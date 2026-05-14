@@ -1,0 +1,28 @@
+# Secrets — never commit
+backend/.env
+backend/.env.*
+.env
+.env.*
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+*.pyo
+.Python
+
+# Node / Gulp (USIS theme)
+W3CRM-v3.0-13_September_2025/gulp/node_modules/
+W3CRM-v3.0-13_September_2025/gulp/.temp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.cursor/
+
+# Flask local uploads (if under repo root)
+**/instance/

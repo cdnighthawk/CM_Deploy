@@ -1,0 +1,13 @@
+/* Dropdown */
+.dropdown-menu{
+	box-shadow: $dropdown-box-shadow;
+}
+.dropdown-sm{
+	.dropdown-menu {
+		--bs-dropdown-min-width: 100px;
+		--bs-dropdown-font-size: 13px;
+		--bs-dropdown-padding-y: 5px;
+		--bs-dropdown-item-padding-x: 10px;
+		--bs-dropdown-item-padding-y: 5px;
+    }
+}

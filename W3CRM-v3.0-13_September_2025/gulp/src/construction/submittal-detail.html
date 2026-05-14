@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "submittal-detail.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		.usis-sub-detail-header { background: #fff; border: 1px solid #e9ecef; border-radius: 0.5rem; padding: 1rem; }
+		#usis-submittal-pdf-wrap { position: relative; background: #525659; border-radius: 0.35rem; overflow: auto; max-height: 75vh; }
+		#usis-submittal-pdf-inner { position: relative; display: inline-block; margin: 0 auto; }
+		#usis-submittal-pdf-canvas { display: block; }
+		#usis-submittal-markup-canvas { position: absolute; left: 0; top: 0; cursor: crosshair; }
+		.usis-pdf-toolbar .btn { padding: 0.15rem 0.45rem; font-size: 0.8rem; }
+		.usis-stamp-palette .btn { min-width: 5rem; }
+	</style>
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Submittal detail",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Submittal Detail</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="services.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="task.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<p class="mb-2"><a id="usis-sub-back" class="small" href="construction/project-detail.html">← Back to project</a></p>
+				<div class="alert alert-danger d-none" id="usis-sub-detail-error" role="alert"></div>
+
+				<div class="usis-sub-detail-header mb-3">
+					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+						<div>
+							<div class="text-muted small mb-1">Submittal <span id="usis-sub-num">—</span></div>
+							<h4 id="usis-sub-title" class="mb-1">Loading…</h4>
+							<div class="small text-muted">Status <strong id="usis-sub-status">—</strong> · Ball in court <strong id="usis-sub-bic">—</strong></div>
+						</div>
+						<div class="small text-muted" id="usis-sub-perms"></div>
+					</div>
+				</div>
+
+				<ul class="nav nav-tabs mb-3" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-general" type="button">General</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-history" type="button">Change history</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-attach" type="button">Attachments</button>
+					</li>
+				</ul>
+
+				<div class="tab-content">
+					<div class="tab-pane fade show active" id="usis-pane-sub-general">
+						<div class="row g-3">
+							<div class="col-lg-8">
+								<div class="row g-2">
+									<div class="col-12">
+										<label class="form-label small mb-0">Title</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-title" maxlength="500">
+									</div>
+									<div class="col-md-6">
+										<label class="form-label small mb-0">Spec section</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-spec" maxlength="120">
+									</div>
+									<div class="col-md-6">
+										<label class="form-label small mb-0">Type</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-type" maxlength="120">
+									</div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0">Status</label>
+										<select class="form-select form-select-sm" id="usis-sub-f-status">
+											<option value="draft">draft</option>
+											<option value="submitted">submitted</option>
+											<option value="in_review">in_review</option>
+											<option value="approved">approved</option>
+											<option value="approved_as_noted">approved_as_noted</option>
+											<option value="rejected">rejected</option>
+											<option value="closed">closed</option>
+										</select>
+									</div>
+									<div class="col-md-8">
+										<label class="form-label small mb-0">Ball in court</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-bic" maxlength="200">
+									</div>
+									<div class="col-12">
+										<label class="form-label small mb-0">Responsible contractor</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-contractor" maxlength="300">
+									</div>
+									<div class="col-md-4"><label class="form-label small mb-0">Due</label><input type="date" class="form-control form-control-sm" id="usis-sub-f-due"></div>
+									<div class="col-md-4"><label class="form-label small mb-0">Submit by</label><input type="date" class="form-control form-control-sm" id="usis-sub-f-submitby"></div>
+									<div class="col-md-4"><label class="form-label small mb-0">Received</label><input type="date" class="form-control form-control-sm" id="usis-sub-f-received"></div>
+									<div class="col-md-6">
+										<label class="form-label small mb-0">Received from</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-receivedfrom" maxlength="300">
+									</div>
+									<div class="col-md-3"><label class="form-label small mb-0">Sent</label><input type="date" class="form-control form-control-sm" id="usis-sub-f-sent"></div>
+									<div class="col-md-3"><label class="form-label small mb-0">Returned</label><input type="date" class="form-control form-control-sm" id="usis-sub-f-returned"></div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0">Revision</label>
+										<input class="form-control form-control-sm" id="usis-sub-f-rev" maxlength="50">
+									</div>
+									<div class="col-12">
+										<label class="form-label small mb-0">Response</label>
+										<textarea class="form-control form-control-sm" id="usis-sub-f-response" rows="3"></textarea>
+									</div>
+								</div>
+								<button type="button" class="btn btn-primary btn-sm mt-3" id="usis-sub-save-general">Save</button>
+								<span class="text-success small ms-2 d-none" id="usis-sub-save-ok">Saved.</span>
+							</div>
+						</div>
+					</div>
+
+					<div class="tab-pane fade" id="usis-pane-sub-history">
+						<div class="table-responsive">
+							<table class="table table-sm table-hover">
+								<thead class="table-light">
+									<tr>
+										<th>When</th>
+										<th>Action</th>
+										<th>Summary</th>
+										<th>From → To</th>
+									</tr>
+								</thead>
+								<tbody id="usis-sub-audit-body"></tbody>
+							</table>
+						</div>
+					</div>
+
+					<div class="tab-pane fade" id="usis-pane-sub-attach">
+						<div class="card border mb-3">
+							<div class="card-body py-2">
+								<h6 class="card-title small mb-2">Add attachment (URL)</h6>
+								<div class="row g-2 align-items-end">
+									<div class="col-md-6">
+										<label class="form-label small mb-0">file_url</label>
+										<input class="form-control form-control-sm" id="usis-sub-att-url" placeholder="https://…/file.pdf">
+									</div>
+									<div class="col-md-3">
+										<label class="form-label small mb-0">Title</label>
+										<input class="form-control form-control-sm" id="usis-sub-att-title">
+									</div>
+									<div class="col-md-3">
+										<button type="button" class="btn btn-primary btn-sm" id="usis-sub-att-add">Upload metadata</button>
+									</div>
+								</div>
+								<p class="text-muted small mb-0 mt-1">Stores a pointer to the file; upload pipeline can replace this later.</p>
+							</div>
+						</div>
+						<div class="table-responsive mb-3">
+							<table class="table table-sm">
+								<thead class="table-light"><tr><th>Ver</th><th>Title</th><th>Updated</th><th class="text-end">Actions</th></tr></thead>
+								<tbody id="usis-sub-att-body"></tbody>
+							</table>
+						</div>
+
+						<div id="usis-sub-viewer-panel" class="d-none">
+							<div class="d-flex flex-wrap align-items-center gap-2 mb-2 usis-pdf-toolbar">
+								<span class="small fw-semibold text-white-50" id="usis-sub-viewer-label">Viewer</span>
+								<div class="btn-group btn-group-sm" role="group">
+									<button type="button" class="btn btn-light" id="usis-pdf-prev">Prev</button>
+									<button type="button" class="btn btn-light" id="usis-pdf-next">Next</button>
+									<button type="button" class="btn btn-light" id="usis-pdf-zoom-out">−</button>
+									<button type="button" class="btn btn-light" id="usis-pdf-zoom-in">+</button>
+									<button type="button" class="btn btn-light" id="usis-pdf-fit">Fit width</button>
+								</div>
+								<div class="btn-group btn-group-sm ms-2" role="group">
+									<button type="button" class="btn btn-warning" data-tool="pan">Pan</button>
+									<button type="button" class="btn btn-warning" data-tool="ink">Markup</button>
+									<button type="button" class="btn btn-warning" data-tool="stamp">Stamp</button>
+								</div>
+								<div class="btn-group btn-group-sm usis-stamp-palette d-none" id="usis-stamp-row" role="group">
+									<button type="button" class="btn btn-outline-dark" data-stamp="approved">APPROVED</button>
+									<button type="button" class="btn btn-outline-dark" data-stamp="rejected">REJECTED</button>
+									<button type="button" class="btn btn-outline-dark" data-stamp="review">REVIEW</button>
+								</div>
+								<button type="button" class="btn btn-success btn-sm ms-auto" id="usis-pdf-save-markups">Save markups</button>
+							</div>
+							<div id="usis-submittal-pdf-wrap">
+								<div id="usis-submittal-pdf-inner">
+									<canvas id="usis-submittal-pdf-canvas"></canvas>
+									<canvas id="usis-submittal-markup-canvas"></canvas>
+								</div>
+							</div>
+							<p class="text-muted small mt-1 mb-0" id="usis-pdf-hint"></p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+
+	</div>
+
+	@@include("../elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script type="module" src="assets/js/submittal-detail-app.js"></script>
+</body>
+</html>

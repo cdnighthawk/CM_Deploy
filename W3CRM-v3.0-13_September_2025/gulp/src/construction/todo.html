@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "mom.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	<link href="assets/vendor/daterangepicker/daterangepicker.css" rel="stylesheet">
+	<link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	<link href="assets/vendor/jquery-ascolorpicker/css/ascolorpicker.min.css" rel="stylesheet">
+    <link href="assets/vendor/clockpicker/bootstrap-clockpicker.min.css" rel="stylesheet">
+	<link href="assets/vendor/toastr/css/toastr.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+		<main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "To Do",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Todo</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="todo-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="transaction.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+            <div class="container-fluid">
+                <div class="row">
+
+					<!-- Start - Filtering -->
+					<div class="col-xl-12">
+						<div class="row justify-content-between align-items-center mb-3">
+							<div class="col-md-9 col-sm-12 clearfix d-flex flex-wrap gap-2 align-items-center">
+								
+                                <div>
+                                    <select class="form-select selectpicker">
+                                        <option>All</option>
+                                        <option>Pending</option>
+                                        <option>Completed</option>
+                                    </select>
+                                </div>
+
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-white border dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Type
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="javascript:void(0);">All</a></li>
+                                    </ul>
+                                </div>
+
+                                <div class="input-group message-search-area width200">
+                                    <input type="text" class="form-control border-end-0" placeholder="Search">
+                                    <div class="input-group-append">
+                                        <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                                    </div>
+                                </div>
+
+								<!-- Start - Filter Dropdown -->
+								<div class="dropdown">
+									<button type="button" class="btn btn-outline-primary" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+										<i class="fa-solid fa-list-ul"></i>Filter
+									</button>
+									<form class="dropdown-menu p-4 width500">
+										<div class="d-flex align-items-start">
+											
+											<div class="nav nav-underline vertical-border flex-column me-3 width150" id="todo-filter" role="tablist" aria-orientation="vertical">
+												<li class="nav-item" role="presentation">
+													<a class="nav-link active" data-bs-target="#Assignee" data-bs-toggle="pill" type="button" role="tab" aria-selected="true">Assignee</a>
+												</li>
+												<li class="nav-item" role="presentation">
+													<a class="nav-link" data-bs-target="#duedate" data-bs-toggle="pill" type="button" role="tab" aria-selected="false">Due Date</a>
+												</li>
+												<li class="nav-item" role="presentation">
+													<a class="nav-link" data-bs-target="#project" data-bs-toggle="pill" type="button" role="tab" aria-selected="false">Project</a>
+												</li>
+											</div>
+
+											<div class="tab-content w-100" id="todo-filter">
+												
+												<div class="tab-pane fade show active height330 overflow-auto" id="Assignee" role="tabpanel" aria-labelledby="to-do" tabindex="0">
+													<div class="input-group message-search-area w-100 mb-3 mt-1">
+														<input type="text" class="form-control border-end-0" placeholder="Assignee Name">
+														<div class="input-group-append">
+															<button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+														</div>
+													</div>
+                                                    <div class="form-check mb-3">
+                                                        <label for="all" class="form-label">All</label>
+                                                        <input class="form-check-input" type="checkbox" value="" id="all">
+                                                    </div>
+												</div>
+
+												<div class="tab-pane fade height330 overflow-scroll" id="duedate" role="tabpanel" aria-labelledby="to-do" tabindex="0">
+                                                    <div class="mb-3 mt-1 position-relative">
+                                                        <label class="form-label">Due Date</label>
+                                                        <input class="form-control w-100" type="text" id="bsDatepicker2" placeholder="mm/dd/yyyy">
+                                                    </div>
+													<div class="form-check mb-3">
+														<input class="form-check-input" type="checkbox" value="" id="Yesterday">
+														<label class="form-check-label" for="Yesterday">Yesterday</label>
+													</div>
+													<div class="form-check mb-3">
+														<input class="form-check-input" type="checkbox" value="" id="Today">
+														<label class="form-check-label" for="Today">Today</label>
+													</div>
+													<div class="form-check mb-3">
+														<input class="form-check-input" type="checkbox" value="" id="Tommorow">
+														<label class="form-check-label" for="Tommorow">Tommorow</label>
+													</div>
+												</div>
+
+												<div class="tab-pane fade height330 overflow-scroll" id="project" role="tabpanel" aria-labelledby="to-do" tabindex="0">
+                                                    <div class="mb-3">
+                                                        <input class="form-control w-100" type="text" placeholder="Project Name">
+                                                    </div>
+                                                    <div class="form-check mb-3">
+														<input class="form-check-input" type="checkbox" value="" id="project-1">
+														<label class="form-check-label" for="project-1">Test</label>
+													</div>
+                                                    <div class="form-check mb-3">
+														<input class="form-check-input" type="checkbox" value="" id="project-2">
+														<label class="form-check-label" for="project-2">Test 2</label>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										<div class="border-top d-flex justify-content-between pt-3">
+											<a href="javascript:void(0);" class="btn btn-primary">Clear Filter <span class="badge bg-white text-black rounded-circle text-white height30 width30 fs-12 d-flex justify-content-center align-items-center">0</span></a>
+											<a href="javascript:void(0);" class="btn btn-primary">Apply</a>
+										</div>
+
+									</form>
+								</div>
+								<!-- End - Filter Dropdown -->
+								
+							</div>
+							<div class="col-md-3 col-sm-4 text-md-end mt-2 mt-md-0">
+								<a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#new-todo">+ New To Do</a>
+                            </div>
+						</div>	
+					</div>
+					<!-- End - Filtering -->
+
+                    <!-- Start - Table -->
+					<div class="col-xl-12">
+						<div class="card table-hover text-nowrap overflow-auto vh-75">
+                            <table class="table mb-0" id="TODOtbl">
+                                <thead>
+                                    <tr>
+                                        <th class="width500">Items name</th>
+                                        <th class="width130 text-center">Due Date</th>
+                                        <th class="text-center width270">Assigned</th>
+                                        <th class="text-center width270">Task</th>
+                                        <th class="text-end width260">Type</th>
+                                        <th class="text-end width140">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">Project Proposal</p>
+                                        </td>
+                                        <td class="text-center">28-Aug-2025</td>
+                                        <td class="text-center">Jonathan</td>
+                                        <td class="text-center">Prepare draft proposal for client approval</td>
+                                        <td class="text-end">Documentation</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">UI Wireframes</p>
+                                        </td>
+                                        <td class="text-center">30-Aug-2025</td>
+                                        <td class="text-center">Elizabeth</td>
+                                        <td class="text-center">Create homepage and dashboard wireframes</td>
+                                        <td class="text-end">Design</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">API Integration</p>
+                                        </td>
+                                        <td class="text-center">01-Sep-2025</td>
+                                        <td class="text-center">Christopher</td>
+                                        <td class="text-center">Integrate payment gateway API</td>
+                                        <td class="text-end">Development</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">Database Setup</p>
+                                        </td>
+                                        <td class="text-center">02-Sep-2025</td>
+                                        <td class="text-center">Benjamin</td>
+                                        <td class="text-center">Configure PostgreSQL database and schema</td>
+                                        <td class="text-end">Technical</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">Logo Design</p>
+                                        </td>
+                                        <td class="text-center">03-Sep-2025</td>
+                                        <td class="text-center">Olivia</td>
+                                        <td class="text-center">Submit 3 logo variations for branding</td>
+                                        <td class="text-end">Creative</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">Testing Checklist</p>
+                                        </td>
+                                        <td class="text-center">05-Sep-2025</td>
+                                        <td class="text-center">Sophia</td>
+                                        <td class="text-center">Create QA checklist and assign test cases</td>
+                                        <td class="text-end">Quality Assurance</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">Marketing Plan</p>
+                                        </td>
+                                        <td class="text-center">06-Sep-2025</td>
+                                        <td class="text-center">Charlotte</td>
+                                        <td class="text-center">Draft marketing strategy for launch</td>
+                                        <td class="text-end">Strategy</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <p class="m-0">User Training</p>
+                                        </td>
+                                        <td class="text-center">08-Sep-2025</td>
+                                        <td class="text-center">William</td>
+                                        <td class="text-center">Prepare training slides and conduct workshop</td>
+                                        <td class="text-end">Training</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>Server Deployment</td>
+                                        <td class="text-center">09-Sep-2025</td>
+                                        <td class="text-center">Daniel</td>
+                                        <td class="text-center">Deploy application on staging server</td>
+                                        <td class="text-end">DevOps</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>Content Writing</td>
+                                        <td class="text-center">10-Sep-2025</td>
+                                        <td class="text-center">Hannah</td>
+                                        <td class="text-center">Draft website homepage and about us content</td>
+                                        <td class="text-end">Content</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>Security Audit</td>
+                                        <td class="text-center">11-Sep-2025</td>
+                                        <td class="text-center">Matthew</td>
+                                        <td class="text-center">Conduct penetration testing and security review</td>
+                                        <td class="text-end">Security</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>Client Feedback Report</td>
+                                        <td class="text-center">12-Sep-2025</td>
+                                        <td class="text-center">Abigail</td>
+                                        <td class="text-center">Compile client feedback and prepare presentation</td>
+                                        <td class="text-end">Reporting</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="construction/todo-detail.html">Edit</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+						</div>
+					</div>
+					<!-- End - Table -->
+
+                </div>
+            </div>
+			
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+    <!-- Start - New Todo Offcanvas -->
+    <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="new-todo" aria-labelledby="new-todo" aria-modal="true" role="dialog">
+        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                <h5 class="offcanvas-title fw-semibold">New To Do</h5>
+            </div>
+            <div>
+                <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+            </div>
+        </div>
+
+        <!-- Start - Offcanvas Body -->
+        <div class="offcanvas-body">
+            <div class="mb-3 position-relative">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="title" aria-describedby="title">
+            </div>
+            <div class="mb-3 position-relative">
+                <label for="bsDatepicker" class="form-label">Due Date</label>
+                <input class="form-control" id="bsDatepicker1" placeholder="Select Date"/>
+            </div>
+            <div class="mb-3 position-relative">
+                <label for="dzRepeatTodo" class="form-label">Repeat Todo</label>
+                <input data-bs-toggle="modal" data-bs-target="#repeat-todo" class="form-control" type="none" id="dzRepeatTodo" aria-describedby="repeat-todo" placeholder="Add Repeat Todo">
+            </div>
+            <div class="mb-3 position-relative">
+                <label for="type" class="form-label">Type</label>
+                <input type="text" class="form-control form-select" id="type" data-bs-toggle="offcanvas" data-bs-target="#todo-type" aria-describedby="type-todo">
+            </div>
+            <div class="mb-3 position-relative">
+                <div class="dropdown-slt">
+                    <label for="" class="form-label text-uppercase">Select Project</label>
+                    <input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#select-todo" type="text" readonly="">
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="select-todo" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="Test">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">T</div>
+                            <div class="fw-semibold text-black">Test</div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="Test 2">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">T</div>
+                            <div class="fw-semibold text-black">Test 2</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3 position-relative">
+                <div class="dropdown-slt">
+                    <label for="" class="form-label text-uppercase">Search Task</label>
+                    <input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#select-task" type="text" readonly="">
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="select-task" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="Zero">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">Z</div>
+                            <div class="fw-semibold text-black">Zero</div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="Add Windows">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AW</div>
+                            <div class="fw-semibold text-black">Add Windows</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3 position-relative">
+                <label for="url" class="form-label">URL</label>
+                <div class="position-relative">
+                    <input type="text" class="form-control pe-5" id="url" aria-describedby="url">
+                    <span class="show-pass position-absolute top-50 end-0 me-2 translate-middle">
+                        <div class="glyph-icon flaticon-381-earth-globe-1"></div>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mb-3 position-relative">
+                <div class="dropdown-slt">
+                    <label for="attendee" class="form-label text-uppercase">Assignee</label>
+                    <input id="attendee" class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#attendeeList" type="text" readonly="">
+                    
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="attendeeList" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="1" data-val="Alexander">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">Alexander</div>
+                                    <span class="fs-12">+91 764302****</span>
+                                </div>
+                                <div>
+                                    <div>Client</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="2" data-val="+15 1343025***">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">Michael Johnson</div>
+                                    <span class="fs-12">+15 1343025***</span>
+                                </div>
+                                <div>
+                                    <div>Staff</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="3" data-val="John Smith">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">JS</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">John Smith</div>
+                                    <span class="fs-12">+1 1343025***</span>
+                                </div>
+                                <div>
+                                    <div>Employee</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+                            + Create Party
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add this div BELOW your dropdown-slt for selected attendees -->
+                <div class="selected-attendees mt-2" id="attendeeSelected"></div>
+
+            </div>
+
+            <div>
+                <form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+                    <div class="dz-default dz-message pointer">
+                        <button class="dz-button" type="button">Attach Media<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- End - Offcanvas Body -->
+    
+    </div>
+    <!-- End - New Todo Offcanvas -->
+
+	<!-- Start - Repeat Todo Modal -->
+	<div class="modal fade" id="repeat-todo" data-bs-keyboard="false" tabindex="-1" aria-labelledby="repeat-todo" aria-modal="true" role="dialog">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header border-4 border-primary">
+					<h1 class="modal-title fs-5" id="date-filter">Repeat Settings</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="d-flex align-items-center justify-content-between mb-3">
+						<div class="form-check p-0">
+							<input id="flexRadioDefault1" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2" checked>
+							<label class="form-check-label" for="flexRadioDefault1">Week Days</label>
+						</div>
+						<div class="form-check p-0">
+							<input id="flexRadioDefault2" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2">
+							<label class="form-check-label" for="flexRadioDefault2">Everyday</label>
+						</div>
+					</div>
+					<div class="mb-3">
+						<p class="p-0 fs-12 mb-2">Week Days</p>
+						<div class="text-center">
+							<div class="btn-group gap-3" role="group" aria-label="Basic checkbox toggle button group">
+								<input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck1">S</label>
+
+								<input type="checkbox" class="btn-check" id="btncheck2" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck2">M</label>
+
+								<input type="checkbox" class="btn-check" id="btncheck3" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck3">T</label>
+
+								<input type="checkbox" class="btn-check" id="btncheck4" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck4">W</label>
+
+								<input type="checkbox" class="btn-check" id="btncheck5" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck5">T</label>
+
+								<input type="checkbox" class="btn-check" id="btncheck6" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck6">F</label>
+
+								<input type="checkbox" class="btn-check" id="btncheck7" autocomplete="off">
+								<label class="btn btn-outline-primary rounded-circle width40 height40" for="btncheck7">S</label>
+							</div>
+						</div>
+					</div>
+					<div class="mb-3">
+						<div class="form-check p-0">
+							<input id="flexRadioDefault3" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2">
+							<label class="form-check-label" for="flexRadioDefault3">Month Days</label>
+						</div>
+					</div>
+					<div>
+						<p class="p-0 fs-12 mb-2">End</p>
+						<div class="form-check p-0 mb-2">
+							<input id="flexRadioDefault4" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2" checked>
+							<label class="form-check-label" for="flexRadioDefault4">End In 6 Months</label>
+						</div>
+						<div class="form-check p-0">
+							<input id="flexRadioDefault5" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2">
+							<label class="form-check-label" for="flexRadioDefault5">End till</label>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer d-flex justify-content-between align-items-center">
+					<button type="button" class="btn btn-outline-danger">Cancel</button>
+					<button type="submit" class="btn btn-primary">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- End - Repeat Todo -->
+
+    <!-- Start - Todo Type Offcanvas -->
+    <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="todo-type" aria-labelledby="todo-type" aria-modal="true" role="dialog">
+        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                <h5 class="offcanvas-title fw-semibold">Select Todo Category</h5>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="javascript:void(0);" class="btn btn-danger light">Cancel</a>
+                <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+            </div>
+        </div>
+
+        <!-- Start - Offcanvas Body -->
+        <div class="offcanvas-body">
+            <div class="input-group message-search-area w-100 mb-4">
+                <input type="text" class="form-control border-end-0" placeholder="Search To Do Category">
+                <div class="input-group-append">
+                    <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end align-items-center mb-4">
+                <a class="text-primary mx-2" data-bs-toggle="offcanvas" data-bs-target="#new-todo-type">New To Do</a>
+            </div>
+
+            <a class="d-flex justify-content-between mb-3">
+                <div class="d-flex gap-2">
+                    <p class="m-0 text-black fw-semibold">1.</p>
+                    <p class="m-0 text-black fw-semibold">Hardware</p>
+                </div>
+                <div>
+                    <input type="color" class="form-control form-control-color p-0 width20 height20 rounded-circle" id="exampleColorInput" value="#002FFF" title="Choose your color">
+                </div>
+            </a>
+            <a class="d-flex justify-content-between">
+                <div class="d-flex gap-2">
+                    <p class="m-0 text-black fw-semibold">2.</p>
+                    <p class="m-0 text-black fw-semibold">Kitchen Sink</p>
+                </div>
+                <div>
+                    <input type="color" class="form-control form-control-color p-0 width20 height20 rounded-circle" id="exampleColorInput2" value="#aaaaaa" title="Choose your color">
+                </div>
+            </a>
+
+        </div>
+        <!-- End - Offcanvas Body -->
+    
+    </div>
+    <!-- End - Todo Type Offcanvas -->
+
+    <!-- Start - Todo Type Offcanvas -->
+    <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="new-todo-type" aria-labelledby="new-todo-type" aria-modal="true" role="dialog">
+        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                <h5 class="offcanvas-title fw-semibold">Add To Do Category</h5>
+            </div>
+            <div>
+                <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+            </div>
+        </div>
+
+        <!-- Start - Offcanvas Body -->
+        <div class="offcanvas-body">
+            
+            <div class="mb-4 position-relative">
+                <label for="AddtoDo" class="form-label text-uppercase">Name</label>
+                <input type="text" id="AddtoDo" class="form-control" placeholder="Add To Do">
+            </div>
+
+            <h6 class="mb-3">Theme Color</h6>
+
+            <div class="position-relative">
+                <label class="form-label text-uppercase">Category Color</label>
+                <div class="form-control form-control-sm d-flex align-items-center gap-2">    
+                    <input type="color" class="form-control form-control-color border-0" id="neAXategoryColor" value="#002FFF" title="Choose your color">
+                    <p class="m-0" id="neAXategoryColorValue"></p>
+                </div>
+            </div>
+
+        </div>
+        <!-- End - Offcanvas Body -->
+    
+    </div>
+    <!-- End - Todo Type Offcanvas -->
+
+    @@include("../essentials/transactions/add-party.html")
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Color Picker -->
+	<script src="assets/vendor/jquery-ascolor/jquery-ascolor.min.js"></script>
+	<script src="assets/vendor/jquery-asgradient/jquery-asgradient.min.js"></script>
+	<script src="assets/vendor/jquery-ascolorpicker/js/jquery-ascolorpicker.min.js"></script>
+    <script src="assets/js/plugins-init/colorpicker-init.js"></script>
+
+	<!-- Script For Toastr -->
+	<script src="assets/vendor/toastr/js/toastr.min.js"></script>
+
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+    <script src="assets/vendor/clockpicker/bootstrap-clockpicker.min.js"></script>
+    <script src="assets/js/plugins-init/clockpicker-init.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	<script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Bootstrap Daterangepicker -->
+	<script src="assets/vendor/daterangepicker/moment.min.js"></script>
+	<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+	<script src="assets/js/plugins-init/daterangepicker-init.js"></script>
+	
+	<!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	
+	
+	
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "user-roles.html",
+	})
+	
+	<link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "User Roles",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">User Roles</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="task.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="user.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="d-flex align-items-center justify-content-between">
+						<h4 class="heading mb-3">Account Setting</h4>
+						<a class="btn btn-primary btn-sm mb-3" data-bs-toggle="offcanvas" href="#offcanvasExample" role="button" aria-controls="offcanvasExample">+ Add a role</a>
+					</div>	
+					<div class="col-xl-3 col-lg-4">
+						<div class="row">
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header py-3">
+										<h4 class="card-title mb-0">Personal</h4>
+									</div>
+									<div class="card-body px-0 py-2">
+										<div class="list-group">
+											<a href="#" class="list-group-item list-group-item-action border-0"><i class="fa-solid fa-user text-primary me-2"></i> Profile</a>
+											<a href="#" class="list-group-item list-group-item-action border-0"><i class="fa-solid fa-lock text-primary me-2"></i> Password</a>
+											<a href="#" class="list-group-item list-group-item-action border-0"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Date</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header py-3">
+										<h4 class="card-title mb-0">Company</h4>
+									</div>
+									<div class="card-body px-0 py-2">
+										<div class="list-group">
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-building text-primary me-2"></i> Commpany Details
+											</a>
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-user-plus text-primary me-2"></i> Team Members
+											</a>
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="far fa-clock text-primary me-2"></i> Format setting
+											</a>
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-briefcase text-primary me-2"></i> Job boards
+											</a>
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="far fa-user text-primary me-2"></i> Positions
+											</a>
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="fas fa-times-circle text-danger me-2"></i>Rejections resions
+											</a>
+											<a href="#" class="list-group-item list-group-item-action border-0">
+												<i class="fas fa-envelope text-primary me-2"></i>Automated message
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-9 col-lg-8">
+						<div class="row">
+							<div class="col-xl-12">
+								<h4 class="card-title mb-3 text-secondary">
+									<i class="fa-solid fa-user-plus text-primary me-1"></i> Job Management
+								</h4>
+								<div class="card h-auto">
+									<div class="card-body p-0 pt-1 pb-2 table-card-body">
+										<div class="table-responsive">
+											<table id="managementTable" class="table">
+												<thead class="text-nowrap">
+													<tr>
+														<th class="mw-200">Name</th>
+														<th class="mw-80 ">Date Added</th>
+														<th class="mw-80">Last active</th>
+														<th class="mw-80">Action</th>
+													</tr>
+												</thead>
+												<tbody class="text-nowrap">
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar3.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Amelia Rose</h6>
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>22 March 2023</td>
+														<td>Monday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Elijah James</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Liam Risher</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Amelia Rose</h6>	
+																	<span class="d-block">demo11@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar7.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Charlotte Mae</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>18 january 2023</td>
+														<td>Monday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Isabella Claire</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 May 2023</td>
+														<td>Monday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar6.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Liam Risher</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar8.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Henry Mason</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>23 May 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<h4 class="card-title mb-3 text-secondary">
+									<i class="fas fa-times-circle text-danger me-1"></i> Rejections resions
+								</h4>
+								<div class="card h-auto">
+									<div class="card-body p-0 pt-1 pb-2 table-card-body">
+										<div class="table-responsive">
+											<table id="rejectionsTable" class="table">
+												<thead class="text-nowrap">
+													<tr>
+														<th class="mw-200">Name</th>
+														<th class="mw-80 ">Date Added</th>
+														<th class="mw-80">Last active</th>
+														<th class="mw-80">Action</th>
+													</tr>
+												</thead>
+												<tbody class="text-nowrap">
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Harper Joy</h6>
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>22 March 2023</td>
+														<td>Monday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Oliver Noah</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar3.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Emily Kate</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Liam Risher</h6>	
+																	<span class="d-block">demo11@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Abigail Faith</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>18 january 2023</td>
+														<td>Monday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img  src="assets/images/avatar/small/avatar6.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Henry Mason</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 May 2023</td>
+														<td>Monday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar7.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Sophia Jane</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>28 February 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<div class="d-flex align-items-center">
+																<img src="assets/images/avatar/small/avatar8.webp" class="avatar avatar-sm rounded-circle" alt="">
+																<div class="ms-2">
+																	<h6 class="mb-0">Elijah James</h6>	
+																	<span class="d-block">demo@gmail.com</span>
+																</div>
+															</div>
+														</td>
+														<td>23 May 2023</td>
+														<td>Tuesday</td>
+														<td>
+															<button type="button" class="btn btn-primary btn-square btn-sm"><i class="fas fa-pencil-alt"></i></button>
+															<button type="button" class="btn btn-danger btn-square btn-sm ms-1"><i class="fas fa-trash-alt"></i></button>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+        
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("elements/footer.html")
+		
+		<!-- Start - Add New Task Modal -->
+		<div class="offcanvas offcanvas-end custom-offcanvas" tabindex="-1" id="offcanvasExample">
+			<div class="offcanvas-header pb-0">
+				<h5 class="modal-title" id="#gridSystemModal">Add New Task</h5>
+				<button type="button" class="btn btn-square btn-danger light btn-sm ms-auto" data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<div class="mb-4">
+					<label for="exampleFormControlInput1" class="form-label">Role Name <span class="text-danger">*</span></label>
+					<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="Enter Role Name">
+				</div>	
+				<h4 class="modal-title mb-3">User Access levels</h4>
+				<div class="table-responsive">
+					<table id="role" class="table table-striped table-borderless border">
+						<thead>
+							<tr>
+								<th class="mw-250">Entity</th>
+								<th class="mw-100">Add</th>
+								<th class="mw-100">Edit</th>
+								<th class="mw-100">Delete</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>User Management</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" id="customCheckBox4" required="">
+										<label class="form-check-label" for="customCheckBox4">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox5" required="">
+										<label class="form-check-label" for="customCheckBox5">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox6" required="">
+										<label class="form-check-label" for="customCheckBox6">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Release</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input"  id="customCheckBox7" required="">
+										<label class="form-check-label" for="customCheckBox7">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" id="customCheckBox8" required="">
+										<label class="form-check-label" for="customCheckBox8">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" id="customCheckBox9" required="">
+										<label class="form-check-label" for="customCheckBox9">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Content Management</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input"  id="customCheckBox10" required="">
+										<label class="form-check-label" for="customCheckBox10">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox11" required="">
+										<label class="form-check-label" for="customCheckBox11">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" id="customCheckBox12" required="">
+										<label class="form-check-label" for="customCheckBox12">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Libabry Management</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" id="customCheckBox131" required="">
+										<label class="form-check-label" for="customCheckBox131">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox132" required="">
+										<label class="form-check-label" for="customCheckBox132">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox13" required="">
+										<label class="form-check-label" for="customCheckBox13">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Permissions for work items</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox14" required="">
+										<label class="form-check-label" for="customCheckBox14">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input"  id="customCheckBox15" required="">
+										<label class="form-check-label" for="customCheckBox15">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" id="customCheckBox16" required="">
+										<label class="form-check-label" for="customCheckBox16">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>User Management	</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox17" required="">
+										<label class="form-check-label" for="customCheckBox17">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox18" required="">
+										<label class="form-check-label" for="customCheckBox18">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox19" required="">
+										<label class="form-check-label" for="customCheckBox19">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Release</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox20" required="">
+										<label class="form-check-label" for="customCheckBox20">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox21" required="">
+										<label class="form-check-label" for="customCheckBox21">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox22" required="">
+										<label class="form-check-label" for="customCheckBox22">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Content Management</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox23" required="">
+										<label class="form-check-label" for="customCheckBox23">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox24" required="">
+										<label class="form-check-label" for="customCheckBox24">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox25" required="">
+										<label class="form-check-label" for="customCheckBox25">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Libabry Management</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox26" required="">
+										<label class="form-check-label" for="customCheckBox26">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox27" required="">
+										<label class="form-check-label" for="customCheckBox27">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox28" required="">
+										<label class="form-check-label" for="customCheckBox28">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Permissions for work items</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox29" required="">
+										<label class="form-check-label" for="customCheckBox29">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox30" required="">
+										<label class="form-check-label" for="customCheckBox30">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" id="customCheckBox31" required="">
+										<label class="form-check-label" for="customCheckBox31">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>User Management	</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox32" required="">
+										<label class="form-check-label" for="customCheckBox32">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox33" required="">
+										<label class="form-check-label" for="customCheckBox33">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" id="customCheckBox34" required="">
+										<label class="form-check-label" for="customCheckBox34">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Release</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox35" required="">
+										<label class="form-check-label" for="customCheckBox35">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox36" required="">
+										<label class="form-check-label" for="customCheckBox36">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox37" required="">
+										<label class="form-check-label" for="customCheckBox37">Delete</label>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Content Management</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-primary">
+										<input type="checkbox" class="form-check-input" id="customCheckBox38" required="">
+										<label class="form-check-label" for="customCheckBox38">Add</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-warning">
+										<input type="checkbox" class="form-check-input"  id="customCheckBox39" required="">
+										<label class="form-check-label" for="customCheckBox39">Edit</label>
+									</div>
+								</td>
+								<td>
+									<div class="form-check custom-checkbox checkbox-danger">
+										<input type="checkbox" class="form-check-input" checked="" id="customCheckBox40" required="">
+										<label class="form-check-label" for="customCheckBox40">Delete</label>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="mt-2">
+					<a href="javascript:void(0)" class="btn btn-light">Discard</a>
+					<a href="javascript:void(0)" class="btn btn-primary ms-2">Submit</a>
+				</div>
+			</div>
+		</div>
+		<!-- End - Add New Task Modal -->		
+		
+	</div>
+    <!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Datatables -->
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+	
+	<!-- Script For Dashboard Pages -->
+	<script src="assets/js/dashboard/dashboard.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

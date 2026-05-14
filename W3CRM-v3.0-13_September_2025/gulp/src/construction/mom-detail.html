@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "timesheet-detail.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	<link href="assets/vendor/daterangepicker/daterangepicker.css" rel="stylesheet">
+	<link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	<link href="assets/vendor/toastr/css/toastr.min.css" rel="stylesheet">
+    <link href="assets/vendor/clockpicker/bootstrap-clockpicker.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+		<main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Minutes of Meeting",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Mom Detail</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="material.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="mom.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+            <div class="container-fluid">
+                <div class="row">
+
+                    <div class="col-xl-12">
+                        <div class="row">
+
+                            <!-- Start - TimeSheet Table -->
+                            <div class="col-xl-5">
+                                <div class="card vh-75 rounded-4 shadow d-flex flex-column">
+                                    <div class="col-xl-12">
+                                        <div class="py-3 px-4 d-flex flex-wrap justify-content-between align-items-center">
+                                            <div class="seach-bar gap-2 align-items-center" style="display: none;">
+                                                <button class="btn btn-square btn-white border filter-btn">
+                                                    <i class="icon feather icon-filter fs-18 text-black pointer"></i>
+                                                </button>
+                                                <div class="input-group message-search-area width250">
+                                                    <input type="text" class="form-control form-control-sm border-end-0" placeholder="Search">
+                                                    <div class="input-group-append">
+                                                        <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="clearfix flex-wrap gap-2 align-items-center filter-op" style="display: flex;">
+                                                <button class="btn btn-square btn-white border search-btn">
+                                                    <i class="icon feather icon-search fs-18 text-black pointer"></i>
+                                                </button>
+
+                                                <!-- Start - Date Filter Modal Trigger -->
+                                                <a href="javascript:void(0);" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#date-filter">
+                                                    Date Filter
+                                                </a>
+
+                                                <div class="modal fade" id="date-filter" tabindex="-1" aria-labelledby="date-filter-label" aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header border-4 border-primary">
+                                                                <h1 class="modal-title fs-5" id="date-filter-label">Date Filter</h1>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <input class="form-control mb-3" type="text" name="datetimes" placeholder="Select date range">
+
+                                                                <!-- Checkboxes stacked for mobile -->
+                                                                <div class="row g-2">
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="lastWeek">
+                                                                            <label class="form-check-label" for="lastWeek">Last Week</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="thisWeek">
+                                                                            <label class="form-check-label" for="thisWeek">This Week</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="today">
+                                                                            <label class="form-check-label" for="today">Today</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="thisMonth">
+                                                                            <label class="form-check-label" for="thisMonth">This Month</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="lastMonth">
+                                                                            <label class="form-check-label" for="lastMonth">Last Month</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="fy2425">
+                                                                            <label class="form-check-label" for="fy2425">FY- 2024 - 2025</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="fy2324">
+                                                                            <label class="form-check-label" for="fy2324">FY- 2023 - 2024</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="fy2223">
+                                                                            <label class="form-check-label" for="fy2223">FY- 2022 - 2023</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-6 col-sm-4">
+                                                                        <div class="form-check">
+                                                                            <input class="form-check-input" type="checkbox" id="all">
+                                                                            <label class="form-check-label" for="all">All</label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-sm btn-primary">Apply</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- End - Date Filter Modal Trigger -->
+
+                                                <!-- Start - Atendee Dropdown -->
+                                                <div class="dropdown-slt">
+                                                    <input class="form-control width120 on-dropdown-name-input" placeholder="Attendee" name="party_name" data-dropdown-target=".attendeeDropdown" type="text" readonly="" value="">
+                                                    <input name="sender_party_id" class="on-dropdown-id-input" type="hidden" value="">
+                                                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu attendeeDropdown" style="display: none;">
+                                                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="1" data-name="Attendee">
+                                                            <p class="m-0 text-black">All</p>
+                                                        </div>
+                                                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="2" data-name="John">
+                                                            <p class="m-0 text-black">John</p>
+                                                        </div>
+                                                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="3" data-name="Chris Sir">
+                                                            <p class="m-0 text-black">Chris Sir</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- End - Atendee Dropdown -->
+
+                                                <!-- Start - Project Dropdown -->
+                                                <div class="dropdown-slt">
+                                                    <input class="form-control width100 on-dropdown-name-input" placeholder="Project" name="party_name" data-dropdown-target=".projectDropdown" type="text" readonly="" value="">
+                                                    <input name="sender_party_id" class="on-dropdown-id-input" type="hidden" value="">
+                                                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu projectDropdown" style="display: none;">
+                                                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="1" data-name="Project">
+                                                            <p class="m-0 text-black">All</p>
+                                                        </div>
+                                                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="2" data-name="Test">
+                                                            <p class="m-0 text-black">Test</p>
+                                                        </div>
+                                                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="3" data-name="Test 2">
+                                                            <p class="m-0 text-black">Test 2</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- End - Project Dropdown -->
+                                                
+                                            </div>
+                                            
+                                            <div class="mt-lg-2 mt-2">
+                                                <a href="javascript:void(0);" class="btn btn-sm btn-primary" data-bs-toggle="offcanvas" data-bs-target="#new-mom">+ New MOM</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 overflow-auto">
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li active">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">21 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div>Budget Review Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">6</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Office Renovation</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">20 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Design Discussion Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">3</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Interior Design</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">17 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Financial Approval Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">13</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Financial Review</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">15 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Landscape Planning Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">8</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Landscaping Works</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">14 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Site Inspection Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">15</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Site Inspection</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">12 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Client Feedback Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">20</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Client Feedback</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">11 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Technology Update Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">26</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Software Upgrade</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">10 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Marketing Strategy Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">5</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Brand Campaign</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">07 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Risk Assessment Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">50</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Construction Safety</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <a href="javascript:void(0);" class="py-3 px-4 d-flex gap-3 align-items-center timesheet-li">
+                                            <div class="p-2 rounded bg-primary-subtle">
+                                                <div class="d-flex flex-column gap-1 text-center">
+                                                    <span class="fs-12">05 Aug,</span>
+                                                    <span class="fs-12">2025</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-black">
+                                                <div class="d-flex">Procurement Meeting</div>
+                                                <div class="d-flex">
+                                                    <span class="fs-12">20</span>
+                                                    <span class="fs-12 px-1">|</span>
+                                                    <span class="fs-12">Material Supply</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- End - TimeSheet Table -->
+
+                            <!-- Start - TimeSheet Detail -->
+                            <div class="col-xl-7">
+                                <div class="card vh-75 rounded-4 shadow d-flex flex-column">
+                                    <div class="border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                                        <div class="d-flex gap-3 align-items-center">
+                                            <a href="construction/mom.html" class="lh-1"><i class="icon feather icon-arrow-left fs-18 text-black"></i></a>
+                                            <h6 class="m-0">MOM View</h6>
+                                        </div>
+                                        <div class="d-flex gap-3 align-items-center">
+                                            <a data-bs-toggle="offcanvas" data-bs-target="#new-mom" class="lh-1"><i class="icon feather icon-edit fs-18 text-black"></i></a>
+                                            <div class="dropdown custom-dropdown mb-0">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 flex-grow-1 overflow-auto">
+                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                            <h4 class="m-0 fw-semibold">Budget Review Meeting</h4>
+                                        </div>
+                                        <div class="d-flex flex-column gap-3">
+                                            <p class="m-0 text-black">Additional Details:</p>
+                                            <div class="row border-bottom pb-3">
+                                                <div class="col-sm-3 fw-semibold text-black">Attendees:</div>
+                                                <div class="col-sm-9 fw-medium">John</div>
+                                            </div>
+                                            <div class="row border-bottom pb-3">
+                                                <div class="col-sm-3 fw-semibold text-black">Project:</div>
+                                                <div class="col-sm-9 fw-medium">Test</div>
+                                            </div>
+                                            <div class="row border-bottom pb-3">
+                                                <div class="col-sm-3 fw-semibold text-black">Date:</div>
+                                                <div class="col-sm-9 fw-medium">05 Aug 2025</div>
+                                            </div>
+                                            <div class="row border-bottom pb-3">
+                                                <div class="col-sm-3 fw-semibold text-black">Notes:</div>
+                                                <div class="col-sm-9 fw-medium">
+                                                    <p class="m-0">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                                                </div>
+                                            </div>
+                                            <div class="row border-bottom pb-3 align-items-center">
+                                                <div class="col-sm-3 fw-semibold text-black">Attachments:</div>
+                                                <div class="col-sm-9 fw-medium d-flex flex-wrap gap-2">
+                                                    <div class="p-3 border rounded d-flex align-items-center gap-2">
+                                                        <i class="icon feather icon-file-text fs-18 text-primary"></i>
+                                                        <span class="text-primary">Image.png</span>
+                                                        <a href="javascript:void(0);" class="text-danger delete-btn"><i class="icon feather icon-trash-2 fs-18"></i></a>
+                                                    </div>
+                                                    <div class="p-3 border rounded d-flex align-items-center gap-2">
+                                                        <i class="icon feather icon-file-text fs-18 text-primary"></i>
+                                                        <span class="text-primary">Image 2.png</span>
+                                                        <a href="javascript:void(0);" class="text-danger delete-btn"><i class="icon feather icon-trash-2 fs-18"></i></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- End - TimeSheet Detail -->
+                        
+                        </div>
+                    </div>
+                
+                
+                </div>
+            </div>
+			
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+    <!-- Start - New MOM Offcanvas -->
+    <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="new-mom" aria-labelledby="new-mom" aria-modal="true" role="dialog">
+        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                <h5 class="offcanvas-title fw-semibold text-uppercase">New MOM</h5>
+            </div>
+            <a href="javascript:void(0);" class="btn btn-sm btn-primary">Save</a>
+        </div>
+
+        <!-- Start - Offcanvas Body -->
+        <div class="offcanvas-body">
+            
+            <div class="d-flex justify-content-end mb-4">
+                <input class="form-control w-100" type="text" id="bsDatepicker2" placeholder="Select Date">
+            </div>
+
+            <div class="mb-4 position-relative">
+                <label class="form-label text-uppercase">Meeting Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control">
+            </div>
+
+            <div class="mb-4 position-relative">
+                <div class="dropdown-slt">
+                    <label for="" class="form-label text-uppercase">Select Project <span class="text-danger">*</span></label>
+                    <input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#projectList" type="text" readonly="">
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="projectList" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="Test">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">T</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div class="fw-semibold text-black">Test <span class="fw-light">(Noida)</span></div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="236 A">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">A</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div class="fw-semibold text-black">236 A <span class="fw-light">(Kota)</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3 position-relative">
+                <div class="dropdown-slt">
+                    <label for="attendee" class="form-label text-uppercase">Attendee <span class="text-danger">*</span></label>
+                    <input id="attendee" class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#attendeeList" type="text" readonly="">
+                    
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="attendeeList" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="1" data-val="Alexander">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">Alexander</div>
+                                    <span class="fs-12">+91 764302****</span>
+                                </div>
+                                <div>
+                                    <div>Client</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="2" data-val="+15 1343025***">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">Michael Johnson</div>
+                                    <span class="fs-12">+15 1343025***</span>
+                                </div>
+                                <div>
+                                    <div>Staff</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="3" data-val="John Smith">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">JS</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">John Smith</div>
+                                    <span class="fs-12">+1 1343025***</span>
+                                </div>
+                                <div>
+                                    <div>Employee</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+                            + Create Party
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add this div BELOW your dropdown-slt for selected attendees -->
+                <div class="selected-attendees mt-2" id="attendeeSelected"></div>
+
+            </div>
+
+            <div class="position-relative mb-3">
+                <label class="form-label text-uppercase">Notes</label>
+                <textarea class="form-control" rows="4"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+                    <div class="dz-default dz-message pointer">
+                        <button class="dz-button" type="button">Attach Media<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+        <!-- End - Offcanvas Body -->
+    
+    </div>
+    <!-- End - New MOM Offcanvas -->
+
+    @@include("../essentials/transactions/add-party.html")
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Toastr -->
+	<script src="assets/vendor/toastr/js/toastr.min.js"></script>
+
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+    <script src="assets/vendor/clockpicker/bootstrap-clockpicker.min.js"></script>
+    <script src="assets/js/plugins-init/clockpicker-init.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	<script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Bootstrap Daterangepicker -->
+	<script src="assets/vendor/daterangepicker/moment.min.js"></script>
+	<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+	<script src="assets/js/plugins-init/daterangepicker-init.js"></script>
+	
+	<!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	
+	
+
+</body>
+</html>

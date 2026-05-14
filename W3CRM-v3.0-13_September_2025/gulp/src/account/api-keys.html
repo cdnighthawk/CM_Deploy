@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<base href="../">
+	
+	@@include("../elements/meta.html",{
+		"fileName": "account/api-keys.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper --> 
+    <div id="main-wrapper" class="show">
+       
+		@@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+		
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "API Keys",
+				})
+				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">API Keys</h6>
+								<p class="text-muted small mb-0">End-user account settings template (billing, security, API keys).</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="activity.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="billing.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			
+			<div class="card border-top-0 border-start-0 border-end-0 rounded-0 h-auto mb-0 px-md-2 pt-md-2">
+				<div class="card-body d-flex py-md-4">
+					<div class="clearfix">
+						<div class="d-inline-block position-relative me-sm-4 me-3 mb-3 mb-lg-0">
+							<img src="assets/images/avatar/large/avatar5.webp" class="avatar avatar-xxl" alt="">
+							<span class="fa fa-circle border border-3 border-white text-success position-absolute bottom-0 end-0 rounded-circle"></span>
+						</div>
+					</div>
+					<div class="clearfix d-xl-flex flex-grow-1">
+						<div class="clearfix pe-md-5">
+							<h3 class="fw-semibold mb-1">Amelia Rose<img src="assets/images/blue-tick.png" alt="Blue Tick"></h3>
+							<ul class="d-flex flex-wrap align-items-center">
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-user me-1"></i>Web Designer</li>
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-map-marker me-1"></i>420 City Path, AU 123-456</li>
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-envelope me-1"></i>info@gmail.com</li>
+							</ul>
+							<div class="d-md-flex d-none flex-wrap">
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 1V23" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">$1,250</h3>
+										<span class="small">Total Earnings</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">125</h3>
+										<span class="small">New Referrals</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">25</h3>
+										<span class="small">New Deals</span>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clearfix mt-3 mt-xl-0 ms-auto d-flex flex-column col-xl-3">
+							<div class="clearfix mb-3 text-xl-end">
+								<a href="javascript:void(0);" class="btn btn-light me-1 me-sm-2 mb-1 btn-active">
+									<span class="active-before">Follow</span>
+									<span class="active-after">Following</span>
+								</a>
+								<a href="javascript:void(0);" class="btn btn-primary mb-1">Offer a Deal</a>
+							</div>
+							<div class="mt-auto d-flex align-items-center">
+								<div class="clearfix me-3">
+									<span class="fw-medium text-black d-block mb-1">Progress</span>
+									<p class="mb-0 d-flex">
+										<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M5.83334 14.1668L14.1667 5.8335" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M5.83334 5.8335H14.1667V14.1668" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+										</svg>
+										<span class="text-success me-1">+3.50%</span>
+									</p>
+								</div>
+								<div id="chartProfileProgress"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-footer py-0 d-flex flex-wrap justify-content-between align-items-center mx-sm-4 px-0">
+					<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl px-3 px-sm-0" id="tabMyProfileBottom" role="tablist">
+						<li class="nav-item" role="presentation">
+							<a href="account/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/settings.html" class="nav-link py-3 px-1 border-3">Settings</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/security.html" class="nav-link py-3 px-1 border-3">Security</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/activity.html" class="nav-link py-3 px-1 border-3">Activity</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/billing.html" class="nav-link py-3 px-1 border-3">Billing</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/statements.html" class="nav-link py-3 px-1 border-3">Statements</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/referrals.html" class="nav-link py-3 px-1 border-3">Referrals</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/api-keys.html" class="nav-link py-3 px-1 border-3 active">API Keys</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="account/logs.html" class="nav-link py-3 px-1 border-3">Logs</a>
+						</li>
+					</ul>
+					<ul class="d-xl-flex d-none py-2">
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-linkedin-in"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-instagram"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-facebook-f"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-telegram"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-youtube"></i>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			
+			<div class="container-fluid">
+				<div class="tab-content" id="tabContentMyProfileBottom">
+                    <div class="row">
+                        <div class="col-xl-8">
+                            <div class="card">
+                                <div class="card-header border-0">
+                                    <h4 class="card-title">API Keys</h4>
+                                    <button class="btn btn-sm btn-primary">Create A Key</button>
+                                </div>
+                                <div class="card-body table-card-body p-0">
+                                    <div class="table-responsive table-sm-responsive">
+                                        <table class="table mb-0 table-bottom-borderless">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="mw-200">Label</th>
+                                                    <th class="mw-150">API Keys</th>
+                                                    <th class="mw-150">Created</th>
+                                                    <th class="mw-100">Status</th>
+                                                    <th class="text-end">Edit</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>None set</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">hhhhhh5782516nsdzjvn54</div>
+                                                            <button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td>Nov 01, 2020</td>
+                                                    <td><span class="badge badge-sm badge-success light">Active</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Navitare</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">hhhhhh5782516nsdzjvn54</div>
+                                                            <button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-nowrap">Sep 27, 2020</td>
+                                                    <td><span class="badge badge-sm badge-info light">Review</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Docs API Key</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">hhhhhh5782516nsdzjvn54</div>
+                                                           <button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td>Jul 09, 2020</td>
+                                                    <td><span class="badge badge-sm badge-danger light">Inactive</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Identity Key</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">jk076590ygghgh324vd3568</div>
+															<button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td>May 14, 2020</td>
+                                                    <td><span class="badge badge-sm badge-success light">Active</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Remore Interface</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">nzsdvnn584948941</div>
+                                                            <button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td>Dec 30, 2019</td>
+                                                    <td><span class="badge badge-sm badge-success light">Active</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>None set</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">nzsdvnn584948941</div>
+                                                            <button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td>Oct 25, 2019</td>
+                                                    <td><span class="badge badge-sm badge-danger light">Inactive</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Test App</td>
+                                                    <td>
+                                                        <div class="select-text-wrap d-flex">
+                                                            <div class="text-select-copy">nzsdvnn584948941</div>
+															<button class="btn-select-text btn p-0 border-0 ms-3" data-bs-toggle="tooltip" data-bs-title="Copy"><i class="las la-copy fs-4"></i></button>
+                                                        </div>
+                                                    </td>
+                                                    <td>Apr 03, 2019</td>
+                                                    <td><span class="badge badge-sm badge-success light">Active</span></td>
+                                                    <td class="text-end">
+                                                        <div class="dropdown dropdown-sm">
+                                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                Options
+                                                            </button>
+                                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+                                                                <li><a class="dropdown-item" href="javascript:void(0);">Delete</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">API Overview</h4>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="clearfix border-bottom p-4 border-dark border-opacity-10">
+                                        <h6>How to set API</h6>
+                                        <p class="fs-14">Enhance your content: Incorporate visuals for greater engagement, seamless transitions, wit, and clear explanations of intricate topics.</p>
+                                        <a href="javascript:void(0);" class="btn btn-light">Get Started</a>
+                                    </div>
+                                    <div class="clearfix p-4">
+                                        <h6>Developer Tools</h6>
+                                        <p class="fs-14">Shape your blog entry: Select a subject, create an outline, conduct thorough research, and verify facts meticulously.</p>
+                                        <a href="javascript:void(0);" class="btn btn-light">Create CLI Rule</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+				</div>		
+			</div>
+			
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("../elements/footer.html")
+		
+		@@include("../elements/task-modal.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+	
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+
+</body>
+</html>

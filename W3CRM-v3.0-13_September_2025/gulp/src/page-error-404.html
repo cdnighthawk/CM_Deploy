@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "page-error-404.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+    
+</head>
+<body>
+    
+	
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Page Error 404</h6>
+								<p class="text-muted small mb-0">Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="page-error-403.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="page-error-500.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div><!-- Start - Error Section -->
+	<section class="clearfix">
+        <div class="container">
+            <div class="row justify-content-center h-100 align-items-center">
+                <div class="col-xl-6 error-page">
+					<div class="error-inner text-center">
+						<div class="dz-error" data-text="404">404</div>
+						<h4 class="error-head"><i class="fa fa-exclamation-triangle text-warning"></i> The page you were looking for is not found!</h4>	
+						<p>You may have mistyped the address or the page may have moved.</p>
+						<a href="index.html" class="btn btn-primary">BACK TO HOMEPAGE</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+	<!-- End - Error Section -->
+
+	<!-- Start - Page Scripts -->
+	@@include("elements/script.html")
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

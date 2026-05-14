@@ -1,0 +1,122 @@
+Project Management & Field Operations – Detailed Breakdown
+This module turns architectural plans into daily crew execution for your finish-work trades (drywall, painting, flooring, ceilings, trim). It is heavily integrated with DrawingViewer, Local AI, RFP (awarded subs), Unified Takeoff, Safety, and Financials. Field crews get a simple mobile-first experience with offline support; office teams get real-time visibility and AI-driven adjustments.
+Canonical PM + field execution spec: Plan 8 owns Gantt/task board, daily logs, punch lists, and DrawingViewer sidebar workflows. Plan 9 (Scheduling & Field Ops) adds calendar-first scheduling emphasis; implement shared pages once (usis-field.html, usis-schedule.html) and link both plans there — see Plan\0 §5.
+Front-end shell: W3CRM (Bootstrap + vanilla JS). Starter pages: project.html, task.html, app-calender.html, performance.html.
+1. Core Purpose
+
+Convert takeoffs and drawings into scheduled, trackable tasks.
+Enable seamless field data capture (daily logs, production, safety, photos).
+Close the loop between plans, execution, and financials.
+Use Local AI to reduce coordination errors and delays.
+
+2. File / Folder Structure (W3CRM gulp src)
+textgulp/gulp/src/
+├── usis-schedule.html               ← Gantt/list/calendar tabs (start from app-calender.html + task.html)
+├── usis-field.html                  ← Mobile-first daily view (simple Bootstrap cards + forms)
+├── elements/
+│   ├── usis-gantt-placeholder.html    ← host Frappe-Gantt or vendor Gantt in a div; wire via usis-schedule.js
+│   ├── usis-daily-log-form.html
+│   ├── usis-punchlist-panel.html
+│   └── usis-field-photo-upload.html
+├── assets/js/
+│   ├── usis-schedule.js
+│   ├── usis-field-ops.js
+│   ├── usis-daily-log.js
+│   └── usis-ai-task-suggestions.js    ← listens to aiReviewBus.js
+Backend
+
+models/project_management.py (already planned)
+Flask blueprint /api/schedule and /api/field
+
+3. Overall Layout (W3CRM + Bootstrap)
+
+Header: Project selector, “Today’s Field Report” button, AI “Regenerate Schedule” button
+Left column (desktop): Trade / Phase tree — Bootstrap nested nav or list-group
+Main: Bootstrap tabs — Schedule (Gantt + task table) | Calendar | Board | Field Today
+Right column: iframe or split pane linking to usis-drawing-viewer.html (compact) + AI insights offcanvas
+Mobile: bottom sheet = Bootstrap offcanvas for quick Daily Log / Punch entry
+
+4. Key Sections & Features
+A. Schedule Header & Overview
+
+Overall timeline progress bar with % complete
+Critical Path highlights (red if AI-flagged delays)
+Key milestones with AI-adjusted dates
+Trade breakdown chips (planned vs actual production)
+“Generate AI-Adjusted Schedule” button (analyzes all saved AI reviews)
+
+B. Interactive Gantt & Task Management
+
+Tasks grouped by trade and phase
+Columns: Task Name, Duration, Start/End, Assigned Crew/Sub (from RFP), % Complete, Dependencies, AI Risk Badge
+Drag-and-drop rescheduling
+Click task → loads related drawing in right sidebar + opens AI panel
+
+C. AI-Powered Task Intelligence (Right Sidebar)
+
+AI offcanvas (usis-ai-drawer.js) in field_review / scheduling_review mode
+Quick buttons:
+“Review This Task’s Drawing with Local AI”
+“Suggest Sequence Adjustments”
+“Add Coordination Days for Flagged Issues”
+
+AI proposes extra days for substrate repairs, fire caulking, MEP coordination, etc.
+One-click “Apply Suggestion” → updates Gantt + audit log
+
+D. Field Operations Tools (Mobile-First)
+
+Daily Logs:
+**Daily pretask (project pretask)** — first step in the daily field flow (Plan 7 §10): links to **project JHA** revision, scope/weather/PPE/sign-offs; may be **required** before production quantities save (configurable). Embedded via `elements/usis-daily-pretask-form.html` in daily log / `usis-field.html`.
+Crew size, hours worked, production quantities per trade
+Weather / delays
+Photo upload → auto-triggers Local AI review (safety/quality)
+GPS timestamp + signature
+
+Punch List:
+Create items with photo + location on DrawingViewer
+AI-assisted severity & category
+Assign to crew or subcontractor (links to RFP)
+Status workflow + before/after photos
+
+Timesheets & Production Tracking:
+Offline-capable
+Real-time sync to Financials for labor cost tracking
+
+Field Photo → AI Flow:
+Camera button → photo → optional alignment to drawing → sent to Local AI for as-built vs plan review
+
+
+E. Task Templates Library
+
+Pre-built finish-trade templates (e.g., “Standard 3-Coat Paint Package”)
+“AI Generate from Drawings” button that scans saved AI reviews and builds logical sequence + durations
+
+5. Data Layer (SQLAlchemy)
+
+Schedule / Task models
+Strong links to Project, TakeoffLineItem, RFPResponse, Drawing, DrawingAnnotation
+DailyLog, DailyPretask (see Plan 7 §10), PunchListItem, FieldPhoto
+TaskDependency
+
+6. Critical Integrations (Preserve 100%)
+
+DrawingViewer: Task click loads exact sheet + annotations
+Unified Takeoff: Quantities → task durations and crew sizing
+Local AI + aiReviewBus.js: Reviews update risk badges and suggest new tasks
+RFP Module: Awarded subs auto-create tasks with pricing
+Safety Management: **Project JHAs** (Plan 7 §9); **daily pretask** embedded before or alongside daily safety checklist in Daily Logs
+Financials: % complete updates billing and variance
+Documents Hub: All logs, photos, punch lists stored centrally
+
+7. Mobile-First & Offline Behavior
+
+Bottom nav emphasizes Field view
+Full offline support: create/edit tasks, logs, photos, punch lists
+Local AI review queue (process when back online)
+Large touch targets, simplified Gantt (list + calendar fallback)
+
+8. Government & Compliance Features
+
+Prevailing wage tracking in daily logs
+Certified payroll export ready
+Full audit trail for inspections

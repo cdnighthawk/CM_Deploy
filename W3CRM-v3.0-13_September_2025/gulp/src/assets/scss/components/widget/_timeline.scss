@@ -1,0 +1,329 @@
+// Widget Timeline 1
+.widget-timeline1{
+	.timeline-status{
+		font-size: 14px;
+		font-weight: 600;
+		color: var(--bs-secondary);
+		position: absolute;
+		left: 0;
+	}
+	.timeline{
+		& > li{
+			padding-left: 60px;
+			position: relative;
+			
+			&:not(:last-child){
+				margin-bottom: 30px;	
+				
+				&:after{
+					content: "";
+					width: 3px;
+					position: absolute;
+					background-color: var(--bs-light);
+					height: 100%;
+					top: 25px;
+					border-radius: 20px;
+				}
+			}
+		}
+	}
+	.timeline-badge{
+		border-width: 3px;
+		border-style: solid;
+		width: 13px;
+		height: 13px;
+		border-radius: 50%;
+		position: absolute;
+		left: 55px;
+		top: 4px;
+	}
+	.timeline-panel{
+		padding-left: 20px;
+		position: relative;
+	}
+}
+
+// Widget Timeline 2
+.widget-timeline2{
+	.timeline-media{
+		height: 36px;
+		width: 36px;
+		border-radius: 50%;
+		background-color: var(--bs-light);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 21px;
+		position: absolute;
+		left: 0;
+	    top: 2px;
+	}
+	.timeline{
+		& > li{
+			padding-left: 50px;
+			position: relative;
+			min-height: 36px;
+			
+			&:not(:last-child){
+				padding-bottom: 40px;
+				
+				&:before{
+					content: "";
+					height: calc(100% - 2px);
+					position: absolute;
+					left: 18px;
+					width: 1px;
+					border-left: 1px dashed rgba(var(--bs-dark-rgb), 0.2);
+					top: 3px;
+				}
+			}
+		}
+	}
+}
+
+// Timeline varticvla Badge
+.timeline-vr-badge{
+	width: 4px;
+	min-width: 4px;
+	align-self: normal;
+}
+
+.widget-timeline{
+	.timeline{
+		list-style: none;
+		position: relative;
+		
+		&:before{
+			top: 1.25rem;
+			bottom: 0;
+			position: absolute;
+			content: " ";
+			width: 0.188rem;
+			left: 0.5625rem;
+			margin-right: -0.0938rem;
+			background: var(--bs-border-color);
+			
+		}
+		> li {
+			margin-bottom: 0.9375rem;
+			position: relative;
+			&:before {
+				content: " ";
+				display: table;
+			}
+			&:after {
+				content: " ";
+				display: table;
+				clear: both;
+			}
+			> {
+				.timeline-panel {
+					border-radius: var(--bs-border-radius);
+					padding: 0.9375rem 1.25rem;
+					position: relative;
+					display:block;
+					margin-left: 2.5rem;
+					border-width:0.0625rem;
+					border-style:solid;
+					span{
+						font-size: 0.75rem;
+						display: block;
+						margin-bottom: 0.3125rem;
+						opacity: 0.8;
+						letter-spacing: 0.0625rem;
+					}
+					p{
+						font-size:0.75rem;
+						line-height:1.125rem;
+					}
+					h6{
+						font-size:13px;
+					}
+					&:after{
+						content: "";
+						width: 0.625rem;
+						height: 0.625rem;
+						background: inherit;
+						border-color: inherit;
+						border-style: solid;
+						border-width: 0rem 0rem 0.0625rem 0.0625rem;
+						display: block;
+						position: absolute;
+						left: -0.3125rem;
+						transform: rotate(45deg);
+						top: 0.9375rem;
+					}
+				}
+				.timeline-badge {
+					border-radius: 50%;
+					height: 1.275rem;
+					left: 0;
+					position: absolute;
+					top: 0.625rem;
+					width: 1.275rem;
+					border-width: 0.125rem;
+					border-style: solid;
+					background:$white;
+					padding:0.25rem;
+					&:after{
+						content:"";
+						width:0.525rem;
+						height:0.525rem;
+						border-radius:100%;
+						display:block;
+					}
+				}
+			}
+		}
+	}
+	
+	.timeline-body > p {
+		font-size: 0.75rem;
+	}
+  
+  .timeline-badge {
+    &.primary{
+		border-color: rgba(var(--bs-primary-rgb), 0.1);
+		&:after{
+			background-color: var(--bs-primary);
+			box-shadow:0 0.3125rem 0.625rem 0 rgba(var(--bs-primary-rgb), 0.2);
+		}
+		& + .timeline-panel{
+			background: rgba(var(--bs-primary-rgb), 0.1);
+			border-color: rgba(var(--bs-primary-rgb), 0.1);
+		}
+    }
+    &.success{
+		border-color: rgba(var(--bs-success-rgb), 0.4);
+		&:after{
+			background-color: var(--bs-success) !important;
+			box-shadow:0 0.3125rem 0.625rem 0 rgba($success, 0.2);
+		}
+		& + .timeline-panel{
+			background: rgba(var(--bs-success-rgb), 0.4);
+			border-color: rgba(var(--bs-success-rgb), 0.4);
+		}
+    }
+    &.warning{
+		border-color: var(--bs-warning-subtle);
+		
+		&:after{
+			background-color: var(--bs-warning) !important;
+			box-shadow:0 0.3125rem 0.625rem 0 rgba($warning, 0.2);
+		}
+		& + .timeline-panel{
+			background: var(--bs-warning-subtle);
+			border-color: var(--bs-warning-subtle);
+		}
+    }
+    &.danger{
+		border-color: var(--bs-danger-subtle);
+		&:after{
+		  background-color: var(--bs-danger) !important;
+		  box-shadow:0 0.3125rem 0.625rem 0 rgba($danger, 0.2);
+		}
+		& + .timeline-panel{
+			background: var(--bs-danger-subtle);
+			border-color: var(--bs-danger-subtle);
+		}
+    }
+	
+    &.info{
+		border-color: var(--bs-info-subtle);
+		
+		&:after{
+			background-color: var(--bs-info) !important;
+			box-shadow:0 0.3125rem 0.625rem 0 rgba($info, 0.2);
+		}
+		& + .timeline-panel{
+			background: var(--bs-info-subtle);
+			border-color: var(--bs-info-subtle);
+		}
+    }
+    &.dark{
+		border-color: var(--bs-dark-subtle);
+		
+		&:after{
+		  background-color: var(--bs-dark) !important;
+		  box-shadow:0 0.3125rem 0.625rem 0 rgba($dark, 0.2);
+		}
+		& + .timeline-panel{
+			background: var(--bs-dark-subtle);
+			border-color: var(--bs-dark-subtle);
+		}
+    }
+  }
+	
+	&.style-1{
+		.timeline-panel{
+			background:transparent;
+		}
+		.timeline {
+			.timeline-badge {
+				&.timeline-badge{
+					& + .timeline-panel{
+						background: transparent !important;
+						border-style:solid;
+						border-width: 0 0 0 0.2125rem;
+						border-radius: 0;
+						padding: 0.3125rem 0.625rem 0.3125rem 0.9375rem;
+						&:after{
+							border: 0;
+							left: -0.3625rem;
+							width: 0.3375rem;
+							height: 0.3375rem;
+						}
+					}
+				}
+				&.primary{
+					& + .timeline-panel{
+						border-color:var(--bs-primary);
+						&:after{
+							background:var(--bs-primary);
+						}
+					}
+				}
+				&.success{
+					& + .timeline-panel{
+						border-color:$success;
+						&:after{
+							background:$success;
+						}
+					}
+				}
+				&.warning{
+					& + .timeline-panel{
+						border-color:$warning;
+						&:after{
+							background:$warning;
+						}
+					}
+				}
+				&.danger{
+					& + .timeline-panel{
+						border-color:$danger;
+						&:after{
+							background:$danger;
+						}
+					}
+				}
+				&.info{
+					& + .timeline-panel{
+						border-color:$info;
+						&:after{
+							background:$info;
+						}
+					}
+				}
+				&.dark{
+					& + .timeline-panel{
+						border-color:$dark;
+						&:after{
+							background:$dark;
+						}
+					}
+				}
+			}
+		}
+	}
+}

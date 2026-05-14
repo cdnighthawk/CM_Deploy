@@ -1,0 +1,82 @@
+USIS Construction Management — Estimating App / PDF & Drawing Viewer Scope of Work (Plan 17)
+=============================================================================================
+High-level scope for the power estimating workspace (dense tables, cost library, AI drawer, drawing/PDF measurement, and proposal outputs)—not the full company website or phone app. Detailed behavior, UI mapping, and data models live in Plans 3, 4, 6, 12, and 14; program-wide context in Plan 15. This document is not a legal contract unless executed separately; it defines intended product scope at a summary level.
+
+1. Purpose
+----------
+Deliver an integrated estimating experience where all quantity and location truth lives on the unified takeoff engine (TakeoffLineItem), with estimating layered as versions, unit costs, markups, and vendor quotes. Users generate professional proposals and summaries as server-rendered PDFs, and pull measurements from the drawing/PDF viewer so canvas measurements apply directly to the active takeoff row—one spine from ROM through detailed estimate without parallel “bid takeoff” versus “estimate takeoff” stores (Plans 3, 4, 14).
+
+2. Business objectives
+----------------------
+• Win and defend more finish-trade work (drywall, paint, flooring, ceilings, trim, and related scopes) with faster, more accurate estimates tied to real drawings and historical California rates.
+• Reduce duplicate entry and reconciliation by keeping takeoff lines canonical and linking estimates, drawings, and (where applicable) awarded RFP pricing in one workflow.
+• Improve consistency and auditability through estimate versions, saved measurements, and optional AI-assisted review without replacing human judgment on bids.
+• Support both quick ROM scenarios and full detailed estimates in the same workspace layout.
+
+3. In scope
+-----------
+• Unified takeoff table user experience in the estimating shell: divisions/trades, location, description, quantity with unit helpers, unit cost, labor/material visibility as designed, extended totals, markup, inline and bulk edit patterns, and debounced persistence to APIs (Plans 3, 4).
+• Estimate headers and versioning (create version, compare, status progression as specified in Plan 4); estimate_line_items linked to takeoff_line_item_id for costing and what-if scenarios.
+• Cost Library panel: search, filters, historical rates, “AI suggest rate,” and import from past project where implemented (Plans 3, 4).
+• AI Assistant panel: estimating_review mode (and related chips/actions), integration with aiReviewBus.js so completed reviews can refresh table/totals; alignment with dual-provider AI strategy (Plan 12).
+• Summary area: live totals, trade breakdown, markups, exclusions/clarifications, and “Generate Professional Proposal” (or equivalent) producing branded PDFs via backend templates (Plans 4, 0).
+• DrawingViewer integration: open viewer from “pull measurement” (or equivalent) per row; calibration, linear/area/count (and volume where specified), persist measurement_data on takeoff lines, and apply finished measurement to the linked takeoff row via the same takeoff APIs as the estimate page (Plans 6, 3, 14).
+• RFP integration as applicable: vendor quote column populated from awarded RFP pricing where the RFP module and data are in scope for the phase (Plans 4, 5, 14).
+• Optional later delivery: desktop-style shell (for example Electron) wrapping the same URLs and APIs—no duplicate business logic (Plan 14).
+
+4. Major deliverables / workstreams
+-----------------------------------
+1) Data model and APIs: takeoff_line_items; estimates and estimate_line_items; document/drawing links; measurement payloads; estimate aggregates for summary and PDF (Plans 3, 4, 6).
+2) Estimating workspace pages and scripts: header with version selector and primary actions; main takeoff table; right column tabs for AI and Cost Library; collapsible summary (Plans 4, 0).
+3) Drawing viewer and measurement scripts: Konva/Fabric-based viewer shell, toolbar, sidebars, measurement list, save/export paths, and handoff back to takeoff quantity (Plan 6).
+4) Proposal and summary PDF pipeline: Flask + Jinja2 (and related) generation from live estimate data (Plans 4, 0).
+5) AI wiring: drawer/offcanvas, estimating_review flows, optional construction_review from drawings when used from this workstream, persistence patterns for AI-linked annotations where in phase (Plans 12, 6).
+6) Responsive and offline-minded behaviors as specified for this client: dense desktop layout; simplified mobile/card patterns and sync semantics per cross-cutting plans (Plans 4, 13 as referenced by roadmap).
+
+5. Technical approach (summary)
+-------------------------------
+• Web shell: W3CRM static pages, Bootstrap 5, and shared JavaScript per Plan 0; module-specific HTML/JS (for example usis-estimating, usis-takeoff-table, usis-drawing-viewer, usis-ai-drawer) rather than a separate React estimating shell unless program direction changes.
+• Drawing surface: high-performance HTML5 canvas with Konva.js or Fabric.js under custom scripts; pan/zoom, calibration, and measurement tools (Plan 6).
+• Backend: Flask routes for CRUD, aggregates, file upload metadata, AI endpoints (/api/ai/* as specified), and Jinja2-driven PDFs for proposals and related outputs (Plans 0, 4, 12).
+• Events: aiReviewBus.js (or equivalent) for cross-page refresh after AI operations (Plan 12).
+
+6. Phased delivery (estimating workstream)
+------------------------------------------
+Phases may overlap with foundation and other modules per Plan 14; the sequence below is the intended depth curve for this workspace.
+
+Phase A — MVP estimate on takeoff: Auth-scoped estimating page; takeoff table backed by live APIs; estimate version create/select; basic totals and line persistence; minimal summary strip.
+Phase B — Cost Library: Library panel, rate search and apply-to-line, prevailing wage or zone hooks as prioritized in implementation plans.
+Phase C — AI: AI drawer in estimating_review mode; chips for scope gaps, exclusions, rate suggestions; table refresh from review completion.
+Phase D — Deep drawing integration: Full measurement loop from row to viewer; saved measurement_data; calibration and apply-to-row; documents hub touchpoints as needed for file pickers.
+Phase E — Proposal polish: Exclusions, markups, charts or breakdowns as specified, version compare, PDF quality and branding pass.
+
+7. Out of scope (unless added by change request)
+-------------------------------------------------
+• Replacing or re-implementing full project management, HR, payroll, or company-wide website modules within this workstream; those remain separate program areas (Plans 14, 15).
+• Full mobile estimating parity (complex spreadsheet-like editing on small screens) unless explicitly added; lightweight mobile patterns may exist per unified plans but are not a commitment to feature-complete estimating on phone here.
+• Vendor portal build-out beyond columns and APIs agreed with the RFP module phase.
+• Legal interpretation of bids, contracts, or codes; the system stores outputs and supports review workflows the business defines.
+
+8. Assumptions and dependencies
+-----------------------------
+• Scale and calibration: Users can set or confirm drawing scale; auto-scale detection may be offered but accuracy depends on sheet quality and user verification (Plan 6).
+• File formats: PDF and raster drawing inputs per documents/drawing plans; very large sheets may require performance tuning and acceptable browser hardware.
+• Browser support: Modern evergreen desktop browsers for primary estimating; specific minimum versions to be confirmed before pilot rollout.
+• Third-party services: Object storage for drawings/PDFs, SMTP or notification services, and AI provider configuration per environment (Plans 6, 12, 0).
+• Unified takeoff remains the single spine; estimating UI changes that imply a second line-item store require explicit architecture approval.
+
+9. Success criteria
+-------------------
+• Estimators can maintain at least one estimate version whose lines all reference takeoff_line_items, with totals consistent between the table, summary, and generated proposal PDF for a pilot project.
+• From a takeoff row, a user can open the drawing viewer, complete a measurement, and apply the resulting quantity to that row without manual re-keying, with measurement persisted for audit.
+• Cost Library and AI panels are usable on the estimating layout for pilot users without blocking core table edits when those features are toggled off or unavailable.
+• Optional desktop shell, if pursued, loads the same application URLs and passes authentication consistent with the web app—no forked estimate calculation logic.
+
+10. Reference documentation
+---------------------------
+• Plan 3 — Unified takeoff engine (TakeoffLineItem, measurement_data, UI components).
+• Plan 4 — Estimating engine (layout, estimate_line_items, proposal PDF, RFP column, integrations).
+• Plan 6 — Drawing viewer and documents hub (Konva/Fabric, tools, annotations, takeoff linkage).
+• Plan 12 — AI intelligence layer (modes including estimating_review, aiReviewBus, Flask AI routes).
+• Plan 14 — Unified system roadmap, Section 3 (estimating app / PDF viewer) and estimating-related bullets.
+• Plan 15 — Unified scope of work (structure, disclaimer pattern, program context).

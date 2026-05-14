@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "projects.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	<style>
+		#usis-projects-table { font-size: 0.8125rem; }
+		#usis-projects-table thead th,
+		#usis-projects-table tbody td {
+			padding: 0.2rem 0.45rem;
+			vertical-align: middle;
+			line-height: 1.25;
+		}
+		#usis-projects-table thead th { font-weight: 600; }
+		#usis-projects-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
+	</style>
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Projects",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Projects</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="project-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="quotation.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3 active">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+
+			<div class="container-fluid">
+
+				<div class="col-xl-12 mb-3">
+					<div class="alert alert-primary border-0 mb-0">
+						<strong>Projects</strong> - Active jobs from PostgreSQL table <code>projects</code> via <code>GET /api/v1/projects</code>.
+						<span class="d-block small mt-1 text-dark" id="usis-projects-load-status"></span>
+					</div>
+				</div>
+
+				<div class="col-xl-12">
+					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+						<div class="input-group message-search-area width200 w-xs-100">
+							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state">
+							<div class="input-group-append">
+								<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-projects-filter-clear" aria-label="Clear filter"><i class="flaticon-381-search-2"></i></button>
+							</div>
+						</div>
+						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Reload from Flask (GET /api/v1/projects)">
+							<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
+						</button>
+					</div>
+				</div>
+
+				<div class="col-xl-12">
+					<div class="card m-0 table-hover text-nowrap overflow-auto">
+						<table class="table table-sm m-0" id="usis-projects-table">
+							<thead>
+								<tr>
+									<th class="text-nowrap">Project #</th>
+									<th>Name</th>
+									<th class="text-nowrap">City</th>
+									<th class="text-nowrap">State</th>
+									<th class="text-nowrap">Status</th>
+									<th class="text-nowrap">Type</th>
+									<th class="text-end text-nowrap">Action</th>
+								</tr>
+							</thead>
+							<tbody id="usis-projects-tbody">
+								<tr>
+									<td colspan="7" class="text-muted">Loading projects from API…</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+    	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+
+	<script>
+	(function () {
+		var API = window.USIS_API_BASE || "http://127.0.0.1:5000";
+		var tbody = document.getElementById("usis-projects-tbody");
+		var statusEl = document.getElementById("usis-projects-load-status");
+		var filterInput = document.getElementById("usis-projects-filter");
+		var lastItems = [];
+
+		function esc(s) {
+			return String(s == null ? "" : s)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+		}
+
+		function renderRow(row) {
+			var num = esc(row.number || "—");
+			var pid = row.id;
+			var pidEnc = pid != null && pid !== "" ? encodeURIComponent(String(pid)) : "";
+			var detailHref = pidEnc ? "construction/project-detail.html?id=" + pidEnc : "javascript:void(0);";
+			var jobKey = row.primary_lead_detail_id;
+			var jobKeyEnc =
+				jobKey != null && String(jobKey).trim() !== "" ? encodeURIComponent(String(jobKey).trim()) : "";
+			var jobHref = jobKeyEnc ? "construction/lead-detail.html?id=" + jobKeyEnc : "";
+			var nameInner = pidEnc
+				? '<a class="fw-semibold text-black text-decoration-none" href="' + detailHref + '">' + esc(row.name || "—") + "</a>"
+				: '<span class="fw-semibold text-black">' + esc(row.name || "—") + "</span>";
+			var numInner = pidEnc
+				? '<a class="link-primary text-decoration-none" href="' + detailHref + '">' + num + "</a>"
+				: num;
+			var city = esc(row.city || "—");
+			var stAbbr = esc(row.state || "—");
+			var st = esc(row.status || "—");
+			var pt = esc(row.project_type || "—");
+			var jobBtn = jobHref
+				? '<a class="btn btn-square btn-sm btn-outline-primary rounded" href="' +
+					jobHref +
+					'" title="Building Connected job info"><i class="fa fa-briefcase"></i></a>'
+				: "";
+			var actions =
+				'<div class="d-inline-flex align-items-center gap-1 justify-content-end">' +
+				jobBtn +
+				'<div class="dropdown custom-dropdown mb-0 tbl-orders-style">' +
+				'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
+				'<div class="dropdown-menu dropdown-menu-end">' +
+				(jobHref ? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>' : "") +
+				'<a class="dropdown-item" href="' + (pidEnc ? detailHref : "javascript:void(0);") + '">Project detail</a>' +
+				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.id) + "</span>" +
+				"</div></div></div>";
+			return (
+				"<tr>" +
+				'<td class="text-nowrap">' + numInner + "</td>" +
+				"<td>" + nameInner + "</td>" +
+				'<td class="text-nowrap">' + city + "</td>" +
+				'<td class="text-nowrap">' + stAbbr + "</td>" +
+				'<td class="text-nowrap">' + st + "</td>" +
+				'<td class="text-nowrap">' + pt + "</td>" +
+				'<td class="text-end">' + actions + "</td>" +
+				"</tr>"
+			);
+		}
+
+		function applyFilter() {
+			if (!tbody || !lastItems.length) return;
+			var q = (filterInput && filterInput.value || "").trim().toLowerCase();
+			var rows = lastItems;
+			if (q) {
+				rows = lastItems.filter(function (r) {
+					var n = (r.number || "").toLowerCase();
+					var nm = (r.name || "").toLowerCase();
+					var c = (r.city || "").toLowerCase();
+					var s = (r.state || "").toLowerCase();
+					var lj = (r.primary_lead_detail_id || "").toLowerCase();
+					return (
+						n.indexOf(q) >= 0 ||
+						nm.indexOf(q) >= 0 ||
+						c.indexOf(q) >= 0 ||
+						s.indexOf(q) >= 0 ||
+						lj.indexOf(q) >= 0
+					);
+				});
+			}
+			if (!rows.length) {
+				tbody.innerHTML =
+					'<tr><td colspan="7" class="text-muted">No projects match this filter.</td></tr>';
+				return;
+			}
+			tbody.innerHTML = rows.map(renderRow).join("");
+		}
+
+		function loadProjects() {
+			if (!tbody) return;
+			tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading…</td></tr>';
+			if (statusEl) statusEl.textContent = "Requesting " + API + "/api/v1/projects …";
+			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000")
+				.then(function (r) {
+					if (!r.ok) throw new Error("HTTP " + r.status);
+					return r.json();
+				})
+				.then(function (data) {
+					lastItems = data.items || [];
+					var total = data.total != null ? data.total : lastItems.length;
+					if (statusEl) {
+						var ent = data.entity ? " Table: <code>" + data.entity + "</code>." : "";
+						statusEl.innerHTML =
+							"Showing " + lastItems.length + " of " + total + " row(s). API base: <code>" + esc(API) + "</code>." + ent;
+					}
+					if (!lastItems.length) {
+						tbody.innerHTML =
+							'<tr><td colspan="7" class="text-muted">No rows in <code>projects</code> yet. Import jobs or create records in the database, then reload.</td></tr>';
+						return;
+					}
+					applyFilter();
+				})
+				.catch(function (err) {
+					tbody.innerHTML =
+						'<tr><td colspan="7" class="text-danger">Could not load projects: ' +
+						esc(err.message) +
+						".</td></tr>";
+					if (statusEl) statusEl.textContent = "";
+				});
+		}
+
+		document.addEventListener("DOMContentLoaded", loadProjects);
+		var btn = document.getElementById("usis-projects-reload");
+		if (btn) btn.addEventListener("click", loadProjects);
+		if (filterInput) {
+			filterInput.addEventListener("input", applyFilter);
+		}
+		var clr = document.getElementById("usis-projects-filter-clear");
+		if (clr) {
+			clr.addEventListener("click", function () {
+				if (filterInput) filterInput.value = "";
+				applyFilter();
+			});
+		}
+	})();
+	</script>
+	
+</body>
+</html>

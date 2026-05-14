@@ -1,0 +1,16 @@
+/* Element Background Hover */
+[class*="bg-action-"]{
+    transition: all 0.3s;
+}
+.bg-action-light:hover{
+	background-color: rgba(var(--bs-light-rgb), 0.5);
+}
+@each $color, $value in $theme-colors{
+	@if $color != "light" {
+		.bg-action-#{$color}{
+			&:hover{
+				background-color: rgba(var(--bs-#{$color}-rgb), 0.04);
+			}
+		}
+	}
+}

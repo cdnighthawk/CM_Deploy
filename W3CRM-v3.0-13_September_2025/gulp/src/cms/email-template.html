@@ -1,0 +1,264 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "cms/email-template.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+     	<main class="content-body">
+		
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Email Template",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Email Template</h6>
+								<p class="text-muted small mb-0">CMS / blog admin template. Reference for content editing shells.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="content.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="menu.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- end - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">
+						<div class="card card-collapse">
+							<div class="card-header">
+								<h4 class="card-title"><i class="fa-sharp fa-solid fa-filter me-1 text-primary"></i> Filter</h4>
+								<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilter" role="button" aria-expanded="false" aria-controls="collapseFilter">
+									<i class="fa fa-angle-down"></i>
+								</a>
+							</div>
+							<div class="collapsed collapse show" id="collapseFilter">
+								<div class="card-body">
+									<div class="row">
+										<div class="col-xxl-3 col-lg-4 col-sm-6 mb-3 mb-xxl-0">
+											<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="Title">
+										</div>
+										<div class="col-xxl-3 col-lg-4 col-sm-6 mb-3 mb-xxl-0">
+											<select class="selectpicker form-select">
+												<option selected>Select Status</option>
+												<option value="1">Published</option>
+												<option value="2">Draft</option>
+												<option value="3">Trash</option>
+												<option value="4">Private</option>
+												<option value="5">Pending</option>
+											</select> 
+										</div>
+										<div class="col-xxl-3 col-lg-4 col-sm-6 mb-3 mb-xxl-0">
+											<input class="form-control bs-datepicker" type="text" value="03/13/2025">
+										</div>
+										<div class="col-xxl-3 col-lg-12 col-sm-6">
+											<button class="btn btn-primary me-2" title="Click here to Search" type="button">
+												<i class="fa-sharp fa-solid fa-filter"></i>Filter
+											</button>
+											<button class="btn btn-danger light" title="Click here to remove filter" type="button">Remove Filter</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="mb-4">
+							<a href="cms/content-add.html" class="btn btn-primary">New Email Template</a>
+						</div>
+						
+						<div class="card card-collapse">
+							<div class="card-header">
+								<h4 class="card-title"><i class="fa-solid fa-file-lines me-1 text-primary"></i>Email Template</h4>
+								<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseContactList" role="button" aria-expanded="false" aria-controls="collapseContactList">
+									<i class="fa fa-angle-down"></i>
+								</a>
+							</div>
+							<div class="collapsed collapse show" id="collapseContactList">
+								<div class="card-body">
+									<div class="table-responsive">
+										<table class="table table-bordered table-striped">
+											<thead>
+												<tr>
+													<th class="mw-80">S.No</th>
+													<th class="mw-150">Title</th>
+													<th class="mw-150">Status</th>
+													<th class="mw-150">Modified</th>
+													<th class="mw-150 text-end">Actions</th>
+												</tr>
+											</thead>
+											<tbody class="text-nowrap">
+												<tr>
+													<td>1</td>
+													<td>User Registration</td>
+													<td> 
+														<div class="form-check">
+															<input class="form-check-input" type="checkbox" checked>
+														</div>
+													</td>
+													<td>03 Feb, 2024</td>
+													<td class="text-end">
+														<a href="javascript:void(0);" class="btn btn-square btn-warning btn-sm">
+															<i class="fa-solid fa-pen-to-square"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-square btn-danger btn-sm">
+															<i class="fa-solid fa-trash"></i>
+														</a>
+													</td>
+												</tr>
+												<tr>
+													<td>2</td>
+													<td>User Forgot Password</td>
+													<td> 
+														<div class="form-check">
+															<input class="form-check-input" type="checkbox" checked>
+														</div>
+													</td>
+													<td>04 Feb, 2024</td>
+													<td class="text-end">
+														<a href="javascript:void(0);" class="btn btn-square btn-warning btn-sm">
+															<i class="fa-solid fa-pen-to-square"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-square btn-danger btn-sm">
+															<i class="fa-solid fa-trash"></i>
+														</a>
+													</td>
+												</tr>
+												<tr>
+													<td>3</td>
+													<td>User Activation</td>
+													<td> 
+														<div class="form-check">
+															<input class="form-check-input" type="checkbox" checked>
+														</div>
+													</td>
+													<td>05 Feb, 2024</td>
+													<td class="text-end">
+														<a href="javascript:void(0);" class="btn btn-square btn-warning btn-sm">
+															<i class="fa-solid fa-pen-to-square"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-square btn-danger btn-sm">
+															<i class="fa-solid fa-trash"></i>
+														</a>
+													</td>
+												</tr>
+												<tr>
+													<td>4</td>
+													<td>User Login</td>
+													<td> 
+														<div class="form-check">
+															<input class="form-check-input" type="checkbox" checked>
+														</div>
+													</td>
+													<td>06 Feb, 2024</td>
+													<td class="text-end">
+														<a href="javascript:void(0);" class="btn btn-square btn-warning btn-sm">
+															<i class="fa-solid fa-pen-to-square"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-square btn-danger btn-sm">
+															<i class="fa-solid fa-trash"></i>
+														</a>
+													</td>
+												</tr>
+												<tr>
+													<td>5</td>
+													<td>User Account Locked</td>
+													<td> 
+														<div class="form-check">
+															<input class="form-check-input" type="checkbox" checked>
+														</div>
+													</td>
+													<td>07 Feb, 2024</td>
+													<td class="text-end">
+														<a href="javascript:void(0);" class="btn btn-square btn-warning btn-sm">
+															<i class="fa-solid fa-pen-to-square"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-square btn-danger btn-sm">
+															<i class="fa-solid fa-trash"></i>
+														</a>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+									<div class="d-flex align-items-center gap-3 justify-content-xl-between flex-wrap justify-content-start justify-content-xl-center">
+										<small>Page 1 of 5, showing 2 records out of 8 total, starting on record 1, ending on 2</small>
+										<nav aria-label="Page navigation">
+											<ul class="pagination mb-2 mb-sm-0">
+												<li class="page-item"><a class="page-link" href="javascript:void(0);"><i class="fa-solid fa-angle-left"></i></a></li>
+												<li class="page-item"><a class="page-link" href="javascript:void(0);">1</a></li>
+												<li class="page-item"><a class="page-link" href="javascript:void(0);">2</a></li>
+												<li class="page-item"><a class="page-link" href="javascript:void(0);">3</a></li>
+												<li class="page-item"><a class="page-link " href="javascript:void(0);"><i class="fa-solid fa-angle-right"></i></a></li>
+											</ul>
+										</nav>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

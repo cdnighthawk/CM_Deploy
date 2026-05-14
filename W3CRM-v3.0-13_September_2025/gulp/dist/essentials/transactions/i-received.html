@@ -1,0 +1,113 @@
+<!-- Start - I Received Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="iReceived" aria-labelledby="iReceived" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-medium text-uppercase m-0">Payment</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+					<div class="d-flex align-items-center justify-content-between mb-3">
+						<label class="form-label m-0 fs-16">I Received</label>
+						<input class="form-control w-50" type="text" id="bsDatepicker8" placeholder="Select Date"/>
+					</div>
+
+					<div class="mb-3">
+						<div class="dropdown-slt">
+							<label class="form-label text-uppercase">Party From</label>
+							<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#iReceived_partyFrom" type="text" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="iReceived_partyFrom" style="display: none;">
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Alexander</div>
+											<span class="fs-12">+91 764302****</span>
+										</div>
+										<div>
+											<div>Client</div>
+										</div>
+									</div>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Michael Johnson</div>
+											<span class="fs-12">+15 1343025***</span>
+										</div>
+										<div>
+											<div>Staff</div>
+										</div>
+									</div>
+								</div>
+								<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+									+ Create Party
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Amount</label>
+						<input type="number" class="form-control">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Description</label>
+						<textarea class="form-control" rows="5"></textarea>
+					</div>
+
+					<div class="mb-4">
+						<label class="form-label">Add Cost Code</label>
+						<div class="position-relative">
+							<input class="form-control" placeholder="Select Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+					
+					<div class="card-collapse mb-5">
+						<div class="card-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseExample2" role="button" aria-expanded="false" aria-controls="collapseExample">
+							<h4 class="m-0">More Details (Optional)</h4>
+							<i class="fa fa-angle-down"></i>
+						</div>
+						<div class="collapsed collapse" id="collapseExample2">
+							<div class="my-3">
+								<label class="form-label form-label">Category</label>
+								<select class="form-select selectpicker">
+									<option>Labour</option>
+									<option>Material</option>
+									<option>Transport</option>
+									<option>Equipment</option>
+									<option>Sub Contractor</option>
+									<option>Customer</option>
+									<option>Designer</option>
+									<option>Food and Travel</option>
+									<option>Others</option>
+									<option>Fuel</option>
+									<option>Salary</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+			</div>
+			<!-- End - I Received Offcanvas -->

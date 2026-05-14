@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "email-read.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+		<main class="content-body">
+		
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Read",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Email Read</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="email-inbox.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="employee.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid p-0">
+				<div class="card border-0 rounded-0 mb-0 h-auto">
+					<div class="card-body p-0">
+						<div class="row gx-0">
+							<div class="col-xxl-2 col-xl-3 col-lg-4 email-left-body">
+								<div class="email-left-column dz-scroll" id="email-left">
+									<div class="mb-4">
+										<a href="email-compose.html" class="btn btn-lg btn-dark w-100"><i class="fa-solid fa-plus"></i> Compose Email</a>
+									</div>
+									<div class="mail-list-group">
+										<a href="email-inbox.html" class="list-group-item active">
+											<i class="fa-regular fa-envelope"></i> Inbox
+											<span class="badge badge-purple badge-sm float-end rounded">2</span>
+										</a>
+										<a href="javascript:void(0);" class="list-group-item">
+											<i class="fa-regular fa-paper-plane"></i> Sent
+										</a> 	
+										<a href="javascript:void(0);" class="list-group-item">
+											<i class="fa-regular fa-star"></i> Favorite
+										</a>
+										<a href="javascript:void(0);" class="list-group-item">
+											<i class="fa-regular fa-file"></i> Draft
+										</a>
+										<a href="javascript:void(0);" class="list-group-item">
+											<i class="fa-solid fa-tag"></i> Important
+										</a>
+										<a href="javascript:void(0);" class="list-group-item">
+											<i class="fa-regular fa-clock"></i> Scheduled
+										</a>
+										<a href="javascript:void(0);" class="list-group-item">
+											<i class="fa-solid fa-angle-down"></i> Move
+										</a>
+									</div>
+									<div class="mail-list-group">
+										<h5 class="mb-3 px-3">Categories</h5>
+										<a href="email-inbox.html" class="list-group-item opacity-75"> <i class="fa fa-circle text-primary"></i> Work </a>
+										<a href="email-inbox.html" class="list-group-item opacity-75"> <i class="fa fa-circle text-purple"></i> Private </a>
+										<a href="email-inbox.html" class="list-group-item opacity-75"> <i class="fa fa-circle text-success"></i> Support </a>
+										<a href="email-inbox.html" class="list-group-item opacity-75"> <i class="fa fa-circle text-primary text-danger"></i> Social </a>
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-10 col-xl-9 col-lg-8">
+								<div class="email-right-column">
+									<div class="d-flex justify-content-between p-3">
+										<div class="d-flex gap-1">
+											<a href="javascript:void(0);" class="btn btn-square btn-sm tp-btn-light btn-primary">
+												<i class="fa fa-archive"></i>
+											</a>
+											<a href="javascript:void(0);" class="btn btn-square btn-sm tp-btn-light btn-primary">
+												<i class="fa fa-exclamation-circle"></i>
+											</a>
+											<a href="javascript:void(0);" class="btn btn-square btn-sm tp-btn-light btn-danger">
+												<i class="fa fa-trash"></i>
+											</a>
+											<a href="javascript:void(0);" class="btn btn-square btn-sm tp-btn-light btn-warning">
+												<i class="fa fa-folder"></i>
+											</a>
+											<div class="dropdown">
+												<button type="button" class="btn btn-square btn-sm tp-btn-light btn-primary" data-bs-toggle="dropdown" aria-expanded="false">
+													<i class="fa-solid fa-ellipsis-vertical"></i>
+												</button>
+												<ul class="dropdown-menu dropdown-menu-end">
+													<li><a class="dropdown-item" href="javascrip:void(0);">Mark as Unread</a></li>
+													<li><a class="dropdown-item" href="javascrip:void(0);">Add to Tasks</a></li>
+													<li><a class="dropdown-item" href="javascrip:void(0);">Add Star</a></li>
+													<li><a class="dropdown-item" href="javascrip:void(0);">Mute</a></li>
+												</ul>
+											</div>
+										</div>
+										<div class="d-block d-lg-none">
+											<a href="javascript:void(0);" class="mobile-email-panel btn btn-square btn-sm tp-btn-light btn-primary">
+												<i class="fa-solid fa-list-ul"></i>
+											</a>
+										</div>
+									</div>
+									<div class="right-box-padding p-0">
+										<div class="read-wapper dz-scroll" id="read-content">
+											<div class="read-content">
+												<div class="pt-3 d-sm-flex d-block justify-content-between border-bottom">
+													<div class="clearfix mb-3 d-flex">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix ms-2">
+															<h5 class="text-primary mb-0">Elijah James</h5>
+															<p class="mb-0">20 May 2020</p>
+														</div>
+													</div>
+													<div class="clearfix mb-3">
+														<a href="javascript:void(0);" class="btn btn-square btn-primary btn-sm light"><i class="fa fa-reply"></i></a>
+														<a href="javascript:void(0);" class="btn btn-square btn-primary btn-sm light"><i class="fas fa-arrow-right"></i></a>
+														<a href="javascript:void(0);" class="btn btn-square btn-danger btn-sm light"><i class="fa fa-trash"></i></a>
+													</div>
+												</div>
+												<div class="mb-2 mt-3">
+													<span>07:23 AM</span>
+													<h5 class="my-1 text-primary">A collection of textile samples lay spread</h5>
+													<p>To: <a href="javascript:void(0);">info@example.com</a></p>
+												</div>
+												<div class="read-content-body">
+													<h5 class="mb-4">Hi, Elijah James,</h5>
+													<p><strong>Elijah James,</strong> A collection of textile samples lay spread out on the table - Samsa was a travelling salesman - and above it there hung a picture</p>
+													<p>Even the all-powerful Pointing has no control about the blind texts it is an almost unorthographic life One day however a small line of blind text by the name of Lorem Ipsum decided to leave for the far World of Grammar. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus.</p>
+													<p>Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar,</p>
+													<h5 class="pt-3 mb-1">Kind Regards</h5>
+													<p>Mr Smith</p>
+												</div>
+												<div class="clearfix border-top border-bottom py-3 my-3">
+													<button class="btn btn-primary btn-sm me-2"><i class="fa-solid fa-forward"></i> Forward</button>
+													<button class="btn btn-secondary btn-sm"><i class="fa-solid fa-reply"></i> Reply</button>
+												</div>
+												<div class="mb-3 pt-3">
+													<textarea name="write-email" id="write-email" cols="30" rows="5" class="form-control" placeholder="It's really an amazing.I want to know more about it..!"></textarea>
+												</div>
+											</div>
+											<div class="text-end">
+												<button class="btn btn-primary mb-3" type="button">Send</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+                    </div>
+                </div>
+            </div>
+			
+        </main>
+		<!-- End - Content Body -->
+		
+        @@include("elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

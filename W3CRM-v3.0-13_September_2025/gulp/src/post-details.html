@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    @@include("elements/meta.html", {
+		"fileName": "post-details.html",
+	})
+	
+	<link href="assets/vendor/lightgallery/css/lightgallery.min.css" rel="stylesheet">	
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Post Details",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Post Details</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="performance.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="profile/activity.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				
+				<div class="row">
+                    <div class="col-lg-12">
+                        <div class="card-profile card card-body p-2 pb-0">
+							<div class="photo-content">
+								<div class="cover-photo rounded"></div>
+							</div>
+							<div class="p-sm-3 p-2 d-sm-flex w-100">
+								<div class="profile-photo me-sm-3">
+									<img src="assets/images/profile/profile.png" class="img-fluid rounded-circle border border-4 border-white" alt="">
+								</div>
+								<div class="d-flex w-100 py-2 py-sm-0">
+									<div class="d-flex flex-wrap w-100 gap-3">
+										<div class="clearfix">
+											<h5 class="mb-0">Mitchell C. Shay</h5>
+											<span>UX / UI Designer</span>
+										</div>
+										<div class="clearfix">
+											<h5 class="mb-0">hello@email.com</h5>
+											<span>Email</span>
+										</div>
+									</div>
+									<div class="dropdown ms-auto">
+										<button class="btn btn-sm btn-square btn-primary light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+											<i class="fa-solid fa-ellipsis"></i>
+										</button>
+										<ul class="dropdown-menu">
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-user-circle text-primary me-2"></i> View profile</a>
+											</li>
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-users text-primary me-2"></i> Add to friends</a>
+											</li>
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-plus text-primary me-2"></i> Add to group</a>
+											</li>
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-ban text-primary me-2"></i> Block</a>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						</div>
+                    </div>
+                </div>
+				
+                <div class="row">
+				
+                    <div class="col-xl-4 col-xxl-3">
+						<div class="row">
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="row">
+											<div class="col">
+												<span class="mb-0 d-block h2">150</span>
+												<span>Follower</span>
+											</div>
+											<div class="col">
+												<span class="mb-0 d-block h2">140</span>
+												<span>Place Stay</span>
+											</div>
+											<div class="col">
+												<span class="mb-0 d-block h2">45</span>
+												<span>Reviews</span>
+											</div>
+										</div>
+										<div class="mt-4">
+											<a href="javascript:void();" class="btn btn-primary mb-1 me-1">Follow</a> 
+											<a href="javascript:void();" class="btn btn-primary mb-1" data-bs-toggle="modal" data-bs-target="#sendMessageModal">Send Message</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Today Highlights</h4>
+									</div>
+									<div class="card-body">
+										<img src="assets/images/profile/1.jpg" alt="" class="img-fluid mb-3 w-100 rounded">
+										<h5><a href="post-details.html">Darwin Creative Agency Theme</a></h5>
+										<p class="mb-0">A small river named Duden flows by their place and supplies it with the necessary regelialia. It is a paradisematic country, in which roasted parts of sentences fly into your mouth.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Interest</h4>
+									</div>
+									<div class="card-body">
+										<div class="row g-1" id="lightgallery">
+											<a href="assets/images/profile/2.jpg" data-exthumbimage="assets/images/profile/2.jpg" data-src="assets/images/profile/2.jpg" class="col-4">
+												<img src="assets/images/profile/2.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/3.jpg" data-exthumbimage="assets/images/profile/3.jpg" data-src="assets/images/profile/3.jpg" class="col-4">
+												<img src="assets/images/profile/3.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/4.jpg" data-exthumbimage="assets/images/profile/4.jpg" data-src="assets/images/profile/4.jpg" class="col-4">
+												<img src="assets/images/profile/4.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/3.jpg" data-exthumbimage="assets/images/profile/3.jpg" data-src="assets/images/profile/3.jpg" class="col-4">
+												<img src="assets/images/profile/3.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/4.jpg" data-exthumbimage="assets/images/profile/4.jpg" data-src="assets/images/profile/4.jpg" class="col-4">
+												<img src="assets/images/profile/4.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/2.jpg" data-exthumbimage="assets/images/profile/2.jpg" data-src="assets/images/profile/2.jpg" class="col-4">
+												<img src="assets/images/profile/2.jpg" alt="" class="img-fluid rounded">
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Our Latest News</h4>
+									</div>
+									<div class="card-body py-3">
+										<div class="d-flex py-2 align-items-center">
+											<img src="assets/images/profile/5.jpg" alt="image" class="avatar avatar-lg rounded">
+											<div class="ms-3">
+												<h6 class="mb-1"><a href="post-details.html">Collection of textile samples</a></h6>
+												<p class="mb-0">I shared this on my fb wall a few months back, and I thought.</p>
+											</div>
+										</div>
+										<div class="d-flex py-2 align-items-center">
+											<img src="assets/images/profile/6.jpg" alt="image" class="avatar avatar-lg rounded">
+											<div class="ms-3">
+												<h6 class="mb-1"><a href="post-details.html">Website Developer </a></h6>
+												<p class="mb-0">I shared this on my fb wall a few months back, and I thought.</p>
+											</div>
+										</div>
+										<div class="d-flex py-2 align-items-center">
+											<img src="assets/images/profile/7.jpg" alt="image" class="avatar avatar-lg rounded">
+											<div class="ms-3">
+												<h6 class="mb-1"><a href="post-details.html">Mern stack Developer</a></h6>
+												<p class="mb-0">I shared this on my fb wall a few months back, and I thought.</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+                    </div>
+					
+                    <div class="col-xl-8 col-xxl-9">
+                        <div class="card">
+                            <div class="card-body">
+								<h2 class="mb-1">Collection of textile samples lay spread</h2>
+								<ul class="mb-4 d-flex flex-wrap">
+									<li class="me-3">By Admin</li>
+									<li class="me-3"><i class="far fa-calendar-plus me-2"></i>18 Nov 2020</li>
+									<li class=""><i class="far fa-comment me-2"></i>28</li>
+								</ul>
+								<img src="assets/images/profile/8.jpg" alt="" class="img-fluid mb-3 w-100 rounded">
+								<p>A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart.A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart.</p>
+								<p>A collection of textile samples lay spread out on the table - Samsa was a travelling salesman - and above it there hung a picture that he had recently cut out of an illustrated magazine and housed in a nice, gilded frame.</p>
+								<figure class="bg-primary-subtle border-start border-3 border-primary p-3 rounded text-dark">
+									<blockquote class="blockquote">
+										<p>A well-known quote, contained in a blockquote element.</p>
+									</blockquote>
+									<figcaption class="blockquote-footer mb-0">
+										Someone famous in <cite title="Source Title">Source Title</cite>
+									</figcaption>
+								</figure>
+								<p>A wonderful serenity has taken possession of my entire soul, like these sweet mornings of spring which I enjoy with my whole heart. I am alone, and feel the charm of existence was created for the bliss of souls like mine.I am so happy, my dear friend, so absorbed in the exquisite sense of mere tranquil existence, that I neglect my talents.</p>
+								
+								<div class="py-3 my-4 border-top border-bottom">
+									<h4 class="text-primary mb-2">Skills</h4>
+									<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Admin</a>
+									<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Dashboard</a>
+									<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Photoshop</a>
+									<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Bootstrap</a>
+									<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Responsive</a>
+									<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Crypto</a>
+								</div>
+								
+								<div class="comment-respond" id="respond">
+									<h4 class="comment-reply-title text-primary mb-3" id="reply-title">Leave a Reply </h4>
+									<form class="comment-form" id="commentform" method="post">
+										<div class="row"> 
+											<div class="col-lg-6">
+												<div class="mb-3">
+													<label for="author" class="form-label">Name <span class="required">*</span></label>
+													<input type="text" class="form-control" value="Author" name="Author" placeholder="Author" id="author">
+												</div>
+											</div>
+											<div class="col-lg-6">
+												<div class="mb-3">
+													<label for="email" class="form-label">Email <span class="required">*</span></label>
+													<input type="text" class="form-control" value="Email" placeholder="Email" name="Email" id="email">
+												</div>
+											</div>
+											<div class="col-lg-12">
+												<div class="mb-3">
+													<label for="comment" class="form-label">Comment</label>
+													<textarea rows="6" class="form-control" name="comment" placeholder="Comment" id="comment"></textarea>
+												</div>
+											</div>
+											<div class="col-lg-12">
+												<input type="submit" value="Post Comment" class="submit btn btn-primary" id="submit" name="submit">
+											</div>
+										</div>
+									</form>
+								</div>
+								
+                            </div>
+                        </div>
+                    </div>
+					
+                </div>
+            </div>
+			
+        </main>
+		<!-- End - Content Body -->
+
+        @@include("elements/footer.html")
+		
+		<!-- Start - Send Message Modal -->
+		<div class="modal fade" id="sendMessageModal">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Send Message</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<form class="comment-form">
+							<div class="row"> 
+								<div class="col-lg-6">
+									<div class="mb-3">
+										<label class="form-label">Name <span class="required">*</span></label>
+										<input type="text" class="form-control" name="Author" placeholder="Mitchell C. Shay">
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="mb-3">
+										<label class="form-label">Email <span class="required">*</span></label>
+										<input type="text" class="form-control" placeholder="hello@email.com" name="Email">
+									</div>
+								</div>
+								<div class="col-lg-12">
+									<div class="mb-3">
+										<label class="form-label">Comment</label>
+										<textarea rows="4" class="form-control" name="comment" placeholder="Comment"></textarea>
+									</div>
+								</div>
+								<div class="col-lg-12">
+									<input type="submit" value="Post Comment" class="submit btn btn-primary" name="submit">
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Send Message Modal -->
+        
+    </div>
+    <!-- End - Main Wrapper -->
+
+    
+	<!-- Start - Page Scripts -->
+	@@include("elements/script.html")
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

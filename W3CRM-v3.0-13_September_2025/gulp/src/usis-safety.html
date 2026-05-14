@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-safety.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "Safety",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">USIS Safety</h6>
+								<p class="text-muted small mb-0">Safety module home (Plan 7): company and site programs, field inspection, incidents—canonical store for OSHA-oriented training and JHAs.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="usis-rfp-list.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="construction/add-quotation.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan references: Plan 7 (Safety), Plan 21 (HR + Safety operating model), Plan 20 — Site map and navigation.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<p class="text-muted small mb-3">
+					<strong>Safety</strong> owns regulatory training records, project JHAs, daily pretasks, observations, and incidents (Plan 7).
+					<strong>HR</strong> owns onboarding and policy acknowledgments; <a href="core-hr.html">Core HR</a> (directory) and the <a href="usis-hr-dashboard.html">HR dashboard</a> show read-only safety cert snapshots only—edit certs and site programs here, not in HR.
+				</p>
+
+				<div class="row g-3 mb-3">
+					<div class="col-xl-3 col-md-6">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body d-flex flex-column">
+								<h5 class="card-title">Company-wide</h5>
+								<p class="text-muted small flex-grow-1">Policies, manuals, JHA <em>templates</em>, training register, leadership KPIs (TRIR / DART / near-miss).</p>
+								<div class="d-flex flex-wrap gap-1">
+									<a href="usis-documents-hub.html" class="btn btn-primary btn-sm">Documents hub</a>
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-jha-library.html (Plan 7 section 3)">JHA templates</button>
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-safety-dashboard.html">Safety KPIs</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body d-flex flex-column">
+								<h5 class="card-title">Project / site</h5>
+								<p class="text-muted small flex-grow-1">Project safety plan, <strong>project JHAs</strong>, daily pretask, crew checklists, site conditions.</p>
+								<div class="d-flex flex-wrap gap-1">
+									<a href="construction/projects.html" class="btn btn-primary btn-sm">Projects</a>
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-project-jha-list.html (Plan 7 section 3)">Project JHAs</button>
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Plan 8 field / daily log — pretask tab">Daily pretask</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body d-flex flex-column">
+								<h5 class="card-title">Field / inspect</h5>
+								<p class="text-muted small flex-grow-1">Quick observation with photo, PPE checks, optional <strong>AI safety review</strong> (local model).</p>
+								<div class="d-flex flex-wrap gap-1">
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-safety-observation.html">Observation</button>
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Plan 7 — usis-ai-drawer safety_review mode">AI review</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body d-flex flex-column">
+								<h5 class="card-title">Incidents &amp; corrective</h5>
+								<p class="text-muted small flex-grow-1">Recordables, root cause, corrective actions linked to punch list / change orders.</p>
+								<div class="d-flex flex-wrap gap-1">
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-safety-incident.html">Incident report</button>
+									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Plan 7 — corrective action tracking">Corrective actions</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="card border-0 shadow-sm">
+					<div class="card-body py-3">
+						<h6 class="fw-semibold mb-2">Also in scope (Plan 7)</h6>
+						<ul class="small text-muted mb-0 ps-3">
+							<li><strong>Subcontractors:</strong> safety docs and attestations via RFP / vendor flows — <a href="usis-rfp-list.html">RFP list</a>.</li>
+							<li><strong>Compliance:</strong> Cal/OSHA / OSHA-oriented exports ship with incident and training workflows.</li>
+							<li><strong>HR handoff:</strong> workers’ comp / return-to-work stays coordinated with HR case files when those flows exist (Plan 21).</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+
+</body>
+</html>

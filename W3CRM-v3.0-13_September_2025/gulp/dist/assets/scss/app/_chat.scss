@@ -1,0 +1,122 @@
+/* Card ChatBox */
+.chatbox-wrapper{
+	display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+	
+	.chatbox-content{
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		
+		&::-webkit-scrollbar {
+			display: none;
+		}
+	}
+	.chat-date{
+		color: var(--bs-body-color);
+		text-align: center;
+		font-size: 12px;
+		font-weight: 500;
+		margin: 12px auto;
+		display: block;
+		position: relative;
+	}
+	.chat-content-left,
+	.chat-content-right{
+		display: flex;
+		align-items: flex-end;
+		justify-content: flex-start;
+		padding-right: 75px;
+		
+		.message-item{
+			margin-bottom: 10px;
+			display: flex;
+			flex-direction: column;
+			align-items: start;
+			
+			.bubble{
+				padding: 10px 15px;
+				background: var(--bs-light);
+				border-radius: var(--bs-border-radius);
+				display: inline-flex;
+				margin-bottom: 5px;
+				font-size: 13px;
+				font-weight: 500;
+				align-items: center;
+				min-width: 75px;
+				
+				&:last-child{
+					margin-bottom: 0;
+				}
+			}
+			.message-time{
+				font-size: 11px;
+				font-weight: 500;
+				text-align: left;
+				color: var(--bs-body-color);
+			}
+		}
+	}
+	.chat-content-right{
+		justify-content: flex-end;
+		padding-right: 0;
+		padding-left: 75px;
+		
+		.message-item{
+			align-items: end;
+			
+			.bubble{
+				background: var(--bs-primary);
+				color: $white;
+				&:last-child{
+					margin-bottom: 0;
+				}
+				.emoji-icon{
+					display: inline-flex;
+					width: 30px;
+					height: 30px;
+					margin: 0 3px;
+				}
+			}  
+			.message-time{
+			   text-align: right;
+			}
+		}
+	}
+	.chat-box-area{
+		display: flex;
+		flex-direction: column;
+	}
+	.input-wrapper{
+		position: relative;
+	}
+}
+
+/* full-chatbox-wrapper */
+.full-chatbox-wrapper{
+	height: 750px;
+	
+	.chat-users{
+		height: 600px;
+	}
+	.chatbox-content{
+	    height: 580px;
+	}
+	.chatbox-wrapper {
+		height: 100%;
+	}
+	@include respond('tab-land'){
+		height: auto;
+	}
+	@include respond('tab-port'){
+		.chat-users{			
+			height: 290px;
+			border-bottom: 5px solid var(--bs-border-color);
+		}
+	}
+	@include respond('phone'){
+		.chatbox-content{
+			height: 350px;
+		}
+	}
+}

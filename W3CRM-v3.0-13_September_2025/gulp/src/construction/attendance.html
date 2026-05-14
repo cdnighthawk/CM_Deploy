@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "estimate.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Transaction",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Attendance</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="add-quotation.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="contact-us.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3 active">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+        
+            <div class="container-fluid">
+                <div class="row">
+
+                    <!-- Start - Filtering -->
+                    <div class="col-xl-12">
+                        <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center pb-3 mb-3 border-bottom">
+                            <div class="clearfix gap-2 d-flex flex-wrap align-items-center">
+                                <ul class="nav nav-pills nav-pills-card rounded gap-1 p-0 bg-white" id="attendance" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link rounded active" data-bs-toggle="pill" data-bs-target="#all" type="button" role="tab" aria-controls="justify-home" aria-selected="true">All</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link rounded" data-bs-toggle="pill" data-bs-target="#site-staff" type="button" role="tab" aria-controls="justify-profile" aria-selected="false" tabindex="-1">Site Staff</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link rounded" data-bs-toggle="pill" data-bs-target="#labour-contractor" type="button" role="tab" aria-controls="justify-contact" aria-selected="false" tabindex="-1">Labour Contractor</button>
+                                    </li>
+                                </ul>
+                                <div>
+                                    <select class="form-select selectpicker">
+                                        <option selected>Active</option>
+                                        <option>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+								<a href="javascript:void(0);" class="btn btn-primary light" data-bs-toggle="modal" data-bs-target="#download">Download<i class="icon feather icon-download"></i></a>
+                                <a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#add-site-staff">+ Add Site Staff</a>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                            <div class="clearfix gap-2 d-flex align-items-center">
+                                <input class="form-control" type="text" id="bsDatepicker" />
+                            </div>
+                            <div>
+                                <p class="m-0 fs-16 fw-medium">0 Present</p>
+                                <span class="fs-10"><i class="icon feather icon-list me-1"></i>0 Present</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End - Filtering -->
+                    
+                    <div class="tab-content" id="attendance">
+                        <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all" tabindex="0">
+                            
+                        </div>
+                        <div class="tab-pane fade" id="site-staff" role="tabpanel" aria-labelledby="site-straff" tabindex="0">
+                            
+                        </div>
+                        <div class="tab-pane fade" id="labour-contractor" role="tabpanel" aria-labelledby="labour-contractor" tabindex="0">
+                            
+                        </div>
+                    </div>
+
+                </div>
+			</div>
+
+			<!-- Start - Pending Entries Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="add-site-staff" aria-labelledby="add-site-staff" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex flex-wrap justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold">Select Site Staff Payroll</h5>
+					</div>
+					<div>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					<div class="input-group message-search-area">
+						<input type="text" class="form-control border-end-0" placeholder="Search Site Staff">
+						<div class="input-group-append">
+							<button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+						</div>
+					</div>
+					<a href="javascript:void(0);" class="d-flex justify-content-end mt-2">+ New Site Staff Payroll</a>
+					<div class="mt-3">
+						<ul class="d-flex justify-content-between align-items-center border-bottom py-2">
+							<li class="fs-12">Name</li>
+							<li class="fs-12">Payroll Type</li>
+						</ul>
+						<ul class="d-flex justify-content-between align-items-center border-bottom py-2">
+							<li class="text-black fw-medium fs-16">John</li>
+							<li class="text-black fw-medium fs-16">Manager</li>
+						</ul>
+					</div>
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Pending Entries Offcanvas -->
+				
+        </main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+		<!-- Start - Download Modal -->
+		<div class="modal fade" id="download" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title" id="date-filter">Test</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+							<div>
+								<p class="m-0 fs-12">Report Type</p>
+								<h5 class="fs-18">ATTENDANCE</h5>
+							</div>
+							<div>
+								<select class="form-select selectpicker">
+									<option selected>All Time</option>
+									<option>Today</option>
+									<option>Last Week (Mon-Sun)</option>
+									<option>Last Month</option>
+									<option>This Week (Mon - Today)</option>
+									<option>This Month</option>
+									<option>Custom</option>
+								</select>
+							</div>
+						</div>
+						<div class="d-flex align-items-center mb-3">
+							<div class="form-check me-3">
+								<input id="flexRadioDefault1" name="paymentMethod" type="radio" class="form-check-input" checked>
+								<label class="form-check-label" for="flexRadioDefault1">Salary</label>
+							</div>
+							<div class="form-check me-3">
+								<input id="flexRadioDefault2" name="paymentMethod" type="radio" class="form-check-input">
+								<label class="form-check-label" for="flexRadioDefault2">Attendance</label>
+							</div>
+						</div>
+						<a href="javascript:void(0);" class="btn btn-sm btn-warning">Download PDF<i class="icon feather icon-file"></i></a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Download -->
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

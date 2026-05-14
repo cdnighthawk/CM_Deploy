@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-documents-hub.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Documents hub" })
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">USIS Documents Hub</h6>
+								<p class="text-muted small mb-0">USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="usis-dashboard.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="core-hr.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<div class="container-fluid">
+				<p class="text-muted small">Requires <code>?project_id=</code> (UUID).</p>
+				<div class="mb-2">
+					<button type="button" class="btn btn-sm btn-primary" id="usis-doc-add">Register document (JSON)</button>
+				</div>
+				<ul class="list-group" id="usis-doc-list"></ul>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-documents-hub.js"></script>
+</body>
+</html>

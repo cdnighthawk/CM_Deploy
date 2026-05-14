@@ -1,0 +1,37 @@
+/* Tagify CSS */
+.tagify,
+.tagify.form-control{
+	--tag-remove-btn-color: var(--bs-danger);
+	
+    display: flex;
+    padding: 0px;
+}
+.tagify__tag{
+    line-height: inherit;
+}
+.tagify__tag>div {
+    padding: 4px 8px;
+	color: var(--bs-body-color);
+}
+.tagify__input {
+    line-height: inherit;
+}
+.tagify__tag>div::before{
+	box-shadow: none !important;
+    background-color: var(--bs-light);
+}
+.tagify__tag__removeBtn{
+    font-size: 1em;
+	
+	&:hover{
+		color: #fff;
+		background: var(--bs-danger);
+	}
+}
+.tagify__tag__removeBtn:hover+div::before {
+    box-shadow: none !important;
+    background-color: var(--bs-danger-bg-subtle);
+}
+.tagify__tag__removeBtn:hover+div>span{
+    opacity: 1;
+}

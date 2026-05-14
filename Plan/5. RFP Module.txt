@@ -1,0 +1,111 @@
+✅ RFP Module – Detailed Breakdown
+This is one of the most mature and production-ready modules in the platform. It handles the entire Request for Proposal / Bid Invitation → Vendor Quoting → Comparison → Award workflow, specifically tailored for your finish-work subcontracting company.
+Front-end: W3CRM multi-page HTML + Bootstrap (see Plan\0). Public vendor flow can be a minimal Bootstrap page served by Flask at /public/rfp/<token>.
+1. Core Purpose
+
+Automate and professionalize the bid invitation process for subcontractors, vendors, and suppliers.
+Turn manual bid chasing into a trackable, auditable, AI-augmented process.
+Seamless bidirectional integration with Estimating, DrawingViewer, and Financials.
+
+2. Overall Architecture & Layout (W3CRM src)
+Main pages (new under gulp/gulp/src/)
+
+usis-rfp-list.html — List + filters + status pipeline (start from email-inbox.html layout for filter bar + table).
+usis-rfp-detail.html — Split pane on desktop: left form, right preview; stacked on mobile.
+
+Partials / scripts
+
+elements/usis-rfp-form.html — Creation & editing sections (@@include into detail page).
+usis-vendor-select.js — Multi-select from Company API (Bootstrap select + fetch, or Select2 if already bundled).
+usis-rfp-email-preview.html — Modal showing Jinja2-rendered HTML from GET /api/rfp/<id>/email-preview.
+public/usis-rfp-vendor-submit.html — Vendor quote form (could live in Flask templates; style with Bootstrap).
+usis-rfp-compare.html — Side-by-side comparison table (sticky first column; horizontal scroll).
+usis-rfp.js — List/detail data loading, status transitions, shared fetch helpers.
+
+3. Detailed Feature Breakdown
+A. RFP Creation & Management
+
+Project link, scope description, due date/time, urgency level
+Line Items table (CSI format): Description, Quantity, Unit, Notes, Drawings reference
+Vendor selection filtered by company_type, trade specialties, past performance
+Drawing attachments (links to DrawingViewer)
+“Save as Template” for common finish scopes (e.g., Full Interior Paint Package)
+
+B. Professional Email & Notification Workflow
+
+One-click “Send RFP” → opens branded Jinja2 email preview
+Includes: Logo, urgency badges, formatted line-item table, CTA button to secure portal, attached watermarked drawings
+Async sending via SMTP + Celery fallback
+Automatic reminders (48h/24h before due)
+Full audit log of emails sent/opened
+
+C. Secure Public Vendor Quote Submission
+
+Public route: /public/rfp/<token>
+Clean mobile-friendly form with:
+Per-line-item pricing (auto quantity × unit price calculation)
+Notes/exclusions (per line or global)
+File upload (submittals, insurance, pricing sheets)
+Due-date enforcement
+Progress saving + resume
+
+
+D. Vendor Comparison Table (Crown Jewel)
+
+Side-by-side columns per responding vendor
+Rows = RFP line items
+Features:
+Lowest price auto-highlighted (green)
+Grand totals per vendor
+Variance columns (% from lowest)
+Notes & attachment icons
+“Award” button (supports multi-vendor splitting)
+CSV / Excel export
+Weighted scoring (price + past performance + capacity)
+
+
+E. Status Tracking & Post-Award Flow
+
+Pipeline: Draft → Sent → Partial Responses → All Received → Evaluation → Awarded → Closed
+Awarded quotes automatically flow into:
+Estimating Engine (Vendor Quote column)
+Commitments / Budget
+Scheduling (subcontractor tasks)
+Vendor Portal (self-service status)
+
+
+4. Data Layer (SQLAlchemy)
+
+RFP model
+RFPLineItem
+RFPResponse (per vendor, per line item pricing + files + notes)
+Strong relationships to Project, Drawing, EstimateLineItem, Company
+Full audit logging on every response and status change
+
+5. Critical Integrations (All Preserved)
+
+DrawingViewer: Attach sheets; vendors see watermarked versions
+Local AI: “AI Review RFP Documents” before sending; feasibility feedback auto-adds exclusions
+Unified Takeoff: Bidirectional sync on award
+Financials: Awarded pricing becomes commitments
+Documents Hub: All RFP docs and responses stored with version history
+aiReviewBus.js: Can feed line items from plan reviews
+
+6. Mobile-First & Offline Behavior
+
+Public submission form is fully responsive and works offline
+Field PMs can create quick RFPs from tablet
+Comparison table scrolls horizontally with sticky columns
+
+7. Security & Government Compliance
+
+Token-based public access (single-use or time-limited)
+Vendor response audit trail for prevailing wage / DBE tracking
+Data encryption for sensitive bids
+
+8. Why This Module Is a Major Differentiator
+
+Turns weeks of manual bid chasing into days of automated, trackable workflow.
+Professional appearance builds trust with GCs and subs.
+Powerful comparison + AI support helps you win more work at better margins.
+Already production-ready — minimal changes needed during rebuild.

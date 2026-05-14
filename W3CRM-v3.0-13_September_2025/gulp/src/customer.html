@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "customer.html",
+	})
+	
+	<link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+	<link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Customers",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Customer</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="customer-profile.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="ecom-checkout.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12 bst-seller">
+						<div class="d-flex align-items-center justify-content-between mb-4">
+							<h4 class="mb-0">Customer List</h4>
+							<div class="d-flex align-items-center">
+								<button type="button" class="btn btn-primary btn-sm me-2"><i class="fa-solid fa-filter me-2"></i>Filter</button>
+								<a class="btn btn-primary btn-sm ms-2" data-bs-toggle="offcanvas" href="#offcanvasExample" role="button" aria-controls="offcanvasExample">+ Add Customer</a>
+							</div>
+						</div>
+						<div class="card h-auto">
+							<div class="card-header border-0 align-items-center">
+								<div id="tableCustomerFilter"></div>
+								<div id="tableCustomerExcelBTN"></div>
+							</div>
+							<div class="card-body table-card-body px-0 pt-0 pb-2">
+								<div class="table-responsive check-wrapper">
+									<table id="customerTable" class="table">
+										<thead class="table-light">
+                                            <tr>
+												<th class="sorting-disabled">
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-all" required="">
+													</div>
+												</th>
+                                                <th class="mw-100">Customer ID</th>
+                                                <th class="mw-200">Customer Name</th>
+                                                <th class="mw-150">Email Address</th>
+                                                <th class="mw-150">Contact Number</th>
+                                                <th class="mw-100">Gender</th>
+                                                <th class="mw-100">Location</th>
+                                                <th class="mw-100">Status</th>
+                                            </tr>
+                                        </thead>
+										<tbody>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>01</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Amelia Rose</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">rs@gmail.com</a></td>
+												<td><span>+1 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>USA</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>02</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Elijah James</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">rm@gmail.com</a></td>
+												<td><span>+16 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>UK</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>03</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar3.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Charlotte Mae</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">rs@gmail.com</a></td>
+												<td><span>+1 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>USA</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>04</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Liam Risher</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">cs@gmail.com</a></td>
+												<td><span>+2 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>TX</span></td>
+												<td><span class="badge badge-danger light">Pending</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>05</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Isabella Claire</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">mj@gmail.com</a></td>
+												<td><span>+022 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>WA</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>06</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar6.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Ethan Cole</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">mj@gmail.com</a></td>
+												<td><span>+044 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>KS</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>07</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar7.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Sophia Jane</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">am@gmail.com</a></td>
+												<td><span>+56 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>PA</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>08</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar8.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Henry Mason</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">am@gmail.com</a></td>
+												<td><span>+88 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>WA</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>09</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar9.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Evelyn Hope</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">ra@gmail.com</a></td>
+												<td><span>+588 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>USA</span></td>
+												<td><span class="badge badge-danger light">Pending</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>10</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar10.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Lucas Bennett</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">ant@gmail.com</a></td>
+												<td><span>+580 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>NYC</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>11</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Scarlett Elise</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">ro@gmail.com</a></td>
+												<td><span>+78 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>NC</span></td>
+												<td><span class="badge badge-danger light">Pending</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>12</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Samuel Owen</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">ri@gmail.com</a></td>
+												<td><span>+80 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>FL</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>13</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Amelia Rose</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">ee@gmail.com</a></td>
+												<td><span>+80 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>GA</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td><span>14</span></td>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Elijah James</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><a href="javascript:void(0)" class="text-primary">it@gmail.com</a></td>
+												<td><span>+59 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>SC</span></td>
+												<td><span class="badge badge-danger light">Pending</span></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			
+			</div>
+        </main>
+		<!-- End - Content Body -->
+		
+		<!-- Start - Add Customer Modal -->
+		<div class="offcanvas offcanvas-end custom-offcanvas" tabindex="-1" id="offcanvasExample">
+			<div class="offcanvas-header pb-0">
+				<h2 class="modal-title fs-5" id="#gridSystemModal">Add Customer</h2>
+				<button type="button" class="btn btn-square btn-danger light btn-sm ms-auto" data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<div class="mb-3">
+					<label class="form-label">Profile Picture</label>
+					<form action="#" class="dropzone">
+						<div class="dropzone-content">
+							<svg width="41" height="40" viewBox="0 0 41 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M27.1666 26.6667L20.4999 20L13.8333 26.6667" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+								<path d="M20.5 20V35" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+								<path d="M34.4833 30.6501C36.1088 29.7638 37.393 28.3615 38.1331 26.6644C38.8731 24.9673 39.027 23.0721 38.5703 21.2779C38.1136 19.4836 37.0724 17.8926 35.6111 16.7558C34.1497 15.619 32.3514 15.0013 30.4999 15.0001H28.3999C27.8955 13.0488 26.9552 11.2373 25.6498 9.70171C24.3445 8.16614 22.708 6.94647 20.8634 6.1344C19.0189 5.32233 17.0142 4.93899 15.0001 5.01319C12.9861 5.0874 11.015 5.61722 9.23523 6.56283C7.45541 7.50844 5.91312 8.84523 4.7243 10.4727C3.53549 12.1002 2.73108 13.9759 2.37157 15.959C2.01205 17.9421 2.10678 19.9809 2.64862 21.9222C3.19047 23.8634 4.16534 25.6565 5.49994 27.1667" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+								<path d="M27.1666 26.6667L20.4999 20L13.8333 26.6667" stroke="#DADADA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+							</svg>
+							<div class="fallback">																
+								<input name="file" type="file" multiple>
+							</div>
+						</div>
+					</form>	
+				</div>
+				<form>
+					<div class="row">
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput1" class="form-label">Employee ID <span class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="">
+						</div>	
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput2" class="form-label">Employee Name<span class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="exampleFormControlInput2" placeholder="">
+						</div>	
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput3" class="form-label">Employee Email<span class="text-danger">*</span></label>
+							<input type="email" class="form-control" id="exampleFormControlInput3" placeholder="">
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput4" class="form-label">Password<span class="text-danger">*</span></label>
+							<input type="password" autocomplete="current-password" class="form-control" id="exampleFormControlInput4" placeholder="">
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label class="form-label">Designation<span class="text-danger">*</span></label>
+							<select class="selectpicker form-select">
+								<option data-display="Select">Please select</option>
+								<option value="html">Software Engineer</option>
+								<option value="css">Civil Engineer</option>
+								<option value="javascript">Web Doveloper</option>
+							</select>
+						</div>	
+						<div class="col-xl-6 mb-3">
+							<label class="form-label">Department<span class="text-danger">*</span></label>
+							<select class="selectpicker form-select">
+								<option data-display="Select">Please select</option>
+								<option value="html">Software</option>
+								<option value="css">Doit</option>
+								<option value="javascript">Designing</option>
+							</select>
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label class="form-label">Country<span class="text-danger">*</span></label>
+							<select class="selectpicker form-select">
+								<option data-display="Select">Please select</option>
+								<option value="html">Ind</option>
+								<option value="css">USA</option>
+								<option value="javascript">UK</option>
+							</select>
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput88" class="form-label">Mobile<span class="text-danger">*</span></label>
+							<input type="number" class="form-control type-number" id="exampleFormControlInput88" placeholder="">
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label class="form-label">Gender<span class="text-danger">*</span></label>
+							<select class="selectpicker form-select">
+								<option data-display="Select">Please select</option>
+								<option value="html">Male</option>
+								<option value="css">Female</option>
+								<option value="javascript">Other</option>
+							</select>
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput99" class="form-label">Joining Date<span class="text-danger">*</span></label>
+							<input type="text" class="form-control bs-datepicker" id="exampleFormControlInput99">
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput8" class="form-label">Date of Birth<span class="text-danger">*</span></label>
+							<input type="text" class="form-control bs-datepicker" id="exampleFormControlInput8">
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label for="exampleFormControlInput10" class="form-label">Reporting To<span class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="exampleFormControlInput10" placeholder="">
+						</div>		
+						<div class="col-xl-6 mb-3">
+							<label class="form-label">Language Select<span class="text-danger">*</span></label>
+							<select class="selectpicker form-select">
+								<option data-display="Select">Please select</option>
+								<option value="html">English</option>
+								<option value="css">Hindi</option>
+								<option value="javascript">Canada</option>
+							</select>
+						</div>
+						<div class="col-xl-6 mb-3">
+							<label class="form-label">User Role<span class="text-danger">*</span></label>
+							<select class="selectpicker form-select">
+								<option data-display="Select">Please select</option>
+								<option value="html">Parmanent</option>
+								<option value="css">Parttime</option>
+								<option value="javascript">Per Hours</option>
+							</select>
+						</div>
+						<div class="col-xl-12 mb-3">
+							<label class="form-label">Address<span class="text-danger">*</span></label>
+							<textarea rows="2" class="form-control"></textarea>
+						</div>
+						<div class="col-xl-12 mb-3">
+							<label class="form-label">About<span class="text-danger">*</span></label>
+							<textarea rows="3" class="form-control"></textarea>
+						</div>	
+					</div>
+					<div class="clearfix">
+						<button class="btn btn-danger light">Cancel</button>
+						<button class="btn btn-primary me-2">Submit</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!-- End - Add Customer Modal -->		
+		
+		@@include("elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+    <!-- Start - Page Scripts -->
+	@@include("elements/script.html")
+	
+	<!-- Script For Datatables -->
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+	
+	<!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Dashboard -->
+	<script src="assets/js/dashboard/dashboard.js"></script>
+   
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

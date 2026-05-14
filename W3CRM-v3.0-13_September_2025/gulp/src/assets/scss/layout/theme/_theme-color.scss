@@ -1,0 +1,33 @@
+@each $name, $color in $theme_backgrounds {
+	[data-primary="#{$name}"] {
+		@if $name != "color_1" {			
+			$link-color: #{$color};
+			
+			--bs-primary: 				  #{$color};
+			--bs-primary-rgb:             #{to-rgb($color)};
+			--bs-primary-text-emphasis:   #{shade-color($color, 60%)};
+			--bs-primary-bg-subtle:       #{tint-color($color, 88%)};
+			--bs-primary-border-subtle:   #{tint-color($color, 60%)};
+			--bs-primary-btn-hover-bg: 	  #{shade-color($color, 15%)};
+			
+			--bs-link-color: #{$color};
+			--bs-link-color-rgb: #{to-rgb($color)};
+			
+			--bs-link-hover-color: #{shade-color($color, 15%)};
+			--bs-link-hover-color-rgb: #{to-rgb(shade-color($color, 15%))};
+			
+			.btn-primary {
+				--bs-btn-hover-bg: #{shade-color($color, $btn-hover-bg-shade-amount)};
+				--bs-btn-active-bg: #{shade-color($color, $btn-active-bg-shade-amount)};
+				--bs-btn-focus-shadow-rgb: #{to-rgb(mix($color, $border-color, 20%))};
+			}
+		}
+	}
+	[data-bs-theme="dark"][data-primary="#{$name}"]{
+		@if $name != "color_1" {
+			--bs-primary-text-emphasis:  #{tint-color($color, 40%)};
+			--bs-primary-bg-subtle:       #{shade-color($color, 80%)};
+			--bs-primary-border-subtle:   #{shade-color($color, 40%)};
+		}
+	}
+}

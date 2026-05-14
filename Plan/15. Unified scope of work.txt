@@ -1,0 +1,104 @@
+USIS Construction Management — Unified Scope of Work (Plan 15)
+================================================================
+High-level project overview for stakeholders and delivery planning. Detailed behavior, UI mapping, and data models live in Plans 0–14 (especially Plan 14 unified roadmap and Plans 1–13 by module). This document is not a legal contract unless executed separately; it defines intended product scope at a summary level.
+
+1. Purpose
+----------
+Deliver a single integrated platform that runs the company’s core operations on one system of record—from business development and estimating through project execution, safety, financials, and formal closeout—with HR- and policy-related workflows supported as the product matures. A shared approvals model applies across modules so critical actions have traceable sign-off. Users access the same capabilities via the primary web application, a power-user estimating and drawing/PDF experience, and a field-oriented phone client, all backed by one API and one data model (see Plan 14).
+
+2. Business objectives
+----------------------
+• Replace fragmented tools and spreadsheets with one auditable workflow where data flows naturally from bid → award → delivery → billing → closeout.
+• Reduce rework and disputes through versioned documents, drawings, estimates, and change history.
+• Speed decisions with consistent dashboards, notifications, and optional AI assistance (Plan 12) without bypassing approvals.
+• Support mobile and intermittent connectivity for field staff (Plan 13).
+• Maintain government- and commercial-ready reporting and exports where specified in module plans.
+
+3. Scope summary — what the program includes
+---------------------------------------------
+A. Platform (all clients)
+• Identity, authentication, role-based access control, and audit logging.
+• Shared approval engine: definable steps, delegation, history, and integration with notifications; server-enforced gates on state changes.
+• Versioned REST (or equivalent) APIs for web, estimating/viewer surfaces, and mobile.
+• Document storage, versioning, thumbnails, and a documents hub; drawing viewer with measurement and annotation (Plan 6).
+• Cross-cutting UX: global search, notifications, command palette / AI entry points, theming, offline queue semantics (Plan 13).
+
+B. Website (operational hub)
+• Core shell, navigation, dashboard, and project context (Plan 1).
+• CRM, leads, bids, and pipeline (Plan 2).
+• Unified takeoff engine used across bid, estimate, and project phases (Plan 3).
+• Estimating workspace: versions, cost library, proposals, PDF generation (Plans 4, 0).
+• RFP and vendor/sub interaction patterns (Plan 5).
+• Project management, tasks, daily logs, punch lists, field coordination (Plans 8–9; Plan 8 canonical where overlap).
+• Safety and quality workflows (Plan 7).
+• Financials, billing, invoices / pay applications as specified (Plan 10).
+• Analytics and reporting (Plan 11).
+• HR-adjacent and closeout capabilities as phased extensions: onboarding artifacts, acknowledgments, training records, turnover binders, lien releases, warranties—implemented as modules using the same documents, approvals, and RBAC model (Plan 14).
+
+C. Estimating app / PDF viewer
+• High-density estimating UI tied to unified takeoff; integration with drawings for quantities; AI-assisted review where configured (Plans 4, 6, 12).
+• Professional proposal and related PDF outputs from the backend template engine (Plan 0).
+• Optional dedicated desktop shell later if required; same URLs and APIs (Plan 14).
+
+D. Phone app
+• Field-first features: schedules/tasks visibility, logs, photos, punch lists, simplified estimate/takeoff views, drawing preview, pending approvals, offline capture with sync (Plans 13, 1).
+
+4. Major deliverables (workstreams)
+-----------------------------------
+1) Backend services, database schema, migrations, and API versioning.
+2) Web application (W3CRM-based shell per Plan 0) wired to live APIs module by module.
+3) Drawing viewer and documents hub integrated with takeoff and project records.
+4) Estimating and proposal outputs on unified takeoff data.
+5) Mobile client consuming the same APIs with offline support.
+6) Shared approvals, notifications, and audit across the above.
+7) Operations documentation: environment setup, backup/restore expectations, and admin runbooks (level of detail TBD with rollout).
+
+5. Technical approach (summary)
+-------------------------------
+• Backend: Flask, SQLAlchemy, Jinja2 for server-generated PDFs and email templates, Celery where asynchronous jobs are required (Plan 0).
+• Web UI: W3CRM v3 / Bootstrap 5 / shared JavaScript patterns (Plan 0); module pages as agreed in the module plans.
+• AI: dual-provider or configurable AI endpoints integrated through a consistent client bus pattern (Plans 12, 0).
+• Files: cloud object storage with application metadata in the database (Plan 6).
+
+6. Phased delivery (high level)
+-------------------------------
+Phase 1 — Foundation: Auth, RBAC, audit, core project/bid entities, minimal approval flow on one pilot object (e.g. estimate submit), API scaffolding, baseline web shell and dashboard.
+Phase 2 — Commercial core: Unified takeoff, estimating MVP, documents upload/list, drawing viewer MVP with measurement link to takeoff.
+Phase 3 — Delivery: Field/PM features, schedule alignment, safety logs, financials integration per priority.
+Phase 4 — Scale: Analytics depth, vendor portal expansion, AI-assisted workflows hardened for production.
+Phase 5 — Breadth: HR- and closeout-specific modules expanded; mobile parity for critical approvals and field workflows; hardening, performance, and compliance review.
+
+Exact sequencing within phases is governed by Plan 14 implementation order and business priority; phases may overlap.
+
+7. Out of scope (unless added by change request)
+-------------------------------------------------
+• Full replacement of dedicated payroll processors or certified payroll engines without explicit add-on scope.
+• Accounting general ledger as the system of record (integration may be in scope; GL ownership stays with the accounting tool unless specified).
+• Hardware procurement, network installation, or end-user device management outside application support.
+• Legal interpretation of contracts or regulatory filings beyond storing artifacts and metadata the company supplies.
+
+8. Assumptions and dependencies
+-------------------------------
+• Stakeholders provide prioritized module order, sample workflows, and approval rules for pilot use cases.
+• Hosting, domains, SSL, email (SMTP), object storage, and any third-party keys are available or procured per environment.
+• W3CRM source tree path and build process remain as described in Plan 0 (or are updated in Plan 0 if the template location changes).
+• Compliance targets (e.g. retention, PII) are confirmed before HR-sensitive data is loaded at scale.
+
+9. Success criteria (measurable at a high level)
+------------------------------------------------
+• Users can complete an end-to-end pilot: create/update a bid or project artifact, route it for approval, and record approval history visible to authorized roles.
+• Estimating quantities originate from or sync to unified takeoff without duplicate competing line-item stores.
+• Drawings and key project documents are versioned, searchable, and permissioned.
+• Field users can perform agreed offline-capable actions and sync without data loss under defined conflict rules.
+• System supports the agreed concurrent user and document volume for pilot production with monitored uptime.
+
+10. Reference documentation
+---------------------------
+• Plan 0 — Platform index and W3CRM mapping.
+• Plan 14 — Unified system roadmap (three clients, approvals, database/API summary).
+• Plans 1–13 — Module and cross-cutting specifications.
+• Plans 16–18 — Workstream scope of work: phone app; estimating app / PDF & drawing viewer; website and database.
+• Plan 19 — HR module and dashboard (PII/retention, RBAC, Safety vs HR training split, `GET /api/v1/hr/dashboard-summary`).
+• Plan 20 — Site map and navigation (W3CRM pages, partials, demo vs product, link sources).
+• Plan 21 — HR and Safety operating model (integration of Plans 7 and 19; industry patterns; phased rollout).
+• Backend and repository conventions as implemented under USIS_CM\backend and related repos.

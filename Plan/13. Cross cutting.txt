@@ -1,0 +1,87 @@
+✅ Module 13: Cross-Cutting Enhancements – Detailed Breakdown
+These are the platform-wide features that tie all previous modules (1–12) together into one cohesive, mobile-first, AI-powered system. They are not isolated but shared infrastructure and workflows that reuse existing code (RFP emails, DrawingViewer, ChatBot pattern, aiReviewBus.js, dual-provider system, audit logging, etc.) with zero regressions. See Plan\0. Platform and W3CRM mapping.txt for shell paths.
+1. Mobile-First & Offline Mode (Platform-Wide)
+
+Bottom navigation bar — elements/usis-bottomnav.html (Bootstrap fixed-bottom nav on <md):
+Icons: Dashboard | CRM | Schedule/Field | Drawings | Financials | Safety
+Active highlighting, badges for Critical AI reviews, open RFPs, due tasks.
+Offline architecture:
+assets/js/usis-offline-queue.js + IndexedDB (Dexie optional if you add it via npm in Gulp pipeline)
+Queues for: field logs, photos, estimate changes, punch lists, AI review requests
+Local drawing + annotation caching (usis-drawing-viewer.js + IndexedDB blobs)
+Local Llama 4 Scout review queue (images + prompts stored locally; auto-process when back online or on the 5× RTX 3090 machine)
+
+Field-first UX:
+Camera button in floating quick actions (elements/usis-speeddial.html) → photo → optional DrawingViewer alignment → open usis-ai-drawer in field_review or safety_review mode
+Large touch targets, simplified views, high-contrast mode (Bootstrap + SCSS)
+Offline indicator in header (elements/header.html) with last-sync timestamp
+
+
+2. Change Order Automation Workflow
+
+Triggered from anywhere an AI issue appears (DrawingViewer, Scheduling, Financials, Safety, AI Review Center, etc.)
+Flow:
+“Create CO from AI Finding” button (prominent on Critical/Major items)
+Pre-populated form: Description (AI text + CBC citation), Cost impact (AI estimate + library rates), Schedule impact, Supporting evidence (annotated drawing)
+Approval workflow with notifications (reuse RFP email templates)
+On approval: auto-updates Budget, Schedule, Estimating, Financials, and Dashboard
+
+Data: ChangeOrder model with ai_triggered: boolean, FK to DrawingAnnotation
+Full audit trail + version history
+
+3. Expanded Vendor & Subcontractor Self-Service Portal
+
+Built on top of the already-built public RFP submission pages
+Public route: /portal (token or invite-based)
+Features for subs/vendors:
+View awarded scopes and project status
+Upload submittals, insurance, payroll docs (auto-routed to Documents Hub)
+See relevant drawings (watermarked) + saved AI reviews for their trade
+Submit RFIs or change order requests
+Receive automated alerts (reuse Celery + SMTP)
+
+Admin side: Vendor management in Company model with portal access toggles and performance scoring
+
+4. Safety & Quality Compliance (AI-Assisted)
+
+Daily Safety Log form (mobile-first): Crew checklist, hazards, PPE verification, photo upload → auto Local AI review
+AI-Generated Punch Lists: From field photos or DrawingViewer reviews
+Trade-specific quality checklists (drywall taping standards, paint mil thickness, flooring flatness, etc.)
+Government-ready exportable reports (Flask Jinja2)
+
+5. Global AI Command Bar & Quick Actions
+
+Trigger: Cmd/Ctrl + K palette (usis-command-palette.js) or persistent floating mic/text input
+Natural language processing via usis-ai-drawer.js (global context) calling Flask /api/ai/chat
+Examples that auto-execute:
+“Review all open drawings for fire code”
+“Show Critical AI issues across portfolio”
+“Create CO for Sheet A2.1 substrate issue”
+“Generate weekly compliance report”
+
+Context-aware: knows current project, selected drawing, etc.
+
+6. Additional Shared Infrastructure
+
+Floating quick actions — elements/usis-speeddial.html + usis-speeddial.js (context from data-usis-page)
+Notification center — bell dropdown in elements/header.html; server push optional later
+Theme & branding — W3CRM SCSS variables + _usis-theme.scss; Bootstrap data-bs-theme for dark/high-contrast
+Audit logging & RBAC — Flask middleware + session roles; hide nav entries in deznav.html per role
+Export engine — all PDFs via Flask Jinja2 backend only (unchanged)
+Real-time updates — aiReviewBus.js + optional WebSocket (for future live cursors / presence)
+
+7. Implementation Guidelines
+
+All new pages must @@include shared elements and load:
+elements/usis-ai-drawer.html + assets/js/usis-ai-drawer.js
+assets/js/aiReviewBus.js
+usis-drawing-viewer.html / hub where relevant
+RFP email/Celery patterns on server
+Flask session auth, structured logging, usis-notify.js (Bootstrap toasts)
+
+Prefer Bootstrap 5 components for consistency with W3CRM
+Keep xAI/Grok integration 100% untouched
+Mobile & offline logic in shared assets/js (load on every authenticated layout)
+
+
+These cross-cutting features make the platform feel like one unified, intelligent system instead of disconnected modules — with your Local Llama 4 Scout as the privacy-first brain running on 5× RTX 3090.

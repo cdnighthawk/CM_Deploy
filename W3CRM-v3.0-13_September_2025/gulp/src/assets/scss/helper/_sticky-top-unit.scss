@@ -1,0 +1,6 @@
+/* Sticky Top  */
+@for $i from 1 through 10 {
+	.sticky-top-#{($i * 10)} {
+		top: #{$i * 10}px;
+	}
+}

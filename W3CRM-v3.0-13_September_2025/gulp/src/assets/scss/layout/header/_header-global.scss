@@ -1,0 +1,135 @@
+/////////////////
+// Header
+/////////////////
+.header {
+	height: 3.125rem;
+    z-index: 1;
+    position: relative;
+    padding: 0rem;
+	background:var(--headerbg);
+    z-index: 3;
+    padding-left: 15rem;
+	padding-top:0rem;
+    transition: all .2s ease;
+	
+    .header-content {
+        height: 100%;
+        padding-left: 3.1rem;
+		padding-right: 1.075rem;
+        align-items: center;
+        display: flex;
+        position: relative;
+		
+        @include respond('phone-land') {
+            padding-left: 3.75rem;
+			padding-right: 0.938rem;
+			&:after{
+				left : -5rem;
+				width:calc(100% + 5rem);
+			}
+        }
+		
+    }
+    .navbar {
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        .navbar-collapse {
+            height: 100%;
+            width: 100%;
+        }
+    }
+	@include respond ('phone-land'){
+		padding-top:0;
+	}
+}
+
+////////////////////////
+// CSS Pulse Effect
+////////////////////////
+@mixin circle($circleSize) {
+    width: $circleSize;
+    height: $circleSize;
+    border-radius: calc($circleSize / 2);
+}
+@for $i from 2 through 15{
+	[data-headerbg="color_#{$i}"] .header{
+		background: var(--headerbg);
+		
+	}
+}
+
+[data-sidebar-style="full"],
+[data-sidebar-style="overlay"] {
+    .header {
+        width: 100%;
+        @include respond ('laptop') {
+            width: 100%;
+            padding-left: 17rem;
+        }
+        @include custommq($max: 63.9375rem) {
+            width: 100%;
+            padding-left: 5rem;
+        }
+    }
+}
+
+[data-sidebar-style="mini"] {
+    .header {
+        width: 100%;
+		padding-left: 7.5rem;
+		
+		@include custommq($max: 63.9375rem){
+			padding-left: 6.5rem;
+		}
+    }
+}
+
+[data-sidebar-style="compact"] {
+    .header {
+        width: 100%;
+        padding-left: 12.5rem;
+		.header-content{
+			padding-left: 2.5rem;
+		}
+    }
+}
+
+[data-header-position="fixed"] {
+    .header {
+        position: fixed;
+        top: 0;
+        width: 100%;
+    }
+    .content-body {
+		padding-top: 3.125rem;
+		
+		@include respond ('phone-land'){
+			padding-top:3.1rem;
+		}
+    }
+    .deznav {
+        margin-top: 0;
+    }
+}
+[data-sidebar-style="compact"][data-header-position="fixed"][data-container="boxed"][data-layout="vertical"] {
+    .header {
+        width: 74.9375rem;
+    }
+}
+[data-sidebar-style="modern"] {
+    .header {
+		width: 100%;
+		padding-left: 11.9rem;
+   
+    }
+	&[data-layout="horizontal"] {
+		.nav-header .brand-logo{
+		    justify-content: start;
+		}
+		.header .header-content{
+            padding-left: 1.875rem;
+			
+        }
+	}
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-hr-quickbooks-employee-reference.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "QuickBooks — employee records",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">QuickBooks employee records (reference)</h6>
+								<p class="text-muted small mb-0">General field guide for HR and payroll staff. Not legal or tax advice; screens vary by QuickBooks Online vs Desktop and whether Payroll is enabled.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="usis-hr.html">Back to HR</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="core-hr.html">Core HR</a><span class="text-muted mx-1">|</span><a href="usis-hr-dashboard.html">HR dashboard</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Internal reference only. Confirm current fields in your Intuit product and your accountant’s chart of accounts.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-lg-10 col-xl-8">
+						<div class="card border-0 shadow-sm mb-3">
+							<div class="card-body">
+								<p class="text-muted small mb-3">
+									Employee records in QuickBooks are centered on <strong>payroll and accounting needs</strong>. Contractors are usually tracked as <strong>vendors</strong> (1099), not employees (W‑2). What you see depends on your subscription and setup.
+								</p>
+
+								<h5 class="mt-2">Identity and contact</h5>
+								<ul class="small">
+									<li>Legal name (and sometimes preferred name), mailing address, phone, email</li>
+									<li>Tax ID: Social Security number (or ITIN where applicable), date of birth (often used for payroll and reporting)</li>
+									<li>Emergency contact (if your company captures it in QuickBooks)</li>
+								</ul>
+
+								<h5 class="mt-3">Employment</h5>
+								<ul class="small">
+									<li>Hire date; inactive or release date when someone leaves</li>
+									<li>Job title, department, or location (when you use those dimensions in QuickBooks)</li>
+									<li>Employment classification (W‑2 employee vs vendor/contractor in the correct list)</li>
+								</ul>
+
+								<h5 class="mt-3">Pay and banking</h5>
+								<ul class="small">
+									<li>Pay schedule (frequency), pay type (hourly, salary, commission, etc.)</li>
+									<li>Pay rates and pay items tied to your payroll setup</li>
+									<li>Payment method: check vs direct deposit (bank account and routing when direct deposit is used)</li>
+								</ul>
+
+								<h5 class="mt-3">Tax withholding</h5>
+								<ul class="small">
+									<li>Federal withholding (W‑4 style: filing status, credits/dependents, additional withholding, exempt where applicable)</li>
+									<li>State and, where applicable, local withholding and work-location fields</li>
+									<li>Multi-state setups may include work state vs home state style information</li>
+								</ul>
+
+								<h5 class="mt-3">Deductions, contributions, and benefits</h5>
+								<p class="text-muted small">When payroll and benefits are configured:</p>
+								<ul class="small">
+									<li>Pre-tax and post-tax deductions (for example health premiums, HSA, garnishments)</li>
+									<li>Retirement deferrals (for example 401(k)) and employer match where set up</li>
+									<li>Other payroll items your company defined</li>
+								</ul>
+
+								<h5 class="mt-3">Time and job costing</h5>
+								<ul class="small">
+									<li>Time tracking preferences, billable flags, default class or customer:job (varies by company setup)</li>
+								</ul>
+
+								<h5 class="mt-3">Internal / accounting</h5>
+								<ul class="small">
+									<li>Notes or memos on the record</li>
+									<li>Links to pay history, tax payments, and year-end forms (for example W‑2) when full payroll is in use</li>
+								</ul>
+
+								<div class="alert alert-light border mt-4 mb-0 small">
+									<strong>USIS note:</strong> QuickBooks is not a full HRIS by default. For deep HR (performance, full onboarding workflows, safety certs), use the USIS HR and Safety modules per Plan 19 and Plan 21, and sync only what payroll and accounting require into QuickBooks or your payroll provider.
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+
+</body>
+</html>

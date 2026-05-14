@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "leads.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	<style>
+		#usis-bc-leads-table { font-size: 0.8125rem; table-layout: fixed; }
+		#usis-bc-leads-table thead th,
+		#usis-bc-leads-table tbody td {
+			padding: 0.2rem 0.45rem;
+			vertical-align: middle;
+			line-height: 1.25;
+		}
+		#usis-bc-leads-table thead th { font-weight: 600; }
+		#usis-bc-leads-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
+		#usis-bc-leads-table th.usis-bc-col-lead,
+		#usis-bc-leads-table td.usis-bc-col-lead {
+			width: 22%;
+			max-width: 22%;
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: break-word;
+		}
+		#usis-bc-leads-table th.usis-bc-col-trade,
+		#usis-bc-leads-table td.usis-bc-col-trade {
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: break-word;
+		}
+		.usis-col-filter-scroll { max-height: 14rem; overflow-y: auto; font-size: 0.8125rem; }
+		#usis-bc-col-filter-modal .accordion-button { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+	</style>
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Leads",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Leads</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="lead-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="material.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+
+				<!-- Start - Filtering -->
+				<div class="col-xl-12">
+					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
+							<div class="input-group message-search-area width200 w-xs-100">
+								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state)" autocomplete="off">
+								<div class="input-group-append">
+									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-bc-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
+								</div>
+							</div>
+							<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-bc-filter-count" aria-live="polite"></span>
+							<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-bc-col-filter-modal" id="usis-bc-col-filter-open" title="Choose values to show per column (like Excel)">
+								<i class="fa fa-filter me-1"></i> Column filters <span class="badge bg-primary ms-1 align-middle" id="usis-bc-col-filter-badge" style="display: none">0</span>
+							</button>
+						</div>
+						<div class="d-flex flex-wrap gap-2">
+							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-bc-sync-stub" title="Reload rows from Flask (GET /api/v1/lead-estimates?submission_state=undecided)">
+								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
+							</button>
+							<a href="javascript:void(0);" class="btn btn-primary w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#lead-detail-offcanvas">
+								<i class="icon feather icon-plus me-1"></i> Add lead
+							</a>
+						</div>
+					</div>
+				</div>
+				<!-- End - Filtering -->
+
+				<!-- Start - Leads table -->
+				<div class="col-xl-12">
+					<div class="card m-0 table-hover text-nowrap overflow-auto">
+						<table class="table table-sm m-0" id="usis-bc-leads-table">
+							<thead>
+								<tr>
+									<th class="text-nowrap">Project #</th>
+									<th class="usis-bc-col-lead">Lead</th>
+									<th class="text-nowrap usis-bc-col-trade">Trade invited</th>
+									<th>Company</th>
+									<th class="text-nowrap">City</th>
+									<th class="text-nowrap">State</th>
+									<th class="text-center text-nowrap">Estimator</th>
+									<th class="text-end text-nowrap">Action</th>
+								</tr>
+							</thead>
+							<tbody id="usis-bc-leads-tbody">
+								<tr>
+									<td colspan="8" class="text-muted">Loading leads from API…</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<!-- End - Leads table -->
+
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	<!-- Column filters (Excel-style value lists per column) -->
+	<div class="modal fade" id="usis-bc-col-filter-modal" tabindex="-1" aria-labelledby="usis-bc-col-filter-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title" id="usis-bc-col-filter-title">Column filters</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted small mb-2">Choose which values to include for each column (like Excel autofilter). Rows must match <strong>all</strong> active columns. The quick search box still applies afterward. <strong>Cancel</strong> discards changes since you opened this dialog.</p>
+					<div class="accordion" id="usis-bc-col-filter-accordion"></div>
+				</div>
+				<div class="modal-footer py-2">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-bc-col-filter-resetall">Reset all columns</button>
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-bc-col-filter-apply">Apply</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Lead detail / manual add (stub — wire to Flask) -->
+	<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="lead-detail-offcanvas" aria-labelledby="lead-detail-title" aria-modal="true" role="dialog">
+		<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+			<div class="d-flex align-items-center gap-2">
+				<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+				<h5 class="offcanvas-title fw-semibold" id="lead-detail-title">Lead (Building Connected)</h5>
+			</div>
+			<div>
+				<button type="button" class="btn btn-primary">Save</button>
+			</div>
+		</div>
+		<div class="offcanvas-body">
+			<div class="mb-3">
+				<label class="form-label" for="bc-doc-no">Building Connected document / opportunity ref</label>
+				<input type="text" class="form-control" id="bc-doc-no" placeholder="e.g. BC-OPP-10482 (BC = Building Connected)" autocomplete="off">
+			</div>
+			<div class="mb-3">
+				<label class="form-label" for="bc-company">Company name</label>
+				<input type="text" class="form-control" id="bc-company" autocomplete="organization">
+			</div>
+			<div class="mb-3">
+				<label class="form-label" for="bc-contact">Primary contact</label>
+				<input type="text" class="form-control" id="bc-contact" autocomplete="name">
+			</div>
+			<div class="mb-3">
+				<label class="form-label" for="bc-stage">Pipeline stage</label>
+				<select class="form-select" id="bc-stage">
+					<option>New from Building Connected</option>
+					<option>In review</option>
+					<option>Qualified</option>
+					<option>Archived</option>
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label" for="bc-notes">Notes</label>
+				<textarea class="form-control" id="bc-notes" rows="4" placeholder="Synced description or internal notes"></textarea>
+			</div>
+			<div class="mb-0">
+				<label class="form-label" for="bc-last-sync">Last imported (read-only)</label>
+				<input type="text" class="form-control" id="bc-last-sync" value="—" readonly>
+			</div>
+		</div>
+	</div>
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+    	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+
+	<script>
+	(function () {
+		var API = window.USIS_API_BASE || "http://127.0.0.1:5000";
+		var COL_CFG = [
+			{ key: "number", label: "Project #" },
+			{ key: "name", label: "Lead" },
+			{ key: "trade_name", label: "Trade invited" },
+			{ key: "company_name", label: "Company" },
+			{ key: "city", label: "City" },
+			{ key: "state", label: "State" },
+		];
+		var BLANK = "\u0000__USIS_EMPTY__\u0000";
+
+		var tbody = document.getElementById("usis-bc-leads-tbody");
+		var filterInput = document.getElementById("usis-bc-table-filter");
+		var filterBtn = document.getElementById("usis-bc-table-filter-btn");
+		var filterCount = document.getElementById("usis-bc-filter-count");
+		var colFilterModal = document.getElementById("usis-bc-col-filter-modal");
+		var colFilterAccordion = document.getElementById("usis-bc-col-filter-accordion");
+		var colFilterBadge = document.getElementById("usis-bc-col-filter-badge");
+		var colFilterApply = document.getElementById("usis-bc-col-filter-apply");
+		var colFilterResetAll = document.getElementById("usis-bc-col-filter-resetall");
+
+		var allItems = [];
+		var isFetching = false;
+		var loadError = null;
+		var colAllowed = {};
+		var modalLists = {};
+
+		var emptyMessage =
+			'<tr><td colspan="8" class="text-muted">No rows in <code>lead_estimates</code> right now. Click <strong>Reload from API</strong> after the server has finished starting, or check the Flask log for import/seed messages.</td></tr>';
+
+		function esc(s) {
+			return String(s == null ? "" : s)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;");
+		}
+
+		function escAttr(s) {
+			return String(s == null ? "" : s)
+				.replace(/&/g, "&amp;")
+				.replace(/"/g, "&quot;")
+				.replace(/</g, "&lt;");
+		}
+
+		function cellToken(row, key) {
+			var v = row[key];
+			if (v == null || String(v).trim() === "") return BLANK;
+			return String(v).trim();
+		}
+
+		function uniquesForColumn(key) {
+			var seen = Object.create(null);
+			for (var i = 0; i < allItems.length; i++) {
+				var t = cellToken(allItems[i], key);
+				seen[t] = true;
+			}
+			return Object.keys(seen).sort(function (a, b) {
+				if (a === BLANK) return -1;
+				if (b === BLANK) return 1;
+				return String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
+			});
+		}
+
+		function isTokenChecked(key, token) {
+			var allowed = colAllowed[key];
+			if (!allowed) return true;
+			return allowed.has(token);
+		}
+
+		function passesColumnFilters(row, uniqCache) {
+			for (var i = 0; i < COL_CFG.length; i++) {
+				var key = COL_CFG[i].key;
+				var allowed = colAllowed[key];
+				if (!allowed) continue;
+				if (allowed.size === 0) return false;
+				var full = uniqCache[key];
+				if (allowed.size >= full.length) continue;
+				if (!allowed.has(cellToken(row, key))) return false;
+			}
+			return true;
+		}
+
+		function activeColumnFilterCount() {
+			var n = 0;
+			for (var i = 0; i < COL_CFG.length; i++) {
+				var key = COL_CFG[i].key;
+				var allowed = colAllowed[key];
+				if (!allowed) continue;
+				var full = uniquesForColumn(key);
+				if (allowed.size < full.length) n++;
+			}
+			return n;
+		}
+
+		function updateColFilterBadge() {
+			if (!colFilterBadge) return;
+			var n = activeColumnFilterCount();
+			if (n > 0) {
+				colFilterBadge.textContent = String(n);
+				colFilterBadge.style.display = "";
+			} else {
+				colFilterBadge.style.display = "none";
+			}
+		}
+
+		function displayTokenLabel(token) {
+			if (token === BLANK) return "(Blanks)";
+			return esc(token);
+		}
+
+		function searchDataAttr(token) {
+			if (token === BLANK) return "blanks";
+			return String(token).toLowerCase();
+		}
+
+		function populateColumnFilterModal() {
+			if (!colFilterAccordion) return;
+			if (!allItems.length) {
+				colFilterAccordion.innerHTML = '<p class="text-muted mb-0">No rows loaded yet.</p>';
+				return;
+			}
+			modalLists = {};
+			var parts = [];
+			for (var idx = 0; idx < COL_CFG.length; idx++) {
+				var c = COL_CFG[idx];
+				var list = uniquesForColumn(c.key);
+				modalLists[c.key] = list;
+				var collapseId = "usis-bc-cfac-" + c.key;
+				var headingId = "usis-bc-cfah-" + c.key;
+				var bodyClass = "accordion-collapse collapse" + (idx === 0 ? " show" : "");
+				var btnClass = "accordion-button" + (idx === 0 ? "" : " collapsed");
+				var exp = idx === 0 ? "true" : "false";
+				var rows = [];
+				for (var ix = 0; ix < list.length; ix++) {
+					var token = list[ix];
+					var checked = isTokenChecked(c.key, token) ? " checked" : "";
+					rows.push(
+						'<label class="d-block small text-truncate mb-0 py-1 usis-bc-fl-row" data-search="' +
+							escAttr(searchDataAttr(token)) +
+							'"><input type="checkbox" class="form-check-input me-1 usis-bc-col-cb" data-col="' +
+							c.key +
+							'" data-ix="' +
+							ix +
+							'"' +
+							checked +
+							">" +
+							displayTokenLabel(token) +
+							"</label>"
+					);
+				}
+				parts.push(
+					'<div class="accordion-item">' +
+						'<h2 class="accordion-header" id="' +
+						headingId +
+						'">' +
+						'<button class="' +
+						btnClass +
+						'" type="button" data-bs-toggle="collapse" data-bs-target="#' +
+						collapseId +
+						'" aria-expanded="' +
+						exp +
+						'" aria-controls="' +
+						collapseId +
+						'">' +
+						esc(c.label) +
+						"</button></h2>" +
+						'<div id="' +
+						collapseId +
+						'" class="' +
+						bodyClass +
+						'" aria-labelledby="' +
+						headingId +
+						'" data-bs-parent="#usis-bc-col-filter-accordion">' +
+						'<div class="accordion-body">' +
+						'<div class="btn-group btn-group-sm mb-2" role="group">' +
+						'<button type="button" class="btn btn-outline-secondary usis-bc-col-selall" data-col="' +
+						c.key +
+						'">Select all</button>' +
+						'<button type="button" class="btn btn-outline-secondary usis-bc-col-selnone" data-col="' +
+						c.key +
+						'">Clear all</button>' +
+						"</div>" +
+						'<input type="search" class="form-control form-control-sm mb-2 usis-bc-col-listq" data-col="' +
+						c.key +
+						'" placeholder="Search values in this column…">' +
+						'<div class="usis-col-filter-scroll border rounded px-2 py-1 bg-white usis-bc-col-list" data-col="' +
+						c.key +
+						'">' +
+						rows.join("") +
+						"</div></div></div></div>"
+				);
+			}
+			colFilterAccordion.innerHTML = parts.join("");
+		}
+
+		function applyColumnFilterChoicesFromModal() {
+			if (!colFilterAccordion) return;
+			for (var i = 0; i < COL_CFG.length; i++) {
+				var key = COL_CFG[i].key;
+				var list = modalLists[key];
+				if (!list) continue;
+				var panel = colFilterAccordion.querySelector('.usis-bc-col-list[data-col="' + key + '"]');
+				if (!panel) continue;
+				var selected = new Set();
+				var cbs = panel.querySelectorAll(".usis-bc-col-cb");
+				for (var j = 0; j < cbs.length; j++) {
+					var cb = cbs[j];
+					if (cb.checked) {
+						var ix = parseInt(cb.getAttribute("data-ix"), 10);
+						if (!isNaN(ix) && list[ix] !== undefined) selected.add(list[ix]);
+					}
+				}
+				if (selected.size === 0) colAllowed[key] = selected;
+				else if (selected.size >= list.length) delete colAllowed[key];
+				else colAllowed[key] = selected;
+			}
+			updateColFilterBadge();
+			applyTableFilter();
+		}
+
+		function resetAllColumnFiltersInModal() {
+			for (var i = 0; i < COL_CFG.length; i++) delete colAllowed[COL_CFG[i].key];
+			if (colFilterAccordion) {
+				colFilterAccordion.querySelectorAll(".usis-bc-col-cb").forEach(function (cb) {
+					cb.checked = true;
+				});
+			}
+			updateColFilterBadge();
+			applyTableFilter();
+		}
+
+		function onAccordionClick(e) {
+			var t = e.target;
+			if (!colFilterAccordion) return;
+			if (t.classList.contains("usis-bc-col-selall")) {
+				var key = t.getAttribute("data-col");
+				var panel = colFilterAccordion.querySelector('.usis-bc-col-list[data-col="' + key + '"]');
+				if (panel) panel.querySelectorAll(".usis-bc-col-cb").forEach(function (cb) { cb.checked = true; });
+				return;
+			}
+			if (t.classList.contains("usis-bc-col-selnone")) {
+				var key2 = t.getAttribute("data-col");
+				var panel2 = colFilterAccordion.querySelector('.usis-bc-col-list[data-col="' + key2 + '"]');
+				if (panel2) panel2.querySelectorAll(".usis-bc-col-cb").forEach(function (cb) { cb.checked = false; });
+			}
+		}
+
+		function onAccordionInput(e) {
+			var t = e.target;
+			if (!t.classList || !t.classList.contains("usis-bc-col-listq")) return;
+			if (!colFilterAccordion) return;
+			var key = t.getAttribute("data-col");
+			var q = String(t.value || "").trim().toLowerCase();
+			var panel = colFilterAccordion.querySelector('.usis-bc-col-list[data-col="' + key + '"]');
+			if (!panel) return;
+			panel.querySelectorAll(".usis-bc-fl-row").forEach(function (label) {
+				var s = label.getAttribute("data-search") || "";
+				label.style.display = !q || s.indexOf(q) !== -1 ? "" : "none";
+			});
+		}
+
+		function renderRow(row) {
+			var num = esc(row.number || "—");
+			var name = row.name || "";
+			var trade = row.trade_name || "";
+			var lid = row.external_id != null && row.external_id !== "" ? row.external_id : row.id;
+			var lidEnc = lid != null && lid !== "" ? encodeURIComponent(String(lid)) : "";
+			var detailHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc : "javascript:void(0);";
+			var numInner = lidEnc
+				? '<a class="link-primary text-decoration-none" href="' + detailHref + '">' + num + "</a>"
+				: num;
+			var leadCell = lidEnc
+				? '<a class="fw-semibold text-black text-decoration-none" href="' + detailHref + '">' + esc(name || "—") + "</a>"
+				: '<span class="fw-semibold text-black">' + esc(name) + "</span>";
+			var tradeCell = trade
+				? '<span class="text-muted">' + esc(trade) + "</span>"
+				: '<span class="text-muted">—</span>';
+			var company = esc(row.company_name || "—");
+			var city = esc(row.city || "—");
+			var state = esc(row.state || "—");
+			var actions =
+				'<div class="dropdown custom-dropdown mb-0 tbl-orders-style">' +
+				'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
+				'<div class="dropdown-menu dropdown-menu-end">' +
+				'<a class="dropdown-item" href="javascript:void(0);">Details (stub)</a>' +
+				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.external_id || row.id) + "</span>" +
+				"</div></div>";
+			return (
+				"<tr>" +
+				'<td class="text-nowrap">' + numInner + "</td>" +
+				"<td class=\"usis-bc-col-lead\">" + leadCell + "</td>" +
+				"<td class=\"usis-bc-col-trade\">" + tradeCell + "</td>" +
+				"<td>" + company + "</td>" +
+				'<td class="text-nowrap">' + city + "</td>" +
+				'<td class="text-nowrap">' + state + "</td>" +
+				'<td class="text-center">—</td>' +
+				'<td class="text-end">' + actions + "</td>" +
+				"</tr>"
+			);
+		}
+
+		function rowFilterText(row) {
+			return [
+				row.number,
+				row.name,
+				row.trade_name,
+				row.company_name,
+				row.city,
+				row.state,
+				row.external_id,
+				row.id,
+			]
+				.filter(Boolean)
+				.join(" ")
+				.toLowerCase();
+		}
+
+		function applyTableFilter() {
+			if (!tbody || isFetching) return;
+			var q = filterInput && filterInput.value ? String(filterInput.value).trim().toLowerCase() : "";
+			if (!allItems.length && !q && loadError) return;
+			if (!allItems.length) {
+				if (filterCount) filterCount.textContent = "";
+				if (q) {
+					tbody.innerHTML =
+						'<tr><td colspan="8" class="text-muted">No rows match your filter. Clear the search box to see all loaded leads (or reload if the list is empty).</td></tr>';
+				} else {
+					tbody.innerHTML = emptyMessage;
+				}
+				return;
+			}
+			var uniqCache = {};
+			for (var ci = 0; ci < COL_CFG.length; ci++) uniqCache[COL_CFG[ci].key] = uniquesForColumn(COL_CFG[ci].key);
+
+			var filtered = allItems.filter(function (row) {
+				return passesColumnFilters(row, uniqCache);
+			});
+			if (q) {
+				filtered = filtered.filter(function (row) {
+					return rowFilterText(row).indexOf(q) !== -1;
+				});
+			}
+			if (!filtered.length) {
+				tbody.innerHTML =
+					'<tr><td colspan="8" class="text-muted">No rows match your column filters and/or search. Adjust <strong>Column filters</strong> or clear the search box.</td></tr>';
+			} else {
+				tbody.innerHTML = filtered.map(renderRow).join("");
+			}
+			if (filterCount) {
+				var ac = activeColumnFilterCount();
+				var parts = [];
+				if (filtered.length !== allItems.length || ac > 0 || q) {
+					parts.push("Showing " + filtered.length + " of " + allItems.length);
+				} else {
+					parts.push(allItems.length + " loaded");
+				}
+				if (ac > 0) parts.push(ac + " column filter" + (ac === 1 ? "" : "s"));
+				filterCount.textContent = parts.join(" · ");
+			}
+		}
+
+		function loadLeads() {
+			if (!tbody) return;
+			isFetching = true;
+			loadError = null;
+			allItems = [];
+			for (var ri = 0; ri < COL_CFG.length; ri++) delete colAllowed[COL_CFG[ri].key];
+			updateColFilterBadge();
+			if (filterCount) filterCount.textContent = "";
+			tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
+			fetch(API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided")
+				.then(function (r) {
+					if (!r.ok) throw new Error("HTTP " + r.status);
+					return r.json();
+				})
+				.then(function (data) {
+					var items = data.items || [];
+					allItems = items;
+					isFetching = false;
+					loadError = null;
+					if (!items.length) {
+						tbody.innerHTML = emptyMessage;
+					} else {
+						applyTableFilter();
+					}
+				})
+				.catch(function (err) {
+					allItems = [];
+					isFetching = false;
+					loadError = err.message;
+					tbody.innerHTML =
+						'<tr><td colspan="8" class="text-danger">Could not load leads: ' +
+						esc(err.message) +
+						".</td></tr>";
+				});
+		}
+
+		document.addEventListener("DOMContentLoaded", loadLeads);
+		var btn = document.getElementById("usis-bc-sync-stub");
+		if (btn) btn.addEventListener("click", loadLeads);
+		if (filterInput) {
+			filterInput.addEventListener("input", applyTableFilter);
+			filterInput.addEventListener("keydown", function (e) {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					applyTableFilter();
+				}
+			});
+		}
+		if (filterBtn) filterBtn.addEventListener("click", applyTableFilter);
+
+		if (colFilterModal) colFilterModal.addEventListener("show.bs.modal", populateColumnFilterModal);
+		if (colFilterAccordion) {
+			colFilterAccordion.addEventListener("click", onAccordionClick);
+			colFilterAccordion.addEventListener("input", onAccordionInput);
+		}
+		if (colFilterApply) {
+			colFilterApply.addEventListener("click", function () {
+				applyColumnFilterChoicesFromModal();
+				if (typeof bootstrap !== "undefined" && colFilterModal) {
+					var inst = bootstrap.Modal.getInstance(colFilterModal);
+					if (inst) inst.hide();
+				}
+			});
+		}
+		if (colFilterResetAll) colFilterResetAll.addEventListener("click", resetAllColumnFiltersInModal);
+
+		updateColFilterBadge();
+	})();
+	</script>
+	
+</body>
+</html>

@@ -1,0 +1,35 @@
+.badge{
+    line-height: 1.2;
+	border: 1px solid transparent;
+}
+[class*="badge-outline-"]{
+	border-width: 1px;
+	border-style: solid;
+}
+@each $color, $value in $theme-colors{
+	.badge-outline-#{$color}{
+		border-color: var(--bs-#{$color});
+		color: var(--bs-#{$color});
+	}
+	.light.badge-#{$color}{
+		color: var(--bs-#{$color}-text-emphasis);
+		background-color: var(--bs-#{$color}-bg-subtle);
+	}
+}
+.badge-xs{
+	font-size: $badge-xs-size;
+    padding: $badge-xs-padding-y $badge-xs-padding-x;
+    border-radius: 4px;
+}
+.badge-sm {
+	font-size: $badge-sm-size;
+    padding: $badge-sm-padding-y $badge-sm-padding-x;
+}
+.badge-lg {
+	font-size: $badge-lg-size;
+	padding: $badge-lg-padding-y $badge-lg-padding-x;
+}
+.badge-xl{
+	font-size: $badge-xl-size;
+    padding: $badge-xl-padding-y $badge-xl-padding-x;
+}

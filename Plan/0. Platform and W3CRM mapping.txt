@@ -1,0 +1,75 @@
+USIS CRM — Platform index & W3CRM mapping (Plan 0)
+=================================================
+This file is the entrypoint for Plans 1–22. It ties product intent (Plans 1–22) to the W3CRM Bootstrap admin template and keeps backend assumptions explicit. Plan 14 (14. Unified system roadmap.txt) is the three-client architecture summary: web + DB, estimating/PDF viewer, phone app—and the website goal of one operational platform from HR through closeout with shared approvals (see Plan 14 §2). Plan 15 (15. Unified scope of work.txt) is the high-level stakeholder scope of work for the overall program. Plans 16–18 are workstream-specific scopes: phone app, estimating app, website and database. Plan 19 (19. HR module and dashboard.txt) specifies the HR dashboard, RBAC, Safety vs HR training ownership, PII rules, and APIs. Plan 20 (20. Site map and navigation.txt) is the canonical list of W3CRM pages/partials and where they are linked from (deznav, dashboard, footer). Plan 21 (21. HR and Safety operating model.txt) outlines how HR and Safety modules cooperate (journeys, RACI, integrations). Plan 22 (22. Operational playbooks and checklist runs.txt) defines reusable operational checklists and runs (distinct from Plan 8 schedule templates and Plan 19 HR onboarding).
+
+1. Canonical stack (post–Jampack pivot)
+---------------------------------------
+• Front-end shell: W3CRM v3.0 (September 2025), Gulp source tree — authoritative path (this repo):
+  E:\programs\USIS_CM\W3CRM-v3.0-13_September_2025\gulp\src
+• Pre-built / preview-only HTML (do not treat as the long-term edit surface):
+  ...\W3CRM-v3.0-13_September_2025\xhtml\xhtml\
+• UI stack: HTML5, Bootstrap 5, jQuery, MetisMenu (sidebar), SCSS compiled by Gulp, gulp-file-include (@@include) for fragments.
+• Back-end (unchanged product intent): Flask REST APIs, SQLAlchemy models, Jinja2 for server-generated PDFs/email templates, Celery where plans already specify jobs. No Jinja in the W3CRM static shell unless you later add a hybrid server-rendered route.
+
+2. W3CRM folder mapping (where USIS work lives)
+-----------------------------------------------
+• Page shells & new USIS pages: gulp\src\*.html (copy from nearest demo, then rename for USIS).
+• Layout fragments (“partials”): gulp\src\elements\
+  - index.html wires: preloader, nav-header, chatbox, header, deznav (sidebar).
+  - USIS construction shell: elements\deznav-construction.html (MetisMenu #menu) with module links.
+• Global / shared JS: gulp\src\assets\js\ (custom.js, deznav-init-construction.js; add usis-*.js as needed).
+• Styles: gulp\src\assets\scss\ (layout\sidebar for nav chrome).
+• Dev workflow: from W3CRM-v3.0-13_September_2025\gulp run npm install then npx gulp (BrowserSync + watch). Production: npx gulp build → dist\
+• BrowserSync prints the real Local URL in the terminal (default start path is /construction/index.html). If port 3000 is already in use, BrowserSync uses the next free port (3001, 3002, …); bookmarking localhost:3000 while the server is on another port looks like “the site won’t load.” After npx gulp build, run npx gulp again if you preview via BrowserSync so ./.temp is regenerated. Pages that call Flask (e.g. HR dashboard) treat the shell as listening on ports **3000–3099** on the same hostname and send API traffic to **port 5000** on that host, unless overridden by `<meta name="usis-api-base">` or `window.USIS_API_BASE`.
+
+3. Module → W3CRM starter page (fork first, then replace demo content)
+-----------------------------------------------------------------------
+Use these as layout/section anchors only; replace labels, routes, and data with USIS modules. **Canonical page list and link sources:** Plan 20 (20. Site map and navigation.txt).
+
+Plan 1  Core / shell           → index.html + elements\header.html + elements\deznav.html + assets\js\custom.js
+Plan 2  Leads / bids / CRM    → manage-client.html, project.html (pipeline/lists); consider construction\index.html for alternate skin
+Plan 3  Unified takeoff       → task-summary.html or tables in project.html (dense tables); heavy custom JS later
+Plan 4  Estimating            → finance.html (tables/cards) + custom usis-estimating.html when split from finance demo
+Plan 5  RFP                   → email-inbox.html, email-compose.html patterns + new usis-rfp-*.html for wizard steps
+Plan 6  Drawing viewer / docs → profile\documents.html or empty-page.html as minimal shell; viewer = custom page + JS
+Plan 7  Safety                → construction\*.html + usis-safety.html; project JHAs + daily pretask: usis-project-jha-*.html, usis-daily-pretask.html, elements\usis-daily-pretask-form.html (see Plan\7 §9–10)
+Plan 8  Project management    → project.html, task.html, performance.html (canonical PM/field spec — see §5)
+Plan 9  Schedule & field ops  → app-calender.html, task.html (calendar + tasks); content overlaps Plan 8 — see §5
+Plan 10 Financials & billing  → finance.html, ecom-invoice.html (invoice-like layouts), reports.html
+Plan 11 Analytics             → reports.html, index-2.html (KPI-style cards)
+Plan 12 AI layer              → aikit\*.html for UI inspiration; USIS implementation = assets\js\usis-ai.js + modal/drawer partial (see §4)
+Plan 13 Cross-cutting         → elements\deznav.html (nav), elements\header.html (global indicators), shared JS for offline/notify
+Plan 14 Unified system        → no single W3CRM page; see 14. Unified system roadmap.txt (web + estimating/viewer + phone, one API)
+Plan 15 Scope of work         → see 15. Unified scope of work.txt (program-level SOW overview, not UI mapping)
+Plan 16 Phone app SOW         → see 16. Phone app scope of work.txt
+Plan 17 Estimating app SOW    → see 17. Estimating app scope of work.txt
+Plan 18 Website & DB SOW      → see 18. Website and database scope of work.txt
+Plan 19 HR module             → usis-hr-dashboard.html (+ usis-hr.html); see 19. HR module and dashboard.txt
+Plan 20 Site map              → see 20. Site map and navigation.txt (every page + linked from)
+Plan 21 HR and Safety         → see 21. HR and Safety operating model.txt (cooperation, RACI, phases)
+Plan 22 Playbooks             → usis-playbooks.html; see 22. Operational playbooks and checklist runs.txt
+
+4. AI UI strategy (Plan 12) — locked for W3CRM phase
+----------------------------------------------------
+• Pattern: Vanilla ES modules (or single IIFE bundle) under assets\js\, no React requirement.
+• Event bus: implement aiReviewBus as assets\js\aiReviewBus.js (same responsibilities as the old .ts bus: subscribe/publish review events, provider mode).
+• Chat UI: Bootstrap offcanvas or modal launched from header; messages rendered as HTML strings or lightweight template literals; streaming via fetch + ReadableStream or SSE from existing Flask /api/ai/* endpoints.
+• Rationale: Matches W3CRM stack, avoids shipping React for the shell; Flask contracts in Plans stay valid. If a future phase introduces React islands, wrap only the chat widget.
+
+5. Plans 8 and 9 — overlap resolution
+---------------------------------------
+• Plan 8 (Project management & field operations) is the canonical spec for Gantt/tasks, daily logs, punch lists, DrawingViewer sidebar, and field-first flows.
+• Plan 9 (Schedule & field ops) complements with scheduling calendars and field execution emphasis; treat Plan 9 as the scheduling-heavy supplement to Plan 8. Implementation order: build shared field/task pages once (e.g. usis-field.html + usis-schedule.html), link both plans to those files without duplicating two different product UIs.
+
+6. Numbering
+------------
+• Plans 1–22 map to filenames 1. core.txt … 22. Operational playbooks and checklist runs.txt.
+• Plan 13 document title must read “Module 13” (not “Module 12”) — corrected in 13. Cross cutting.txt.
+
+7. Integration notes (all modules)
+------------------------------------
+• Forms and tables POST/GET via fetch() to Flask JSON APIs; use Bootstrap validation classes.
+• Toasts: Bootstrap toast component + small helper in assets\js\usis-notify.js (new).
+• Auth: session cookie or token header from Flask login page (e.g. page-login.html restyled); protect USIS pages server-side when integrated.
+
+When Plans 1–21 reference .tsx / MUI / React Router, interpret them using this file and the W3CRM paths above unless a plan section explicitly says “backend only.”

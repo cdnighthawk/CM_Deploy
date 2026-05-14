@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "task.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/daterangepicker/daterangepicker.css" rel="stylesheet">
+    <link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Transaction",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Task</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="submittal-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="time-sheet.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3 active">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+        
+            <div class="container-fluid">
+                <div class="row">
+
+                    <!-- Start - Filtering -->
+                    <div class="col-xl-12">
+                        <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+                            <div class="clearfix gap-2 d-flex align-items-center">
+                                <div>
+                                    <select class="form-select selectpicker text-primary">
+                                        <option selected>All Status</option>
+                                        <option>Ongoing</option>
+                                        <option>Not Started</option>
+                                        <option>Completed</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select class="form-select selectpicker text-primary">
+                                        <option selected>All Member</option>
+                                        <option>John</option>
+                                        <option>Chris</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="clearfix gap-2 d-flex flex-wrap align-items-center">
+                                <a href="javascript:void(0);" class="btn btn-primary light w-xs-100" data-bs-toggle="modal" data-bs-target="#s-curve">S-Curve<i class="icon feather icon-git-merge"></i></a>
+                                <a href="javascript:void(0);" class="btn btn-primary light" data-bs-toggle="offcanvas" data-bs-target="#download-option">Download <i class="icon feather icon-download"></i></a>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#add-task">
+                                    + Add Task
+                                    </button>
+                                    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="visually-hidden">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a href="javascript:void(0);" class="dropdown-item">From BOQ</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End - Filtering -->
+
+                    <!-- Start - Task Table -->
+                    <div class="col-xl-12">
+                        <div class="table-hover text-nowrap card m-0 overflow-auto vh-50">
+							<table class="table table-bordered" id="example6">
+								<thead >
+									<tr>
+										<th class="width60">S.No.</th>
+                                        <th class="width400">Task Name</th>
+                                        <th class="text-center width140">Duration</th>
+                                        <th class="text-center width140">Start Date</th>
+                                        <th class="text-center width140">End Date</th>
+                                        <th class="text-center width200">Pregress Status</th>
+                                        <th class="text-center width140">Dependecies</th>
+                                        <th class="text-center width200">Assigned To</th>
+                                        <th class="text-center width140">Status</th>
+                                        <th class="text-center width40">
+                                            <i class="icon feather icon-plus-circle"></i>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>Zero</td>
+                                        <td class="text-center">2 Days</td>
+                                        <td class="text-center">26 Jun 25</td>
+                                        <td class="text-center">27 Jun 25</td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-around">
+                                                <span class="badge bg-secondary">0/5%</span><img src="assets/icons/feather/chaticon.svg"></i>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <i class="icon feather icon-git-pull-request text-primary fs-20"></i>
+                                        </td>
+                                        <td class="text-center">John</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">Start</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown custom-dropdown mb-0">
+                                                <div data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Edit</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Add Subtask</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Add Dependecies</a>
+                                                </div>
+										    </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>Zero</td>
+                                        <td class="text-center">2 Days</td>
+                                        <td class="text-center">26 Jun 25</td>
+                                        <td class="text-center">27 Jun 25</td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-around">
+                                                <span class="badge bg-secondary">0/5%</span><img src="assets/icons/feather/chaticon.svg"></i>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <i class="icon feather icon-git-pull-request text-primary fs-20"></i>
+                                        </td>
+                                        <td class="text-center">John</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">Start</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown custom-dropdown mb-0">
+                                                <div data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Edit</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Add Subtask</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Add Dependecies</a>
+                                                </div>
+										    </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>Zero</td>
+                                        <td class="text-center">2 Days</td>
+                                        <td class="text-center">26 Jun 25</td>
+                                        <td class="text-center">27 Jun 25</td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-around">
+                                                <span class="badge bg-secondary">0/5%</span><img src="assets/icons/feather/chaticon.svg"></i>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <i class="icon feather icon-git-pull-request text-primary fs-20"></i>
+                                        </td>
+                                        <td class="text-center">John</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">Start</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown custom-dropdown mb-0">
+                                                <div data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" href="javascript:void(0);">Edit</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Add Subtask</a>
+                                                    <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                    <a class="dropdown-item" href="javascript:void(0);">Add Dependecies</a>
+                                                </div>
+										    </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- End - Task Table -->
+
+                    <!-- Start - S Curve Modal -->
+                    <div class="modal fade" id="s-curve" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header border-4 border-primary d-flex justify-content-between">
+                                    <h1 class="modal-title fs-5" id="date-filter">Progress S-Curve</h1>
+                                    <div class="d-flex gap-2">
+                                        <a href="javascript:void(0);" class="btn btn-square btn-sm btn-light border"><i class="icon feather icon-rotate-cw"></i></a>
+                                        <a href="javascript:void(0);" class="btn btn-square btn-sm btn-light border"><i class="icon feather icon-bar-chart-2"></i></a>
+                                        <a href="javascript:void(0);" class="btn btn-sm btn-light border">Sort</a>
+                                        <a href="javascript:void(0);" class="btn btn-square btn-sm btn-light border"><i class="icon feather icon-upload"></i></a>
+                                    </div>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="d-flex gap-3">
+                                        <div>
+                                            <span>Section Name:</span>
+                                            <select class="form-select selectpicker">
+                                                <option selected>All</option>
+                                                <option>None</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <span>Task Name:</span>
+                                            <select class="form-select selectpicker">
+                                                <option selected>All</option>
+                                                <option>None</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="position-relative height400">
+                                        <div class="clearfix">
+                                            <div class="position-absolute start-50 top-50 translate-middle">
+                                                <p class="m-0 text-danger fs-20 fw-semibold">No Data Available</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer d-flex justify-content-between align-items-center">
+                                    <div class="text-end">
+                                        <sapn class="fs-12">Powered by</button>
+                                        <span class="text-danger fs-16">W3ITEXPERTS</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End - S Curve -->
+
+                    <!-- Start - Download Option Offcanvas -->
+                    <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="download-option" aria-labelledby="download-option" aria-modal="true" role="dialog">
+                        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                                <h5 class="offcanvas-title fw-semibold">Download Option</h5>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="javascript:void(0);" class="btn btn-secondary light">Cancel</a>
+                                <a href="javascript:void(0);" class="btn btn-primary">Download</a>
+                            </div>
+                        </div>
+
+                        <!-- Start - Offcanvas Body -->
+                        <div class="offcanvas-body">
+                            <div class="d-flex justify-content-sm-end justify-content-start align-items-center">
+                                <div>
+                                    <select class="selectpicker form-select">
+                                        <option>All</option>
+                                        <option selected>Today</option>
+                                        <option>Last Week ( Mon - Sun )</option>
+                                        <option>Last Month</option>
+                                        <option>This Week ( Mon - Today )</option>
+                                        <option>This Month</option>
+                                        <option>Custom</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <p class="m-0 py-3">Download Format</p>
+                                <div class="form-check p-0 border border-primary p-3 rounded bg-primary-subtle w-50">
+                                    <input id="flexRadioDefault1" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2" checked="">
+                                    <label class="form-check-label" for="flexRadioDefault1">PDF</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <p class="mb-3">Include in report:</p>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked">Work Summary</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked1" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked1">Labour Report</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked2" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked2">Material Inventory</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked3" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked3">Material Request</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked4" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked4">Equipment</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked5" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked5">Site Photo</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked6" checked="">
+                                    <label class="form-check-label" for="flexCheckChecked6">Subcon Progress Summary</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End - Offcanvas Body -->
+                    
+                    </div>
+                    <!-- End - Download Option Offcanvas -->
+
+                    <!-- Start - Add Task Offcanvas -->
+                    <div class="custom-offcanvas-width offcanvas offcanvas-end p-0" tabindex="-1" id="add-task" aria-labelledby="add-task" aria-modal="true" role="dialog">
+                        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                                <h5 class="offcanvas-title fw-semibold">ADDING TASK</h5>
+                            </div>
+                            <a href="javascript:void(0);" class="btn btn-secondary">Save</a>
+                        </div>
+
+                        <!-- Start - Offcanvas Body -->
+                        <div class="offcanvas-body">
+                            <div class="mb-3">
+                                <label for="task-name" class="form-label">Task Name *</label>
+                                <input type="text" class="form-control" id="task-name" aria-describedby="task-name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="duration" class="form-label">Duration (Days) *</label>
+                                <input type="text" class="form-control" id="duration" aria-describedby="duration">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Start and End Date</label>
+                                <input class="form-control mb-3" type="text" name="datetimes">
+                            </div>
+                            <div class="d-flex gap-2 mb-3">
+                                <div class="w-50">
+                                    <label for="est-quality" class="form-label">Est Quantity</label>
+                                    <input type="text" class="form-control" id="est-quality" aria-describedby="task-name" placeholder=100>
+                                </div>
+                                <div class="w-50">
+                                    <label for="est-quality" class="form-label">Unit</label>
+                                    <select class="form-select selectpicker">
+                                        <option>numbers</option>
+                                        <option>cum</option>
+                                        <option>meter</option>
+                                        <option>sqm</option>
+                                        <option>ft</option>
+                                        <option>cft</option>
+                                        <option>tonne</option>
+                                        <option>kg</option>
+                                        <option>quintal</option>
+                                        <option>in</option>
+                                        <option>Trips</option>
+                                        <option>cm</option>
+                                        <option>yard</option>
+                                        <option>yd</option>
+                                        <option>km</option>
+                                        <option selected>%</option>
+                                        <option>hours</option>
+                                        <option>pair</option>
+                                        <option>Brass</option>
+                                        <option>Bundle</option>
+                                        <option>CKM</option>
+                                        <option>sqmm</option>
+                                        <option>Day</option>
+                                        <option>Item</option>
+                                        <option>Shift</option>
+                                        <option>set</option>
+                                        <option>KL</option>
+                                        <option>points</option>
+                                        <option>pcs</option>
+                                        <option>bags</option>
+                                        <option>KW</option>
+                                        <option>Litre</option>
+                                        <option>manday</option>
+                                        <option>lumpsum</option>
+                                        <option>Mn</option>
+                                        <option>Monthly</option>
+                                        <option>RFT</option>
+                                        <option>RMT</option>
+                                        <option>Stage</option>
+                                        <option>each</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-5">
+                                <label for="assignee-to" class="form-label">Assign to</label>
+                                <input type="text" class="form-control" id="assignee-to" aria-describedby="assignee-to">
+                            </div>
+                            <div>
+                                <form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+                                    <div class="dz-default dz-message pointer">
+                                        <button class="dz-button" type="button">Attach Media<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <!-- End - Offcanvas Body -->
+                    
+                    </div>
+                    <!-- End - Add Task Offcanvas -->
+
+                </div>
+			</div>
+
+        </main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+    <!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Bootstrap Daterangepicker -->
+	<script src="assets/vendor/daterangepicker/moment.min.js"></script>
+	<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+    <script src="assets/js/plugins-init/daterangepicker-init.js"></script>
+
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

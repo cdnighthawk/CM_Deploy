@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html",{
+		"fileName": "account/settings.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper" class="show">
+
+		@@include("../elements/nav-header.html")
+
+		@@include("../elements/chatbox.html")
+
+		@@include("../elements/header.html")
+
+		@@include("../elements/deznav.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Account settings",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Account settings</h6>
+								<p class="text-muted small mb-0">Update your name, contact email, phone, and password. Changes are saved to your signed-in account.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="../usis-dashboard.html">Dashboard</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid" id="usis-account-remote-body">
+				<div class="row justify-content-center">
+					<div class="col-xl-3 col-lg-4 mb-4">
+						<div class="card h-auto">
+							<div class="card-body text-center py-4">
+								<div class="avatar avatar-xl mx-auto mb-3 rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:5rem;height:5rem;font-size:1.75rem;" id="usis-profile-avatar-initials" aria-hidden="true">—</div>
+								<h5 class="mb-1" id="usis-profile-card-name">—</h5>
+								<p class="text-muted small mb-1" id="usis-profile-card-email">—</p>
+								<p class="text-muted small mb-0" id="usis-profile-card-roles">—</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-7 col-lg-8">
+						<div id="usis-profile-alert" class="alert d-none" role="alert"></div>
+						<form id="usis-profile-form" class="needs-validation" novalidate>
+							<div class="card">
+								<div class="card-header">
+									<h6 class="card-title mb-0">Account</h6>
+								</div>
+								<div class="card-body">
+									<div class="row">
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-first">First name</label>
+											<input type="text" class="form-control" id="usis-pf-first" name="first_name" maxlength="120" autocomplete="given-name">
+										</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-last">Last name</label>
+											<input type="text" class="form-control" id="usis-pf-last" name="last_name" maxlength="120" autocomplete="family-name">
+										</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-email">Email</label>
+											<input type="email" class="form-control" id="usis-pf-email" name="email" required maxlength="255" autocomplete="username">
+										</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-phone">Phone</label>
+											<input type="text" class="form-control" id="usis-pf-phone" name="phone" maxlength="50" autocomplete="tel">
+										</div>
+										<div class="col-12"><hr class="my-2"></div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-password">New password</label>
+											<input type="password" class="form-control" id="usis-pf-password" name="password" autocomplete="new-password" placeholder="Leave blank to keep current">
+										</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-password2">Confirm new password</label>
+											<input type="password" class="form-control" id="usis-pf-password2" autocomplete="new-password" placeholder="Repeat if changing">
+										</div>
+									</div>
+								</div>
+								<div class="card-footer d-flex flex-wrap gap-2 align-items-center">
+									<button type="submit" class="btn btn-primary" id="usis-pf-save">Save changes</button>
+									<a href="../usis-dashboard.html" class="btn btn-outline-secondary">Cancel</a>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("../elements/footer.html")
+
+	</div>
+
+	@@include("../elements/script.html")
+	<script src="assets/js/deznav-init.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/usis-profile.js"></script>
+
+</body>
+</html>

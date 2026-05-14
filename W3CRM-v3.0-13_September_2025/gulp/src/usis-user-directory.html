@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-user-directory.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "User admin",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Users &amp; roles</h6>
+								<p class="text-muted small mb-0">Live directory backed by PostgreSQL <code>users</code>, <code>roles</code>, and <code>user_roles</code>. Only admins and superusers may change records.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="usis-playbooks.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-procurement.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">On secured APIs, set <code>localStorage.usisActorUserId</code> to your user UUID (an admin) so requests send <code>X-Usis-User-Id</code>. Replaces the static W3CRM <code>user.html</code> / <code>user-roles.html</code> demos.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<div id="usis-ud-alert" class="alert alert-danger d-none" role="alert"></div>
+				<ul class="nav nav-pills gap-1 mb-3" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" id="usis-ud-tab-users" data-bs-toggle="pill" data-bs-target="#usis-ud-pane-users" type="button" role="tab" aria-selected="true">Users</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" id="usis-ud-tab-roles" data-bs-toggle="pill" data-bs-target="#usis-ud-pane-roles" type="button" role="tab" aria-selected="false">Roles</button>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div class="tab-pane fade show active" id="usis-ud-pane-users" role="tabpanel">
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<div class="d-flex flex-wrap gap-2 align-items-end justify-content-between mb-3">
+									<div class="flex-grow-1" style="min-width: 12rem; max-width: 24rem">
+										<label class="form-label small mb-0" for="usis-ud-search">Search</label>
+										<input type="search" class="form-control form-control-sm" id="usis-ud-search" placeholder="Email or name…">
+									</div>
+									<div class="d-flex flex-wrap gap-1">
+										<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ud-refresh">Refresh</button>
+										<button type="button" class="btn btn-sm btn-primary" id="usis-ud-add">+ Add user</button>
+									</div>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped align-middle mb-0">
+										<thead>
+											<tr>
+												<th>Name</th>
+												<th>Email</th>
+												<th>Roles</th>
+												<th class="text-center">Active</th>
+												<th class="text-center">Super</th>
+												<th class="text-center">Login</th>
+												<th style="width: 5rem"></th>
+											</tr>
+										</thead>
+										<tbody id="usis-ud-users-body"></tbody>
+									</table>
+								</div>
+								<p class="text-muted small mb-0 mt-2" id="usis-ud-users-meta"></p>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="usis-ud-pane-roles" role="tabpanel">
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<p class="text-muted small">Role codes are used by the API permission layer (e.g. RFI matrix). Edit role assignments per user on the <strong>Users</strong> tab.</p>
+								<div class="table-responsive">
+									<table class="table table-sm table-bordered mb-0">
+										<thead class="table-light">
+											<tr>
+												<th>Code</th>
+												<th>Name</th>
+												<th>Description</th>
+											</tr>
+										</thead>
+										<tbody id="usis-ud-roles-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal fade" id="usis-ud-modal-user" tabindex="-1" aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="usis-ud-modal-title">User</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="alert alert-danger py-2 d-none" id="usis-ud-modal-err" role="alert"></div>
+							<input type="hidden" id="usis-ud-modal-user-id" value="">
+							<div class="row g-2 mb-2">
+								<div class="col-md-6">
+									<label class="form-label small mb-0" for="usis-ud-modal-email">Email <span class="text-danger">*</span></label>
+									<input type="email" class="form-control form-control-sm" id="usis-ud-modal-email" maxlength="255" autocomplete="off">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small mb-0" for="usis-ud-modal-phone">Phone</label>
+									<input type="text" class="form-control form-control-sm" id="usis-ud-modal-phone" maxlength="50">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small mb-0" for="usis-ud-modal-fn">First name</label>
+									<input type="text" class="form-control form-control-sm" id="usis-ud-modal-fn" maxlength="120">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small mb-0" for="usis-ud-modal-ln">Last name</label>
+									<input type="text" class="form-control form-control-sm" id="usis-ud-modal-ln" maxlength="120">
+								</div>
+								<div class="col-12">
+									<label class="form-label small mb-0" for="usis-ud-modal-pw">Password</label>
+									<input type="password" class="form-control form-control-sm" id="usis-ud-modal-pw" autocomplete="new-password" placeholder="Leave blank to skip (edit: keep existing)">
+								</div>
+							</div>
+							<div class="form-check mb-2">
+								<input class="form-check-input" type="checkbox" id="usis-ud-modal-active" checked>
+								<label class="form-check-label small" for="usis-ud-modal-active">Active</label>
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" id="usis-ud-modal-super">
+								<label class="form-check-label small" for="usis-ud-modal-super">Superuser (full admin)</label>
+							</div>
+							<label class="form-label small fw-semibold mb-1">Roles</label>
+							<div id="usis-ud-modal-role-checks" class="border rounded p-2 bg-light" style="max-height: 12rem; overflow: auto;"></div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-sm btn-primary" id="usis-ud-modal-save">Save</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-user-directory.js"></script>
+
+</body>
+</html>

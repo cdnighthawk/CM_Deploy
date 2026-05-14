@@ -1,0 +1,921 @@
+{
+  "version": 1,
+  "indexPage": "usis-all-pages-index.html",
+  "pages": [
+    {
+      "path": "usis-all-pages-index.html",
+      "order": 1,
+      "title": "USIS All Pages Index",
+      "summary": "Alphabetical tour of all first-party pages in this tree with one-line descriptions. Regenerate via tools/apply_usis_site_guides.py after adding pages.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-crm-bid-detail.html",
+      "order": 2,
+      "title": "USIS CRM Bid Detail",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-crm-leads.html",
+      "order": 3,
+      "title": "USIS CRM Leads",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-dashboard.html",
+      "order": 4,
+      "title": "USIS Dashboard",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-documents-hub.html",
+      "order": 5,
+      "title": "USIS Documents Hub",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hrms-home.html",
+      "order": 5.1,
+      "title": "USIS HR suite",
+      "summary": "HRMS hub: role-based dashboard cards from /api/v1/hrms/dashboard; full Sage-style roadmap in Plan/HRMS/README.md (Flask + PostgreSQL, not WordPress).",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hr-dashboard.html",
+      "order": 6,
+      "title": "USIS HR Dashboard",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hr-employee.html",
+      "order": 7,
+      "title": "USIS HR Employee",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hr-quickbooks-employee-reference.html",
+      "order": 8,
+      "title": "USIS HR Quickbooks Employee Reference",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hr.html",
+      "order": 9,
+      "title": "USIS HR",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-leads.html",
+      "order": 10,
+      "title": "USIS Leads",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis",
+      "injectAfter": "body"
+    },
+    {
+      "path": "usis-playbook-run.html",
+      "order": 11,
+      "title": "USIS Playbook Run",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-playbooks.html",
+      "order": 12,
+      "title": "USIS Playbooks",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-user-directory.html",
+      "order": 12.5,
+      "title": "USIS User admin",
+      "summary": "Live users and roles; API /api/v1/admin/users and /api/v1/admin/roles (admin or superuser only).",
+      "category": "usis"
+    },
+    {
+      "path": "usis-procurement.html",
+      "order": 13,
+      "title": "USIS Procurement",
+      "summary": "Hub for Sage-style procurement: POs, subcontracts, and RFPs; edit per job on construction/project-detail.html (Procurement tab: PO / Subcontract / RFP tools). API: /api/v1/projects/<id>/commitments, /api/v1/rfps.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-rfp-compare.html",
+      "order": 14,
+      "title": "USIS RFP Compare",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-rfp-detail.html",
+      "order": 15,
+      "title": "USIS RFP Detail",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-rfp-list.html",
+      "order": 16,
+      "title": "USIS RFP List",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-safety.html",
+      "order": 17,
+      "title": "USIS Safety",
+      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
+      "category": "usis"
+    },
+    {
+      "path": "construction/add-quotation.html",
+      "order": 18,
+      "title": "Construction — Add Quotation",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/attendance.html",
+      "order": 19,
+      "title": "Construction — Attendance",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/contact-us.html",
+      "order": 20,
+      "title": "Construction — Contact Us",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/drawing-viewer.html",
+      "order": 21,
+      "title": "Construction — Drawing Viewer",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/edit-quotation.html",
+      "order": 22,
+      "title": "Construction — Edit Quotation",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/estimate-detail.html",
+      "order": 23,
+      "title": "Construction — Estimate Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/estimate.html",
+      "order": 24,
+      "title": "Construction — Estimate",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/estimate_legacy.html",
+      "order": 25,
+      "title": "Construction — Estimate Legacy",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/files.html",
+      "order": 26,
+      "title": "Construction — Files",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/finance.html",
+      "order": 27,
+      "title": "Construction — Finance",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/index.html",
+      "order": 28,
+      "title": "Construction — Index",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/lead-detail.html",
+      "order": 29,
+      "title": "Construction — Lead Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/leads.html",
+      "order": 30,
+      "title": "Construction — Leads",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/material.html",
+      "order": 31,
+      "title": "Construction — Material",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/mom-detail.html",
+      "order": 32,
+      "title": "Construction — Mom Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/mom.html",
+      "order": 33,
+      "title": "Construction — Mom",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/overview.html",
+      "order": 34,
+      "title": "Construction — Overview",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/party.html",
+      "order": 35,
+      "title": "Construction — Party",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/project-detail.html",
+      "order": 36,
+      "title": "Construction — Project Detail",
+      "summary": "Active project shell: Job info, Schedule (installation windows + calendar), Tasks (W3CRM-style grid, same schedule-items API), drawings, takeoff, RFIs, Submittals (log), RFP, Procurement (PO / Subcontract / RFP inner tools), Contract admin (Sage-style prime/CO shell), job costing. Use ?id= project UUID.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/projects.html",
+      "order": 37,
+      "title": "Construction — Projects",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/quotation.html",
+      "order": 38,
+      "title": "Construction — Quotation",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/reports.html",
+      "order": 39,
+      "title": "Construction — Reports",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/rfi-create.html",
+      "order": 40,
+      "title": "Construction — RFI Create",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/rfi-detail.html",
+      "order": 41,
+      "title": "Construction — RFI Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/rfis.html",
+      "order": 42,
+      "title": "Construction — RFIS",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/services.html",
+      "order": 43,
+      "title": "Construction — Services",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/submittal-detail.html",
+      "order": 44,
+      "title": "Construction — Submittal Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/task.html",
+      "order": 45,
+      "title": "Construction — Task",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/time-sheet.html",
+      "order": 46,
+      "title": "Construction — Time Sheet",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/timesheet-detail.html",
+      "order": 47,
+      "title": "Construction — Timesheet Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/todo-detail.html",
+      "order": 48,
+      "title": "Construction — Todo Detail",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/todo.html",
+      "order": 49,
+      "title": "Construction — Todo",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "construction/transaction.html",
+      "order": 50,
+      "title": "Construction — Transaction",
+      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
+      "category": "construction_demo"
+    },
+    {
+      "path": "account/activity.html",
+      "order": 51,
+      "title": "Activity",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/api-keys.html",
+      "order": 52,
+      "title": "API Keys",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/billing.html",
+      "order": 53,
+      "title": "Billing",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/logs.html",
+      "order": 54,
+      "title": "Logs",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/overview.html",
+      "order": 55,
+      "title": "Overview",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/referrals.html",
+      "order": 56,
+      "title": "Referrals",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/security.html",
+      "order": 57,
+      "title": "Security",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/settings.html",
+      "order": 58,
+      "title": "Settings",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "account/statements.html",
+      "order": 59,
+      "title": "Statements",
+      "summary": "End-user account settings template (billing, security, API keys).",
+      "category": "account"
+    },
+    {
+      "path": "add-role.html",
+      "order": 60,
+      "title": "Add Role",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "aikit/auto-write.html",
+      "order": 61,
+      "title": "Auto Write",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/chatbot.html",
+      "order": 62,
+      "title": "Chatbot",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/fine-tune-models.html",
+      "order": 63,
+      "title": "Fine Tune Models",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/import.html",
+      "order": 64,
+      "title": "Import",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/prompt.html",
+      "order": 65,
+      "title": "Prompt",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/repurpose.html",
+      "order": 66,
+      "title": "Repurpose",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/rss.html",
+      "order": 67,
+      "title": "Rss",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/scheduled.html",
+      "order": 68,
+      "title": "Scheduled",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "aikit/setting.html",
+      "order": 69,
+      "title": "Setting",
+      "summary": "AI kit demo pages. Reference for AI-related settings and prompts.",
+      "category": "aikit"
+    },
+    {
+      "path": "app-calender.html",
+      "order": 70,
+      "title": "App Calender",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "app-profile-2.html",
+      "order": 71,
+      "title": "App Profile 2",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "app-profile.html",
+      "order": 72,
+      "title": "App Profile",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "blog.html",
+      "order": 73,
+      "title": "Blog",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "chat.html",
+      "order": 74,
+      "title": "Chat",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template",
+      "injectAfter": "content_body"
+    },
+    {
+      "path": "cms/add-blog.html",
+      "order": 75,
+      "title": "Add Blog",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/add-email.html",
+      "order": 76,
+      "title": "Add Email",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/blog-category.html",
+      "order": 77,
+      "title": "Blog Category",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/blog.html",
+      "order": 78,
+      "title": "Blog",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/content-add.html",
+      "order": 79,
+      "title": "Content Add",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/content.html",
+      "order": 80,
+      "title": "Content",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/email-template.html",
+      "order": 81,
+      "title": "Email Template",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "cms/menu.html",
+      "order": 82,
+      "title": "Menu",
+      "summary": "CMS / blog admin template. Reference for content editing shells.",
+      "category": "cms"
+    },
+    {
+      "path": "contacts.html",
+      "order": 83,
+      "title": "Contacts",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "core-hr.html",
+      "order": 84,
+      "title": "Core HR",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "customer-profile.html",
+      "order": 85,
+      "title": "Customer Profile",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "customer.html",
+      "order": 86,
+      "title": "Customer",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "ecom-checkout.html",
+      "order": 87,
+      "title": "E-commerce Checkout",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "ecom-customers.html",
+      "order": 88,
+      "title": "E-commerce Customers",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "ecom-invoice.html",
+      "order": 89,
+      "title": "E-commerce Invoice",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "ecom-product-detail.html",
+      "order": 90,
+      "title": "E-commerce Product Detail",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "ecom-product-grid.html",
+      "order": 91,
+      "title": "E-commerce Product Grid",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "ecom-product-list.html",
+      "order": 92,
+      "title": "E-commerce Product List",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "ecom-product-order.html",
+      "order": 93,
+      "title": "E-commerce Product Order",
+      "summary": "E-commerce demo template. Reference for catalog and checkout UI patterns.",
+      "category": "ecom"
+    },
+    {
+      "path": "edit-profile.html",
+      "order": 94,
+      "title": "Edit Profile",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "email-compose.html",
+      "order": 95,
+      "title": "Email Compose",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "email-inbox.html",
+      "order": 96,
+      "title": "Email Inbox",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "email-read.html",
+      "order": 97,
+      "title": "Email Read",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "employee.html",
+      "order": 98,
+      "title": "Employee",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "empty-page.html",
+      "order": 99,
+      "title": "Empty Page",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template",
+      "injectAfter": "content_body"
+    },
+    {
+      "path": "finance.html",
+      "order": 100,
+      "title": "Finance",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "index-2.html",
+      "order": 101,
+      "title": "Index 2",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "index.html",
+      "order": 102,
+      "title": "Index",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "manage-client.html",
+      "order": 103,
+      "title": "Manage Client",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "page-error-400.html",
+      "order": 104,
+      "title": "Page Error 400",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "body"
+    },
+    {
+      "path": "page-error-403.html",
+      "order": 105,
+      "title": "Page Error 403",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "body"
+    },
+    {
+      "path": "page-error-404.html",
+      "order": 106,
+      "title": "Page Error 404",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "body"
+    },
+    {
+      "path": "page-error-500.html",
+      "order": 107,
+      "title": "Page Error 500",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "body"
+    },
+    {
+      "path": "page-error-503.html",
+      "order": 108,
+      "title": "Page Error 503",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "body"
+    },
+    {
+      "path": "page-forgot-password.html",
+      "order": 109,
+      "title": "Page Forgot Password",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "auth_wrapper"
+    },
+    {
+      "path": "page-lock-screen.html",
+      "order": 110,
+      "title": "Page Lock Screen",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "auth_wrapper"
+    },
+    {
+      "path": "page-login.html",
+      "order": 111,
+      "title": "Page Login",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "auth_wrapper"
+    },
+    {
+      "path": "page-register.html",
+      "order": 112,
+      "title": "Page Register",
+      "summary": "Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.",
+      "category": "auth",
+      "injectAfter": "auth_wrapper"
+    },
+    {
+      "path": "performance.html",
+      "order": 113,
+      "title": "Performance",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "post-details.html",
+      "order": 114,
+      "title": "Post Details",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "profile/activity.html",
+      "order": 115,
+      "title": "Activity",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "profile/campaigns.html",
+      "order": 116,
+      "title": "Campaigns",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "profile/documents.html",
+      "order": 117,
+      "title": "Documents",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "profile/followers.html",
+      "order": 118,
+      "title": "Followers",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "profile/overview.html",
+      "order": 119,
+      "title": "Overview",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "profile/projects-details.html",
+      "order": 120,
+      "title": "Projects Details",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "profile/projects.html",
+      "order": 121,
+      "title": "Projects",
+      "summary": "User profile and social-style profile template.",
+      "category": "profile"
+    },
+    {
+      "path": "project.html",
+      "order": 122,
+      "title": "Project",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "reports.html",
+      "order": 123,
+      "title": "Reports",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "task-summary.html",
+      "order": 124,
+      "title": "Task Summary",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "task.html",
+      "order": 125,
+      "title": "Task",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "user-roles.html",
+      "order": 126,
+      "title": "User Roles",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    },
+    {
+      "path": "user.html",
+      "order": 127,
+      "title": "User",
+      "summary": "General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.",
+      "category": "template"
+    }
+  ]
+}

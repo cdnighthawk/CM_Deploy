@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "quotation.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+    <link href="assets/vendor/daterangepicker/daterangepicker.css" rel="stylesheet">
+    <link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	<link href="assets/vendor/toastr/css/toastr.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Quatation",
+				})
+            </div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Quotation</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="projects.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="reports.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+            
+            <div class="container-fluid">
+                <div class="row">
+
+                    <!-- Start - Filtering -->
+                    <div class="col-12">
+                        <div class="row g-2 align-items-center mb-3">
+
+                            <!-- Left group -->
+                            <div class="col-12 col-lg-9 col-md-9 col-sm-12">
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+
+                                    <!-- Search box -->
+                                    <div class="input-group message-search-area w-xs-100 width250">
+                                        <input type="text" class="form-control border-end-0" placeholder="Search Quotation">
+                                        <button class="input-group-text rounded-0 rounded-end border-start-0 bg-transaparent">
+                                            <i class="flaticon-381-search-2"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Start - Date Filter Modal Trigger -->
+                                    <a href="javascript:void(0);" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#date-filter">
+                                        Date Filter
+                                    </a>
+
+                                    <div class="modal fade" id="date-filter" tabindex="-1" aria-labelledby="date-filter-label" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                            <div class="modal-content">
+                                                <div class="modal-header border-4 border-primary">
+                                                    <h1 class="modal-title fs-5" id="date-filter-label">Date Filter</h1>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input class="form-control mb-3" type="text" name="datetimes" placeholder="Select date range">
+
+                                                    <!-- Checkboxes stacked for mobile -->
+                                                    <div class="row g-2">
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="lastWeek">
+                                                                <label class="form-check-label" for="lastWeek">Last Week</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="thisWeek">
+                                                                <label class="form-check-label" for="thisWeek">This Week</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="today">
+                                                                <label class="form-check-label" for="today">Today</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="thisMonth">
+                                                                <label class="form-check-label" for="thisMonth">This Month</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="lastMonth">
+                                                                <label class="form-check-label" for="lastMonth">Last Month</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="fy2425">
+                                                                <label class="form-check-label" for="fy2425">FY- 2024 - 2025</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="fy2324">
+                                                                <label class="form-check-label" for="fy2324">FY- 2023 - 2024</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="fy2223">
+                                                                <label class="form-check-label" for="fy2223">FY- 2022 - 2023</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-6 col-sm-4">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="all">
+                                                                <label class="form-check-label" for="all">All</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-sm btn-primary">Apply</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- End - Date Filter Modal Trigger -->
+
+                                    <!-- Bootstrap select -->
+                                    <div>
+                                        <select class="form-select selectpicker w-auto">
+                                            <option>All</option>
+                                            <option>Draft</option>
+                                            <option>Sent</option>
+                                            <option>In Discussion</option>
+                                            <option>In Hold</option>
+                                            <option>Client Confirmed</option>
+                                            <option>Rejected</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: new quotation button -->
+                            <div class="col-12 col-lg-3 col-md-3 col-sm-4 text-md-end">
+                                <a href="javascript:void(0);" class="btn btn-primary w-xs-100" data-bs-toggle="modal" data-bs-target="#addQuatation">
+                                    + New Quotation
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- End - Filtering -->
+                    
+                    <!-- Start - Table -->
+                    <div class="col-xl-12">
+                        <div class="card vh-75 table-hover text-nowrap overflow-auto">
+                            <table class="table m-0 quotation-tbl" id="quatationTbl">
+                                <thead >
+                                    <tr>
+                                        <th class="width100">S.No.</th>
+                                        <th class="width220">Date</th>
+                                        <th class="text-center width200">Subject</th>
+                                        <th class="text-center width200">Client</th>
+                                        <th class="text-center width200">Est. Amount</th>
+                                        <th class="text-center width200">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-10</td>
+                                        <td>14 Aug 2025</td>
+                                        <td class="text-center">Landscaping</td>
+                                        <td class="text-center">Johnson</td>
+                                        <td class="text-center">$ 12,500</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-9</td>
+                                        <td>12 Aug 2025</td>
+                                        <td class="text-center">Roofing</td>
+                                        <td class="text-center">Davis</td>
+                                        <td class="text-center">$ 18,200</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-8</td>
+                                        <td>09 Aug 2025</td>
+                                        <td class="text-center">Flooring Works</td>
+                                        <td class="text-center">Emily</td>
+                                        <td class="text-center">$ 9,750</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-7</td>
+                                        <td>04 Aug 2025</td>
+                                        <td class="text-center">Plumbing Works</td>
+                                        <td class="text-center">Sarah</td>
+                                        <td class="text-center">$ 7,300</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-6</td>
+                                        <td>28 Jul 2025</td>
+                                        <td class="text-center">Renovation</td>
+                                        <td class="text-center">John</td>
+                                        <td class="text-center">$ 24,800</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-5</td>
+                                        <td>25 Jul 2025</td>
+                                        <td class="text-center">Villa Upgrade</td>
+                                        <td class="text-center">Smith</td>
+                                        <td class="text-center">$ 35,600</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-4</td>
+                                        <td>18 Jul 2025</td>
+                                        <td class="text-center">Office Fit-Out</td>
+                                        <td class="text-center">Olivia</td>
+                                        <td class="text-center">$ 42,000</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-3</td>
+                                        <td>15 Jul 2025</td>
+                                        <td class="text-center">Marble Supply</td>
+                                        <td class="text-center">Michael</td>
+                                        <td class="text-center">$ 6,450</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-2</td>
+                                        <td>12 Jul 2025</td>
+                                        <td class="text-center">Painting Works</td>
+                                        <td class="text-center">Chris</td>
+                                        <td class="text-center">$ 8,900</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer" data-bs-toggle="offcanvas" data-bs-target="#quatation">
+                                        <td>QT-1</td>
+                                        <td>08 Jul 2025</td>
+                                        <td class="text-center">Electrical Works</td>
+                                        <td class="text-center">David</td>
+                                        <td class="text-center">$ 11,200</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 justify-content-end">
+                                                <div class="dropdown dropdown-badge width140">
+                                                    <button type="button" class="btn btn-light dropdown-toggle btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        Select Status
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-badge-menu">
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">Draft</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-primary light w-100" href="javascript:void(0);">Sent</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-info light w-100" href="javascript:void(0);">In Disscussion</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-warning light w-100" href="javascript:void(0);">On Hold</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-success light w-100" href="javascript:void(0);">Client Confirmed</a></li>
+                                                        <li><a class="dropdown-item" data-badge="btn-danger light w-100" href="javascript:void(0);">Rejected</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                    <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                    </div>
+                                                    <div class="dropdown-menu dropdown-menu-end">
+                                                        <a class="dropdown-item" href="construction/edit-quotation.html">Edit</a>
+                                                        <a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+                                                        <a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- End - Table -->
+
+                </div>
+            </div>
+
+            <!-- Start - Add Quotation Modal -->
+            <div class="modal TriggerModal fade" id="addQuatation" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addQuatation" aria-modal="true" role="dialog">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-4 border-primary">
+                            <h3 class="modal-title" id="date-filter">Create Quotation</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label text-uppercase">Quotation Subject</label>
+                                <input type="text" class="form-control" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="dropdown-slt">
+                                    <label class="form-label text-uppercase">Client Name</label>
+                                    <input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#clientName" type="text" readonly="">
+                                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="clientName" style="display: none;">
+                                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+                                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+                                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <div class="fw-semibold text-black">Alexander</div>
+                                                    <span class="fs-12">+91 764302****</span>
+                                                </div>
+                                                <div>
+                                                    <div>Client</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+                                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+                                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <div class="fw-semibold text-black">Michael Johnson</div>
+                                                    <span class="fs-12">+15 1343025***</span>
+                                                </div>
+                                                <div>
+                                                    <div>Staff</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+                                            + Create Party
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Select Tax Type:</label>
+                                <div class="d-flex gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" checked>
+                                        <label class="form-check-label" for="flexRadioDefault1">Item Level Tax</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+                                        <label class="form-check-label" for="flexRadioDefault2">Bill Level Tax</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end align-items-center">
+                                <a href="construction/add-quotation.html" class="btn btn-primary">Create Quotation</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Add Quotation Modal -->
+
+            <!-- Start - Quotation Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="quatation" aria-labelledby="quatation" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        <h5 class="offcanvas-title fw-semibold">Quatation</h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="javascript:void(0);" class="btn btn-sm btn-light btn-square border"><i class="icon feather icon-download"></i></a>
+                        <a href="construction/edit-quotation.html" class="btn btn-sm btn-light btn-square border"><i class="icon feather icon-edit"></i></a>
+                    </div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    
+                    <div class="row mb-3 gap-1">
+                        <div class="col-sm-6 col-12 d-flex flex-column gap-1">
+                            <div class="row align-items-center">
+                                <p class="m-0 fs-12 col-4">Client :</p>
+                                <span class="fs-12 col-8">John</span>
+                            </div>
+                            <div class="row align-items-center">
+                                <p class="m-0 fs-12 col-4">GST :</p>
+                                <span class="fs-12 col-8">XX5432XX</span>
+                            </div>
+                            <div class="row align-items-center">
+                                <p class="m-0 fs-12 col-4">Mobile :</p>
+                                <span class="fs-12 col-8">8619207723</span>
+                            </div>
+                            <div class="row align-items-center">
+                                <p class="m-0 fs-12 col-4">Address :</p>
+                                <span class="fs-12 col-8">13 B, Keshavpura, Kota</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-12 d-flex flex-column gap-1">
+                            <div class="row align-items-center">
+                                <p class="m-0 fs-12 col-4">QT NO :</p>
+                                <span class="fs-12 col-8">QT-5</span>
+                            </div>
+                            <div class="row align-items-center">
+                                <p class="m-0 fs-12 col-4">QT Date :</p>
+                                <span class="fs-12 col-8">13 Jul, 2025</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="bg-primary text-white fs-12 width180">Item Name</th>
+                                    <th class="bg-primary text-white fs-12 text-center">Qty</th>
+                                    <th class="bg-primary text-white fs-12 text-center">Rate</th>
+                                    <th class="bg-primary text-white fs-12 text-center">Tax</th>
+                                    <th class="bg-primary text-white fs-12 text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Furniture</td>
+                                    <td class="text-center">20 sqft</td>
+                                    <td class="text-center">$ 1,000</td>
+                                    <td class="text-center">18%</td>
+                                    <td class="text-end">$ 20,000</td>
+                                </tr>
+                                <tr>
+                                    <td>Ply</td>
+                                    <td class="text-center">20 sqft</td>
+                                    <td class="text-center">$ 1,000</td>
+                                    <td class="text-center">18%</td>
+                                    <td class="text-end">$ 20,000</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end">Item Subtotal</td>
+                                    <td class="text-end">$ 40,000</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end">CGST</td>
+                                    <td class="text-end">$ 3,600</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end">SGST</td>
+                                    <td class="text-end">$ 3,600</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end">Additional Charges</td>
+                                    <td class="text-end">$ 0</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end">Discount</td>
+                                    <td class="text-end">$ 0</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Total</strong></td>
+                                    <td class="text-end"><strong>$ 47,200</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="fs-14 fw-semibold">Terms and Conditions</h6>
+                        <p class="mb-0">Any changes must be requested in writing and agreed upon by both parties. Additional work or design changes may incur additional costs. Some delays may occur due to unforeseen circumstances. Late payments may result in late payment fees. All disputes are subject to India jurisdiction only</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="fs-14 fw-semibold">Note</h6>
+                        <p class="mb-0">This is the Test Note. You will add this (Optional)</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="fs-14 fw-semibold">Bank Details</h6>
+                        <p class="mb-0 text-uppercase">JUNOI</p>
+                        <p class="mb-0">John Smith</p>
+                        <p class="mb-0">65233465213221</p>
+                        <p class="mb-0">Hbs8522</p>
+                    </div>
+
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Quotation Offcanvas -->
+
+			<!-- Start - Add Party Offcanvas -->
+			<div class="custom-offcanvas-width TriggerOffcanvas offcanvas offcanvas-end" tabindex="-1" id="create-party" aria-labelledby="create-party" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-medium">Add Party</h5>
+					</div>
+					<div class="d-flex gap-2">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Party Name</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="d-flex gap-2">
+						<div class="width130">
+							<select class="form-select selectpicker">
+								<option data-content="<img src='assets/images/onsite/india.png' alt=''> +91">India</option>
+								<option data-content="<img src='assets/images/onsite/saudi-arab.png' alt=''> +966">Saudi Arabis</option>
+								<option data-content="<img src='assets/images/onsite/qatar.png' alt=''> +974">Qatar</option>
+								<option data-content="<img src='assets/images/onsite/uae.png' alt=''> +971">United Arab Emiarates</option>
+								<option data-content="<img src='assets/images/onsite/nepal.png' alt=''> +977">Nepal</option>
+								<option data-content="<img src='assets/images/onsite/us-canada.png' alt=''> +1">US/Canada</option>
+								<option data-content="<img src='assets/images/onsite/uk.png' alt=''> +44">UK</option>
+								<option data-content="<img src='assets/images/onsite/australia.png' alt=''> +61">Austialia</option>
+								<option data-content="<img src='assets/images/onsite/kuwait.png' alt=''> +965">Kuwait</option>
+								<option data-content="<img src='assets/images/onsite/oman.png' alt=''> +968">Oman</option>
+								<option data-content="<img src='assets/images/onsite/indonasia.png' alt=''> +62">Indonasia</option>
+								<option data-content="<img src='assets/images/onsite/thialand.png' alt=''> +66">Thailand</option>
+								<option data-content="<img src='assets/images/onsite/phillipins.png' alt=''> +63">Phillipins</option>
+								<option data-content="<img src='assets/images/onsite/lebanon.png' alt=''> +961">Lebanon</option>
+								<option data-content="<img src='assets/images/onsite/egypt.png' alt=''> +20">Egypt</option>
+								<option data-content="<img src='assets/images/onsite/turkey.png' alt=''> +90">Turkey</option>
+								<option data-content="<img src='assets/images/onsite/kenya.png' alt=''> +254">Kenya</option>
+								<option data-content="<img src='assets/images/onsite/south-africa.png' alt=''> +27">South Africa</option>
+								<option data-content="<img src='assets/images/onsite/nigeria.png' alt=''> +234">Nigeria</option>
+								<option data-content="<img src='assets/images/onsite/behrain.png' alt=''> +973">Behrain</option>
+								<option data-content="<img src='assets/images/onsite/togo.png' alt=''> +228">Togo</option>
+								<option data-content="<img src='assets/images/onsite/ivory-coast.png' alt=''> +225">Ivory Coast</option>
+							</select>
+						</div>
+						<div class="position-relative mb-4 w-75">
+							<input type="number" class="form-control" placeholder="Phone">
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Email</label>
+						<input type="email" class="form-control form-control-lg" placeholder="Email">
+					</div>
+
+					<div class="mb-4">
+						<div class="dropdown-slt">
+							<label class="form-label text-uppercase">Party Type</label>
+							<input class="form-control form-control-lg w-100 border rounded on-dropdown-input" data-dropdown-target="#party_type" type="text" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="party_type" style="display: none;">
+								<h6 class="m-0 p-2 border-bottom">Party Type</h6>
+								<div class="party-item d-flex align-items-center p-2 on-dropdown-item" data-val="Client">
+									<label for="client" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0" >
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="client" name="party-type">
+											<span class="form-check-label" >Client</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Staff">
+									<label class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="staff" name="party-type">
+											<span class="form-check-label" for="staff">Staff</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Worker">
+									<label class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="worker" name="party-type">
+											<span class="form-check-label">Worker</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Investor">
+									<label  class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="investor" name="party-type">
+											<span class="form-check-label">Investor</span>
+										</div>
+									</label>
+								</div>
+								<h6 class="m-0 p-2 border-bottom">Vendor</h6>
+								<div class="party-item d-flex align-items-center p-2 on-dropdown-item" data-val="Labour Contractor">
+									<label for="labour_contractor" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0" >
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="labour_contractor" name="party-type">
+											<span class="form-check-label">Labour Contractor</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Material Supplier">
+									<label for="material_supplier" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="material_supplier" name="party-type">
+											<span class="form-check-label">Material Supplier</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Equipment Supplier">
+									<label for="equipment_supplier" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="equipment_supplier" name="party-type">
+											<span class="form-check-label">Equipment Supplier</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Subcontractor">
+									<label for="subcontractor" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="subcontractor" name="party-type">
+											<span class="form-check-label">Subcontractor</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Other Vendor">
+									<label for="other_vendor" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="other_vendor" name="party-type">
+											<span class="form-check-label">Other Vendor</span>
+										</div>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="form-control form-control-lg mb-4 pointer" data-bs-toggle="offcanvas" data-bs-target="#opening_balance">
+						<div class="d-flex justify-content-between align-items-center">
+							<div class="d-flex gap-3">
+								<span>$</span>
+								<p class="m-0">Opening Balance</p>
+							</div>
+							<div>
+								<i class="icon feather icon-chevron-right"></i>
+							</div>
+						</div>
+					</div>
+
+					<div class="form-control form-control-lg mb-4 pointer" data-bs-toggle="offcanvas" data-bs-target="#add_address">
+						<div class="d-flex justify-content-between align-items-center">
+							<p class="m-0">Your Address</p>
+							<div>
+								<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#add_address">+Add</a>
+							</div>
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Party ID</label>
+						<input type="none" class="form-control form-control-lg" data-bs-toggle="modal" data-bs-target="#edit_party_id" placeholder="PID-1">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Aadhaar</label>
+						<div class="d-flex gap-2">
+							<input type="number" class="form-control form-control-lg" placeholder="Aadhar Number">
+							<div class="custom-img-upload img-parent-box">
+								<img src="https://demo.w3cms.in/lemars/public/images/noimage.jpg" class="img-for-onchange" id="UserImg" alt="Image" width="100px" height="100px" title="Image" style="display: none;">
+								<button type="button" class="cancel-img-btn position-absolute" style="display: none; z-index: 2;" aria-label="Close"><i class="icon feather icon-x"></i></button>
+								<div class="upload-btn">
+									<input type="file" class="form-control ps-2 img-input-onchange" name="aadhar_img" id="aadhar_img" accept=".png, .jpg, .jpeg, .pdf" hidden="">
+									<label class="upload-label btn btn-outline-primary dropzone-btn m-0" for="aadhar_img"><i class="icon fas fa-upload"></i></label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">PAN</label>
+						<div class="d-flex gap-2">
+							<input type="text" class="form-control form-control-lg" placeholder="PAN Number">
+							<div class="custom-img-upload img-parent-box">
+								<img src="https://demo.w3cms.in/lemars/public/images/noimage.jpg" class="img-for-onchange" id="UserImg" alt="Image" width="100px" height="100px" title="Image" style="display: none;">
+								<button type="button" class="cancel-img-btn position-absolute" style="display: none; z-index: 2;" aria-label="Close"><i class="icon feather icon-x"></i></button>
+								<div class="upload-btn">
+									<input type="file" class="form-control ps-2 img-input-onchange" name="pan_img" id="pan_img" accept=".png, .jpg, .jpeg, .pdf" hidden="">
+									<label class="upload-label btn btn-outline-primary dropzone-btn m-0" for="pan_img"><i class="icon fas fa-upload"></i></label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Party Offcanvas -->
+			
+            <!-- Start - Remove Image Modal -->
+            <div class="modal fade" id="imageRemoveConfirmModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content stylish-modal text-center p-3">
+                        <div class="text-danger mb-2">
+                            <i class="icon feather icon-trash-2 fs-26"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-2">Are you sure?</h5>
+                        <p class="text-muted mb-3">You want to remove this image.</p>
+                    
+                        <!-- Image preview -->
+                        <div class="preview-wrapper mb-3 rounded shadow-sm overflow-hidden">
+                            <img id="previewImageInModal" src="" alt="Preview" class="img-fluid w-100" />
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-center gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-1" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger rounded-pill px-4 py-1" id="confirmRemoveImageBtn">Yes, Remove</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Remove Image Modal -->
+
+            <!-- Start - Opening Balance Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="opening_balance" aria-labelledby="opening_balance" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        <h5 class="offcanvas-title fw-medium">Opening Balance</h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+                        <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+                    </div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    
+                    <div class="d-flex mb-4 gap-2">
+                        <label for="party_will_pay" class="d-flex justify-content-center align-items-center border rounded gap-2 form-label p-2 pointer w-50">
+                            <input class="form-check-input" type="radio" name="opening_balance" id="party_will_pay">
+                            <span>Party will pay</span>
+                        </label>
+                        <label for="party_will_receive" class="d-flex justify-content-center align-items-center border rounded gap-2 form-label p-2 pointer w-50">
+                            <input class="form-check-input" type="radio" name="opening_balance" id="party_will_receive">
+                            <span>Party will receive</span>
+                        </label>
+                    </div>
+
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">Amount($)*</label>
+                        <input type="number" class="form-control form-control-lg">
+                    </div>
+
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Opening Balance Offcanvas -->
+
+            <!-- Start - Add Address Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="add_address" aria-labelledby="add_address" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        <h5 class="offcanvas-title fw-semibold text-uppercase">New Address</h5>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+                        <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+                    </div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">Address Heading</label>
+                        <input type="text" class="form-control form-control-lg">
+                    </div>
+
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">GST</label>
+                        <input type="text" class="form-control form-control-lg">
+                    </div>
+
+                    <h6 class="mb-4">Address Details</h6>
+                    
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">Address Line 1</label>
+                        <input type="text" class="form-control form-control-lg">
+                    </div>
+
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">City</label>
+                        <input type="text" class="form-control form-control-lg">
+                    </div>
+
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">State / Province</label>
+                        <input type="text" class="form-control form-control-lg">
+                    </div>
+
+                    <div class="position-relative mb-4">
+                        <label class="form-label text-uppercase">ZIP / Postal Code</label>
+                        <input type="text" class="form-control form-control-lg">
+                    </div>
+
+                    <div class="position-relative">
+                        <label class="form-label text-uppercase">Country</label>
+                        <select class="form-select form-select-lg selectpicker">
+                            <option data-content="<img src='assets/images/onsite/india.png' alt=''> India">India</option>
+                            <option data-content="<img src='assets/images/onsite/saudi-arab.png' alt=''> Saudi Arabia">Saudi Arabis</option>
+                            <option data-content="<img src='assets/images/onsite/qatar.png' alt=''> Qatar">Qatar</option>
+                            <option data-content="<img src='assets/images/onsite/uae.png' alt=''> Ubited Aram Emiates">United Arab Emiarates</option>
+                            <option data-content="<img src='assets/images/onsite/nepal.png' alt=''> Nepal">Nepal</option>
+                            <option data-content="<img src='assets/images/onsite/us-canada.png' alt=''> US">US/Canada</option>
+                            <option data-content="<img src='assets/images/onsite/uk.png' alt=''> UK">UK</option>
+                            <option data-content="<img src='assets/images/onsite/australia.png' alt=''> Austialia">Austialia</option>
+                            <option data-content="<img src='assets/images/onsite/kuwait.png' alt=''> Kuwait">Kuwait</option>
+                            <option data-content="<img src='assets/images/onsite/oman.png' alt=''> Oman">Oman</option>
+                            <option data-content="<img src='assets/images/onsite/indonasia.png' alt=''> Indonasia">Indonasia</option>
+                            <option data-content="<img src='assets/images/onsite/thialand.png' alt=''> Thailand">Thailand</option>
+                            <option data-content="<img src='assets/images/onsite/phillipins.png' alt=''> Phillipins">Phillipins</option>
+                            <option data-content="<img src='assets/images/onsite/lebanon.png' alt=''> Lebanon">Lebanon</option>
+                            <option data-content="<img src='assets/images/onsite/egypt.png' alt=''> Egypt">Egypt</option>
+                            <option data-content="<img src='assets/images/onsite/turkey.png' alt=''> Turkey">Turkey</option>
+                            <option data-content="<img src='assets/images/onsite/kenya.png' alt=''> Kenya">Kenya</option>
+                            <option data-content="<img src='assets/images/onsite/south-africa.png' alt=''> South Africa">South Africa</option>
+                            <option data-content="<img src='assets/images/onsite/nigeria.png' alt=''> Nigeria">Nigeria</option>
+                            <option data-content="<img src='assets/images/onsite/behrain.png' alt=''> Behrain">Behrain</option>
+                            <option data-content="<img src='assets/images/onsite/togo.png' alt=''> Togo">Togo</option>
+                            <option data-content="<img src='assets/images/onsite/ivory-coast.png' alt=''> Ivory Coast">Ivory Coast</option>
+                        </select>
+                    </div>
+
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Add Address Offcanvas -->
+
+            <!-- Start - Edit Party ID Modal -->
+            <div class="modal fade" id="edit_party_id" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edit_party_id" aria-modal="true" role="dialog">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-4 border-primary">
+                            <h4 class="modal-title">Edit Party ID</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            
+                            <div class="position-relative mb-4">
+                                <label class="form-label text-uppercase">Prefix</label>
+                                <input type="text" class="form-control" placeholder="PID-">
+                            </div>
+
+                            <div class="position-relative mb-4">
+                                <label class="form-label text-uppercase">Sequence</label>
+                                <input type="text" class="form-control" placeholder="1">
+                            </div>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary w-100">Save</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Edit Party ID Modal -->
+
+        </main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Toastr -->
+	<script src="assets/vendor/toastr/js/toastr.min.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Bootstrap Daterangepicker -->
+	<script src="assets/vendor/daterangepicker/moment.min.js"></script>
+	<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+    <script src="assets/js/plugins-init/daterangepicker-init.js"></script>
+	
+    <!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	    
+</body>
+</html>

@@ -1,0 +1,51 @@
+/* Nav Scroll */
+.nav-scroll,
+[class*="nav-scroll-"] {
+    display: flex;
+    overflow-x: scroll;
+    white-space: nowrap;
+	flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+// Responsive scroll classes
+@media (min-width: 576px) {
+	.nav-scroll-sm {
+		overflow-x: scroll;
+	}
+	.nav-scroll-auto-sm{
+		overflow-x: auto;
+	}
+}
+@media (min-width: 768px) {
+	.nav-scroll-md {
+		overflow-x: scroll;
+	}
+	.nav-scroll-auto-md {
+		overflow-x: auto;
+	}
+}
+@media (min-width: 992px) {
+	.nav-scroll-lg {
+		overflow-x: scroll;
+	}
+	.nav-scroll-auto-lg {
+		overflow-x: auto;
+	}
+}
+@media (min-width: 1200px) {
+	.nav-scroll-xl {
+		overflow-x: scroll;
+	}
+	.nav-scroll-auto-xl {
+		overflow-x: auto;
+	}
+}
+@media (min-width: 1600px) {
+	.nav-scroll-xxl {
+		overflow-x: scroll;
+	}
+	.nav-scroll-auto-xxl {
+		overflow-x: auto;
+	}
+}

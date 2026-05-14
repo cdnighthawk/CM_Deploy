@@ -1,0 +1,2333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "add-quotation.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	<link href="assets/vendor/daterangepicker/daterangepicker.css" rel="stylesheet">
+	<link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	<link href="assets/vendor/toastr/css/toastr.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+		<main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Quatation",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Edit Quotation</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="drawing-viewer.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="estimate-detail.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="container-fluid">
+				<div class="row">
+					
+					<!-- Start - Filtering -->
+					<div class="col-xl-12">
+						<div class="row align-items-center mb-3">
+							<div class="col-xl-6 col-lg-7 col-md-12 gap-2 d-flex flex-wrap align-items-center mb-lg-0 mb-2">
+								
+								<!-- Start - Edit Quatation Subject -->
+								<div class="bg-white border rounded p-3 d-flex gap-4 align-items-center">
+									<div>
+										<h6 class="m-0">John</h6>
+										<p class="m-0 fs-10">Quatation A</p>
+									</div>
+									<a data-bs-toggle="modal" data-bs-target="#editQuatation">
+										<i class="icon feather icon-edit fs-18"></i>
+									</a>
+								</div>
+								<!-- End - Edit Quatation Subject -->
+
+								<!-- Start - Edit Quatation Number -->
+								<div class="bg-white border rounded p-3 d-flex gap-4 align-items-center pointer" data-bs-toggle="modal" data-bs-target="#edit-qtnumber">
+									<div>
+										<p class="m-0 fs-10">QT. NO.</p>
+										<h6 class="m-0">#QT-7</h6>
+									</div>
+								</div>
+								<!-- End - Edit Quatation Number -->
+
+								<!-- Start - Edit Quatation Number -->
+								<div class="bg-white border rounded p-3 d-flex gap-4 align-items-center pointer" data-bs-toggle="modal" data-bs-target="#edit-qtdate">
+									<div>
+										<p class="mb-1 fs-10">QT. Date</p>
+										<input class="form-control form-control-xs border-0 p-0 fs-14 lh-sm width100" placeholder="13-07-2025" type="text" id="bsDatepicker" />
+									</div>
+								</div>
+								<!-- End - Edit Quatation Number -->
+								
+								<!-- Start - Edit Quatation Status -->
+								<div class="bg-white border rounded p-3 d-flex gap-4 align-items-center pointer" data-bs-toggle="modal" data-bs-target="#edit-qtdate">
+									<div>
+										<p class="mb-0 fs-10">Status</p>
+										<div class="dropdown dropdown-badge">
+											<button type="button" class="dropdown-toggle border-0 fs-14 bg-transparent" data-bs-toggle="dropdown" aria-expanded="false">
+												Select Status
+											</button>
+											<ul class="dropdown-menu dropdown-badge-menu">
+												<li><a class="dropdown-item" href="javascript:void(0);">Draft</a></li>
+												<li><a class="dropdown-item" href="javascript:void(0);">Sent</a></li>
+												<li><a class="dropdown-item" href="javascript:void(0);">In Disscussion</a></li>
+												<li><a class="dropdown-item" href="javascript:void(0);">On Hold</a></li>
+												<li><a class="dropdown-item" href="javascript:void(0);">Client Confirmed</a></li>
+												<li><a class="dropdown-item" href="javascript:void(0);">Rejected</a></li>
+											</ul>
+										</div>
+									</div>
+								</div>
+								
+								<!-- End - Edit Quatation Status -->
+								
+							</div>
+
+							<div class="col-xl-6 col-lg-5 col-md-12">
+								<div class="d-flex flex-wrap justify-content-lg-end gap-2">
+									<a href="javascript:void(0);" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addQuatationSection">+ Section</a>
+									<div class="btn-group">
+										<button type="button" class="btn btn-outline-primary" data-bs-toggle="offcanvas" data-bs-target="#qtAdditem">+ Add Items</button>
+										<button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+											<span class="visually-hidden">Toggle Dropdown</span>
+										</button>
+										<ul class="dropdown-menu">
+											<li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">Add Form Library</a></li>
+										</ul>
+									</div>
+									<a href="javascript:void(0);" class="btn btn-primary">Save Quatation</a>
+									<a href="construction/quotation.html" class="btn btn-outline-primary btn-square"><i class="icon feather icon-x"></i></a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- End - Filtering -->
+
+					<!-- Start - Table -->
+					<div class="col-xl-12">
+						<div class="card table-hover text-nowrap overflow-auto quotation-tbl">
+							<div class="minmaxh450">
+								<table class="table mb-0" id="example6">
+									<thead>
+										<tr>
+											<th class="width20">S.No.</th>
+											<th class="width960">Item</th>
+											<th class="text-end width200">Cost Price</th>
+											<th class="text-end width200">Selling Price</th>
+											<th class="text-end width200">QTY</th>
+											<th class="text-end width100">Tax(%)</th>
+											<th class="text-end width200">Amount</th>
+											<th class="text-end width80">Action</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr class="parent-row pointer">
+											<td>1</td>
+											<td>
+												<div class="d-flex align-items-center gap-3">
+													<div class="d-flex gap-1 align-items-center">
+														<div class="expand-btn btn btn-xs btn-square">
+															<i class="fas fa-chevron-right"></i>
+														</div>Furniture
+													</div>
+													<div class="d-flex gap-1 align-items-center section-utility">
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">
+															<i class="icon feather icon-file-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items to this Section"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">
+															<i class="icon feather icon-layers fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items From Library"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="modal" data-bs-target="#add_section">
+															<i class="icon feather icon-folder-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Subsection"></i>
+														</a>
+													</div>
+												</div>
+											</td>
+											<td colspan="5" class="text-end">
+												$ 60,000
+											</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Add Sub Section</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">Add Items from Library</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">Add Item</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>1.1</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Sofa Set
+												</div>
+											</td>
+											<td class="text-end">$ 2,500</td>
+											<td class="text-end">$ 3,000</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>2</span>
+													<span>Set</span>
+												</div>
+											</td>
+											<td class="text-end">5%</td>
+											<td class="text-end">$ 6,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>1.2</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Dining Table
+												</div>
+											</td>
+											<td class="text-end">$ 3,000</td>
+											<td class="text-end">$ 3,600</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>1</span>
+													<span>Set</span>
+												</div>
+											</td>
+											<td class="text-end">5%</td>
+											<td class="text-end">$ 3,600</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>1.3</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Office Chairs
+												</div>
+											</td>
+											<td class="text-end">$ 500</td>
+											<td class="text-end">$ 650</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>10</span>
+													<span>pcs</span>
+												</div>
+											</td>
+											<td class="text-end">5%</td>
+											<td class="text-end">$ 6,500</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td>2</td>
+											<td>Door</td>
+											<td class="text-end">$ 500</td>
+											<td class="text-end">$ 650</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>15</span>
+													<span>Unit</span>
+												</div>
+											</td>
+											<td class="text-end">12%</td>
+											<td class="text-end">$ 9,750</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="parent-row pointer">
+											<td>3</td>
+											<td>
+												<div class="d-flex align-items-center gap-3">
+													<div class="d-flex gap-1 align-items-center">
+														<div class="expand-btn btn btn-xs btn-square">
+															<i class="fas fa-chevron-right"></i>
+														</div>Window
+													</div>
+													<div class="d-flex gap-1 align-items-center section-utility">
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">
+															<i class="icon feather icon-file-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items to this Section"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">
+															<i class="icon feather icon-layers fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items From Library"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="modal" data-bs-target="#add_section">
+															<i class="icon feather icon-folder-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Subsection"></i>
+														</a>
+													</div>
+												</div>
+											</td>
+											<td colspan="5" class="text-end">
+												$ 5,000
+											</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Add Sub Section</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">Add Items from Library</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">Add Item</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>3.1</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Wooden Frame
+												</div>
+											</td>
+											<td class="text-end">$ 120</td>
+											<td class="text-end">$ 150</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>20</span>
+													<span>Unit</span>
+												</div>
+											</td>
+											<td class="text-end">12%</td>
+											<td class="text-end">$ 3,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>3.2</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Glass
+												</div>
+											</td>
+											<td class="text-end">$ 80</td>
+											<td class="text-end">$ 100</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>20</span>
+													<span>Unit</span>
+												</div>
+											</td>
+											<td class="text-end">12%</td>
+											<td class="text-end">$ 2,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="parent-row pointer">
+											<td>4</td>
+											<td>
+												<div class="d-flex align-items-center gap-3">
+													<div class="d-flex gap-1 align-items-center">
+														<div class="expand-btn btn btn-xs btn-square">
+															<i class="fas fa-chevron-right"></i>
+														</div>Painting
+													</div>
+													<div class="d-flex gap-1 align-items-center section-utility">
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">
+															<i class="icon feather icon-file-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items to this Section"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">
+															<i class="icon feather icon-layers fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items From Library"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="modal" data-bs-target="#add_section">
+															<i class="icon feather icon-folder-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Subsection"></i>
+														</a>
+													</div>
+												</div>
+											</td>
+											<td colspan="5" class="text-end">
+												$ 9,000
+											</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Add Sub Section</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">Add Items from Library</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">Add Item</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>4.1</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Interior Walls
+												</div>
+											</td>
+											<td class="text-end">$ 2</td>
+											<td class="text-end">$ 2.5</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>2,000</span>
+													<span>sqft</span>
+												</div>
+											</td>
+											<td class="text-end">18%</td>
+											<td class="text-end">$ 5,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>4.2</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Exterior Walls
+												</div>
+											</td>
+											<td class="text-end">$ 2.5</td>
+											<td class="text-end">$ 3.2</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>1,000</span>
+													<span>sqft</span>
+												</div>
+											</td>
+											<td class="text-end">18%</td>
+											<td class="text-end">$ 3,200</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>4.3</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Waterproof Coating
+												</div>
+											</td>
+											<td class="text-end">$ 1.5</td>
+											<td class="text-end">$ 2</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>500</span>
+													<span>sqft</span>
+												</div>
+											</td>
+											<td class="text-end">18%</td>
+											<td class="text-end">$ 1,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="parent-row pointer">
+											<td>5</td>
+											<td>
+												<div class="d-flex align-items-center gap-3">
+													<div class="d-flex gap-1 align-items-center">
+														<div class="expand-btn btn btn-xs btn-square">
+															<i class="fas fa-chevron-right"></i>
+														</div>Ceiling
+													</div>
+													<div class="d-flex gap-1 align-items-center section-utility">
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">
+															<i class="icon feather icon-file-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items to this Section"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">
+															<i class="icon feather icon-layers fs-16" data-bs-toggle="tooltip" data-bs-title="Add Items From Library"></i>
+														</a>
+														<a href="javascript:void(0);" class="btn btn-xs btn-square" data-bs-toggle="modal" data-bs-target="#add_section">
+															<i class="icon feather icon-folder-plus fs-16" data-bs-toggle="tooltip" data-bs-title="Add Subsection"></i>
+														</a>
+													</div>
+												</div>
+											</td>
+											<td colspan="5" class="text-end">
+												$ 4,000
+											</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Add Sub Section</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtAdditemLibrary">Add Items from Library</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#section_Additem">Add Item</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#add_section">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>5.1</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													POP False Ceiling
+												</div>
+											</td>
+											<td class="text-end">$ 2.5</td>
+											<td class="text-end">$ 3.2</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>600</span>
+													<span>sqft</span>
+												</div>
+											</td>
+											<td class="text-end">18%</td>
+											<td class="text-end">$ 1,920</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>5.2</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													Gypsum Boards
+												</div>
+											</td>
+											<td class="text-end">$ 3.5</td>
+											<td class="text-end">$ 4.5</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>400</span>
+													<span>sqft</span>
+												</div>
+											</td>
+											<td class="text-end">18%</td>
+											<td class="text-end">$ 1,800</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="child-row" style="display: none;">
+											<td>5.3</td>
+											<td>
+												<div class="d-flex gap-1 align-items-center">
+													<i class="icon feather icon-corner-down-right fs-16 btn-xs btn-square"></i>
+													LED Lights
+												</div>
+											</td>
+											<td class="text-end">$ 20</td>
+											<td class="text-end">$ 25</td>
+											<td class="text-end">
+												<div class="d-flex flex-column">
+													<span>20</span>
+													<span>pcs</span>
+												</div>
+											</td>
+											<td class="text-end">18%</td>
+											<td class="text-end">$ 500</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#qtEdititem">Edit</a>
+														<a class="dropdown-item" href="javascript:void(0);">Duplicate</a>
+														<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+														<a class="dropdown-item" href="javascript:void(0);">Move Down</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#selectParent">Select Parent</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+					<!-- End - Table -->
+
+					<!-- Start - Bank Details -->
+					<div class="col-xl-12">
+						<div class="card">
+							<div class="row">
+								<div class="col-xl-6 border-xl-end">
+									<div class="card-body">
+										
+										<div class="mb-5">
+											<div class="mb-3 add-input-box">
+												<a class="add-input-btn" href="javascript:void(0);">+ Bank Details</a>
+												<div class="input-content">
+													<div class="dropdown-slt mb-3">
+														<div class="d-flex justify-content-between">
+															<label class="form-label text-uppercase remove-input-btn pointer">Bank Account</label>
+															<a href="javascript:void(0);" class="btn btn-square btn-sm remove-input-btn"><i class="icon feather icon-x"></i></a>
+														</div>
+															
+														<input class="form-control w-100 border rounded on-dropdown-input AccountInput" type="text" placeholder="Select Bank Account" data-dropdown-target="#dropdownAccountList" readonly="">
+														<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="dropdownAccountList">
+															<div class="align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="John Smith - JUNIO">
+																<div class="d-flex align-items-center gap-3">
+																	<img src="../assets/images/construction/bank-logo.jpg" width="25" height="25" alt="Your Bank">
+																	<h4 class="fw-semibold m-0">JUNIO</h4>
+																</div>
+																<div class="px-5">
+																	<p class="m-0 fs-12">John Smith</p>
+																	<p class="m-0 fs-12">AC : <span class="fw-semibold">65233465213221</span></p>
+																	<p class="m-0 fs-12">Bank Code : <span class="fw-semibold">Hbs8522</span></p>
+																	<p class="m-0 fs-12">UPI : <span class="fw-semibold">John Smith478@ybl</span></p>
+																</div>
+																<div class="d-flex justify-content-end">
+																	<p class="badge bg-primary fs-10 m-0">Primary Account</p>
+																</div>
+															</div>
+															<div class="p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="John - HDFC">
+																<div class="d-flex align-items-center gap-3">
+																	<img src="../assets/images/construction/bank-logo.jpg" width="25" height="25" alt="Your Bank">
+																	<h4 class="fw-semibold m-0">HDFC</h4>
+																</div>
+																<div class="px-5">
+																	<p class="m-0 fs-12">John</p>
+																	<p class="m-0 fs-12">AC : <span class="fw-semibold">98741566521687</span></p>
+																	<p class="m-0 fs-12">Bank Code : <span class="fw-semibold">SBIN0111</span></p>
+																	<p class="m-0 fs-12">UPI : <span class="fw-semibold">945961465@ybl</span></p>
+																</div>
+																<div class="d-flex justify-content-end">
+																	<p class="badge bg-warning fs-10 m-0">Secondary Account</p>
+																</div>
+															</div>
+															<div class="d-flex justify-content-center">
+																<div class="btn btn-outline-primary mt-2" data-bs-toggle="offcanvas" data-bs-target="#add-bank-account">
+																	+ New Account
+																</div>
+															</div>
+														</div>
+														<div class="bank-detail">
+															<div class="mb-3">
+																<span class="form-label text-gray">Account Holder Name</span>
+																<h6>John Smith</h6>
+															</div>
+															<div class="mb-3">
+																<span class="form-label text-gray">Account Number</span>
+																<h6>65233465213221</h6>
+															</div>
+															<div class="mb-3">
+																<span class="form-label text-gray">Bank Code</span>
+																<h6>Hbs8522</h6>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+										
+										<div class="mb-4 rounded border p-3 position-relative">
+											<label class="form-label text-uppercase">Terms And Conditions</label>
+											<p class="m-0">Any changes must be requested in writing and agreed upon by both parties. Additional work or design changes may incur additional costs. Some delays may occur due to unforeseen circumstances. Late payments may result in late payment fees. All disputes are subject to India jurisdiction only</p>
+										</div>
+										
+										<div class="mb-4 add-input-box">
+											<a class="add-input-btn" href="javascript:void(0);">+ Note</a>
+											<div class="input-content">
+												<div class="d-flex align-items-center gap-2 pointer remove-input-btn mb-3">
+													<i class="icon feather icon-x-circle fs-18 fw-medium"></i>
+													<label class="form-label pointer m-0">Note</label>
+												</div>
+												<textarea class="form-control"></textarea>
+											</div>
+										</div>
+										
+										<div>
+											<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+												<div class="dz-default dz-message pointer">
+													<button class="dz-button" type="button">Attach Media<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+												</div>
+											</form>
+										</div>
+
+									</div>
+								</div>
+								<div class="col-xl-6 ps-xl-0">
+									<div class="card-body d-flex flex-column h-100">
+										<div>
+											<p class="d-flex justify-content-between mb-2">Item Sub Total <span>$ 2,07,36,000</span></p>
+											<p class="d-flex justify-content-between mb-2">
+												<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preTaxDetuction">+ Pre Tax Detuction</a>
+												<span>$ 0</span>
+											</p>
+											<p class="d-flex justify-content-between mb-2">Net Subtotal <span>2,07,36,000</span></p>
+											<div class="d-flex justify-content-between align-items-center">
+												<div class="d-flex align-items-baseline gap-2">
+													<p class="mb-2">Tax</p>
+													<select class="form-select form-select-sm selectpicker">
+														<option>18%</option>
+														<option>12%</option>
+														<option>5%</option>
+														<option selected>0%</option>
+														<option>28%</option>
+														<option>0.1%</option>
+														<option>0.25%</option>
+														<option>1.5%</option>
+														<option>3%</option>
+														<option>6%</option>
+														<option>7.5%</option>
+														<option>14%</option>
+													</select>
+												</div>
+												<span>$17</span>
+											</div>
+										</div>
+										<div class="d-flex justify-content-between my-4">
+											<a href="javascript:void(0);" class="text-gray">Additional Discount (%)</a>
+											<input type="number" class="form-control width200" placeholder="0">
+										</div>
+										<div class="d-flex justify-content-between my-4">
+											<a href="javascript:void(0);" class="text-gray">Additional Charges</a>
+											<input type="number" class="form-control width200" placeholder="0">
+										</div>
+										<hr class="my-4">
+										<div class="d-flex justify-content-between align-items-center mt-auto">
+											<div>
+												<p class="mb-0">Total Amount</p>
+												<div class="form-check lh-sm align-items-center">
+													<input class="form-check-input fs-12" type="checkbox" value="" id="roundOff">
+													<label class="form-check-label fs-12" for="roundOff">Round Off</label>
+												</div>
+											</div>
+											<span>$ 2,07,36,000</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- End - Bank Details -->
+
+					<div class="col-xl-12">
+						<div class="card">
+							<div class="card-body row">
+								<div class="col-xl-4 border-xl-end mb-2 mb-xl-0">
+									<p class="m-0 text-center text-black">Cost Price: <span>$ 1,72,80,000</span></p>
+								</div>
+								<div class="col-xl-4 border-xl-end mb-2 mb-xl-0">
+									<p class="m-0 text-center text-black">Markup: <span>$ 34,56,000</span></p>
+								</div>
+								<div class="col-xl-4">
+									<p class="m-0 text-center text-black">Total Amount: <span>$ 2,07,36,000</span></p>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+				</div>
+			</div>
+
+			<!-- Start - Add Quatation Modal -->
+			<div class="modal TriggerModal fade" id="editQuatation" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editQuatation" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h3 class="modal-title" id="date-filter">Create Quotation</h3>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="mb-3">
+								<label class="form-label text-uppercase">Quotation Subject</label>
+								<input type="text" class="form-control" required>
+							</div>
+
+							<div class="mb-3">
+								<div class="dropdown-slt">
+									<label class="form-label text-uppercase">Client Name</label>
+									<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#clientName" type="text" readonly="">
+									<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="clientName" style="display: none;">
+										<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+											<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+											<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+												<div>
+													<div class="fw-semibold text-black">Alexander</div>
+													<span class="fs-12">+91 764302****</span>
+												</div>
+												<div>
+													<div>Client</div>
+												</div>
+											</div>
+										</div>
+										<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+											<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+											<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+												<div>
+													<div class="fw-semibold text-black">Michael Johnson</div>
+													<span class="fs-12">+15 1343025***</span>
+												</div>
+												<div>
+													<div>Staff</div>
+												</div>
+											</div>
+										</div>
+										<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+											+ Create Party
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="mb-2">
+								<label class="form-label">Select Tax Type:</label>
+								<div class="d-flex gap-4">
+									<div class="form-check">
+										<input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1" checked>
+										<label class="form-check-label" for="flexRadioDefault1">Item Level Tax</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+										<label class="form-check-label" for="flexRadioDefault2">Bill Level Tax</label>
+									</div>
+								</div>
+							</div>
+							<div class="d-flex justify-content-end align-items-center">
+								<a href="construction/add-quotation.html" class="btn btn-primary">Create Quatation</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Add Quatation Modal -->
+
+			<!-- Start - Edit Quatation Number Modal -->
+			<div class="modal fade" id="edit-qtnumber" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edit-qtnumber" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h3 class="modal-title" id="date-filter">Edit Quotation Number</h3>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="align-items-center mb-3">
+								<form class="d-flex gap-2">
+									<div>
+										<label for="grn-no" class="form-label text-uppercase">Prefix</label>
+										<input class="form-control" id="grn-no" aria-describedby="grn-no" placeholder="QT-">
+									</div>
+									<div>
+										<label for="grn-no" class="form-label text-uppercase">Number</label>
+										<input class="form-control text-end" type="number" id="grn-no" aria-describedby="grn-no" placeholder="7">
+									</div>
+								</form>
+							</div>
+							<div>
+								<button type="submit" class="btn btn-sm btn-primary">Save</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Edit Quatation Number Modal -->
+
+			<!-- Start - Add Quatation Section Modal -->
+			<div class="modal fade" id="addQuatationSection" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edit-qtnumber" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h3 class="modal-title" id="date-filter">Add Section</h3>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="align-items-center mb-3">
+								<input class="form-control" type="text" placeholder="Section name">
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" id="toggleDropdown">
+								<label class="form-check-label" for="toggleDropdown">Assign to Parent</label>
+							</div>
+
+							<div class="dropdown-container mb-3 d-none">
+								<select class="form-select selectpicker">
+									<option selected>Window</option>
+									<option value="1">Section 2</option>
+									<option value="2">Section 3</option>
+									<option value="3">Section 4</option>
+								</select>
+							</div>
+							<div class="d-flex justify-content-end">
+								<div>
+									<a href="javascript:void(0);" class="btn btn-sm btn-light">Cancel</a>
+									<button type="submit" class="btn btn-sm btn-primary">Save</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Add Quatation Section Modal -->
+
+			<!-- Start - Add Quatation Item Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="qtAdditem" aria-labelledby="qtAdditem" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">New Item</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control" placeholder="Enter Item Name">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Code</label>
+						<input type="text" class="form-control" placeholder="Enter Item Code">
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="w-50">
+							<label class="form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+						<div class="w-50">
+							<label for="est-quality" class="form-label">GST %</label>
+							<select class="form-select selectpicker">
+								<option>0%</option>
+								<option>5%</option>
+								<option>12%</option>
+								<option>18%</option>
+								<option>28%</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<div class="form-check mb-3">
+							<input class="form-check-input" type="checkbox" value="" id="addMeasurment">
+							<label class="form-check-label" for="addMeasurment">Add Measurement</label>
+						</div>
+
+						<div class="d-flex align-items-center mb-3 gap-2">
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Number</label>
+								<input type="number" class="form-control" placeholder="Number">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Length</label>
+								<input type="number" class="form-control" placeholder="Length">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Width</label>
+								<input type="number" class="form-control" placeholder="Width">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Estimated Qty.</label>
+						<input type="number" class="form-control" placeholder="0">
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Cost Price</label>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Mark Up</label>
+						<div class="input-group position-relative w-50">
+							<input type="number" class="form-control" placeholder="0">
+							<div>
+								<select class="form-select selectpicker">
+									<option>%</option>
+									<option>$</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Sale Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="10">
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Sales Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="mb-3">
+						<div class="position-relative">
+							<input class="form-control" placeholder="Add Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ HSN/SAC</a>
+						</div>
+						<div class="input-content">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">HSN/SAC</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Description</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div>
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">Note</label>
+								</div>
+								<textarea class="form-control mt-3"></textarea>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Quatation Item Offcanvas -->
+
+			<!-- Start - Edit Quatation Item Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="qtEdititem" aria-labelledby="qtEdititem" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Edit Item</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control" placeholder="Enter Item Name">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Code</label>
+						<input type="text" class="form-control" placeholder="Enter Item Code">
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="w-50">
+							<label class="form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+						<div class="w-50">
+							<label for="est-quality" class="form-label">GST %</label>
+							<select class="form-select selectpicker">
+								<option>0%</option>
+								<option>5%</option>
+								<option>12%</option>
+								<option>18%</option>
+								<option>28%</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<div class="form-check mb-3">
+							<input class="form-check-input" type="checkbox" value="" id="addMeasurment">
+							<label class="form-check-label" for="addMeasurment">Add Measurement</label>
+						</div>
+
+						<div class="d-flex align-items-center mb-3 gap-2">
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Number</label>
+								<input type="number" class="form-control" placeholder="Number">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Length</label>
+								<input type="number" class="form-control" placeholder="Length">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Width</label>
+								<input type="number" class="form-control" placeholder="Width">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Estimated Qty.</label>
+						<input type="number" class="form-control" placeholder="0">
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Sale Price</label>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Mark Up</label>
+						<div class="input-group position-relative w-50">
+							<input type="number" class="form-control" placeholder="0">
+							<div>
+								<select class="form-select selectpicker">
+									<option>%</option>
+									<option>$</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Sale Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="10">
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Sales Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="mb-3">
+						<div class="position-relative">
+							<input class="form-control" placeholder="Add Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ HSN/SAC</a>
+						</div>
+						<div class="input-content">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">HSN/SAC</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Description</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div>
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">Note</label>
+								</div>
+								<textarea class="form-control mt-3"></textarea>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Edit Quatation Item Offcanvas -->
+
+			<!-- Start - Add Section Item Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="section_Additem" aria-labelledby="section_Additem" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div>
+							<h5 class="offcanvas-title fw-semibold text-uppercase">New Item</h5>
+							<p class="m-0 text-uppercase">Sub Item of Window</p>
+						</div>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control" placeholder="Enter Item Name">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Code</label>
+						<input type="text" class="form-control" placeholder="Enter Item Code">
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="w-50">
+							<label class="form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+						<div class="w-50">
+							<label for="est-quality" class="form-label">GST %</label>
+							<select class="form-select selectpicker">
+								<option>0%</option>
+								<option>5%</option>
+								<option>12%</option>
+								<option>18%</option>
+								<option>28%</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<div class="form-check mb-3">
+							<input class="form-check-input" type="checkbox" value="" id="addMeasurment">
+							<label class="form-check-label" for="addMeasurment">Add Measurement</label>
+						</div>
+
+						<div class="d-flex align-items-center mb-3 gap-2">
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Number</label>
+								<input type="number" class="form-control" placeholder="Number">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Length</label>
+								<input type="number" class="form-control" placeholder="Length">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Width</label>
+								<input type="number" class="form-control" placeholder="Width">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Estimated Qty.</label>
+						<input type="number" class="form-control" placeholder="0">
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Sale Price</label>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Mark Up</label>
+						<div class="input-group position-relative w-50">
+							<input type="number" class="form-control" placeholder="0">
+							<div>
+								<select class="form-select selectpicker">
+									<option>%</option>
+									<option>$</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Sale Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="10">
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Sales Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="mb-3">
+						<div class="position-relative">
+							<input class="form-control" placeholder="Add Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ HSN/SAC</a>
+						</div>
+						<div class="input-content">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">HSN/SAC</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Description</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div>
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">Note</label>
+								</div>
+								<textarea class="form-control mt-3"></textarea>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Section Item Offcanvas -->
+
+			<!-- Start - Pre Tax Detuction Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="preTaxDetuction" aria-labelledby="preTaxDetuction" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Pre Tax Deduction</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-4 d-flex justify-content-between">
+						<h6 class="m-0">Items</h6>
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preTaxDetuction_AddDeduction">+ Add Deductions</a>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction1">
+							</div>
+							<h5 class="m-0">Furniture</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" id="deduction2" />
+							</div>
+							<h5 class="m-0">Glass</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0" id="amountInput" />
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction3">
+							</div>
+							<h5 class="m-0">Wooden Frame</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+				<div class="offcanvas-footer border-top">
+					<div class="d-flex justify-content-between">
+						<p class="m-0 text-black fs-16 fw-semibold">Total</p>
+						<p class="m-0 text-black fs-16">$ 0</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Pre Tax Detuction Offcanvas -->
+			
+			<!-- Start - New Detuction Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="preTaxDetuction_AddDeduction" aria-labelledby="preTaxDetuction" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">New Deduction</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control">
+					</div>
+					
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - New Detuction Offcanvas -->
+
+			<!-- Start - Add Quatation Item From Library Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="qtAdditemLibrary" aria-labelledby="qtAdditemLibrary" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Selected Items (0)</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Next</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<div class="input-group message-search-area w-50">
+							<input type="text" class="form-control border-end-0" placeholder="Search">
+							<div class="input-group-append">
+								<button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+							</div>
+						</div>
+					</div>
+
+					<div class="vh-75 position-relative">
+						<div class="position-absolute start-50 top-50 translate-middle text-center">
+							<p class="m-0 fw-semibold fw-18">No Item Found</p>
+						</div>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Quatation Item From Library Offcanvas -->
+
+			<!-- Start - Select Parent Modal -->
+			<div class="modal fade" id="selectParent" data-bs-keyboard="false" tabindex="-1" aria-labelledby="selectParent" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<div>
+								<h4 class="modal-title">Select Parent</h4>
+								<p class="m-0">For Wooden Frame</p>
+							</div>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="d-flex justify-content-between align-items-center p-0 form-check mb-3">
+								<label class="form-check-label" for="selectParent1">Window</label>
+								<input class="form-check-input" type="checkbox" value="" id="selectParent1">
+							</div>
+							<div class="d-flex justify-content-between align-items-center p-0 form-check mb-3">
+								<label class="form-check-label" for="selectParent2">Test</label>
+								<input class="form-check-input" type="checkbox" value="" id="selectParent2">
+							</div>
+							<div class="d-flex justify-content-end">
+								<div>
+									<button type="submit" class="btn btn-sm btn-primary">Save</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Select Parent Modal -->
+
+			<!-- Start - Add Section Modal -->
+			<div class="modal fade" id="add_section" data-bs-keyboard="false" tabindex="-1" aria-labelledby="add_section" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h4 class="modal-title">Add Section</h4>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="mb-3">
+								<input type="text" class="form-control" placeholder="Section Name">
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" id="toggleDropdown">
+								<label class="form-check-label" for="toggleDropdown">Assign to Parent</label>
+							</div>
+
+							<div class="dropdown-container mb-3 d-none">
+								<select class="form-select selectpicker">
+									<option selected>Window</option>
+									<option value="1">Section 2</option>
+									<option value="2">Section 3</option>
+									<option value="3">Section 4</option>
+								</select>
+							</div>
+							<div class="d-flex justify-content-end">
+								<div>
+									<button type="submit" class="btn btn-sm btn-primary">Save</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Select Parent Modal -->
+
+			<!-- Start - Add Bank Account Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="add-bank-account" aria-labelledby="add-bank-account" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-bold">Add New Account</h5>
+					</div>
+					<div class="d-flex gap-2">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Account Holder Name:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Account Number:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">IFSC Code:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Bank Name:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Bank Address:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Iban Number:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">UPI Number:</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<h6 class="mb-3">Opening Balance:</h6>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Amount</label>
+						<input type="number" class="form-control form-control-lg">
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Bank Account Offcanvas -->
+
+			<!-- Start - Add Party Offcanvas -->
+			<div class="custom-offcanvas-width TriggerOffcanvas offcanvas offcanvas-end" tabindex="-1" id="create-party" aria-labelledby="create-party" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-medium">Add Party</h5>
+					</div>
+					<div class="d-flex gap-2">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Party Name</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="d-flex gap-2">
+						<div class="width130">
+							<select class="form-select selectpicker">
+								<option data-content="<img src='assets/images/onsite/india.png' alt=''> +91">India</option>
+								<option data-content="<img src='assets/images/onsite/saudi-arab.png' alt=''> +966">Saudi Arabis</option>
+								<option data-content="<img src='assets/images/onsite/qatar.png' alt=''> +974">Qatar</option>
+								<option data-content="<img src='assets/images/onsite/uae.png' alt=''> +971">United Arab Emiarates</option>
+								<option data-content="<img src='assets/images/onsite/nepal.png' alt=''> +977">Nepal</option>
+								<option data-content="<img src='assets/images/onsite/us-canada.png' alt=''> +1">US/Canada</option>
+								<option data-content="<img src='assets/images/onsite/uk.png' alt=''> +44">UK</option>
+								<option data-content="<img src='assets/images/onsite/australia.png' alt=''> +61">Austialia</option>
+								<option data-content="<img src='assets/images/onsite/kuwait.png' alt=''> +965">Kuwait</option>
+								<option data-content="<img src='assets/images/onsite/oman.png' alt=''> +968">Oman</option>
+								<option data-content="<img src='assets/images/onsite/indonasia.png' alt=''> +62">Indonasia</option>
+								<option data-content="<img src='assets/images/onsite/thialand.png' alt=''> +66">Thailand</option>
+								<option data-content="<img src='assets/images/onsite/phillipins.png' alt=''> +63">Phillipins</option>
+								<option data-content="<img src='assets/images/onsite/lebanon.png' alt=''> +961">Lebanon</option>
+								<option data-content="<img src='assets/images/onsite/egypt.png' alt=''> +20">Egypt</option>
+								<option data-content="<img src='assets/images/onsite/turkey.png' alt=''> +90">Turkey</option>
+								<option data-content="<img src='assets/images/onsite/kenya.png' alt=''> +254">Kenya</option>
+								<option data-content="<img src='assets/images/onsite/south-africa.png' alt=''> +27">South Africa</option>
+								<option data-content="<img src='assets/images/onsite/nigeria.png' alt=''> +234">Nigeria</option>
+								<option data-content="<img src='assets/images/onsite/behrain.png' alt=''> +973">Behrain</option>
+								<option data-content="<img src='assets/images/onsite/togo.png' alt=''> +228">Togo</option>
+								<option data-content="<img src='assets/images/onsite/ivory-coast.png' alt=''> +225">Ivory Coast</option>
+							</select>
+						</div>
+						<div class="position-relative mb-4 w-75">
+							<input type="number" class="form-control" placeholder="Phone">
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Email</label>
+						<input type="email" class="form-control form-control-lg" placeholder="Email">
+					</div>
+
+					<div class="mb-4">
+						<div class="dropdown-slt">
+							<label class="form-label text-uppercase">Party Type</label>
+							<input class="form-control form-control-lg w-100 border rounded on-dropdown-input" data-dropdown-target="#party_type" type="text" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="party_type" style="display: none;">
+								<h6 class="m-0 p-2 border-bottom">Party Type</h6>
+								<div class="party-item d-flex align-items-center p-2 on-dropdown-item" data-val="Client">
+									<label for="client" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0" >
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="client" name="party-type">
+											<span class="form-check-label" for="client">Client</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Staff">
+									<label class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="staff" name="party-type">
+											<span class="form-check-label" for="staff">Staff</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Worker">
+									<label class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="worker" name="party-type">
+											<span class="form-check-label">Worker</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Investor">
+									<label  class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="investor" name="party-type">
+											<span class="form-check-label">Investor</span>
+										</div>
+									</label>
+								</div>
+								<h6 class="m-0 p-2 border-bottom">Vendor</h6>
+								<div class="party-item d-flex align-items-center p-2 on-dropdown-item" data-val="Labour Contractor">
+									<label for="labour_contractor" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0" >
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="labour_contractor" name="party-type">
+											<span class="form-check-label">Labour Contractor</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Material Supplier">
+									<label for="material_supplier" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="material_supplier" name="party-type">
+											<span class="form-check-label">Material Supplier</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Equipment Supplier">
+									<label for="equipment_supplier" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="equipment_supplier" name="party-type">
+											<span class="form-check-label">Equipment Supplier</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Subcontractor">
+									<label for="subcontractor" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="subcontractor" name="party-type">
+											<span class="form-check-label">Subcontractor</span>
+										</div>
+									</label>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 pt-0 on-dropdown-item" data-val="Other Vendor">
+									<label for="other_vendor" class="d-flex justify-content-between pointer align-items-center bg-primary-subtle rounded w-100 p-2 form-check mb-0">
+										<div class="form-check">
+											<input class="form-check-input" type="radio" id="other_vendor" name="party-type">
+											<span class="form-check-label">Other Vendor</span>
+										</div>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="form-control form-control-lg mb-4 pointer" data-bs-toggle="offcanvas" data-bs-target="#opening_balance">
+						<div class="d-flex justify-content-between align-items-center">
+							<div class="d-flex gap-3">
+								<span>$</span>
+								<p class="m-0">Opening Balance</p>
+							</div>
+							<div>
+								<i class="icon feather icon-chevron-right"></i>
+							</div>
+						</div>
+					</div>
+
+					<div class="form-control form-control-lg mb-4 pointer" data-bs-toggle="offcanvas" data-bs-target="#add_address">
+						<div class="d-flex justify-content-between align-items-center">
+							<p class="m-0">Your Address</p>
+							<div>
+								<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#add_address">+Add</a>
+							</div>
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Party ID</label>
+						<input type="none" class="form-control form-control-lg" data-bs-toggle="modal" data-bs-target="#edit_party_id" placeholder="PID-1">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Aadhaar</label>
+						<div class="d-flex gap-2">
+							<input type="number" class="form-control form-control-lg" placeholder="Aadhar Number">
+							<div class="custom-img-upload img-parent-box">
+								<img src="https://demo.w3cms.in/lemars/public/images/noimage.jpg" class="img-for-onchange" id="UserImg" alt="Image" width="100px" height="100px" title="Image" style="display: none;">
+								<button type="button" class="cancel-img-btn position-absolute" style="display: none; z-index: 2;" aria-label="Close"><i class="icon feather icon-x"></i></button>
+								<div class="upload-btn">
+									<input type="file" class="form-control ps-2 img-input-onchange" name="aadhar_img" id="aadhar_img" accept=".png, .jpg, .jpeg, .pdf" hidden="">
+									<label class="upload-label btn btn-outline-primary dropzone-btn m-0" for="aadhar_img"><i class="icon fas fa-upload"></i></label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">PAN</label>
+						<div class="d-flex gap-2">
+							<input type="text" class="form-control form-control-lg" placeholder="PAN Number">
+							<div class="custom-img-upload img-parent-box">
+								<img src="https://demo.w3cms.in/lemars/public/images/noimage.jpg" class="img-for-onchange" id="UserImg" alt="Image" width="100px" height="100px" title="Image" style="display: none;">
+								<button type="button" class="cancel-img-btn position-absolute" style="display: none; z-index: 2;" aria-label="Close"><i class="icon feather icon-x"></i></button>
+								<div class="upload-btn">
+									<input type="file" class="form-control ps-2 img-input-onchange" name="pan_img" id="pan_img" accept=".png, .jpg, .jpeg, .pdf" hidden="">
+									<label class="upload-label btn btn-outline-primary dropzone-btn m-0" for="pan_img"><i class="icon fas fa-upload"></i></label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Party Offcanvas -->
+			
+			<!-- Start - Remove Image Modal -->
+			<div class="modal fade" id="imageRemoveConfirmModal" tabindex="-1">
+				<div class="modal-dialog modal-dialog-centered modal-sm">
+					<div class="modal-content stylish-modal text-center p-3">
+						<div class="text-danger mb-2">
+							<i class="icon feather icon-trash-2 fs-26"></i>
+						</div>
+						<h5 class="fw-bold text-dark mb-2">Are you sure?</h5>
+						<p class="text-muted mb-3">You want to remove this image.</p>
+					
+						<!-- Image preview -->
+						<div class="preview-wrapper mb-3 rounded shadow-sm overflow-hidden">
+							<img id="previewImageInModal" src="" alt="Preview" class="img-fluid w-100" />
+						</div>
+
+						<!-- Buttons -->
+						<div class="d-flex justify-content-center gap-2">
+							<button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-1" data-bs-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-danger rounded-pill px-4 py-1" id="confirmRemoveImageBtn">Yes, Remove</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Remove Image Modal -->
+
+			<!-- Start - Opening Balance Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="opening_balance" aria-labelledby="opening_balance" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-medium">Opening Balance</h5>
+					</div>
+					<div class="d-flex gap-2">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="d-flex mb-4 gap-2">
+						<label for="party_will_pay" class="d-flex justify-content-center align-items-center border rounded gap-2 form-label p-2 pointer w-50">
+							<input class="form-check-input" type="radio" name="opening_balance" id="party_will_pay">
+							<span>Party will pay</span>
+						</label>
+						<label for="party_will_receive" class="d-flex justify-content-center align-items-center border rounded gap-2 form-label p-2 pointer w-50">
+							<input class="form-check-input" type="radio" name="opening_balance" id="party_will_receive">
+							<span>Party will receive</span>
+						</label>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Amount($)*</label>
+						<input type="number" class="form-control form-control-lg">
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Opening Balance Offcanvas -->
+
+			<!-- Start - Add Address Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="add_address" aria-labelledby="add_address" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">New Address</h5>
+					</div>
+					<div class="d-flex gap-2">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Address Heading</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">GST</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<h6 class="mb-4">Address Details</h6>
+					
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Address Line 1</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">City</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">State / Province</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">ZIP / Postal Code</label>
+						<input type="text" class="form-control form-control-lg">
+					</div>
+
+					<div class="position-relative">
+						<label class="form-label text-uppercase">Country</label>
+						<select class="form-select form-select-lg selectpicker">
+							<option data-content="<img src='assets/images/onsite/india.png' alt=''> India">India</option>
+							<option data-content="<img src='assets/images/onsite/saudi-arab.png' alt=''> Saudi Arabia">Saudi Arabis</option>
+							<option data-content="<img src='assets/images/onsite/qatar.png' alt=''> Qatar">Qatar</option>
+							<option data-content="<img src='assets/images/onsite/uae.png' alt=''> Ubited Aram Emiates">United Arab Emiarates</option>
+							<option data-content="<img src='assets/images/onsite/nepal.png' alt=''> Nepal">Nepal</option>
+							<option data-content="<img src='assets/images/onsite/us-canada.png' alt=''> US">US/Canada</option>
+							<option data-content="<img src='assets/images/onsite/uk.png' alt=''> UK">UK</option>
+							<option data-content="<img src='assets/images/onsite/australia.png' alt=''> Austialia">Austialia</option>
+							<option data-content="<img src='assets/images/onsite/kuwait.png' alt=''> Kuwait">Kuwait</option>
+							<option data-content="<img src='assets/images/onsite/oman.png' alt=''> Oman">Oman</option>
+							<option data-content="<img src='assets/images/onsite/indonasia.png' alt=''> Indonasia">Indonasia</option>
+							<option data-content="<img src='assets/images/onsite/thialand.png' alt=''> Thailand">Thailand</option>
+							<option data-content="<img src='assets/images/onsite/phillipins.png' alt=''> Phillipins">Phillipins</option>
+							<option data-content="<img src='assets/images/onsite/lebanon.png' alt=''> Lebanon">Lebanon</option>
+							<option data-content="<img src='assets/images/onsite/egypt.png' alt=''> Egypt">Egypt</option>
+							<option data-content="<img src='assets/images/onsite/turkey.png' alt=''> Turkey">Turkey</option>
+							<option data-content="<img src='assets/images/onsite/kenya.png' alt=''> Kenya">Kenya</option>
+							<option data-content="<img src='assets/images/onsite/south-africa.png' alt=''> South Africa">South Africa</option>
+							<option data-content="<img src='assets/images/onsite/nigeria.png' alt=''> Nigeria">Nigeria</option>
+							<option data-content="<img src='assets/images/onsite/behrain.png' alt=''> Behrain">Behrain</option>
+							<option data-content="<img src='assets/images/onsite/togo.png' alt=''> Togo">Togo</option>
+							<option data-content="<img src='assets/images/onsite/ivory-coast.png' alt=''> Ivory Coast">Ivory Coast</option>
+						</select>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Add Address Offcanvas -->
+
+			<!-- Start - Edit Party ID Modal -->
+			<div class="modal fade" id="edit_party_id" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edit_party_id" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h4 class="modal-title">Edit Party ID</h4>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							
+							<div class="position-relative mb-4">
+								<label class="form-label text-uppercase">Prefix</label>
+								<input type="text" class="form-control" placeholder="PID-">
+							</div>
+
+							<div class="position-relative mb-4">
+								<label class="form-label text-uppercase">Sequence</label>
+								<input type="text" class="form-control" placeholder="1">
+							</div>
+
+							<div>
+								<button type="submit" class="btn btn-primary w-100">Save</button>
+							</div>
+
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Edit Party ID Modal -->
+
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Toastr -->
+	<script src="assets/vendor/toastr/js/toastr.min.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	<script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Bootstrap Daterangepicker -->
+	<script src="assets/vendor/daterangepicker/moment.min.js"></script>
+	<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+	<script src="assets/js/plugins-init/daterangepicker-init.js"></script>
+	
+	<!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	
+	
+	
+</body>
+</html>

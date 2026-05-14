@@ -1,0 +1,20 @@
+Flask==3.0.3
+Flask-Cors==5.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+SQLAlchemy==2.0.36
+alembic==1.13.3
+psycopg[binary]==3.2.3
+python-dotenv==1.0.1
+httpx==0.28.1
+PyJWT==2.10.1
+cryptography==44.0.0
+pytest==8.3.4
+
+# Phase 3 — email notifications + background fan-out for the RFI tool.
+# Flask-Mail handles SMTP when ``MAIL_SERVER`` is set; otherwise the API
+# writes a notification row and skips delivery. Celery + Redis are loaded
+# lazily in ``app.api._notifications`` so the app still boots without a
+# broker — set ``CELERY_BROKER_URL`` to enable async dispatch.
+Flask-Mail==0.10.0
+celery[redis]==5.4.0

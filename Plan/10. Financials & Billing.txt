@@ -1,0 +1,127 @@
+Financials & Billing – Detailed Breakdown
+This module tracks every dollar from bid to closeout with strong finish-trade granularity and California government compliance (AIA forms, certified payroll, retention, prevailing wage, DBE). It is tightly bidirectional with RFP (awarded pricing), Estimating, Scheduling, Documents (AI reviews), and the Unified Takeoff Engine.
+Front-end: W3CRM — start from finance.html, ecom-invoice.html, reports.html; add usis-financials.html as unified shell.
+1. Core Purpose
+
+Provide live visibility into Budget vs Actual vs Forecast.
+Automate change order recovery from AI findings.
+Ensure government-ready billing and audit trails.
+Turn AI plan reviews into real financial protection.
+
+2. File / Folder Structure (W3CRM gulp src)
+textgulp/gulp/src/
+├── usis-financials.html             ← Tabbed shell: Budget | Billing | CO | Forecast
+├── elements/
+│   ├── usis-budget-table.html       ← Hierarchical table (tree via nested rows or Tabulator)
+│   ├── usis-variance-ai-widget.html ← Card list fed from /api/ai/summaries
+│   ├── usis-invoice-generator.html  ← Form POST → Flask returns PDF (UI only preview in modal)
+│   ├── usis-change-order-form.html
+│   ├── usis-profit-by-trade.html
+│   └── usis-cashflow-forecast.html  ← ApexCharts already in W3CRM vendor bundle
+├── assets/js/
+│   ├── usis-financials.js
+│   ├── usis-budget.js
+│   └── usis-change-orders.js
+Backend
+
+models/financials.py
+Flask blueprint /api/financials
+
+3. Overall Layout (W3CRM + Bootstrap)
+
+Header: Project selector, date range (Bootstrap datepicker), actions “Create Change Order”, “Generate Invoice”, “Export Certified Payroll”
+Left nav: MetisMenu subsection or vertical pills for Budget & Commitments | Billings & Invoices | Payments & Retention | Change Orders | Forecasts
+Main: Bootstrap tabs + table-responsive + chart cards (ApexCharts)
+Right: offcanvas AI variance (usis-ai-drawer.js, financial_review mode)
+Bottom: collapse panel “SOV summary”
+
+4. Key Sections & Features
+A. Project Financial Header
+
+Contract Value, % Billed, % Complete, Projected Profit %, Retention Held
+“AI-Adjusted Forecast” badge (pulls from saved AI reviews)
+Large color-coded variance indicator
+
+B. Budget vs Actual Hierarchical Table (Core View)
+
+Bootstrap table or Tabulator/DataTables with tree/group by CSI Division → Trade → Line Item
+Columns:
+Description (Drywall Hanging, 2nd Coat Paint, etc.)
+Original Budget (from Estimating)
+Approved COs
+Current Budget
+Committed (awarded RFP amounts)
+Actual Cost (from timesheets + invoices)
+Variance $ and %
+Forecast to Complete
+AI Impact $ (new column from drawing_annotations)
+
+Color coding: Green (under), Red (over, especially AI-triggered), Yellow (watch)
+Click row → drill-down or linked drawing
+
+C. AI Variance & Risk Panel (Right Sidebar)
+
+AI offcanvas (usis-ai-drawer.js) in financial_review mode (Local Llama 4 Scout default)
+Live cards from saved AI reviews:
+“Critical fire separation on A2.1 → +$18k drywall labor / +4 days”
+“Substrate moisture flagged → recommend +$9.2k”
+
+One-click “Create Change Order from this Finding”
+What-If sliders
+
+D. Billing & Invoicing Workflow
+
+Progress Billing Schedule (SOV) table
+AIA G702/G703 form generation (Flask Jinja2 backend → professional PDF)
+Auto-population from Estimating + RFP + % complete from Scheduling
+Retention tracking (5% or 10%)
+Certified payroll upload & validation
+
+E. Change Order Management
+
+Fully automated flow triggered by AI:
+AI review flags issue → “Create CO” button
+Pre-filled: Description (AI text + citation), Cost impact, Supporting evidence (annotated drawing)
+Approval workflow with audit trail
+
+On approval: auto-updates Budget, Schedule, Estimating, and notifies via existing email system
+
+F. Profitability & Forecasting
+
+Per-trade profitability dashboard (Drywall vs Paint vs Flooring)
+Cash flow forecast chart with AI risk overlays
+Margin by GC / Project type
+
+5. Data Layer (SQLAlchemy – Sage-Aligned)
+
+Budget + BudgetLineItem (hierarchical, versioned)
+Commitment + CommitmentLineItem (from RFP)
+ChangeOrder (with ai_triggered flag + FK to DrawingAnnotation)
+Invoice, Payment, FinancialTransaction
+Strong relationships to TakeoffLineItem, RFPResponse, Task, DrawingAnnotation, DailyLog
+
+6. Critical Integrations (Preserve 100%)
+
+RFP Module: Awarded pricing becomes commitments automatically
+Unified Takeoff / Estimating: Baseline budget created on award; variances flow both ways
+Scheduling: % complete and delays update forecasts and billing
+DrawingViewer + Local AI + aiReviewBus.js: Every saved review can trigger variance alerts and CO suggestions
+Safety: Safety corrective work flows into COs and Budget
+Documents Hub: All COs, invoices, payroll docs stored with AI evidence
+
+7. Mobile-First & Offline Behavior
+
+Bottom nav “Financials” tab shows summary cards + quick invoice entry
+Offline timesheet/expense entry (syncs to budget)
+Photo receipt uploads with queued AI cost extraction
+
+8. Government Compliance Features
+
+Certified payroll export (CSV + PDF)
+Prevailing wage rate validation
+Retention release tracking
+DBE/MWBE participation reports
+Full audit-ready export packs
+
+
+This module turns your Local AI plan reviews into real financial protection — catching costly issues early and automating change order recovery while staying fully Sage-compatible.

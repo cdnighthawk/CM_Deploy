@@ -1,0 +1,231 @@
+<!-- Start - Other Expenses Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="otherExpenses" aria-labelledby="otherExpenses" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-medium m-0 text-uppercase">Add Expenses</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Other Expenses</label>
+						<div class="position-relative">
+							<input class="form-control position-relative" placeholder="09 Jul 2025">
+							<span class="position-absolute end-0 top-50 translate-middle">
+							</span>
+						</div>
+					</div>
+					
+					<div class="mb-4">
+						<div class="dropdown-slt">
+							<label class="form-label text-uppercase">Party Name</label>
+							<input class="form-control w-100 p-2 border rounded on-dropdown-input" data-dropdown-target="#otherExpenses_partyName" type="text" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="otherExpenses_partyName" style="display: none;">
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Alexander</div>
+											<span class="fs-12">+91 764302****</span>
+										</div>
+										<div>
+											<div>Client</div>
+										</div>
+									</div>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Michael Johnson</div>
+											<span class="fs-12">+15 1343025***</span>
+										</div>
+										<div>
+											<div>Staff</div>
+										</div>
+									</div>
+								</div>
+								<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+									+ Create Party
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4 add-input-box">
+						<div>
+							<a class="add-input-btn" href="javascript:void(0);">+ Add Quantity and Unit Rate</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn mb-3">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Quantity</label>
+								</div>
+								<div class="input-group mb-3">
+									<input type="number" class="form-control" placeholder="Quantity">
+									<div>
+										<select class="form-select selectpicker w-25">
+											<option>Number</option>
+											<option>Nos</option>
+											<option>Kg</option>
+											<option>Bags</option>
+											<option>Cft</option>
+											<option>Tonne</option>
+											<option>Brass</option>
+											<option>Liter</option>
+											<option>Sqft</option>
+											<option>Meter</option>
+											<option>Km</option>
+											<option>Box</option>
+											<option>Ft</option>
+											<option>Cum</option>
+											<option>Quintal</option>
+											<option>Mm</option>
+											<option>Sqm</option>
+											<option>Kilolitre</option>
+											<option>In</option>
+											<option>Gram</option>
+											<option>Cm</option>
+											<option>Lb</option>
+											<option>Trips</option>
+											<option>Unit</option>
+											<option>Hour</option>
+											<option>Pac</option>
+											<option>Pair</option>
+											<option>Kw</option>
+											<option>Pcs</option>
+											<option>Per Day</option>
+											<option>Roll</option>
+											<option>Set</option>
+											<option>Sheet</option>
+											<option>Ml</option>
+											<option>Lumpsum</option>
+											<option>Barrel</option>
+											<option>Gallon</option>
+											<option>Drum</option>
+											<option>Bundle</option>
+											<option>Yard</option>
+											<option>Watt</option>
+											<option>Rmt</option>
+											<option>Qty</option>
+											<option>Pkt</option>
+											<option>Loads</option>
+											<option>Litre</option>
+											<option>Length</option>
+											<option>Dozen</option>
+											<option>Days</option>
+										</select>
+									</div>
+								</div>
+								<div class="mb-3">
+									<label class="form-label text-uppercase">Unit Rate ($)</label>
+									<input type="number" class="form-control">
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Amount</label>
+						<input class="form-control w-50" type="number">
+					</div>
+
+					<div class="mb-4 add-input-box">
+						<div>
+							<a class="add-input-btn" href="javascript:void(0);">+ Add Discount</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn mb-3">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Add Discount</label>
+								</div>
+								<input type="number" class="form-control w-50" placeholder="AMOUNT">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4 add-input-box">
+						<div>
+							<a class="add-input-btn" href="javascript:void(0);">+ Add Additional Charges</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn mb-3">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Charges</label>
+								</div>
+								<input type="number" class="form-control w-50" placeholder="AMOUNT">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4 add-input-box">
+						<div>
+							<a class="add-input-btn" href="javascript:void(0);">+ Add GST</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn mb-3">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Add GST Amount</label>
+								</div>
+								<input type="number" class="form-control w-50" placeholder="AMOUNT">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<label class="form-label">Add Cost Code</label>
+						<div class="position-relative">
+							<input class="form-control" placeholder="Select Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Total Amount</label>
+						<input class="form-control w-50" type="number">
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Paid Amount</label>
+						<input class="form-control w-50" type="number" disabled>
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Balance Due</label>
+						<input class="form-control w-50" type="number" disabled>
+					</div>
+					
+					<div class="form-control pointer d-flex justify-content-between align-items-center mb-3" data-bs-toggle="modal" data-bs-target="#saleInvoice_BillTo">
+						<p class="m-0 text-dark fw-medium">Bill To/Ship To</p>
+						<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#saleInvoice_BillTo">+ Add</a>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label">Note (Optional)</label>
+						<textarea class="form-control" rows="2"></textarea>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+			</div>
+			<!-- End - Other Expenses Offcanvas -->

@@ -1,0 +1,262 @@
+:root{
+	--nav-headbg: #FFFFFF;
+	--sidebar-bg: #FFFFFF;
+	--headerbg: #FFFFFF;
+}
+[data-bs-theme="dark"]{
+	--nav-headbg: var(--bs-body-bg);
+	--sidebar-bg: var(--bs-body-bg);
+	--headerbg: var(--bs-body-bg);
+}
+
+
+@each $name, $color in $theme_backgrounds {
+	
+	// background for nav header
+	[data-nav-headerbg="#{$name}"][data-theme-version="dark"],
+    [data-nav-headerbg="#{$name}"] {
+        @if $name != "color_1"  {
+			--nav-headbg: #{$color};
+			
+			.nav-header{
+				.brand-logo{
+					.logo-abbr{
+						path{
+							&.react-w,
+							&.w3{
+								fill:$white;
+							}
+						}
+					}	
+				}
+				.brand-title{
+					path{
+						fill:$white;
+					}
+				}
+			}
+		}
+	}
+	
+	// data sidebarbg
+	[data-sidebarbg="#{$name}"][data-theme-version="dark"],
+    [data-sidebarbg="#{$name}"] {
+        @if $name != "color_1"  {
+			--sidebar-bg: #{$color};
+			
+			.menu-toggle .deznav .metismenu li > ul{
+				background:$color!important;
+			}
+			.deznav .metismenu ul a:before{
+				background:rgba($white,0.5);
+			}
+			.deznav{
+				.menu-icon{
+					svg{
+						path,
+						ellipse{
+							stroke:$white!important;
+						}
+					}
+				}
+			}			
+			&[data-layout="vertical"]{
+				.deznav {
+					.menu-title{
+						color:$white;
+					}
+					.metismenu{
+						&>li{
+							&.mm-active{
+								&>a{
+									i{
+										color:$white;
+									}
+								}
+							}
+						}				
+					}
+				}
+			}
+			&[data-sidebar-style="mini"],
+			&[data-sidebar-style="modern"],
+			&[data-sidebar-style="compact"],
+			&[data-sidebar-style="icon-hover"][data-layout="horizontal"],
+			&[data-sidebar-style="full"][data-layout="horizontal"]{
+				.deznav{
+					.metismenu li ul{
+						background-color: lighten($color: $color, $amount: 10%);
+					}
+				} 
+				.deznav .metismenu > li.mm-active > a,
+				.deznav .metismenu > li:hover > a{
+					background:var(--bs-primary);
+				}
+			}
+			&[data-sidebar-style="compact"][data-layout="vertical"]{
+				.deznav {
+					.metismenu {
+						&>li {
+							a{
+								&:hover{
+									color:$white;
+								}
+							}
+							&>a{
+								&>i{
+									background: lighten($color: $color, $amount: 3%);
+									color:rgba($white,0.7);
+								}
+								.menu-icon{
+									background-color:lighten($color: $color, $amount: 10%);	
+								}	
+							}
+							&.mm-active,&:hover{
+								&>a {
+									box-shadow:none;
+									background:transparent!important;
+									color:$white!important;
+									i{
+										background:var(--bs-primary);
+										color:$white!important;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			&[data-sidebar-style="compact"][data-layout="horizontal"]{
+				.deznav {
+					.metismenu {
+						&>li {
+							&>a{
+								.menu-icon{
+									background-color:lighten($color: $color, $amount: 10%);	
+								}	
+							}
+							
+						}
+					}
+				}
+				
+			}
+			.deznav {
+				.metismenu{
+					a{
+						color:rgba($white,0.8)!important;
+					}
+					li{
+						ul{
+							a{
+								&:hover,
+								&:focus,
+								&.mm-active {
+									color:$white;
+								}
+							}
+						}
+					}
+					&>li{
+						&:hover{
+							&>a{
+								background: rgba(255, 255, 255, 0.15) !important;
+							}
+						}
+						&>a{
+							
+							color:rgba($white,0.85)!important;
+							i{
+								color:rgba($white,0.85)!important;
+							}
+							
+						}
+						&.mm-active{
+							&>a{
+								background: rgba(255, 255, 255, 0.15) !important;
+								color:$white;
+								i{
+									color:$white!important;
+								}
+								&:before{
+									background:$white!important;
+									}
+							}
+						}
+					}
+					.has-arrow:after{
+						border-color: rgba($white,0.85) transparent transparent rgba($white,0.85)!important;
+					}				
+				}
+				.sidebar-info{
+					color: $white; 
+					i{
+						color: $white; 		
+					}
+				}
+				
+			}
+		}
+	}
+
+	
+	// data headerbg
+	[data-headerbg="#{$name}"][data-theme-version="dark"],
+    [data-headerbg="#{$name}"] {
+        @if $name != "color_1"  {
+			--headerbg: #{$color};
+			
+			.header-right{
+				.notification_dropdown .nav-link{
+					&.show{
+						background-color:#202020;
+					}
+					
+				}
+				.nav-item{
+					&.ps-3{
+						&:hover{
+							background:transparent;
+						}
+					}
+				}
+				.header-border{
+					.btn{
+						background-color:lighten($color: $color, $amount: 10%);
+						border-color:lighten($color: $color, $amount: 10%);
+					}
+					&:hover{
+						background:transparent;
+					}
+				}
+				.header-info{
+					 p{
+						color: #E1E1E1;
+					 }
+					 h6{
+						color:$white;
+					 }
+				}
+			}
+			.header-left{
+				.dashboard_bar{
+					color:$white;
+				}
+			}
+		}
+	}
+	
+	// data-primary
+	[data-primary="#{$name}"][data-nav-headerbg="#{$name}"][data-theme-version="light"],
+	[data-nav-headerbg="#{$name}"] {
+		@if $name == "color_1"  {
+			
+			&[data-layout="horizontal"]{
+				.header .header-content{
+					padding-left: 0;
+				}
+			}			
+		}
+	}
+	
+}

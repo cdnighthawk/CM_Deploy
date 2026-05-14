@@ -1,0 +1,125 @@
+DrawingViewer & Documents Hub – Detailed Breakdown
+This is one of the core differentiators of your entire platform. It serves as the visual heart for reviewing, measuring, annotating, and AI-analyzing construction drawings, while acting as the central repository for all project documents.
+Shell: W3CRM (Plan\0). Viewer and hub are custom pages + vendor canvas libs (Konva/Fabric) loaded from assets/js — not React components.
+1. Core Purpose & Philosophy
+
+Advanced, touch-friendly canvas optimized for architectural, structural, and finish-trade drawings.
+Heavy integration with Local Llama 4 Scout for vision-based plan review (California codes, scope gaps, safety, etc.).
+All AI reviews are saved permanently as layered annotations for audit and compliance.
+Central hub for every document type in the platform.
+
+2. File / Folder Structure (W3CRM gulp src + assets)
+textgulp/gulp/src/
+├── usis-drawing-viewer.html               ← Full-screen / main viewer shell (@@include header optional; often chrome-less mode)
+├── usis-documents-hub.html                ← Central repository UI
+├── usis-ai-review-center.html             ← Saved AI reviews list / filters
+├── elements/
+│   ├── usis-drawing-toolbar.html          ← Sticky toolbar partial
+│   └── usis-drawing-sidebars.html         ← Layers + sheet thumbs
+├── assets/js/
+│   ├── usis-drawing-viewer.js             ← Konva/Fabric stage, pan/zoom, save
+│   ├── usis-drawing-measure.js
+│   ├── usis-drawing-annotate.js
+│   ├── usis-drawing-export.js
+│   └── usis-documents-hub.js              ← grid/list, upload, folder tree
+└── assets/js/usis-canvas-utils.js         ← Scale detection, calibration helpers
+
+Backend
+
+models/documents.py (polymorphic Document + Drawing)
+models/drawing_annotations.py
+Flask endpoints for upload, versioning, and AI review
+
+3. Overall Layout & UI Structure
+DrawingViewer (Immersive Full-Screen / Modal Mode) — usis-drawing-viewer.html
+
+Top Toolbar (sticky):
+Sheet title, number, version, project link
+Zoom controls, Fit to screen, 100%
+Calibration tool + auto-scale detection
+Save / Export (PNG, PDF, annotated)
+Prominent Purple Button: “Review This Drawing with Local AI”
+
+Left Sidebar (collapsible):
+Layers panel (Base Drawing, Measurements, Annotations, AI Reviews)
+Sheet navigator (thumbnails of all drawings in project)
+
+Main Canvas Area:
+High-performance HTML5 canvas (Konva.js or Fabric.js)
+Pan/zoom (wheel + pinch), multi-touch support
+Rulers, grid overlay, smart snapping
+
+Right Sidebar / Bottom Drawer (mobile):
+Active measurements list
+Annotation list (text, arrows, clouds, freehand)
+AI Review Panel (saved reviews with severity filters)
+
+
+Documents Hub — usis-documents-hub.html
+
+Top bar (shared header partial) with global search + upload button
+Left sidebar: Folder tree (All, Drawings, RFIs, Submittals, COs, AI Reviews, etc.) — Bootstrap list-group / collapse
+Main area: Bootstrap row-cols grid or responsive table for list view; card grid toggle
+Right column: Preview iframe/card + version history + AI insights (offcanvas on mobile)
+Tabs: Bootstrap nav-tabs — All | Drawings | RFIs | Submittals | Compliance | AI Reviews
+
+4. Key Built-in Tools & Capabilities
+Measurement Tools
+
+Linear (LF), Area (sq ft), Count (EA)
+Auto-association to TakeoffLineItem (“Apply 1,247 sq ft to Drywall”)
+Persistent saved measurements
+
+Annotation System
+
+Text, Arrow, Rectangle, Cloud, Freehand, Stamps
+Color-coded by trade
+@mentions for team members
+Versioned annotations
+
+AI Integration (The Magic)
+
+Purple “Review This Drawing with Local AI” button:
+Captures full canvas (including overlays)
+Uses aiReviewBus.js
+Forces Local Llama 4 Scout + construction_review mode
+Structured output: severity, issues with CBC citations, location, recommended fix, cost/delay impact
+
+One-click “Save Review to Drawing” → drawing_annotations table (type='ai_review')
+
+5. Data Layer (SQLAlchemy)
+
+Document (polymorphic base)
+project_id, document_type, file_url (Backblaze B2), thumbnail_url, version
+
+Drawing (specialized)
+sheet_number, discipline, file_url
+
+DrawingAnnotation
+drawing_id
+type ('measurement', 'user_note', 'ai_review')
+data (JSONB)
+severity, provider ('llama4-scout'), issues, cost_impact, delay_impact_days
+
+
+6. Critical Integrations (All Preserved)
+
+Unified Takeoff Engine: Measurements flow directly into TakeoffLineItem
+Local AI + aiReviewBus.js: Broadcasts review completion → refreshes Estimating, Scheduling, Financials, Dashboard
+RFP Module: Attach drawings; vendors see watermarked versions
+Safety & PM: AI reviews auto-generate RFIs, Punch items, safety observations
+Financials: AI-flagged issues create variance alerts and CO suggestions
+
+7. Mobile-First & Offline Behavior
+
+Touch-optimized toolbar and pinch-zoom
+Offline: Cached drawings + latest annotations (IndexedDB)
+Field photo overlay mode (align site photo to drawing → AI comparison)
+
+8. Why This Module Is a Major Differentiator
+
+Turns static PDFs into an intelligent, measurable, AI-reviewed workspace.
+Every “Review This Drawing” action updates the entire platform via the event bus.
+Provides massive time savings and compliance protection for California government/commercial work.
+
+This module is already advanced and production-ready. It powers the intelligence of almost every other module.

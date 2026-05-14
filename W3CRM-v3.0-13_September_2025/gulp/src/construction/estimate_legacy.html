@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "estimate_legacy.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+    <link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Estimate (legacy)",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Estimate Legacy</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="estimate.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="files.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate_legacy.html" class="nav-link py-3 px-1 border-3 active">Legacy template</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+             
+            <!-- Start - Estimate Tab -->
+            <div class="container-fluid">
+                <div class="row">
+
+                    <!-- Start - Filtering -->
+                    <div class="col-xl-12">
+                        <div class="d-flex flex-wrap justify-content-between gap-3 align-items-center mb-3">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <div class="w-sm-100">
+                                    <select class="form-select selectpicker">
+                                        <option selected>John</option>
+                                        <option>Chris</option>
+                                        <option>David</option>
+                                    </select>
+                                </div>
+                                <div class="input-group message-search-area width300 w-xs-100">
+                                    <input type="text" class="form-control border-end-0" placeholder="Search Party">
+                                    <div class="input-group-append">
+                                        <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-4 me-4">
+                                <a href="javascript:void(0);"><i class="icon feather icon-download fs-22"></i></a>
+                                <a href="javascript:void(0);"><i class="icon feather icon-edit fs-22"></i></a>
+                                <a href="javascript:void(0);"><i class="icon feather icon-trash fs-22"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End - Filtering -->
+
+                    <!-- Start - Table -->
+                    <div class="col-xl-12">
+						<div class="card table-hover text-nowrap overflow-auto">
+                            <div class="minmaxh450">
+                                <table class="table mb-0" id="example6">
+                                    <thead>
+                                        <tr>
+                                            <th class="width20">S.No.</th>
+                                            <th class="width960">Items</th>
+                                            <th class="text-end">OTY</th>
+                                            <th class="text-end">Unit Rate ($)</th>
+                                            <th class="text-end">Sales Price ($)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>1</td>
+                                            <td>Test</td>
+                                            <td class="text-end">20</td>
+                                            <td class="text-end">2000</td>
+                                            <td class="text-end">3500</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End - Table -->
+
+                    <!-- Start - Bank Details -->
+                    <div class="col-xl-12">
+                        <div class="card">
+                            <div class="row">
+                                <div class="col-xl-6 border-xl-end">
+                                    <div class="card-body">
+                                        <div class="mb-5">
+                                            <h6 class="card-title border-bottom py-2 mb-3">Bank Details</h6>
+                                            <p class="mb-2">Account Holder Name : <span>John</Span></p>
+                                            <p class="mb-2">Account Number : <span>143XXXXXX456</Span></p>
+                                            <p class="mb-2">Bank Code : <span>2389542</Span></p>
+                                        </div>
+                                        <div class="mb-5">
+                                            <h6 class="card-title border-bottom py-2 mb-3">Terms and Conditions</h6>
+                                            <p class="m-0">Late payments may result in late payment fees. Please reach out to us in case of any Invoice errors. All disputes are subject to India jurisdiction only</p>
+                                        </div>
+                                        <div>
+                                            <h6 class="card-title border-bottom py-2 mb-3">Note</h6>
+                                        </div>
+                                        <div>
+                                            <h6 class="card-title border-bottom py-2 mb-3">NA</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6 ps-xl-0">
+                                    <div class="card-body d-flex flex-column h-100">
+                                        <div class="border-bottom">
+                                            <div>
+                                                <p class="d-flex justify-content-between mb-2">Item Sub Total <span class="">$200</span></p>
+                                                <p class="d-flex justify-content-between mb-2">CGST <span class="">$18</span></p>
+                                                <p class="d-flex justify-content-between mb-2">SGST <span class="">$17</span></p>
+                                            </div>
+                                            <div class="d-flex justify-content-between my-4">
+                                                <a href="javascript:void(0);" class="text-gray">Additional Discount (%)</a>
+                                                <input type="number" class="form-control width200" placeholder="0">
+                                            </div>
+                                            <div class="d-flex justify-content-between my-4">
+                                                <a href="javascript:void(0);" class="text-gray">Additional Charges</a>
+                                                <input type="number" class="form-control width200" placeholder="0">
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-3 mt-xl-auto">
+                                            <p class="mb-0">Total Amount</p>
+                                            <span>$235</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End - Bank Details -->
+
+                    <div class="col-xl-12">
+                        <div class="card">
+                            <div class="card-body d-flex row">
+                                <div class="col-sm-4 border-sm-end">
+                                    <p class="m-0 text-center text-black">Cost Price: $ 0</p>
+                                </div>
+                                <div class="col-sm-4 border-sm-end">
+                                    <p class="m-0 text-center text-black">Markup: $ 0</p>
+                                </div>
+                                <div class="col-sm-4">
+                                    <p class="m-0 text-center text-black">Total Amount: $ 0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Estimate Tab -->
+
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Datatables -->
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+    
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

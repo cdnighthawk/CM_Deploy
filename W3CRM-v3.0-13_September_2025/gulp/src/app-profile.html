@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "add-profile.html",
+	})
+	
+	<link href="assets/vendor/lightgallery/css/lightgallery.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+
+       <!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "App Profile",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">App Profile</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="app-profile-2.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="blog.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+            
+				<div class="row">
+                    <div class="col-lg-12">
+                        <div class="card-profile card card-body p-2 pb-0">
+							<div class="photo-content">
+								<div class="cover-photo rounded"></div>
+							</div>
+							<div class="p-sm-3 p-2 d-sm-flex w-100">
+								<div class="profile-photo me-sm-3">
+									<img src="assets/images/profile/profile.png" class="img-fluid rounded-circle border border-4 border-white" alt="">
+								</div>
+								<div class="d-flex w-100 py-2 py-sm-0">
+									<div class="d-flex flex-wrap w-100 gap-3">
+										<div class="clearfix">
+											<h5 class="mb-0">Mitchell C. Shay</h5>
+											<span>UX / UI Designer</span>
+										</div>
+										<div class="clearfix">
+											<h5 class="mb-0">hello@email.com</h5>
+											<span>Email</span>
+										</div>
+									</div>
+									<div class="dropdown ms-auto">
+										<button class="btn btn-sm btn-square btn-primary light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+											<i class="fa-solid fa-ellipsis"></i>
+										</button>
+										<ul class="dropdown-menu">
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-user-circle text-primary me-2"></i> View profile</a>
+											</li>
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-users text-primary me-2"></i> Add to friends</a>
+											</li>
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-plus text-primary me-2"></i> Add to group</a>
+											</li>
+											<li><a class="dropdown-item" href="javascript:void(0);">
+												<i class="fa fa-ban text-primary me-2"></i> Block</a>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						</div>
+                    </div>
+                </div>
+				
+                <div class="row">
+                    <div class="col-xl-4 col-xxl-3">
+						<div class="row">
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="row">
+											<div class="col">
+												<span class="mb-0 d-block h2">150</span>
+												<span>Follower</span>
+											</div>
+											<div class="col">
+												<span class="mb-0 d-block h2">140</span>
+												<span>Place Stay</span>
+											</div>
+											<div class="col">
+												<span class="mb-0 d-block h2">45</span>
+												<span>Reviews</span>
+											</div>
+										</div>
+										<div class="mt-4">
+											<a href="javascript:void();" class="btn btn-primary mb-1 me-1">Follow</a> 
+											<a href="javascript:void();" class="btn btn-primary mb-1" data-bs-toggle="modal" data-bs-target="#sendMessageModal">Send Message</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Today Highlights</h4>
+									</div>
+									<div class="card-body">
+										<img src="assets/images/profile/1.jpg" alt="" class="img-fluid mb-3 w-100 rounded">
+										<h5><a href="post-details.html">Darwin Creative Agency Theme</a></h5>
+										<p class="mb-0">A small river named Duden flows by their place and supplies it with the necessary regelialia. It is a paradisematic country, in which roasted parts of sentences fly into your mouth.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Interest</h4>
+									</div>
+									<div class="card-body">
+										<div class="row g-1" id="lightgallery">
+											<a href="assets/images/profile/2.jpg" data-exthumbimage="assets/images/profile/2.jpg" data-src="assets/images/profile/2.jpg" class="col-4">
+												<img src="assets/images/profile/2.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/3.jpg" data-exthumbimage="assets/images/profile/3.jpg" data-src="assets/images/profile/3.jpg" class="col-4">
+												<img src="assets/images/profile/3.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/4.jpg" data-exthumbimage="assets/images/profile/4.jpg" data-src="assets/images/profile/4.jpg" class="col-4">
+												<img src="assets/images/profile/4.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/3.jpg" data-exthumbimage="assets/images/profile/3.jpg" data-src="assets/images/profile/3.jpg" class="col-4">
+												<img src="assets/images/profile/3.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/4.jpg" data-exthumbimage="assets/images/profile/4.jpg" data-src="assets/images/profile/4.jpg" class="col-4">
+												<img src="assets/images/profile/4.jpg" alt="" class="img-fluid rounded">
+											</a>
+											<a href="assets/images/profile/2.jpg" data-exthumbimage="assets/images/profile/2.jpg" data-src="assets/images/profile/2.jpg" class="col-4">
+												<img src="assets/images/profile/2.jpg" alt="" class="img-fluid rounded">
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Our Latest News</h4>
+									</div>
+									<div class="card-body py-3">
+										<div class="d-flex py-2 align-items-center">
+											<img src="assets/images/profile/5.jpg" alt="image" class="avatar avatar-lg rounded">
+											<div class="ms-3">
+												<h6 class="mb-1"><a href="post-details.html">Collection of textile samples</a></h6>
+												<p class="mb-0">I shared this on my fb wall a few months back, and I thought.</p>
+											</div>
+										</div>
+										<div class="d-flex py-2 align-items-center">
+											<img src="assets/images/profile/6.jpg" alt="image" class="avatar avatar-lg rounded">
+											<div class="ms-3">
+												<h6 class="mb-1"><a href="post-details.html">Website Developer </a></h6>
+												<p class="mb-0">I shared this on my fb wall a few months back, and I thought.</p>
+											</div>
+										</div>
+										<div class="d-flex py-2 align-items-center">
+											<img src="assets/images/profile/7.jpg" alt="image" class="avatar avatar-lg rounded">
+											<div class="ms-3">
+												<h6 class="mb-1"><a href="post-details.html">Mern stack Developer</a></h6>
+												<p class="mb-0">I shared this on my fb wall a few months back, and I thought.</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						</div>
+                    </div>
+                    <div class="col-xl-8 col-xxl-9">
+                        <div class="card h-auto">
+							<div class="card-header">
+								<ul class="nav nav-underline card-header-tabs" id="nav-tab" role="tablist">
+									<li class="nav-item">
+										<button class="nav-link active" id="underline-Posts-tab" data-bs-toggle="tab" data-bs-target="#underline-Posts" type="button" role="tab" aria-controls="underline-Posts" aria-selected="true">Posts</button>
+									</li>
+									<li class="nav-item">
+										<button class="nav-link" id="underline-about-tab" data-bs-toggle="tab" data-bs-target="#underline-about" type="button" role="tab" aria-controls="underline-about" aria-selected="false">About Me</button>
+									</li>
+									<li class="nav-item">
+										<button class="nav-link" id="underline-setting-tab" data-bs-toggle="tab" data-bs-target="#underline-setting" type="button" role="tab" aria-controls="underline-setting" aria-selected="false">Setting</button>
+									</li>
+								</ul>
+							</div>
+							<div class="card-body">
+								<div class="tab-content" id="underline-tabContent">
+									<div class="tab-pane fade show active" id="underline-Posts" role="tabpanel" aria-labelledby="underline-Posts-tab" tabindex="0">
+										<div class="clearfix mb-4">
+											<textarea name="textarea" id="textarea" rows="5" class="form-control" placeholder="Please type what you want...."></textarea>
+											<div class="mt-3">
+												<a href="javascript:void(0);" class="btn btn-square btn-primary light me-1" data-bs-toggle="modal" data-bs-target="#linkModal">
+													<i class="fa fa-link"></i>
+												</a>
+												<a href="javascript:void(0);" class="btn btn-square btn-primary light me-1" data-bs-toggle="modal" data-bs-target="#cameraModal">
+													<i class="fa fa-camera"></i>
+												</a>
+												<a href="javascript:void(0);" class="btn btn-primary me-1" data-bs-toggle="modal" data-bs-target="#postModal">Post</a>
+											</div>
+										</div>
+										
+										<!-- Blog Post 1 -->
+										<div class="pb-5">
+											<img src="assets/images/profile/8.jpg" alt="" class="img-fluid w-100 rounded">
+											<div class="mt-3">
+												<h3><a href="post-details.html">Collection of textile samples lay spread</a></h3>
+												<p>A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart. A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart.</p>
+												<button class="btn btn-primary me-1">
+													<i class="fa fa-heart"></i> Like
+												</button>
+												<button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#replyModal">
+													<i class="fa fa-reply"></i> Reply
+												</button>
+											</div>
+										</div>
+										
+										<!-- Blog Post 2 -->
+										<div class="pb-5">
+											<img src="assets/images/profile/9.jpg" alt="" class="img-fluid w-100 rounded">
+											<div class="mt-3">
+												<h3><a href="post-details.html">Collection of textile samples lay spread</a></h3>
+												<p>A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart. A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart.</p>
+												<button class="btn btn-primary me-1">
+													<i class="fa fa-heart"></i> Like
+												</button>
+												<button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#replyModal">
+													<i class="fa fa-reply"></i> Reply
+												</button>
+											</div>
+										</div>
+										
+										<!-- Blog Post 3 -->
+										<div class="pb-4">
+											<img src="assets/images/profile/8.jpg" alt="" class="img-fluid w-100 rounded">
+											<div class="mt-3">
+												<h3><a href="post-details.html">Collection of textile samples lay spread</a></h3>
+												<p>A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart. A wonderful serenity has take possession of my entire soul like these sweet morning of spare which enjoy whole heart.</p>
+												<button class="btn btn-primary me-1">
+													<i class="fa fa-heart"></i> Like
+												</button>
+												<button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#replyModal">
+													<i class="fa fa-reply"></i> Reply
+												</button>
+											</div>
+										</div>
+										
+									</div>
+									<div class="tab-pane fade" id="underline-about" role="tabpanel" aria-labelledby="underline-about-tab" tabindex="0">
+										<div class="pt-4 border-bottom-1 pb-3">
+											<h4 class="text-primary">About Me</h4>
+											<p class="mb-2">A wonderful serenity has taken possession of my entire soul, like these sweet mornings of spring which I enjoy with my whole heart. I am alone, and feel the charm of existence was created for the bliss of souls like mine.I am so happy, my dear friend, so absorbed in the exquisite sense of mere tranquil existence, that I neglect my talents.</p>
+											<p>A collection of textile samples lay spread out on the table - Samsa was a travelling salesman - and above it there hung a picture that he had recently cut out of an illustrated magazine and housed in a nice, gilded frame.</p>
+										</div>
+										<div class="py-3 border-top border-bottom">
+											<h4 class="text-primary mb-2">Skills</h4>
+											<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Admin</a>
+											<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1" style="direction: ltr;">Dashboard</a>
+											<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Photoshop</a>
+											<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1" style="direction: ltr;">Bootstrap</a>
+											<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Responsive</a>
+											<a href="javascript:void();;" class="btn btn-primary light btn-sm mb-1">Crypto</a>
+										</div>
+										<div class="py-3 border-bottom">
+											<h4 class="text-primary mb-2">Language</h4>
+											<a href="javascript:void(0);" class="badge light badge-primary">English</a> 
+											<a href="javascript:void(0);" class="badge light badge-primary">French</a>
+											<a href="javascript:void(0);" class="badge light badge-primary">Bangla</a>
+										</div>
+										<div class="py-3 px-4 bg-primary-subtle text-dark rounded mt-3">
+											<h4 class="text-primary mb-4">Personal Information</h4>
+											<div class="row mb-2">
+												<div class="col-md-3 col-sm-4">
+													<h5>Name <span class="float-sm-end">:</span></h5>
+												</div>
+												<div class="col-md-9 col-sm-8">
+													<span>Mitchell C.Shay</span>
+												</div>
+											</div>
+											<div class="row mb-2">
+												<div class="col-md-3 col-sm-4">
+													<h5>Email <span class="float-sm-end">:</span></h5>
+												</div>
+												<div class="col-md-9 col-sm-8">
+													<span>example@examplel.com</span>
+												</div>
+											</div>
+											<div class="row mb-2">
+												<div class="col-md-3 col-sm-4">
+													<h5>Availability <span class="float-sm-end">:</span></h5>
+												</div>
+												<div class="col-md-9 col-sm-8">
+													<span>Full Time (Free Lancer)</span>
+												</div>
+											</div>
+											<div class="row mb-2">
+												<div class="col-md-3 col-sm-4">
+													<h5>Age <span class="float-sm-end">:</span></h5>
+												</div>
+												<div class="col-md-9 col-sm-8">
+													<span>27</span>
+												</div>
+											</div>
+											<div class="row mb-2">
+												<div class="col-md-3 col-sm-4">
+													<h5>Location <span class="float-sm-end">:</span></h5>
+												</div>
+												<div class="col-md-9 col-sm-8">
+													<span>Rosemont Avenue Melbourne, Florida</span>
+												</div>
+											</div>
+											<div class="row mb-2">
+												<div class="col-md-3 col-sm-4">
+													<h5>Year Experience <span class="float-sm-end">:</span></h5>
+												</div>
+												<div class="col-md-9 col-sm-8">
+													<span>07 Year Experiences</span>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane fade" id="underline-setting" role="tabpanel" aria-labelledby="underline-setting-tab" tabindex="0">
+										<h4 class="text-primary">Account Setting</h4>
+										<form>
+											<div class="row">
+												<div class="mb-3 col-md-6">
+													<label class="form-label">Email</label>
+													<input type="email" placeholder="Email" class="form-control">
+												</div>
+												<div class="mb-3 col-md-6">
+													<label class="form-label">Password</label>
+													<input type="password" autocomplete="current-password" placeholder="Password" class="form-control">
+												</div>
+												<div class="mb-3 col-md-12">													
+													<label class="form-label">Address</label>
+													<input type="text" placeholder="1234 Main St" class="form-control">
+												</div>
+												<div class="mb-3 col-md-12">
+													<label class="form-label">Address 2</label>
+													<input type="text" placeholder="Apartment, studio, or floor" class="form-control">
+												</div>
+												<div class="mb-3 col-md-4">
+													<label class="form-label">City</label>
+													<input type="text" class="form-control">
+												</div>
+												<div class="mb-3 col-md-4">
+													<label class="form-label">State</label>
+													<select class="selectpicker form-select">
+														<option selected="">Choose...</option>
+														<option>Option 1</option>
+														<option>Option 2</option>
+														<option>Option 3</option>
+													</select>
+												</div>
+												<div class="mb-3 col-md-4">
+													<label class="form-label">Zip</label>
+													<input type="number" class="form-control type-number">
+												</div>
+												<div class="mb-3 col-md-12">													
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input" id="gridCheck">
+														<label class="form-check-label" for="gridCheck"> Check me out</label>
+													</div>
+												</div>
+												<div class="col-md-12">
+													<button class="btn btn-primary" type="submit">Sign in</button>
+												</div>
+											</div>
+										</form>
+									</div>
+								</div>
+								
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				
+            </div>
+        </main>
+		<!-- End - Content Body -->
+
+        @@include("elements/footer.html")
+		
+		<!-- Start - Modal Send Message -->
+		<div class="modal fade" id="sendMessageModal">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Send Message</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<form class="comment-form">
+							<div class="row"> 
+								<div class="col-lg-6">
+									<div class="mb-3">
+										<label class="form-label">Name <span class="required">*</span></label>
+										<input type="text" class="form-control" name="Author" placeholder="Mitchell C. Shay">
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="mb-3">
+										<label class="form-label">Email <span class="required">*</span></label>
+										<input type="text" class="form-control" placeholder="info@example.com" name="Email">
+									</div>
+								</div>
+								<div class="col-lg-12">
+									<div class="mb-3">
+										<label class="form-label">Comment</label>
+										<textarea rows="4" class="form-control" name="comment" placeholder="Comment"></textarea>
+									</div>
+								</div>
+								<div class="col-lg-12">
+									<input type="submit" value="Post Comment" class="submit btn btn-primary" name="submit">
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Modal Send Message -->
+		
+		<!-- Start - Modal Social Links -->
+		<div class="modal fade" id="linkModal">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Social Links</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<div class="d-flex gap-2">
+							<a href="javascript:void(0);" class="btn btn-square btn-facebook btn-sm"><i class="fa-brands fa-facebook-f"></i></a>
+							<a href="javascript:void(0);" class="btn btn-square btn-skype btn-sm"><i class="fa-brands fa-skype"></i></a>
+							<a href="javascript:void(0);" class="btn btn-square btn-linkedin btn-sm"><i class="fa-brands fa-linkedin-in"></i></a>
+							<a href="javascript:void(0);" class="btn btn-square btn-instagram btn-sm"><i class="fa-brands fa-instagram"></i></a>
+							<a href="javascript:void(0);" class="btn btn-square btn-primary btn-sm"><i class="fa fa-rss"></i></a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+        <!-- End - Modal Social Links -->
+		
+		<!-- Start - Modal Post -->
+		<div class="modal fade" id="postModal">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Post</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<textarea name="textarea" id="textarea2" cols="30" rows="5" class="form-control mb-3" placeholder="Please type what you want...."></textarea>
+						<a class="btn btn-primary" href="javascript:void(0)">Post</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Modal Post -->
+		
+		<!-- Start - Modal Upload Images -->
+		<div class="modal fade" id="cameraModal">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Upload images</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal">
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="input-group custom_file_input mb-3">
+							<span class="input-group-text border-0">Upload</span>
+							<div class="form-file">
+								<input type="file" class="form-file-input form-control">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Modal Upload Images -->
+		
+		<!-- Start - Modal Post Reply -->
+		<div class="modal fade" id="replyModal">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">Post Reply</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<textarea class="form-control h-50" rows="4">Message</textarea>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-danger light" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Reply</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Modal Post Reply -->
+		
+    </div>
+    <!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("elements/script.html")
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+    
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

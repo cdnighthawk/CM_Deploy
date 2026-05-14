@@ -1,0 +1,134 @@
+Safety Management – Detailed Breakdown
+This is a new but critical module specifically added to address your request for both company-wide and site-specific safety. It integrates deeply with Daily Logs, DrawingViewer, Local AI, Punch Lists, RFIs, and Financials.
+Front-end: W3CRM (Plan\0). Prefer construction\*.html demos as visual references; implement as usis-safety-*.html + Bootstrap forms.
+1. Core Philosophy
+
+Dual Layer Approach: Company-wide standards + Project-specific execution.
+AI-Powered: Local Llama 4 Scout reviews field photos for hazards, PPE compliance, and unsafe conditions.
+Proactive & Compliant: Designed for California government/commercial requirements (OSHA, Cal/OSHA, Title 24 safety elements).
+Tightly Integrated: Safety findings automatically create Punch List items, RFIs, or Change Orders.
+
+2. Two Main Sub-Modules
+A. Company-Wide Safety (Global / Admin Level)
+
+Centralized safety policies and manual (stored in Backblaze B2)
+Standard safety checklists, Job Hazard Analysis (JHA) templates, and Emergency Response Plans
+Employee training records & certifications (OSHA 10/30, First Aid, Scaffold, Fall Protection, etc.)
+Company-wide incident history, lessons learned database, and safety KPI tracking (TRIR, DART, Near-Miss Rate)
+Safety bulletin board / company alerts
+Safety dashboard for leadership (trends, compliance score)
+
+B. Site / Project-Specific Safety
+
+Project-specific safety plan & site orientation documents
+**Project JHAs** — living Job Hazard Analysis documents **for the job** (see §9); distinct from company JHA **templates** in §2A.
+**Daily pretask** (same workflow as **project pretask**) — crew completes **each workday** before production work; references the applicable project JHA (see §10); integrated with Daily Logs / field ops (Plan 8).
+Daily Safety Logs (integrated into Daily Reports)
+Crew safety checklist
+Hazard identification & controls (JHA per task / activity row on a project JHA)
+PPE verification per trade
+Site condition / weather assessment
+
+Safety Observations & Near-Miss reporting (quick mobile form + photo)
+Incident / Injury reporting (with mandatory fields for government compliance)
+Corrective Action tracking (linked to Punch List)
+Subcontractor safety compliance (tied to RFP awards)
+
+3. Key UI Components (W3CRM / Bootstrap)
+
+usis-safety-dashboard.html — Company KPI cards + project table (fork from reports.html or construction dashboards).
+elements/usis-daily-safety-log.html — Checklist + photo <input>; embedded in daily log page (Plan 8).
+usis-safety-observation.html — Mobile-first single-column form + “AI review photo” button.
+usis-safety-incident.html — Multi-step Bootstrap wizard or grouped sections for full incident report.
+usis-jha-library.html — Company **template** list + builder forms (Bootstrap modals); templates instantiate into project JHAs.
+usis-project-jha-list.html — Per-project list of JHA documents (status, version, trade/area).
+usis-project-jha-detail.html — Edit JHA sections: activity/task, hazards, controls, PPE, responsible role, review cycle; optional “copy from template” from usis-jha-library.
+elements/usis-daily-pretask-form.html — Short pretask form (embedded in daily log / field page per Plan 8): today’s scope, JHA acknowledgment, weather, PPE, crew sign-off.
+usis-daily-pretask.html — Standalone mobile-first page for crews who only file pretask (optional).
+Safety AI panel — Bootstrap offcanvas; usis-ai-drawer.js with mode=safety_review (replaces embedded ChatBot.tsx pattern).
+
+4. Database Models (in project_management.py)
+
+safety_policies (company-wide)
+safety_training_records
+daily_safety_logs (linked to daily_logs)
+daily_pretasks (aka project pretask: project_id, work_date, crew_lead_user_id, project_jha_id or jha_revision_id, scope_summary, checklist_json, weather_notes, ppe_verified, status draft/submitted, signatures JSON, optional daily_log_id FK once daily log exists)
+safety_observations
+incidents (with severity, root cause, corrective actions)
+jha_templates — company library rows (project_id null); fields: title, trade_tags, body JSON or structured steps
+project_jhas — **project-scoped** JHA documents; FK project_id; version int; status draft/active/archived; may clone from jha_template_id
+project_jha_steps — rows per activity: task_description, hazards, controls, ppe_required, sort_order (normalized JHA content)
+safety_corrective_actions (linked to Punch List / CO)
+
+Naming: legacy single table name `jhas` in older notes may be split into **jha_templates** + **project_jhas** + **project_jha_steps** for clarity; migrations can alias if an existing `jhas` table already shipped.
+
+All records have project_id (nullable for company-wide items except project_jhas / daily_pretasks which are always project-scoped).
+5. AI Integration (Major Differentiator)
+
+Field photo upload → auto-triggered Local Llama 4 Scout safety_review mode
+Detects: Missing PPE, improper fall protection, blocked egress, unsafe scaffolding, etc.
+Auto-generates:
+Safety Observation
+Punch List item
+Recommended corrective action / JHA addition
+
+Severity-based alerts (Critical → immediate notification to PM + Safety Officer)
+
+6. Key Integrations
+
+Daily Reports → **Daily pretask** is a **required or configurable-first** step/tab inside the daily log / field flow (Plan 8); then safety checklist and production (see §10). Project JHA list/detail linked from project safety menu.
+DrawingViewer → AI can flag safety issues directly on drawings (egress, fire ratings, etc.)
+Unified Takeoff → Safety-related add-ons (extra PPE, substrate repairs) appear as lines
+Punch Lists & RFIs → Auto-created from AI safety findings
+Financials → Safety corrective work flows into Change Orders and Budget
+RFP / Vendor Portal → Subs must upload safety docs and daily attestations
+
+7. Mobile-First & Offline Behavior
+
+Large touch targets for field crews
+Offline safety checklist + photo capture (queued for AI review)
+Offline **daily pretask** capture (queued sync; dedupe on server per §10)
+Camera-first “Quick Safety Observation” flow
+
+8. Compliance Features
+
+Cal/OSHA / OSHA report-ready exports
+Training records & certification expiration alerts
+Audit-ready chain of custody for incidents and corrective actions
+DBE / prevailing wage safety tracking where applicable
+
+9. Project Job Hazard Analysis (project JHAs)
+---------------------------------------------
+Purpose: Maintain **formal, versioned JHAs on the project** so crews and subs align on hazards and controls for that site—not only generic company templates.
+
+• **Scope:** One project may have **multiple** project JHAs (e.g. by building, phase, major trade package, or high-risk activity cluster). Each `project_jhas` row has a version number; edits create a new version or explicit revision per company policy; submitted pretasks should reference **revision** for audit if the JHA changes mid-job.
+
+• **Content model:** Structured steps (`project_jha_steps`): activity/task, identified hazards, engineering/administrative/PPE controls, responsible party, date reviewed. Attachments (photos, SDS refs) via Documents hub `document_id` links.
+
+• **Templates:** Users may “Create from template” pulling from `jha_templates` / `usis-jha-library.html`, then edit for site-specific conditions.
+
+• **Approvals (optional phase):** Major JHA revisions may enter the shared approval engine (Plan 14) before marked `active` for field use.
+
+• **API/UI:** CRUD under `/api/v1/projects/<id>/project-jhas` (shape TBD); list + detail pages as in §3.
+
+10. Daily pretask (project pretask)
+------------------------------------
+Same practice, two labels used in the field: **daily pretask** and **project pretask**. In this platform both mean: **the per-day, per-crew (or per-shift) pre-job safety brief and hazard review** completed **with field ops as part of the daily rhythm**, before production quantities are logged.
+
+• **When:** **Each calendar workday** (or each shift if you later split shifts) that the crew works on the project; configurable rule: “cannot submit daily production log without a submitted pretask for that date/crew.”
+
+• **Who:** Foreman / competent person (logged `User`); optional worker acknowledgment list (names or headcount + “all present reviewed”).
+
+• **What:** (1) Confirm **today’s work scope** aligns with schedule/task or free-text scope line. (2) **Review** linked **project JHA** section(s) or attach “reviewed JHA v3” acknowledgment—store `project_jha_id` + `jha_version` snapshot on `daily_pretasks`. (3) Site/weather, nearby utilities, hot work, fall hazard reminders as checkboxes. (4) **PPE** verification. (5) Emergency muster / nearest hospital (optional fields). (6) **Signatures** (foreman + optional crew attestation).
+
+• **Where in UI:** Primary path: **embedded** in Plan 8 daily log / `usis-field.html` as first tab or accordion “Daily pretask” using `elements/usis-daily-pretask-form.html`. Secondary: standalone `usis-daily-pretask.html` with `?project_id=&date=` for phone-first crews.
+
+• **Offline:** Queue pretask JSON same as other field forms (Plan 13); server rejects duplicate (project_id, work_date, crew_lead_user_id) unless policy allows amend flow.
+
+• **Reporting:** Filter pretasks by project/date; export for GC or Cal/OSHA inspection packages alongside `daily_safety_logs`.
+
+This module turns safety from a compliance burden into a proactive, AI-assisted competitive advantage — reducing incidents, speeding up corrective actions, and protecting margins on California government projects.
+
+11. HR dashboard linkage (Plan 19)
+------------------------------------
+Regulatory and site safety certifications remain **owned here** (`safety_training_records`). The HR dashboard shows **read-only aggregates** for safety cert health; it does not duplicate OSHA rows. See Plan 19 §1 for the split with HR-owned onboarding and policy acknowledgments. **End-to-end HR + Safety operating model (RACI, journeys, industry patterns):** Plan 21.

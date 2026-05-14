@@ -1,0 +1,81 @@
+@each $color, $value in $theme-colors{
+	.alert-solid-#{$color}{
+		background-color: var(--bs-#{$color});
+		border-color: var(--bs-#{$color});
+	}
+	.alert-#{$color}.alert-alt{
+		border-left: 0.25rem solid var(--bs-#{$color});
+	}
+	.alert-solid-#{$color}.alert-alt{
+		border-left: 0.25rem solid var(--bs-#{$color}-text-emphasis);
+	}
+	.alert-outline-#{$color}{
+		border-color: var(--bs-#{$color});
+		color: var(--bs-#{$color}-text-emphasis);
+	}
+	.alert-card-#{$color}.alert-alt{
+		border-left: 0.25rem solid var(--bs-#{$color});
+	}
+}
+@each $color, $value in $social-colors{
+	.bg-#{$color}{
+		background-color: $value;
+	}
+}
+[class*="alert-card-"]{
+	background-color: var(--bs-body-bg);
+}
+[class*="alert-outline-"]{
+	border-style: solid;
+	border-width: 1px;
+}
+[class*="alert-solid-"]:not(.alert-solid-light),
+.alert[class*="bg-"]{
+	color: #fff;
+	
+	.btn-close{
+		--bs-btn-close-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+	}
+	.alert-link{
+		color: #fff;
+	}
+}
+.alert{
+	.alert-link{
+		text-decoration: underline;
+		opacity: 0.8;
+		margin-left: 2px;
+		margin-right: 2px;
+	}
+}
+.alert-rounded{
+	border-radius: 50px;
+}
+.alert-dismissible .btn-close {
+    top: 0;
+}
+.alert-icon{
+	display: flex;
+    align-items: center;
+    gap: 15px;
+	border: 0;
+	
+	.alert-media{
+		min-width: 40px;
+		text-align: center;
+		
+		i{
+			font-size: 32px;
+		}
+	}
+}
+.alert-dismissible{
+	transform: scale(1.05);
+	
+	&.fade{
+		transition: transform 0.35s ease, opacity 0.5s ease; 
+	}
+	&.show {
+		transform: none;
+	}
+}

@@ -1,0 +1,129 @@
+AI Intelligence Layer – Detailed Breakdown
+This is the core differentiator and intelligence engine of your entire platform. It powers every AI-assisted feature while keeping privacy-first (Local Llama 4 Scout) and cloud fallback (Grok) fully functional.
+Stack pivot (W3CRM): No React ChatBot bundle required. Use vanilla JS modules under gulp/gulp/src/assets/js/ plus Bootstrap offcanvas/modal. See Plan\0 §4 for the locked AI UI strategy.
+1. Core Philosophy
+
+Dual-Provider System: Local Llama 4 Scout (default, private, fast) + Grok (xAI) as fallback.
+Specialized Construction Modes with strong California code system prompts.
+Event-Driven Architecture via assets/js/aiReviewBus.js for seamless cross-module communication.
+One-Click Flows from anywhere in the app.
+
+2. Primary Component & Architecture (W3CRM)
+
+Main markup: elements/usis-ai-drawer.html (@@include from any page) — Bootstrap offcanvas end + scrollable message list.
+Main logic:
+assets/js/usis-ai-drawer.js — open/close, mode badge, send message, stream reader, append bubbles
+assets/js/aiReviewBus.js — subscribe / emit (mirror prior TypeScript bus API in plain JS)
+assets/js/usis-ai-markdown.js — optional: marked.js or markdown-it from vendor folder for safe rendering
+assets/js/usis-ai-provider-toggle.js — Grok ↔ Local; persists choice in sessionStorage + sends header to Flask
+
+Types: document modes in usis-ai-types.js as JSDoc @typedef or a small exported const object (mode names unchanged).
+
+Backend: Flask routes /api/ai/chat, /api/ai/status, /api/ai/review (unchanged contracts).
+
+3. UI Layout (Bootstrap + streaming)
+
+Desktop: Bootstrap offcanvas (wide) or resizable column; mobile: full-screen modal (Bootstrap modal-xl).
+Header: Title + current mode badge + provider toggle + status indicator
+Message area: div#usis-ai-messages — streaming tokens appended; sanitize HTML; image previews as <img>
+Input: textarea, file input + camera capture, optional Web Speech API, quick review chip buttons
+
+4. Specialized Construction Modes (Pre-configured System Prompts)
+All modes default to Local Llama 4 Scout but allow Grok toggle:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ModePrimary Use CaseKey Outputconstruction_reviewDrawingViewer (default)Severity, CBC citations, location, fix, cost/delay impactestimating_reviewEstimating & TakeoffQuantities, scope gaps, code add-ons, line item suggestionsbid_feasibility_reviewLead & Bid ManagementRisk score, exclusions, ROM pricing, compliance flagsfinancial_reviewFinancials & VarianceVariance analysis, CO suggestionsfield_reviewDaily Logs & SafetyAs-built comparison, safety/PPE issuessafety_reviewSafety ManagementHazard detection, PPE compliance, corrective actionsanalytics_reviewAnalytics & ReportingDataset summarization, trends, predictive riskGlobal / CustomOpen conversationFlexible
+5. One-Click Flows & Event Bus Integration
+
+aiReviewBus.js (implement as small pub/sub on window or ES module):
+
+aiReviewBus.emit('review-request', {
+  drawingId,
+  imageDataUrl,
+  mode: 'construction_review',
+  context: { projectId, trades: ['drywall', 'paint'] }
+});
+
+Listeners in usis-ai-drawer.js, usis-financials.js, usis-crm-leads.js, etc., subscribe once on DOMContentLoaded.
+On completion: aiReviewBus.emit('review-complete', payload) → handlers refresh tables/cards from API.
+
+“Review This Drawing with Local AI” flow (used everywhere)
+
+User clicks primary CTA on drawing page
+Canvas export to image (usis-drawing-viewer.js)
+Bus emits review-request → usis-ai-drawer opens in matching mode
+POST /api/ai/review with image + prompt
+Stream response into message area
+“Save review” POST persists drawing_annotations
+
+6. Data Layer
+
+DrawingAnnotation (heavily used)
+type ('ai_review')
+provider, model_version, severity
+issues (JSONB), raw_response
+cost_impact, delay_impact_days
+
+AIChatSession (optional history)
+
+7. Critical Integrations (Preserve 100%)
+
+DrawingViewer canvas capture
+All modules listen to aiReviewBus
+RFP, Estimating, Scheduling, Financials, Safety, Analytics all benefit
+xAI/Grok integration untouched
+
+8. Performance & Security
+
+Image compression before sending
+120-second timeout with retry
+Local-only mode for government-sensitive projects
+Prompt injection protection

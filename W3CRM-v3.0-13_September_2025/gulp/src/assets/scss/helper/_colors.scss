@@ -1,0 +1,9 @@
+/* Text Color And Background Variant */
+@each $color, $value in $colors{
+	.text-#{$color}{
+		color: $value;
+	}
+	.bg-#{$color}{
+		background: $value;
+	}
+}

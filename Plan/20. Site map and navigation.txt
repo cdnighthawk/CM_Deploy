@@ -1,0 +1,189 @@
+USIS CRM — Site map and navigation (Plan 20)
+============================================
+Authoritative inventory of **HTML pages and major partials** under the W3CRM construction shell, with **where each is linked from**. Paths are relative to the Gulp source root:
+
+  E:\programs\USIS_CM\W3CRM-v3.0-13_September_2025\gulp\src\
+
+Shell pages typically `@@include` preloader, nav-header-construction, chatbox-construction, header-construction, deznav-construction, footer (which pulls in bottom nav). See §E.
+
+**Maintenance:** When you add, rename, or retire a product page, update this file in the same change as `elements/deznav-construction.html`, `usis-dashboard.html`, or other entry-point hrefs. Plan 0 §3 points here for the canonical page list.
+
+```mermaid
+flowchart TD
+  subgraph global [Global chrome]
+    Deznav[deznav_construction]
+    Header[header_construction]
+    Dash[usis_dashboard]
+    Bottomnav[usis_bottomnav_via_footer]
+  end
+  subgraph product [USIS product pages]
+    CRM[usis_crm_leads]
+    RFP[usis_rfp_list]
+    Docs[usis_documents_hub]
+    Safety[usis_safety]
+    HR[usis_hr_dashboard]
+    Playbooks[usis_playbooks]
+  end
+  Deznav --> Dash
+  Deznav --> CRM
+  Dash --> CRM
+  Dash --> RFP
+  Dash --> HR
+  Deznav --> Playbooks
+  Footer[footer_html] --> Bottomnav
+```
+
+--------------------------------------------------------------------
+0. Conventions for “Linked from”
+--------------------------------------------------------------------
+• **deznav (USIS)** — Top MetisMenu block (menu-title “USIS”) in `elements/deznav-construction.html`.
+• **deznav (Construction demos)** — Submenu “Construction template (demos)”.
+• **deznav (Classic demos)** — Submenu “Other W3CRM demos”.
+• **usis-dashboard** — Card buttons on `usis-dashboard.html`.
+• **usis-hr-dashboard** — Quick link buttons on `usis-hr-dashboard.html`; employee names in the sample table link to `usis-hr-employee.html?id=…`.
+• **usis-hr** — CTA on `usis-hr.html`.
+• **usis-rfp-list** — In-page link (e.g. Compare).
+• **footer / bottomnav** — `elements/footer.html` includes `elements/usis-bottomnav.html` (mobile primary links).
+• **JS / URL** — Deep links built in JavaScript (e.g. `usis-crm-leads.js` row → `usis-crm-bid-detail.html?…`); document as “JS navigation”.
+• **TBD** — Planned in module plans but not wired in HTML yet.
+
+--------------------------------------------------------------------
+A. Built USIS pages (`usis-*.html` at `gulp/src/`)
+--------------------------------------------------------------------
+| Page | Role | Linked from |
+|------|------|-------------|
+| usis-dashboard.html | Post-login style hub | deznav (USIS) “Dashboard”; usis-bottomnav (footer) first icon |
+| usis-crm-leads.html | CRM pipeline / bids list | deznav “CRM pipeline”; usis-dashboard card “Leads & bids” |
+| usis-crm-bid-detail.html | Bid / lead detail shell | JS from usis-crm-leads (row click; see Plan 2); typically `?bid=` or lead UUID |
+| usis-rfp-list.html | RFP list | usis-dashboard card “RFP”; `construction/project-detail.html` RFP tab (opens list with `?project_id=` when applicable) |
+| usis-rfp-detail.html | RFP editor / detail | JS from usis-rfp-list (not a deznav direct link) |
+| usis-rfp-compare.html | Vendor compare (demo) | usis-rfp-list button “Compare (demo)” |
+| usis-documents-hub.html | Project documents list | deznav “Documents”; usis-dashboard card; usis-hr-dashboard quick links |
+| usis-safety.html | Safety module hub — Plan 7 pillars (company / project / field / incidents); stubbed deep links per Plan 7 §3 | deznav “Safety”; usis-hr-dashboard “Safety module” |
+| usis-hr-dashboard.html | HR KPI dashboard (Plan 19 snapshot widgets) | deznav “HR” → `usis-hr-dashboard.html`; usis-dashboard card “HR dashboard”; links to **HR suite** |
+| usis-hrms-home.html | HRMS hub — Sage-style roadmap; live cards from ``GET /api/v1/hrms/dashboard`` | deznav “HR suite”; `Plan/HRMS/README.md` |
+| usis-hr-employee.html | HR employee detail (`?id=` user UUID) — `users` + `hr_*` lists | JS from usis-hr-dashboard (name links in sample table) |
+| usis-hr.html | HR landing — narrative and deep links only; KPIs stay on dashboard (Plan 19 section 7) | usis-hr-dashboard “HR landing”; links to QuickBooks reference |
+| usis-hr-quickbooks-employee-reference.html | HR reference — typical QuickBooks employee / payroll fields (not legal advice) | usis-hr, usis-hr-dashboard quick links; index |
+| usis-playbooks.html | Operational playbooks — checklist templates, steps, start run; API `/api/v1/playbooks/*` (Plan 22) | deznav “Playbooks”; usis-all-pages-index |
+| usis-user-directory.html | User admin — live `users` / `roles` / `user_roles`; API `/api/v1/admin/users`, `/api/v1/admin/roles` (admin / superuser) | deznav “User admin”; usis-dashboard card; usis-all-pages-index |
+| usis-playbook-run.html | One active checklist run (`?run_id=`) | usis-playbooks “Recent runs”; index |
+| usis-leads.html | Redirect / handoff to BC leads | TBD direct nav; links to `construction/leads.html` (canonical) |
+
+• **Safety vs HR surfaces:** `usis-safety.html` is the Safety module home (Plan 7). `usis-hr.html` is a short people landing; `usis-hr-dashboard.html` is the HR surface for KPI cards and the employee sample table; `usis-hr-employee.html` shows one person’s `hr_*` rows (`?id=`).
+
+--------------------------------------------------------------------
+B. Built construction shell pages (`construction/*.html`) in active USIS flows
+--------------------------------------------------------------------
+| Page | Role | Linked from |
+|------|------|-------------|
+| construction/leads.html | BuildingConnected / leads workspace | deznav “Leads”; usis-dashboard; usis-bottomnav; usis-leads.html |
+| construction/projects.html | Projects directory | deznav “Projects”; usis-dashboard; usis-bottomnav |
+| construction/estimate.html | Estimate / takeoff workspace | deznav “Estimate”; usis-dashboard; usis-bottomnav |
+| construction/drawing-viewer.html | Drawing viewer shell | usis-dashboard “Drawings”; usis-bottomnav |
+| construction/rfis.html | RFI log | `construction/project-detail.html` RFIs tab (“Open RFI Log”); cross-links from construction flows |
+| construction/rfi-create.html | Create RFI | `construction/project-detail.html` RFIs tab (“+ Create RFI”); cross-links |
+| construction/lead-detail.html | Lead detail | JS/list from leads.html (pattern `?id=` or internal links — verify when wiring) |
+| construction/project-detail.html | Project detail — tabs include Job info, Schedule (installation windows + calendar), **Tasks** (W3CRM-style grid on the same `schedule-items` API), Drawings, RFIs, … | JS/list from projects.html |
+| construction/estimate-detail.html | Estimate detail | JS from estimate.html |
+| construction/rfi-detail.html | RFI detail | JS from rfis.html |
+| construction/submittal-detail.html | Submittal detail | Linked from submittal flows when implemented |
+
+Other `construction/*.html` files exist on disk (attendance, finance, files, **task.html** standalone demo, etc.) but are **not** in the USIS top nav until promoted; many appear only under §C demo menus. The **Tasks** UX for active projects is **project-detail → Tasks** (not only the legacy `construction/task.html` demo).
+
+--------------------------------------------------------------------
+C. W3CRM template / demo pages (non-product unless promoted)
+--------------------------------------------------------------------
+Linked primarily from **deznav → Construction template (demos)** or **deznav → Other W3CRM demos**. Treat as design references unless moved to USIS block.
+
+**Construction template (demos)** — construction/index.html, projects.html (dup), overview.html, finance.html, reports.html, services.html, contact-us.html; workspace tabs: estimate_legacy.html, party.html, transaction.html, leads.html (dup), task.html, attendance.html, material.html, files.html; quotation.html, add-quotation.html, edit-quotation.html; time-sheet.html, timesheet-detail.html, todo.html, todo-detail.html; mom.html, mom-detail.html.
+
+**Other W3CRM demos** — index.html, index-2.html, project.html, manage-client.html, finance.html (root), task.html (root), app-calender.html, email-inbox.html, empty-page.html.
+
+**Linked from:** deznav only (and cross-links between those demo pages).
+
+--------------------------------------------------------------------
+D. Planned pages (spec in Plans 1–13, 19; file may not exist yet)
+--------------------------------------------------------------------
+For each, **Linked from** is intended navigation once built.
+
+**Plan 1 Core** — usis-command-palette (global); login shell (page-login pattern). Linked from: header / keyboard (TBD).
+
+**Plan 2 CRM** — usis-bid-kanban.html (optional). Linked from: usis-crm-leads or bid detail tabs.
+
+**Plan 3 Takeoff** — usis-takeoff.html; elements/usis-takeoff-row.html. Linked from: bid detail “Estimating” tab; estimate workspace.
+
+**Plan 4 Estimating** — usis-estimating.html (+ usis-takeoff-table.js). Linked from: deznav Estimate / CRM bid detail; “Pull measurement” → usis-drawing-viewer.html.
+
+**Plan 5 RFP** — elements/usis-rfp-form.html; usis-rfp-email-preview.html; public vendor page (Flask template possible). Linked from: usis-rfp-detail, bid detail.
+
+**Plan 6 Drawing / docs** — usis-drawing-viewer.html; usis-ai-review-center.html; elements/usis-drawing-toolbar.html; elements/usis-drawing-sidebars.html. Linked from: estimate rows; project documents; drawing-viewer upgrade path from construction/drawing-viewer.html.
+
+**Plan 7 Safety** — usis-safety-dashboard.html; usis-safety-observation.html; usis-safety-incident.html; usis-jha-library.html; usis-project-jha-list.html; usis-project-jha-detail.html; usis-daily-pretask.html; elements/usis-daily-pretask-form.html; elements/usis-daily-safety-log.html. Linked from: usis-safety.html hub; project safety menu (TBD); usis-field / daily log (pretask + safety log).
+
+**Plan 8 / 9 Field & schedule** — usis-field.html; usis-schedule.html; usis-calendar.html or tab inside schedule; elements/usis-daily-log-form.html; elements/usis-punchlist-panel.html; elements/usis-field-photo-upload.html; elements/usis-gantt-placeholder.html. Linked from: deznav (when promoted); project detail “Field / Schedule”.
+
+**Plan 10 Financials** — usis-financials.html; partials usis-budget-table, usis-variance-ai-widget, usis-invoice-generator, usis-change-order-form, usis-profit-by-trade, usis-cashflow-forecast. Linked from: project Finance tab; deznav when promoted.
+
+**Plan 11 Analytics** — usis-analytics.html (?view=…). Linked from: header/reporting menu (TBD); dashboard card (TBD).
+
+**Plan 12 AI** — elements/usis-ai-drawer.html (+ usis-ai-drawer.js). Linked from: @@included on module pages; speed-dial (Plan 13).
+
+**Plan 13 Cross-cutting** — elements/usis-bottomnav.html (included via footer); elements/usis-speeddial.html. Linked from: all pages using standard footer; body data attributes for speed-dial context.
+
+**Plan 19 HR** — usis-hr-onboarding.html; usis-hr-policies.html. Linked from: usis-hr-dashboard widgets / HR admin nav (TBD).
+
+--------------------------------------------------------------------
+E. Global partials (not standalone routes)
+--------------------------------------------------------------------
+| Artifact | Role | “Linked from” |
+|----------|------|----------------|
+| elements/meta.html | Head meta | @@included by every page |
+| elements/preloader.html | Loading UI | Standard shell |
+| elements/nav-header-construction.html | Top strip | Standard shell |
+| elements/chatbox-construction.html | Chat placeholder | Standard shell |
+| elements/header-construction.html | App header | Standard shell |
+| elements/deznav-construction.html | Sidebar | Standard shell |
+| elements/footer.html | Footer | Standard shell; **includes** usis-bottomnav |
+| elements/usis-bottomnav.html | Mobile bottom nav | footer.html |
+| elements/breadcrumb.html | Title area | Per-page @@include |
+| elements/script.html | Vendor JS bundle | Standard shell |
+| elements/usis-ai-drawer.html | AI offcanvas | Plan 12 — include from module pages when wired |
+
+--------------------------------------------------------------------
+F. Mobile bottom nav targets (footer)
+--------------------------------------------------------------------
+`elements/usis-bottomnav.html` links to: usis-dashboard.html, construction/leads.html, construction/projects.html, construction/estimate.html, construction/drawing-viewer.html. Any page using `footer.html` exposes these on small screens.
+
+--------------------------------------------------------------------
+G. Phone app (Plan 16)
+--------------------------------------------------------------------
+Native/PWA routes are **not** this HTML tree. See Plan 16 for mobile surfaces; parity with §A–D APIs over time.
+
+--------------------------------------------------------------------
+I. Site guide bar, manifest, and all-pages index
+--------------------------------------------------------------------
+Every first-party shell page under `gulp/src` (excluding `assets/**` and `elements/*.html` partials) can show a one-time **site guide** strip: short purpose text, **Prev | Index | Next** links with correct relative URLs, and a pointer to this plan. The canonical ordered list lives in **`tools/usis-site-pages.json`** (path, `order`, `title`, `summary`, `category`, optional `injectAfter` anchor hint).
+
+**Generator:** run from the USIS_CM repo root:
+
+- `python tools/apply_usis_site_guides.py --write-manifest` — rescan `gulp/src` and rewrite the manifest (use when adding or renaming pages).
+- `python tools/apply_usis_site_guides.py --dry-run` — report which files would receive the bar (skips any file that already contains `id="usis-site-guide-root"`).
+- `python tools/apply_usis_site_guides.py --apply` — inject the bar once per file and regenerate **`gulp/src/usis-all-pages-index.html`** (grouped list with the same summaries).
+
+After changing the template tree, rebuild with `npx gulp` from `W3CRM-v3.0-13_September_2025/gulp`. The human-facing index is **`usis-all-pages-index.html`** at the Gulp source root; it is linked from **deznav-construction** (“All pages (tour)”) and from a card on **usis-dashboard.html**.
+
+--------------------------------------------------------------------
+H. Revision history (manual)
+--------------------------------------------------------------------
+• 2026-05-12 — Plan 20 initial authoring from deznav-construction.html, usis-dashboard.html, usis-hr-*.html, usis-rfp-list.html, footer/bottomnav, module Plans 1–13 and 19.
+• 2026-05-12 — §I: site-wide guide bar, `tools/usis-site-pages.json`, and `apply_usis_site_guides.py` index generator.
+• 2026-05-12 — deznav (USIS): removed sidebar **RFIs** submenu and **RFP** link; RFI/RFP entry from **project detail** tabs and dashboard RFP card instead.
+• 2026-05-12 — §A: clarified `usis-safety.html` hub vs `usis-hr.html` landing vs `usis-hr-dashboard.html` KPIs; Safety/HR HTML aligned to Plans 7, 19, 21.
+• 2026-05-12 — §A + deznav: added `usis-playbooks.html` / `usis-playbook-run.html` (Plan 22 operational checklists); `tools/usis-site-pages.json` orders 11.5 / 11.6.
+• 2026-05-13 — §A: added `usis-hr-quickbooks-employee-reference.html`; linked from `usis-hr.html`, HR dashboard quick links.
+• 2026-05-13 — §A/B: Procurement — `usis-procurement.html` hub; `construction/project-detail.html` **Procurement** tab + `project-detail-procurement.js`; deznav + dashboard links; API `/api/v1/projects/<id>/commitments`; `tools/usis-site-pages.json` order 11.25.
+• 2026-05-13 — `construction/project-detail.html` **Contract admin** tab: `project-detail-job.js` — commitment snapshot (approved value, rules active, status counts), Reload summary, Copy Sage id, Edit on Job info (compliance).
+• 2026-05-14 — **Tasks** tab on `construction/project-detail.html` + `project-detail-tasks.js` (W3CRM task grid; `GET/POST/PATCH/DELETE` same `schedule-items` as Schedule); `project-detail-schedule.js` emits `usis-project-schedule-changed` and exposes `window.USISProjectScheduleUi` for shared modal.
+• 2026-05-14 — **HRMS scaffold:** `Plan/HRMS/README.md`; Alembic `0030_hrms_foundation`; models `hrms_core`; API ``/api/v1/hrms/*`` (`app/hrms`); `usis-hrms-home.html` + deznav “HR suite”; `tools/usis-site-pages.json`; seed `scripts/seed_hrms_sample.py` (HR roles).
+• 2026-05-13 — §A + deznav + dashboard: `usis-user-directory.html` + `usis-user-directory.js`; admin APIs `/api/v1/admin/users`, `/api/v1/admin/roles`; `tools/usis-site-pages.json` (user admin + repaired `usis-procurement.html` entry); replaces static `user.html` / `user-roles.html` for live directory management.

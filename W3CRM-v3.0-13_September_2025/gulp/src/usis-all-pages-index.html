@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-all-pages-index.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "All pages (tour)",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">USIS All Pages Index</h6>
+								<p class="text-muted small mb-0">Alphabetical tour of all first-party pages in this tree with one-line descriptions. Regenerate via tools/apply_usis_site_guides.py after adding pages.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="user.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-crm-bid-detail.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<div class="container-fluid">
+				<div class="card mb-3">
+					<div class="card-body">
+						<h5 class="card-title">First-party HTML index</h5>
+						<p class="text-muted small mb-0">Each in-scope page under <code>gulp/src</code> has a site guide bar with Prev / Index / Next. Regenerate this file with <code>python tools/apply_usis_site_guides.py --apply</code> or <code>--write-index</code> after editing <code>tools/usis-site-pages.json</code>.</p>
+					</div>
+				</div>
+				<h5 class="mt-2">USIS product &amp; hubs</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="usis-crm-bid-detail.html"><strong>USIS CRM Bid Detail</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-crm-leads.html"><strong>USIS CRM Leads</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-dashboard.html"><strong>USIS Dashboard</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-documents-hub.html"><strong>USIS Documents Hub</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="core-hr.html"><strong>Core HR (USIS landing)</strong></a> <span class="text-muted small">— Employee directory; names link to <code>usis-hr-employee.html?id=</code>. Same shell as construction nav.</span></li>
+					<li class="mb-2"><a href="usis-hr-dashboard.html"><strong>USIS HR Dashboard</strong></a> <span class="text-muted small">— HR KPI cards and sample table; deznav “HR” opens Core HR.</span></li>
+					<li class="mb-2"><a href="usis-hr-employee.html"><strong>USIS HR — employee</strong></a> <span class="text-muted small">— Per-user HR detail (<code>?id=</code> user UUID); opened from Core HR / dashboard name links.</span></li>
+					<li class="mb-2"><a href="usis-hr-quickbooks-employee-reference.html"><strong>USIS HR — QuickBooks employee reference</strong></a> <span class="text-muted small">— Field guide for typical QuickBooks employee / payroll data (internal reference).</span></li>
+					<li class="mb-2"><a href="usis-hr.html"><strong>USIS HR</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-leads.html"><strong>USIS Leads</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-playbook-run.html"><strong>USIS Playbook run</strong></a> <span class="text-muted small">— Checklist run detail (<code>?run_id=</code>); Plan 22.</span></li>
+					<li class="mb-2"><a href="usis-playbooks.html"><strong>USIS Playbooks</strong></a> <span class="text-muted small">— Operational checklist templates and runs; Plan 22.</span></li>
+					<li class="mb-2"><a href="usis-user-directory.html"><strong>USIS User admin</strong></a> <span class="text-muted small">— Live users and roles directory (<code>/api/v1/admin/users</code>); admin/superuser only.</span></li>
+					<li class="mb-2"><a href="usis-rfp-compare.html"><strong>USIS Rfp Compare</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-rfp-detail.html"><strong>USIS Rfp Detail</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-rfp-list.html"><strong>USIS Rfp List</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+					<li class="mb-2"><a href="usis-safety.html"><strong>USIS Safety</strong></a> <span class="text-muted small">— USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</span></li>
+				</ul>
+				<h5 class="mt-2">Construction demos</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="construction/add-quotation.html"><strong>Construction — Add Quotation</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/attendance.html"><strong>Construction — Attendance</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/contact-us.html"><strong>Construction — Contact Us</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/drawing-viewer.html"><strong>Construction — Drawing Viewer</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/edit-quotation.html"><strong>Construction — Edit Quotation</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/estimate-detail.html"><strong>Construction — Estimate Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/estimate.html"><strong>Construction — Estimate</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/estimate_legacy.html"><strong>Construction — Estimate Legacy</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/files.html"><strong>Construction — Files</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/finance.html"><strong>Construction — Finance</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/index.html"><strong>Construction — Index</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/lead-detail.html"><strong>Construction — Lead Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/leads.html"><strong>Construction — Leads</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/material.html"><strong>Construction — Material</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/mom-detail.html"><strong>Construction — Mom Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/mom.html"><strong>Construction — Mom</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/overview.html"><strong>Construction — Overview</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/party.html"><strong>Construction — Party</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/project-detail.html"><strong>Construction — Project Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/projects.html"><strong>Construction — Projects</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/quotation.html"><strong>Construction — Quotation</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="reports.html"><strong>Reports</strong></a> <span class="text-muted small">— Construction-style report catalog (W3CRM template demo); shell matches other USIS pages.</span></li>
+					<li class="mb-2"><a href="construction/rfi-create.html"><strong>Construction — RFI Create</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/rfi-detail.html"><strong>Construction — RFI Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/rfis.html"><strong>Construction — RFIS</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/services.html"><strong>Construction — Services</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/submittal-detail.html"><strong>Construction — Submittal Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/task.html"><strong>Construction — Task</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/time-sheet.html"><strong>Construction — Time Sheet</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/timesheet-detail.html"><strong>Construction — Timesheet Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/todo-detail.html"><strong>Construction — Todo Detail</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/todo.html"><strong>Construction — Todo</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+					<li class="mb-2"><a href="construction/transaction.html"><strong>Construction — Transaction</strong></a> <span class="text-muted small">— Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</span></li>
+				</ul>
+				<h5 class="mt-2">Authentication</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="page-error-400.html"><strong>Page Error 400</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-error-403.html"><strong>Page Error 403</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-error-404.html"><strong>Page Error 404</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-error-500.html"><strong>Page Error 500</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-error-503.html"><strong>Page Error 503</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-forgot-password.html"><strong>Page Forgot Password</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-lock-screen.html"><strong>Page Lock Screen</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-login.html"><strong>Page Login</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+					<li class="mb-2"><a href="page-register.html"><strong>Page Register</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
+				</ul>
+				<h5 class="mt-2">E-commerce demos</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="ecom-checkout.html"><strong>E-commerce Checkout</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+					<li class="mb-2"><a href="ecom-customers.html"><strong>E-commerce Customers</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+					<li class="mb-2"><a href="ecom-invoice.html"><strong>E-commerce Invoice</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+					<li class="mb-2"><a href="ecom-product-detail.html"><strong>E-commerce Product Detail</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+					<li class="mb-2"><a href="ecom-product-grid.html"><strong>E-commerce Product Grid</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+					<li class="mb-2"><a href="ecom-product-list.html"><strong>E-commerce Product List</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+					<li class="mb-2"><a href="ecom-product-order.html"><strong>E-commerce Product Order</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
+				</ul>
+				<h5 class="mt-2">CMS</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="cms/add-blog.html"><strong>Add Blog</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/add-email.html"><strong>Add Email</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/blog-category.html"><strong>Blog Category</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/blog.html"><strong>Blog</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/content-add.html"><strong>Content Add</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/content.html"><strong>Content</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/email-template.html"><strong>Email Template</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+					<li class="mb-2"><a href="cms/menu.html"><strong>Menu</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
+				</ul>
+				<h5 class="mt-2">AI kit</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="aikit/auto-write.html"><strong>Auto Write</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/chatbot.html"><strong>Chatbot</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/fine-tune-models.html"><strong>Fine Tune Models</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/import.html"><strong>Import</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/prompt.html"><strong>Prompt</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/repurpose.html"><strong>Repurpose</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/rss.html"><strong>Rss</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/scheduled.html"><strong>Scheduled</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+					<li class="mb-2"><a href="aikit/setting.html"><strong>Setting</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
+				</ul>
+				<h5 class="mt-2">Account</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="account/activity.html"><strong>Activity</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/api-keys.html"><strong>API Keys</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/billing.html"><strong>Billing</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/logs.html"><strong>Logs</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/overview.html"><strong>Overview</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/referrals.html"><strong>Referrals</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/security.html"><strong>Security</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/settings.html"><strong>Settings</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+					<li class="mb-2"><a href="account/statements.html"><strong>Statements</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
+				</ul>
+				<h5 class="mt-2">Profile</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="profile/activity.html"><strong>Activity</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+					<li class="mb-2"><a href="profile/campaigns.html"><strong>Campaigns</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+					<li class="mb-2"><a href="profile/documents.html"><strong>Documents</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+					<li class="mb-2"><a href="profile/followers.html"><strong>Followers</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+					<li class="mb-2"><a href="profile/overview.html"><strong>Overview</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+					<li class="mb-2"><a href="profile/projects-details.html"><strong>Projects Details</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+					<li class="mb-2"><a href="profile/projects.html"><strong>Projects</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
+				</ul>
+				<h5 class="mt-2">Other template pages</h5>
+				<ul class="list-unstyled">
+					<li class="mb-2"><a href="add-role.html"><strong>Add Role</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="app-calender.html"><strong>App Calender</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="app-profile-2.html"><strong>App Profile 2</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="app-profile.html"><strong>App Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="blog.html"><strong>Blog</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="chat.html"><strong>Chat</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="contacts.html"><strong>Contacts</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="core-hr.html"><strong>Core HR</strong></a> <span class="text-muted small">— <strong>USIS HR landing</strong> (employee directory + template chrome). Linked from deznav HR.</span></li>
+					<li class="mb-2"><a href="customer-profile.html"><strong>Customer Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="customer.html"><strong>Customer</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="edit-profile.html"><strong>Edit Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="email-compose.html"><strong>Email Compose</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="email-inbox.html"><strong>Email Inbox</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="email-read.html"><strong>Email Read</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="employee.html"><strong>Employee</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="empty-page.html"><strong>Empty Page</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="finance.html"><strong>Finance</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="index-2.html"><strong>Index 2</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="index.html"><strong>Index</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="manage-client.html"><strong>Manage Client</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="performance.html"><strong>Performance</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="post-details.html"><strong>Post Details</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="project.html"><strong>Project</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="task-summary.html"><strong>Task Summary</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="task.html"><strong>Task</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="user-roles.html"><strong>User Roles</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+					<li class="mb-2"><a href="user.html"><strong>User</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
+				</ul>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+
+</body>
+</html>

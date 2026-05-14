@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-crm-leads.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "CRM — Leads" })
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">USIS CRM Leads</h6>
+								<p class="text-muted small mb-0">USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="usis-crm-bid-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-dashboard.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<div class="container-fluid">
+				<p class="text-muted small">Uses the same API as Leads with optional <code>crm_stage</code> filter.</p>
+				<div class="mb-2">
+					<label class="form-label small">CRM stage</label>
+					<select class="form-select form-select-sm w-auto d-inline-block" id="usis-crm-filter-stage">
+						<option value="">(all)</option>
+						<option>New Lead</option>
+						<option>Invited</option>
+						<option>Estimating</option>
+						<option>Submitted</option>
+						<option>Awarded</option>
+						<option>Lost</option>
+					</select>
+					<button type="button" class="btn btn-sm btn-primary ms-2" id="usis-crm-refresh">Refresh</button>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-sm table-hover">
+						<thead><tr><th>Stage</th><th>Name</th><th>Due</th><th></th></tr></thead>
+						<tbody id="usis-crm-tbody"></tbody>
+					</table>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-crm-leads.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+// Bootstrap SCSS Functions
+@import "../../../node_modules/bootstrap/scss/functions.scss";
+
+// Theme Custom Variables
+@import "./abstracts/bs-custom";
+@import "./abstracts/variable";
+@import "./abstracts/mixin";
+@import "./abstracts/maps";
+
+// Bootstrap Custom SCSS
+@import "../../../node_modules/bootstrap/scss/variables";
+@import "../../../node_modules/bootstrap/scss/variables-dark";
+@import "../../../node_modules/bootstrap/scss/maps";
+@import "../../../node_modules/bootstrap/scss/mixins";
+@import "../../../node_modules/bootstrap/scss/utilities";
+
+// Switcher SCSS
+@import "./switcher/demo-sidebar.scss";
+@import "./switcher/switcher-right.scss";

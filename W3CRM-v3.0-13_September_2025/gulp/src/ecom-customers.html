@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "ecom-customers.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Customers",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">E-commerce Customers</h6>
+								<p class="text-muted small mb-0">E-commerce demo template. Reference for catalog and checkout UI patterns.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="ecom-checkout.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="ecom-invoice.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body table-card-body p-0 pt-2">
+                                <div class="table-responsive check-wrapper">
+                                    <table class="table table-striped table-borderless">
+                                        <thead>
+                                            <tr>
+                                                <th>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-all" required="">
+													</div>
+                                                </th>
+                                                <th class="mw-200">Name</th>
+                                                <th class="mw-150">Email</th>
+                                                <th class="mw-150">Phone</th>
+                                                <th class="mw-250">Billing Address</th>
+                                                <th class="mw-150">Joined</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="customers">
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox ">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<div class="d-flex align-items-center">
+														<div class="avatar rounded-circle bg-primary text-white avatar-xs me-2">A</div>
+														<h6 class="mb-0">Amelia Rose</h6>
+													</div>
+                                                </td>
+                                                <td><a href="mailto:ricky@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:2012001851">(201) 200-1851</a></td>
+                                                <td>2392 Main Avenue, Penasauka</td>
+                                                <td>30/03/2018</td>
+                                                <td class="text-end">
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar1.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Charlotte Mae</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:emma@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:2122288403">(212) 228-8403</a></td>
+                                                <td>2289 5th Avenue, New York</td>
+                                                <td>11/07/2017</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<div class="d-flex align-items-center">
+														<div class="avatar rounded-circle bg-info text-white avatar-xs me-2">I</div>
+														<h6 class="mb-0">Isabella Claire</h6>
+													</div>
+                                                </td>
+                                                <td><a href="mailto:rown@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:2012001851">(201) 200-1851</a></td>
+                                                <td>112 Bostwick Avenue, Jersey City</td>
+                                                <td>05/04/2016</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class=" d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                               <img src="assets/images/avatar/middle/avatar3.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Sophia Jane</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:antony@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:9013243127">(901) 324-3127</a></td>
+                                                <td>3448 Ile De France St #242, </td>
+                                                <td>05/04/2018</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar5.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Evelyn Hope</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:jennifer@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:8283829631">(828) 382-9631</a></td>
+                                                <td>659 Hannah Street, Charlotte</td>
+                                                <td>17/03/2016</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<div class="d-flex align-items-center">
+														<div class="avatar rounded-circle bg-success text-white avatar-xs me-2">
+															S
+														</div>
+														<h6 class="mb-0">Scarlett Elise</h6>
+													</div>
+                                                </td>
+                                                <td><a href="mailto:raymond@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:5624685646">(562) 468-5646</a></td>
+                                                <td>2298 Locust Court, Artesia</td>
+                                                <td>12/07/2014</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                   <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar7.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Abigail Faith</h6>                                                            
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:jenkins@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:3026138829">(302) 613-8829</a></td>
+                                                <td>4678 Maud Street, Philadelphia</td>
+                                                <td>15/06/2014</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar9.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Emily Kate</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:cadena@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:3172737814">(317) 273-7814</a></td>
+                                                <td>3412 Crestview Manor, Indianapolis</td>
+                                                <td>15/04/2015</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<div class="d-flex align-items-center">
+														<div class="avatar rounded-circle bg-warning text-white avatar-xs me-2">H</div>
+														<h6 class="mb-0">Harper Joy</h6>
+													</div>
+                                                </td>
+                                                <td><a href="mailto:ricky@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:2012001851">(201) 200-1851</a></td>
+                                                <td>2392 Main Avenue, Penasauka</td>
+                                                <td>30/03/2018</td>
+                                                <td class="text-end">
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                   <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                               <img src="assets/images/avatar/middle/avatar2.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Ethan Cole</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:emma@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:2122288403">(212) 228-8403</a></td>
+                                                <td>2289 5th Avenue, New York</td>
+                                                <td>11/07/2017</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<div class="d-flex align-items-center">
+														<div class="avatar rounded-circle bg-info text-white avatar-xs me-2">H</div>
+														<h6 class="mb-0">Henry Mason</h6>
+													</div>
+                                                </td>
+                                                <td><a href="mailto:rown@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:2012001851">(201) 200-1851</a></td>
+                                                <td>112 Bostwick Avenue, Jersey City</td>
+                                                <td>05/04/2016</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar4.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Lucas Bennett</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:antony@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:9013243127">(901) 324-3127</a></td>
+                                                <td>3448 Ile De France St #242</td>
+                                                <td>05/04/2018</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                   <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar6.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Samuel Owen</h6>                                                            
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:jennifer@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:8283829631">(828) 382-9631</a></td>
+                                                <td>659 Hannah Street, Charlotte</td>
+                                                <td>17/03/2016</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                   <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<div class="d-flex align-items-center">
+														<div class="avatar rounded-circle bg-success text-white avatar-xs me-2">J</div>
+														<h6 class="mb-0">Jackson Miles</h6>
+													</div>
+                                                </td>
+                                                <td><a href="mailto:raymond@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:5624685646">(562) 468-5646</a></td>
+                                                <td>2298 Locust Court, Artesia</td>
+                                                <td>12/07/2014</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+													<a href="javascript:void(0);">
+                                                        <div class=" d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                                <img src="assets/images/avatar/middle/avatar8.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">Alexander Finn</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:jenkins@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:3026138829">(302) 613-8829</a></td>
+                                                <td>4678 Maud Street, Philadelphia</td>
+                                                <td>15/06/2014</td>
+                                                <td class="text-end">
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                            <tr class="btn-reveal-trigger">
+                                                <td>
+                                                    <div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+                                                </td>
+                                                <td>
+                                                    <a href="javascript:void(0);">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar rounded-circle avatar-xs me-2">
+                                                               <img src="assets/images/avatar/middle/avatar10.webp" alt="">
+                                                            </div>
+															<h6 class="mb-0">William Jasper</h6>
+                                                        </div>
+                                                    </a>
+                                                </td>
+                                                <td><a href="mailto:cadena@example.com">info@example.com</a></td>
+                                                <td><a class="text-body" href="tel:3172737814">(317) 273-7814</a></td>
+                                                <td>3412 Crestview Manor, Indianapolis</td>
+                                                <td>15/04/2015</td>
+                                                <td class="text-end">
+                                                    <div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+		</main>
+		<!-- End - Content Body -->
+
+        @@include("elements/footer.html")
+
+    </div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

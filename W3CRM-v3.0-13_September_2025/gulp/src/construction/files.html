@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "files.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Transaction",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Files</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="estimate_legacy.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="finance.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3 active">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+        
+            <div class="container-fluid">
+                <div class="vh-50 position-relative">
+                    <div class="clearfix">
+                        <div class="row justify-content-center align-items-center h-100">
+                            <div class="col-xl-3 position-absolute start-50 top-50 translate-middle text-center">
+                                <a href="javascript:void(0);" class="btn btn-primary btn-sm mb-3" data-bs-toggle="modal" data-bs-target="#create-file">Create Folder +</a>
+                                <h4 class="fw-bold">You don't have any Folder</h6>
+                                <p class="m-0 fs-12">Please Add Photos or Create Folder</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+			</div>
+
+        </main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+		
+		<!-- Start - Download Modal -->
+		<div class="modal fade" id="create-file" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title" id="date-filter">Folder</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="mb-3">
+							<label for="folder" class="form-label">FOLDER NAME</label>
+							<input type="text" class="form-control" id="folder" placeholder="Enter Folder Name">
+						</div>
+					</div>
+					<div class="p-3 d-flex justify-content-end border-top">
+						<a href="javascript:void(0);" class="btn btn-secondary">Create Folder</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Download -->
+
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

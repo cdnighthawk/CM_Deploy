@@ -1,0 +1,50 @@
+/* Social Colors */
+@each $color, $value in $social-colors{
+	.btn.btn-#{$color}{
+		--bs-btn-bg: #{$value};
+		--bs-btn-border-color: #{$value};
+		--bs-btn-focus-shadow-rgb: #{to-rgb($value)};
+		
+		background: $value;
+		border-color: $value;
+		
+		@if $color != snapchat{
+			color: $white;
+		}
+		&:active,
+		&:focus,
+		&:hover{
+			background: darken($value, 5%);
+			border-color: darken($value, 5%);
+			
+			@if $color != snapchat{
+				color: $white;
+			}
+		}
+	}
+	.btn-snapchat{
+		color: #000;
+	}
+	.btn-outline-#{$color}{
+		border-color: $value;
+		color: $value;
+		
+		&:active,
+		&:focus,
+		&:hover {
+			background: darken($value, 10%);
+			color: $white;
+			border-color: darken($value, 10%);
+		}
+	}
+	.text-#{$color}{
+		color: $value;
+	}
+	a.text-#{$color}{
+		&:active,
+		&:focus,
+		&:hover{
+			color: darken($value, 10%);
+		}
+	}
+}

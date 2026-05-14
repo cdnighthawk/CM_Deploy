@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "manage-client.html",
+	})
+	
+	<link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Manage Client",
+				})
+				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Manage Client</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="index.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="page-error-400.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-3">
+						<div class="card h-auto">
+							<div class="card-header py-3">
+								<h4 class="card-title mb-0"><i class="fa-sharp fa-solid fa-filter me-1"></i> Filter</h4>
+							</div>
+							<div class="card-body d-block">
+								<form class="row align-items-end">
+									<div class="col-12 col-sm-6 col-md-4 col-xl-12 mb-3">
+										<label class="form-label">Search</label>
+										<input type="text" class="form-control" id="searchFilter">
+									</div>
+									<div class="col-12 col-sm-6 col-md-4 col-xl-12 mb-3">
+										<label class="form-label">Gender</label>
+										<select id="genderFilter" class="selectpicker form-select">
+											<option value="">All</option>
+											<option value="Male">Male</option>
+											<option value="Female">Female</option>
+										</select>
+									</div>
+									<div class="col-12 col-sm-6 col-md-4 col-xl-12 mb-3">
+										<label class="form-label">Status</label>
+										<select id="statusFilter" class="selectpicker form-select">
+											<option value="">All</option>
+											<option value="Active">Active</option>
+											<option value="Inactive">Inactive</option>
+											<option value="Pending">Pending</option>
+										</select>
+									</div>
+									<div class="col-12 col-sm-6 col-md-4 col-xl-12 mb-3">
+										<label class="form-label">Location</label>
+										<select id="locationFilter" class="selectpicker form-select">
+											<option value="">All</option>
+											<option value="USA">USA</option>
+											<option value="Uk">Uk</option>
+										</select>
+									</div>
+									<div class="col-12 col-sm-6 col-md-4 col-xl-12 mb-3">
+										<div class="row g-3">
+											<div class="col">
+												<button id="applyFilter" class="btn btn-primary w-100" type="button">Apply</button>
+											</div>
+											<div class="col">
+												<button id="resetFilter" class="btn btn-danger light w-100" type="button">Reset</button>
+											</div>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-9">
+						<div class="card">
+							<div class="card-header border-0">
+								<h4 class="card-title">Manage Client</h4>
+								<div id="tableManageClientExcelBTN"></div>								
+							</div>
+							<div class="card-body table-card-body px-0 pt-0 pb-2">
+								<div class="table-responsive">
+									<table id="manageClientTable" class="table">
+										<thead class="table-light">
+											<tr>
+												<th class="mw-200">Name</th>
+												<th class="mw-100">User Name</th>
+												<th class="mw-150">Contact</th>
+												<th class="mw-100">Gender</th>
+												<th class="mw-100">Location</th>
+												<th class="mw-100">Status</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Amelia Rose</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">ricky.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>Uk</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Elijah James</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">Lily.antony</span></td>
+												<td><span>+91 123 456 7190</span></td>
+												<td><span>Female</span></td>	
+												<td><span>Usa</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar3.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Charlotte Mae</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">Lily.antony</span></td>
+												<td><span>+91 123 456 7190</span></td>
+												<td><span>Male</span></td>	
+												<td><span>Usa</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Liam Risher</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">ricky.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>Uk</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Isabella Claire</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">ricky.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>Usa</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar6.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Ethan Cole</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">Lily.antony</span></td>
+												<td><span>+91 123 456 7190</span></td>
+												<td><span>Female</span></td>	
+												<td><span>Usa</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar7.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Sophia Jane</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">Harry.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>Uk</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar8.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Henry Mason</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">ricky.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>Usa</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar9.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Evelyn Hope</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary"> Alexander.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>USA</span></td>
+												<td><span class="badge badge-danger light">Inactive</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar10.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Lucas Bennett</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">Joseph.Elias</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Male</span></td>	
+												<td><span>Uk</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Lucas Bennett</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">ricky.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>Usa</span></td>
+												<td><span class="badge badge-success light">Active</span></td>
+											</tr>
+											<tr>
+												<td>
+													<div class="d-flex">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+														<div class="clearfix">
+															<h6 class="mb-0">Samuel Owen</h6>
+															<small>Web Designer</small>	
+														</div>	
+													</div>
+												</td>
+												<td><span class="text-primary">john.antony</span></td>
+												<td><span>+91 123 456 7890</span></td>
+												<td><span>Female</span></td>	
+												<td><span>USA</span></td>
+												<td><span class="badge badge-danger light">Inactive</span></td>
+											</tr>
+										</tbody>										
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+        
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("elements/footer.html")
+		
+		@@include("elements/task-modal.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("elements/script.html")
+	
+	<!-- Script For Datatables -->
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Dashboard -->
+	<script src="assets/js/dashboard/dashboard.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

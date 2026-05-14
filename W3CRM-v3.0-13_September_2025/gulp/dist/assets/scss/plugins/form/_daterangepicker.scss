@@ -1,0 +1,111 @@
+.daterangepicker {
+    border-radius: var(--bs-border-radius-sm);
+    border: 1px solid var(--bs-border-color);
+	background-color: var(--bs-body-bg);
+	font-family: var(--bs-body-font-family);
+	
+	&::after{
+		border-bottom: 6px solid var(--bs-body-bg);
+	}
+	td.in-range {
+		background-color: var(--bs-light);
+		color: var(--bs-heading-color);
+	}
+	td.active.start-date,
+	td.active.end-date{
+        background-color: var(--bs-primary);
+		color: #fff;
+
+        &:hover {
+            background-color: var(--bs-primary);
+        }
+    }
+	.btn-default{
+		background-color: var(--bs-light);
+	}
+	.drp-buttons{
+		border-top: 1px solid var(--bs-border-color);
+	}
+	.calendar-table{
+		border: 1px solid var(--bs-body-bg);
+		background-color: var(--bs-body-bg);
+	}
+	td.available:hover,
+	th.available:hover{
+		background-color: var(--bs-primary);
+		border-color: transparent;
+		color: #fff;
+	}
+	.calendar-table th,
+	.calendar-table td{
+		min-width: 24px;
+		width: 24px;
+		height: 24px;
+		line-height: 24px;
+		font-size: 12px;
+	}
+	.calendar-table .prev span{
+		margin-left: 2px;
+	}
+	.calendar-table .next span{
+		margin-right: 4px;
+	}
+	.calendar-table .next:hover span,
+	.calendar-table .prev:hover span{
+		border-color: #fff;
+	}
+	select.hourselect,
+	select.minuteselect,
+	select.secondselect,
+	select.ampmselect{
+		background: var(--bs-light);
+		border: 1px solid var(--bs-border-color);
+	}
+	select.monthselect,
+	select.yearselect{
+		border-color: var(--bs-border-color);
+		border-radius: var(--bs-border-radius-sm);
+	}
+	.ranges li{
+		padding: 7px 10px;
+	}
+	.ranges li.active,
+	.ranges li.active:hover{
+		background-color: var(--bs-primary);
+		color: #fff;
+	}
+	.ranges li:hover{
+		background-color: var(--bs-light);
+	}
+	.show-ranges.ltr .drp-calendar.left{
+		border-left: 1px solid var(--bs-border-color);
+	}
+
+	[data-bs-theme="dark"] &{		
+		td.in-range:not(.end-date):not(.start-date){
+			background-color: var(--bs-dark);
+		}
+		td.off,
+		td.off.in-range,
+		td.off.start-date,
+		td.off.end-date{
+			background-color: var(--bs-body-bg);
+		}
+		.calendar-table .next span,
+		.calendar-table .prev span{
+			border-color: #fff;
+		}
+		.btn-default{
+			background-color: var(--bs-dark);
+		}
+		select.hourselect,
+		select.minuteselect,
+		select.secondselect,
+		select.ampmselect{
+			background: var(--bs-dark);
+		}
+		.ranges li:hover{
+			background-color: var(--bs-dark);
+		}
+	}
+}

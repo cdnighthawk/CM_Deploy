@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "profile/activity.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper" class="show">
+       
+		@@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Activity",
+				})
+				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Activity</h6>
+								<p class="text-muted small mb-0">User profile and social-style profile template.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="../post-details.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="campaigns.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="card border-top-0 border-start-0 border-end-0 rounded-0 h-auto mb-0 px-md-2 pt-md-2">
+				<div class="card-body d-flex py-md-4">
+					<div class="clearfix">
+						<div class="d-inline-block position-relative me-sm-4 me-3 mb-3 mb-lg-0">
+							<img src="assets/images/avatar/large/avatar5.webp" class="avatar avatar-xxl" alt="">
+							<span class="fa fa-circle border border-3 border-white text-success position-absolute bottom-0 end-0 rounded-circle"></span>
+						</div>
+					</div>
+					<div class="clearfix d-xl-flex flex-grow-1">
+						<div class="clearfix pe-md-5">
+							<h3 class="fw-semibold mb-1">Amelia Rose<img src="assets/images/blue-tick.png" alt="Blue Tick"></h3>
+							<ul class="d-flex flex-wrap align-items-center">
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-user me-1"></i>Web Designer</li>
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-map-marker me-1"></i>420 City Path, AU 123-456</li>
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-envelope me-1"></i>info@gmail.com</li>
+							</ul>
+							<div class="d-md-flex d-none flex-wrap">
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 1V23" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">$1,250</h3>
+										<span class="small">Total Earnings</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">125</h3>
+										<span class="small">New Referrals</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">25</h3>
+										<span class="small">New Deals</span>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clearfix mt-3 mt-xl-0 ms-auto d-flex flex-column col-xl-3">
+							<div class="clearfix mb-3 text-xl-end">
+								<a href="javascript:void(0);" class="btn btn-light me-1 me-sm-2 mb-1 btn-active">
+									<span class="active-before">Follow</span>
+									<span class="active-after">Following</span>
+								</a>
+								<a href="javascript:void(0);" class="btn btn-primary mb-1">Offer a Deal</a>
+							</div>
+							<div class="mt-auto d-flex align-items-center">
+								<div class="clearfix me-3">
+									<span class="fw-medium text-black d-block mb-1">Progress</span>
+									<p class="mb-0 d-flex">
+										<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M5.83334 14.1668L14.1667 5.8335" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M5.83334 5.8335H14.1667V14.1668" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+										</svg>
+										<span class="text-success me-1">+3.50%</span>
+									</p>
+								</div>
+								<div id="chartProfileProgress"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-footer py-0 d-flex flex-wrap justify-content-between align-items-center mx-sm-4 px-0">
+					<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl px-3 px-sm-0" id="tabMyProfileBottom" role="tablist">
+						<li class="nav-item" role="presentation">
+							<a href="profile/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/campaigns.html" class="nav-link py-3 px-1 border-3">Campaigns</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/documents.html" class="nav-link py-3 px-1 border-3">Documents</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/followers.html" class="nav-link py-3 px-1 border-3">Followers</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/activity.html" class="nav-link py-3 px-1 border-3 active">Activity</a>
+						</li>
+					</ul>
+					<ul class="d-xl-flex d-none py-2">
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-linkedin-in"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-instagram"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-facebook-f"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-telegram"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-youtube"></i>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			
+			<div class="container-fluid">	
+				<div class="tab-content" id="tabContentMyProfileBottom">
+					<div class="row">
+						<div class="col-xxl-9 col-xl-8">
+							<div class="card">
+								<div class="card-header py-3 flex-wrap gap-2">
+									<h4 class="card-title mb-0">10 March 2025</h4>
+									<ul class="nav nav-pills nav-pills-sm nav-pills-bg gap-2" id="myTab3" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="week-tab3" data-bs-toggle="tab" data-bs-target="#tabWeek3" type="button" role="tab" aria-controls="tabWeek3" aria-selected="true">Week</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="month-tab3" data-bs-toggle="tab" data-bs-target="#tabMonth3" type="button" role="tab" aria-controls="tabMonth3" aria-selected="false">Month</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="year-tab3" data-bs-toggle="tab" data-bs-target="#tabYear3" type="button" role="tab" aria-controls="tabYear3" aria-selected="false">Year</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="all-tab3" data-bs-toggle="tab" data-bs-target="#tabAll3" type="button" role="tab" aria-controls="tabAll3" aria-selected="false">All</button>
+                                        </li>
+                                    </ul>
+								</div>
+								<div class="card-body">
+									<div class="tab-content" id="myTabContent">
+										<div class="tab-pane fade show active" id="tabWeek3" role="tabpanel" aria-labelledby="week-tab3" tabindex="0">
+											<div class="widget-timeline2 pb-3">
+												<ul class="timeline">
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">StumbleUpon has been acquired by Grok.</h6>
+																<span class="d-block">3:30 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">Meeting with customer</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">UI Design</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs avatar-primary border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar2.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs avatar-success border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar4.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs text-bg-primary rounded-circle border-2 border-white">S</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-info badge-sm light">In Progress</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">User Module Testing</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">Phase 2.6 QA</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs text-bg-warning rounded-circle border-2 border-white">A</div>
+																			<div class="avatar avatar-xs text-bg-success rounded-circle border-2 border-white">R</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-success badge-sm light">Completed</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-user"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Mashable, an online news platform and blog, is now live.</h6>
+																<span class="small d-block">04:12 PM by <span class="text-primary">Jackson</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-link"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">05 New Project Files Uploaded</h6>
+																<span class="small d-block">12:25 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/pdf.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">Airplus Guideline</h6>
+																				<span class="small">1.5MB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/csv.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe requirements</h6>
+																				<span class="small">9KB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/css.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe styles</h6>
+																				<span class="small">52KB</span>
+																			</div>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-file-alt"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Hughes Fold has generated and assigned a new task to you <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-image"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">3 Dashboard concepts uploaded</h6>
+																<span class="small d-block">1:56 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen1.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen2.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen3.jpg" alt="" class="w-100 rounded">
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have been assigned a new task by Hughes Fold: <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-credit-card"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have received your monthly Affiliate Fee</h6>
+																<span class="small d-block">2:08 PM by <span class="text-primary">DexignZone Team</span></span>
+															</div>
+															<div class="row">
+																<div class="col-lg-8">
+																	<div class="alert alert-primary outline-dashed border-2 d-sm-flex align-items-center px-4 py-3 mb-0 mt-3">
+																		<i class="fa-solid fa-building-columns fs-3 text-primary align-self-start mt-1"></i>
+																		<div class="mx-sm-3 my-3 my-sm-0">
+																			<h6 class="mb-0 fw-semibold">Transfer Your Funds to Your Bank</h6>
+																			<p class="mb-0">Safely transfer your money to your bank account for a fee of $50.</p>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+												</ul>
+											</div>
+										</div>
+										<div class="tab-pane fade" id="tabMonth3" role="tabpanel" aria-labelledby="month-tab3" tabindex="0">
+											<div class="widget-timeline2 pb-3">
+												<ul class="timeline">
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">StumbleUpon has been acquired by Grok.</h6>
+																<span class="d-block">3:30 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">Meeting with customer</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">UI Design</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs avatar-primary border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar2.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs avatar-success border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar4.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs text-bg-primary rounded-circle border-2 border-white">S</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-info badge-sm light">In Progress</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">User Module Testing</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">Phase 2.6 QA</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs text-bg-warning rounded-circle border-2 border-white">A</div>
+																			<div class="avatar avatar-xs text-bg-success rounded-circle border-2 border-white">R</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-success badge-sm light">Completed</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-user"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Mashable, an online news platform and blog, is now live.</h6>
+																<span class="small d-block">04:12 PM by <span class="text-primary">Jackson</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-link"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">05 New Project Files Uploaded</h6>
+																<span class="small d-block">12:25 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/pdf.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">Airplus Guideline</h6>
+																				<span class="small">1.5MB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/csv.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe requirements</h6>
+																				<span class="small">9KB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/css.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe styles</h6>
+																				<span class="small">52KB</span>
+																			</div>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-file-alt"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Hughes Fold has generated and assigned a new task to you <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-image"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">3 Dashboard concepts uploaded</h6>
+																<span class="small d-block">1:56 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen1.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen2.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen3.jpg" alt="" class="w-100 rounded">
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have been assigned a new task by Hughes Fold: <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-credit-card"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have received your monthly Affiliate Fee</h6>
+																<span class="small d-block">2:08 PM by <span class="text-primary">DexignZone Team</span></span>
+															</div>
+															<div class="row">
+																<div class="col-lg-8">
+																	<div class="alert alert-primary outline-dashed border-2 d-sm-flex align-items-center px-4 py-3 mb-0 mt-3">
+																		<i class="fa-solid fa-building-columns fs-3 text-primary align-self-start mt-1"></i>
+																		<div class="mx-sm-3 my-3 my-sm-0">
+																			<h6 class="mb-0 fw-semibold">Transfer Your Funds to Your Bank</h6>
+																			<p class="mb-0">Safely transfer your money to your bank account for a fee of $50.</p>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+												</ul>
+											</div>
+										</div>
+										<div class="tab-pane fade" id="tabYear3" role="tabpanel" aria-labelledby="year-tab3" tabindex="0">
+											<div class="widget-timeline2 pb-3">
+												<ul class="timeline">
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">StumbleUpon has been acquired by Grok.</h6>
+																<span class="d-block">3:30 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">Meeting with customer</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">UI Design</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs avatar-primary border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar2.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs avatar-success border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar4.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs text-bg-primary rounded-circle border-2 border-white">S</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-info badge-sm light">In Progress</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">User Module Testing</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">Phase 2.6 QA</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs text-bg-warning rounded-circle border-2 border-white">A</div>
+																			<div class="avatar avatar-xs text-bg-success rounded-circle border-2 border-white">R</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-success badge-sm light">Completed</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-user"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Mashable, an online news platform and blog, is now live.</h6>
+																<span class="small d-block">04:12 PM by <span class="text-primary">Jackson</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-link"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">05 New Project Files Uploaded</h6>
+																<span class="small d-block">12:25 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/pdf.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">Airplus Guideline</h6>
+																				<span class="small">1.5MB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/csv.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe requirements</h6>
+																				<span class="small">9KB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/css.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe styles</h6>
+																				<span class="small">52KB</span>
+																			</div>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-file-alt"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Hughes Fold has generated and assigned a new task to you <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-image"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">3 Dashboard concepts uploaded</h6>
+																<span class="small d-block">1:56 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen1.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen2.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen3.jpg" alt="" class="w-100 rounded">
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have been assigned a new task by Hughes Fold: <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-credit-card"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have received your monthly Affiliate Fee</h6>
+																<span class="small d-block">2:08 PM by <span class="text-primary">DexignZone Team</span></span>
+															</div>
+															<div class="row">
+																<div class="col-lg-8">
+																	<div class="alert alert-primary outline-dashed border-2 d-sm-flex align-items-center px-4 py-3 mb-0 mt-3">
+																		<i class="fa-solid fa-building-columns fs-3 text-primary align-self-start mt-1"></i>
+																		<div class="mx-sm-3 my-3 my-sm-0">
+																			<h6 class="mb-0 fw-semibold">Transfer Your Funds to Your Bank</h6>
+																			<p class="mb-0">Safely transfer your money to your bank account for a fee of $50.</p>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+												</ul>
+											</div>
+										</div>
+										<div class="tab-pane fade" id="tabAll3" role="tabpanel" aria-labelledby="all-tab3" tabindex="0">
+											<div class="widget-timeline2 pb-3">
+												<ul class="timeline">
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">StumbleUpon has been acquired by Grok.</h6>
+																<span class="d-block">3:30 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">Meeting with customer</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">UI Design</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs avatar-primary border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar2.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs avatar-success border-2 rounded-circle border-white">
+																				<img src="assets/images/avatar/small/avatar4.webp" alt="">
+																			</div>
+																			<div class="avatar avatar-xs text-bg-primary rounded-circle border-2 border-white">S</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-info badge-sm light">In Progress</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+															<div class="px-3 py-3 mt-3 border rounded">
+																<div class="row align-items-center">
+																	<div class="col-xxl-4 col-lg-12 mb-2 mb-sm-3 mb-xxl-0">
+																		<h6 class="mb-0">User Module Testing</h6>
+																	</div>
+																	<div class="col-md-2 col-sm-3 mb-2 mb-sm-0 ms-xxl-auto">
+																		<span class="badge badge-sm text-bg-light">Phase 2.6 QA</span>
+																	</div>
+																	<div class="col-xxl-3 col-sm-3 col-6">
+																		<div class="avatar-list-stacked">
+																			<div class="avatar avatar-xs text-bg-warning rounded-circle border-2 border-white">A</div>
+																			<div class="avatar avatar-xs text-bg-success rounded-circle border-2 border-white">R</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-1 col-sm-3 col-6 mt-sm-2 mt-sm-0">
+																		<span class="badge badge-success badge-sm light">Completed</span>
+																	</div>
+																	<div class="col-xxl-2 col-lg-2 col-sm-3 col-6 text-sm-end mt-2 mt-sm-0">
+																		<a href="javascript:void(0);" class="btn btn-sm btn-light">View</a>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-user"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Mashable, an online news platform and blog, is now live.</h6>
+																<span class="small d-block">04:12 PM by <span class="text-primary">Jackson</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-link"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">05 New Project Files Uploaded</h6>
+																<span class="small d-block">12:25 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/pdf.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">Airplus Guideline</h6>
+																				<span class="small">1.5MB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/csv.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe requirements</h6>
+																				<span class="small">9KB</span>
+																			</div>
+																		</div>
+																	</div>
+																	<div class="col-xxl-3 col-xl-4 col-sm-6">
+																		<div class="d-flex align-items-center">
+																			<div class="me-3">
+																				<img src="assets/images/files/css.png" width="35" alt="">
+																			</div>
+																			<div class="clearfix">
+																				<h6 class="mb-0">FureStibe styles</h6>
+																				<span class="small">52KB</span>
+																			</div>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-file-alt"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">Hughes Fold has generated and assigned a new task to you <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-image"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">3 Dashboard concepts uploaded</h6>
+																<span class="small d-block">1:56 PM by <span class="text-primary">You</span></span>
+															</div>
+															<div class="p-md-4 p-3 mt-3 border rounded">
+																<div class="row g-3">
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen1.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen2.jpg" alt="" class="w-100 rounded">
+																	</div>
+																	<div class="col-md-2 col-4">
+																		<img src="assets/images/blog/screen3.jpg" alt="" class="w-100 rounded">
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have been assigned a new task by Hughes Fold: <a href="javascript:void(0);" class="text-primary">Design a Multi-step Registration Form.</a> </h6>
+																<span class="small d-block">11:02 PM by <span class="text-primary">Hughes</span></span>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-credit-card"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0">You have received your monthly Affiliate Fee</h6>
+																<span class="small d-block">2:08 PM by <span class="text-primary">DexignZone Team</span></span>
+															</div>
+															<div class="row">
+																<div class="col-lg-8">
+																	<div class="alert alert-primary outline-dashed border-2 d-sm-flex align-items-center px-4 py-3 mb-0 mt-3">
+																		<i class="fa-solid fa-building-columns fs-3 text-primary align-self-start mt-1"></i>
+																		<div class="mx-sm-3 my-3 my-sm-0">
+																			<h6 class="mb-0 fw-semibold">Transfer Your Funds to Your Bank</h6>
+																			<p class="mb-0">Safely transfer your money to your bank account for a fee of $50.</p>
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</li>
+													<li>
+														<div class="timeline-media">
+															<i class="las la-book-open"></i>
+														</div>
+														<div class="timeline-panel">
+															<div class="clearfix">
+																<h6 class="mb-0"><a href="javascript:void(0);" class="text-primary">jQuery.js</a> was merged into <strong>Google</strong> Task task</h6>
+																<span class="small d-block">12:38 PM by <span class="text-primary">Jogn Walles</span></span>
+															</div>
+														</div>
+													</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-xxl-3 col-xl-4">
+							<div class="row sticky-top sticky-top-80 z-0">
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-header">
+											<h4 class="card-title">My To Do Items</h4>
+											<div class="clearfix">
+												<a href="javascript:void(0);" class="text-primary me-2">View All</a>
+												<a href="javascript:void(0);" class="text-black">+ Add To Do</a>
+											</div>
+										</div>
+										<div class="card-body p-0">
+											<div class="list-group list-group-flush dz-draggable dropzoneContainer dz-scroll height380">
+												<div class="list-group-item draggable p-3">
+													<span class="text-warning d-block mb-2">
+														<svg class="me-1" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path fill-rule="evenodd" clip-rule="evenodd" d="M3.61051 15.3276H14.3978C15.5843 15.3276 16.329 14.0451 15.7395 13.0146L10.35 3.59085C9.75676 2.5536 8.26126 2.55285 7.66726 3.5901L2.26876 13.0139C1.67926 14.0444 2.42326 15.3276 3.61051 15.3276Z" stroke="var(--bs-warning)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M9.00189 10.0611V7.7361" stroke="var(--bs-warning)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8.99625 12.375H9.00375" stroke="var(--bs-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+														Latest to do's
+													</span>
+													<div class="d-flex justify-content-between gap-2">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="toDoCheck1">
+																	<label class="form-check-label" for="toDoCheck1">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="d-flex gap-2">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can"></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<span class="text-success d-block mb-2">
+														<svg class="me-1" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M15 4.5L6.75 12.75L3 9" stroke="var(--bs-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+														</svg>
+														Latest finished to do's
+													</span>
+													<div class="d-flex justify-content-between gap-2">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="toDoCheck2">
+																	<label class="form-check-label" for="toDoCheck2">Apply for more jobs</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="d-flex gap-2">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can"></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between gap-2">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="toDoCheck3">
+																	<label class="form-check-label text-black" for="toDoCheck3">multilanguage support</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="d-flex gap-2">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can"></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between gap-2">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="toDoCheck4">
+																	<label class="form-check-label text-black" for="toDoCheck4">Check Figma design</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="d-flex gap-2">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can"></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between gap-2">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="toDoCheck5">
+																	<label class="form-check-label text-black" for="toDoCheck5">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="d-flex gap-2">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can"></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between gap-2">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="toDoCheck6">
+																	<label class="form-check-label text-black" for="toDoCheck6">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="d-flex gap-2">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can"></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-header">
+											<h4 class="card-title mb-0">Activity</h4>
+										</div>
+										<div class="card-body dz-scroll height380">
+											<div class="widget-timeline1">
+												<ul class="timeline">
+													<li>
+														<span class="timeline-status">07:45</span>
+														<div class="timeline-badge border-dark"></div>
+														<div class="timeline-panel">
+															<span>Started the day with a fresh perspective—embracing challenges like a pro.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">11:25</span>
+														<div class="timeline-badge border-success"></div>
+														<div class="timeline-panel">
+															<span><span class="text-secondary fs-14 fw-semibold">Video uploaded</span> and shared with the world.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">09:28</span>
+														<div class="timeline-badge border-danger"></div>
+														<div class="timeline-panel">
+															<span class="text-secondary fs-14 fw-semibold">John made a smart move—grabbed a deal worth <span class="text-primary">$350</span></span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">15:40</span>
+														<div class="timeline-badge border-info"></div>
+														<div class="timeline-panel">
+															<span>Mashable, a news website and blog, goes live.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">23:12</span>
+														<div class="timeline-badge border-warning"></div>
+														<div class="timeline-panel">
+															<span><span class="text-secondary fs-14 fw-semibold">Breaking news:</span> Mashable emerges as a go-to hub for all things trending.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">02:40</span>
+														<div class="timeline-badge border-primary"></div>
+														<div class="timeline-panel">
+															<span>Revisited an old memory—shared this on my FB wall a while ago.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">10:30</span>
+														<div class="timeline-badge border-success"></div>
+														<div class="timeline-panel">
+															<span>Another video making rounds—content is king!</span>
+														</div>
+													</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+		
+		@@include("../elements/task-modal.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

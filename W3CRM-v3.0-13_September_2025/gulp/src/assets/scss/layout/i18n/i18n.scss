@@ -1,0 +1,33 @@
+.i18n-select{
+	&.bootstrap-select{
+		background-color: transparent;
+		
+		&.dropdown .dropdown-toggle{
+			border: 0;
+			padding: 12px 10px;
+			background: transparent;
+			
+			&::after{
+				content: none;
+			}
+			.filter-option-inner-inner{
+				font-size: 0;
+				
+				img{
+					width: 25px;
+					margin: 0;
+					border-radius: 15px;
+				}
+			}
+		}
+		& > .dropdown-menu{
+			width: 150px;
+			right: 0;
+			left: auto;
+
+			.inner{
+				position: static;
+			}
+		}
+	}
+}

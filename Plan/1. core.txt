@@ -1,0 +1,73 @@
+✅ Core Navigation & Platform-Wide Tools Module – In-Depth Breakdown
+This is Core Module — the foundational layer that makes the entire platform feel like one unified, mobile-first system. It is shared infrastructure used by every other module (Leads, Estimating, RFP, Drawings, Safety, Financials, etc.). Front-end shell: W3CRM (Gulp src). See Plan\0. Platform and W3CRM mapping.txt for template paths and AI strategy.
+
+1. High-Level Architecture & Design Principles
+
+Single source of truth for layout, navigation, global UX, and server-backed state (session + API).
+Mobile-first + Desktop parity: compact header + collapsible MetisMenu sidebar on small screens; full deznav + header on desktop (W3CRM defaults, tuned for USIS).
+Reuse W3CRM patterns: Bootstrap components, existing header/deznav, toasts, form validation; add Flask-backed auth session and audit logging on the server.
+Offline-first — core navigation and cached module shells work offline; unsynced actions queued (IndexedDB + optional Service Worker; see Plan 13).
+AI-native — integration with assets\js\aiReviewBus.js, dual-provider toggle in header, global AI command palette (Bootstrap modal/offcanvas).
+Context-aware — floating quick actions, command palette, and nav badges reflect current page and project (data attributes on body or sessionStorage keys).
+Government-ready — high-contrast theme toggle (Bootstrap + SCSS), keyboard focus order, semantic landmarks, full audit trail from API.
+
+2. File / Folder Structure (W3CRM Gulp src — recommended)
+Base: W3CRM-v3.0-13_September_2025\gulp\gulp\src\
+
+textgulp/gulp/src/
+├── index.html                    ← dashboard shell; @@include elements
+├── elements/
+│   ├── header.html               ← top bar: logo, project selector, search, notifications, user, AI toggle, offline chip
+│   ├── deznav.html               ← MetisMenu sidebar: USIS module links + badges
+│   ├── nav-header.html
+│   ├── chatbox.html              ← optional; repurpose or hide for USIS
+│   └── preloader.html
+├── usis-dashboard.html           ← primary post-login landing (start from index.html)
+├── assets/
+│   ├── js/
+│   │   ├── custom.js             ← MetisMenu init; extend for USIS nav helpers
+│   │   ├── aiReviewBus.js        ← event bus (vanilla module or global)
+│   │   ├── usis-command-palette.js  ← Ctrl+K launcher, calls Flask /api/ai/*
+│   │   ├── usis-offline-queue.js    ← sync queue wrapper
+│   │   └── usis-notify.js        ← Bootstrap toasts for errors/success
+│   └── scss/                     ← USIS overrides: _usis-theme.scss partial
+└── (module pages per Plans 2–11: usis-*.html)
+
+Backend (unchanged intent): Flask auth, JSON APIs, Jinja2 for PDFs/email only — not mixed into static W3CRM pages until you choose server rendering.
+
+3. Key UI surfaces (W3CRM / Bootstrap mapping)
+
+Component / surface — Purpose & key features — Integration
+• header.html (top bar) — Logo, platform name, project selector (Bootstrap select or Select2), global search input, notifications dropdown, user dropdown, AI provider toggle (Local Llama / Grok) with status indicator, offline/sync chip — Every page includes via @@include; project list from GET /api/projects; provider change dispatches aiReviewBus events.
+• Mobile bottom bar (new partial elements/usis-bottomnav.html) — Icons: Dashboard, CRM, Schedule/Field, Drawings, Financials, Safety; active state + badges — Shown under md breakpoint via SCSS; links to usis-*.html; badge counts from polling or small SSE script.
+• deznav.html (MetisMenu) — Project tree or filters (Gov/Commercial, trade, due date), quick module links, collapsible groups — Edit #menu markup; links to USIS module routes; badge spans updated from usis-nav-badges.js.
+• Floating quick actions (elements/usis-speeddial.html + JS) — Contextual FAB: new project, upload drawing, create RFP, AI chat, daily log, CO, safety observation — data-usis-page attribute drives which buttons show; uses same Flask flows as modules.
+• Global AI command palette — Bootstrap modal or offcanvas; Ctrl+K; natural language to /api/ai/chat; examples in placeholder text — Uses usis-command-palette.js + aiReviewBus for follow-up events.
+• Notification center — Bell dropdown in header; lists AI critical items, RFP due, safety, tasks — Mark read via PATCH endpoints; optional WebSocket later.
+• Offline indicator — Header chip: online / syncing / offline + last sync — usis-offline-queue.js + optional Service Worker registration in custom.js.
+• Global search — Debounced fetch to /api/search?q=… returning projects, bids, docs, takeoff lines — Results in dropdown panel under search input.
+
+4. Supporting infrastructure (JS utilities)
+
+usis-offline-queue.js — IndexedDB queue for photos, logs, takeoffs, AI review payloads; flush on online event.
+Session project context — usis-project-context.js sets data-project-id on document.body after project switch (from API).
+aiReviewBus.js — Pub/sub for AI review lifecycle across modules (replaces prior TypeScript bus contract in spirit).
+Theme — SCSS variables + [data-bs-theme="dark"] or USIS high-contrast partial; logo paths in images/.
+
+5. Routing & navigation flow
+
+Multi-page: each module is a .html under src\ with shared @@includes (not React Router).
+Default after login: redirect to usis-dashboard.html (or /dashboard served by Flask that emits same shell).
+Mobile: bottom nav visible; desktop: sidebar primary.
+Project-scoped URLs can be query-string (?project=uuid) or path-based if Flask later serves routes like /p/<id>/estimating.html.
+
+6. Build & integration notes
+
+Build Core first — every module depends on header, deznav, bus, and toast helpers.
+npm install && npx gulp from gulp\gulp for local preview; npx gulp build for dist assets to ship behind Flask static mount.
+Emails/PDFs remain Flask + Jinja2 only.
+xAI/Grok integration unchanged server-side; header toggle only switches client preference header sent to API.
+Safety and AI critical items surface as nav/header badges.
+Offline behavior remains critical for field crews.
+
+This Core Navigation Module is the glue that makes the platform feel professional and cohesive. Once built, every other module (Leads, Estimating, Safety, etc.) drops in as additional usis-*.html pages and partials.

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "aikit/chatbot.html",
+	})
+	
+	<link rel="stylesheet" href="assets/vendor/nouislider/nouislider.min.css">
+	<link href="assets/vendor/jquery-asColorPicker/css/asColorPicker.min.css" rel="stylesheet">
+    
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Chatbot",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Chatbot</h6>
+								<p class="text-muted small mb-0">AI kit demo pages. Reference for AI-related settings and prompts.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="auto-write.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="fine-tune-models.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<!-- row -->
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">
+						<div class="alert alert-card-warning alert-alt alert-dismissible fade show">
+							This is a demo of AIKit plugin made for you to test the experience of using the plugin.
+							<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						</div>
+						<p>AIKit Chatbot allows you to create a chatbot that can be used on your website. You, or your users can use it to answer questions and provide support about your products or services.</p>
+						
+						<ul class="nav nav-tabs-standard pt-4 mb-3 nav-scroll nav-scroll-auto-xl">
+							<li class="nav-item"><a class="nav-link" aria-current="true" href="aikit/auto-write.html">Auto Writer</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/scheduled.html">Scheduler</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/repurpose.html">Repurpose</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/rss.html">RSS</a></li>
+							<li class="nav-item"><a class="nav-link active" href="aikit/chatbot.html">Chatbot</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/fine-tune-models.html">Fine-tune Models</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/prompt.html">AI Menu Prompts</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/setting.html">Settings</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/import.html">Export/Import Settings</a></li>
+						</ul>
+						<div class="card h-auto">
+							<div class="card-header border-0 pb-0 gap-2 flex-wrap">
+								<h4 class="card-title">Auto Writer</h4>
+								<div class="clearfix">
+									<select class="selectpicker form-select">
+										<option data-content="<img src='assets/images/svg/england.svg' alt=''> England">England</option>
+										<option data-content="<img src='assets/images/svg/india.svg' alt=''> India">India</option>
+										<option data-content="<img src='assets/images/svg/uae.svg' alt=''> UAE">UAE</option>
+									</select>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<div class="col-xl-3 col-xxl-2 mb-3">
+										<label class="form-label">Choose content type:</label>
+										<div class="d-flex flex-wrap gap-2">
+											<div class="clearix">
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio1" checked>
+												<label class="btn btn-outline-primary btn-sm" for="btnradio1">Yes</label>
+											</div>
+											<div class="clearix">
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio2">
+												<label class="btn btn-outline-primary btn-sm" for="btnradio2">No</label>
+											</div>
+										</div>
+									</div>
+									<div class="col-xl-3 col-xxl-3 mb-3">
+										<label class="form-label">Default view:</label>
+										<div class="d-flex flex-wrap gap-2">
+											<div class="clearix">
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio3" checked>
+												<label class="btn btn-outline-primary btn-sm" for="btnradio3">Collapsed</label>
+											</div>
+											<div class="clearix">
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio4">
+												<label class="btn btn-outline-primary btn-sm" for="btnradio4">Expanded</label>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-xl-4 mb-3">
+										<label class="form-label">Chatbot model</label>
+										<select class="selectpicker form-select">
+											<option selected>gpt-3.5-turbo</option>
+											<option value="1">gpt-3.6-turbo</option>
+										</select>
+										<div class="form-text">For best results, please use chat models like gpt-3.5-turbo or gpt-4.</div>
+									</div>
+									<div class="col-xl-4 mb-3">
+										<label class="form-label">Show Chatbot on</label>
+										<select class="selectpicker form-select">
+											<option selected>Frontend Only</option>
+											<option value="1">Backend Only</option>
+										</select>
+									</div>
+									<div class="col-xl-4 mb-3">
+										<label for="exampleFormControlInput1" class="form-label">Max response tokens</label>
+										<input type="number" class="form-control type-number" id="exampleFormControlInput1" placeholder="150">
+									</div>
+									<div class="col-xl-6 mb-3">
+										<textarea class="form-control" id="exampleFormControlTextarea1" rows="3">Prompt stop sequence</textarea>
+										<div class="form-text">Please set this only if you are using a fine-tuned model. Leave empty if you are using any of the built-in models. Completion stop sequence is used to mark the stop of the completion.</div>
+									</div>
+									<div class="col-xl-6 mb-3">
+										<textarea class="form-control" id="exampleFormControlTextarea2" rows="3">Completion stop sequence</textarea>
+										<div class="form-text">Please set this only if you are using a fine-tuned model. Leave empty if you are using any of the built-in models. Completion stop sequence is used to mark the stop of the completion.</div>
+									</div>
+									<div class="col-xl-12 mb-3">
+										<textarea class="form-control" id="exampleFormControlTextarea3" rows="5">Chatbot Context</textarea>
+										<div class="form-text">You can use this field to set the behaviour of the chatbot. For example, use something like "You are a helpful assistant." or "Answer in the style of Shakespeare."</div>
+									</div>
+									<div class="col-xl-12 mb-3">
+										<label class="form-label">Show Chatbot only for user role</label>
+										<select class="selectpicker form-select">
+											<option selected>All</option>
+											<option value="1">One</option>
+										</select>
+									</div>
+									<div class="col-xl-12 mb-3">
+										<div class="form-check mb-2">
+											<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+											<label class="form-check-label" for="flexCheckDefault">Page content aware?</label>
+										</div>
+										<div class="form-text">If enabled, the chatbot will be able to use the content of the current page to generate better responses. Important: it will increase your API costs!</div>
+									</div>
+								</div>
+							</div>
+							<div class="card-footer">
+								<h4 class="cart-title">Create Repurpose Job</h4>
+								<div class="row">
+									<div class="col-xl-4 mb-3">
+										<label for="exampleFormControlInput4" class="form-label">Title</label>
+										<input type="text" class="form-control" id="exampleFormControlInput4" placeholder="Chat with us">
+									</div>
+									<div class="col-xl-4 mb-3">
+										<label for="exampleFormControlInput2" class="form-label">Input text placeholder</label>
+										<input type="text" class="form-control" id="exampleFormControlInput2" placeholder="Input text placeholder">
+									</div>
+									<div class="col-xl-4 mb-3">
+										<label for="exampleFormControlInput3" class="form-label">Start Message</label>
+										<input type="text" class="form-control" id="exampleFormControlInput3" placeholder="Hi there! How can I help you?">
+									</div>
+									<div class="col-xl-12 mt-3 mb-4">
+										<h4 class="card-title">Width</h4>
+										<div id="chatbotSlider" class="mt-4 mb-2"></div>
+									</div>
+									<div class="col-xxl-2 col-xl-3 col-md-4 col-sm-6 mb-3">
+										<label class="form-label">Main Color</label>
+										<div class="position-relative">
+											<input type="text" class="complex-colorpicker form-control" value="#0d99ff">
+										</div>
+									</div>
+									<div class="col-xxl-2 col-xl-3 col-md-4 col-sm-6 mb-3">
+										<label class="form-label">Title Color</label>
+										<div class="position-relative">
+											<input type="text" class="complex-colorpicker form-control" value="#2c2c2c">
+										</div>
+									</div>
+									<div class="col-xxl-2 col-xl-3 col-md-4 col-sm-6 mb-3">
+										<label class="form-label">AI Message Bubble Color</label>
+										<div class="position-relative">
+											<input type="text" class="complex-colorpicker form-control" value="#495A69">
+										</div>
+                                    </div>
+									<div class="col-xxl-2 col-xl-3 col-md-4 col-sm-6 mb-3">
+										<label class="form-label">AI Message Text Color</label>
+										<div class="position-relative">
+											<input type="text" class="complex-colorpicker form-control" value="#9084B1">
+										</div>
+									</div>
+									<div class="col-xxl-2 col-xl-3 col-md-4 col-sm-6 mb-3">
+										<label class="form-label">User Message Bubble Color</label>
+										<div class="position-relative">
+											<input type="text" class="complex-colorpicker form-control" value="#9084B1">
+										</div>
+									</div>
+									<div class="col-xxl-2 col-xl-3 col-md-4 col-sm-6 mb-3">
+										<label class="form-label">User Message Text Color</label>
+										<div class="position-relative">
+											<input type="text" class="complex-colorpicker form-control" value="#0d99ff">
+										</div>
+									</div>
+								</div>
+								<button type="button" class="btn btn-primary float-end mt-3">Save Settings</button>
+							</div>
+						</div>
+					</div>
+				</div>
+            </div>
+        </main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- nouislider -->
+	<script src="assets/vendor/nouislider/nouislider.min.js"></script>
+    <script src="assets/vendor/wnumb/wNumb.js"></script>
+   
+	<!-- Script For asColorPicker -->
+    <script src="assets/vendor/jquery-asColor/jquery-asColor.min.js"></script>
+    <script src="assets/vendor/jquery-asGradient/jquery-asGradient.min.js"></script>
+    <script src="assets/vendor/jquery-asColorPicker/js/jquery-asColorPicker.min.js"></script>
+	
+	<!-- Script For AIKIT Pages -->
+	<script src="assets/js/dashboard/aikit.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

@@ -1,0 +1,115 @@
+/* Data Picker */
+.datepicker{
+	&.datepicker-dropdown{
+		padding: 10px;
+	}
+	table tr td.today{
+		color: #fff;
+		background-color: var(--bs-primary);
+		border-color: var(--bs-primary);
+		
+		&:active:focus,
+		&:active:hover{
+			color: $white;
+		}
+		&:hover{
+			color: $white;
+			background-color: var(--bs-primary) !important;
+			background-image: none;
+		}
+	}
+	table tr td.new,
+	table tr td.old{
+		opacity: 0.5;
+		color: var(--bs-body-color);
+	}
+	table tr td.active.active,
+	table tr td.active.highlighted.active,
+	table tr td.active.highlighted:active,
+	table tr td.active:active {
+		color: var(--bs-body-color);
+		background-color: var(--bs-light);
+		border-color: var(--bs-light);
+	}
+	table tr td.active,
+	table tr td.active.highlighted{
+		text-shadow: none;
+	}
+	table tr{
+		td.active.active.focus, 
+		td.active.active:focus, 
+		td.active.active:hover, 
+		td.active.highlighted.active.focus, 
+		td.active.highlighted.active:focus, 
+		td.active.highlighted.active:hover, 
+		td.active.highlighted:active.focus, 
+		td.active.highlighted:active:focus, 
+		td.active.highlighted:active:hover, 
+		td.active:active.focus, 
+		td.active:active:focus, 
+		td.active:active:hover,
+		td span.active.active,
+		td span.active.disabled.active,
+		td span.active.disabled:active,
+		td span.active.disabled:hover.active,
+		td span.active.disabled:hover:active,
+		td span.active:active,
+		td span.active:hover.active,
+		td span.active:hover:active,
+		td span.active.active.focus,
+		td span.active.active:focus,
+		td span.active.active:hover,
+		td span.active.disabled.active.focus,
+		td span.active.disabled.active:focus,
+		td span.active.disabled.active:hover,
+		td span.active.disabled:active.focus,
+		td span.active.disabled:active:focus,
+		td span.active.disabled:active:hover,
+		td span.active.disabled:hover.active.focus,
+		td span.active.disabled:hover.active:focus,
+		td span.active.disabled:hover.active:hover,
+		td span.active.disabled:hover:active.focus,
+		td span.active.disabled:hover:active:focus,
+		td span.active.disabled:hover:active:hover,
+		td span.active:active.focus,
+		td span.active:active:focus,
+		td span.active:active:hover,
+		td span.active:hover.active.focus,
+		td span.active:hover.active:focus,
+		td span.active:hover.active:hover,
+		td span.active:hover:active.focus,
+		td span.active:hover:active:focus,
+		td span.active:hover:active:hover{
+			color: #fff;
+			background-color: var(--bs-primary);
+			border-color: var(--bs-primary);
+		}
+	}
+	table tr td span.focused,
+	table tr td span:hover{
+		background: var(--bs-light);
+	}
+	.datepicker-switch:hover,
+	.next:hover,
+	.prev:hover,
+	tfoot tr th:hover{
+		background: var(--bs-light);
+	}
+	table tr td.day:hover,
+	table tr td.focused {
+		background: var(--bs-light);
+	}
+}
+.datepicker-dropdown{
+	&.datepicker-orient-top{
+		&::after{
+			border-top: 6px solid var(--bs-body-bg);
+		}
+		&::before{
+			border-top: 7px solid var(--bs-border-color);
+		}
+	}
+	&::after{
+		border-bottom-color: var(--bs-body-bg);
+	}
+}

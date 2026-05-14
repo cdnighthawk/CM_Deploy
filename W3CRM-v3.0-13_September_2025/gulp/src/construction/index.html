@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "index.html",
+	})
+
+	<!-- Start - Required CSS -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+    <link href="assets/vendor/toastr/css/toastr.min.css" rel="stylesheet">
+	<!-- End - Required CSS -->
+
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+	
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Projects",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Index</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="finance.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="lead-detail.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="container-fluid">	
+				<div class="row">
+					
+					<!-- Start - Approval -->
+					<div class="col-xl-3 col-sm-6">
+						<div class="card pointer" data-bs-toggle="offcanvas" data-bs-target="#pending-entries">
+							<div class="card-body">
+								<span class="fs-16"> Approval (Pending)</span>
+								<i class="icon feather icon-info fs-16" data-bs-toggle="tooltip" data-bs-title="All Transaction done by your team members which are pending for approval reflect here."></i>
+								<div class="d-flex align-items-center justify-content-between mt-3">
+									<span class="text-black fs-20 fw-semibold">
+										10
+									</span>
+									<span class="avatar avatar-success">
+										<svg width="31" height="31" viewBox="0 0 31 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+										<path d="M3.78076 9.54496C3.78076 9.86073 4.03338 10.1134 4.34916 10.1134H16.096C16.4118 10.1134 16.6644 9.86073 16.6644 9.54496C16.6644 9.22918 16.4118 8.97656 16.096 8.97656H4.34916C4.03338 8.97656 3.78076 9.22918 3.78076 9.54496Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M16.096 13.2109H4.34916C4.03338 13.2109 3.78076 13.4636 3.78076 13.7793C3.78076 14.0951 4.03338 14.3477 4.34916 14.3477H16.096C16.4118 14.3477 16.6644 14.0951 16.6644 13.7793C16.6644 13.4636 16.4433 13.2109 16.096 13.2109Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M16.096 17.4062H4.34916C4.03338 17.4062 3.78076 17.6589 3.78076 17.9746C3.78076 18.2904 4.03338 18.543 4.34916 18.543H16.096C16.4118 18.543 16.6644 18.2904 16.6644 17.9746C16.6644 17.6589 16.4433 17.4062 16.096 17.4062Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M11.5493 21.6094H4.34964C4.03387 21.6094 3.78125 21.862 3.78125 22.1778C3.78125 22.4935 4.03387 22.7462 4.34964 22.7462H11.5493C11.8651 22.7462 12.1177 22.4935 12.1177 22.1778C12.1177 21.862 11.8651 21.6094 11.5493 21.6094Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M11.5521 25.4291H3.40513C2.42623 25.4291 1.63679 24.6396 1.63679 23.6607V6.54575C1.63679 5.56685 2.42623 4.77741 3.40513 4.77741H3.56301C3.87879 4.77741 4.13141 4.52479 4.13141 4.20902C4.13141 3.89324 3.87879 3.64062 3.56301 3.64062H3.40513C1.79468 3.64062 0.5 4.9353 0.5 6.54575V23.6607C0.5 25.2712 1.79468 26.5659 3.40513 26.5659H11.5521C11.8679 26.5659 12.1205 26.3133 12.1205 25.9975C12.1205 25.6817 11.8679 25.4291 11.5521 25.4291Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M16.8907 4.77741H17.0485C18.0274 4.77741 18.8169 5.56685 18.8169 6.54575V17.661C18.8169 17.9768 19.0695 18.2294 19.3853 18.2294C19.7011 18.2294 19.9537 17.9768 19.9537 17.661V6.54575C19.9537 4.9353 18.659 3.64062 17.0485 3.64062H16.8907C16.5749 3.64062 16.3223 3.89324 16.3223 4.20902C16.3223 4.52479 16.5749 4.77741 16.8907 4.77741Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M5.96244 6.00814H14.4884C14.8041 6.00814 15.0567 5.75552 15.0567 5.43975V2.94513C15.0567 2.62935 14.8041 2.37673 14.4884 2.37673H12.3727C12.12 1.42941 11.2675 0.703125 10.2254 0.703125C9.21492 0.703125 8.33075 1.39783 8.10971 2.37673H5.96244C5.64666 2.37673 5.39404 2.62935 5.39404 2.94513V5.43975C5.39404 5.75552 5.64666 6.00814 5.96244 6.00814ZM6.56241 3.51352H8.61495C8.93072 3.51352 9.18334 3.22932 9.18334 2.91355C9.18334 2.34515 9.657 1.87149 10.2254 1.87149C10.7938 1.87149 11.2675 2.34515 11.2675 2.88197C11.2675 2.91355 11.2675 2.94513 11.2675 2.94513C11.2675 3.10301 11.3306 3.2609 11.4253 3.35563C11.5201 3.48194 11.678 3.5451 11.8358 3.5451H13.92V4.90293H6.56241V3.51352Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M30.1539 24.0698C30.1539 23.6909 30.0276 23.3751 29.8381 23.0593C30.2486 22.7435 30.5012 22.2383 30.5012 21.6699C30.5012 20.691 29.7118 19.9016 28.7329 19.9016H25.0383C25.1962 19.0806 25.4488 17.6911 25.6067 16.9017C25.8593 15.7018 25.2909 14.7544 24.0278 14.2808C23.6489 14.1229 23.2068 14.1545 22.8279 14.3439C22.449 14.5334 22.1963 14.8808 22.1016 15.2913L21.6911 16.9017C21.249 18.5437 19.3228 20.8489 19.2912 20.8489C19.1649 21.0068 19.007 21.1331 18.8491 21.2278V21.1962C18.8491 20.8805 18.5965 20.6279 18.2807 20.6279H13.9546C13.6388 20.6279 13.3862 20.8805 13.3862 21.1962V28.7748C13.3862 29.0906 13.6388 29.3432 13.9546 29.3432H18.2807C18.5018 29.3432 18.7228 29.2169 18.8176 28.9959C19.007 29.1222 19.1965 29.2485 19.3859 29.3748C20.1122 29.88 21.028 30.5432 22.6384 30.5432H27.6592C28.6381 30.5432 29.4276 29.7537 29.4276 28.7748C29.4276 28.3959 29.3013 28.0801 29.1118 27.7644C29.5223 27.4486 29.7749 26.9433 29.7749 26.3749C29.7749 25.996 29.6486 25.6487 29.4592 25.3645C29.9012 25.1434 30.1539 24.6382 30.1539 24.0698ZM17.7123 28.238H14.5546V21.7962H17.7123V28.238ZM28.7329 22.3015H27.8487C27.5329 22.3015 27.2803 22.5541 27.2803 22.8699C27.2803 23.1856 27.5329 23.4382 27.8487 23.4382H28.3855C28.7329 23.4382 28.9855 23.7224 28.9855 24.0382C28.9855 24.3856 28.7013 24.6698 28.3855 24.6698H27.3435C27.0277 24.6698 26.7751 24.9224 26.7751 25.2382C26.7751 25.5539 27.0277 25.8066 27.3435 25.8066H28.0382C28.3855 25.8066 28.6381 26.0592 28.6381 26.4065C28.6381 26.7539 28.3855 27.0065 28.0382 27.0065H27.0593C26.7435 27.0065 26.4909 27.2591 26.4909 27.5749C26.4909 27.8907 26.7435 28.1433 27.0593 28.1433H27.6908C28.0382 28.1433 28.2908 28.4275 28.2908 28.7433C28.2908 29.059 28.0066 29.3432 27.6908 29.3432H22.6384C21.3753 29.3432 20.7122 28.8696 20.0491 28.3959C19.7017 28.1433 19.3228 27.8907 18.8491 27.7012V22.5225C19.3544 22.3646 19.828 22.0804 20.1754 21.6699C20.2701 21.5752 22.3227 19.1753 22.7963 17.2491L23.1752 15.607C23.2068 15.5123 23.27 15.4491 23.3331 15.386C23.3963 15.3544 23.4594 15.3228 23.5858 15.386C24.5015 15.7333 24.5331 16.2702 24.4383 16.7122C24.1857 17.9122 23.7436 20.4068 23.7436 20.4068C23.7121 20.5647 23.7436 20.7542 23.87 20.8805C23.9647 21.0068 24.1226 21.1015 24.312 21.1015H28.7013C29.0487 21.1015 29.3013 21.3857 29.3013 21.7015C29.3013 22.0173 29.0802 22.3015 28.7329 22.3015Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										<path d="M16.0977 27.5157C16.5082 27.5157 16.8556 27.1684 16.8556 26.7579C16.8556 26.3474 16.5082 26 16.0977 26C15.6872 26 15.3398 26.3474 15.3398 26.7579C15.3714 27.1999 15.6872 27.5157 16.0977 27.5157Z" fill="var(--bs-success)" stroke="var(--bs-success)" stroke-width="0.3"/>
+										</svg>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- End - Approval -->
+					
+					<!-- Start - Material -->
+					<div class="col-xl-3 col-sm-6">
+						<div class="card pointer" data-bs-toggle="offcanvas" data-bs-target="#mateial-request">
+							<div class="card-body">
+								<span class="fs-16">Material (Requested)</span>
+								<i class="icon feather icon-info fs-16" data-bs-toggle="tooltip" data-bs-title="All material requests raised by site team which are pending for approval reflect here."></i>
+								<div class="d-flex align-items-center justify-content-between mt-3">
+									<span class="text-black fs-20 fw-semibold">
+										126
+									</span>
+									<span class="avatar avatar-warning">
+										<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M28 12.1V12C27.998 10.1441 27.2599 8.36477 25.9476 7.05245C24.6352 5.74012 22.8559 5.00199 21 5H20C19.4696 5 18.9609 5.21071 18.5858 5.58579C18.2107 5.96086 18 6.46957 18 7V22H16V9C16 8.73478 15.8946 8.48043 15.7071 8.29289C15.5196 8.10536 15.2652 8 15 8H2C1.46957 8 0.960859 8.21071 0.585786 8.58579C0.210714 8.96086 0 9.46957 0 10L0 23C0.000913299 23.8121 0.248994 24.6047 0.71126 25.2724C1.17353 25.9401 1.82808 26.4513 2.58789 26.738C3.3477 27.0246 4.17678 27.0733 4.9649 26.8774C5.75302 26.6815 6.46285 26.2503 7 25.6413C7.48014 26.1867 8.0998 26.591 8.79242 26.8109C9.48504 27.0307 10.2245 27.0577 10.9313 26.889C11.6381 26.7202 12.2856 26.3621 12.8042 25.8532C13.3228 25.3442 13.693 24.7035 13.875 24H24.125C24.3668 24.9445 24.9453 25.7681 25.7516 26.3162C26.558 26.8642 27.5367 27.0988 28.5039 26.976C29.4711 26.8532 30.3601 26.3814 31.0039 25.6492C31.6477 24.917 32.0019 23.9749 32 23V17C31.9986 15.8478 31.6 14.7313 30.8713 13.8387C30.1427 12.9461 29.1286 12.3321 28 12.1ZM20 7H21C22.3261 7 23.5979 7.52678 24.5355 8.46447C25.4732 9.40215 26 10.6739 26 12V13C26 13.2652 26.1054 13.5196 26.2929 13.7071C26.4804 13.8946 26.7348 14 27 14C27.7956 14 28.5587 14.3161 29.1213 14.8787C29.6839 15.4413 30 16.2044 30 17V19.5387C29.3929 19.1851 28.7026 18.9991 28 19C27.1132 19.0008 26.2517 19.2958 25.5505 19.8387C24.8493 20.3815 24.3479 21.1417 24.125 22H20V7ZM14 10V22H13.875C13.693 21.2965 13.3228 20.6558 12.8042 20.1468C12.2856 19.6379 11.6381 19.2798 10.9313 19.111C10.2245 18.9423 9.48504 18.9693 8.79242 19.1891C8.0998 19.409 7.48014 19.8133 7 20.3587C6.39074 19.6638 5.559 19.2021 4.64698 19.0525C3.73497 18.9029 2.79932 19.0748 2 19.5387V10H14ZM4 25C3.60444 25 3.21776 24.8827 2.88886 24.6629C2.55996 24.4432 2.30362 24.1308 2.15224 23.7654C2.00087 23.3999 1.96126 22.9978 2.03843 22.6098C2.1156 22.2219 2.30608 21.8655 2.58579 21.5858C2.86549 21.3061 3.22186 21.1156 3.60982 21.0384C3.99778 20.9613 4.39991 21.0009 4.76537 21.1522C5.13082 21.3036 5.44318 21.56 5.66294 21.8889C5.8827 22.2178 6 22.6044 6 23C6 23.5304 5.78929 24.0391 5.41421 24.4142C5.03914 24.7893 4.53043 25 4 25ZM10 25C9.60444 25 9.21776 24.8827 8.88886 24.6629C8.55996 24.4432 8.30362 24.1308 8.15224 23.7654C8.00087 23.3999 7.96126 22.9978 8.03843 22.6098C8.1156 22.2219 8.30608 21.8655 8.58579 21.5858C8.86549 21.3061 9.22186 21.1156 9.60982 21.0384C9.99778 20.9613 10.3999 21.0009 10.7654 21.1522C11.1308 21.3036 11.4432 21.56 11.6629 21.8889C11.8827 22.2178 12 22.6044 12 23C12 23.5304 11.7893 24.0391 11.4142 24.4142C11.0391 24.7893 10.5304 25 10 25ZM28 25C27.6044 25 27.2178 24.8827 26.8889 24.6629C26.56 24.4432 26.3036 24.1308 26.1522 23.7654C26.0009 23.3999 25.9613 22.9978 26.0384 22.6098C26.1156 22.2219 26.3061 21.8655 26.5858 21.5858C26.8655 21.3061 27.2219 21.1156 27.6098 21.0384C27.9978 20.9613 28.3999 21.0009 28.7654 21.1522C29.1308 21.3036 29.4432 21.56 29.6629 21.8889C29.8827 22.2178 30 22.6044 30 23C30 23.5304 29.7893 24.0391 29.4142 24.4142C29.0391 24.7893 28.5304 25 28 25Z" fill="#FFAB2D"/>
+										</svg>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- End - Material -->
+					
+					<!-- Start - Leads (Building Connected) -->
+					<div class="col-xl-3 col-sm-6">
+						<a class="card" href="construction/leads.html">
+							<div class="card-body">
+								<span class="fs-16"> Leads (Building Connected)</span>
+								<i class="icon feather icon-info fs-16" data-bs-toggle="tooltip" data-bs-title="Leads downloaded from Building Connected (BC). Open to review, qualify, or push into estimating."></i>
+								<div class="d-flex align-items-center justify-content-between mt-3">
+									<span class="text-black fs-20 fw-semibold">
+										36
+									</span>
+									<span class="avatar avatar-info">
+										<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<g clip-path="url(#clip0_5849_20695)">
+											<path d="M15.9998 29.3307C14.1554 29.3307 12.4221 28.9805 10.7998 28.2801C9.17762 27.5796 7.76651 26.6298 6.56651 25.4307C5.36651 24.2316 4.41673 22.8205 3.71717 21.1974C3.01762 19.5743 2.66739 17.841 2.66651 15.9974C2.66562 14.1538 3.01584 12.4205 3.71717 10.7974C4.41851 9.17428 5.36828 7.76317 6.56651 6.56406C7.76473 5.36495 9.17584 4.41517 10.7998 3.71473C12.4238 3.01428 14.1572 2.66406 15.9998 2.66406C17.4443 2.66406 18.8109 2.87517 20.0998 3.2974C21.3887 3.71962 22.5776 4.30851 23.6665 5.06406L21.7332 7.03073C20.8887 6.4974 19.9887 6.08095 19.0332 5.7814C18.0776 5.48184 17.0665 5.33162 15.9998 5.33073C13.0443 5.33073 10.5274 6.36984 8.44917 8.44806C6.37095 10.5263 5.33228 13.0427 5.33317 15.9974C5.33406 18.9521 6.37317 21.469 8.45051 23.5481C10.5278 25.6272 13.0443 26.6658 15.9998 26.6641C16.7109 26.6641 17.3998 26.5974 18.0665 26.4641C18.7332 26.3307 19.3776 26.1418 19.9998 25.8974L21.9998 27.9307C21.0887 28.3752 20.1332 28.7196 19.1332 28.9641C18.1332 29.2085 17.0887 29.3307 15.9998 29.3307ZM25.3332 26.6641V22.6641H21.3332V19.9974H25.3332V15.9974H27.9998V19.9974H31.9998V22.6641H27.9998V26.6641H25.3332ZM14.1332 22.1307L8.46651 16.4641L10.3332 14.5974L14.1332 18.3974L27.4665 5.03073L29.3332 6.8974L14.1332 22.1307Z" fill="var(--bs-info)"/>
+											</g>
+											<defs>
+											<clipPath id="clip0_5849_20695">
+											<rect width="32" height="32" fill="white"/>
+											</clipPath>
+											</defs>
+										</svg>
+									</span>
+								</div>
+							</div>
+						</a>
+					</div>
+					<!-- End - Leads (Building Connected) -->
+					
+					<!-- Start - Our Services -->
+					<div class="col-xl-3 col-sm-6">
+						<div class="card overflow-hidden">
+							<div class="card-body bg-success-subtle">
+								<span class="fs-16 text-black">Our Services</span>
+								<div class="d-flex align-items-center justify-content-between">
+									<span>
+										Introducing new services for you...
+									</span>
+									<span class="avatar avatar-success border-0">
+										<img src="assets/images/anouncement.png" alt="anouncement">
+									</span>
+								</div>
+								<a href="construction/services.html" class="text-secondary fs-14 fw-medium">Learn more</a>
+							</div>
+						</div>
+					</div>
+					<!-- End - Our Services -->
+
+				</div>
+				<div class="row">
+					<div class="col-lg-12">
+						<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+							<div class="gap-2 d-flex align-items-center">
+								<select class="selectpicker form-select" data-style="btn-light btn-sm">
+									<option>All</option>
+									<option>USD</option>
+									<option>USD</option>
+								</select>
+								<span class="avatar avatar-xs border-dark text-bg-dark ">4</span>
+							</div>
+							<div class="d-flex flex-wrap gap-2 align-items-center">
+								<div class="input-group message-search-area width250 w-xs-100">
+									<input type="text" class="form-control border-end-0" placeholder="Search Project">
+									<div class="input-group-append">
+										<button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+									</div>
+								</div>
+								<a href="javascript:void(0)" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#new-project">+ New Project</a>
+							</div>
+						</div>
+						<div class="col-12">
+							<div class="card vh-50 mb-0 table-hover project-tbl overflow-auto text-nowrap">
+								<table class="table m-0" id="ProjectTbl">
+									<thead >
+										<tr>
+											<th class="mw-200">Name</th>
+											<th class="mw-150 text-center">Progress</th>
+											<th class="mw-150 text-center">In/Out</th>
+											<th class="width50 text-end">Action</th>
+										</tr>	
+									</thead>
+									<tbody>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">S</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">Skyline Heights</span>
+														<span>New York, USA</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">4%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 4%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 100/$ 2,500</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">R</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">Riverside Villa</span>
+														<span>Gold Coast, Australia</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">45.45%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 45.45%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 500/$ 1100</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">M</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">MetroLink Underground Station</span>
+														<span>London, UK</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">68%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 68%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 17,000/$ 25,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">G</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">Green Valley Eco Apartments</span>
+														<span>Berlin, Germany</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">19%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 19%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 22,800/$ 120,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">H</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">Heritage Mall</span>
+														<span>Singapore</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">66%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 66%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 76,000/$ 115,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">S</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">Summit Tower</span>
+														<span>San Francisco, USA</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">57.5%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 57.5%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 115,000/$ 200,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+										<tr class="pointer">
+											<td>
+												<div class="d-flex align-items-center">
+													<div>
+														<span class="avatar avatar-xs border-info text-bg-primary me-2">U</span>
+													</div>
+													<div class="d-flex flex-column">
+														<span class="fs-14 text-black">Urban Nest Housing</span>
+														<span>Tokyo, Japan</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center">
+												<span class="fs-14 text-black">20.9%</span>
+												<div class="progress" role="progressbar" aria-label="Success example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar bg-success" style="width: 20.9%"></div>
+												</div>
+											</td>
+											<td class="text-center">$ 115,000/$ 550,000</td>
+											<td class="text-center">
+												<div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+													<div class="btn btn-square rounded" data-bs-toggle="dropdown">
+														<i class="fa-solid fa-ellipsis-vertical"></i>
+													</div>
+													<div class="dropdown-menu dropdown-menu-end">
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#duplicate-project">Duplicate</a>
+														<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#edit-project">Edit</a>
+													</div>
+												</div>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+						
+				</div>
+				
+				
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+		@@include("../elements/task-modal.html")
+
+    	@@include("../essentials/transactions/add-party.html")
+
+		<!-- Start - Pending Entries Offcanvas -->
+		<div class="custom-offcanvas-width offcanvas offcanvas-end z-99" tabindex="-1" id="pending-entries" aria-labelledby="pending-entries" aria-modal="true" role="dialog">
+			<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+				<div class="d-flex align-items-center gap-2">
+					<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+					<h5 class="offcanvas-title fw-semibold">
+						<select class="form-select selectpicker border-0">
+							<option selected>Pending Entries</option>
+							<option>Rejecteds Entries</option>
+						</select>
+					</h5>
+				</div>
+				<a href="javascript:void(0);" class="btn" data-bs-toggle="modal" data-bs-target="#approval-setting"><i class="icon feather icon-more-vertical"></i></a>
+			</div>
+
+			<!-- Start - Offcanvas Body -->
+			<div class="offcanvas-body vh-100 position-relative">
+				<div class="clearfix">
+					<div class="row justify-content-center align-items-center h-100">
+						<div class="position-absolute start-50 top-50 translate-middle text-center">
+							<p class="m-0 fw-semibold fw-18">No Transactions entries are Pending for Approval</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Offcanvas Body -->
+		
+		</div>
+		<!-- End - Pending Entries Offcanvas -->
+
+		<!-- Start - Approval Settings Modal -->
+		<div class="modal fade" id="approval-setting" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h1 class="modal-title fs-5">Approval Settings</h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="form-check mb-2 border rounded p-2">
+							<input id="flexRadioDefault1" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2" checked>
+							<label class="form-check-label" for="flexRadioDefault1">Auto approve all Manager Expenses</label>
+						</div>
+						<div class="form-check mb-2 border rounded p-2 position-relative">
+							<input id="flexRadioDefault2" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2">
+							<label class="form-check-label" for="flexRadioDefault2">Manually approve all Manager Expenses</label>
+							<span class="bg-warning rounded-bottom p-1 position-absolute top-0 end-10 fs-8 text-white">Pro+</span>
+						</div>
+						<div class="form-check mb-2 border rounded p-2 position-relative">
+							<input id="flexRadioDefault3" name="paymentMethod" type="radio" class="form-check-input mx-1 me-2">
+							<label class="form-check-label" for="flexRadioDefault3">Set auto approval limit</label>
+							<span class="bg-warning rounded-bottom p-1 position-absolute top-0 end-10 fs-8 text-white">Pro+</span>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-primary w-100">Save</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Approval Settings -->
+
+		<!-- Start - Material Request Offcanvas -->
+		<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="mateial-request" aria-labelledby="mateial-request" aria-modal="true" role="dialog">
+			<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+				<div class="d-flex align-items-center gap-2">
+					<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+					<h5 class="offcanvas-title fw-semibold">Material Request</h5>
+				</div>
+			</div>
+
+			<!-- Start - Offcanvas Body -->
+			<div class="offcanvas-body">
+				<ul class="nav nav-pills nav-pills-all mb-3 gap-2" id="material" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" data-bs-toggle="pill" data-bs-target="#requested" type="button" role="tab" aria-controls="requested" aria-selected="true">Requested</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="pill" data-bs-target="#ordered" type="button" role="tab" aria-controls="ordered" aria-selected="false" tabindex="-1">Ordered</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="pill" data-bs-target="#rejected" type="button" role="tab" aria-controls="rejected" aria-selected="false" tabindex="-1">Rejected</button>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div class="tab-pane fade show active" id="requested" role="tabpanel" aria-labelledby="requested" tabindex="0">
+						<div class="p-2 my-2 rounded d-flex align-items-center justify-content-between bg-light">
+							<div class="d-flex align-items-center gap-3">
+								<div class="py-2 px-3 rounded bg-primary-subtle">
+									<p class="m-0 fs-14">01</p>
+									<p class="m-0 fs-12">Jul</p>
+								</div>
+								<div>
+									<p class="m-0 fs-14 text-black">Concrete</p>
+									<p class="m-0 fs-10">London, Heritage Mall</p>
+									<p class="m-0 fs-10">In Stock: <span class="fs-8">250 Numbers</span></p>
+								</div>
+							</div>
+							<div class="text-center">
+								<p class="m-0 fs-14">12</p>
+								<p class="m-0 fs-10">numbers</p>
+							</div>
+							<div>
+								<p class="m-0 text-success">Requested</p>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="ordered" role="tabpanel" aria-labelledby="ordered" tabindex="0">
+						<div class="p-2 my-2 rounded d-flex align-items-center justify-content-between bg-light">
+							<div class="d-flex align-items-center gap-3">
+								<div class="py-2 px-3 rounded bg-primary-subtle">
+									<p class="m-0 fs-14">01</p>
+									<p class="m-0 fs-12">Jul</p>
+								</div>
+								<div>
+									<p class="m-0 fs-14 text-black">Steel</p>
+									<p class="m-0 fs-10">New York, Skyline</p>
+									<p class="m-0 fs-10">In Stock: <span class="fs-8">25 Tonn</span></p>
+								</div>
+							</div>
+							<div class="text-center">
+								<p class="m-0 fs-14">15</p>
+								<p class="m-0 fs-10">numbers</p>
+							</div>
+							<div>
+								<p class="m-0 text-info">Ordered</p>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected" tabindex="0">
+						<div class="p-2 my-2 rounded d-flex align-items-center justify-content-between bg-light">
+							<div class="d-flex align-items-center gap-3">
+								<div class="py-2 px-3 rounded bg-primary-subtle">
+									<p class="m-0 fs-14">01</p>
+									<p class="m-0 fs-12">Jul</p>
+								</div>
+								<div>
+									<p class="m-0 fs-14 text-black">Marbal</p>
+									<p class="m-0 fs-10">Tokyo, Urban Housing</p>
+									<p class="m-0 fs-10">In Stock: <span class="fs-8">600 Unit</span></p>
+								</div>
+							</div>
+							<div class="text-center">
+								<p class="m-0 fs-14">50</p>
+								<p class="m-0 fs-10">numbers</p>
+							</div>
+							<div>
+								<p class="m-0 text-danger">Rejected</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Offcanvas Body -->
+		
+		</div>
+		<!-- End - Material Request Offcanvas -->
+
+		<!-- Start - Duplicate Project Modal -->
+		<div class="modal fade" id="duplicate-project" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title">Duplicate Project</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div>
+							<form>
+								<div class="mb-3">
+									<label for="projectName" class="form-label">New Project Name</label>
+									<input type="text" class="form-control" id="projectName" aria-describedby="projectName">
+								</div>
+							</form>
+						</div>
+						<div>
+							<h5 class="m-0">This action include</h5>
+							<div class="d-flex align-items-center gap-2">
+								<div class="height10 width10 rounded-circle bg-success"></div>
+								<p class="m-0">[object Object] Force</p>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<div class="height10 width10 rounded-circle bg-success"></div>
+								<p class="m-0">Team</p>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<div class="height10 width10 rounded-circle bg-success"></div>
+								<p class="m-0">Task</p>
+							</div>
+						</div>
+						<div class="d-flex justify-content-end mt-1">
+							<button type="submit" class="btn btn-primary">Save</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Duplicate Project -->
+
+		<!-- Start - Edit Project Modal -->
+		<div class="modal fade" id="edit-project" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered modal-lg">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title">Project Setting</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						
+						<ul class="nav nav-underline gap-2 border-bottom mb-3" id="nav-tab" role="tablist">
+							<li class="nav-item" role="presentation">
+								<button class="nav-link fw-semibold active" data-bs-toggle="tab" data-bs-target="#project-deatils" type="button" role="tab" aria-controls="project-details" aria-selected="true">Project Details</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab" aria-controls="members" aria-selected="false" tabindex="-1">Members</button>
+							</li>
+						</ul>
+
+						<div class="tab-content" id="underline-tabContent">
+							<div class="tab-pane fade show active" id="project-deatils" role="tabpanel" aria-labelledby="underline-home-tab" tabindex="0">
+								<div class="col-12">
+									<div class="row">
+										<div class="col-2">
+											<div class="avatar avatar-primary avatar-lg">T</div>
+										</div>
+										<div class="col-10">
+											<div class="row">
+												<div class="col-6 mb-3">
+													<label for="project-name" class="form-label text-uppercase">Project Name</label>
+													<input id="project-name" type="text" class="form-control" value="Test" />
+												</div>
+												<div class="col-6 mb-3">
+													<label for="project-code" class="form-label text-uppercase">Project Code</label>
+													<input id="project-code" type="text" class="form-control" value="PR-01"/>
+												</div>
+												<div class="col-6 mb-3">
+													<label for="bsDatepicker" class="form-label text-uppercase">Start Date</label>
+													<input class="form-control" type="text" id="bsDatepicker" />
+												</div>
+												<div class="col-6 mb-3">
+													<label for="bsDatepicker1" class="form-label text-uppercase">End Date</label>
+													<input class="form-control" type="text" id="bsDatepicker1" />
+												</div>
+												<div class="col-12 mb-3">
+													<label for="Address" class="form-label text-uppercase">Address</label>
+													<input class="form-control" type="text" id="Address" />
+												</div>
+												<div class="col-6 mb-3">
+													<label for="attendance" class="form-label text-uppercase">Attendance Radius</label>
+													<input class="form-control" type="number" max="9999" id="attendance" oninput="if(this.value.length > 4) this.value = this.value.slice(0,4);"/>
+												</div>
+												<div class="col-6 mb-3">
+													<label for="value" class="form-label text-uppercase">Project Value</label>
+													<input class="form-control" type="number" id="value"  oninput="if(this.value.length > 16) this.value = this.value.slice(0,16);"/>
+												</div>
+												<div class="col-6 mb-3">
+													<label for="orientation" class="form-label text-uppercase">Project Orientation</label>
+													<input class="form-control" type="text" id="orientation" />
+												</div>
+												<div class="col-6 mb-3">
+													<label for="dimension" class="form-label text-uppercase">Project Dimension</label>
+													<input class="form-control" type="text" id="dimension" />
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end gap-3 align-items-center">
+									<button class="btn btn-outline-danger">Delete</button>
+									<button class="btn btn-primary">Save</button>
+								</div>
+							</div>
+							<div class="tab-pane fade" id="members" role="tabpanel" aria-labelledby="underline-profile-tab" tabindex="0">
+								<div class="mb-3 position-relative">
+									<div class="dropdown-slt">
+										<label for="attendee" class="form-label text-uppercase">Select Members</label>
+										<input id="attendee" class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#memberList" type="text" readonly="">
+										
+										<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="memberList" style="display: none;">
+											<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="1" data-val="Alexander">
+												<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+												<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<div class="fw-semibold attendee-name text-black">Alexander</div>
+														<span class="fs-12">+91 764302****</span>
+													</div>
+													<div>
+														<div>Client</div>
+													</div>
+												</div>
+											</div>
+											<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="2" data-val="+15 1343025***">
+												<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+												<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<div class="fw-semibold attendee-name text-black">Michael Johnson</div>
+														<span class="fs-12">+15 1343025***</span>
+													</div>
+													<div>
+														<div>Staff</div>
+													</div>
+												</div>
+											</div>
+											<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="3" data-val="John Smith">
+												<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">JS</div>
+												<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<div class="fw-semibold attendee-name text-black">John Smith</div>
+														<span class="fs-12">+1 1343025***</span>
+													</div>
+													<div>
+														<div>Employee</div>
+													</div>
+												</div>
+											</div>
+											<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="3" data-val="David Brown">
+												<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">DB</div>
+												<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<div class="fw-semibold attendee-name text-black">David Brown</div>
+														<span class="fs-12">+1 642820***</span>
+													</div>
+													<div>
+														<div>Employee</div>
+													</div>
+												</div>
+											</div>
+											<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+												+ Create Party
+											</div>
+										</div>
+									</div>
+
+									<!-- Add this div BELOW your dropdown-slt for selected attendees -->
+									<div class="selected-attendees mt-2" id="memberSelected"></div>
+
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Edit Project Modal -->
+
+		<!-- Start - New Project Modal -->
+		<div class="modal fade" id="new-project" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title">Creating Project</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div>
+							<form>
+								<div class="mb-3">
+									<input type="text" class="form-control" placeholder="Project Name" aria-describedby="projectName">
+								</div>
+								<div class="mb-3">
+									<input type="text" class="form-control" placeholder="Address" aria-describedby="projectName">
+								</div>
+								<div class="mb-3">
+									<input type="text" class="form-control" placeholder="City" aria-describedby="projectName">
+								</div>
+							</form>
+						</div>
+						<div class="d-flex justify-content-end mt-1">
+							<button type="submit" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#new-project-team">Next</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - New Project Modal -->
+
+		<!-- Start - New Project Modal -->
+		<div class="modal fade" id="new-project-team" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title">Add Team</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="mb-3 position-relative">
+							<div class="dropdown-slt">
+								<label for="attendee" class="form-label text-uppercase">Attendee <span class="text-danger">*</span></label>
+								<input id="attendee" class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#attendeeList" type="text" readonly="">
+								
+								<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="attendeeList" style="display: none;">
+									<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="1" data-val="Alexander">
+										<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+										<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+											<div>
+												<div class="fw-semibold attendee-name text-black">Alexander</div>
+												<span class="fs-12">+91 764302****</span>
+											</div>
+											<div>
+												<div>Client</div>
+											</div>
+										</div>
+									</div>
+									<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="2" data-val="+15 1343025***">
+										<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+										<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+											<div>
+												<div class="fw-semibold attendee-name text-black">Michael Johnson</div>
+												<span class="fs-12">+15 1343025***</span>
+											</div>
+											<div>
+												<div>Staff</div>
+											</div>
+										</div>
+									</div>
+									<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="3" data-val="John Smith">
+										<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">JS</div>
+										<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+											<div>
+												<div class="fw-semibold attendee-name text-black">John Smith</div>
+												<span class="fs-12">+1 1343025***</span>
+											</div>
+											<div>
+												<div>Employee</div>
+											</div>
+										</div>
+									</div>
+									<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+										+ Create Party
+									</div>
+								</div>
+							</div>
+
+							<!-- Add this div BELOW your dropdown-slt for selected attendees -->
+							<div class="selected-attendees mt-2" id="attendeeSelected"></div>
+
+						</div>
+						<div class="d-flex justify-content-end mt-1">
+							<button type="submit" class="btn btn-primary" id="create-project-success">Next</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - New Project Modal -->
+
+		<!-- Start - Project Success Toast -->
+		<div class="toast-container position-fixed top-0 start-0 p-3">
+			<div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+				<div class="d-flex">
+    				<div class="toast-body">
+						Success! Project created successfully.
+						</div>
+						<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Project Success Toast -->
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Toastr -->
+	<script src="assets/vendor/toastr/js/toastr.min.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	<script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

@@ -1,0 +1,69 @@
+.input-rounded{
+    border-radius: 50px;
+}
+
+// Chrome, Safari, Edge, Opera
+.type-number[type="number"]::-webkit-outer-spin-button,
+.type-number[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+// Firefox
+.type-number[type="number"] {
+    -moz-appearance: textfield;
+}
+
+@each $color, $value in $theme-colors{
+	.input-#{$color}{
+		.form-control{
+			border-color: var(--bs-#{$color});
+		}	
+		.input-group-text{
+			border-color: var(--bs-#{$color});
+			background-color: var(--bs-#{$color});
+			color: $white;
+		}
+	}
+	.input-#{$color}-o{
+		.form-control{
+			border-color: var(--bs-#{$color});
+		}	
+		.input-group-text{
+			border-color: var(--bs-#{$color});
+			background-color: transparent;
+			color: var(--bs-#{$color});
+		}
+	}
+}
+
+.show-pass{
+	display: flex;
+    align-items: center;
+    justify-content: center;
+	cursor: pointer;
+	user-select: none;
+	
+	.show,
+	.hide{
+		display: flex;
+		font-size: 1em;
+		
+		i{
+		    font-size: 1.5em;
+			
+			&.fa{
+				font-size: 1em;
+			}
+		}
+	}
+	.hide{
+		display: none;
+	}
+	&.active{
+		.show{
+			display: none;
+		}
+		.hide{
+			display: flex;
+		}
+	}
+}

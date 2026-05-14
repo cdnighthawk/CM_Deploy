@@ -1,0 +1,94 @@
+.dtp div.dtp-date,
+.dtp div.dtp-time {
+    background: var(--bs-primary);
+}
+.dtp .p10 > a {
+    color: #fff;
+}
+.dtp div.dtp-actual-year {
+    color: #fff;
+    opacity: 0.8;
+}
+.dtp > .dtp-content{
+    background: var(--bs-body-bg);
+    border-radius: var(--bs-border-radius-sm);
+    overflow: hidden;
+    box-shadow: var(--bs-box-shadow);
+	
+	& > .dtp-date-view > header.dtp-header {
+		background: var(--bs-primary-text-emphasis);
+	}
+}
+.dtp table.dtp-picker-days tr > td > a.selected {
+    background: var(--bs-primary);
+}
+.dtp table.dtp-picker-days tr > td > a, .dtp .dtp-picker-time > a {
+    color: var(--bs-body-color);
+}
+.dtp table.dtp-picker-days tr > th {
+    color: var(--bs-body-color);
+    font-weight: 600;
+    border-bottom-color: var(--bs-border-color);
+}
+.dtp .dtp-buttons .btn{
+	padding: $input-btn-padding-y-sm $input-btn-padding-x-sm;
+	font-size: $input-btn-font-size-sm;
+	border-radius: var(--bs-border-radius-sm);
+	margin-left: 5px;
+	
+	&.dtp-btn-cancel{
+		background-color: var(--bs-light);
+	}
+	&.dtp-btn-ok{
+		background-color: var(--bs-primary);
+		color: #fff
+	}
+}
+.dtp-picker{
+	.dtp-picker-year,
+	.dtp-select-year-range{
+		.btn-default{
+			background-color: var(--bs-light);
+			box-shadow: none;
+			border: 0;
+		}
+	}
+}
+.year-picker-item{
+	&.active{
+		color: var(--bs-primary);    
+	}
+	&:hover {
+		color: var(--bs-primary);
+	}
+}
+
+.svg-clock{
+	.dtp-select-hour[fill="#8BC34A"]{
+		fill: var(--bs-primary);
+	}
+	.hour-hand[stroke="#8BC34A"]{
+		stroke: var(--bs-primary);
+	}
+	.dtp-select-hour-text:not([fill="#fff"]){
+		fill: var(--bs-heading-color);
+	}
+	circle[stroke="#bdbdbd"]{
+		stroke: var(--bs-border-color);
+	}
+	circle[fill="#757575"]{
+	    fill: var(--bs-dark);
+	}
+	circle[fill="#eee"]{
+	    fill: var(--bs-light);
+	}
+	.minute-hand{
+		stroke: var(--bs-dark);
+	}
+	.dtp-select-minute[fill="#8BC34A"]{
+		fill: var(--bs-primary);	
+	}
+	.dtp-select-minute-text[fill="#000"]{
+		fill: var(--bs-heading-color);	
+	}
+}

@@ -1,0 +1,99 @@
+USIS Construction Management — Website & Database Scope of Work (Plan 18)
+============================================================================
+Stakeholder-facing scope for the **primary web application (operational hub)** and the **backend database and APIs** that are the system of record for the company. This document excludes the dedicated native phone app (Plan 16) and the estimating/drawing power-workstream detail boundary (Plan 17), though the website surfaces many of the same modules and shares the same backend. Detailed module behavior lives in Plans 0–13; architecture in Plan 14; program overview in Plan 15. This document is not a legal contract unless executed separately; it defines intended scope at a summary level.
+
+1. Purpose
+----------
+Deliver a single web-based hub and a unified Flask/SQLAlchemy backend so USIS can run operations from business development through project delivery, safety, financials, reporting, and phased HR- and closeout-oriented workflows—with **shared approvals**, **RBAC**, **auditability**, and **document control**—without maintaining parallel siloed systems. The website is the default surface for administrators, estimators (where not using a dedicated shell), PMs, accounting, and executives; the database and APIs serve the estimating client and phone app as well (Plan 14).
+
+2. Business objectives
+----------------------
+• One authoritative place for projects, bids, documents, financial artifacts, and workflow state.
+• Consistent internal control: approvals and role permissions enforced on the server for every gated transition.
+• Faster onboarding for staff: one login, one navigation model (W3CRM shell per Plan 0), module growth without re-platforming.
+• Reliable reporting and exports (including Jinja2-generated PDFs and email-driven workflows per Plan 0) from live data, not copies.
+• Extensibility: new modules (HR acknowledgments, closeout checklists, vendor portal expansion) plug into the same auth, approvals, and document models.
+
+3. In-scope — website (operational hub)
+---------------------------------------
+• **Core shell and navigation** — Header, sidebar (MetisMenu), dashboard, project context, global search entry points, notifications, theme and accessibility patterns (Plan 1).
+• **CRM and pipeline** — Leads, clients, bid opportunities, and related lists and detail views (Plan 2).
+• **Unified takeoff and estimating entry points** — Web pages that read/write the same takeoff and estimate entities as other clients; full estimating UX depth may follow Plan 17 but data and APIs are owned here (Plans 3, 4).
+• **RFP and vendor workflows** — Internal RFP tooling, email patterns, and portal-facing routes as specified (Plan 5).
+• **Documents hub and drawing metadata** — Repository UI, upload, folder taxonomy, version history, permissions, thumbnails; integration with object storage (Plan 6). Full canvas viewer behavior overlaps Plan 17 where estimating pulls measurements; hub and permissions remain website scope.
+• **Safety and quality** — Logs, checklists, AI-assisted review entry points as the module plan defines (Plan 7).
+• **Project management and field** — Tasks, daily logs, punch lists, Gantt or task views; shared pages with schedule emphasis where Plans 8 and 9 overlap (Plan 8 canonical for field flows).
+• **Schedule and calendar views** — Calendar-centric views complementing Plan 8 (Plan 9).
+• **Financials and billing** — Invoices, pay applications, billing views aligned with Plan 10.
+• **Analytics and reporting** — KPI-style dashboards and reports per Plan 11.
+• **AI entry points** — Global command palette, drawers, and module hooks calling `/api/ai/*` with the vanilla JS strategy in Plan 0 and Plan 12.
+• **Cross-cutting web UX** — Toasts, offline queue script for supported web actions, bottom nav on small screens, speed dial / quick actions where implemented (Plan 13).
+• **Phased breadth** — HR-adjacent pages (onboarding docs, acknowledgments, training records), closeout packages (warranties, lien releases, turnover binders) as modules using the same Document, approval, and RBAC infrastructure (Plan 14).
+
+4. In-scope — database and backend
+------------------------------------
+• **Relational schema and migrations** — SQLAlchemy models, Alembic (or project-standard) migrations, indexes for reporting and search.
+• **Authentication and authorization** — Sessions and/or tokens; role- and project-scoped access; audit log for security-relevant and approval events (Plans 1, 13, 14).
+• **Shared approval engine** — Templates and instances: entity reference, steps (sequential or parallel), approve/reject/delegate, immutable history; server-side enforcement on state transitions (Plan 14).
+• **Versioned HTTP APIs** — e.g. `/api/v1/...` for projects, CRM entities, takeoff, estimates, documents, annotations, field payloads, approvals, notifications, and module-specific resources as they are built.
+• **File pipeline** — Presigned upload or application upload handlers, virus scan hook if required, metadata persistence, linkage to `Document` / `Drawing` models (Plan 6).
+• **Asynchronous jobs** — Celery tasks for email, heavy PDF generation, imports, and long-running AI jobs where specified (Plan 0).
+• **Integrations** — Webhooks or batch connectors only when explicitly added to scope; otherwise design APIs to support future integrations.
+• **Observability** — Structured application logging, health endpoints, correlation IDs for support (Plan 14 cross-cutting).
+
+5. Major deliverables / workstreams
+-----------------------------------
+1) **Backend foundation** — Auth, RBAC, audit, approval model, core project/bid/company entities, API versioning, environment configuration.
+2) **Data model expansion** — Module-by-module tables and relationships per Plans 2–11, always avoiding duplicate takeoff stores (Plan 3).
+3) **Web shell** — W3CRM gulp build integration, USIS-branded layout fragments, shared JS utilities (`usis-notify`, `aiReviewBus`, offline queue, command palette as phased).
+4) **Module UIs** — HTML/JS pages per Plan 0 mapping, each wired to live APIs with validation and error handling.
+5) **Reporting and PDFs** — Server-rendered outputs for proposals, invoices, safety exports, closeout bundles as modules require (Plans 4, 7, 10, 14).
+6) **Operations** — Deployment manifests, backup expectations, seed data for roles and pilot projects, admin documentation (level TBD).
+
+6. Technical approach (summary)
+-------------------------------
+• **Backend:** Python Flask, SQLAlchemy, Jinja2 for PDFs and email bodies, Celery with broker/backing store as configured in the repo, structured JSON responses for all SPA-like pages (Plan 0).
+• **Website:** Static W3CRM HTML assembled with `@@include`, Bootstrap 5, jQuery where the template already uses it, incremental `usis-*.js` modules (Plan 0).
+• **Security:** HTTPS, secure cookies or token storage guidance for web, rate limiting and input validation on APIs, least-privilege defaults for new routes.
+• **Data:** PostgreSQL or project-standard RDBMS; object storage for binaries; no second “reporting only” database unless introduced explicitly for analytics scale later.
+
+7. Phased delivery (high level)
+-------------------------------
+• **Phase A — Foundation:** Auth, RBAC, audit, approvals pilot (e.g. estimate submit), projects and CRM baseline, `/api/v1` scaffolding, dashboard + “my approvals.”
+• **Phase B — Commercial core:** Takeoff CRUD, estimate headers/lines on web, documents upload/list, drawing metadata and permissions.
+• **Phase C — Delivery:** PM/field modules, schedule views, safety, financials per business priority.
+• **Phase D — Scale:** Analytics depth, vendor portal hardening, AI workflows in production guardrails.
+• **Phase E — Breadth:** HR- and closeout-specific modules; performance, retention, and compliance review.
+
+Phases may overlap; sequencing within a phase follows Plan 14 and stakeholder priority.
+
+8. Out of scope (unless added by change request)
+------------------------------------------------
+• **Native mobile app** — Covered by Plan 16; website provides responsive web and PWA-style behaviors only unless separately scoped.
+• **Full payroll engine or certified payroll product** — Integration hooks may be in scope; owning full payroll calculation is not.
+• **General ledger as system of record** — Accounting system remains authoritative unless explicitly replaced.
+• **Legal review of contract language** — System stores and routes artifacts; interpretation stays with the business and counsel.
+• **Estimating-only desktop shell** — Optional; if delivered, still uses this backend (see Plan 17).
+
+9. Assumptions and dependencies
+-------------------------------
+• Stakeholders provide module priority, sample approval matrices, and pilot project data.
+• Hosting, TLS certificates, SMTP, object storage, and secrets management are available per environment.
+• W3CRM source path and build process remain as documented in Plan 0 (or Plan 0 is updated when the template moves).
+• Compliance requirements (PII retention, HR data handling) are agreed before loading sensitive HR datasets at scale — see **Plan 19 §6** (PII, retention, logging, exports, aggregate access) for HR dashboard specifics.
+
+10. Success criteria
+--------------------
+• Authorized users complete a pilot workflow on the web: create or update a governed entity, route it through approval, and view immutable history.
+• APIs support at least one non-web client (estimating web surface or phone) without schema forks for core entities.
+• Documents and drawings are versioned, permissioned, and discoverable from the hub.
+• Role-restricted users cannot bypass server checks for approvals or document access.
+• Production pilot meets agreed availability and backup targets.
+
+11. References
+--------------
+• Plan 0 — Platform and W3CRM mapping (canonical stack and paths).
+• Plans 1–13 — Module specifications.
+• Plan 14 — Unified system roadmap (single API, approvals, three clients).
+• Plan 15 — Unified program scope of work.
+• Plans 16–17 — Phone app and estimating app scopes (consumers of this backend).

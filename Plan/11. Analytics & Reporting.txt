@@ -1,0 +1,91 @@
+Analytics & Reporting Module – Complete Visual Layout
+Overall page structure (usis-analytics.html with ?view=executive|portfolio|project&projectId=…)
+
+Shell: shared W3CRM header + deznav (Plan\1). Header row: Global date range, multi-project multi-select, Export, view toggle, AI command launcher (Ctrl+K → usis-command-palette.js).
+
+Layout: Bootstrap grid — col-lg-3 left report category nav (collapse on mobile); col-lg-6 main KPI + charts; col-lg-3 right AI report offcanvas trigger + pinned summary cards. Charts: ApexCharts (already bundled in W3CRM) or Chart.js.
+
+Left sidebar — navigation categories (Bootstrap list-group)
+
+Executive Overview (Default)
+AI Compliance & Risk
+Trade Performance (Drywall, Paint, Flooring, Ceilings, Trim, etc.)
+Financials & Profitability
+Scheduling & Field Productivity
+Custom Report Builder
+Government Compliance & Exports
+
+1. Executive Overview (Landing Dashboard)
+Top KPI row (4–6 Bootstrap cards / card-group)
+
+AI Risk Score – Circular progress (Green/Yellow/Red) + “Project Health: 87%”
+Total AI Cost Avoidance – $XXXk saved from early flags
+Win Rate – % from Leads/Bids
+Avg Gross Margin by Trade – with trend arrows
+Critical Open Issues – count with badge
+On-Time Completion – AI-adjusted %
+
+Chart Grid (2×2 or responsive)
+
+Revenue & Margin Trend (Line chart)
+AI Issues by Trade (Stacked bar)
+Trade Breakdown (Donut)
+Portfolio Health Heatmap (Projects × Risk)
+
+2. AI Compliance & Risk Intelligence
+
+Severity Overview – Pie chart + total counts (Critical / Major / Minor)
+Issue Heatmap – Thumbnail grid of drawings with color intensity
+Top Risk Areas Table – Click any row → opens DrawingViewer at exact annotation
+Common Violations – Bar chart by CBC/Title 24 section or trade
+Trend Over Time – Line chart of new AI findings
+
+3. Trade Performance Analytics
+Drill-down per finish trade:
+
+Drywall | Paint | Flooring | Ceilings | Trim | Specialties
+Metrics cards: Sq Ft / Man-Hour | Cost per Sq Ft | Production Rate
+Profitability Waterfall chart
+Historical Benchmarking (your company vs California norms)
+
+4. Financials & Forecasting
+
+Variance Waterfall – Budget → COs → Committed → Actual → AI Impact
+Cash Flow Forecast – Line chart with red AI risk bands
+Change Order Analysis – AI-triggered vs traditional
+Per-GC Profitability – Heatmap
+
+5. Custom Report Builder
+
+Drag-and-drop widget area — use SortableJS + Bootstrap cards, or a lightweight grid library compatible with static HTML
+Saved report templates (JSON layout stored via API)
+Natural language input → AI generates report on the fly (POST /api/ai/report)
+
+Right sidebar – AI report generator (always available)
+
+Bootstrap offcanvas + usis-ai-drawer.js (default: Local Llama 4 Scout, analytics_review mode)
+Quick action chips:
+“Summarize all Critical AI issues this quarter”
+“Compare profitability of drywall vs paint last 6 months”
+“Generate full compliance report for current portfolio”
+“Predict delay risks for next 90 days”
+
+One-click “Add to Dashboard” or “Export PDF”
+
+Data Flow & Live Updates
+
+Every saved DrawingAnnotation (AI review) instantly updates charts via aiReviewBus.js
+Sage CSV imports feed FinancialTransaction → live variance
+Unified Takeoff + BudgetLineItem provide all quantity/cost data
+Full audit trail on every report generation
+
+Mobile Experience
+
+Bottom nav access
+Collapsible filters
+Card-based KPI layout
+Full-screen chart views
+
+This module turns your Local AI + Sage data into executive-level intelligence while staying consistent with your existing RFP, DrawingViewer, and AI drawer infrastructure (Plan\12).
+
+Primary files: usis-analytics.html, assets/js/usis-analytics.js, reuse reports.html / index-2.html as visual references.

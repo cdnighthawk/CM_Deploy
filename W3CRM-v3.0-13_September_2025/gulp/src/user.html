@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "user.html",
+	})
+	
+	<link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "User",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">User</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="user-roles.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="d-flex justify-content-between align-items-center mb-4">
+					<h4 class="mb-0">Users</h4>
+					<div class="d-flex align-items-center">
+						<ul class="nav nav-pills nav-pills-square-sm gap-2" id="pills-tab" role="tablist">
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="pills-colm-tab" data-bs-toggle="pill" data-bs-target="#pills-colm" type="button" role="tab" aria-selected="false">
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-list">
+										<line x1="8" y1="6" x2="21" y2="6"></line>
+										<line x1="8" y1="12" x2="21" y2="12"></line>
+										<line x1="8" y1="18" x2="21" y2="18"></line>
+										<line x1="3" y1="6" x2="3.01" y2="6"></line>
+										<line x1="3" y1="12" x2="3.01" y2="12"></line>
+										<line x1="3" y1="18" x2="3.01" y2="18"></line>
+									</svg>
+								</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link active" id="pills-week-tab" data-bs-toggle="pill" data-bs-target="#pills-list" type="button" role="tab" aria-selected="true">
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-grid">
+										<rect x="3" y="3" width="7" height="7"></rect>
+										<rect x="14" y="3" width="7" height="7"></rect>
+										<rect x="14" y="14" width="7" height="7"></rect>
+										<rect x="3" y="14" width="7" height="7"></rect>
+									</svg>
+								</button>
+							</li>
+						</ul>
+						<a href="edit-profile.html" class="btn btn-primary btn-sm ms-2">+ Add User</a>
+					</div>
+				</div>
+					
+				<div class="tab-content" id="pills-tabContent">
+					<div class="tab-pane fade show active" id="pills-list" role="tabpanel">
+						<div class="row">
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar1.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-success position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Olivia Grace</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">175</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">50</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">30</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>Software Engineer</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>15 Feb 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar2.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-danger position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Oliver Noah</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">172</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">47</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">20</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>Web Doveloper</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>12 Jan 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar4.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-success position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Elijah James</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">180</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">90</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">40</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>App Doveloper</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>17 March 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar3.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-danger position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Charlotte Mae</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">1500</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">130</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">10</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>App Doveloper</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>17 March 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar10.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-success position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Henry Mason</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">450</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">782</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">585</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>Mobile Doveloper</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>17 March 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar5.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-danger position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Emily Kate</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">175</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">50</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">30</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>Software Engineer</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>15 Feb 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar7.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-danger position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Abigail Faith</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">172</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">47</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">20</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>Web Doveloper</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>12 Jan 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+							<div class="col-xxl-3 col-xl-4 col-sm-6">
+								<div class="card">
+									<div class="card-body text-center">
+										<div class="position-relative d-inline-block mx-auto mb-2">
+											<img src="assets/images/avatar/middle/avatar8.webp" class="avatar avatar-xl rounded-circle border border-4 border-light" alt="">
+											<span class="text-success position-absolute bottom-0 end-0 border border-2 border-white rounded-circle mb-lg-3 mb-2 me-2 fa fa-circle fs-8"></span>
+										</div>
+										<div class="clearfix mb-3">
+											<h4 class="mb-0">Samuel Owen</h4>
+											<p class="mb-0">demo11@gmail.com</p>
+										</div>
+										<ul class="d-flex justify-content-center gap-4 mb-3">
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">180</span>
+												<span>Posts</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">90</span>
+												<span>Followers</span>
+											</li>
+											<li class="d-grid">
+												<span class="fs-4 fw-semibold text-primary">40</span>
+												<span>Following</span>
+											</li>
+										</ul>
+										<ul class="mb-4 text-center">
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Position: </span>
+												<span>App Doveloper</span>
+											</li>
+											<li class="my-1 d-flex gap-2 justify-content-center">
+												<span class="text-primary">Joining Date: </span>
+												<span>17 March 2023</span>
+											</li>
+										</ul>
+										<div class="d-flex gap-2">
+											<a href="chat.html" class="btn btn-primary w-100">Message</a>
+											<a href="javascript:void(0)" class="btn btn-secondary w-100">Following</a>
+										</div>	
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="pills-colm" role="tabpanel" aria-labelledby="pills-colm-tab">
+						<div class="card h-auto">
+							<div class="card-header border-0">
+								<div id="tableUserExcelBTN"></div>
+							</div>
+							<div class="card-body table-card-body pt-0 px-0 pb-1">
+								<div class="table-responsive check-wrapper">
+									<table id="userTable" class="table table-sm mb-0">
+										<thead class="table-light">
+											<tr>
+												<th class="sorting-disabled">
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-all" required="">
+													</div>
+												</th>
+												<th class="mw-200">User</th>
+												<th class="mw-100">Email</th>
+												<th class="mw-150">Position</th>
+												<th class="mw-150">Date Of Joining</th>
+												<th class="mw-150">Last Status</th>
+												<th class="mw-100">Action</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar9.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Olivia Grace</h6>
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>12 Jan 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar1.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Amelia Rose</h6>	
+													</div>
+												</td>
+												<td>jr@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>15 Jan 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar3.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Charlotte Mae</h6>	
+													</div>
+												</td>
+												<td>je@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>18 Jan 2023</td>
+												<td>Friday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar5.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Isabella Claire</h6>	
+													</div>
+												</td>
+												<td>mj@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>30 Jan 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar7.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Sophia Jane</h6>	
+													</div>
+												</td>
+												<td>mj@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>30 Jan 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar2.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Oliver Noah</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>12 Jan 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar4.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Elijah James</h6>	
+													</div>
+												</td>
+												<td>sj@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>12 Aug 2023</td>
+												<td>Sunday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar6.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Liam Risher</h6>	
+													</div>
+												</td>
+												<td>bj@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>18 Feb 2023</td>
+												<td>Sunday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar8.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Ethan Cole</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>App Doveloper</td>
+												<td>18 Mar 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar10.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Henry Mason</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>12 Jan 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar1.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Harper Joy</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>App Doveloper</td>
+												<td>18 Mar 2023</td>
+												<td>Sunday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar3.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Emily Kate</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Web Designer</td>
+												<td>25 Jan 2023</td>
+												<td>Tuesday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar5.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Abigail Faith</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>App Doveloper</td>
+												<td>18 Mar 2023</td>
+												<td>Friday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar7.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Scarlett Elise</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Web Designer</td>
+												<td>25 Jan 2023</td>
+												<td>Tuesday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar9.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Evelyn Hope</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Software Engineer</td>
+												<td>12 Jan 2023</td>
+												<td>Thu</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar10.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">William Jasper</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>App Doveloper</td>
+												<td>18 Mar 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar1.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Evelyn Hope</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Web Designer</td>
+												<td>25 Jan 2023</td>
+												<td>Tuesday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar2.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Jackson Miles</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>App Doveloper</td>
+												<td>18 Mar 2023</td>
+												<td>Monday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="form-check custom-checkbox">
+														<input type="checkbox" class="form-check-input check-input" required="">
+													</div>
+												</td>
+												<td>
+													<div class="d-flex align-items-center">
+														<img src="assets/images/avatar/middle/avatar4.webp" class="avatar avatar-xs rounded-circle" alt="">
+														<h6 class="mb-0 ms-2">Alexander Finn</h6>	
+													</div>
+												</td>
+												<td>demo@gmail.com</td>
+												<td>Web Designer</td>
+												<td>25 Jan 2023</td>
+												<td>Tuesday</td>
+												<td>
+													<div class="dropdown">
+														<button type="button" class="btn btn-sm btn-primary light btn-square" data-bs-toggle="dropdown">
+															<i class="fa-solid fa-ellipsis"></i>
+														</button>
+														<ul class="dropdown-menu dropdown-menu-end">
+															<li><a class="dropdown-item" href="javascript:void(0);">Edit</a></li>
+															<li><a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a></li>
+														</ul>
+													</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+						   </div>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+        
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Datatables -->
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+	
+	<!-- Script For Dashboard -->
+	<script src="assets/js/dashboard/dashboard.js"></script>
+   
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

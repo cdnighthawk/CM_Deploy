@@ -1,0 +1,13 @@
+.footer {
+	padding-left: 15rem;
+    font-size: 0.813rem;
+	font-weight: 400;
+	border-top: 1px solid var(--bs-border-color);
+    
+	.copyright {
+        padding: 0.9375rem;
+    }
+	@include respond ('tab-port'){
+		padding-left: 3.8rem;
+	}
+}

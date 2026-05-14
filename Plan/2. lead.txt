@@ -1,0 +1,129 @@
+✅ Lead & Bid Management Module – In-Depth Build Guide
+This module is the front-end of your business — managing GC inquiries, bid invitations, and opportunities all the way to award. It closes the loop before projects hit the Dashboard and integrates directly with the already-built RFP module, Unified Takeoff Engine, DrawingViewer, Local AI (usis-ai-drawer + aiReviewBus.js), and the new Safety features.
+1. High-Level Architecture & Design Principles
+
+Single Database with project_id (UUID) scoping.
+Unified Takeoff Engine starts here (same TakeoffLineItem used in Estimates and Projects).
+Local AI first (Llama 4 Scout default) for feasibility reviews.
+Reuse everything:
+AI panel + assets\js\aiReviewBus.js (see Plan\0 and Plan\12)
+Full RFP module (one-click “Send RFP”)
+DrawingViewer (one-click upload + review)
+Bootstrap 5 / W3CRM patterns, Flask auth, audit logging, offline queue (usis-offline-queue.js), Bootstrap toasts
+
+Mobile-first with offline lead capture.
+Bid → Project conversion is the key transition point.
+
+2. File / Folder Structure (W3CRM Gulp src — Cursor-ready)
+Base: ...\W3CRM-v3.0-13_September_2025\gulp\gulp\src\
+
+textgulp/gulp/src/
+├── usis-crm-leads.html              ← Main list / pipeline (start from manage-client.html + project.html tables)
+├── usis-crm-bid-detail.html         ← Detail shell (tabs: Overview, Docs, Estimating, RFP, AI, History)
+├── elements/
+│   └── usis-bid-kanban.html         ← optional partial: columns = stages (Bootstrap cards + dragula or native DnD)
+├── assets/js/
+│   ├── usis-crm-leads.js            ← fetch /api/bids, filter, stage updates
+│   ├── usis-bid-feasibility.js      ← opens AI offcanvas, mode=bid_feasibility_review
+│   └── usis-takeoff-from-bid.js     ← links bid to unified takeoff APIs
+└── assets/scss/ (optional _usis-crm.scss)
+
+Backend
+textapp/
+├── models/
+│   ├── crm.py                 ← BidOpportunity, LeadContact
+│   └── relationships.py       ← backrefs
+├── blueprints/
+│   └── crm.py                 ← /api/bids blueprint
+├── schemas/
+│   └── bid_schema.py
+└── services/
+    └── bid_service.py         ← award logic, AI integration
+3. SQLAlchemy Models (Key Tables)
+BidOpportunity (main table)
+
+id (UUID PK)
+project_id (UUID, nullable — filled on award)
+stage (enum: New Lead, Invited, Estimating, Submitted, Awarded, Lost)
+name, number, estimated_value, bid_due_date
+gc_id, owner_id, architect_id (FK to companies)
+win_probability (AI-updated)
+estimate_id (FK)
+rfp_id (FK to existing RFP)
+ai_feasibility_review_id (FK to drawing_annotations)
+
+LeadContact
+
+Interaction history, notes, relationship strength.
+
+Relationships
+
+BidOpportunity.takeoff_line_items (via unified Takeoff)
+BidOpportunity.documents (via documents table)
+Project.bid_opportunity_id (back-link on award)
+
+4. Backend Build Steps (Flask)
+
+Add /api/bids blueprint (reuse RFP patterns heavily).
+Endpoints to implement:
+GET /api/bids + filters (stage, trade, due date)
+POST /api/bids (new lead)
+GET /api/bids/<id>
+POST /api/bids/<id>/ai-feasibility (opens AI drawer in bid_feasibility_review mode)
+POST /api/bids/<id>/award (creates Project, copies data, links takeoffs)
+POST /api/bids/<id>/takeoff (adds to unified TakeoffLineItem)
+
+Reuse existing Celery + email for reminders.
+Import Sage ProjectId logic for future sync.
+
+5. Front-end Build Steps (W3CRM + Bootstrap + vanilla JS)
+Main page (usis-crm-leads.html)
+
+@@include shared shell (header, deznav from Plan 1).
+Left column: pipeline stage filters (Bootstrap list-group or pills).
+Main: Bootstrap tab toggle — “Board” vs “Table”.
+Board: columns per stage; each card is a bid summary (badges for due date, trade, AI probability).
+Table: table-responsive + sortable thead; row click opens usis-crm-bid-detail.html?bid=<uuid>.
+Right: Bootstrap offcanvas “Bid preview” with quick actions + “Run AI feasibility” button.
+Mobile: bottom nav highlights CRM; offcanvas replaces right rail.
+
+Key building blocks
+
+usis-bid-card — Bootstrap card markup generated from JSON or server-rendered rows.
+AI feasibility — offcanvas loads partial elements/usis-ai-drawer.html; usis-bid-feasibility.js posts to /api/bids/<id>/ai-feasibility and listens on aiReviewBus.
+usis-crm-bid-detail.html — Nav tabs (Bootstrap nav-tabs): Overview, Documents & Drawings, Estimating, RFP, AI Review, History.
+
+Scripts
+
+usis-crm-leads.js — fetch /api/bids, filters, PATCH stage.
+usis-bid-feasibility.js — orchestrates AI review events on aiReviewBus.
+usis-takeoff-from-bid.js — POST /api/bids/<id>/takeoff, refresh table.
+
+Key Workflows (Implement These)
+
+New Lead → Upload plans → DrawingViewer → Local AI review → Create takeoff → Send RFP
+AI Feasibility → One-click buttons auto-populate risk flags and suggested exclusions
+Award → Button triggers backend award flow (creates Project + Budget + links existing takeoff)
+Offline → Lead capture + photo queue (usis-offline-queue.js)
+
+6. Critical Integrations (Do Not Break These)
+
+DrawingViewer: One-click “Upload Plans” opens full viewer + canvas capture for AI
+Unified Takeoff: Same TakeoffLineItem table used here (with bid_opportunity_id)
+Local AI + aiReviewBus.js: review-request event with mode=bid_feasibility_review
+RFP Module: One-click “Send RFP” pre-fills and launches existing RFP (reuse 100%)
+Estimating: “Create Estimate” copies takeoff + AI suggestions
+Safety: AI feasibility can flag safety risks; award flow pulls safety templates
+Documents Hub: All bid docs live here automatically
+
+7. Mobile & Offline Behavior
+
+Full swipe-to-stage on Kanban
+Camera-first “Capture New Bid Invitation” flow
+Offline lead form + photo queue (auto AI review on reconnect)
+
+8. Security & Government Compliance
+
+Token-based sharing for GCs (similar to public RFP portal)
+DBE / prevailing wage flags on bids
+Full audit trail for every stage change

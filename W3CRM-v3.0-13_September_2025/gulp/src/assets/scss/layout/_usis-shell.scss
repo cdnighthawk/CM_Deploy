@@ -1,0 +1,26 @@
+/* USIS shell — bottom nav clears fixed footer on small screens */
+.usis-mobile-bottomnav {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1040;
+	padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+body.usis-has-bottomnav .content-body {
+	padding-bottom: 4.5rem;
+}
+
+body.usis-has-bottomnav .footer {
+	margin-bottom: 3.5rem;
+}
+
+@media (min-width: 768px) {
+	body.usis-has-bottomnav .content-body {
+		padding-bottom: 0;
+	}
+	body.usis-has-bottomnav .footer {
+		margin-bottom: 0;
+	}
+}

@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "project-detail.html",
+	})
+	
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
+	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
+	<style>
+		.usis-detail-toolbar .nav-link { font-weight: 500; }
+		.usis-submittal-log-table { font-size: 0.78rem; white-space: nowrap; }
+		.usis-submittal-log-table td:nth-child(2),
+		.usis-submittal-log-table th:nth-child(2) { white-space: normal; min-width: 10rem; max-width: 14rem; }
+		.usis-submittal-log-table td:nth-child(14),
+		.usis-submittal-log-table th:nth-child(14) { white-space: normal; max-width: 10rem; }
+		.usis-tool-toolbar .form-control,
+		.usis-tool-toolbar .form-select { min-width: 8rem; }
+		#usis-grid-drawings { min-height: 22rem; }
+		#usis-grid-drawings .tabulator { font-size: 0.875rem; }
+		#usis-grid-takeoff { min-height: 22rem; }
+		#usis-grid-takeoff .tabulator { font-size: 0.875rem; }
+		#usis-proj-schedule-calendar { min-height: 28rem; }
+		.usis-proj-task-table-wrap { max-height: 50vh; overflow: auto; }
+	</style>
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Active project",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Project Detail</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="party.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="projects.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<div class="col-xl-12 mb-3">
+					<p class="text-muted mb-1 small" id="usis-proj-detail-idline"></p>
+					<a href="construction/projects.html" class="small">&larr; Back to Projects</a>
+				</div>
+
+				<div class="col-xl-12 mb-3">
+					<div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
+						<ul class="nav nav-pills flex-wrap gap-1 usis-detail-toolbar mb-0" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true">Job info</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-schedule" data-bs-toggle="pill" data-bs-target="#proj-pane-schedule" type="button" role="tab" aria-controls="proj-pane-schedule" aria-selected="false">Schedule</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-tasks" data-bs-toggle="pill" data-bs-target="#proj-pane-tasks" type="button" role="tab" aria-controls="proj-pane-tasks" aria-selected="false">Tasks</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-drawings" data-bs-toggle="pill" data-bs-target="#proj-pane-drawings" type="button" role="tab" aria-controls="proj-pane-drawings" aria-selected="false">Drawings</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-specs" data-bs-toggle="pill" data-bs-target="#proj-pane-specs" type="button" role="tab" aria-controls="proj-pane-specs" aria-selected="false">Specs</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-takeoff" data-bs-toggle="pill" data-bs-target="#proj-pane-takeoff" type="button" role="tab" aria-controls="proj-pane-takeoff" aria-selected="false">Takeoff</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-estimate" data-bs-toggle="pill" data-bs-target="#proj-pane-estimate" type="button" role="tab" aria-controls="proj-pane-estimate" aria-selected="false">Estimate</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-rfi" data-bs-toggle="pill" data-bs-target="#proj-pane-rfi" type="button" role="tab" aria-controls="proj-pane-rfi" aria-selected="false">RFIs</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-submittals" data-bs-toggle="pill" data-bs-target="#proj-pane-submittals" type="button" role="tab" aria-controls="proj-pane-submittals" aria-selected="false">Submittals</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false">Procurement</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false">Invoicing</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-contract" data-bs-toggle="pill" data-bs-target="#proj-pane-contract" type="button" role="tab" aria-controls="proj-pane-contract" aria-selected="false">Contract admin</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-costing" data-bs-toggle="pill" data-bs-target="#proj-pane-costing" type="button" role="tab" aria-controls="proj-pane-costing" aria-selected="false">Job costing</button>
+						</li>
+					</ul>
+						<a class="btn btn-sm btn-outline-secondary text-nowrap d-none" id="usis-proj-contract-admin-hub" href="../usis-procurement.html">Contract admin hub</a>
+					</div>
+				</div>
+
+				<div class="col-xl-12">
+					<div class="tab-content card card-body border-0 shadow-sm">
+						<div class="tab-pane fade show active" id="proj-pane-job" role="tabpanel" aria-labelledby="proj-tab-job" tabindex="0">
+							<div class="alert alert-light border py-2 mb-2" data-usis-loading>Loading job information…</div>
+							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
+							<div id="usis-project-job-root" class="d-none">
+								<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+									<div>
+										<h4 class="mb-1 fw-semibold" id="usis-proj-job-title">—</h4>
+										<p class="text-muted small mb-0" id="usis-proj-job-subtitle"></p>
+									</div>
+									<div class="d-flex flex-wrap gap-1">
+										<span class="badge bg-light text-dark border" id="usis-proj-job-status"></span>
+										<span class="badge bg-light text-muted border" id="usis-proj-job-type"></span>
+									</div>
+								</div>
+								<div class="row g-3">
+									<div class="col-xl-7">
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Project details</div>
+											<div class="card-body p-0">
+												<table class="table table-sm mb-0">
+													<tbody id="usis-proj-job-tbody"></tbody>
+												</table>
+											</div>
+										</div>
+										<div class="card border-0 shadow-sm mb-0">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Description</div>
+											<div class="card-body small text-muted" id="usis-proj-job-description">—</div>
+										</div>
+									</div>
+									<div class="col-xl-5">
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Notes</div>
+											<div class="card-body small text-muted" id="usis-proj-job-notes">—</div>
+										</div>
+										<p class="text-muted small mb-0" id="usis-proj-job-leadlink-wrap"></p>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Installation windows + construction calendar -->
+						<div class="tab-pane fade" id="proj-pane-schedule" role="tabpanel" aria-labelledby="proj-tab-schedule" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+								<div>
+									<h5 class="mb-0">Construction schedule</h5>
+									<p class="text-muted small mb-0">Installation or work windows by area (optional crew label). Use the calendar to see overlaps.</p>
+								</div>
+							</div>
+							<ul class="nav nav-pills gap-1 mb-3" role="tablist">
+								<li class="nav-item" role="presentation">
+									<button class="nav-link active" id="proj-sched-sub-tab-list" data-bs-toggle="pill" data-bs-target="#proj-sched-sub-pane-list" type="button" role="tab" aria-controls="proj-sched-sub-pane-list" aria-selected="true">Installation dates</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="proj-sched-sub-tab-cal" data-bs-toggle="pill" data-bs-target="#proj-sched-sub-pane-cal" type="button" role="tab" aria-controls="proj-sched-sub-pane-cal" aria-selected="false">Calendar</button>
+								</li>
+							</ul>
+							<div class="tab-content">
+								<div class="tab-pane fade show active" id="proj-sched-sub-pane-list" role="tabpanel" aria-labelledby="proj-sched-sub-tab-list" tabindex="0">
+									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-sched-loading>Loading schedule…</div>
+									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-sched-error role="alert"></div>
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+										<p class="text-muted small mb-0">Rows are inclusive date ranges (e.g. 1 June through 10 June).</p>
+										<button type="button" class="btn btn-primary btn-sm" id="usis-sched-btn-add">+ Add window</button>
+									</div>
+									<div class="table-responsive">
+										<table class="table table-sm table-bordered align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>Area / scope</th>
+													<th style="min-width: 9rem">Start</th>
+													<th style="min-width: 9rem">End</th>
+													<th style="min-width: 8rem">Crew (optional)</th>
+													<th style="width: 7rem"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-sched-tbody">
+												<tr><td colspan="5" class="text-muted small">Open this tab to load schedule lines.</td></tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="proj-sched-sub-pane-cal" role="tabpanel" aria-labelledby="proj-sched-sub-tab-cal" tabindex="0">
+									<p class="text-muted small mb-2">Events use the same windows as the list. Month view shows multi-day bars.</p>
+									<div id="usis-proj-schedule-calendar" class="app-fullcalendar"></div>
+								</div>
+							</div>
+						</div>
+
+						<!-- W3CRM-style task grid (same data as Schedule → schedule-items API) -->
+						<div class="tab-pane fade" id="proj-pane-tasks" role="tabpanel" aria-labelledby="proj-tab-tasks" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+								<div>
+									<h5 class="mb-0">Tasks</h5>
+									<p class="text-muted small mb-0">Construction template layout: sortable-style columns, filters, and row actions. Each row is an <strong>installation window</strong> (same records as <strong>Schedule → Installation dates</strong> and the calendar).</p>
+								</div>
+							</div>
+							<div class="col-xl-12 px-0">
+								<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+									<div class="clearfix gap-2 d-flex align-items-center flex-wrap">
+										<div>
+											<label class="form-label small text-muted mb-0 d-block" for="usis-task-filter-status">Status</label>
+											<select class="form-select form-select-sm" id="usis-task-filter-status" style="min-width: 10rem">
+												<option value="all" selected>All status</option>
+												<option value="not_started">Not started</option>
+												<option value="ongoing">Ongoing</option>
+												<option value="completed">Completed</option>
+											</select>
+										</div>
+										<div>
+											<label class="form-label small text-muted mb-0 d-block" for="usis-task-filter-member">Assigned contains</label>
+											<input type="text" class="form-control form-control-sm" id="usis-task-filter-member" placeholder="Crew / team" style="min-width: 10rem">
+										</div>
+									</div>
+									<div class="clearfix gap-2 d-flex flex-wrap align-items-end">
+										<button type="button" class="btn btn-primary light btn-sm" data-bs-toggle="modal" data-bs-target="#usis-task-s-curve">S-Curve <i class="icon feather icon-git-merge"></i></button>
+										<button type="button" class="btn btn-primary light btn-sm" data-bs-toggle="offcanvas" data-bs-target="#usis-task-download">Download <i class="icon feather icon-download"></i></button>
+										<div class="btn-group">
+											<button class="btn btn-primary btn-sm" type="button" id="usis-task-btn-add">+ Add task</button>
+											<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+												<span class="visually-hidden">Toggle</span>
+											</button>
+											<ul class="dropdown-menu dropdown-menu-end">
+												<li><span class="dropdown-item-text small text-muted">Same form as Schedule tab</span></li>
+											</ul>
+										</div>
+									</div>
+								</div>
+								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-task-loading>Loading tasks…</div>
+								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-task-error role="alert"></div>
+								<div class="table-hover text-nowrap card m-0 overflow-auto usis-proj-task-table-wrap">
+									<table class="table table-bordered table-sm align-middle mb-0" id="usis-proj-tasks-table">
+										<thead class="table-light">
+											<tr>
+												<th class="text-center" style="width: 3rem">#</th>
+												<th style="min-width: 12rem">Task name</th>
+												<th class="text-center" style="min-width: 6rem">Duration</th>
+												<th class="text-center" style="min-width: 7rem">Start</th>
+												<th class="text-center" style="min-width: 7rem">End</th>
+												<th class="text-center" style="min-width: 7rem">Progress</th>
+												<th class="text-center" style="min-width: 6rem">Dependencies</th>
+												<th class="text-center" style="min-width: 7rem">Assigned</th>
+												<th class="text-center" style="min-width: 6rem">Status</th>
+												<th class="text-center" style="width: 2.5rem"></th>
+											</tr>
+										</thead>
+										<tbody id="usis-task-tbody">
+											<tr><td colspan="10" class="text-muted small p-3">Open this tab to load tasks.</td></tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+
+						<!-- Drawings (Procore-style log) -->
+						<div class="tab-pane fade" id="proj-pane-drawings" role="tabpanel" aria-labelledby="proj-tab-drawings" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-0">Drawings</h5>
+									<p class="text-muted small mb-0">Current set, revisions, and sheet metadata (project-scoped).</p>
+								</div>
+								<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-modal-drawing-create">+ Upload / add</button>
+							</div>
+							<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading drawings…</div>
+							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
+							<div class="row g-2 align-items-end usis-tool-toolbar mb-3">
+								<div class="col-md-4 col-lg-3">
+									<label class="form-label small text-muted mb-0" for="usis-filter-drawing-discipline">Discipline</label>
+									<select class="form-select form-select-sm" id="usis-filter-drawing-discipline">
+										<option value="">All disciplines</option>
+									</select>
+								</div>
+								<div class="col-md-4 col-lg-3">
+									<label class="form-label small text-muted mb-0" for="usis-filter-drawing-set">Set</label>
+									<select class="form-select form-select-sm" id="usis-filter-drawing-set">
+										<option value="">All sets</option>
+									</select>
+								</div>
+								<div class="col-md-6 col-lg-4">
+									<label class="form-label small text-muted mb-0" for="usis-search-drawings">Search</label>
+									<input type="search" class="form-control form-control-sm" id="usis-search-drawings" placeholder="Sheet #, title, set, discipline…" autocomplete="off">
+								</div>
+							</div>
+							<div id="usis-grid-drawings" class="border rounded overflow-hidden bg-white"></div>
+						</div>
+
+						<div class="tab-pane fade" id="proj-pane-specs" role="tabpanel" aria-labelledby="proj-tab-specs" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+								<div>
+									<h5 class="mb-0">Specifications</h5>
+									<p class="text-muted small mb-0">Procore-style spec book: CSI sections on the left, PDF on the right. Link a PDF URL per section (stored on the spec section record).</p>
+								</div>
+								<a class="btn btn-sm btn-outline-secondary" id="usis-specs-open-fullpage" href="construction/specs-viewer.html" target="_blank" rel="noopener">Open full page</a>
+							</div>
+							<div id="usis-proj-specs-root"></div>
+						</div>
+
+						<div class="tab-pane fade" id="proj-pane-takeoff" role="tabpanel" aria-labelledby="proj-tab-takeoff" tabindex="0">
+							<div id="usis-project-takeoff-root"></div>
+						</div>
+
+						<div class="tab-pane fade" id="proj-pane-estimate" role="tabpanel" aria-labelledby="proj-tab-estimate" tabindex="0">
+							<h5 class="mb-2">Estimate</h5>
+							<p class="text-muted mb-0">Placeholder — working estimate for the active job.</p>
+						</div>
+
+						<!-- RFIs -->
+						<div class="tab-pane fade" id="proj-pane-rfi" role="tabpanel" aria-labelledby="proj-tab-rfi" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-0">RFIs</h5>
+									<p class="text-muted small mb-0">Procore-style log: # / Subject / Status / Ball-in-Court / Assignees / Due. Same APIs as the full RFI workspace (<code>rfis.html</code>). Use the <strong>Submittals</strong> tab for shop drawings and submittal workflow.</p>
+								</div>
+								<div class="d-flex gap-1">
+									<a class="btn btn-outline-secondary btn-sm" id="usis-rfi-open-log" href="construction/rfis.html">Open RFI Log</a>
+									<a class="btn btn-primary btn-sm" id="usis-rfi-open-create" href="construction/rfi-create.html">+ Create RFI</a>
+								</div>
+							</div>
+							<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading RFIs…</div>
+							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
+							<div class="row g-2 align-items-end usis-tool-toolbar mb-3">
+								<div class="col-md-4 col-lg-3">
+									<label class="form-label small text-muted mb-0" for="usis-filter-rfi-status">Status</label>
+									<select class="form-select form-select-sm" id="usis-filter-rfi-status">
+										<option value="">All statuses</option>
+										<option value="draft">Draft</option>
+										<option value="open">Open</option>
+										<option value="closed">Closed</option>
+										<option value="closed_draft">Closed-Draft</option>
+									</select>
+								</div>
+								<div class="col-md-6 col-lg-4">
+									<label class="form-label small text-muted mb-0" for="usis-search-rfis">Search</label>
+									<input type="search" class="form-control form-control-sm" id="usis-search-rfis" placeholder="Subject, ball in court…" autocomplete="off">
+								</div>
+							</div>
+							<div class="table-responsive">
+								<table class="table table-hover table-sm align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>#</th>
+											<th>Subject</th>
+											<th>Status</th>
+											<th>Ball in court</th>
+											<th>Assignees</th>
+											<th>RFI Manager</th>
+											<th>Due</th>
+											<th class="text-end"></th>
+										</tr>
+									</thead>
+									<tbody id="usis-tbody-rfis"></tbody>
+								</table>
+							</div>
+						</div>
+
+						<!-- Submittals (document / submittal register — not Sage contract admin) -->
+						<div class="tab-pane fade" id="proj-pane-submittals" role="tabpanel" aria-labelledby="proj-tab-submittals" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-0">Submittals</h5>
+									<p class="text-muted small mb-0">Procore-style register: workflow dates, contractor, responses, and attachments. Open a row for PDF review markup. Pair with the <strong>RFIs</strong> tab for questions linked to drawings or specs.</p>
+								</div>
+								<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create">+ Create submittal</button>
+								</div>
+								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading submittals…</div>
+								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
+								<div class="row g-2 align-items-end usis-tool-toolbar mb-3">
+									<div class="col-md-4 col-lg-3">
+										<label class="form-label small text-muted mb-0" for="usis-filter-submittal-status">Status</label>
+										<select class="form-select form-select-sm" id="usis-filter-submittal-status">
+											<option value="">All statuses</option>
+											<option value="draft">Draft</option>
+											<option value="submitted">Submitted</option>
+											<option value="in_review">In review</option>
+											<option value="approved">Approved</option>
+											<option value="approved_as_noted">Approved as noted</option>
+											<option value="rejected">Rejected</option>
+											<option value="closed">Closed</option>
+										</select>
+									</div>
+									<div class="col-md-6 col-lg-4">
+										<label class="form-label small text-muted mb-0" for="usis-search-submittals">Search</label>
+										<input type="search" class="form-control form-control-sm" id="usis-search-submittals" placeholder="Title, spec section, contractor…" autocomplete="off">
+									</div>
+								</div>
+								<div class="table-responsive" style="max-height: 70vh;">
+									<table class="table table-hover table-sm align-middle mb-0 usis-submittal-log-table">
+										<thead class="table-light sticky-top">
+											<tr>
+												<th>#</th>
+												<th>Title</th>
+												<th>Spec</th>
+												<th>Type</th>
+												<th>Status</th>
+												<th>Responsible</th>
+												<th>Submit by</th>
+												<th>Received</th>
+												<th>Sent</th>
+												<th>Returned</th>
+												<th>BIC</th>
+												<th>Due</th>
+												<th>Rev</th>
+												<th>Response</th>
+												<th class="text-end">File</th>
+												<th class="text-end"></th>
+											</tr>
+										</thead>
+										<tbody id="usis-tbody-submittals"></tbody>
+									</table>
+								</div>
+						</div>
+
+						<!-- Procurement: PO tool | Subcontract tool | RFP tool (inner tabs) -->
+						<div class="tab-pane fade" id="proj-pane-procurement" role="tabpanel" aria-labelledby="proj-tab-procurement" tabindex="0">
+							<div class="mb-3">
+								<h5 class="mb-1">Procurement</h5>
+								<p class="text-muted small mb-0">Purchase orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
+							</div>
+							<ul class="nav nav-pills flex-wrap gap-1 mb-3" role="tablist">
+								<li class="nav-item" role="presentation">
+									<button class="nav-link active" id="usis-proc-subtab-po" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-po" type="button" role="tab" aria-controls="usis-proc-subpane-po" aria-selected="true">Purchase orders</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="usis-proc-subtab-sub" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-sub" type="button" role="tab" aria-controls="usis-proc-subpane-sub" aria-selected="false">Subcontracts</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="usis-proc-subtab-rfp" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-rfp" type="button" role="tab" aria-controls="usis-proc-subpane-rfp" aria-selected="false">RFPs</button>
+								</li>
+							</ul>
+							<div class="tab-content">
+								<div class="tab-pane fade show active" id="usis-proc-subpane-po" role="tabpanel" aria-labelledby="usis-proc-subtab-po" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Committed cost when approved; multiple vendor bills per PO (PO-to-bill).</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-procurement-refresh-po">Refresh</button>
+											<button type="button" class="btn btn-primary btn-sm usis-procurement-new-po" data-bs-toggle="modal" data-bs-target="#usis-modal-commitment-create" data-usis-commitment-kind="purchase_order">+ New PO</button>
+										</div>
+									</div>
+									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-proc-po-loading>Loading…</div>
+									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-proc-po-error role="alert"></div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>Ref</th>
+													<th>Title</th>
+													<th>Vendor</th>
+													<th>Linked RFP</th>
+													<th>Status</th>
+													<th class="text-end">Total</th>
+													<th class="text-end"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-tbody-commitments-po"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="usis-proc-subpane-sub" role="tabpanel" aria-labelledby="usis-proc-subtab-sub" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Subcontracts; retention % on the commitment when applicable.</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-procurement-refresh-sub">Refresh</button>
+											<button type="button" class="btn btn-primary btn-sm usis-procurement-new-sub" data-bs-toggle="modal" data-bs-target="#usis-modal-commitment-create" data-usis-commitment-kind="subcontract">+ New subcontract</button>
+										</div>
+									</div>
+									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-proc-sub-loading>Loading…</div>
+									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-proc-sub-error role="alert"></div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>Ref</th>
+													<th>Title</th>
+													<th>Vendor</th>
+													<th>Linked RFP</th>
+													<th>Status</th>
+													<th class="text-end">Total</th>
+													<th class="text-end"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-tbody-commitments-sub"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="usis-proc-subpane-rfp" role="tabpanel" aria-labelledby="usis-proc-subtab-rfp" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Draft and manage RFP packages scoped to this project.</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-proc-rfp-refresh">Refresh</button>
+											<button type="button" class="btn btn-primary btn-sm" id="usis-proc-rfp-new">New RFP draft</button>
+											<a class="btn btn-outline-primary btn-sm" id="usis-proc-rfp-full-list" href="../usis-rfp-list.html">Full RFP workspace</a>
+										</div>
+									</div>
+									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-proc-rfp-loading>Loading RFPs…</div>
+									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-proc-rfp-error role="alert"></div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>Title</th>
+													<th>Status</th>
+													<th>Due</th>
+													<th>Token</th>
+													<th class="text-end">Actions</th>
+												</tr>
+											</thead>
+											<tbody id="usis-proc-rfp-tbody"></tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Invoicing: G702-style pay applications + Textura-like SOV grid -->
+						<div class="tab-pane fade" id="proj-pane-invoicing" role="tabpanel" aria-labelledby="proj-tab-invoicing" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Invoicing</h5>
+									<p class="text-muted small mb-0">
+										Owner <strong>payment applications</strong> (G702-aligned summary lines) with a <strong>schedule of values</strong> grid (G703-style columns, Textura-like layout). Field meanings follow common AIA practice; USIS does not reproduce AIA copyrighted forms.
+									</p>
+								</div>
+								<div class="d-flex flex-wrap gap-1">
+									<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-inv-refresh-register">Refresh</button>
+									<button type="button" class="btn btn-primary btn-sm" id="usis-inv-new-app">+ New payment application</button>
+								</div>
+							</div>
+							<div class="alert alert-danger py-2 mb-2 d-none" id="usis-inv-register-error" role="alert"></div>
+							<div class="table-responsive mb-3">
+								<table class="table table-hover table-sm align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>App #</th>
+											<th>Period to</th>
+											<th>Status</th>
+											<th class="text-end">Payment due</th>
+											<th class="text-end">Certified</th>
+											<th class="text-end">Lines</th>
+											<th class="text-end"></th>
+										</tr>
+									</thead>
+									<tbody id="usis-inv-tbody-register"></tbody>
+								</table>
+							</div>
+							<div id="usis-inv-editor" class="d-none border rounded p-3 bg-white shadow-sm">
+								<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+									<h6 class="mb-0 fw-semibold" id="usis-inv-editor-title">Payment application</h6>
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-inv-close-editor" aria-label="Close editor">Close</button>
+								</div>
+								<ul class="nav nav-pills flex-wrap gap-1 mb-3" role="tablist">
+									<li class="nav-item" role="presentation">
+										<button class="nav-link active" id="usis-inv-subtab-summary" data-bs-toggle="pill" data-bs-target="#usis-inv-subpane-summary" type="button" role="tab" aria-controls="usis-inv-subpane-summary" aria-selected="true">Summary (G702)</button>
+									</li>
+									<li class="nav-item" role="presentation">
+										<button class="nav-link" id="usis-inv-subtab-sov" data-bs-toggle="pill" data-bs-target="#usis-inv-subpane-sov" type="button" role="tab" aria-controls="usis-inv-subpane-sov" aria-selected="false">Schedule of values</button>
+									</li>
+								</ul>
+								<div class="tab-content">
+									<div class="tab-pane fade show active" id="usis-inv-subpane-summary" role="tabpanel" aria-labelledby="usis-inv-subtab-summary" tabindex="0">
+										<div class="row g-2 mb-2">
+											<div class="col-md-4">
+												<label class="form-label small text-muted mb-0" for="usis-inv-period-to">Period to</label>
+												<input type="date" class="form-control form-control-sm" id="usis-inv-period-to" disabled>
+											</div>
+											<div class="col-md-8">
+												<label class="form-label small text-muted mb-0" for="usis-inv-notes">Notes</label>
+												<input type="text" class="form-control form-control-sm" id="usis-inv-notes" placeholder="Optional" disabled>
+											</div>
+										</div>
+										<div class="table-responsive">
+											<table class="table table-sm table-bordered mb-0">
+												<tbody class="small">
+													<tr><th class="text-muted bg-light" style="width:40%">Line 1 — Original contract sum</th><td><input type="text" class="form-control form-control-sm" id="usis-inv-l1" inputmode="decimal" disabled></td></tr>
+													<tr><th class="text-muted bg-light">Line 2 — Net change by change orders</th><td><input type="text" class="form-control form-control-sm" id="usis-inv-l2" inputmode="decimal" disabled></td></tr>
+													<tr><th class="text-muted bg-light">Line 3 — Contract sum to date</th><td><span id="usis-inv-l3" class="font-monospace">—</span></td></tr>
+													<tr><th class="text-muted bg-light">Line 4 — Total completed &amp; stored to date</th><td><span id="usis-inv-l4" class="font-monospace">—</span></td></tr>
+													<tr><th class="text-muted bg-light">Line 5 — Retainage (total)</th><td><span id="usis-inv-l5" class="font-monospace">—</span></td></tr>
+													<tr><th class="text-muted bg-light">Line 6 — Total earned less retainage</th><td><span id="usis-inv-l6" class="font-monospace">—</span></td></tr>
+													<tr><th class="text-muted bg-light">Line 7 — Less previous certificates</th><td><span id="usis-inv-l7" class="font-monospace">—</span></td></tr>
+													<tr><th class="text-muted bg-light">Line 8 — Current payment due</th><td><span id="usis-inv-l8" class="font-monospace fw-semibold">—</span></td></tr>
+													<tr><th class="text-muted bg-light">Line 9 — Balance to finish (incl. retainage)</th><td><span id="usis-inv-l9" class="font-monospace">—</span></td></tr>
+												</tbody>
+											</table>
+										</div>
+										<p class="text-muted small mt-2 mb-2">Architect certificate</p>
+										<div class="row g-2">
+											<div class="col-md-4">
+												<label class="form-label small text-muted mb-0" for="usis-inv-arch-amt">Amount certified</label>
+												<input type="text" class="form-control form-control-sm" id="usis-inv-arch-amt" inputmode="decimal" disabled>
+											</div>
+											<div class="col-md-4">
+												<label class="form-label small text-muted mb-0" for="usis-inv-arch-at">Certified at (UTC)</label>
+												<input type="datetime-local" class="form-control form-control-sm" id="usis-inv-arch-at" disabled>
+											</div>
+										</div>
+									</div>
+									<div class="tab-pane fade" id="usis-inv-subpane-sov" role="tabpanel" aria-labelledby="usis-inv-subtab-sov" tabindex="0">
+										<div class="d-flex flex-wrap gap-1 mb-2">
+											<button type="button" class="btn btn-sm btn-outline-primary" id="usis-inv-add-line" disabled>+ Add line</button>
+											<button type="button" class="btn btn-sm btn-primary" id="usis-inv-save-draft" disabled>Save draft</button>
+											<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-inv-submit-app" disabled>Mark submitted</button>
+										</div>
+										<div class="table-responsive" style="max-height: min(480px, 55vh); overflow: auto;">
+											<table class="table table-bordered table-sm align-middle mb-0 small" id="usis-inv-sov-table">
+												<thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+													<tr>
+														<th style="min-width:3.5rem">Phase</th>
+														<th style="min-width:12rem">Description</th>
+														<th class="text-end" style="min-width:6rem">Sched. value</th>
+														<th class="text-end" style="min-width:5rem">Net C/O</th>
+														<th class="text-end" style="min-width:5rem">Prev. work</th>
+														<th class="text-end" style="min-width:5rem">This period</th>
+														<th class="text-end" style="min-width:5rem">Materials</th>
+														<th class="text-end" style="min-width:5rem">Retainage</th>
+														<th class="text-end" style="min-width:5rem">% comp</th>
+														<th class="text-end" style="min-width:5rem">Bal. to comp.</th>
+														<th style="width:2rem"></th>
+													</tr>
+												</thead>
+												<tbody id="usis-inv-sov-tbody"></tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="tab-pane fade" id="proj-pane-contract" role="tabpanel" aria-labelledby="proj-tab-contract" tabindex="0">
+							<h5 class="mb-2">Contract admin</h5>
+							<p class="text-muted mb-3">
+								In <strong>Sage Construction Management</strong>, contract administration centers on the <strong>prime contract</strong> (financial terms, dates, retention), <strong>change orders</strong> that adjust that contract, and how <strong>approved commitments</strong> (subcontracts and POs) roll into committed cost and billing — not on submittal packages. Submittals are a separate document workflow; use the <strong>Submittals</strong> tab for this project’s register.
+							</p>
+							<div class="row g-3">
+								<div class="col-lg-6">
+									<div class="card border-0 shadow-sm h-100">
+										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+											<span>Prime contract (summary)</span>
+											<div class="d-flex flex-wrap gap-1 justify-content-end">
+												<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-ca-reload-project" title="Reload project and this summary from the API">Reload summary</button>
+												<button type="button" class="btn btn-outline-secondary btn-sm d-none" id="usis-ca-copy-sage" title="Copy Sage project id to clipboard" disabled>Copy Sage id</button>
+												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ca-jump-job" title="Open Job info tab">Job info</button>
+											</div>
+										</div>
+										<div class="card-body small">
+											<p class="text-muted mb-2">Live fields from <code>GET /api/v1/projects/&lt;id&gt;</code> (same source as Job info).</p>
+											<div class="table-responsive">
+												<table class="table table-sm table-borderless mb-0">
+													<tbody>
+														<tr><th class="text-muted fw-normal" scope="row">Contract value</th><td id="usis-ca-prime-contract-value" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">Contract date</th><td id="usis-ca-prime-contract-date" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">Start date</th><td id="usis-ca-prime-start" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">Substantial completion</th><td id="usis-ca-prime-substantial" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">Closeout</th><td id="usis-ca-prime-closeout" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">Retention % (prime)</th><td id="usis-ca-prime-retention" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">Sage project id</th><td id="usis-ca-prime-sage-id" class="text-body">—</td></tr>
+													</tbody>
+												</table>
+											</div>
+											<hr class="my-3" />
+											<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+												<span class="fw-semibold">Schedule of values (prime)</span>
+												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ca-sov-edit" data-bs-toggle="modal" data-bs-target="#usis-modal-prime-sov" title="Edit master SOV in a dialog">Edit SOV</button>
+											</div>
+											<p class="text-muted small mb-2">
+												Master line items for the owner contract. Use <strong>Edit SOV</strong> to add or change rows; totals should match <strong>Contract value</strong> above.
+											</p>
+											<p class="small mb-0 text-body" id="usis-ca-sov-summary">Loading SOV summary…</p>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="card border-0 shadow-sm h-100">
+										<div class="card-header bg-white py-2 fw-semibold border-bottom">Change orders (prime)</div>
+										<div class="card-body small">
+											<p class="text-muted mb-2">Owner-facing prime CO log (not SCO). USIS has no prime-CO API yet — track and approve prime COs in <strong>Sage CM</strong> until a register is added here.</p>
+											<div class="table-responsive">
+												<table class="table table-hover table-sm align-middle mb-0">
+													<thead class="table-light"><tr><th>#</th><th>Title</th><th>Status</th><th class="text-end">Amount</th></tr></thead>
+													<tbody id="usis-ca-co-tbody"><tr><td colspan="4" class="text-muted">No prime change orders yet (endpoint TBD).</td></tr></tbody>
+												</table>
+											</div>
+											<button type="button" class="btn btn-sm btn-outline-secondary mt-2" disabled title="Planned">+ New prime CO</button>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="card border-0 shadow-sm h-100">
+										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+											<span>Procurement snapshot</span>
+											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-ca-proc-refresh" title="Reload from commitments API">Refresh</button>
+										</div>
+										<div class="card-body small">
+											<p class="text-muted mb-2">Counts from <code>/api/v1/projects/&lt;id&gt;/commitments</code>. Edit lines and bills on the <strong>Procurement</strong> tab.</p>
+											<ul class="list-unstyled mb-2 text-body" id="usis-ca-proc-summary">
+												<li class="text-muted">Loading snapshot…</li>
+											</ul>
+											<button type="button" class="btn btn-sm btn-primary" id="usis-ca-open-procurement">Open Procurement</button>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="card border-0 shadow-sm h-100">
+										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+											<span>Compliance &amp; P2P</span>
+											<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ca-jump-job-compliance" title="Open Job info tab to edit flags">Edit on Job info</button>
+										</div>
+										<div class="card-body small">
+											<p class="text-muted mb-2">Project flags that often drive Sage / contract compliance checks.</p>
+											<div class="table-responsive">
+												<table class="table table-sm table-borderless mb-0">
+													<tbody>
+														<tr><th class="text-muted fw-normal" scope="row">Prevailing wage</th><td id="usis-ca-prevailing" class="text-body">—</td></tr>
+														<tr><th class="text-muted fw-normal" scope="row">DBE required</th><td id="usis-ca-dbe" class="text-body">—</td></tr>
+													</tbody>
+												</table>
+											</div>
+											<p class="text-muted small mb-0 mt-2">Org-level P2P / approval chains live in Sage Intacct configuration. Commitment <code>workflow_rule_active</code> locks edits while a rule is active.</p>
+										</div>
+									</div>
+								</div>
+							</div>
+							<p class="text-muted small mt-3 mb-0">
+								Sage references (external): <a href="https://help.sagecm.intacct.com/Content/Modules/Procurement/POs/POsOverview.htm" target="_blank" rel="noopener">PO overview</a> ·
+								<a href="https://help.sagecm.intacct.com/Content/Modules/Procurement/SCO/SCOOverview.htm" target="_blank" rel="noopener">SCO overview</a>
+							</p>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-costing" role="tabpanel" aria-labelledby="proj-tab-costing" tabindex="0">
+							<h5 class="mb-2">Job costing</h5>
+							<p class="text-muted mb-0">Placeholder — actuals vs budget, cost codes, Corecon / ERP sync.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+
+	</div>
+
+	<!-- Task tab — Progress S-Curve (template stub; chart TBD) -->
+	<div class="modal fade" id="usis-task-s-curve" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header border-4 border-primary">
+					<h5 class="modal-title">Progress S-Curve</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted small mb-0">Placeholder from the W3CRM construction task template. USIS can chart earned value / % complete here when task progress fields exist.</p>
+					<div class="position-relative mt-3" style="min-height: 12rem">
+						<p class="position-absolute top-50 start-50 translate-middle text-danger fw-semibold mb-0">No chart data</p>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Task tab — Download options (template stub) -->
+	<div class="offcanvas offcanvas-end" tabindex="-1" id="usis-task-download" aria-labelledby="usis-task-download-label">
+		<div class="offcanvas-header border-bottom border-primary border-4">
+			<h5 class="offcanvas-title" id="usis-task-download-label">Download</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		</div>
+		<div class="offcanvas-body">
+			<p class="text-muted small">Placeholder from the W3CRM task template (PDF / labour summary, etc.). Export from live task data can reuse the same <code>schedule-items</code> API later.</p>
+			<div class="form-check mt-3">
+				<input class="form-check-input" type="checkbox" id="usis-task-dl-stub1" checked disabled>
+				<label class="form-check-label small text-muted" for="usis-task-dl-stub1">Work summary (not wired)</label>
+			</div>
+		</div>
+	</div>
+
+	<!-- Schedule item (installation window) -->
+	<div class="modal fade" id="usis-modal-schedule-item" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-modal-schedule-item-title">Installation window</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-sched-modal-err" role="alert"></div>
+					<input type="hidden" id="usis-sched-modal-item-id" value="">
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-sched-modal-title">Area / scope <span class="text-danger">*</span></label>
+						<input class="form-control form-control-sm" type="text" id="usis-sched-modal-title" maxlength="300" placeholder="e.g. 1st floor bathrooms">
+					</div>
+					<div class="row g-2 mb-2">
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-sched-modal-start">Start date <span class="text-danger">*</span></label>
+							<input class="form-control form-control-sm" type="date" id="usis-sched-modal-start">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-sched-modal-end">End date <span class="text-danger">*</span></label>
+							<input class="form-control form-control-sm" type="date" id="usis-sched-modal-end">
+						</div>
+					</div>
+					<div class="mb-0">
+						<label class="form-label small mb-0" for="usis-sched-modal-crew">Crew / team (optional)</label>
+						<input class="form-control form-control-sm" type="text" id="usis-sched-modal-crew" maxlength="200" placeholder="e.g. Crew A — reserved for future assignment">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-sched-modal-save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Stub create modals (wire to POST endpoints later) -->
+	<div class="modal fade" id="usis-modal-drawing-create" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Upload drawing (PDF)</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-drawing-upload-err" role="alert"></div>
+					<p class="text-muted small">Saves to the server and appears in the drawing log. The upload must reach <strong>Flask</strong> (port <code>5000</code>), not the static preview port — if you see <strong>405 Method Not Allowed</strong>, check <code>window.USIS_API_BASE</code> in the console (avoid mixing <code>localhost</code> vs <code>127.0.0.1</code> for the dev server URL). PDF.js loads from <code>/api/v1/drawings/&lt;id&gt;/file</code>.</p>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-drawing-file">PDF file <span class="text-danger">*</span></label>
+						<input class="form-control form-control-sm" type="file" id="usis-drawing-file" accept=".pdf,application/pdf">
+					</div>
+					<div class="row g-2">
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-drawing-sheetno">Sheet #</label>
+							<input class="form-control form-control-sm" id="usis-drawing-sheetno" maxlength="50" placeholder="A-101">
+						</div>
+						<div class="col-md-8">
+							<label class="form-label small mb-0" for="usis-drawing-title">Sheet title</label>
+							<input class="form-control form-control-sm" id="usis-drawing-title" maxlength="500" placeholder="Floor plan — Level 1">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-drawing-disc">Discipline</label>
+							<input class="form-control form-control-sm" id="usis-drawing-disc" maxlength="50" placeholder="Architectural">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-drawing-set">Set</label>
+							<input class="form-control form-control-sm" id="usis-drawing-set" maxlength="120" placeholder="IFC">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-drawing-rev">Revision</label>
+							<input class="form-control form-control-sm" id="usis-drawing-rev" maxlength="50" placeholder="0">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-drawing-upload-submit">Upload</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="usis-modal-submittal-create" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Create submittal</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-submittal-create-err" role="alert"></div>
+					<div class="row g-2">
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-submittal-c-title">Title <span class="text-danger">*</span></label>
+							<input class="form-control form-control-sm" id="usis-submittal-c-title" required maxlength="500" placeholder="e.g. Concrete mix design">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-submittal-c-spec">Spec section</label>
+							<input class="form-control form-control-sm" id="usis-submittal-c-spec" maxlength="120" placeholder="03 30 00">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-submittal-c-type">Type</label>
+							<select class="form-select form-select-sm" id="usis-submittal-c-type">
+								<option value="">—</option>
+								<option value="Shop Drawing">Shop Drawing</option>
+								<option value="Product Information">Product Information</option>
+								<option value="Product Manual">Product Manual</option>
+								<option value="Sample">Sample</option>
+								<option value="Document">Document</option>
+								<option value="Other">Other</option>
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-submittal-c-status">Status</label>
+							<select class="form-select form-select-sm" id="usis-submittal-c-status">
+								<option value="draft">Draft</option>
+								<option value="submitted">Submitted</option>
+								<option value="in_review">In review</option>
+							</select>
+						</div>
+						<div class="col-md-8">
+							<label class="form-label small mb-0" for="usis-submittal-c-bic">Ball in court (name or email)</label>
+							<input class="form-control form-control-sm" id="usis-submittal-c-bic" maxlength="200" placeholder="Reviewer email">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-submittal-c-contractor">Responsible contractor</label>
+							<input class="form-control form-control-sm" id="usis-submittal-c-contractor" maxlength="300">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-submittal-c-rev">Revision label</label>
+							<input class="form-control form-control-sm" id="usis-submittal-c-rev" maxlength="50" placeholder="0 / A / B">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-submittal-c-due">Due (review)</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-submittal-c-submitby">Submit by</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-submittal-c-received">Received date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom">Received from</label>
+							<input class="form-control form-control-sm" id="usis-submittal-c-receivedfrom" maxlength="300">
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-create-submit">Create</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="usis-modal-rfi-create" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Create RFI</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted small mb-0">The full Procore-style Create RFI page lives at <a href="construction/rfi-create.html">construction/rfi-create.html</a>. Use the "+ Create RFI" button at the top of this tab.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="usis-modal-commitment-create" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-c-create-modal-title">New commitment</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="mb-2 d-none" id="usis-c-create-kind-wrap">
+						<label class="form-label small mb-0" for="usis-c-create-kind">Kind</label>
+						<select class="form-select form-select-sm" id="usis-c-create-kind">
+							<option value="purchase_order">Purchase order</option>
+							<option value="subcontract">Subcontract</option>
+						</select>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-c-create-vendor">Vendor</label>
+						<select class="form-select form-select-sm" id="usis-c-create-vendor"></select>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-c-create-title">Title</label>
+						<input class="form-control form-control-sm" id="usis-c-create-title" maxlength="500" placeholder="e.g. Drywall package">
+					</div>
+					<div class="mb-0">
+						<label class="form-label small mb-0" for="usis-c-create-ref" id="usis-c-create-ref-label">Reference # (optional)</label>
+						<input class="form-control form-control-sm" id="usis-c-create-ref" maxlength="80" placeholder="PO-1001">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-c-create-submit">Create</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="usis-modal-commitment-edit" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-c-edit-modal-label">Edit commitment</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<input type="hidden" id="usis-c-edit-id" value="">
+					<p class="text-muted small mb-2" id="usis-c-edit-vendorline"></p>
+					<p class="small mb-2 d-none" id="usis-c-edit-rfp-link-wrap"><span class="text-muted">Linked RFP:</span> <a href="#" id="usis-c-edit-rfp-link" target="_blank" rel="noopener"></a></p>
+					<div class="row g-2 mb-3">
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-edit-status">Status</label>
+							<select class="form-select form-select-sm" id="usis-c-edit-status">
+								<option value="draft">draft</option>
+								<option value="pending_submission">pending_submission</option>
+								<option value="pending">pending</option>
+								<option value="not_approved">not_approved</option>
+								<option value="approved">approved</option>
+							</select>
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-edit-wf">Workflow lock</label>
+							<select class="form-select form-select-sm" id="usis-c-edit-wf">
+								<option value="0">Off (editable)</option>
+								<option value="1">On (locked)</option>
+							</select>
+							<p class="text-muted small mb-0 mt-1">Turn off to abandon lock and edit lines.</p>
+						</div>
+						<div class="col-md-3 d-none" id="usis-c-edit-ret-wrap">
+							<label class="form-label small mb-0" for="usis-c-edit-ret">Retention %</label>
+							<input type="number" step="0.01" class="form-control form-control-sm" id="usis-c-edit-ret" placeholder="e.g. 10">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-edit-total">Total amount</label>
+							<input class="form-control form-control-sm" id="usis-c-edit-total" placeholder="optional rollup">
+						</div>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-c-edit-titlefield">Title</label>
+						<input class="form-control form-control-sm" id="usis-c-edit-titlefield" maxlength="500">
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-c-edit-ref">Reference #</label>
+						<input class="form-control form-control-sm" id="usis-c-edit-ref" maxlength="80">
+					</div>
+					<div class="mb-3">
+						<label class="form-label small mb-0" for="usis-c-edit-notes">Notes</label>
+						<textarea class="form-control form-control-sm" id="usis-c-edit-notes" rows="2"></textarea>
+					</div>
+					<div class="d-flex justify-content-between align-items-center mb-2">
+						<h6 class="mb-0">Line items</h6>
+					</div>
+					<div class="row g-2 align-items-end mb-2">
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-c-line-desc">Description</label>
+							<input class="form-control form-control-sm" id="usis-c-line-desc" placeholder="Scope line">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-qty">Qty</label>
+							<input class="form-control form-control-sm" id="usis-c-line-qty" placeholder="1">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-unit">Unit</label>
+							<input class="form-control form-control-sm" id="usis-c-line-unit" value="EA">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-cost">Unit cost</label>
+							<input class="form-control form-control-sm" id="usis-c-line-cost" placeholder="0">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-cc">Cost code</label>
+							<select class="form-select form-select-sm" id="usis-c-line-cc"><option value="">—</option></select>
+						</div>
+					</div>
+					<button type="button" class="btn btn-outline-primary btn-sm mb-3" id="usis-c-line-add">Add line</button>
+					<div class="table-responsive mb-4">
+						<table class="table table-sm table-bordered align-middle">
+							<thead class="table-light"><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Unit cost</th><th>Line total</th><th></th></tr></thead>
+							<tbody id="usis-c-edit-lines-tbody"></tbody>
+						</table>
+					</div>
+					<h6 class="mb-2">Vendor bill allocations</h6>
+					<div class="row g-2 align-items-end mb-2">
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-c-bill-ref">Bill ref</label>
+							<input class="form-control form-control-sm" id="usis-c-bill-ref" placeholder="INV-123">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-bill-amt">Amount</label>
+							<input class="form-control form-control-sm" id="usis-c-bill-amt" placeholder="0.00">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-bill-date">Billed date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-bill-date">
+						</div>
+						<div class="col-md-2 d-flex align-items-end">
+							<button type="button" class="btn btn-outline-primary btn-sm w-100" id="usis-c-bill-add">Add bill</button>
+						</div>
+					</div>
+					<div class="table-responsive mb-3">
+						<table class="table table-sm table-bordered align-middle">
+							<thead class="table-light"><tr><th>Bill ref</th><th class="text-end">Amount</th><th>Billed</th><th></th></tr></thead>
+							<tbody id="usis-c-edit-bills-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer d-flex flex-wrap justify-content-between gap-2">
+					<button type="button" class="btn btn-outline-danger btn-sm" id="usis-c-edit-delete">Delete commitment</button>
+					<div class="d-flex gap-1 ms-auto">
+						<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary btn-sm" id="usis-c-edit-save">Save header</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="usis-modal-prime-sov" tabindex="-1" aria-labelledby="usis-modal-prime-sov-label" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-modal-prime-sov-label">Edit prime contract — schedule of values</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted small mb-2">
+						Rows are saved to <code>PUT /api/v1/projects/&lt;id&gt;/prime-contract/sov</code> (replace all lines). Close without saving to discard modal-only edits.
+					</p>
+					<p class="text-muted small mb-2">
+						<strong>Import CSV:</strong> comma-separated, optional header row (e.g. Phase, Description, Scheduled value). Phase is the first column, scheduled value is the <strong>last</strong> column; any columns in between are combined into the description. Then click <strong>Save SOV</strong> to persist.
+					</p>
+					<input type="file" id="usis-ca-sov-modal-import-file" class="d-none" accept=".csv,text/csv,text/plain" />
+					<div id="usis-ca-sov-modal-alert" class="alert alert-warning py-2 px-3 small d-none" role="status"></div>
+					<div class="table-responsive" style="max-height: min(50vh, 22rem)">
+						<table class="table table-sm table-bordered align-middle mb-0">
+							<thead class="table-light">
+								<tr>
+									<th style="min-width: 5rem">Phase</th>
+									<th>Description</th>
+									<th class="text-end" style="min-width: 7rem">Scheduled value</th>
+									<th style="width: 2rem"></th>
+								</tr>
+							</thead>
+							<tbody id="usis-ca-sov-modal-tbody"></tbody>
+						</table>
+					</div>
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ca-sov-modal-add-row">+ Add row</button>
+						<p class="small mb-0 text-body">
+							<span class="text-muted">SOV total:</span>
+							<strong id="usis-ca-sov-modal-total">—</strong>
+							<span class="text-muted ms-2" id="usis-ca-sov-modal-vs"></span>
+						</p>
+					</div>
+				</div>
+				<div class="modal-footer d-flex flex-wrap justify-content-between gap-2">
+					<div class="d-flex flex-wrap gap-1">
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ca-sov-modal-import" title="Load rows from a CSV file (replaces the grid until you save or reload)">Import SOV</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-ca-sov-modal-reload" title="Reload from server and lose unsaved edits">Reload</button>
+					</div>
+					<div class="d-flex gap-1 ms-auto">
+						<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-primary btn-sm" id="usis-ca-sov-modal-save">Save SOV</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	@@include("../elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
+	<script src="assets/js/usis-specs-book-tab.js"></script>
+	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
+	<script src="assets/js/project-detail-job.js"></script>
+	<script src="assets/js/project-detail-tools.js"></script>
+	<script src="assets/js/project-detail-schedule.js"></script>
+	<script src="assets/js/project-detail-tasks.js"></script>
+	<script src="assets/js/project-detail-procurement.js"></script>
+	<script src="assets/js/project-detail-pay-apps.js"></script>
+	<script src="assets/js/project-takeoff.js"></script>
+	<script>
+	(function () {
+		var p = new URLSearchParams(window.location.search);
+		var id = p.get("id");
+		var el = document.getElementById("usis-proj-detail-idline");
+		if (el) {
+			el.textContent = id
+				? "Project id: " + id + " (PostgreSQL projects.id)"
+				: "No project id in URL — open this page from the Projects table (click the project name).";
+		}
+		var specsFull = document.getElementById("usis-specs-open-fullpage");
+		if (specsFull && id) {
+			specsFull.href = "construction/specs-viewer.html?project_id=" + encodeURIComponent(id);
+		}
+		function mountSpecs() {
+			var root = document.getElementById("usis-proj-specs-root");
+			if (!root || !id || typeof window.USISSpecsBook === "undefined") return;
+			window.USISSpecsBook.mount(root, id);
+		}
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", mountSpecs);
+		} else {
+			mountSpecs();
+		}
+	})();
+	</script>
+
+</body>
+</html>

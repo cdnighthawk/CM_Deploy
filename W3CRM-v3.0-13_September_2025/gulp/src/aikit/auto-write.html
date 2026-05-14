@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "aikit/auto-write.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+		
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Auto Writer",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Auto Write</h6>
+								<p class="text-muted small mb-0">AI kit demo pages. Reference for AI-related settings and prompts.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="../add-role.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="chatbot.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-12">
+						<div class="alert alert-card-warning alert-alt alert-dismissible fade show">
+							This is a demo of AIKit plugin made for you to test the experience of using the plugin. Text & images generated in this demo are dummy. In real life, AIKit will call OpenAI API and generate relevant text and images based on your prompts.
+							<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						</div>
+						<p>AIKit Auto Writer is a tool helps you write drafts quickly, but please review and edit before publishing for best results. This is not a substitute for human editing, but a drafting aid. Happy writing!</p>
+						<ul class="nav nav-tabs-standard pt-4 mb-3 nav-scroll nav-scroll-auto-xl">
+							<li class="nav-item"><a class="nav-link active" aria-current="true" href="aikit/auto-write.html">Auto Writer</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/scheduled.html">Scheduler</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/repurpose.html">Repurpose</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/rss.html">RSS</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/chatbot.html">Chatbot</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/fine-tune-models.html">Fine-tune Models</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/prompt.html">AI Menu Prompts</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/setting.html">Settings</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/import.html">Export/Import Settings</a></li>
+						</ul>
+						<div class="row">
+							<div class="col-xl-4">
+								<div class="card h-auto">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Auto Writer</h4>
+										<div class="clearfix">
+											<select class="selectpicker form-select">
+												<option data-content="<img src='assets/images/svg/england.svg' alt=''> England">England</option>
+												<option data-content="<img src='assets/images/svg/india.svg' alt=''> India">India</option>
+												<option data-content="<img src='assets/images/svg/uae.svg' alt=''> UAE">UAE</option>
+											</select>
+										</div>
+									</div>
+									<div class="card-body">
+										<div class="row">
+											<div class="col-xl-12">
+												<div class="mb-3">
+													<textarea class="form-control" id="exampleFormControlTextarea1" rows="4">Write a brief description of the topic you want to write about...</textarea>
+												</div>
+												<div class="mb-3">
+													<label for="exampleFormControlInput2" class="form-label">Write a brief description of the topic you want to write about...</label>
+													<input type="text" class="form-control" id="exampleFormControlInput2" placeholder="Find My Device">
+												</div>
+												<div class="mb-3">
+													<label class="form-label">Post type</label>
+													<select class="selectpicker form-select">
+														<option selected>Post</option>
+														<option value="1">Product</option>
+													</select>
+												</div>
+												<div class="mb-3">
+													<label class="form-label">Post category</label>
+													<select class="selectpicker form-select">
+														<option selected>Uncategorized</option>
+														<option value="1">Categorized</option>
+													</select>
+												</div>
+												<div class="mb-3">
+													<label class="form-label">Post status</label>
+													<select class="selectpicker form-select">
+														<option selected>Draft</option>
+														<option value="1">Categorized</option>
+													</select>
+												</div>
+												<div class="mb-0">
+													<div class="row align-items-center g-2 mb-3">
+														<div class="col-6">
+															<label for="exampleFormControlInput10" class="form-label mb-0">Articles:</label>
+														</div>
+														<div class="col-6">
+															<input type="number" class="form-control type-number" id="exampleFormControlInput10" placeholder="10">
+														</div>
+													</div>
+													<div class="row align-items-center g-2 mb-3">
+														<div class="col-6">
+															<label for="exampleFormControlInput3" class="form-label mb-0">Sections per article:</label>
+														</div>
+														<div class="col-6">
+															<input type="number" class="form-control type-number" id="exampleFormControlInput3" placeholder="10">
+														</div>
+													</div>
+													<div class="row align-items-center g-2 mb-3">
+														<div class="col-6">
+															<label for="exampleFormControlInput4" class="form-label mb-0">Maximum words per section:</label>
+														</div>
+														<div class="col-6">
+															<input type="number" class="form-control type-number" id="exampleFormControlInput4" placeholder="10">
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="card-footer d-flex flex-wrap gap-2">
+										<div class="clearfix">
+											<input type="checkbox" class="btn-check" id="btncheck1">
+											<label class="btn btn-outline-primary btn-sm" for="btncheck1">Include outline</label>
+										</div>
+										<div class="clearfix">
+											<input type="checkbox" class="btn-check" id="btncheck2">
+											<label class="btn btn-outline-primary btn-sm" for="btncheck2">Include conclusion</label>
+										</div>
+										<div class="clearfix">
+											<input type="checkbox" class="btn-check" id="btncheck3">
+											<label class="btn btn-outline-primary btn-sm" for="btncheck3">Include TL;DR</label>
+										</div>
+										<div class="clearfix">
+											<input type="checkbox" class="btn-check" id="btncheck4">
+											<label class="btn btn-outline-primary btn-sm" for="btncheck4">Include featured article Image3</label>
+										</div>
+										<div class="clearfix">
+											<input type="checkbox" class="btn-check" id="btncheck5">
+											<label class="btn btn-outline-primary btn-sm" for="btncheck5">Include section images</label>
+										</div>
+									</div>
+									<div class="card-footer text-center">
+										<a href="javascript:void(0);" class="btn btn-outline-primary me-2">
+											<i class="fa-solid fa-arrows-rotate"></i> Schedule
+										</a>
+										<a href="javascript:void(0);" class="btn btn-primary">
+											<svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.1498 15.1013H7.30563L6.86828 12.8455H4.15205L3.71469 15.1013H0.0546875L2.67883 0.806641H8.52563L11.1498 15.1013ZM6.43092 10.1523L5.62526 5.04211H5.46413L4.65847 10.1523H6.43092Z" fill="white"/><path d="M16.4903 0.806641H12.5771V15.1013H16.4903V0.806641Z" fill="white"/></svg>
+											Generate
+										</a>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-8">
+								<div class="accordion accordion-card mb-3" id="accordionExampleShadow">
+									<div class="accordion-item">
+										<h2 class="accordion-header">
+											<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOneCard" aria-expanded="true" aria-controls="collapseOneCard">Prompts</button>
+										</h2>
+										<div id="collapseOneCard" class="accordion-collapse collapse show" data-bs-parent="#accordionExampleCard">
+											<div class="accordion-body px-0">
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+													
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+		[[description]]
+		The article will include the following sections:
+		[[section-headlines]]
+
+		Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="card h-auto">
+									<div class="card-body py-1 px-0">
+										<div class="table-responsive table-responsive-md">
+											<table class="table mb-0 table-bottom-borderless">
+												<thead>
+													<tr>
+														<th class="mw-150">Type</th>
+														<th class="mw-250">Title</th>
+														<th class="mw-200">Date created</th>
+													</tr>
+												</thead>
+												<tbody>
+													<tr>
+														<td>Landing Page</td>
+														<td><a href="javascript:void(0);">This is a test title generation</a></td>
+														<td>July 10, 2004</td>
+													</tr>
+													<tr>
+														<td>Landing Page</td>
+														<td><a href="javascript:void(0);">This is a test title generation</a></td>
+														<td>September 26, 2024</td>
+													</tr>
+													<tr>
+														<td>Landing Page</td>
+														<td><a href="javascript:void(0);">This is a test title generation</a></td>
+														<td>January 10, 2025</td>
+													</tr>
+													<tr>
+														<td>Landing Page</td>
+														<td><a href="javascript:void(0);">This is a test title generation</a></td>
+														<td>February 18, 2025</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("../elements/script.html")
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

@@ -1,0 +1,122 @@
+// Social Colors
+$facebook:      #1674ea;
+$twitter:       #000000;
+$youtube:       #f70002;
+$linkedin:      #0a63bc;
+$instagram:     #dc3366;
+$pinterest:     #e50022;
+$google:        #e34133;
+$snapchat:      #f7f400;
+$whatsapp:      #4dc85a;
+$tumblr:        #334459;
+$reddit:        #f74300;
+$spotify:       #1cb351;
+$yahoo:         #3f008e;
+$dribbble:      #e34a85;
+$skype:         #00aae8;
+$vimeo:         #19b1e3;
+$drive:         #209e60;
+$envato:        #9cee69;
+$flickr:        #0060d4;
+$photo:         #F44336;
+$dropbox:       #005ef6;
+$apple:         #9da5a8;
+$behance:       #0059f7;
+
+$social-colors: () !default;
+$social-colors: map-merge((
+  "facebook":   	$facebook,
+  "twitter":    	$twitter,
+  "youtube":    	$youtube,
+  "linkedin":     	$linkedin,
+  "instagram":     	$instagram,
+  "pinterest":     	$pinterest,
+  "google":     	$google,
+  "snapchat":     	$snapchat,
+  "whatsapp":     	$whatsapp,
+  "tumblr":     	$tumblr,
+  "reddit":     	$reddit,
+  "spotify":     	$spotify,
+  "yahoo":     		$yahoo,
+  "dribbble":     	$dribbble,
+  "skype":     		$skype,
+  "vimeo":     		$vimeo,
+  "flickr":     	$flickr,
+  "envato":     	$envato,
+  "drive":     		$drive,
+  "photo":     		$photo,
+  "dropbox":     	$dropbox,
+  "behance":     	$behance,
+  "apple":     		$apple),
+$social-colors);
+
+
+// button variables css
+$bs-btn-padding-y-xs: 4px;
+$bs-btn-padding-x-xs: 8px;
+$bs-btn-size-xs: 11px;
+
+$btn-square-size-xs: 28px;
+$btn-square-size-sm: 32px;
+$btn-square-size: 42px;
+$btn-square-size-lg: 48px;
+
+// avatar variables css
+$avatar-size-xs: 30px;
+$avatar-size-sm: 45px;
+$avatar-size: 60px;
+$avatar-size-lg: 80px;
+$avatar-size-xl: 120px;
+$avatar-size-xxl: 150px;
+
+// avatar variables css
+$nav-pills-sm-y: 4px;
+$nav-pills-sm-x: 12px;
+$nav-pills-square: 44px;
+$nav-pills-square-sm: 30px;
+
+// badge variables css
+$badge-xs-size: 10px;
+$badge-xs-padding-y: 2px;
+$badge-xs-padding-x: 5px;
+ 
+$badge-sm-size: 11px;
+$badge-sm-padding-y: 3px;
+$badge-sm-padding-x: 5px;
+
+$badge-lg-size: 13px;
+$badge-lg-padding-y: 5px;
+$badge-lg-padding-x: 8px;
+
+$badge-xl-size: 14px;
+$badge-xl-padding-y: 7px;
+$badge-xl-padding-x: 10px;
+
+// button variables css
+$btn-square-size: 44px;
+$btn-square-size-sm: 30px;
+$btn-square-size-lg: 48px;
+
+// color for coller pallate
+$color_pallate_1:  $white;
+$color_pallate_2:  #18a594;
+$color_pallate_3:  $primary;
+$color_pallate_4:  #ca3927;
+$color_pallate_5:  #ff7a41;
+$color_pallate_6:  #5f64fb;
+$color_pallate_7:  #8c60ea;
+$color_pallate_8:  #4b93c2;
+$color_pallate_9:  #2648E7;
+$color_pallate_10: #3258a4;
+$color_pallate_11: #0C1A5B;
+$color_pallate_12: #2c2c2c;
+
+$white: #fff;
+$black: #000;
+
+// Dark Version Color
+$d-ctd: #ddd;
+$d-ctl: #828690;
+$d-border: #444444;
+$d-bg: #1E1E1E;
+$dark-card: #242424;

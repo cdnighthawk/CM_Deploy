@@ -1,0 +1,24 @@
+USIS CRM — Operational playbooks and checklist runs (Plan 22)
+===============================================================
+**Purpose:** Company-scoped reusable checklists (“templates”) with ordered steps and default assignees. **Runs** are instantiated copies tied to optional `project_id`, with per-step status and assignee overrides. Keeps crews and office staff aligned on multi-step procedures (new contract, change order, closeout prep, etc.) without duplicating ad-hoc spreadsheets.
+
+**Not the same as:**
+• **Plan 8 — Gantt / task templates:** schedule trade work and durations, not procedural SOPs.
+• **Plan 7 — Safety pretasks / daily checklists:** regulatory and crew safety data model (`daily_pretasks`, JHAs).
+• **Plan 19 — HR onboarding checklist:** per-hire `hr_*` tables and HR dashboard scope.
+• **W3CRM `construction/todo.html`:** static demo; no USIS persistence.
+
+**Data model (implemented):**
+• `checklist_templates` + `checklist_template_steps` (company_id, sequence, title, body, default_assignee_user_id).
+• `checklist_runs` + `checklist_run_steps` (snapshot of template at start; assignee_user_id; status pending/done/skipped; optional project FK).
+• Run status `complete` is set automatically when all steps are done or skipped; `cancelled` via PATCH by owner or admin.
+
+**API:** Flask routes under `/api/v1/playbooks/` — see `backend/app/api/_playbooks.py`. Template management requires admin/superuser (or dev unrestricted mode). Starting runs and viewing requires an authenticated user (header `X-Usis-User-Id` or dev default); read-only roles excluded from starting runs.
+
+**UI:** `usis-playbooks.html` + `assets/js/usis-playbooks.js`; run detail `usis-playbook-run.html` + `usis-playbook-run.js`. Optional `localStorage.usisActorUserId` for API identity when not in Flask dev mode.
+
+**Notifications:** On run start, assignees with emails receive a best-effort SMTP message via `send_plain_notification_email` in `backend/app/api/_notifications.py` (dry-run log when SMTP unset). Reassignment notifies the new assignee only.
+
+**Future (not MVP):** Event triggers (e.g. project awarded to auto-start a template), due dates per step, Celery-backed mail queue for playbooks, granular RBAC `playbook.manage`.
+
+**Navigation:** Plan 20 section A; deznav label “Playbooks”.

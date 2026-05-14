@@ -1,0 +1,181 @@
+✅ Unified Takeoff Engine – Detailed Breakdown
+This is the single most important technical differentiator in your platform.
+It is one unified engine used from the earliest Lead/Bid stage all the way through Estimating, Project execution, and closeout.
+UI shell: W3CRM static pages + Bootstrap tables/cards (see Plan\0). Canvas/measurement UI lives with DrawingViewer (Plan 6).
+1. Core Philosophy
+
+One single table (takeoff_line_items) powers takeoff everywhere.
+No duplication between “Bid Takeoff”, “Estimate Takeoff”, or “Project Takeoff”.
+Every line item can evolve naturally from rough ROM in a bid → detailed estimate → actual production tracking.
+Deep integration with DrawingViewer, Local AI, Budget, Safety, and Scheduling.
+
+2. Database Model (TakeoffLineItem)
+Main Table: takeoff_line_items
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ColumnTypePurposeidUUIDPrimary keyproject_idUUIDMain scoping (nullable during early bid stage)bid_opportunity_idUUIDLink during pre-project phaseestimate_idUUIDLink when used inside a formal estimatejob_cost_code_idUUIDCSI / Sage cost code (critical for financial rollup)descriptionString(500)Line item descriptionquantityNumeric(15,4)Measured or entered quantityunitString(50)SF, LF, EA, CY, etc.unit_costNumeric(15,4)From Cost Library or manualtotalNumeric(15,2)Calculated (quantity × unit_cost)drawing_idUUIDSource drawingmeasurement_dataJSONBRich data from DrawingViewer (points, scale, calibration, etc.)ai_review_idUUIDLink to Local AI review that suggested or validated this linestatusStringDraft, Reviewed, Approved, ProductionversionIntegerFor historynotesTextExclusions, assumptions, AI commentscreated_at / updated_atTimestampsAudit
+Relationships
+
+To Project, BidOpportunity, Estimate, JobCostCode, Drawing, DrawingAnnotation
+Backref from BudgetLineItem for financial sync
+
+3. Key Capabilities & Features
+A. Measurement & Drawing Integration
+
+Direct “Pull Measurement” button in takeoff table → opens DrawingViewer in measurement mode
+Auto-populates quantity when user finishes measuring on canvas
+Supports Linear (LF), Area (SF), Count (EA), Volume
+Calibration + auto-scale detection from architectural drawings
+Persistent saved measurements linked back to the takeoff line
+
+B. AI Intelligence Layer
+
+AI sidebar / offcanvas (estimating_review mode) using Local Llama 4 Scout via Flask APIs + aiReviewBus.js
+Quick actions:
+“Review Attached Drawings for Takeoff”
+“Detect Scope Gaps & California Code Add-ons”
+“Suggest Quantities & Exclusions”
+
+AI can auto-create or update multiple takeoff lines with one click (“Apply to Table”)
+
+C. Costing & Financial Sync
+
+Live pull from Cost Library (historical California rates, prevailing wage tiers)
+AI rate suggestions based on current drawing + trade
+Direct link to BudgetLineItem for committed vs actual tracking
+Markup application at line or bulk level
+
+D. Workflow & Lifecycle
+
+Bid Stage: Rough ROM takeoff for feasibility & pricing
+Estimating Stage: Detailed takeoff with full measurements
+Project Stage: Production tracking (% complete, daily log quantities)
+Version history + comparison between estimate versions
+Bulk actions (apply markup, assign trade, link to drawing)
+
+E. Mobile & Offline
+
+Collapsible cards on mobile with swipe actions
+Full offline editing (IndexedDB)
+Photo alignment to drawing for field verification
+
+4. UI Components (W3CRM / Bootstrap)
+
+usis-takeoff.html — Main workspace (fork from project.html or task-summary.html for dense tables).
+usis-takeoff-table — Bootstrap table.table-hover with sticky thead; optional Tabulator.js or DataTables if you need spreadsheet behaviors without React.
+elements/usis-takeoff-row.html — Optional @@include row template for Gulp file-include.
+MeasurementLinkButton — <button> per row opens usis-drawing-viewer.html?measure=1&line=<id> (Plan 6).
+usis-takeoff-summary.js — Footer totals, trade breakdown (fetch aggregates from API).
+AICostSuggestionsPanel — Right column partial; usis-ai-drawer.js for estimating_review mode.
+TakeoffLineForm — Bootstrap modal for add/edit line; validate with Bootstrap forms API.
+
+5. Integration Points (Critical – Already Designed for Reuse)
+
+DrawingViewer: Canvas capture + measurement tools feed directly into takeoff lines
+Local AI + aiReviewBus.js: Any review completion can suggest new lines or update quantities
+RFP Module: Awarded lines pull vendor pricing into takeoff
+Budget / Financials: Takeoff totals feed BudgetLineItem
+Safety & Daily Logs: Production quantities from daily logs update takeoff status
+Scheduling: Quantities drive task durations
+
+6. Why This Design Is Powerful for Your Business
+
+Finish-trade optimized (room-by-room drywall, paint coverage, flooring layouts, etc.)
+Eliminates the common “estimate vs actual” disconnect
+Local AI gives you a real edge on speed and accuracy for California projects
+One engine = dramatically less maintenance and training
+
+This Unified Takeoff Engine is the heart of your platform and the reason you can move so fast from bid to execution.

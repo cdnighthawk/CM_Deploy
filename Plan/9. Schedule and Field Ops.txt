@@ -1,0 +1,110 @@
+Scheduling & Field Ops – Detailed Breakdown
+This module turns architectural plans and takeoffs into daily crew execution for your finish-work trades (drywall, painting, flooring, ceilings, trim). It is heavily integrated with DrawingViewer, Local AI, RFP (awarded subs), Unified Takeoff Engine, Safety, and Financials. Field crews get a simple mobile-first experience with offline support; office teams get real-time visibility and AI-driven adjustments.
+Relationship to Plan 8: Plan 9 emphasizes scheduling calendars, sequencing, and calendar-driven field coordination. Plan 8 remains the canonical home for shared field artifacts (daily logs, punch lists, production capture). Do not duplicate two conflicting UIs — reuse usis-schedule.html / usis-field.html described in Plan 8; extend with calendar-centric views from app-calender.html (Plan\0).
+1. Core Purpose
+
+Convert takeoffs into scheduled, assignable tasks.
+Capture accurate field production and safety data daily.
+Use Local AI to suggest adjustments and reduce coordination errors.
+Feed production data back into Budget, Financials, and Estimating for accurate forecasting.
+
+2. File / Folder Structure (W3CRM — shared with Plan 8)
+
+Reuse: usis-schedule.html, usis-field.html, elements/usis-daily-log-form.html, elements/usis-punchlist-panel.html, assets/js/usis-schedule.js, usis-field-ops.js, usis-daily-log.js, usis-ai-task-suggestions.js.
+Add for Plan 9 emphasis: usis-calendar.html (fork app-calender.html) or an extra “Calendar” tab inside usis-schedule.html to avoid duplicate navigation entries.
+
+Backend
+
+models/project_management.py (Tasks, DailyLog, etc.)
+Flask blueprint /api/schedule and /api/field
+
+3. Overall Layout (W3CRM + Bootstrap)
+
+Same shell patterns as Plan 8: header controls, trade/phase left rail, main tabbed workspace.
+Default tab for Plan 9 work sessions may be “Calendar” or “Gantt” depending on persona; Field Today tab still uses usis-field.html partials.
+Right column: compact drawing + AI offcanvas; mobile quick entry via Bootstrap offcanvas.
+
+4. Key Sections & Features
+A. Schedule Header & Overview
+
+Overall timeline progress bar with % complete
+Critical Path highlights (red if AI-flagged delays)
+Key milestones with AI-adjusted dates
+Trade breakdown chips showing planned vs actual production
+“Generate AI-Adjusted Schedule” button (analyzes all saved drawing_annotations)
+
+B. Interactive Gantt & Task Management
+
+Tasks grouped by trade and phase
+Columns: Task Name (e.g., “Level 3 Drywall Hanging”), Duration, Start/End dates, Assigned Crew/Sub (from RFP), % Complete, Dependencies, AI Risk Badge
+Drag-and-drop rescheduling and resizing
+Click task → loads related drawing in right sidebar + opens AI panel
+
+C. AI-Powered Task Intelligence (Right Sidebar)
+
+AI offcanvas via usis-ai-drawer.js in field_review / scheduling_review mode (Local Llama 4 Scout default)
+Quick buttons:
+“Review This Task’s Drawing with Local AI”
+“Suggest Sequence Adjustments”
+“Add Coordination Days for Flagged Issues”
+
+AI automatically proposes extra days for substrate repairs, fire caulking, MEP coordination, etc.
+One-click “Apply Suggestion” → updates Gantt + audit log
+
+D. Field Operations Tools (Mobile-First)
+
+Daily Logs:
+Crew size, hours worked, production quantities per trade
+Weather / delays / notes
+Photo upload → auto-triggers Local AI review (safety/quality/compliance)
+GPS timestamp + signature capture
+
+Punch List:
+Create items with photo + location pin on DrawingViewer
+AI-assisted severity & category
+Assign to crew or subcontractor (links to RFP vendors)
+Status workflow: Open → In Progress → Resolved (with before/after photos)
+
+Timesheets & Production Tracking:
+Offline-capable entry
+Real-time sync to Financials for labor cost tracking
+Production units feed back into Estimating for benchmarking
+
+
+E. Task Templates Library
+
+Pre-built finish-trade templates
+“AI Generate from Drawings” button that scans saved AI reviews and builds logical sequence + durations
+
+5. Data Layer (SQLAlchemy)
+
+Task / Schedule models
+Strong relationships to Project, TakeoffLineItem, RFPResponse, Drawing, DrawingAnnotation, DailyLog
+DailyLog, PunchListItem, FieldPhoto
+TaskDependency
+
+6. Critical Integrations (Preserve 100%)
+
+DrawingViewer: Task click loads exact sheet + annotations
+Unified Takeoff Engine: Quantities → task durations and crew sizing
+Local AI + aiReviewBus.js: Reviews update risk badges and suggest new tasks
+RFP Module: Awarded subs auto-create tasks with pricing
+Safety Management: Daily safety checklist embedded in Daily Logs
+Financials: % complete updates billing and variance
+Documents Hub: All logs, photos, punch lists stored centrally
+
+7. Mobile-First & Offline Behavior
+
+Bottom nav emphasizes Field view
+Full offline support via IndexedDB: create/edit tasks, logs, photos, punch lists
+Local AI review queue (process when back online)
+Large touch targets, simplified Gantt (list + calendar fallback on mobile)
+
+8. Government & Compliance Features
+
+Prevailing wage tracking in daily logs
+Certified payroll export ready
+Full audit trail for inspections
+
+
+This module turns your Local AI reviews into actionable daily execution, dramatically reducing coordination errors and delays on finish-work scopes while feeding accurate production data back into Financials and Estimating for better forecasting.

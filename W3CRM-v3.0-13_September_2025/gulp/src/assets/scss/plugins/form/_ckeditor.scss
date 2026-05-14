@@ -1,0 +1,82 @@
+.ck-editor{
+	--ck-border-radius: var(--bs-border-radius);
+	--ck-color-base-border: var(--bs-border-color);    
+	--ck-color-toolbar-border: var(--bs-border-color);
+	--ck-spacing-unit: 8px;
+	--ck-font-face: var(--bs-body-font-family);
+    --ck-color-shadow-inner: rgba(0, 0, 0, 0);
+    --ck-color-base-active: var(--bs-primary);
+    --ck-color-base-active-focus: var(--bs-primary);
+	--ck-inner-shadow: none;
+	--ck-color-focus-border: var(--bs-border-color);
+	--ck-color-button-default-active-background: var(--bs-light);
+    --ck-focus-ring: 1px solid var(--bs-border-color);
+	--ck-color-button-on-background: rgba(var(--bs-primary-rgb), 0.1);
+	--ck-color-button-on-color: var(--bs-primary);
+    --ck-focus-outer-shadow-geometry: none;
+	--ck-color-list-button-on-background: var(--bs-primary);
+	--ck-color-list-button-on-background-focus: var(--bs-primary);
+	--ck-color-button-default-hover-background: #fff;
+	--ck-color-base-background: var(--bs-body-bg);
+	--ck-spacing-extra-tiny: 4px;
+}
+[data-bs-theme="dark"]{
+	.ck-editor{
+		--ck-color-base-background: var(--bs-body-bg);
+	}
+}
+.ck-editor__main .ck-content.ck-editor__editable{
+	min-height: 200px;
+}
+.ck.ck-editor {
+    z-index: 1;
+}
+.ck-dropdown .ck-button.ck-dropdown__button.ck-off:active:focus,
+.ck-dropdown .ck-button.ck-dropdown__button.ck-on:active:focus {
+    box-shadow: none !important;
+}
+.ck-editor .ck-toolbar.ck-toolbar_grouping{
+	background-color: var(--bs-light);
+}
+.ck.ck-editor{
+	.ck.ck-editor__main>.ck-editor__editable{
+		background: var(--bs-body-bg);
+	}
+	.ck-reset_all :not(.ck-reset_all-excluded *),
+	.ck.ck-reset_all{
+		color: var(--bs-heading-color);
+	}
+	.ck.ck-list {
+		background: var(--bs-body-bg);
+	}
+	.ck.ck-dropdown__panel {
+		background: var(--bs-body-bg);
+		border-color: var(--bs-border-color);
+	}
+	.ck.ck-list__item .ck-button:hover:not(.ck-disabled) {
+		background: var(--bs-primary);
+		color: var(--bs-heading-color);
+	}
+	.ck.ck-button:active,
+	.ck.ck-button:focus,
+	a.ck.ck-button:active,
+	a.ck.ck-button:focus {
+		box-shadow: none;
+	}
+	.ck.ck-button:not(.ck-disabled):hover,
+	a.ck.ck-button:not(.ck-disabled):hover {
+		background: var(--bs-primary);
+	    --bs-heading-color: #fff;
+	}
+	.ck.ck-list__item .ck-button.ck-on{
+		--bs-heading-color: #fff;
+	}
+	.ck.ck-input {
+		background: var(--bs-body-bg);
+		border-color: var(--bs-border-color);
+		box-shadow: none;
+	}
+	.ck.ck-labeled-field-view>.ck.ck-labeled-field-view__input-wrapper>.ck.ck-label {
+		background: var(--bs-body-bg);
+	}
+}

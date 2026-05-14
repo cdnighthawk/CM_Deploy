@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "profile/overview.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	<link href="assets/vendor/lightgallery/css/lightgallery.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper" class="show">
+       
+		@@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Overview",
+				})
+				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Overview</h6>
+								<p class="text-muted small mb-0">User profile and social-style profile template.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="followers.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="projects-details.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="card border-top-0 border-start-0 border-end-0 rounded-0 h-auto mb-0 px-md-2 pt-md-2">
+				<div class="card-body d-flex py-md-4">
+					<div class="clearfix">
+						<div class="d-inline-block position-relative me-sm-4 me-3 mb-3 mb-lg-0">
+							<img src="assets/images/avatar/large/avatar5.webp" class="avatar avatar-xxl" alt="">
+							<span class="fa fa-circle border border-3 border-white text-success position-absolute bottom-0 end-0 rounded-circle"></span>
+						</div>
+					</div>
+					<div class="clearfix d-xl-flex flex-grow-1">
+						<div class="clearfix pe-md-5">
+							<h3 class="fw-semibold mb-1">Amelia Rose<img src="assets/images/blue-tick.png" alt="Blue Tick"></h3>
+							<ul class="d-flex flex-wrap align-items-center">
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-user me-1"></i>Web Designer</li>
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-map-marker me-1"></i>420 City Path, AU 123-456</li>
+								<li class="me-3 d-inline-flex align-items-center"><i class="las la-envelope me-1"></i>info@gmail.com</li>
+							</ul>
+							<div class="d-md-flex d-none flex-wrap">
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 1V23" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">$1,250</h3>
+										<span class="small">Total Earnings</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">125</h3>
+										<span class="small">New Referrals</span>
+									</div>
+								</div>
+								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
+									<div class="avatar avatar-sm avatar-primary">
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="clearfix ms-2">
+										<h3 class="mb-0 fw-semibold lh-1">25</h3>
+										<span class="small">New Deals</span>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clearfix mt-3 mt-xl-0 ms-auto d-flex flex-column col-xl-3">
+							<div class="clearfix mb-3 text-xl-end">
+								<a href="javascript:void(0);" class="btn btn-light me-1 me-sm-2 mb-1 btn-active">
+									<span class="active-before">Follow</span>
+									<span class="active-after">Following</span>
+								</a>
+								<a href="javascript:void(0);" class="btn btn-primary mb-1">Offer a Deal</a>
+							</div>
+							<div class="mt-auto d-flex align-items-center">
+								<div class="clearfix me-3">
+									<span class="fw-medium text-black d-block mb-1">Progress</span>
+									<p class="mb-0 d-flex">
+										<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M5.83334 14.1668L14.1667 5.8335" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M5.83334 5.8335H14.1667V14.1668" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+										</svg>
+										<span class="text-success me-1">+3.50%</span>
+									</p>
+								</div>
+								<div id="chartProfileProgress"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-footer py-0 d-flex flex-wrap justify-content-between align-items-center mx-sm-4 px-0">
+					<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl px-3 px-sm-0" id="tabMyProfileBottom" role="tablist">
+						<li class="nav-item" role="presentation">
+							<a href="profile/overview.html" class="nav-link py-3 px-1 border-3 active">Overview</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/campaigns.html" class="nav-link py-3 px-1 border-3">Campaigns</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/documents.html" class="nav-link py-3 px-1 border-3">Documents</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/followers.html" class="nav-link py-3 px-1 border-3">Followers</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a href="profile/activity.html" class="nav-link py-3 px-1 border-3">Activity</a>
+						</li>
+					</ul>
+					<ul class="d-xl-flex d-none py-2">
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-linkedin-in"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-instagram"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-facebook-f"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-telegram"></i>
+							</a>
+						</li>
+						<li class="px-1">
+							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
+								<i class="fa-brands fa-youtube"></i>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			
+			<div class="container-fluid">	
+				<div class="tab-content" id="tabContentMyProfileBottom">
+					<div class="row">
+						<div class="col-xl-6">
+							<div class="row">
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center">
+													<div class="d-inline-block">
+														<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="mb-0 fw-semibold">Amelia Rose</h6>
+														<span class="d-block small">Yestarday at 4:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center">
+													<div class="d-inline-block">
+														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="mb-0 fw-semibold">Elijah James</h6>
+														<span class="d-block small">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="gallery-grid rows-3" id="lightgallery">
+												<a href="assets/images/post/img-full1.jpg" data-exthumbimage="assets/images/post/img-full1.jpg" data-src="assets/images/post/img-full1.jpg" class="grid-item colspan-3 rowspan-2">
+													<img src="assets/images/post/img-full1.jpg" alt="">
+												</a>
+												<a href="assets/images/post/img2.jpg" data-exthumbimage="assets/images/post/img2.jpg" data-src="assets/images/post/img2.jpg" class="grid-item">
+													<img src="assets/images/post/img2.jpg" alt="">
+												</a>
+												<a href="assets/images/post/img1.jpg" data-exthumbimage="assets/images/post/img1.jpg" data-src="assets/images/post/img1.jpg" class="grid-item">
+													<img src="assets/images/post/img1.jpg" alt="">
+												</a>
+												<a href="assets/images/post/img3.jpg" data-exthumbimage="assets/images/post/img3.jpg" data-src="assets/images/post/img3.jpg" class="grid-item gallery-more" data-more="+06">
+													<img src="assets/images/post/img3.jpg" alt="">
+												</a>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar3.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Charlotte Mae</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="gallery-grid rows-3" id="lightgallery2">
+												<a href="assets/images/post/img-full2.jpg" data-exthumbimage="assets/images/post/img-full2.jpg" data-src="assets/images/post/img-full2.jpg" class="grid-item colspan-2 rowspan-3">
+													<img src="assets/images/post/img-full2.jpg" alt="">
+												</a>
+												<a href="assets/images/post/img4.jpg" data-exthumbimage="assets/images/post/img4.jpg" data-src="assets/images/post/img4.jpg" class="grid-item">
+													<img src="assets/images/post/img4.jpg" alt="">
+												</a>
+												<a href="assets/images/post/img5.jpg" data-exthumbimage="assets/images/post/img5.jpg" data-src="assets/images/post/img5.jpg" class="grid-item">
+													<img src="assets/images/post/img5.jpg" alt="">
+												</a>
+												<a href="assets/images/post/img6.jpg" data-exthumbimage="assets/images/post/img6.jpg" data-src="assets/images/post/img6.jpg" class="grid-item gallery-more" data-more="+3">
+													<img src="assets/images/post/img6.jpg" alt="">
+												</a>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-2">
+												<div class="d-flex justify-content-between mb-3">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Liam Risher</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="post-quote bg-purple p-4 text-center mb-2 rounded">
+												<h3 class="text-white">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</h3>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Isabella Claire</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="post-quote post-quote-img p-4 text-center mb-2 rounded" style="background-image: url('assets/images/post/img8.jpg');">
+												<div class="quote-inner">
+													<h3 class="text-white">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</h3>
+												</div>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar6.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Ethan Cole</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="clearfix mb-2">
+												<img src="assets/images/post/img7.jpg" alt="" class="rounded w-100">
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar7.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Sophia Jane</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="clearfix mb-2">
+												<iframe class="rounded soundcloud-iframe" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/539018871&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar8.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Henry Mason</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="clearfix mb-2 text-center">
+												<img src="assets/images/post/img6.jpg" alt="" class="rounded">
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-3">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar9.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Evelyn Hope</h6>
+														<span class="fs-13">Yestarday at 5:30 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="clearfix mb-2">
+												<iframe class="rounded video-iframe" src="https://www.youtube.com/embed/pyRjzvdOSHk" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="clearfix mb-3">
+												<div class="d-flex justify-content-between mb-3">
+													<div class="d-flex align-items-center py-2">
+														<div class="d-inline-block position-relative">
+															<img src="assets/images/avatar/small/avatar10.webp" class="avatar avatar-sm me-2" alt="">
+														</div>
+														<div class="clearfix ms-2">
+															<h6 class="fs-14 mb-0 fw-semibold">Lucas Bennett</h6>
+															<span class="fs-13">Yestarday at 5:06 PM</span>
+														</div>
+													</div>
+													<div class="clearfix ms-auto">
+														<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+													</div>
+												</div>
+												<div class="clearfix">
+													<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+												</div>
+												<div class="clearfix pt-1">
+													<a href="javascript:void(0);" class="me-3 text-body">
+														<i class="fa-regular fa-image"></i> 25
+													</a>
+													<a href="javascript:void(0);" class="text-body">
+														<i class="fa-regular fa-heart"></i> 75
+													</a>
+												</div>
+											</div>
+											<div class="d-flex py-2 position-relative">
+												<div class="d-inline-block position-relative">
+													<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-1 fw-semibold">Isabella Claire<span class="fs-12 text-muted ms-1 fw-normal">2 Day ago</span></h6>
+													<p class="small mb-0">There are many variations of passages of Lorem Ipsum available.</p>
+												</div>
+												<a href="javascript:void(0);" class="position-absolute end-0 top-0">Reply</a>
+											</div>
+											<div class="d-flex py-2 position-relative">
+												<div class="d-inline-block position-relative">
+													<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm me-2" alt="">
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-1 fw-semibold">Liam Risher<span class="fs-12 text-muted ms-1 fw-normal">3 Days ago</span></h6>
+													<p class="small mb-0">There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form.</p>
+												</div>
+												<a href="javascript:void(0);" class="position-absolute end-0 top-0">Reply</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<div class="card">
+										<div class="card-body pb-2">
+											<div class="d-flex justify-content-between mb-2">
+												<div class="d-flex align-items-center py-2">
+													<div class="d-inline-block position-relative">
+														<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm me-2" alt="">
+													</div>
+													<div class="clearfix ms-2">
+														<h6 class="fs-14 mb-0 fw-semibold">Amelia Rose</h6>
+														<span class="fs-13">Yestarday at 5:42 PM</span>
+													</div>
+												</div>
+												<div class="clearfix ms-auto">
+													<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+												</div>
+											</div>
+											<div class="clearfix">
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.</p>
+											</div>
+											<div class="clearfix pt-1">
+												<a href="javascript:void(0);" class="me-3 text-body">
+													<i class="fa-regular fa-image"></i> 25
+												</a>
+												<a href="javascript:void(0);" class="text-body">
+													<i class="fa-regular fa-heart"></i> 75
+												</a>
+											</div>
+											<div class="position-relative border-top mt-3">
+												<input type="text" class="form-control border-0 pe-5 shadow-none px-0" placeholder="Reply..">
+												<div class="d-flex position-absolute end-0 top-50 translate-middle-y">
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<line x1="22" y1="2" x2="11" y2="13"></line>
+														<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14.2934 7.36665L8.1667 13.4933C7.41613 14.2439 6.39815 14.6655 5.3367 14.6655C4.27524 14.6655 3.25726 14.2439 2.5067 13.4933C1.75613 12.7428 1.33447 11.7248 1.33447 10.6633C1.33447 9.60186 1.75613 8.58388 2.5067 7.83332L8.63336 1.70665C9.13374 1.20628 9.81239 0.925171 10.52 0.925171C11.2277 0.925171 11.9063 1.20628 12.4067 1.70665C12.9071 2.20703 13.1882 2.88568 13.1882 3.59332C13.1882 4.30096 12.9071 4.97961 12.4067 5.47999L6.27336 11.6067C6.02318 11.8568 5.68385 11.9974 5.33003 11.9974C4.97621 11.9974 4.63688 11.8568 4.3867 11.6067C4.13651 11.3565 3.99596 11.0171 3.99596 10.6633C3.99596 10.3095 4.13651 9.97017 4.3867 9.71999L10.0467 4.06665" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+													<a href="javascript:void(0);" class="btn btn-square btn-sm btn-link">
+														<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M14 6.66669C14 11.3334 8 15.3334 8 15.3334C8 15.3334 2 11.3334 2 6.66669C2 5.07539 2.63214 3.54927 3.75736 2.42405C4.88258 1.29883 6.4087 0.666687 8 0.666687C9.5913 0.666687 11.1174 1.29883 12.2426 2.42405C13.3679 3.54927 14 5.07539 14 6.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8 8.66669C9.10457 8.66669 10 7.77126 10 6.66669C10 5.56212 9.10457 4.66669 8 4.66669C6.89543 4.66669 6 5.56212 6 6.66669C6 7.77126 6.89543 8.66669 8 8.66669Z" stroke="#888888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+													</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-lg-12">
+									<button type="button" class="btn btn-primary w-100 mb-4">More Feeds</button>
+								</div>
+								
+							</div>
+						</div>
+						<div class="col-xl-6">
+							<div class="row sticky-top z-0">
+								<div class="col-xxl-6 col-xl-12 col-md-6">
+									<div class="card">
+										<div class="card-header pb-0 border-0">
+											<div class="clearfix">
+												<h4 class="card-title mb-0">Projects Contributions</h4>
+												<small class="d-block">84 New Tasks & 29 Guides</small>
+											</div>
+											<div class="clearfix ms-auto">
+												<button type="button" class="btn btn-square btn-light btn-sm"><i class="bi bi-grid"></i></button>
+											</div>
+										</div>
+										<div class="card-body">
+											<div class="d-flex align-items-center p-2 bg-action-light rounded my-1">
+												<div class="avatar avatar-sm bg-white p-2">
+													<img src="assets/images/logo/google.png" alt="">
+												</div>
+												<div class="clearfix ms-3">
+													<h6 class="mb-0 fw-semibold">Piper Aerostar</h6>
+													<span class="small d-block">piper-aircraft-class.jsp</span>
+												</div>
+												<div class="clearfix ms-auto">
+													<span class="badge badge-sm bg-primary">0</span>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded my-1">
+												<div class="avatar avatar-sm bg-white p-2">
+													<img src="assets/images/logo/figma.png" alt="">
+												</div>
+												<div class="clearfix ms-3">
+													<h6 class="mb-0 fw-semibold">Cirrus SR22</h6>
+													<span class="small d-block">cirrus-aircraft.jsp</span>
+												</div>
+												<div class="clearfix ms-auto">
+													<span class="badge badge-sm bg-primary">3</span>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded my-1">
+												<div class="avatar avatar-sm bg-white p-2">
+													<img src="assets/images/logo/slack.png" alt="">
+												</div>
+												<div class="clearfix ms-3">
+													<h6 class="mb-0 fw-semibold">Beachcraft Baron</h6>
+													<span class="small d-block">baron-class.pyt</span>
+												</div>
+												<div class="clearfix ms-auto">
+													<span class="badge badge-sm bg-primary">0</span>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded my-1">
+												<div class="avatar avatar-sm bg-white p-2">
+													<img src="assets/images/logo/html.png" alt="">
+												</div>
+												<div class="clearfix ms-3">
+													<h6 class="mb-0 fw-semibold">Cessna SF150</h6>
+													<span class="small d-block">cessna-aircraft-class.jsp</span>
+												</div>
+												<div class="clearfix ms-auto">
+													<span class="badge badge-sm bg-primary">0</span>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer border-0 pt-0">
+											<div class="alert alert-primary outline-dashed border-2 py-3 px-3 mb-0 text-dark">
+												<strong class="text-primary">Welcome fresh .NET experts</strong> to develop top-tier modular JSP class scripts for seamless B2B solutions!
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-xxl-6 col-xl-12 col-md-6">
+									<div class="card">
+										<div class="card-header">
+											<h4 class="card-title mb-0">Activity</h4>
+										</div>
+										<div class="card-body dz-scroll height380">
+											<div class="widget-timeline1">
+												<ul class="timeline">
+													<li>
+														<span class="timeline-status">07:45</span>
+														<div class="timeline-badge border-dark"></div>
+														<div class="timeline-panel">
+															<span>Started the day with a fresh perspective—embracing challenges like a pro.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">11:25</span>
+														<div class="timeline-badge border-success"></div>
+														<div class="timeline-panel">
+															<span><span class="text-secondary fs-14 fw-semibold">Video uploaded</span> and shared with the world.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">09:28</span>
+														<div class="timeline-badge border-danger"></div>
+														<div class="timeline-panel">
+															<span class="text-secondary fs-14 fw-semibold">John made a smart move—grabbed a deal worth <span class="text-primary">$350</span></span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">15:40</span>
+														<div class="timeline-badge border-info"></div>
+														<div class="timeline-panel">
+															<span>Mashable, a news website and blog, goes live.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">23:12</span>
+														<div class="timeline-badge border-warning"></div>
+														<div class="timeline-panel">
+															<span><span class="text-secondary fs-14 fw-semibold">Breaking news:</span> Mashable emerges as a go-to hub for all things trending.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">02:40</span>
+														<div class="timeline-badge border-primary"></div>
+														<div class="timeline-panel">
+															<span>Revisited an old memory—shared this on my FB wall a while ago.</span>
+														</div>
+													</li>
+													<li>
+														<span class="timeline-status">10:30</span>
+														<div class="timeline-badge border-success"></div>
+														<div class="timeline-panel">
+															<span>Another video making rounds—content is king!</span>
+														</div>
+													</li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-xxl-12 col-xl-12 col-md-12">
+									<div class="card">
+										<div class="card-header pb-0 border-0">
+											<div class="clearfix">
+												<h4 class="card-title mb-0">Top Selling Categories</h4>
+												<small class="d-block">7 Category</small>
+											</div>
+										</div>
+										<div class="card-body pt-1">
+											<div class="row align-items-center">
+												<div class="col-sm-6 mb-2">
+													<div id="chartTopSelling"></div>
+												</div>
+												<div class="col-sm-6 mb-2">
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-primary me-1"></i> Laptop
+														</div>
+														<span>20</span>
+													</div>
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-success me-1"></i> Phone
+														</div>
+														<span>05</span>
+													</div>
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-danger me-1"></i> Keyboard
+														</div>
+														<span>05</span>
+													</div>
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-warning me-1"></i> Mouse
+														</div>
+														<span>20</span>
+													</div>
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-purple me-1"></i> Monitors
+														</div>
+														<span>21</span>
+													</div>
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-dark me-1"></i> Watch
+														</div>
+														<span>04</span>
+													</div>
+													<div class="d-flex justify-content-between mb-3">
+														<div class="text-black">
+															<i class="fa-solid fa-square text-secondary me-1"></i> Earbuds
+														</div>
+														<span>25</span>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="card-footer border-0 pt-0">
+											<div class="alert alert-outline-primary outline-dashed p-3 d-sm-flex align-items-center justify-content-between mb-0">
+												<p class="mb-0">Comprehensive Category Analysis & Revenue Trends for This Quarter!</p>
+												<div class="clearfix w-100 ms-auto text-sm-end mt-2 mt-sm-0">
+													<a href="javascript:void(0);" class="btn btn-primary">Download Report</a>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-xxl-7 col-xl-12 col-md-6">
+									<div class="card">
+										<div class="card-header">
+											<h4 class="card-title">My To Do Items</h4>
+											<div class="clearfix">
+												<a href="javascript:void(0);" class="text-primary me-2">View All</a>
+												<a href="javascript:void(0);" class="text-black">+ Add To Do</a>
+											</div>
+										</div>
+										<div class="card-body p-0">
+											<div class="list-group list-group-flush dz-draggable dropzoneContainer dz-scroll height380">
+												<div class="list-group-item draggable p-3">
+													<span class="text-warning d-block mb-2">
+														<svg class="me-1" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path fill-rule="evenodd" clip-rule="evenodd" d="M3.61051 15.3276H14.3978C15.5843 15.3276 16.329 14.0451 15.7395 13.0146L10.35 3.59085C9.75676 2.5536 8.26126 2.55285 7.66726 3.5901L2.26876 13.0139C1.67926 14.0444 2.42326 15.3276 3.61051 15.3276Z" stroke="var(--bs-warning)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M9.00189 10.0611V7.7361" stroke="var(--bs-warning)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+															<path d="M8.99625 12.375H9.00375" stroke="var(--bs-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+														</svg>
+														Latest to do's
+													</span>
+													<div class="d-flex justify-content-between flex-wrap">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="customCheckBox1">
+																	<label class="form-check-label text-black" for="customCheckBox1">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="clearfix">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can "></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm ms-1">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<span class="text-success d-block mb-2">
+														<svg class="me-1" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+															<path d="M15 4.5L6.75 12.75L3 9" stroke="var(--bs-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+														</svg>
+														Latest finished to do's
+													</span>
+													<div class="d-flex justify-content-between flex-wrap">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="customCheckBox2">
+																	<label class="form-check-label text-black" for="customCheckBox2">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="clearfix">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can "></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm ms-1">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between flex-wrap">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="customCheckBox3">
+																	<label class="form-check-label text-black" for="customCheckBox3">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="clearfix">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can "></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm ms-1">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between flex-wrap">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="customCheckBox4">
+																	<label class="form-check-label text-black" for="customCheckBox4">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="clearfix">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can "></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm ms-1">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between flex-wrap">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="customCheckBox5">
+																	<label class="form-check-label text-black" for="customCheckBox5">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="clearfix">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can "></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm ms-1">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="list-group-item draggable p-3">
+													<div class="d-flex justify-content-between flex-wrap">
+														<div class="d-flex gap-3">
+															<div class="draggable-handle">
+																<svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+																	<rect width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="4" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="3" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="6" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="9" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="12" width="1" height="1" fill="var(--bs-body-color)"/>
+																	<rect x="8" y="15" width="1" height="1" fill="var(--bs-body-color)"/>
+																</svg>
+															</div>
+															<div class="clearfix">
+																<div class="form-check">
+																	<input class="form-check-input" type="checkbox" id="customCheckBox6">
+																	<label class="form-check-label text-black" for="customCheckBox6">Compete this projects Monday</label>
+																</div>
+																<span>2023-12-26 07:15:00</span>
+															</div>
+														</div>
+														<div class="clearfix">
+															<div class="btn btn-square btn-danger light btn-sm">
+																<i class="fa-regular fa-trash-can "></i>
+															</div>
+															<div class="btn btn-square btn-primary light btn-sm ms-1">
+																<i class="fa fa-pen "></i>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-xxl-5 col-xl-12 col-md-6">
+									<div class="card">
+										<div class="card-header pb-0 border-0 align-items-center">
+											<div>
+												<h4 class="card-title">Projects Status</h4>
+											</div>
+											<div>
+												<select class="selectpicker form-select form-select-sm">
+													<option value="Today">Today</option>
+													<option value="Week">Week</option>
+													<option value="Month">Month</option>
+												</select>
+											</div>
+										</div>
+										<div class="card-body">
+											<div id="projectChart" class="d-flex justify-content-center"></div>
+											<div class="clearfix mt-4">
+												<div class="d-flex justify-content-between mb-3">
+													<div class="text-black">
+														<i class="fa-solid fa-square text-primary me-1"></i> Completed Projects
+													</div>
+													<span>30</span>
+												</div>
+												<div class="d-flex justify-content-between mb-3">
+													<div class="text-black">
+														<i class="fa-solid fa-square text-success me-1"></i> Progress Projects
+													</div>
+													<span>40</span>
+												</div>
+												<div class="d-flex justify-content-between mb-3">
+													<div class="text-black">
+														<i class="fa-solid fa-square text-danger me-1"></i> Cancelled Projects
+													</div>
+													<span>10</span>
+												</div>
+												<div class="d-flex justify-content-between mb-3">
+													<div class="text-black">
+														<i class="fa-solid fa-square text-warning me-1"></i> Yet to Start
+													</div>
+													<span>20</span>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+							</div>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+			
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+		
+		@@include("../elements/task-modal.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+
+</body>
+</html>

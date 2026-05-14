@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "party.html",
+	})
+
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Transaction",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Party</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="overview.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="project-detail.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3 active">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+             
+			<div class="container-fluid">
+
+				<!-- Start - Filtering -->
+				<div class="col-xl-12">
+					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
+							<div class="input-group message-search-area w-xs-100 width200">
+								<input type="text" class="form-control border-end-0" placeholder="Search Party">
+								<div class="input-group-append">
+									<button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+								</div>
+							</div>
+
+							<!-- Start - Filter Dropdown -->
+							<div class="dropdown">
+								<button type="button" class="btn btn-outline-primary" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+									<i class="fa-solid fa-list-ul"></i>Filter
+								</button>
+								<form class="dropdown-menu p-4 width500">
+									<div class="d-flex align-items-start">
+										<div class="nav nav-underline vertical-border flex-column me-3" id="party-filter" role="tablist" aria-orientation="vertical">
+											<li class="nav-item" role="presentation">
+												<a class="nav-link active" data-bs-target="#payment-type" data-bs-toggle="pill" type="button" role="tab" aria-selected="true">Payment Type</a>
+											</li>
+											<li class="nav-item" role="presentation">
+												<a class="nav-link" data-bs-target="#party-type" data-bs-toggle="pill" type="button" role="tab" aria-selected="false">Party Type</a>
+											</li>
+										</div>
+										<div class="tab-content" id="party-filter">
+											<div class="tab-pane fade show active" id="payment-type" role="tabpanel" aria-labelledby="payment-type" tabindex="0">
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="to-pay">
+													<label class="form-check-label" for="to-pay">To Pay</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="to-receive">
+													<label class="form-check-label" for="to-receive">To Recieve</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="paid">
+													<label class="form-check-label" for="paid">Advance Paid</label>
+												</div>
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="received">
+													<label class="form-check-label" for="received">Advance Received</label>
+												</div>
+											</div>
+											<div class="tab-pane fade" id="party-type" role="tabpanel" aria-labelledby="party-type" tabindex="0">
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="client">
+													<label class="form-check-label" for="client">Client</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="staff">
+													<label class="form-check-label" for="staff">Staff</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="labour">
+													<label class="form-check-label" for="labour">Labour</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="investor">
+													<label class="form-check-label" for="investor">Investor</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="l-contractor">
+													<label class="form-check-label" for="l-contractor">Labour Contractor</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="m-supplier">
+													<label class="form-check-label" for="m-supplier">Material Supplier</label>
+												</div>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" value="" id="e-supplier">
+													<label class="form-check-label" for="e-supplier">Equipment Supplier</label>
+												</div>
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="subcontractor">
+													<label class="form-check-label" for="subcontractor">Subcontractor</label>
+												</div>
+											</div>
+										</div>
+									</div>
+								</form>
+							</div>
+							<!-- End - Filter Dropdown -->
+
+						</div>
+						
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<div class="d-flex gap-2">
+								<div>
+									<select class="form-select selectpicker text-primary">
+										<option selected>Active</option>
+										<option>Inactive</option>
+									</select>
+								</div>
+								<a href="javascript:void(0);" class="btn btn-primary light" data-bs-toggle="modal" data-bs-target="#download">Download <i class="icon feather icon-download"></i></a>
+							</div>
+							<div class="d-flex flex-wrap gap-2">
+								<div class="bg-secondary-subtle p-3 rounded width200 w-xs-100 text-black">
+									<p class="m-0">Advance Paid</p>
+									<span class="fw-semibold">$ 0</span>
+								</div>
+								<div class="bg-success-subtle p-3 rounded width200 w-xs-100 text-black">
+									<p class="m-0">To Pay</p>
+									<span class="fw-semibold">$ 0</span>
+								</div>
+							</div>
+						</div>
+					</div>	
+				</div>
+				<!-- End - Filtering -->
+				
+				<!-- Start - Table -->
+				<div class="col-xl-12">
+					<div class="card mb-0 table-hover text-nowrap overflow-auto">
+						<table class="table mb-0" id="example6">
+							<thead>
+								<tr>
+									<th class="width20">S.No.</th>
+									<th class="width500">Party Name</th>
+									<th class="width500 text-center">Type</th>
+									<th class="width500 text-end">Amount</th>
+									<th class="width70 text-center">Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>1</td>
+									<td>
+										<div class="d-flex align-items-center">
+											<img class="avatar avatar-sm rounded-circle me-2" src="assets/images/avatar/small/avatar1.webp">
+											<div class="d-flex flex-column gap-1">
+												<p class="m-0 text-black fw-medium">John</p>
+												<span class="fs-12">8619207723</span>
+											</div>
+										</div>
+									</td>
+									<td class="text-center"><p class="badge bg-primary m-0">Client</p></td>
+									<td class="text-end">
+										<div class="d-flex flex-column gap-1">
+											<p class="m-0 text-black fw-medium">$ 2,400</p>
+											<span class="text-danger fs-12">To Recieve</span>
+										</div>
+									</td>
+									<td class="text-center">
+										<a class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#party_offcanvas" aria-controls="party_offcanvas">
+											<i class="fa-solid fa-ellipsis-vertical"></i>
+										</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<!-- End - Table -->
+				 
+				<!-- Start - Party Offcanvas -->
+				<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="party_offcanvas" aria-labelledby="party_offcanvas" aria-modal="true" role="dialog">
+					<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+						<div class="d-flex align-items-center gap-2">
+							<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+							<h5 class="offcanvas-title fw-semibold">John</h5>
+						</div>
+						<a href="javascript:void(0);" class="me-2">Download <i class="icon feather icon-download"></i></a>
+					</div>
+
+					<!-- Start - Offcanvas Body -->
+					<div class="offcanvas-body">
+						<div class="py-3 text-center">
+							<h5 class="text-danger fw-bold m-0 fs-22">$ 2,400</h5>
+							<p class="m-0 text-danger">To Receive</p>
+						</div>
+
+						<!-- Start - Offcanvas Ammount Tab -->
+						<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl" id="party" role="tablist">
+							<li class="nav-item" role="presentation">
+								<a href="javascript:void(0);" data-bs-toggle="tab" data-bs-target="#party-received" type="button" role="tab" aria-controls="party-received" class="nav-link py-1 border-3 text-center active">
+									<h6 class="fs-12 fw-semibold mb-1">Party Received</h6>
+									<p class="m-0 fs-13">$ 2,500</p>
+								</a>
+							</li>
+							<li class="nav-item" role="presentation">
+								<a href="javascript:void(0);" data-bs-toggle="tab" data-bs-target="#party-paid" type="button" role="tab" aria-controls="party-paid" class="nav-link py-1 border-3 text-center">
+									<h6 class="fs-12 fw-semibold mb-1">Party Paid</h6>
+									<p class="m-0 fs-13">$ 100</p>
+								</a>
+							</li>
+						</ul>
+						<!-- End - Offcanvas Ammount Tab -->
+
+						<div class="tab-content" id="party">
+
+							<!-- Start - Party Received Tab -->
+							<div class="tab-pane fade show active" id="party-received" role="tabpanel" aria-labelledby="all" tabindex="0">
+								<div class="d-flex justify-content-between align-items-center mt-3 cursor-pointer p-2 bg-primary-subtle rounded" data-bs-toggle="offcanvas" data-bs-target="#payment_out_offcanvas" aria-controls="payment_out_offcanvas">
+									<div class="d-flex align-items-center">
+										<div class="flex-column px-3 py-0 border-end border-2 text-center">
+											<p class="m-0 fs-16 fw-medium text-black">26</p>
+											<span class="fs-12 text-black">Jun</span>
+										</div>
+										<div class="px-3 align-items-center">
+											<p class="m-0 text-black">Company > John</p>
+										</div>
+									</div>
+									<div class="px-3">
+										<p class="m-0 text-black fw-medium">$ 2,500</p>
+									</div>
+								</div>
+							</div>
+							<!-- Start - Party Received Tab -->
+
+							<!-- Start - Party Paid Tab -->
+							<div class="tab-pane fade" id="party-paid" role="tabpanel" aria-labelledby="site-straff" tabindex="0">
+								<div class="d-flex justify-content-between align-items-center mt-3 cursor-pointer p-2 bg-primary-subtle rounded" data-bs-toggle="offcanvas" data-bs-target="#payment_in_offcanvas" aria-controls="payment_in_offcanvas">
+									<div class="d-flex align-items-center">
+										<div class="flex-column px-3 py-0 border-end border-2 text-center">
+											<p class="m-0 fs-16 fw-medium text-black">26</p>
+											<span class="fs-12 text-black">Jun</span>
+										</div>
+										<div class="px-3 align-items-center">
+											<p class="m-0 text-black">John > Company</p>
+										</div>
+									</div>
+									<div class="px-3">
+										<p class="m-0 text-black fw-medium">$ 100</p>
+									</div>
+								</div>
+							</div>
+							<!-- End - Party Paid Tab -->
+
+						</div>
+					</div>
+					<!-- End - Offcanvas Body -->
+
+					<!-- Start - Offcanvas Footer -->
+					<div class="offcanvas-footer border-top border-2">
+						<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center">
+							<a href="javascript:void(0);" class="btn btn-success w-xs-100">+ Payment In</a>
+							<a href="javascript:void(0);" class="btn btn-primary w-xs-100">+ Create Transaction</a>
+						</div>
+					</div>
+					<!-- End - Offcanvas Footer -->
+
+				</div>
+				<!-- End - Party Offcanvas -->
+
+				<!-- Start - Payment Out Offcanvas -->
+				<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="payment_out_offcanvas" aria-labelledby="party_offcanvas" aria-modal="true" role="dialog">
+					<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+						<div class="d-flex align-items-center gap-3">
+							<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+							<div class="flex-column">
+								<h5 class="fs-14 fw-bold m-0">PAYMENT OUT</h5>
+								<p class="m-0 fs-12">ENTER BY</p>
+							</div>
+						</div>
+						<div class="d-flex gap-3">
+							<a href="javascript:void(0);" class="btn btn-sm btn-light btn-square border"><i class="icon feather icon-edit fs-18"></i></a>
+							<a href="javascript:void(0);" class="btn btn-sm btn-light btn-square border"><i class="icon feather icon-download fs-18"></i></a>
+							<a href="javascript:void(0);" class="btn btn-sm btn-light btn-square"><i class="icon feather icon-more-vertical fs-18"></i></a>
+						</div>
+					</div>
+					<div class="offcanvas-body pt-5 pb-3">
+						<div class="d-flex justify-content-between align-items-center border-bottom pb-3">
+							<div class="flex-column">
+								<p class="m-0 text-black fs-12">Amount (Cash)</p>
+								<h2 class="m-0 fs-24 fw-bold">$ 2,500</h2>
+							</div>
+							<span class="rounded-circle text-success bg-success-subtle height30 width30 text-center lh-lg border border-success"><i class="icon feather icon-thumbs-up"></i></span>
+						</div>
+						<div class="d-flex justify-content-between align-items-center border-bottom py-3">
+							<div class="flex-column">
+								<p class="m-0 text-black fs-12">To</p>
+								<h5 class="m-0 fs-14 fw-bold">John</h5>
+							</div>
+						</div>
+						<div class="d-flex justify-content-between align-items-center pt-3">
+							<div class="flex-column">
+								<p class="m-0 text-black fs-12">From</p>
+								<h5 class="m-0 fs-14 fw-bold">Company</h5>
+								<span class="badge bg-body-secondary text-gray mt-1">9:30 PM, 26 Jun 2025</span>
+							</div>
+						</div>
+					</div>
+					<div class="offcanvas-footer">
+						<div class="d-flex align-items-center">
+							<p class="m-0 text-green fs-13 fw-medium">Approved</p>
+							<span class="ms-2 fs-10">Auto Approved</span>
+						</div>
+					</div>
+				</div>
+				<!-- Start - Payment Out Offcanvas -->
+
+				<!-- Start - Payment in Offcanvas -->
+				<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="payment_in_offcanvas" aria-labelledby="party_offcanvas" aria-modal="true" role="dialog">
+					<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+						<div class="d-flex align-items-center gap-3">
+							<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+							<div class="flex-column">
+								<h5 class="fs-14 fw-bold m-0">PAYMENT IN</h5>
+								<p class="m-0 fs-12">ENTER BY</p>
+							</div>
+						</div>
+						<div class="d-flex gap-3">
+							<a href="javascript:void(0);" class="btn btn-sm btn-light btn-square border"><i class="icon feather icon-edit fs-18"></i></a>
+							<a href="javascript:void(0);" class="btn btn-sm btn-light btn-square border"><i class="icon feather icon-download fs-18"></i></a>
+							<a href="javascript:void(0);" class="btn btn-sm btn-light btn-square"><i class="icon feather icon-more-vertical fs-18"></i></a>
+						</div>
+					</div>
+					<div class="offcanvas-body pt-5 pb-3">
+						<div class="d-flex justify-content-between align-items-center border-bottom pb-3">
+							<div class="flex-column">
+								<p class="m-0 text-black fs-12">Amount</p>
+								<h2 class="m-0 fs-24 fw-bold">$ 100</h2>
+							</div>
+							<span class="rounded-circle text-success bg-success-subtle height30 width30 text-center lh-lg border border-success"><i class="icon feather icon-thumbs-up"></i></span>
+						</div>
+						<div class="d-flex justify-content-between align-items-center border-bottom py-3">
+							<div class="flex-column">
+								<p class="m-0 text-black fs-12">To</p>
+								<h5 class="m-0 fs-14 fw-bold"></h5>
+							</div>
+						</div>
+						<div class="d-flex justify-content-between align-items-center pt-3">
+							<div class="flex-column">
+								<p class="m-0 text-black fs-12">From</p>
+								<h5 class="m-0 fs-14 fw-bold"></h5>
+								<span class="badge bg-body-secondary text-gray mt-1">9:30 PM, 26 Jun 2025</span>
+							</div>
+						</div>
+					</div>
+					<div class="offcanvas-footer">
+						<div class="d-flex align-items-center">
+							<p class="m-0 text-green fs-13 fw-medium">Approved</p>
+							<span class="ms-2 fs-10">Auto Approved</span>
+						</div>
+					</div>
+				</div>
+				<!-- Start - Payment in Offcanvas -->
+				 
+
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+		
+		<!-- Start - Download Modal -->
+		<div class="modal fade" id="download" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header border-4 border-primary">
+						<h3 class="modal-title" id="date-filter">Test</h3>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<div>
+								<p class="m-0 fs-12">Report Type</p>
+								<h5 class="fs-18">Party</h5>
+							</div>
+							<div>
+								<select class="form-select selectpicker">
+									<option selected>All Time</option>
+									<option>Today</option>
+									<option>Last Week (Mon-Sun)</option>
+									<option>Last Month</option>
+									<option>This Week (Mon - Today)</option>
+									<option>This Month</option>
+									<option>Custom</option>
+								</select>
+							</div>
+						</div>
+						<div class="d-flex align-items-center mb-3">
+							<div class="form-check me-3">
+								<input id="flexRadioDefault1" name="paymentMethod" type="radio" class="form-check-input" checked>
+								<label class="form-check-label" for="flexRadioDefault1">Salary</label>
+							</div>
+							<div class="form-check me-3">
+								<input id="flexRadioDefault2" name="paymentMethod" type="radio" class="form-check-input">
+								<label class="form-check-label" for="flexRadioDefault2">Attendance</label>
+							</div>
+						</div>
+						<a href="javascript:void(0);" class="btn btn-sm btn-warning">Download PDF<i class="icon feather icon-file"></i></a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Download -->
+
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Lightgallery -->
+	<script src="assets/vendor/lightgallery/js/lightgallery-all.min.js"></script>
+	
+	<!-- Script For Draggable -->
+	<script src="assets/vendor/draggable/draggable.js"></script>
+	
+	<!-- Script For Account And Profile -->
+	<script src="assets/js/dashboard/profile.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

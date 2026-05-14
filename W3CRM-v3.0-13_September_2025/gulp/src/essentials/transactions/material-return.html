@@ -1,0 +1,146 @@
+<!-- Start - Material Return Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialReturn" aria-labelledby="materialReturn" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-medium text-uppercase m-0">Material Return</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+					<div class="mb-3 d-flex justify-content-end">
+						<input class="form-control w-50" type="text" id="bsDatepicker4" placeholder="Select Date"/>
+					</div>
+					
+					<div class="mb-3">
+						<div class="dropdown-slt">
+							<label class="form-label text-uppercase">Party Name</label>
+							<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#materialReturn_partyName" type="text" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="materialReturn_partyName" style="display: none;">
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Alexander</div>
+											<span class="fs-12">+91 764302****</span>
+										</div>
+										<div>
+											<div>Client</div>
+										</div>
+									</div>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Michael Johnson</div>
+											<span class="fs-12">+15 1343025***</span>
+										</div>
+										<div>
+											<div>Staff</div>
+										</div>
+									</div>
+								</div>
+								<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+									+ Create Party
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<a href="javascript:void(0);" class="btn btn-outline-primary w-100" data-bs-toggle="offcanvas" data-bs-target="#materialPurchase_AddMaterial">+ Add Material</a>
+					</div>
+
+					<div class="mb-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Sub Total</label>
+						<input class="form-control w-50" type="number">
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Add Discount</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Discount</label>
+								</div> 
+								<input type="number" class="form-control w-50" placeholder="AMOUNT">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Add Additional Charges</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Charges</label>
+								</div>
+								<input type="number" class="form-control w-50" placeholder="AMOUNT">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Add GST</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Add GST Amount</label>
+								</div>
+								<input type="number" class="form-control w-50" placeholder="AMOUNT">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4 py-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Total Amount</label>
+						<p class="m-0 fs-18 text-black w-50 px-3">$ 0</p>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Refrence</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 pointer remove-input-btn">
+									<i class="icon feather icon-trash fs-18 fw-medium"></i>
+									<label class="form-label pointer m-0">Reference no.</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label">Note (Optional)</label>
+						<textarea class="form-control" rows="3"></textarea>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+			</div>
+			<!-- End - Material Return Offcanvas -->

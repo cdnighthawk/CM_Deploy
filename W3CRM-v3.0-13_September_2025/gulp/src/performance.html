@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "performance.html",
+	})
+	
+	<link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Performance",
+				})
+				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Performance</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="page-register.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="post-details.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">
+						<div class="card">
+							<div class="card-header border-0">
+								<h4 class="card-title">Performance Indicators</h4>
+							</div>
+							<div class="card-body table-card-body px-0 pt-0 pb-2">
+								<div class="table-responsive">
+									<table id="performanceTable" class="table">
+										<thead class="table-light">
+											<tr>
+												<th class="mw-150">Title</th>
+												<th class="mw-150">Designation</th>
+												<th class="mw-150">Rating</th>
+												<th class="mw-150">Added By</th>
+												<th class="mw-150">Created Date</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td><a href="javascript:void(0)">Jack</a></td>
+												<td>Civil Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>4.0</span>
+												</td>
+												<td>John Marry</td>
+												<td>14 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Khalid</a></td>
+												<td>Software Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>2.1</span>
+												</td>
+												<td>Caty Fsa</td>
+												<td>18 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Ethan</a></td>
+												<td>Website Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>3.1</span>
+												</td>
+												<td>John Marry</td>
+												<td>19 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Peter</a></td>
+												<td>Software Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>4.0</span>
+												</td>
+												<td>Geeta Marry</td>
+												<td>14 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Aaron</a></td>
+												<td>Civil Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>4.0</span>
+												</td>
+												<td>John Marry</td>
+												<td>14 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Scott</a></td>
+												<td>Software Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>2.1</span>
+												</td>
+												<td>Caty Fsa</td>
+												<td>18 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Morris</a></td>
+												<td>Website Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>3.1</span>
+												</td>
+												<td>John Marry</td>
+												<td>19 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Robin</a></td>
+												<td>Software Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>4.0</span>
+												</td>
+												<td>Geeta Marry</td>
+												<td>14 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Samuel</a></td>
+												<td>Civil Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>4.0</span>
+												</td>
+												<td>John Marry</td>
+												<td>14 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Cedric</a></td>
+												<td>Software Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>2.1</span>
+												</td>
+												<td>Caty Fsa</td>
+												<td>18 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Sandy</a></td>
+												<td>Website Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>3.1</span>
+												</td>
+												<td>John Marry</td>
+												<td>19 Feb 2023</td>
+											</tr>
+											<tr>
+												<td><a href="javascript:void(0)">Joe</a></td>
+												<td>Software Engineer</td>
+												<td>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-sharp fa-solid fa-star text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<i class="fa-solid fa-star-half-stroke text-orange"></i>
+													<span>4.0</span>
+												</td>
+												<td>Geeta Marry</td>
+												<td>14 Feb 2023</td>
+											</tr>
+										</tbody>										
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+        
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("elements/footer.html")
+		
+		@@include("elements/task-modal.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Datatables -->
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+	<!-- Script For Dashboard Pages -->
+	<script src="assets/js/dashboard/dashboard.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+.card-collapse{
+	height: auto;
+	
+	.card-header{
+		border-bottom: 0;
+	}
+	.card-body{
+	    border-top: 1px solid var(--bs-border-color);
+	}
+	.collapse-indicator{
+		position: absolute;
+		top: var(--bs-card-cap-padding-y);
+		right: var(--bs-card-cap-padding-x);
+		font-size: 16px;
+		width: 1.5rem;
+		height: 1.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--bs-border-radius-sm);
+		transition: transform 0.15s ease-in-out;
+		
+		&:not(.collapsed){
+			transform: rotate(-180deg);
+		}
+	}
+}
+.collapsing,
+.collapse{
+	.card{
+		margin-bottom: unset;
+		height: unset;
+	}
+}

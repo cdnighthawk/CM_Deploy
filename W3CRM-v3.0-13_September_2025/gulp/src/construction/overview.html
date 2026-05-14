@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "overview.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Overview",
+				})
+				
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Overview</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="mom.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="party.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Start - Project Tabs -->
+			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3">Projects</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3 active">Overview</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
+				</li>
+			</ul>
+			<!-- End - Project Tabs -->
+             
+			<div class="container-fluid">	
+				<div class="row">
+
+					<!-- Start - Financial Health -->
+					<div class="col-xxl-4 col-xl-6">
+						<div class="card"> 
+							<div class="card-header border-0">
+								<h4 class="card-title">Financial Health</h4>
+							</div>
+							<div class="card-body">
+								<canvas id="barChart_1"></canvas>
+							</div>
+						</div>
+					</div>
+					<!-- End - Financial Health -->
+
+					<!-- Start - Total Expense -->
+					<div class="col-xxl-4 col-xl-6">
+						<div class="card"> 
+							<div class="card-header border-0">
+								<h4 class="card-title">Total Expense</h4>
+							</div>
+							<div class="card-body">
+								<canvas id="lineChart_3"></canvas>
+							</div>
+						</div>
+					</div>
+					<!-- End - Total Expense -->
+
+					<!-- Start - Expense Analyise By Cost Code -->
+					<div class="col-xxl-4 col-xl-12 col-lg-12">
+						<div class="card"> 
+							<div class="card-header border-0">
+								<h4 class="card-title">Expense Analysis by cost code</h4>
+							</div>
+							<div class="card-body">
+								<canvas id="areaChart_2"></canvas>
+							</div>
+						</div>
+					</div>
+					<!-- End - Expense Analyise By Cost Code -->
+
+				</div>
+				<div class="row">
+					<div class="col-12">
+						<div class="row">
+							
+							<!-- Start - Task Schedule -->
+							<div class="col-xl-8 col-lg-12">
+								<div class="card overflow-auto"> 
+									<!-- <div class="card-header pb-1 border-0">
+										<h4 class="card-title">Task Schedule</h4>
+									</div> -->
+									<!-- <div class="card-body"> -->
+										<table class="table table-bottom-borderless text-nowrap m-0">
+											<thead>
+												<tr>
+													<th>Item</th>
+													<th>Start Date</th>
+													<th>End Date</th>
+													<th>Progress</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr>
+													<td>Add Windows</td>
+													<td>08 Jul, 25</td>
+													<td>27 Jul, 25</td>
+													<td>0/50 numbers</td>
+												</tr>
+												<tr>
+													<td>Fit Lift</td>
+													<td>08 Jul, 25</td>
+													<td>27 Jul, 25</td>
+													<td>0 %</td>
+												</tr>
+												<tr>
+													<td>Electrical Wiring</td>
+													<td>15 Jul, 25</td>
+													<td>05 Aug, 25</td>
+													<td>20 %</td>
+												</tr>
+												<tr>
+													<td>Plumbing Installation</td>
+													<td>20 Jul, 25</td>
+													<td>10 Aug, 25</td>
+													<td>15 %</td>
+												</tr>
+												<tr>
+													<td>Flooring Work</td>
+													<td>25 Jul, 25</td>
+													<td>15 Aug, 25</td>
+													<td>0 / 2000 sq.ft</td>
+												</tr>
+												<tr>
+													<td>Painting & Finishing</td>
+													<td>05 Aug, 25</td>
+													<td>25 Aug, 25</td>
+													<td>0 %</td>
+												</tr>
+												<tr>
+													<td>Roofing Work</td>
+													<td>10 Aug, 25</td>
+													<td>30 Aug, 25</td>
+													<td>0 %</td>
+												</tr>
+												<tr>
+													<td>Landscape Development</td>
+													<td>15 Aug, 25</td>
+													<td>05 Sep, 25</td>
+													<td>0 %</td>
+												</tr>
+												<tr>
+													<td>Add Doors</td>
+													<td>08 Jul, 25</td>
+													<td>27 Jul, 25</td>
+													<td>0/50 numbers</td>
+												</tr>
+											</tbody>
+										</table>
+									<!-- </div> -->
+								</div>
+							</div>
+							<!-- End - Task Schedule -->
+
+							<div class="col-xl-4 col-lg-12">
+								<div class="row">
+
+									<!-- Start - Total Sales Invoices -->
+									<div class="col-xl-12">
+										<div class="card">
+											<div class="card-header pb-0 border-0">
+												<h4 class="card-title">Total Sales Invoices</h4>
+											</div>
+											<div class="card-body">
+												<div class="d-flex justify-content-between align-items-center">
+													<div>
+														<span class="fs-12">Paid</span>
+														<p class="m-0 text-black fw-medium">17,500</p>
+													</div>
+													<div class="text-end">
+														<span class="fs-12">Total</span>
+														<p class="m-0 text-black fw-medium">50,000</p>
+													</div>
+												</div>
+												<div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+													<div class="progress-bar" style="width: 35%;"></div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<!-- End - Total Sales Invoices -->
+
+									<!-- Start - Labour Attendance -->
+									<div class="col-xl-12">
+										<div class="card">
+											<div class="card-header border-0">
+												<h4 class="card-title">Labour Attendance (last 7 days)</h4>
+											</div>
+											<div class="card-body">
+												<canvas id="lineChart_3Kk"></canvas>
+											</div>
+										</div>
+									</div>
+									<!-- End - Labour Attendance -->
+
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+			
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		@@include("../elements/footer.html")
+
+		@@include("../elements/task-modal.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+
+	<!-- Script For ChartJS -->
+	<script src="assets/vendor/chartjs/chart.bundle.min.js"></script>
+    <script src="assets/js/chart/chartjs-init.js"></script>
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+		
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	
+</body>
+</html>

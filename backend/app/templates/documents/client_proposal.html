@@ -1,0 +1,48 @@
+{% extends "documents/_layout.html" %}
+{% block title %}Proposal — {{ project.name }}{% endblock %}
+{% block body %}
+<div class="letterhead">
+	<h1>{{ seller_name }}</h1>
+	<p class="tag">Client proposal</p>
+</div>
+
+<h2>Proposal to {{ client_name }}</h2>
+
+<dl class="meta">
+	<div>
+		<dt>Project</dt>
+		<dd><strong>{{ project.name }}</strong>{% if project.number %} — Job #{{ project.number }}{% endif %}</dd>
+		<dt>Project type</dt>
+		<dd>{{ project.project_type | replace("_", " ") | title }}</dd>
+	</div>
+	<div>
+		<dt>Contract value (reference)</dt>
+		<dd>{% if project.contract_value %}{{ project.contract_value }}{% else %}—{% endif %}</dd>
+		<dt>Prepared</dt>
+		<dd>{{ generated_at }}</dd>
+	</div>
+</dl>
+
+{% if project_address %}
+<p style="font-size:10pt;"><strong>Location:</strong> {{ project_address }}</p>
+{% endif %}
+
+<h2>Scope summary</h2>
+<p style="font-size:10pt;white-space:pre-wrap;">{{ scope_text }}</p>
+
+{% if optional_lines %}
+<h2>Pricing reference (from commitment)</h2>
+<table class="lines">
+	<thead>
+		<tr><th>Description</th><th class="num">Line total</th></tr>
+	</thead>
+	<tbody>
+		{% for row in optional_lines %}
+		<tr><td>{{ row.description }}</td><td class="num">{{ row.line_total }}</td></tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endif %}
+
+<p class="footer-note">This proposal is a draft shell for Jinja2 output. Terms, exclusions, and pricing are placeholders until wired to your estimate module. Project {{ project.id }}</p>
+{% endblock %}

@@ -1,0 +1,140 @@
+<!-- Start - Material Transfer Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialTransfer" aria-labelledby="materialTransfer" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-medium text-uppercase m-0">Material Transfer</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<form class="d-flex gap-2">
+							<div class="w-100">
+								<label for="grn-no" class="form-label">GRN NO</label>
+								<input class="form-control" id="grn-no" aria-describedby="grn-no" data-bs-toggle="modal" data-bs-target="#materialTransfer-prefix-sequence">
+							</div>
+							<div class="w-100">
+								<label for="bsDatepicker" class="form-label">Date</label>
+								<input class="form-control" type="text" id="bsDatepicker6">
+							</div>
+						</form>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">From</label>
+						<input type="text" class="form-control" placeholder="Enter Project">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">To</label>
+						<input type="text" class="form-control" placeholder="Select Project">
+					</div>
+
+					<div class="mb-4 d-flex justify-content-end">
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#materialTransfer_AddMaterial">+ Add Material</a>
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Total Amount</label>
+						<input class="form-control w-50" type="number">
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Refrence No.</label>
+						<input class="form-control w-50" type="text">
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">E Way Bill No.</label>
+						<input class="form-control w-50" type="text">
+					</div>
+
+					<div class="mb-4 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Vehicle No.</label>
+						<input class="form-control w-50" type="text">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label">Note (Optional)</label>
+						<textarea class="form-control" rows="3"></textarea>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+					
+				</div>
+
+			</div>
+			<!-- End - Material Transfer Offcanvas -->
+
+            <!-- Start - Material Transfer Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialTransfer_AddMaterial" aria-labelledby="materialTransfer_AddMaterial" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-medium text-uppercase m-0">Material Transfer</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+                    <div class="input-group message-search-area mb-4">
+                        <input type="text" class="form-control border-end-0" placeholder="Search Material">
+                        <div class="input-group-append">
+                            <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                        </div>
+                    </div>
+
+                    <span class="fw-medium text-black">Selected Materials (0)</span>
+
+				</div>
+
+			</div>
+			<!-- End - Material Transfer Offcanvas -->
+             
+			<!-- Start - Material Transfer Prefix Sequence Modal -->
+			<div class="modal fade" id="materialTransfer-prefix-sequence" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h3 class="modal-title" id="date-filter">GRN Prefix Sequence</h3>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="align-items-center mb-3">
+								<form class="d-flex gap-2">
+									<div>
+										<label for="grn-no" class="form-label text-uppercase">Prefix</label>
+										<input class="form-control" id="grn-no" aria-describedby="grn-no">
+									</div>
+									<div>
+										<label for="grn-no" class="form-label text-uppercase">Sequence</label>
+										<input class="form-control" type="number" id="grn-no" placeholder="0" aria-describedby="grn-no">
+									</div>
+								</form>
+							</div>
+							<div class="d-flex justify-content-end">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Material Transfer Prefix Sequence Modal -->

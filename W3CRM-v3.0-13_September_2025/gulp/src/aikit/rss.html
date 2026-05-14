@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<base href="../">
+    
+	@@include("../elements/meta.html", {
+		"fileName": "aikit/rss.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "RSS",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Rss</h6>
+								<p class="text-muted small mb-0">AI kit demo pages. Reference for AI-related settings and prompts.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="repurpose.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="scheduled.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">
+						<div class="alert alert-card-warning alert-alt alert-dismissible fade show">
+							This is a demo of AIKit plugin made for you to test the experience of using the plugin. Text & images generated in this demo are dummy. In real life, AIKit will call OpenAI API and generate relevant text and images based on your prompts.
+							<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						</div>
+						<ul class="nav nav-tabs-standard pt-4 mb-3 nav-scroll nav-scroll-auto-xl">
+							<li class="nav-item"><a class="nav-link" aria-current="true" href="aikit/auto-write.html">Auto Writer</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/scheduled.html">Scheduler</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/repurpose.html">Repurpose</a></li>
+							<li class="nav-item"><a class="nav-link active" href="aikit/rss.html">RSS</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/chatbot.html">Chatbot</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/fine-tune-models.html">Fine-tune Models</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/prompt.html">AI Menu Prompts</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/setting.html">Settings</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/import.html">Export/Import Settings</a></li>
+						</ul>
+						<div class="row">
+							<div class="col-xl-4">
+								<div class="card h-auto">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Create Repurpose Job</h4>
+										<div class="clearfix">
+											<select class="selectpicker form-select">
+												<option data-content="<img src='assets/images/svg/england.svg' alt=''> England">England</option>
+												<option data-content="<img src='assets/images/svg/india.svg' alt=''> India">India</option>
+												<option data-content="<img src='assets/images/svg/uae.svg' alt=''> UAE">UAE</option>
+											</select>
+										</div>
+									</div>
+									<div class="card-body">
+										<div class="row">
+											<div class="col-xl-12">
+												<div class="mb-3">
+													<label for="exampleFormControlInput1" class="form-label">RSS URL</label>
+													<input type="text" class="form-control" id="exampleFormControlInput1" placeholder="https://example.com">
+												</div>
+												<div class="mb-3">
+													<label for="exampleFormControlInput2" class="form-label">Time to wait between generating articles (minutes)</label>
+													<input type="number" class="form-control type-number" id="exampleFormControlInput2" placeholder="30">
+												</div>
+												<div class="mb-3">
+													<label for="exampleFormControlInput2" class="form-label">Post status</label>
+													<select class="selectpicker form-select">
+														<option selected>Draft</option>
+														<option value="1">Product</option>
+													</select>
+												</div>
+												<div class="mb-3">
+													<label class="form-label">Post type</label>
+													<select class="selectpicker form-select">
+														<option selected>Post</option>
+														<option value="1">Product</option>
+													</select>
+												</div>
+												<div class="mb-3">
+													<label class="form-label">Post category</label>
+													<select class="selectpicker form-select">
+														<option selected>Uncategorized</option>
+														<option value="1">Categorized</option>
+													</select>
+												</div>
+												<div class="mb-3">
+													<label for="exampleFormControlInput3" class="form-label">Posts to generate</label>
+													<input type="number" class="form-control type-number" id="exampleFormControlInput3" placeholder="1">
+												</div>
+												<div class="mb-3">
+													<label class="form-label">How often to check for new articles in RSS feed</label>
+													<select class="selectpicker form-select">
+														<option selected>Hourly</option>
+														<option value="1">Weekly</option>
+													</select>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="card-footer">
+										<div class="btn-group" role="group" aria-label="Basic checkbox toggle button group">
+											<input type="checkbox" class="btn-check" id="btncheck1">
+											<label class="btn btn-outline-primary btn-sm me-1 mb-2" for="btncheck1">Include featured image</label>
+										</div>
+									</div>
+									<div class="card-footer text-center">
+										<a href="javascript:void(0);" class="btn btn-primary">
+											<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<path d="M3.33301 9.16699C5.32213 9.16699 7.22979 9.95717 8.63631 11.3637C10.0428 12.7702 10.833 14.6779 10.833 16.667" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+												<path d="M3.33301 3.33301C6.86923 3.33301 10.2606 4.73777 12.7611 7.23825C15.2616 9.73874 16.6663 13.1301 16.6663 16.6663" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+												<path d="M4.16634 16.6667C4.62658 16.6667 4.99967 16.2936 4.99967 15.8333C4.99967 15.3731 4.62658 15 4.16634 15C3.7061 15 3.33301 15.3731 3.33301 15.8333C3.33301 16.2936 3.7061 16.6667 4.16634 16.6667Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+											Add RSS Job
+										</a>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-8">
+								<div class="accordion accordion-card mb-3" id="accordionExampleShadow">
+									<div class="accordion-item">
+										<h2 class="accordion-header">
+											<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOneCard" aria-expanded="true" aria-controls="collapseOneCard">Prompts</button>
+										</h2>
+										<div id="collapseOneCard" class="accordion-collapse collapse show" data-bs-parent="#accordionExampleCard">
+											<div class="accordion-body px-0">	
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+													
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+	[[description]]
+	The article will include the following sections:
+	[[section-headlines]]
+
+	Title:
+													</textarea>
+												</div>
+												
+												<div class="d-flex align-items-center mb-2">
+													<h6 class="mb-0">article-title:</h6>
+													<span class="badge badge-sm badge-danger light ms-1">description</span>
+													<span class="mx-1">,</span>
+													<span class="badge badge-sm badge-danger light">section-headlines</span>
+												</div>
+												<div class="mb-3">
+													<textarea class="form-control bg-transparent" rows="3">
+Generate a title for an article that discusses the following topic:
+		[[description]]
+		The article will include the following sections:
+		[[section-headlines]]
+
+		Title:
+													</textarea>
+												</div>
+												
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+		
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("../elements/script.html")
+	
+	<!-- Script For AIKIT Pages -->
+	<script src="assets/js/dashboard/aikit.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

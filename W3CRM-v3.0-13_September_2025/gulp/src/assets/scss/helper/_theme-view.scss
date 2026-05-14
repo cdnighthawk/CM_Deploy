@@ -1,0 +1,7 @@
+/* Theme View */
+[data-bs-theme="light"] .view-dark{
+    display: none;
+}
+[data-bs-theme="dark"] .view-light{
+    display: none;
+}

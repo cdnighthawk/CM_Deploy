@@ -1,0 +1,62 @@
+.localizationTool{
+	color: unset;
+    background: transparent;
+    padding: 15px 10px;
+	
+	.ltool-dropdown-label .ltool-language-countryname,
+	.ltool-dropdown-label-arrow{
+		display: none !important;
+	}
+	.ltool-dropdown-label {
+		padding: 0;
+		transform: scale(1.5);
+		display: flex;
+	}
+	ul.ltool-dropdown-items{
+		display: block;
+		position: absolute;
+		width: 160px;
+		background-color: var(--bs-body-bg);
+		border-radius: var(--bs-border-radius);
+		right: 0;
+		top: 50px;
+		box-shadow: var(--bs-box-shadow);
+		padding: 5px 0;
+		opacity: 0;
+		visibility: hidden;
+		@include transitionFast;
+		margin-top: 10px;
+		border: 1px solid var(--bs-border-color);
+	}
+	&.ltool-is-visible{
+		ul.ltool-dropdown-items{
+			opacity: 1;
+			visibility: visible;
+			margin-top: 0;
+		}
+	}
+	li{
+		background: transparent;
+		display: flex;
+		align-items: center;
+		font-size: 13px;
+		@include transitionMedium;
+	    color: var(--bs-secondary);
+		padding: 6px 12px;
+
+		.ltool-language-flag{
+			margin: 0;
+		}
+		&:hover{
+			background: rgba(var(--bs-primary-rgb), 0.1);
+		}
+	}
+	li.ltool-is-selected {
+		background: rgba(var(--bs-primary-rgb), 0.1);
+	}
+	.ltool-language-countryname,
+	.ltool-language-flag{
+		margin-left: 8px;
+		margin-right: 0;
+	}
+}

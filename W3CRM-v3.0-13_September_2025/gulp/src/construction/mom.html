@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "mom.html",
+	})
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	<link href="assets/vendor/daterangepicker/daterangepicker.css" rel="stylesheet">
+	<link href="assets/vendor/dropzone/dropzone.min.css" rel="stylesheet">
+	<link href="assets/vendor/toastr/css/toastr.min.css" rel="stylesheet">
+    <link href="assets/vendor/clockpicker/bootstrap-clockpicker.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<!-- Start - Content Body -->
+		<main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Minutes of Meeting",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — Mom</h6>
+								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="mom-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="overview.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+            <div class="container-fluid">
+                <div class="row">
+
+                    <!-- Start - Filtering -->
+                    <div class="col-xl-12">
+                        <div class="pb-3 row align-items-center">
+                            <div class="col-lg-8 col-md-12">
+                                <div class="seach-bar gap-2 align-items-center flex-wrap" style="display: none;">
+                                    <button class="btn btn-square btn-white border filter-btn">
+                                        <i class="icon feather icon-filter fs-18 text-black pointer"></i>
+                                    </button>
+                                    <div class="input-group message-search-area width250">
+                                        <input type="text" class="form-control form-control-sm border-end-0" placeholder="Search">
+                                        <div class="input-group-append">
+                                            <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="clearfix gap-2 align-items-center filter-op flex-wrap" style="display: flex;">
+                                    <button class="btn btn-square btn-white border search-btn">
+                                        <i class="icon feather icon-search fs-18 text-black pointer"></i>
+                                    </button>
+
+                                    <!-- Start - Date Filter Modal -->
+                                    <a href="javascript:void(0);" class="btn btn-outline-primary" data-bs-target="#date-filter" data-bs-toggle="modal">Date Filter</a>
+                                    
+                                    <div class="modal fade" id="date-filter" data-bs-keyboard="false" tabindex="-1" aria-labelledby="date-filter" aria-modal="true" role="dialog">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header border-4 border-primary">
+                                                    <h1 class="modal-title fs-5" id="date-filter">Date Filter</h1>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input class="form-control mb-3" type="text" name="datetimes">
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value="" id="alL">
+                                                        <label class="form-check-label" for="alL">All</label>
+                                                    </div>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value="" id="today">
+                                                        <label class="form-check-label" for="today">Today</label>
+                                                    </div>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value="" id="lastWeek">
+                                                        <label class="form-check-label" for="lastWeek">Last Week</label>
+                                                    </div>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value="" id="thisWeek">
+                                                        <label class="form-check-label" for="thisWeek">This Week</label>
+                                                    </div>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value="" id="thisMonth">
+                                                        <label class="form-check-label" for="thisMonth">This Month</label>
+                                                    </div>
+                                                    <div class="form-check mb-3">
+                                                        <input class="form-check-input" type="checkbox" value="" id="lastMonth">
+                                                        <label class="form-check-label" for="lastMonth">Last Month</label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-sm btn-primary">Apply</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- End - Date Filter Modal -->
+
+                                    <!-- Start - Atendee Dropdown -->
+                                    <div class="dropdown-slt">
+                                        <input class="form-control width150 on-dropdown-name-input" placeholder="Attendee" name="party_name" data-dropdown-target=".attendeeDropdown" type="text" readonly="" value="">
+                                        <input name="sender_party_id" class="on-dropdown-id-input" type="hidden" value="">
+                                        <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu attendeeDropdown" style="display: none;">
+                                            <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="1" data-name="Attendee">
+                                                <p class="m-0 text-black">All</p>
+                                            </div>
+                                            <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="2" data-name="John">
+                                                <p class="m-0 text-black">John</p>
+                                            </div>
+                                            <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="3" data-name="Chris Sir">
+                                                <p class="m-0 text-black">Chris Sir</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- End - Atendee Dropdown -->
+
+                                    <!-- Start - Project Dropdown -->
+                                    <div class="dropdown-slt">
+                                        <input class="form-control width150 on-dropdown-name-input" placeholder="Project" name="party_name" data-dropdown-target=".projectDropdown" type="text" readonly="" value="">
+                                        <input name="sender_party_id" class="on-dropdown-id-input" type="hidden" value="">
+                                        <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu projectDropdown" style="display: none;">
+                                            <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="1" data-name="Project">
+                                                <p class="m-0 text-black">All</p>
+                                            </div>
+                                            <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="2" data-name="Test">
+                                                <p class="m-0 text-black">Test</p>
+                                            </div>
+                                            <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-id="3" data-name="Test 2">
+                                                <p class="m-0 text-black">Test 2</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- End - Project Dropdown -->
+                                    
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-4 col-md-12 text-lg-end mt-lg-0 mt-2">
+								<a href="javascript:void(0);" class="btn btn-primary w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#new-mom">+ New MOM</a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Start - Filtering -->
+                    
+                    <!-- Start - Blank Time - Sheet -->
+                    <!-- <div class="vh-50 position-relative">
+                        <div class="clearfix">
+                            <div class="row justify-content-center align-items-center h-100">
+                                <div class="col-xl-4 position-absolute start-50 top-50 translate-middle text-center">
+                                    <img src="assets/images/construction-1.gif" alt="" width="200">
+                                    <p class="m-0">No Timesheet Available.</p>
+                                    <p>Add New Timesheet.</p>
+                                    <a href="javascript:void(0);" class="btn btn-sm btn-primary" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">+ New Timesheet</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                    <!-- End - Blank Time - Sheet -->
+
+                    <!-- Start - Table -->
+					<div class="col-xl-12">
+						<div class="card vh-75 overflow-auto table-hover text-nowrap">
+                            <table class="table mb-0" id="MOMtbl">
+                                <thead>
+                                    <tr>
+                                        <th class="width200">Name</th>
+                                        <th class="text-center width250">Attendee</th>
+                                        <th class="text-center width350">Project</th>
+                                        <th class="text-center width220">Notes</th>
+                                        <th class="text-end width100">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Budget Review Meeting</h6>
+                                                <p class="m-0">21 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">6</td>
+                                        <td class="text-center">Office Renovation</td>
+                                        <td class="text-center">Reviewed updated floor plan and budget adjustments.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Design Discussion Meeting</h6>
+                                                <p class="m-0">20 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">3</td>
+                                        <td class="text-center">Interior Design</td>
+                                        <td class="text-center">Presented new interior themes and shared material samples.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Financial Approval Meeting</h6>
+                                                <p class="m-0">17 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">13</td>
+                                        <td class="text-center">Financial Review</td>
+                                        <td class="text-center">Discussed contractor invoices and confirmed additional client requirements.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Landscape Planning Meeting</h6>
+                                                <p class="m-0">15 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">8</td>
+                                        <td class="text-center">Landscaping Works</td>
+                                        <td class="text-center">Reviewed outdoor lighting plans and finalized garden layout.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Site Inspection Meeting</h6>
+                                                <p class="m-0">14 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">15</td>
+                                        <td class="text-center">Site Inspection</td>
+                                        <td class="text-center">Addressed safety measures and verified structural modifications.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Client Feedback Meeting</h6>
+                                                <p class="m-0">12 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">20</td>
+                                        <td class="text-center">Client Feedback</td>
+                                        <td class="text-center">Approved design modifications and agreed on delivery timelines.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Technology Update Meeting</h6>
+                                                <p class="m-0">11 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">26</td>
+                                        <td class="text-center">Software Upgrade</td>
+                                        <td class="text-center">Shared updates on system migration and resolved integration issues.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Marketing Strategy Meeting</h6>
+                                                <p class="m-0">10 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">5</td>
+                                        <td class="text-center">Brand Campaign</td>
+                                        <td class="text-center">Finalized social media strategy and content release schedule.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Risk Assessment Meeting</h6>
+                                                <p class="m-0">07 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">50</td>
+                                        <td class="text-center">Construction Safety</td>
+                                        <td class="text-center">Identified potential hazards and suggested preventive measures.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="pointer">
+                                        <td>
+                                            <div>
+                                                <h6 class="m-0">Procurement Meeting</h6>
+                                                <p class="m-0">05 Aug 2025</p>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">20</td>
+                                        <td class="text-center">Material Supply</td>
+                                        <td class="text-center">Discussed supplier delays and confirmed new delivery timelines.</td>
+                                        <td class="text-end">
+                                            <div class="dropdown custom-dropdown mb-0 tbl-orders-style">
+                                                <div class="btn btn-square rounded" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </div>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <a class="dropdown-item" data-bs-toggle="offcanvas" data-bs-target="#new-timesheet">Edit</a>
+                                                    <a class="dropdown-item text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+						</div>
+					</div>
+					<!-- End - Table -->
+                
+                </div>
+            </div>
+			
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+    <!-- Start - New MOM Offcanvas -->
+    <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="new-mom" aria-labelledby="new-mom" aria-modal="true" role="dialog">
+        <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                <h5 class="offcanvas-title fw-semibold text-uppercase">New MOM</h5>
+            </div>
+            <a href="javascript:void(0);" class="btn btn-sm btn-primary">Save</a>
+        </div>
+
+        <!-- Start - Offcanvas Body -->
+        <div class="offcanvas-body">
+            
+            <div class="d-flex justify-content-end mb-4">
+                <input class="form-control w-100" type="text" id="bsDatepicker2" placeholder="Select Date">
+            </div>
+
+            <div class="mb-4 position-relative">
+                <label class="form-label text-uppercase">Meeting Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control">
+            </div>
+
+            <div class="mb-4 position-relative">
+                <div class="dropdown-slt">
+                    <label for="" class="form-label text-uppercase">Select Project <span class="text-danger">*</span></label>
+                    <input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#projectList" type="text" readonly="">
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="projectList" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="Test">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">T</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div class="fw-semibold text-black">Test <span class="fw-light">(Noida)</span></div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 pointer gap-2 on-dropdown-item" data-val="236 A">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">A</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div class="fw-semibold text-black">236 A <span class="fw-light">(Kota)</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3 position-relative">
+                <div class="dropdown-slt">
+                    <label for="attendee" class="form-label text-uppercase">Attendee <span class="text-danger">*</span></label>
+                    <input id="attendee" class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#attendeeList" type="text" readonly="">
+                    
+                    <div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="attendeeList" style="display: none;">
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="1" data-val="Alexander">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">Alexander</div>
+                                    <span class="fs-12">+91 764302****</span>
+                                </div>
+                                <div>
+                                    <div>Client</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="2" data-val="+15 1343025***">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">Michael Johnson</div>
+                                    <span class="fs-12">+15 1343025***</span>
+                                </div>
+                                <div>
+                                    <div>Staff</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-id="3" data-val="John Smith">
+                            <div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">JS</div>
+                            <div class="flex-grow-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold attendee-name text-black">John Smith</div>
+                                    <span class="fs-12">+1 1343025***</span>
+                                </div>
+                                <div>
+                                    <div>Employee</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+                            + Create Party
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add this div BELOW your dropdown-slt for selected attendees -->
+                <div class="selected-attendees mt-2" id="attendeeSelected"></div>
+
+            </div>
+
+            <div class="position-relative mb-3">
+                <label class="form-label text-uppercase">Notes</label>
+                <textarea class="form-control" rows="4"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+                    <div class="dz-default dz-message pointer">
+                        <button class="dz-button" type="button">Attach Media<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+        <!-- End - Offcanvas Body -->
+    
+    </div>
+    <!-- End - New MOM Offcanvas -->
+
+    @@include("../essentials/transactions/add-party.html")
+
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Toastr -->
+	<script src="assets/vendor/toastr/js/toastr.min.js"></script>
+
+	<!-- Script For Apexchart -->
+	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
+	
+    <script src="assets/vendor/clockpicker/bootstrap-clockpicker.min.js"></script>
+    <script src="assets/js/plugins-init/clockpicker-init.js"></script>
+
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	<script src="assets/js/plugins-init/bootstrap-datepicker-init.js"></script>
+	
+	<!-- Script For Bootstrap Daterangepicker -->
+	<script src="assets/vendor/daterangepicker/moment.min.js"></script>
+	<script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+	<script src="assets/js/plugins-init/daterangepicker-init.js"></script>
+	
+	<!-- Script For Dropzone -->
+	<script src="assets/vendor/dropzone/dropzone.min.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+		<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	
+	
+	
+</body>
+</html>

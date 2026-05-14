@@ -1,0 +1,107 @@
+<!-- Start - Modal Add New Task -->
+		<div class="offcanvas offcanvas-end custom-offcanvas" tabindex="-1" id="addTaskmodal">
+			<div class="offcanvas-header pb-0">
+				<h2 class="modal-title fs-5" id="#gridSystemModal1">Add New Task</h2>
+				<button type="button" class="btn btn-square btn-danger light btn-sm ms-auto" data-bs-dismiss="offcanvas" aria-label="Close">
+					<i class="fa-solid fa-xmark"></i>
+				</button>
+			</div>
+			<div class="offcanvas-body">
+				<form class="row">
+					<div class="col-xl-6 mb-3">
+						<label for="exampleFormControlInputfirst" class="form-label">Title<span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="exampleFormControlInputfirst" placeholder="Title">
+					</div>	
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Project<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Project</option>
+							<option value="html">HTML</option>
+							<option value="css">CSS</option>
+							<option value="javascript">JavaScript</option>
+						</select>
+					</div>	
+					<div class="col-xl-6 mb-3">
+						<label for="exampleFormControlInputthree" class="form-label">Start Date<span class="text-danger">*</span></label>
+						<input type="text" class="form-control bs-datepicker" id="exampleFormControlInputthree">
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label for="exampleFormControlInputfour" class="form-label">End Date<span class="text-danger">*</span></label>
+						<input type="text" class="form-control bs-datepicker" id="exampleFormControlInputfour">
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Estimated Hour<span class="text-danger">*</span></label>
+						<input type="text" class="form-control bs-datepicker" value="09:30">
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Status<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Status</option>
+							<option value="In Progess">In Progess</option>
+							<option value="Pending">Pending</option>
+							<option value="Completed">Completed</option>
+						</select>
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Priority<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Priority</option>
+							<option value="Hight">Hight</option>
+							<option value="Medium">Medium</option>
+							<option value="Low">Low</option>
+						</select>
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Category<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Category</option>
+							<option value="Designing">Designing</option>
+							<option value="Development">Development</option>
+							<option value="react developer">React Developer</option>
+						</select>
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Permission<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Permission</option>
+							<option value="Public">Public</option>
+							<option value="Private">Private</option>
+						</select>
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Deadline add<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Deadline</option>
+							<option value="Yes">Yes</option>
+							<option value="No">No</option>
+						</select>
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Assigned to<span class="text-danger">*</span></label>
+						<select class="selectpicker form-select">
+							<option data-display="Select">Assigned</option>
+							<option value="Bernard">Bernard</option>
+							<option value="Sergey Brin">Sergey Brin</option>
+							<option value="Larry Ellison">Larry Ellison</option>
+						</select>
+					</div>
+					<div class="col-xl-6 mb-3">
+						<label class="form-label">Responsible Person<span class="text-danger">*</span></label>
+						<input name='tagify' class="form-control basic-tagify" value='James, Harry'>
+					</div>
+					<div class="col-xl-12 mb-3">
+						<label class="form-label">Description<span class="text-danger">*</span></label>
+						<textarea rows="3" class="form-control"></textarea>
+					</div>
+					<div class="col-xl-12 mb-3">
+						<label class="form-label">Summary<span class="text-danger">*</span></label>
+						<textarea rows="3" class="form-control"></textarea>
+					</div>
+					<div class="col-xl-12">					
+						<button class="btn btn-danger light">Cancel</button>
+						<button class="btn btn-primary ms-2">Submit</button>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!-- End - Modal Add New Task -->

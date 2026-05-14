@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "ecom-product-detail.html",
+	})
+	
+    <link rel="stylesheet" type="text/css" href="assets/vendor/star-rating/star-rating-svg.css">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Product Details",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">E-commerce Product Detail</h6>
+								<p class="text-muted small mb-0">E-commerce demo template. Reference for catalog and checkout UI patterns.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="ecom-invoice.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="ecom-product-grid.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-xxl-3 col-xl-4 col-md-5 mb-2">
+                                        <div class="tab-content" id="myTabContent">
+											<div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+												<img class="img-fluid rounded  " src="assets/images/product/1.jpg" alt="">
+											</div>
+											<div class="tab-pane fade" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+												<img class="img-fluid rounded " src="assets/images/product/2.jpg" alt="">
+											</div>
+											<div class="tab-pane fade" id="contact-tab-pane" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
+												<img class="img-fluid rounded" src="assets/images/product/3.jpg" alt="">
+											</div>
+											<div class="tab-pane fade" id="end-tab-pane" role="tabpanel" aria-labelledby="end-tab" tabindex="0">
+												<img class="img-fluid rounded" src="assets/images/product/3.jpg" alt="">
+											</div>
+										</div>
+										<ul class="nav nav-pills nav-pills-light nav-pills-sm flex-nowrap mt-2" id="myTab" role="tablist">
+											<li class="nav-item" role="presentation">
+												<a href="#first" class="nav-link p-1 active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home-tab-pane" role="tab" aria-controls="home-tab-pane" aria-selected="true">
+													<img class="rounded" src="assets/images/tab/1.jpg" alt="">
+												</a>
+											</li>
+											<li class="nav-item" role="presentation">
+												<a href="#second" class="nav-link p-1" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" role="tab" aria-controls="profile-tab-pane" aria-selected="false">
+													<img class="rounded" src="assets/images/tab/2.jpg" alt="">
+												</a>
+											</li>
+											<li class="nav-item" role="presentation">
+												<a href="#third" class="nav-link p-1" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact-tab-pane" role="tab" aria-controls="contact-tab-pane" aria-selected="false">
+													<img class="rounded" src="assets/images/tab/3.jpg" alt="">
+												</a>
+											</li>
+											<li class="nav-item" role="presentation">
+												<a href="#for" class="nav-link p-1" id="end-tab" data-bs-toggle="tab" data-bs-target="#end-tab-pane" role="tab" aria-controls=	"end-tab-pane" aria-selected="false">
+													<img class="rounded" src="assets/images/tab/4.jpg" alt="">
+												</a>
+											</li>
+										</ul>
+                                    </div>
+                                    <div class="col-xxl-9 col-xl-8 col-md-7 pt-3">
+										<h3 class="fw-semibold mb-1">Solid Women's V-neck Dark T-Shirt</h3>
+										<div class="d-flex gap-2 mb-2 flex-wrap">
+											<ul class="d-flex align-items-start gap-1">
+												<li class="text-orange"><i class="fa fa-star"></i></li>
+												<li class="text-orange"><i class="fa fa-star"></i></li>
+												<li class="text-orange"><i class="fa fa-star"></i></li>
+												<li class="text-orange"><i class="fa fa-star"></i></li>
+												<li class="text-orange"><i class="fa fa-star"></i></li>
+											</ul>
+											<span class="ms-2">(34 reviews) / </span><a  href="javascrpt:void(0)"  class="text-decoration-underline" data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+										</div>
+										<span class="fs-3 fw-semibold text-primary mb-3 d-block">$325.00</span>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-shopping-basket text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>
+											<span class="small fw-medium text-dark me-1">Product Tags:</span>
+											<span class="badge badge-success badge-sm light">Bags</span>
+											<span class="badge badge-success badge-sm light">Clothes</span>
+											<span class="badge badge-success badge-sm light">Shoes</span>
+											<span class="badge badge-success badge-sm light">Dresses</span>
+										</p>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing.</p>
+										<div class="d-flex align-items-center gap-3 flex-wrap mb-3">
+											<h6 class="mb-0">Select size</h6>
+											<div class="d-flex gap-1" role="group" aria-label="Basic radio toggle button group">
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio1" checked>
+												<label class="btn btn-outline-primary btn-sm btn-square" for="btnradio1">XS</label>
+
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio2">
+												<label class="btn btn-outline-primary btn-sm btn-square" for="btnradio2">SM</label>
+
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio3">
+												<label class="btn btn-outline-primary btn-sm btn-square" for="btnradio3">MD</label>
+
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio4">
+												<label class="btn btn-outline-primary btn-sm btn-square" for="btnradio4">LG</label>
+											  
+												<input type="radio" class="btn-check" name="btnradio" id="btnradio5">
+												<label class="btn btn-outline-primary btn-sm btn-square" for="btnradio5">XL</label>
+											</div>
+										</div>
+										<div class="d-flex gap-2">
+											<input type="number" name="num" class="form-control type-number width120" value="1">
+											<a class="btn btn-primary" href="javascript:void(0);"><i class="fa fa-shopping-basket me-2"></i>Addto cart</a>
+										</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+				
+				<!-- Start - Product Review Modal -->
+				<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-dialog-centered">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="reviewModalLabel">Review</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+							</div>
+							<div class="modal-body">
+								<form>
+									<div class="text-center mb-4">
+										<img src="assets/images/product/1.jpg" class="avatar avatar-lg" alt="">
+										<div class="rating-stars mt-3">
+											<ul id="stars">
+												<li class="star" title="Poor" data-value="1">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="Fair" data-value="2">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="Good" data-value="3">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="Excellent" data-value="4">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="WOW!!!" data-value="5">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+											</ul>
+										</div>
+									</div>
+									<div class="mb-3">
+										<textarea class="form-control" placeholder="Comment" rows="5"></textarea>
+									</div>
+									<button class="btn btn-success w-100">RATE</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End - Product Review Modal -->
+				
+            </div>
+			
+        </main>
+		<!-- End - Content Body -->
+
+        @@include("elements/footer.html")
+        
+    </div>
+	<!-- End - Main Wrapper -->
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Rating -->
+	<script src="assets/vendor/star-rating/jquery.star-rating-svg.js"></script>
+
+    <!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-hr-dashboard.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "HR Dashboard",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">USIS HR Dashboard</h6>
+								<p class="text-muted small mb-0">KPI cards and onboarding snapshot. <a href="core-hr.html">Core HR — employee directory</a> (name links to profiles).</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="usis-documents-hub.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-hr.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<p class="text-muted small mb-3">
+					Operational people compliance snapshot (Plan 19). Safety certifications remain authoritative in the Safety module; counts here will include read-only safety aggregates when wired.
+				</p>
+				<div class="row" id="usis-hr-kpi-row">
+					<div class="col-xl-3 col-md-6 mb-3">
+						<div class="card h-100 border-primary border-opacity-25">
+							<div class="card-body">
+								<h6 class="text-muted mb-1">Pending policy acknowledgments</h6>
+								<h2 class="mb-0" id="usis-hr-count-acks">—</h2>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6 mb-3">
+						<div class="card h-100 border-primary border-opacity-25">
+							<div class="card-body">
+								<h6 class="text-muted mb-1">Onboarding in progress</h6>
+								<h2 class="mb-0" id="usis-hr-count-onboarding">—</h2>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6 mb-3">
+						<div class="card h-100 border-warning border-opacity-50">
+							<div class="card-body">
+								<h6 class="text-muted mb-1">Safety certs expiring (30d)</h6>
+								<h2 class="mb-0" id="usis-hr-count-safety-exp">—</h2>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-md-6 mb-3">
+						<div class="card h-100 border-primary border-opacity-25">
+							<div class="card-body">
+								<h6 class="text-muted mb-1">Pending HR approvals</h6>
+								<h2 class="mb-0" id="usis-hr-count-approvals">—</h2>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-12 mb-3">
+						<div class="card h-100 border-0 shadow-sm">
+							<div class="card-body">
+								<h5 class="card-title">Employees with HR activity (sample)</h5>
+								<p class="text-muted small mb-2">Populated from <code>hr_*</code> tables when the API returns <code>sample_employees</code>.</p>
+								<p class="small text-warning mb-2 d-none" id="usis-hr-sample-hint" role="status"></p>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Name</th>
+												<th>Email</th>
+												<th class="text-end">Open onboarding</th>
+												<th class="text-end">Pending policies</th>
+												<th class="text-end">Open HR training</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-sample-employees-body">
+											<tr><td colspan="5" class="text-muted small">No rows yet.</td></tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">Quick links</h5>
+								<a href="core-hr.html" class="btn btn-outline-primary btn-sm me-2 mb-2">Core HR directory</a>
+								<a href="usis-safety.html" class="btn btn-outline-primary btn-sm me-2 mb-2">Safety module</a>
+								<a href="usis-documents-hub.html" class="btn btn-outline-secondary btn-sm me-2 mb-2">Documents hub</a>
+								<a href="usis-hr.html" class="btn btn-outline-secondary btn-sm me-2 mb-2">HR landing</a>
+								<a href="usis-hr-quickbooks-employee-reference.html" class="btn btn-outline-secondary btn-sm mb-2">QuickBooks employee fields</a>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">API status</h5>
+								<p class="small text-muted mb-2" id="usis-hr-api-status">Loading summary…</p>
+								<code class="small d-block text-break">GET /api/v1/hr/dashboard-summary</code>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/usis-hr-dashboard.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+
+</body>
+</html>

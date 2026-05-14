@@ -1,0 +1,351 @@
+// Heart Blast Effect
+.heart{
+	width: 3.75rem;
+    height: 3.75rem;
+    display: inline-block;
+    background: url('../images/like.png');
+    cursor: pointer;
+    margin: -1.563rem -0.938rem;
+}
+.heart-blast{
+	background-position: -1680px 0 !important;
+    transition: background 1s steps(28);
+}
+
+// draggable-handle
+.draggable-handle{
+	cursor: move;
+}
+.list-group .list-group-item.draggable{
+	background-color: var(--bs-body-bg);
+}
+
+.active-map{
+	height: 19rem !important;
+}
+.widget-events{
+	.datepicker {
+		padding: 0;
+	}
+	.datepicker-days{
+		.picker-switch{
+			font-size: 15px;
+			font-weight: 500;
+			color: var(--bs-secondary);
+		}
+		.prev,
+		.next{
+			i{
+				height:32px;
+				width:32px;
+				border-radius: var(--bs-border-radius);
+				background: rgba(var(--bs-primary-rgb), 0.1);
+				color: var(--bs-primary);
+				line-height: 32px;
+			}
+			&:hover{
+				background:transparent;
+			}
+		}
+		.dow{
+			font-weight: 500;
+			color: var(--bs-heading-color);
+			background-color: var(--bs-light);
+			border-radius: 0;
+			text-transform: uppercase;
+			font-size: 13px;
+			height: auto;
+			line-height: normal;
+			padding: 8px;
+		}
+		tr{
+			.day.weekend:first-child{
+				color: var(--bs-danger);
+			}
+		}
+		.day{
+			color: var(--bs-heading-color);
+			height: 40px;
+			line-height: 40px;
+			box-sizing: initial;
+			max-width: 25px;
+			min-width: 25px;
+			width: 25px;
+			z-index: 1;
+			position: relative;
+			padding: 0;
+			
+			&:before,
+			&:after{
+				content: "";
+				position: absolute;
+				opacity: 0;
+			}
+			&:after{
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 40px;
+				height: 40px;
+				border-radius: var(--bs-border-radius);
+				background-color: var(--bs-primary);
+				z-index: -1;
+			}
+			&:before{
+				height: 12px;
+				width: 12px;
+				border: 2px solid #fff;
+				top: calc(50% - 20px);
+				right: calc(50% - 30px);
+				background: var(--bs-danger);
+				border-radius: 50%;
+				transform: translate(-50%, -50%);
+			}
+			&:hover{
+				&:not(.active),
+				&:not(.today){
+					&:after{
+						background-color: var(--bs-light);
+						opacity: 1;
+					}
+				}
+			}
+			&.active,
+			&.today{
+				background: var(--bs-body-bg) !important;
+				color: #fff !important;
+				
+				&:before,
+				&:after{
+					opacity: 1;
+				}
+				&:hover{
+					&:after{
+						background: var(--bs-primary) !important;
+					}
+				}
+			}
+		}
+		tr td.day:hover,
+		tr td.focused{
+			background: var(--bs-body-bg);
+		}
+	}
+	.bootstrap-datetimepicker-widget a[data-action]{
+		display:none;
+	}
+	.meta-date{
+		height: 55px;
+		width: 50px;
+		line-height: 1;
+		border-radius: var(--bs-border-radius);
+		background-color: var(--bs-primary-bg-subtle);
+		text-align: center;
+		padding: 7px 4px;
+		
+		.date{
+			font-size: 20px;
+			line-height: 1.2;
+			font-weight: 600;
+			color: var(--bs-primary);
+		}
+	}
+}
+.ps--active-x>.ps__rail-x, .ps--active-y>.ps__rail-y{
+	z-index: -1;
+}
+
+.card-carousel-dots{
+	.owl-dots{
+		position: absolute;
+		right: 0;
+		top: 0;
+	
+		.owl-dot{
+			width: 9px;
+			height: 9px;
+			border-radius: 50%;
+			background-color: var(--bs-secondary);
+			opacity: 0.2;
+			@include transitionMedium;
+			display: inline-block;
+			margin: 0 4px;
+			
+			&.active{
+				transform: scale(1.3);
+				opacity: 1;
+			}
+		}
+	}
+}
+
+// Custom Offcanvas 
+.custom-offcanvas{
+	--bs-offcanvas-padding-x: 40px;
+    --bs-offcanvas-padding-y: 30px;
+	--bs-offcanvas-width: 800px;
+
+	@include respond ('phone-land'){
+		--bs-offcanvas-padding-x: 15px;
+		--bs-offcanvas-padding-y: 15px;
+	}
+}
+
+.kanban-bx{
+	display: flex;
+    width: 100%;
+    overflow-x: auto;
+	flex-wrap:nowrap;
+	margin:0;
+	
+	.col{
+		width: 324px;
+		min-width: 324px;
+		padding-left: 0;
+	}
+	@include respond ('phone-land'){
+		display: block;
+		width: auto;
+		
+		.col{
+			width:100%;
+			min-width:100%;
+			flex-basis: 0;
+			flex-grow: 1;
+		}
+	}
+}
+[data-headerbg="color_4"]{
+	.header-right .header-border .btn{
+		background-color:var(--bs-primary)!important;
+		border-color:var(--bs-primary)!important;
+	}
+	.header-right .notification_dropdown .nav-link:hover{
+		background-color:#202020;
+	}	
+}
+.brand-logo .logo-abbr{
+	path{
+		&.react-w{
+			[data-nav-headerbg="color_1"] &{
+				fill: black;
+			}
+			[data-nav-headerbg="color_1"][data-bs-theme="dark"] &{
+				fill: #fff;	
+			}
+		}
+		&.w3{
+			[data-nav-headerbg="color_1"] &{
+				fill:var(--bs-primary);
+			}
+		}
+	}
+}
+input[type="date"]::-webkit-calendar-picker-indicator{
+    background: transparent;
+    bottom: 0;
+    color: transparent;
+    cursor: pointer;
+    height: auto;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+}
+.menu-title{
+	@include respond ('phone'){
+		display:none;
+	}
+}
+.chart-series{
+	cursor: pointer;
+	display: inline-block;
+	
+	label{
+		cursor: pointer;
+	}	
+	input[type="checkbox"]:checked + label{
+		opacity: 0.5;
+	}
+}
+.btn-docs{
+	padding: 10px 8px;
+    font-size: 13px;
+	
+	i{
+		transform: rotate(45deg);
+		margin-left: 2px;
+	}
+}
+
+.page-title{
+	display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 30px;
+    background: var(--bs-body-bg);
+    position: relative;
+    z-index: 1;
+	border-bottom: 1px solid var(--bs-border-color);
+	flex-flow:wrap;
+    
+    @include custommq($max: 767px) {
+		padding-right: 20px;
+		padding-left: 20px;
+	}
+	@include custommq($max: 575px) {
+		padding-right: 15px;
+		padding-left: 15px;
+		flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+	}
+	.breadcrumb {
+		margin-bottom: 0;
+		align-items: center;
+		
+        li {
+            margin-top: 0;
+            margin-bottom: 0;
+
+            a{
+				display: flex;
+				gap: 6px;
+				color: var(--bs-body-color);
+            }
+            &.active{
+                color:var(--bs-primary);
+				font-weight: 500;
+				
+				a{
+					color:var(--bs-primary) !important;
+				}
+            }
+        }   
+        .breadcrumb-item + .breadcrumb-item {
+            &:before {
+				color:var(--bs-primary);
+            }
+        }
+    }
+	h1{
+		margin:0;
+		font-size: 17px;
+		margin-right: 2rem;
+		
+		@include respond ('phone'){
+			font-size: 15px;
+			margin-right: 1rem;
+		}
+	}
+	ol{
+		margin-bottom: 0;
+	}
+}
+.card-title{
+    font-size: 1rem;
+}
+.card-header {
+    align-items: center;
+}

@@ -1,0 +1,49 @@
+.morris-hover {
+	position: absolute;
+	z-index : 1;
+	background: var(--bs-primary);
+	color: $white;
+	
+	.morris-hover-point {
+		color: $white !important;
+		margin: 3px 0;
+		text-align: center;
+		padding: 0 25px;
+	}
+	.morris-hover-row-label{
+		background-color: $dark;
+		text-align: center;
+		padding: 5px;
+		margin-bottom: 5px;
+	}
+	&.morris-default-style {
+		border-radius: var(--bs-border-radius-sm);
+		padding: 0;
+		margin: 0;
+		border: none;
+		overflow: hidden;
+		background-color: var(--bs-primary);
+		
+		.morris-hover-row-label{
+			background-color: var(--bs-dark);
+			margin: 0;
+			color: #fff;
+		}
+	}
+}
+.morris-chart{
+	height: 350px;
+	
+	@include respond ('laptop'){
+		height: 300px;
+	}
+	@include respond ('tab-land'){
+		height: 280px;
+	}
+	@include respond ('phone-land'){
+		height: 250px;
+	}
+	@include respond ('phone'){
+		height: 200px;
+	}
+}

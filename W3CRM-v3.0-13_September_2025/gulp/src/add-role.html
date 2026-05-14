@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "add-role.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+	
+        @@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Add Roles",
+				})
+				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Add Role</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="account/statements.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="aikit/auto-write.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container">
+				<div class="row">
+					<h4 class="mb-3">Account Setting</h4>
+					<div class="col-xl-3">
+						<div class="row">
+						
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header">
+										<h4 class="card-title">Personal</h4>
+									</div>
+									<div class="card-body px-0 py-2">
+										<div class="list-group">
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-user text-primary me-2"></i> Profile
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-lock text-primary me-2"></i> Password
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-calendar-days text-primary me-2"></i> Date
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header">
+										<h4 class="card-title">Company</h4>
+									</div>
+									<div class="card-body px-0 py-2">
+										<div class="list-group">
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-building text-primary me-2"></i> Commpany Details
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-user-plus text-primary me-2"></i> Team Members
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="far fa-clock text-primary me-2"></i> Format setting
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fa-solid fa-briefcase text-primary me-2"></i> Job boards
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="far fa-user text-primary me-2"></i> Positions
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fas fa-times-circle text-danger me-2"></i>Rejections resions
+											</a>
+											<a href="javascript:void(0);" class="list-group-item list-group-item-action border-0">
+												<i class="fas fa-envelope text-primary me-2"></i>Automated message
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+					
+					<div class="col-xl-9">
+						<div class="row">
+							
+							<div class="col-xl-12">
+								<div class="card overflow-hidden">
+									<div class="card-header d-block border-0">
+										<h4 class="card-title">Team Members</h4>
+										<p class="mb-0">Invitite or manage your origanisation's members.</p>
+									</div>
+									<div class="card-body bg-light py-2">
+										<div class="d-flex justify-content-between">
+											<h4 class="mb-0">All Users</h4>
+											<h4 class="mb-0 text-primary">Users Role Manager</h4>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<h5 class="mb-2"><i class="fa-solid fa-user-plus text-primary"></i> Job Management</h5>
+							</div>
+							<div class="col-xl-12 mb-2">
+								<div class="card">
+									<div class="card-body table-card-body p-0">
+										<div class="table-responsive">
+											<table class="table table-borderless my-1">
+												<thead>
+													<tr>
+														<th class="mw-250">Actions</th>
+														<th class="mw-100 text-end">Member</th>
+														<th class="mw-100 text-end">Manager</th>
+														<th class="mw-100 text-end">Admin</th>
+													</tr>
+												</thead>
+												<tbody>
+													<tr>
+														<td>
+															<h6 class="mb-0">Create new job and stage</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox1" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox2" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox3" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Edit job and stage</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox4" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox5" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox6" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Atchive jobs</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox7" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox8" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox9" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Change jobs status</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkboxcheckbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox10" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input"  checked="" id="customCheckBox11" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox12" required="">
+															</div>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<h5 class="mb-2"><i class="fa-solid fa-user text-primary"></i> Candidate Management</h5>
+							</div>
+							<div class="col-xl-12 mb-2">
+								<div class="card">
+									<div class="card-body table-card-body p-0">
+										<div class="table-responsive">
+											<table class="table table-borderless my-1">
+												<thead>
+													<tr>
+														<th class="mw-250">Actions</th>
+														<th class="mw-100 text-end">Member</th>
+														<th class="mw-100 text-end">Manager</th>
+														<th class="mw-100 text-end">Admin</th>
+													</tr>
+												</thead>
+												<tbody>
+													<tr>
+														<td>
+															<h6 class="mb-0">Create new job and stage</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox13" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox14" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox15" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Edit job and stage</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox16" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox17" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox18" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Atchive jobs</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox19" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox20" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox21" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Change jobs status</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkboxcheckbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox22" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input"  checked="" id="customCheckBox23" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox24" required="">
+															</div>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<h5 class="mb-2"><i class="fa-solid fa-users text-primary"></i> Commpany Management</h5>
+							</div>
+							<div class="col-xl-12 mb-2">
+								<div class="card">
+									<div class="card-body table-card-body p-0">
+										<div class="table-responsive">
+											<table class="table table-borderless my-1">
+												<thead>
+													<tr>
+														<th class="mw-250">Actions</th>
+														<th class="mw-100 text-end">Member</th>
+														<th class="mw-100 text-end">Manager</th>
+														<th class="mw-100 text-end">Admin</th>
+													</tr>
+												</thead>
+												<tbody>
+													<tr>
+														<td>
+															<h6 class="mb-0">Create new job and stage</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox25" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox26" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox27" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Edit job and stage</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox28" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox29" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox30" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Atchive jobs</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox31" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox32" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox33" required="">
+															</div>
+														</td>
+													</tr>
+													<tr>
+														<td>
+															<h6 class="mb-0">Change jobs status</h6>
+														</td>
+														<td>
+															<div class="form-check custom-checkboxcheckbox-warning float-end">
+																<input type="checkbox" class="form-check-input" checked="" id="customCheckBox34" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-primary float-end">
+																<input type="checkbox" class="form-check-input"  checked="" id="customCheckBox35" required="">
+															</div>
+														</td>
+														<td>
+															<div class="form-check custom-checkbox checkbox-success float-end">
+																<input type="checkbox" class="form-check-input" id="customCheckBox36" required="">
+															</div>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+        
+		</main>
+		<!-- End - Content Body -->
+		
+        @@include("elements/footer.html")
+		
+		@@include("elements/task-modal.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Full Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

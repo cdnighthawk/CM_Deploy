@@ -1,0 +1,400 @@
+<!-- Start - Material Purchase Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialPurchase" aria-labelledby="materialPurchase" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-bold m-0">Material Purchase</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label">Purchase and Invoice Date</label>
+						<div class="position-relative" data-bs-toggle="offcanvas" data-bs-target="#materialPurchase_EditDate&Number">
+							<input class="form-control position-relative" placeholder="09 Jul 2025">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-edit fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<div class="dropdown-slt">
+							<label class="form-label text-uppercase">Party Name</label>
+							<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#materialPurchase_partyName" type="text" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="materialPurchase_partyName" style="display: none;">
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Alexander</div>
+											<span class="fs-12">+91 764302****</span>
+										</div>
+										<div>
+											<div>Client</div>
+										</div>
+									</div>
+								</div>
+								<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+									<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+									<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+										<div>
+											<div class="fw-semibold text-black">Michael Johnson</div>
+											<span class="fs-12">+15 1343025***</span>
+										</div>
+										<div>
+											<div>Staff</div>
+										</div>
+									</div>
+								</div>
+								<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+									+ Create Party
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<a href="javascript:void(0);" class="btn btn-outline-primary w-100" data-bs-toggle="offcanvas" data-bs-target="#materialPurchase_AddMaterial">+ Add Material</a>
+					</div>
+
+					<div class="mb-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Sub Total</label>
+						<input class="form-control w-50" type="number">
+					</div>
+
+					<div class="mb-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Discount</label>
+						<input class="form-control w-50" type="number" placeholder="AMOUNT">
+					</div>
+
+					<div class="d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Charges</label>
+						<input class="form-control w-50" type="number" placeholder="AMOUNT">
+					</div>
+
+					<hr>
+
+					<div class="mb-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Total Amount</label>
+						<p class="m-0 fs-18 text-black w-50 px-3">00</p>
+					</div>
+
+					<div class="mb-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Paid Amount</label>
+						<input class="form-control w-50" type="number">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label">Add Cost Code</label>
+						<div class="position-relative">
+							<input class="form-control" placeholder="Select Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 d-flex align-items-center justify-content-between">
+						<label class="form-label m-0 fs-16">Purcahse Invoice No.</label>
+						<input class="form-control w-50" type="text	">
+					</div>
+
+					<div class="form-control pointer d-flex justify-content-between align-items-center mb-3" data-bs-toggle="modal" data-bs-target="#saleInvoice_BillTo">
+						<p class="m-0 text-dark fw-medium">Bill To/Ship To</p>
+						<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#saleInvoice_BillTo">+ Add</a>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label">Note (Optional)</label>
+						<textarea class="form-control" rows="3"></textarea>
+					</div>
+
+					<div class="mb-3">
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone dz-clickable">
+							<div class="dz-default dz-message">
+								<button class="dz-button" type="button">Scan Bills<i class="icon feather icon-upload text-primary fs-18 ms-2"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+			</div>
+			<!-- End - Material Purchase Offcanvas -->
+
+            <!-- Start - Material Purchase_Edit Date Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialPurchase_EditDate&Number" aria-labelledby="materialPurchase_EditDate&Number" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-bold m-0 text-uppercase">Edit Date & Number</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					
+                    <div class="mb-4 position-relative">
+                        <label class="form-label text-uppercase">Bill Date</label>
+                        <input class="form-control form-control-lg" type="text" id="bsDatepicker10" />
+                    </div>
+
+                    <div class="position-relative">
+                        <label class="form-label text-uppercase">Due Date</label>
+                        <input class="form-control form-control-lg" type="text" id="bsDatepicker11" />
+                    </div>
+
+				</div>
+			</div>
+			<!-- End - Material Purchase_Edit Date Offcanvas -->
+
+            <!-- Start - Material Add Material Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialPurchase_AddMaterial" aria-labelledby="materialPurchase_AddMaterial" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 m-0 text-uppercase">Materials library</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+                    
+                    <div class="d-flex gap-2 mb-4">
+                        <div class="btn-group w-25">
+                            <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                Category
+                            </button>
+                            <ul class="dropdown-menu width200">
+                                <div class="input-group message-search-area px-3">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Search Category">
+                                </div>
+                                <li><a class="dropdown-item" href="javascript:void(0);">All</a></li>
+                            </ul>
+                        </div>
+                        <div class="input-group message-search-area w-75">
+                            <input type="text" class="form-control border-end-0" placeholder="Search Material">
+                            <div class="input-group-append">
+                                <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <span>Selected Materials(0)</span>
+                        <a href="javascript:void(0);" class="fw-medium" data-bs-toggle="offcanvas" data-bs-target="#materialPurchase_AddMaterial_NewMaterial">+ New Material</a>
+                    </div>
+
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="m-0 fw-semibold text-black">Cement</p>
+                            <span class="badge bg-primary-subtle text-black">Category:</span>
+                        </div>
+                        <div>
+                            <label class="form-check-label" for="CementUnit">
+                                <span class="pe-2">Unit : Numbers</span>
+                                <input class="form-check-input" type="checkbox" value="" id="CementUnit">
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="m-0 fw-semibold text-black">Sariya</p>
+                            <span class="badge bg-primary-subtle text-black">Category:</span>
+                        </div>
+                        <div>
+                            <label class="form-check-label" for="SariyaUnit">
+                                <span class="pe-2">Unit : Numbers</span>
+                                <input class="form-check-input" type="checkbox" value="" id="SariyaUnit">
+                            </label>
+                        </div>
+                    </div>
+
+				</div>
+			</div>
+			<!-- End - Material Add Material Offcanvas -->
+
+            <!-- Start - Material Add New Material Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="materialPurchase_AddMaterial_NewMaterial" aria-labelledby="materialPurchase_AddMaterial_NewMaterial" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 m-0 text-uppercase">Add Material</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+                    
+                    <div class="mb-4 position-relative">
+                        <label class="form-label text-uppercase">Material Name</label>
+                        <input type="text" class="form-control" placeholder="Material Name">
+                    </div>
+                    
+                    <div class="d-flex gap-2 align-items-center mb-4">
+						<div class="w-50 position-relative">
+							<label class="form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+						<div class="w-50 position-relative">
+							<label class="form-label" for="est-quality">GST %</label>
+							<select class="form-select selectpicker">
+								<option>0%</option>
+								<option>5%</option>
+								<option>12%</option>
+								<option>18%</option>
+								<option>28%</option>
+							</select>
+						</div>
+					</div>
+
+                    <div class="form-control form-control-lg mb-4 position-relative pointer" data-bs-toggle="offcanvas" data-bs-target="#MaterialCategory">
+                        <label class="form-label text-uppercase">Category</label>
+                        <p class="m-0 text-black fs-14">Select Category</p>
+                        <span class="position-absolute end-0 top-50 translate-middle"><i class="icon feather icon-chevron-down fs-20"></i></span>
+                    </div>
+
+                    <div class="mb-4 position-relative">
+                        <label class="form-label text-uppercase">HSN/SAC</label>
+                        <input type="text" class="form-control" placeholder="HSN/SAC">
+                    </div>
+                    
+                    <div class="mb-4 position-relative">
+                        <label class="form-label text-uppercase">Specifications</label>
+                        <textarea rows="5" class="form-control" ></textarea>
+                    </div>
+                    
+				</div>
+			</div>
+			<!-- End - Material Add New Material Offcanvas -->
+
+            <!-- Start - Material Add New Material Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="MaterialCategory" aria-labelledby="MaterialCategory" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 m-0 text-uppercase">Select Material Category</h5>
+						</div>
+					</div>
+					<div class="d-flex gap-3">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+        
+                    <div class="input-group message-search-area mb-4">
+                        <input type="text" class="form-control border-end-0" placeholder="Search Material Category">
+                        <div class="input-group-append">
+                            <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 d-flex justify-content-end">
+                        <a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#MaterialCategory_NeAXategory">+ New Material Category</a>
+                    </div>
+
+                    <div class="mb-3">
+                        <a href="javascript:void(0);" class="fw-medium m-0 text-black"><span>1. </span> Hardware</a>
+                    </div>
+
+                    <div class="mb-3">
+                        <a href="javascript:void(0);" class="fw-medium m-0 text-black"><span>2. </span> Wet Material</a>
+                    </div>
+
+				</div>
+			</div>
+			<!-- End - Material Add New Material Offcanvas -->
+
+            <!-- Start - Material Add New Material Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="MaterialCategory_NeAXategory" aria-labelledby="MaterialCategory_NeAXategory" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 m-0 text-uppercase">Add Material Category</h5>
+						</div>
+					</div>
+                    <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+				<div class="offcanvas-body">
+                    
+                    <div class="position-relative">
+                        <label class="form-label text-uppercase">Name</label>
+                        <input type="text" class="form-control" placeholder="Add Material Category">
+                    </div>
+
+				</div>
+			</div>
+			<!-- End - Material Add New Material Offcanvas -->

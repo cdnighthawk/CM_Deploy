@@ -1,0 +1,98 @@
+USIS CRM — HR module and dashboard (Plan 19)
+==============================================
+First-class specification for the **HR dashboard** and HR-adjacent data called out in Plans 14, 15, and 18. Shell placeholder was `usis-hr.html`; primary leadership view is **`usis-hr-dashboard.html`** (KPI-style cards + deep links, fork pattern from Plan 11 / `reports.html` per Plan 0).
+
+1. Training and certification ownership (locked decision)
+---------------------------------------------------------
+**Safety-owned regulatory and site safety training** remains under Plan 7:
+
+- Canonical store: `safety_training_records` (and related Safety models) for OSHA 10/30, First Aid, Scaffold, Fall Protection, Cal/OSHA-oriented certs, expiration alerts, and the **Safety dashboard** (`usis-safety-dashboard.html` when implemented).
+
+**HR-owned general people workflows** use separate tables (to be implemented) keyed to `User` / company employee identity:
+
+- `hr_onboarding_checklist` (or equivalent): tasks per hire, assigned documents, completion dates.
+- `hr_policy_acknowledgment`: policy version, user, signed_at, approval_request_id when gated.
+- `hr_training_assignment`: non-safety courses (e.g. harassment prevention, company handbook, trade-neutral orientation) with optional `document_id` link to Documents hub.
+- **`hr_employee_pay_scales`** and **`hr_employee_documents`** (implemented): multiple pay schedules per employee (hourly/salary/prevailing reference, optional FK to org-wide **`wage_rates`** prevailing lookup — not a duplicate of that table), plus categorized HR document links; mutations require `hr_admin` / `admin` / `executive`. Not a payroll engine; no certified payroll math here.
+
+**HR dashboard rule:** The HR dashboard **aggregates**:
+
+1. Counts and lists from **HR tables** (onboarding, acknowledgments, HR-assigned training).
+2. **Read-only summary metrics** sourced from Safety’s API/view for “expiring safety certs in N days” and total employees with missing required safety certs — **no duplicate write path** for safety certs in HR tables. If a single SQL view is preferred later, define a database view that joins `safety_training_records` for read-only HR reporting only; writes still go through Safety module endpoints.
+
+This preserves Plan 7 schema integrity and avoids two sources of truth for the same OSHA row.
+
+2. Purpose of the HR dashboard
+-------------------------------
+Give HR, executives, and authorized admins a **single page** to see operational people risk: who has not finished onboarding, which policy acknowledgments are overdue, pending HR-tagged approvals, and **safety compliance snapshot** (via read model above). Not a full HRIS; scope grows by phase (Plans 14–18).
+
+3. RBAC
+-------
+| Role (example) | Access |
+|------------------|--------|
+| `hr_admin` | Full HR dashboard, all aggregates, export audit trails. |
+| `executive` | Read-only dashboard cards; no individual PII drill-down unless policy allows. |
+| `manager` | Team-scoped onboarding/ack status only if product adds reporting-line model. |
+| `employee` | Self-service: own acknowledgments and assigned training (separate page or drawer; not full dashboard). |
+
+Enforce on **every** `/api/v1/hr/*` route. Dashboard HTML may render for any authenticated user but sensitive widgets load only after API returns 200 with role-appropriate payload; otherwise show “insufficient permission” card.
+
+4. Dashboard widgets (MVP vs later)
+------------------------------------
+**MVP (align Plans 14/18 phased breadth):**
+
+1. **Pending policy acknowledgments** — count + table snippet; link to detail workflow; uses shared **approval engine** when legal requires witness/second approver (Plan 14).
+2. **Onboarding in progress** — new hires with checklist completion %; deep link to per-user checklist page (future `usis-hr-onboarding.html`).
+3. **Pending HR approvals** — items in `approval_request` where `entity_type` in HR-defined set (onboarding_complete, policy_ack, etc.).
+4. **Safety cert snapshot** — read-only: expiring within 30/60 days, missing required cert (counts from Safety read model); button **Open Safety module** → `usis-safety.html`.
+5. **Documents hub** — link to HR folder or tag filter on `usis-documents-hub.html` (`document_type` includes `onboarding_packet`, `policy_acknowledgment` when uploaded).
+
+**Later (explicit CR only):** PTO balances, headcount by craft, org chart, integrations to external payroll/HRIS, performance review cycles.
+
+5. APIs
+-------
+- `GET /api/v1/hr/dashboard-summary` — JSON: KPI counts and `sample_employees` (live from `hr_*` when migrated); must respect RBAC and return 403 for unauthorized roles.
+- `GET /api/v1/hr/employees/<user_uuid>` — JSON: `user` plus onboarding items, policy acknowledgments, HR training assignments, **`regulatory_certifications`** (read-only `safety_training_records`), **`pay_scales`**, **`hr_employee_documents`**, and **`capabilities.can_edit_hr_employee_records`**. 404 if user missing.
+- `POST` / `PATCH` / `DELETE` — `/api/v1/hr/employees/<user_uuid>/pay-scales` and `…/employee-documents` (edit gated to `hr_admin`, `admin`, `executive`; same view permission as employee GET).
+- Future: `GET /api/v1/hr/onboarding`, `POST /api/v1/hr/policy-acknowledgments`, etc., each behind same auth.
+
+Frontend: `assets/js/usis-hr-dashboard.js` fetches dashboard-summary; name cells link to `usis-hr-employee.html?id=<uuid>`, which uses `usis-hr-employee.js` and the same `apiBase()` pattern as other USIS shells.
+
+6. PII, retention, and access (compliance gate)
+-----------------------------------------------
+Before loading **production** HR-sensitive data at scale (Plans 15, 18):
+
+- **Classification:** Separate PII (SSN, bank, medical) from operational training status. Default MVP **avoids** storing SSN/full medical in v1; if added, field-level encryption or attachment-only in secured storage is required.
+- **Retention:** Document retention periods per record type (acknowledgments 7 years typical; verify with counsel). Soft-delete + tombstone in audit log, not hard delete of compliance records without policy.
+- **Logging:** Structured logs must **not** write full PII payloads; log IDs and action types only.
+- **Exports:** CSV/PDF exports of people data are HR-admin-only and audited (who exported, when).
+- **Aggregates:** Executive dashboard cards show **counts** by default; drill-down to named lists is HR_admin (or configured role) unless company policy permits managers team scope.
+
+7. UI files (W3CRM)
+---------------------
+- `gulp/src/usis-hr-dashboard.html` — Main dashboard (this plan).
+- `gulp/src/usis-hr-employee.html` — Per-employee HR detail (`?id=`); opened from dashboard name links. Includes read-only **Licenses & certifications** (`regulatory_certifications` / `safety_training_records`), **Pay scales** (`pay_scales` / `hr_employee_pay_scales`), and **HR documents** (`hr_employee_documents`).
+- `gulp/src/usis-hr.html` — Short landing: link to dashboard + future deep links.
+- Optional later: `usis-hr-onboarding.html`, `usis-hr-policies.html`.
+- Nav: `elements/deznav-construction.html` — HR entry points to `usis-hr-dashboard.html` (primary).
+
+8. Database sketch (implementation backlog)
+---------------------------------------------
+Not migrated until Alembic tasks are scheduled:
+
+- `hr_onboarding_item` (user_id, title, sort_order, completed_at, document_id nullable)
+- `hr_policy_acknowledgment` (user_id, policy_version, signed_at, ip optional, approval_request_id nullable)
+- `hr_training_assignment` (user_id, course_key, due_at, completed_at, document_id nullable) — **not** for OSHA rows duplicated from Safety.
+- **`hr_employee_pay_scales`** — migrated: multiple rows per `user_id`; optional `wage_rate_id` → prevailing **`wage_rates`** reference; optional `document_id`.
+- **`hr_employee_documents`** — migrated: `user_id`, `category`, `title`, optional `document_id`.
+
+9. References
+-------------
+• Plan 0 — W3CRM mapping; KPI pages `index-2.html`, `reports.html`.
+• Plan 1 — Header, notifications, dashboard shell.
+• Plan 6 — Documents hub, `document_type` extensions.
+• Plan 7 — `safety_training_records`, safety dashboard (canonical safety certs).
+• Plan 13 — Cross-cutting notifications, offline (HR approvals finalize online per Plan 14).
+• Plan 14 — HR breadth, approvals, API conventions.
+• Plans 15, 18 — Program SOW and website SOW compliance gates.
+• Plan 21 — HR and Safety operating model (RACI, journeys, phased rollout with Plan 7).

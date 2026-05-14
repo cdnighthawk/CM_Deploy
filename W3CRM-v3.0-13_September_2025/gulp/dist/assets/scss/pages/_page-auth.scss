@@ -1,0 +1,30 @@
+.auth-wrapper{
+	min-height: 100vh;
+	overflow: hidden;
+	
+	.auth-form{
+		padding: 20px;
+		max-width: 450px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+	.auth-info{
+		background-color: var(--bs-body-bg);
+		padding: 60px;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+	.info-text{
+		font-size: 16px;
+		color: var(--bs-heading-color);
+		font-weight: 500;
+	}
+	@include respond ('tab-port'){
+		.auth-info{
+			min-height: auto;
+			padding: 20px;
+		}
+	}
+}

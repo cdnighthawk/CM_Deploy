@@ -1,0 +1,35 @@
+.clockpicker-popover{
+	position: absolute;
+	overflow: hidden;
+	
+	.popover-title{
+		padding: 10px 0px;
+		background-color: var(--bs-body-bg);
+		color: var(--bs-body-color);
+	}
+	.popover-content{
+		background-color: var(--bs-light);
+	}
+	.clockpicker-button{
+		display: block;
+		width: 100%;
+		border: 0;
+	}
+	.clockpicker-plate{
+		background-color: var(--bs-body-bg);
+		border: 1px solid var(--bs-border-color);
+	}
+}
+.clockpicker-canvas line {
+    stroke: var(--bs-primary-bg-subtle);
+}
+.clockpicker-canvas-bearing, .clockpicker-canvas-fg {
+    fill: var(--bs-primary-bg-subtle);
+}
+.clockpicker-canvas-bg {
+    fill: var(--bs-primary-bg-subtle);
+}
+.clockpicker-tick.active,
+.clockpicker-tick:hover {
+    background-color: var(--bs-primary-bg-subtle);
+}

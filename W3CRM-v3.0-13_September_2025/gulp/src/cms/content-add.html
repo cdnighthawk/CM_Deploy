@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "cms/content-add.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper" class="overflow-unset">
+
+        @@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+		
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Content Add",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Content Add</h6>
+								<p class="text-muted small mb-0">CMS / blog admin template. Reference for content editing shells.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="blog.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="content.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- end - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">
+						<div class="clearfix mb-4">
+							<a href="cms/content.html" class="btn btn-primary mb-2 me-2">Content List</a>
+							<a class="btn btn-primary mb-2" data-bs-toggle="collapse" href="#collapseScreenOption" role="button" aria-expanded="false" aria-controls="collapseScreenOption">Screen Option</a>
+							<div class="collapsed collapse" id="collapseScreenOption">
+								<div class="card">
+									<div class="card-body">
+										<label class="form-label">Show on screen</label>
+										<div class="row">
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-1">
+													<label class="form-check-label mb-0 text-nowrap" for="flexCheckDefault-1">Page Attributes</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-2">
+													<label class="form-check-label mb-0 text-nowrap" for="flexCheckDefault-2">Featured Image</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-3">
+													<label class="form-check-label mb-0" for="flexCheckDefault-3">Excerpt</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-4">
+													<label class="form-check-label mb-0 text-nowrap" for="flexCheckDefault-4">Custom Fields</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-5">
+													<label class="form-check-label mb-0 text-nowrap" for="flexCheckDefault-5">Discussion</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-6">
+													<label class="form-check-label mb-0 text-nowrap" for="flexCheckDefault-6">Slug</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-7">
+													<label class="form-check-label mb-0" for="flexCheckDefault-7">Author</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-8">
+													<label class="form-check-label mb-0" for="flexCheckDefault-8">Page Type</label>
+												</div>
+											</div>
+											<div class="col-xl-2 col-lg-3 col-sm-4 mb-sm-3 mb-1">
+												<div class="form-check">
+													<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-9">
+													<label class="form-check-label mb-0" for="flexCheckDefault-9">Seo</label>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="row">
+							<div class="col-xl-8">
+								<div class="row">
+									<div class="col-12">
+										<div class="card">
+											<div class="card-body">
+												<form>
+													<div class="mb-3">
+														<label class="form-label">Title</label>
+														<input type="text" class="form-control" placeholder="Add Title">
+													</div>
+													<div id="ckeditor"></div>
+												</form>
+											</div>
+										</div>
+									</div>
+									
+									<div class="col-12">
+										<div class="card card-collapse">										
+											<div class="card-header">
+												<h4 class="card-title">Custom Fields</h4>
+												<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilter" role="button" aria-expanded="false" aria-controls="collapseFilter">
+													<i class="fa fa-angle-down"></i>
+												</a>
+											</div>
+											<div class="collapsed collapse show" id="collapseFilter">
+												<div class="card-body">
+													<h6 class="mb-3">Add New Custom Field:</h6>
+													<div class="row">
+														<div class="col-xl-6 col-sm-6">
+															<form>
+																<div class="mb-3">
+																	<label class="form-label">Title</label>
+																	<input type="text" class="form-control" placeholder="Add Title">
+																</div>
+															</form>
+														</div>
+														<div class="col-xl-6 col-sm-6">
+															<label class="form-label">Value</label>
+															<textarea class="form-control" rows="2"></textarea>
+														</div>
+													</div>	
+													<button type="button" class="btn btn-primary mt-3 mt-sm-0">Add Custom Field</button>
+													<div class="mt-3 form-text">Custom fields can be used to extra metadata to a post that you can use in your theme.</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-12">
+										<div class="card card-collapse">
+											<div class="card-header">
+												<h4 class="card-title">Discussion</h4>
+												<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFiltercoments" role="button" aria-expanded="false" aria-controls="collapseFiltercoments">
+													<i class="fa fa-angle-down"></i>
+												</a>
+											</div>
+											<div class="collapsed collapse show" id="collapseFiltercoments">
+												<div class="card-body">
+													<div class="form-check">
+														<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+														<label class="form-check-label" for="flexCheckDefault">Allow comments.</label>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-12">
+										<div class="card card-collapse">
+											<div class="card-header">
+												<h4 class="card-title">Slug</h4>
+												<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilterslug" role="button" aria-expanded="false" aria-controls="collapseFilterslug">
+													<i class="fa fa-angle-down"></i>
+												</a>
+											</div>
+											<div class="collapsed collapse show" id="collapseFilterslug">
+												<div class="card-body">
+													<label class="form-label">Slug</label>
+													<input type="text" class="form-control">
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-12">
+										<div class="card card-collapse">
+											<div class="card-header">
+												<h4 class="card-title">Author</h4>
+												<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseauthor" role="button" aria-expanded="false" aria-controls="collapseauthor">
+													<i class="fa fa-angle-down"></i>
+												</a>
+											</div>
+											<div class="collapsed collapse show" id="collapseauthor">
+												<div class="card-body">
+													<label class="form-label">User</label>
+													<select class="selectpicker form-select">
+														<option value="AL">admin@gmail.com</option>
+														<option value="WY">India</option>
+														<option value="WY">Information</option>
+														<option value="WY">New Menu</option>
+														<option value="WY">Page Menu</option>
+													</select>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-12">
+										<div class="card card-collapse">
+											<div class="card-header">
+												<h4 class="card-title">Seo</h4>
+												<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilterseo" role="button" aria-expanded="false" aria-controls="collapseFilterseo">
+													<i class="fa fa-angle-down"></i>
+												</a>
+											</div>
+											<div class="collapsed collapse show" id="collapseFilterseo">
+												<div class="card-body">
+													<label class="form-label">Page Title</label>
+													<input type="text" class="form-control mb-3" placeholder="Add title">
+													<div class="row">
+														<div class="col-xl-6 col-sm-6">
+															<label class="form-label">Keywords</label>
+															<input type="text" class="form-control mb-3 mb-sm-0" placeholder="Enter meta Keywords">
+														</div>
+														<div class="col-xl-6 col-sm-6">
+															<label class="form-label">Descriptions</label>
+															<textarea  class="form-control" rows="3" placeholder="Enter meta Keywords"></textarea>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-4">
+								<div class="card card-collapse">
+									<div class="card-header">
+										<h4 class="card-title">Published</h4>
+										<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilterpublished" role="button" aria-expanded="false" aria-controls="collapseFilterpublished">
+											<i class="fa fa-angle-down"></i>
+										</a>
+									</div>
+									<div class="collapsed collapse show" id="collapseFilterpublished">
+										<div class="card-body py-3">
+											<ul>
+												<li class="border-bottom py-2">
+													<div class="d-flex justify-content-between align-items-center">
+														<div class="clearfix">
+															<label class="form-label mb-0 me-2">
+																<i class="fa-solid fa-key me-1 text-primary"></i> Status:
+															</label>
+															<span>Published</span>
+														</div>
+														<a href="javascript:void(0);" class="badge badge-primary btn-sm light ms-3" id="headingOne" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-controls="collapseOne" aria-expanded="true" role="button">Edit</a>
+													</div>
+													<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-bs-parent="#accordion-one">
+														<div class="border rounded p-3 mt-3">
+															<div class="mb-2">
+																<label class="form-label w-100">Content Type</label>
+																<select class="selectpicker form-select">
+																	<option selected>Select Status</option>
+																	<option value="1">Published</option>
+																	<option value="2">Draft</option>
+																	<option value="3">Trash</option>
+																	<option value="4">Private</option>
+																	<option value="5">Pending</option>
+																</select> 
+															</div>
+															<div class="mt-3">
+																<button class="btn btn-primary btn-sm me-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">Ok</button>
+																<button class="btn btn-danger light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">Cancel</button>
+															</div>
+														</div>
+													</div>	
+												</li>
+												<li class="border-bottom py-2">
+													<div class="d-flex justify-content-between align-items-center">
+														<div class="clearfix">
+															<label class="form-label mb-0 me-2">
+																<i class="fa-solid fa-eye me-1 text-primary"></i> Visible:
+															</label>
+															<span>Public</span>
+														</div>
+														<a href="javascript:void(0);" class="badge badge-primary light ms-3"  id="headingtwo" data-bs-toggle="collapse" data-bs-target="#collapsetwo" aria-controls="collapsetwo"   aria-expanded="true" role="button">Edit</a>
+													</div>
+													<div id="collapsetwo" class="collapse" aria-labelledby="headingtwo" data-bs-parent="#accordion-one">
+														<div class="p-3 mt-3 border rounded">
+															<div class="basic-form">
+																<form>
+																	<div class="mb-3 mb-0">
+																		<div class="form-check mb-2">
+																		   <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+																		   <label class="form-check-label" for="flexRadioDefault1">Public</label>
+																		</div>
+																		<div class="form-check mb-2">
+																		   <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+																		   <label class="form-check-label" for="flexRadioDefault2">Password Protected</label>
+																		</div>
+																		<div class="form-check mb-2">
+																		   <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault3">
+																		   <label class="form-check-label" for="flexRadioDefault3">Private</label>
+																		</div>
+																	</div>
+																</form>
+															</div>
+															<div>
+																<button class="btn btn-primary btn-sm me-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapsetwo" aria-expanded="false" aria-controls="collapsetwo">Ok</button>
+																<button class="btn btn-danger light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapsetwo" aria-expanded="false" aria-controls="collapsetwo">Cancel</button>
+															</div>
+														</div>
+													</div>
+												</li>
+												<li class="py-2">
+													<div class="d-flex justify-content-between align-items-center">
+														<div class="clearfix">
+															<label class="form-label mb-0 me-2">
+																<i class="fa-solid fa-calendar-days me-1 text-primary"></i> Published
+															</label>
+															<span>on :24-09-2024 16:22:52</span>
+														</div>
+														<a href="javascript:void(0);" class="badge badge-primary light ms-3"  id="headingthree" data-bs-toggle="collapse" data-bs-target="#collapsethree" aria-controls="collapsethree" aria-expanded="true" role="button">Edit</a>
+													</div>
+													<div id="collapsethree" class="collapse" aria-labelledby="headingthree" data-bs-parent="#accordion-one">
+														<div class="p-3 mt-3 border rounded">
+															<div class="position-relative">
+																<input class="form-control bs-datepicker" type="text" value="03/13/2025">
+																<div class="position-absolute end-0 me-3 top-50 translate-middle-y">
+																	<i class="far fa-calendar"></i>
+																</div>
+															</div>
+															<div class="mt-3">
+																<button class="btn btn-primary btn-sm me-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapsethree" aria-expanded="false" aria-controls="collapsethree">Ok</button>
+																<button class="btn btn-danger light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapsethree" aria-expanded="false" aria-controls="collapsethree">Cancel</button>
+															</div>
+														</div>
+													</div>
+												</li>
+											</ul>
+										</div>
+										<div class="card-footer text-end">
+											<a href="javascript:void(0);" class="btn btn-primary">Publish</a>
+										</div>
+									</div>
+								</div>
+								
+								<div class="card card-collapse">
+									<div class="card-header">
+										<h4 class="card-title">Page Attributes</h4>
+										<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilterattribute" role="button" aria-expanded="false" aria-controls="collapseFilterattribute">
+											<i class="fa fa-angle-down"></i>
+										</a>
+									</div>
+									<div class="collapsed collapse show" id="collapseFilterattribute">
+										<div class="card-body">
+											<label class="form-label">Title</label>
+											<select class="selectpicker form-select">
+												<option selected>(No Parent)</option>
+												<option value="1">Privacy Policy</option>
+												<option value="2">Contact Us</option>
+												<option value="3">Important Information</option>
+												<option value="4">Free shipping</option>
+												<option value="5">Daily Gifts</option>
+												<option value="6">Blog</option>
+												<option value="6">About Us</option>
+												<option value="6">Dummy Co</option>
+											</select>
+										</div>
+									</div>
+								</div>
+								
+								<div class="card card-collapse">
+									<div class="card-header">
+										<h4 class="card-title">Page Type</h4>
+										<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFiltertype" role="button" aria-expanded="false" aria-controls="collapseFiltertype">
+											<i class="fa fa-angle-down"></i>
+										</a>
+									</div>
+									<div class="collapsed collapse show" id="collapseFiltertype">
+										<div class="card-body">
+											<label class="form-label">Content</label>
+											<select class="selectpicker form-select">
+												<option selected>Page</option>
+												<option value="Widget">Widget</option>
+												<option value="Team">Team</option>
+												<option value="About US">About US</option>
+											</select>
+										</div>
+									</div>
+								</div>
+								
+								<div class="card card-collapse">
+									<div class="card-header">
+										<h4 class="card-title">Featured Image</h4>
+										<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilterfeatured" role="button" aria-expanded="false" aria-controls="collapseFilterfeatured">
+											<i class="fa fa-angle-down"></i>
+										</a>
+									</div>
+									<div class="collapsed collapse show" id="collapseFilterfeatured">
+										<div class="card-body">
+											<div class="avatar avatar-xl avatar-preview">
+												<img class="imagePreview w-100 h-100" src="assets/images/avatar/placeholder.png" alt="Avatar">
+												<input type="file" class="imageUpload d-none" accept=".png, .jpg, .jpeg">
+												<a href="javascript:void(0);" class="avatar avatar-xs position-absolute bottom-0 end-0 bg-white shadow-sm upload-trigger">
+													<i class="fa-solid fa-upload"></i>
+												</a>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+							</div>
+						</div>
+					</div>
+				</div>
+			
+			</div>
+		</main>
+		<!-- End - Content Body -->
+
+		@@include("../elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    
+	<!-- Script For Ckeditor -->
+	<script src="assets/vendor/ckeditor/ckeditor.js"></script>
+
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

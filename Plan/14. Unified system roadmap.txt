@@ -1,0 +1,79 @@
+USIS CRM — Unified system roadmap (Plan 14)
+=============================================
+Single product, three clients: (1) website + database, (2) estimating workspace + PDF/drawing viewer, (3) phone app. The website’s primary goal is one unified platform for all company operations—from HR through closeout documents—with approvals at the right gates so nothing material ships without traceable sign-off.
+
+This plan ties Plans 0–13 together at the architecture level. Detailed specs remain in Plans 3 (takeoff), 4 (estimating), 6 (drawing viewer), 13 (mobile/offline/cross-cutting), 19 (HR module and dashboard), **22 (operational playbooks / checklist runs)**, and Plan 0 (W3CRM mapping). **Web UI page inventory and navigation links:** Plan 20 (20. Site map and navigation.txt). **HR and Safety cooperation (RACI, journeys, phases):** Plan 21 (21. HR and Safety operating model.txt). Stakeholder-level program scope: Plan 15 (15. Unified scope of work.txt). Workstream SOWs: Plan 16 (phone), Plan 17 (estimating / drawing viewer), Plan 18 (website and database). HR dashboard, training ownership, PII rules, and APIs: **Plan 19** (19. HR module and dashboard.txt). Payroll depth and full closeout checklists beyond Plan 19 may still warrant additional slices; other HR breadth follows the same stack and approval model.
+
+Optional: drop client-specific requirement notes under repo folder unified\ (estimating + phone); merge them here or into Plans 4 / 13 as those files stabilize.
+
+1. North star
+-------------
+• One API and one canonical data model; no parallel “bid takeoff” vs “estimate takeoff” tables — unified takeoff (Plan 3) is the spine for estimating and much of project delivery.
+• Estimating (Plan 4) layers pricing on takeoff via estimate_line_items → takeoff_line_item_id.
+• DrawingViewer (Plan 6) feeds quantities and annotations into the same takeoff and document models.
+• Web shell: W3CRM + Bootstrap + shared JS (Plan 0, Plan 1). Phone: native or PWA consuming the same versioned JSON APIs.
+• Operations breadth: the same platform covers CRM/leads, bids, estimating, field/schedule, safety, financials, analytics (Plans 2, 4, 8–11), documents and drawings (Plan 6), vendor/RFP (Plan 5), and extends to HR policies/onboarding artifacts, time or PTO if needed, and formal closeout packages (warranties, lien releases, as-builts, turnover binders)—all as first-class modules, not separate siloed apps.
+• Approvals: major transitions (e.g. estimate submit, CO, submittal, safety stop-work, invoice release, closeout completeness) use a shared approval pattern—roles, steps, timestamps, and audit (Plan 13)—so compliance and internal control stay consistent across modules.
+
+2. Website and database
+-----------------------
+Role: single operational hub—system of record for the full business lifecycle: people and policy (HR-facing records and workflows as you define them), sales and delivery, field and safety, money and reporting, and document control through final closeout. Includes PM/admin workflows, documents hub, reporting, vendor portal patterns, PDFs via Flask + Jinja2 (Plan 0).
+
+Approvals (shared platform capability):
+• Treat approvals as reusable infrastructure: what entity is pending, which rule set applies (by amount, trade, project type, or doc type), ordered steps or parallel reviewers, and immutable history on approve/reject/delegate.
+• Surface pending items in header/notifications (Plan 1, Plan 13); enforce on the server on state transitions, not only in the UI.
+• Map examples: bid go/no-go; estimate version submit; RFP award recommendation; drawing distribution; submittal/RFI sign-off; change order; invoice or pay-app; safety incident escalation; closeout checklist completion—each module plugs into the same pattern.
+
+Database priorities (order):
+• Identity, RBAC, audit (Plan 13, Plan 1).
+• Approval definitions + instances (workflow template, approval_request, approval_step—or equivalent—linked polymorphically or by entity_type + entity_id).
+• CRM / projects / bids (Plan 2).
+• takeoff_line_items + related types (Plan 3).
+• estimates, estimate_line_items (Plan 4).
+• Document / Drawing, versions, storage URLs (Plan 6); closeout document types as Document categories or linked checklist rows.
+• DrawingAnnotation, AI review links, change-order hooks (Plans 6, 13).
+• HR-adjacent data (as scope grows): employee/project role assignments already live in RBAC; expand with HR-only tables for onboarding docs, acknowledgments, training records—still behind the same auth and approval where policy requires it.
+
+API conventions:
+• Versioned prefix e.g. /api/v1/… for all clients.
+• Same resources for web and mobile: projects, estimates, takeoff lines, documents, annotations, field payloads as modules land.
+• Auth: one story (session and/or bearer) for web and phone; role-scoped routes.
+• Sync-friendly: PATCH batches, ETags or cursors, idempotent writes for offline replay (align with Plan 13 offline queue).
+
+3. Estimating app / PDF viewer
+------------------------------
+Role: power workspace — dense tables, cost library, AI drawer, proposal PDFs, deep link to drawings (Plan 4).
+
+• All quantity/location truth on takeoff lines; estimating UI edits takeoff where needed and estimate_line_items for cost/markup/vendor quote.
+• DrawingViewer: measurements “apply to takeoff row” call the same takeoff APIs as the web estimate page (Plan 6).
+• Delivery options: (A) same W3CRM pages in browser, full-screen viewer mode; (B) later optional desktop shell (e.g. Electron) wrapping the same URLs — still one API, no duplicate business logic.
+
+4. Phone app
+------------
+Role: field-first — logs, photos, punch lists, simplified takeoff/estimate views, drawing preview, offline queue, notifications (Plan 13, Plan 1 mobile patterns).
+
+• Consume /api/v1 only; no parallel backend.
+• Local persistence + upload queue mirroring the intent of usis-offline-queue.js (IndexedDB on web; SQLite/MMKV or equivalent on native).
+• UI: large touch targets, card layouts for takeoff on small screens, bottom nav pattern per Plan 13.
+• Stack choice (pick one): React Native or Flutter recommended for parity and hiring; PWA-first acceptable if store distribution can wait.
+
+5. Cross-cutting (all three)
+----------------------------
+• Offline: one queue contract — operation type, payload, idempotency key, server acknowledgment (Plan 13).
+• AI: same Flask /api/ai/* modes; clients differ only in presentation (Plan 12).
+• Files: upload → object storage → Document row; thumbnails for phone lists (Plan 6).
+• Observability: structured logging, request/correlation IDs for support across clients.
+• Approvals + notifications: push “pending your approval” to web and phone; respect offline queue for draft actions but never finalize gated states until server validates approver chain.
+
+6. Implementation order (suggested)
+-----------------------------------
+1) Backend + DB: auth, RBAC, audit; minimal approval model (templates + requests + steps) and one pilot flow (e.g. estimate submit); projects; takeoff_line_items; minimal Document model; /api/v1 scaffolding.
+2) Web: dashboard with “my approvals” + takeoff table + one estimate screen on live APIs; notification hooks for approvers.
+3) DrawingViewer: view + calibration + measurement + link to takeoff row (AI can follow).
+4) Estimating depth: versions, cost library, proposal PDF (Plan 4).
+5) Phone: read-only project/estimate/takeoff + sync; then edits, photos, offline flush rules.
+6) Harden: RBAC, rate limits, conflict resolution for concurrent edits, vendor portal if in scope.
+
+7. Traceability
+---------------
+When unified\ requirement files exist, maintain a short table: requirement id → API route → SQLAlchemy model → client(s). Keep Plan 14 as the executive summary; defer line-by-line behavior to Plans 3, 4, 6, 13, and Plan 19 for HR. **HTML page routes and “linked from”:** Plan 20.

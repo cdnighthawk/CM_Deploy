@@ -1,0 +1,131 @@
+USIS Construction Management — Phone App Scope of Work (Plan 16)
+=================================================================
+Stakeholder-facing scope for the field-oriented phone client only. Detailed shell paths, web parity, and platform-wide behavior live in Plans 1 (core / mobile-first shell), 13 (cross-cutting mobile, offline, notifications), and 14 (unified roadmap, section 4). Program-level context: Plan 15. This document is not a legal contract unless executed separately; it defines intended product scope for the phone app at a summary level.
+
+1. Purpose
+----------
+Provide a field-first mobile client for the same USIS Construction Management platform as the web hub and estimating/drawing surfaces. The phone app consumes the same versioned JSON APIs as other clients (e.g. /api/v1) and the same canonical data model—no separate “mobile database” or duplicate business rules. Its role is to put approvals, field work, photos, punch lists, schedule and task visibility, simplified estimating/takeoff views, and drawing preview into crews’ hands with large touch targets, resilient offline capture, and role-appropriate access (RBAC) aligned with Plan 13 and Plan 14 section 4.
+
+2. Business objectives
+----------------------
+• Keep superintendents, foremen, and field PMs productive on site without waiting for a laptop or full web session.
+• Ensure pending approvals and critical tasks are visible and actionable from the field, reducing cycle time on gates that block money or schedule.
+• Capture logs, photos, and punch-list evidence at the moment of observation, with traceable sync back to the system of record.
+• Reduce duplicate data entry and shadow spreadsheets by reading the same projects, estimates, takeoff lines, documents, and workflow state as the web application.
+• Support intermittent connectivity through a defined offline queue and sync contract, consistent with cross-cutting intent in Plan 13 (mirroring usis-offline-queue.js semantics on native storage).
+
+3. In-scope features
+--------------------
+The following capabilities are in scope for the phone app, subject to phased delivery (section 6) and API availability.
+
+• Approvals inbox — List and drill into items pending the signed-in user’s action; respect server-enforced approval chains (Plan 14, Plan 15). Presentation differs from web; authority and history remain server-side.
+
+• Field logs — Create and view daily / field log entries tied to project context; queue writes when offline per Plan 13 offline architecture. Includes **daily pretask (project pretask)** when exposed on mobile per Plan 7 §10 / Plan 8 (same APIs as web).
+
+• Photos — Capture or attach photos, upload to object storage with Document (or equivalent) metadata; thumbnails in lists (Plan 14 files pattern). Align with Plan 13 field-first pattern: camera-oriented flow; optional linkage to drawing context when APIs support it.
+
+• Punch lists — Create, assign, and update punch items with status and photos; sync with project delivery modules as APIs land.
+
+• Schedule and task visibility — Read-focused views of schedule milestones and assigned tasks suitable for small screens; expand to agreed edits in later phases.
+
+• Simplified takeoff and estimate views — Card or list layouts for takeoff line items and estimate summaries (Plan 14: large touch targets, simplified views); not full desktop estimating parity.
+
+• Drawing preview — View current drawing versions, pan/zoom, and basic sheet navigation; deep measurement and full markup parity are phased unless explicitly added (section 7).
+
+• Offline queue and sync — Local persistence plus an outbound queue for agreed operation types (e.g. field logs, photos, punch updates, queued approval actions that require server validation). Operation type, payload, idempotency key, and server acknowledgment align with Plan 14 “one queue contract” and Plan 13 offline intent (IndexedDB on web; SQLite/MMKV or equivalent on native).
+
+• Notifications — In-app notification list and badges for pending approvals, due tasks, and other server-driven events; push notifications (FCM/APNs or equivalent) may be delivered as an optional phase (section 4) once auth and backend hooks are stable.
+
+• RBAC — Hide or disable features based on role and project permissions from the same auth story as web (session and/or bearer tokens per Plan 14); no client-only security.
+
+• UX patterns (reference Plan 13) — Bottom navigation for primary modules (conceptually aligned with Dashboard, CRM, Schedule/Field, Drawings, Financials, Safety as on web shell); floating quick actions / speed-dial style entry for frequent field actions (e.g. photo, log); offline indicator with last-sync visibility; high-contrast / readable layouts per mobile-first guidance in Plans 1 and 13.
+
+4. Major deliverables / workstreams
+-----------------------------------
+1) Client platform decision — Select one primary path: native (e.g. React Native or Flutter per Plan 14 recommendation) or PWA-first, documented with rationale (store distribution, hiring, device features, background sync).
+
+2) Authentication and session — Integrate with the platform’s single auth story; secure token storage; session refresh and sign-out; alignment with API auth requirements.
+
+3) API client layer — Typed or documented consumption of /api/v1 (and agreed subpaths); error handling, correlation IDs where provided, and version pinning strategy.
+
+4) Local store and sync engine — Schema for cached entities, queue rows, retry/backoff, and conflict surfacing; idempotent replay compatible with server expectations (Plan 14).
+
+5) Feature modules — Screens and flows for approvals inbox, field logs, photos, punch lists, schedule/tasks, takeoff/estimate summaries, drawing preview, settings, and help.
+
+6) Notifications phase (optional) — Push registration, device token binding, server-side triggers for “pending your approval” and similar events; falls back to in-app-only if deferred.
+
+7) Quality and release — Test matrix on agreed OS versions, crash reporting, staged rollout, and handoff materials for internal support.
+
+5. Technical approach summary
+-----------------------------
+• Consume /api/v1 (and documented extensions) only; no parallel Flask app or duplicate domain logic in the mobile codebase.
+
+• Local store plus outbound queue on device; flush when connectivity returns; never finalize gated states (e.g. approvals) until the server accepts the transition.
+
+• No duplicate backend — uploads, PDFs, emails, and heavy reporting remain server-side per Plan 0 / Plan 15 patterns.
+
+• AI and advanced automation — If exposed to mobile, use the same server endpoints as web (e.g. /api/ai/* where applicable); clients differ in presentation only (Plan 14 cross-cutting).
+
+• Observability — Support correlation or request IDs in logs for support across web and phone.
+
+6. Phased delivery
+------------------
+Phases may overlap; exact sequencing follows Plan 14 implementation order and business priority.
+
+• Phase A — MVP read-only: Sign-in, project picker, read-only project summary, schedule/task list, simplified takeoff/estimate read views, drawing preview, in-app notifications list (data from API).
+
+• Phase B — Edits online: Create/update field logs, photos, punch items while online; approvals actions when API supports full mobile flow; RBAC enforced throughout.
+
+• Phase C — Offline: Queue agreed writes; sync engine; offline indicator and conflict handling per defined rules; drawing cache for preview where feasible.
+
+• Phase D — Approvals parity: Feature completeness and polish for approval types the business prioritizes (may require backend approval API maturity first); optional push notification phase.
+
+Later tightening (performance, bulk sync, additional modules) is incremental once the above foundation is stable.
+
+7. Out of scope (unless added by change request)
+-------------------------------------------------
+• Full estimating desktop parity — dense cost libraries, proposal PDF authoring, and multi-sheet estimating workflows remain on web or estimating workspace (Plan 14 sections 2–3).
+
+• Full drawing markup parity — CAD-grade markup, complex layer management, or full measurement-to-takeoff authoring on phone unless explicitly phased in; phone targets preview and light interaction unless otherwise agreed.
+
+• MDM / device procurement — Purchasing phones, enrolling in enterprise mobility, and cellular plans.
+
+• Replacement of the web application — the phone app complements, not replaces, the operational hub.
+
+8. Assumptions and dependencies
+-------------------------------
+• API stability — /api/v1 contracts are versioned; breaking changes are coordinated or backward-compatible during pilot rollout.
+
+• Auth tokens and rotation — Server issues and documents token lifetimes, refresh, and revocation behavior; mobile implements secure storage accordingly.
+
+• Backend readiness — Approvals, documents, field entities, and takeoff/estimate read models exist or reach agreed MVP shape before dependent mobile phases.
+
+• Device and OS matrix — Stakeholders agree minimum iOS and Android versions (or browser versions for PWA) for pilot and production; testing covers that matrix.
+
+• Object storage and upload URLs — Server provides upload patterns compatible with mobile (presigned URLs or equivalent) per Plan 6 / Plan 14 file flow.
+
+• Same RBAC and audit expectations as web — Mobile is another client, not a bypass.
+
+9. Success criteria
+-------------------
+• Pilot users complete sign-in, pick a project, and view schedule/tasks, simplified takeoff/estimate data, and drawing preview from live APIs without a desktop session.
+
+• Field users create at least one each of field log, photo-backed punch item, and photo upload in production-like conditions, with items visible in the web hub after sync.
+
+• Offline (when in scope for the phase): queued actions replay successfully after reconnect without duplicate records under defined idempotency rules.
+
+• Approvals: users with approver roles see pending items and complete approve/reject/delegate per business rules, with history visible to authorized roles on the server.
+
+• RBAC: users without permission cannot access restricted screens or APIs (verified by negative testing).
+
+• Stability: crash rate and support tickets during pilot stay within agreed thresholds (thresholds set at kickoff).
+
+10. References
+--------------
+• Plan 1 — Core navigation and mobile-first shell patterns (header, bottom nav concept, speed dial, offline queue file names, project context).
+
+• Plan 13 — Cross-cutting mobile, offline queue intent, bottom navigation and speed-dial field UX, notification center patterns, badges, offline chip.
+
+• Plan 14 — Unified system roadmap; section 4 Phone app; API conventions; one queue contract; stack options; implementation order including phone after core APIs.
+
+• Plan 15 — Unified scope of work; disclaimer style; stakeholder tone; program context and shared approvals model.

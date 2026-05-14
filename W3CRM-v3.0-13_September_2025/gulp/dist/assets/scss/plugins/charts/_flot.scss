@@ -1,0 +1,31 @@
+.flot-chart{
+    height: 15rem;
+	
+	@include respond ('phone'){
+		height: 12rem;
+	}
+}
+.tooltipflot{
+	background-color: transparent;
+	font-size: 1.4rem;
+	padding: .5rem 1rem;
+	color: rgba(255, 255, 255, 0.7);
+	border-radius: .2rem;
+}
+.legendColorBox > div {
+    border: 0 !important;
+    padding: 0 !important;
+}
+.legendLabel{
+    font-size: 0.825rem;
+    padding-left: .5rem; 
+    color: #999;
+}    
+.flotTip{
+	background: $black;
+	border: 1px solid $black;
+	color: $white;
+}
+.legend > div{
+	background: transparent!important;
+}

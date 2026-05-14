@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "cms/add-email.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper" class="overflow-unset">
+
+        @@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+		
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Add Email",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Add Email</h6>
+								<p class="text-muted small mb-0">CMS / blog admin template. Reference for content editing shells.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="add-blog.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="blog-category.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- end - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid">
+				
+				<div class="row">
+					<div class="col-xl-12">
+						<a href="cms/email-template.html" class="btn btn-primary mb-3">List Email Template</a>
+					</div>
+					<div class="col-xl-12">
+						<div class="card card-collapse">
+							<div class="card-header">
+								<h4 class="card-title"><i class="fa-solid fa-envelope me-1 text-primary"></i> Add Email Template</h4>
+								<a class="collapse-indicator" data-bs-toggle="collapse" href="#collapseFilter" role="button" aria-expanded="false" aria-controls="collapseFilter">
+									<i class="fa fa-angle-down"></i>
+								</a>
+							</div>
+							<div class="collapsed collapse show" id="collapseFilter">
+								<div class="card-body">
+									<div class="row">
+										<div class="col-xl-6">
+											<form>
+												<div class="mb-3">
+													<label class="form-label">Title</label>
+													<input type="text" class="form-control">
+													<div class="form-text">Title should be meaning full like : registration email, forgot password email.</div>
+												</div>
+												<div class="mb-3">
+													<label class="form-label">Description</label>
+													<textarea class="form-control" rows="5"></textarea>
+													<div class="form-text">Decribe about this email template. </div>
+												</div>
+											</form>
+										</div>
+										<div class="col-xl-6">
+											<div class="mb-3">
+												<label class="form-label">Slug</label>
+												<input class="form-control bg-light" type="text" placeholder="Slug" aria-label="Disabled input example" disabled>
+												<div class="form-text">slug will use for url. can't edited.</div>
+											</div>
+											<div class="mb-3">
+												<label class="form-label">Placeholder</label>
+												<div class="bg-light dz-scroll height140 p-3 rounded">
+													<div class="d-grid mb-3">
+														<h6 class="mb-0">User Configuration</h6>
+														<span>#USERNAME#: Username can display with this placeholder.</span>
+														<span>#USERNAME#: Username can display with this placeholder.</span>
+														<span>#LASTNAME#: Lastname can display with this placeholder.</span>
+														<span>#TELEPHONE#: Contact number can display with this placeholder.</span>
+														<span>#PASSWORD#: password can display with this placeholder.</span>
+														<span>#SITENAME#: Site name can display with this placeholder.</span>
+													</div>
+													<div class="d-grid mb-3">
+														<h6 class="mb-0">Config Configuration</h6>
+														<span>#SITENAME#: Site name can display with this placeholder.</span>
+														<span>#ADMINEMAIL#: Admin email can display with this placeholder.</span>
+														<span>#SUPPORTEMAIL#: Support email can display with this placeholder.</span>
+														<span>#SITEADDRESS#: Site address can display with this placeholder.</span>
+													</div>
+													<div class="d-grid mb-3">
+														<h6 class="mb-0">Generate Configuration</h6>
+														<span>#ACTIVATIONLINK#: Activation link can display with this placeholder.</span>
+														<span>#SITELOGO#: Site logo can display with this placeholder.</span>
+														<span>#LOGINLINK#: Login link can display with this placeholder.</span>
+														<span>#REGESTERLINK#: Registration link can display with this placeholder.</span>
+														<span>#REGESTERLINK#: Registration link can display with this placeholder.</span>
+													</div>
+													<div class="d-grid mb-3">
+														<h6 class="mb-0">Contact Configuration</h6>
+														<span>#NAME#: Contact user name can display with this placeholder.</span>
+														<span>#EMAIL#: Contact user email can display with this placeholder.</span>
+														<span>#MESSAGE#: Contact user message can display with this placeholder.</span>
+													</div>
+													<div class="d-grid mb-3">
+														<h6>Subscribe Configuration</h6>
+														<span>#USERNAME#: Subscribe user email can display with this placeholder.</span>
+													</div>
+													<div class="d-grid mb-3">
+														<h6 class="mb-0">Order Configuration</h6>
+														<span>#STATUS#: Order Status can display with this placeholder.</span>
+														<span>#FIRSTNAME#: User first name can display with this placeholder.</span>
+														<span>#LASTNAME#: User last name can display with this placeholder.</span>
+														<span>#MESSAGE#: Delivery details or expected deliery date. This message will deliver to customer.</span>
+														<span>#ID#: Order number can display with this placeholder.</span>
+													</div>
+												</div>
+											</div>
+										</div>
+										
+										<div class="col-xl-12">
+											<label class="form-label">Email Template</label>
+											<div id="ckeditor"></div>
+											<div class="form-text mb-3">This design will show in recieved email and place holders will replace with dynamic content.</div>
+											
+											<label class="form-label">Status</label>
+											<div class="form-check custom-checkbox mb-3">
+												<input class="form-check-input" type="checkbox" id="checkboxDeactivation" required="">
+												<label class="form-check-label" for="checkboxDeactivation">Active status template will use in email sending only.</label>
+											</div>
+											<div class="text-end">
+												<button type="button" class="btn btn-primary">Save EmailTemplate</button>
+											</div>
+										</div>
+										
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			
+			</div>
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+		
+	</div>
+    <!-- End - Main Wrapper -->
+
+	
+    <!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Ck Editor -->
+	<script src="assets/vendor/ckeditor/ckeditor.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

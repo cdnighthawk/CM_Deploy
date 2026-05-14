@@ -1,0 +1,52 @@
+/*
+    
+	Name                 : W3CRM
+    Author               : Dexignzone
+    Author Portfolio     : https://themeforest.net/user/dexignzone/portfolio
+    
+	
+	===== Table of Sass Contents =====
+	
+    01. Bootstrap SCSS Functions
+    02. Theme Custom Variables
+    03. Bootstrap SCSS
+    04. Theme Basic SCSS
+    05. Theme Helper SCSS
+    06. Header, Footer, Sidebar and Typography SCSS
+    07. Components, Widge, Table, Forms and App SCSS
+	08. Apps Pages
+	09. Pages SCSS
+
+*/
+
+@use "sass:math";
+
+// 01. Bootstrap SCSS Functions
+@import "../../../node_modules/bootstrap/scss/functions.scss";
+
+// 02. Theme Custom Variables
+@import "./abstracts/abstracts";
+
+// 03. Preloader SCSS
+@import "./preloader";
+
+// 04. Bootstrap SCSS
+@import "../../../node_modules/bootstrap/scss/bootstrap.scss";
+
+// 05. Theme Basic SCSS
+@import "./base/base";
+
+// 06. Theme Helper SCSS
+@import './helper/helper';
+
+// 07. Header, Footer, Sidebar and Typography SCSS
+@import "./layout/layout";
+
+// 08. Components, Widge, Table, Forms and App SCSS
+@import "./components/components";
+
+// 09. Apps Pages
+@import "./app/apps";
+
+// 10. Pages SCSS
+@import "./pages/pages"

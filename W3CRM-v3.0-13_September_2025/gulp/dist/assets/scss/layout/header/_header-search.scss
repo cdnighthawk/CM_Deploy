@@ -1,0 +1,47 @@
+/* Header Search bar */
+.header{
+	.header-search{
+		width: 15rem;
+		border-radius: 0;
+		
+		@include respond('tab-land'){
+			display: none;
+		}
+		.form-control{
+			border:0;
+			background: transparent;
+			font-size: 0.875rem;
+			font-weight: 400;
+			padding-left: 4px;
+			box-shadow: none;
+			
+			body:not([data-headerbg="color_1"]) &{
+				color: #fff;
+				
+				&::placeholder{
+					color: #fff;
+				}
+			}
+		}
+		.input-group-text{
+			background-color: transparent;
+			border:0;
+			padding-right: 1rem;
+
+			i{
+				font-size:1.5rem;	
+			}
+			body:not([data-headerbg="color_1"]) &{
+				i{
+					color: #fff;
+				}
+				svg{
+					path,
+					circle{
+						stroke: #fff;
+					}
+				}
+			}
+		}
+	}
+}

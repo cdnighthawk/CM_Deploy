@@ -1,0 +1,138 @@
+/* Calendar */
+:root{
+    --fc-event-border-color: var(--bs-primary);
+}
+.external-event {
+    cursor: move !important;
+	width: 100%;
+}
+.app-fullcalendar{
+	--fc-border-color: var(--bs-border-color);
+	
+	@include respond ('phone'){
+	    margin: -10px;
+	}
+	.fc-toolbar-title{
+		font-size: 1rem;
+		font-weight: 500;
+	}
+	.fc-button-primary{
+		background-color: var(--bs-primary);
+		border-color: var(--bs-primary);
+		
+		&:hover, &:focus, &:active{
+			background-color: var(--bs-primary);
+			border-color: var(--bs-primary);
+		} 
+	}
+	&.fc-theme-standard{
+		td,
+		th{
+			border: 1px solid var(--bs-border-color);
+		}
+	}
+	.fc-button-group{
+		.fc-prev-button,
+		.fc-next-button{
+			padding: 0;
+			font-size: 12px;
+			height: $btn-square-size-sm;
+			width: $btn-square-size-sm;
+			border-radius: var(--bs-border-radius);
+		}
+	}
+	.fc-button{
+		border-radius: var(--bs-border-radius);
+		padding: $input-btn-padding-y-sm $input-btn-padding-x-sm;
+		font-size: $input-btn-font-size-sm;
+		box-shadow: none !important;
+		text-transform: capitalize;
+		font-weight: 500;
+	}
+	.fc-view-harness{
+		@include respond ('tab-port'){
+			overflow: scroll;
+			height: 500px !important;
+			
+			.fc-view{
+				height: 600px;
+				min-width: 600px;
+			}
+		}
+	}
+	.fc .fc-button-primary:not(:disabled).fc-button-active,
+	.fc .fc-button-primary:not(:disabled):active {
+		background-color: var(--bs-primary-bg-subtle) !important;
+		border-color: var(--bs-primary-bg-subtle) !important;
+	}
+	.fc .fc-toolbar{
+		flex-direction: column;
+		gap: 10px;
+	}
+	@include respond ('phone'){
+		.fc-header-toolbar.fc-toolbar{
+			flex-direction: column;
+			gap: 10px;
+		}
+	}
+}
+.fc-daygrid-dot-event{
+	.fc-event-title{
+		font-weight: 500;
+	}
+	&.fc-event-mirror,
+	&:hover{
+		background: var(--bs-light);
+	}
+}
+.fc{
+	a {
+		color: var(--bs-body-color);
+		text-decoration: none !important;
+	}
+	.fc-daygrid-week-number {
+		background-color: var(--bs-light);
+		color: var(--bs-body-color);
+	}
+	.fc-col-header-cell-cushion {
+		padding: 0;
+		color: var(--bs-body-color);
+	}
+	.fc-timegrid-axis-cushion,
+	.fc-timegrid-slot-label-cushion{
+		padding: 4px 4px;
+	}
+}
+.fc-timegrid-event .fc-event-main {
+    padding: 5px;
+}
+.fc-media-screen .fc-timegrid-event {
+    border-radius: var(--bs-border-radius);
+    border: 0;
+    box-shadow: none;
+}
+.fc-h-event{
+    border: 0;
+}
+.fc-theme-standard .fc-scrollgrid {
+    border: 0;
+}
+.fc-scrollgrid-sync-inner{
+	padding: 5px;
+}
+.fc-daygrid-event {
+    border-radius: var(--bs-border-radius);
+    font-size: 0.8em;
+    padding: 4px 10px;
+    font-weight: 500;
+}
+.fc-event.bg-primary,
+.fc-event.bg-secondary,
+.fc-event.bg-success,
+.fc-event.bg-danger,
+.fc-event.bg-info,
+.fc-event.bg-warning{
+	--fc-event-border-color: #fff;
+	
+	color: #fff;
+}

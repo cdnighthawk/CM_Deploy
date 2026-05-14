@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "edit-profile.html",
+	})
+	
+	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Edit profile",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Edit Profile</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="ecom-product-order.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="email-compose.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			
+			<div class="container-fluid">
+
+				<div class="row">
+					<div class="col-xl-3">
+						<div class="card h-auto">
+							<div class="card-body py-sm-5">
+								<div class="text-center">
+									<div class="avatar avatar-xl avatar-preview rounded-circle">
+										<img class="imagePreview w-100 h-100" src="assets/images/avatar/middle/avatar2.webp" alt="Avatar">
+										<input type="file" class="imageUpload d-none" accept=".png, .jpg, .jpeg">
+										<a href="javascript:void(0);" class="btn btn-square btn-primary btn-sm position-absolute bottom-0 end-0 shadow-sm upload-trigger rounded-circle border-2 border-white">
+											<i class="fa fa-camera "></i>
+										</a>
+									</div>
+									<div class="clearfix mt-3">
+										<h6 class="mb-0">Elijah James</h6>
+										<span>Developer</span>
+									</div>
+								</div>
+							</div>
+							<ul class="list-group list-group-flush">
+								<li class="list-group-item d-flex justify-content-between py-3"><a href="app-profile.html">Models</a><span>36</span></li>
+								<li class="list-group-item d-flex justify-content-between py-3"><a href="javascript:void(0);">Gallery</a><span>3</span></li>
+								<li class="list-group-item d-flex justify-content-between py-3"><a href="app-profile.html">Lessons</a><span>1</span></li>
+							</ul>
+							<div class="card-footer p-4">
+								<a href="javascript:void(0);" class="btn btn-outline-light w-100">Portfolio</a>
+								<a href="https://www.dexignzone.com" target="_blank" class="btn btn-outline-primary w-100 mt-2"><span class="overflow-hidden">https://www.dexignzone.com</span></a>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-9">
+						<form>
+							<div class="card m-b30">
+								<div class="card-header">
+									<h6 class="card-title">Account Setup</h6>
+								</div>
+								<div class="card-body">
+									<div class="row">
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">First Name</label>
+											<input type="text" class="form-control" value="John">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Last Name</label>
+											<input type="text" class="form-control" value="Doe">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Specialty</label>
+											<input type="text" class="form-control" value="Developer">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Skills</label>
+											<input type="text" class="form-control basic-tagify" value="HTML, JavaScript, PHP">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Gender</label>
+											<select class="selectpicker form-select" id="validationCustom05">
+												<option  data-display="Select">Please select</option>
+												<option value="html">Male</option>
+												<option value="css">Female</option>
+												<option value="javascript">Other</option>
+											</select>
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Birth</label>
+											<input class="form-control bs-datepicker" type="text" value="03/13/2025">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Phone</label>
+											<input type="number" class="form-control type-number" value="12345">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Email address</label>
+											<input type="text" class="form-control" value="demo@gmail.com">
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">Country</label>
+											<select class="selectpicker form-select" id="validationCustom01">
+												<option  data-display="Select">Please select</option>
+												<option value="russia">Russia</option>
+												<option value="canada">Canada</option>
+												<option value="china">China</option>
+												<option value="india">India</option>
+											</select>
+										</div>
+										<div class="col-sm-6 mb-4">
+											<label class="form-label">City</label>
+											<select class="selectpicker form-select" id="validationCustom02">
+												<option  data-display="Select">Please select</option>
+												<option>Krasnodar</option>
+												<option>Tyumen</option>
+												<option>Chelyabinsk</option>
+												<option>Moscow</option>
+											</select>
+										</div>
+									</div>
+								</div>
+								<div class="card-footer">
+									<button class="btn btn-primary me-1">UPDATE</button>
+									<a href="page-register.html" class="btn btn-link">Forgot your password?</a>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+           
+			</div>
+			
+        </main>
+		<!-- End - Content Body -->
+		
+		@@include("elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Bootstrap Datepicker -->
+	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+	
+    <!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

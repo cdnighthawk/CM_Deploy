@@ -1,0 +1,65 @@
+.pagination-gutter{
+	gap: 6px;
+	
+	.page-link{
+		border-radius: var(--bs-border-radius);
+	}
+	&.pagination-sm .page-link{
+		border-radius: var(--bs-border-radius-sm);
+	}
+	&.pagination-lg{
+		.page-item .page-link {
+			border-radius: var(--bs-border-radius-lg);
+			padding: calc(0.6* var(--bs-pagination-padding-y)) calc(1.2* var(--bs-pagination-padding-y));
+		}
+	}
+}
+.pagination{
+	&.no-bg{
+		li{
+			&:not(.page-indicator):not(.active):not(:hover){
+				.page-link{
+					background: transparent;
+					border-color: transparent;
+				}
+			}
+		}
+	}
+	@each $color, $value in $theme-colors{
+		&-#{$color}{
+			.page-item{
+				.page-link{
+					background: var(--bs-#{$color}-bg-subtle);
+					border-color: var(--bs-#{$color}-bg-subtle);
+					color: var(--bs-#{$color});
+				}
+				&:hover,
+				&.active{
+					.page-link{
+						background: var(--bs-#{$color});
+						border-color: var(--bs-#{$color});
+						color: #fff;
+					}
+				}
+			}
+		}
+	}
+	&-circle{
+        .page-item .page-link{
+			border-radius: 50% !important;
+			align-content: center;
+			padding: 0;
+			text-align: center;
+			width: 35px;
+			height: 35px;
+        }
+		&.pagination-sm .page-link{
+			width: 28px;
+			height: 28px;
+		}
+		&.pagination-lg .page-link {
+			width: 42px;
+			height: 42px;
+		}
+    }
+}

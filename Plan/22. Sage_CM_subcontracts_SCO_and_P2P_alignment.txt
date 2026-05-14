@@ -1,0 +1,85 @@
+Sage CM — Subcontracts, SCO, Procure-to-Pay (extension to Plan PO review)
+============================================================================
+
+Purpose
+-------
+Confirm and document how Sage Construction Management extends beyond purchase
+orders (POs) into subcontracts and subcontract change orders (SCO), and where
+Intacct-style procure-to-pay (P2P) controls sit. This complements the PO-focused
+summary in the Sage CM PO review plan and ties behaviors to USIS_CM schema
+direction (commitments, bill allocations, workflow locks).
+
+1. Subcontracts vs POs (Sage product behavior)
+----------------------------------------------
+From Sage CM procurement help (same family as the PO overview):
+
+- POs: no retainage in the PO path; vendor bills tie via PO-to-Bill.
+- Subcontracts: retainage / holdbacks and scope changes are handled on a
+  subcontract track, not the same as a simple PO line lifecycle.
+
+Use Sage help for authoritative wording:
+- Purchase orders overview:
+  https://help.sagecm.intacct.com/Content/Modules/Procurement/POs/POsOverview.htm
+- Subcontract change orders (SCO) overview:
+  https://help.sagecm.intacct.com/Content/Modules/Procurement/SCO/SCOOverview.htm
+
+2. Subcontract change orders (SCO)
+----------------------------------
+Per SCO overview documentation:
+
+- SCOs modify an existing subcontract when scope or commercial terms change;
+  either party may participate depending on configuration.
+- Status progression parallels PO-style governance: Draft → Pending Submission →
+  Pending → Not Approved → Approved (exact labels per Sage UI/help).
+- An SCO affects budget / committed views when Approved with a status date
+  (similar “effective approval date” idea to PO → committed cost).
+- Preconditions echo POs: prime contract and base subcontract approved with
+  status dates; job cost codes on the project; optional tax codes.
+- Creation paths include manual entry and flows from CPR / CO / WO (same
+  procurement wizard family as POs).
+- Line items support cost codes, quantities, unit pricing, and imports from
+  labor/equipment/work databases where licensed.
+
+USIS_CM mapping (directional): model SCO as either (a) a child entity under a
+subcontract commitment with its own approval/status dates, or (b) a specialized
+change-order record linked to a subcontract commitment. Phase 1 in code uses a
+single `commitments` table with `commitment_kind = subcontract` and optional
+`retention_percentage`; SCO can be a follow-on migration adding
+`subcontract_change_orders` when financials UI ships.
+
+3. Procure-to-pay (P2P) and workflow controls
+---------------------------------------------
+PO overview already states: if a workflow rule for the PO is initiated or
+approved, the PO cannot be edited unless the rule is abandoned.
+
+Broader Intacct/Sage documentation describes organization-level P2P controls
+(segregation of duties, approval chains, matching). For construction-specific
+PO behavior, stay on Sage CM procurement help; for enterprise control concepts,
+see Intacct procure-to-pay / workflow control topics (separate help tree from
+pure “construction” PO screens).
+
+USIS_CM mapping: `commitments.workflow_rule_active` (boolean) mirrors the
+“locked while workflow in flight” flag at header level; future refinements can
+add a workflow instance table, approver steps, and abandonment events.
+
+4. Bill linkage (PO → many bills)
+---------------------------------
+Same as PO overview: one PO may drive multiple vendor bills; PO-to-Bill wizard
+is used repeatedly. USIS_CM stores each slice in `commitment_bill_allocations`
+with amount and vendor bill reference until a first-class `invoices` table exists.
+
+5. References
+-------------
+- PO overview (statuses, committed cost, PO to Bill):
+  https://help.sagecm.intacct.com/Content/Modules/Procurement/POs/POsOverview.htm
+- SCO overview:
+  https://help.sagecm.intacct.com/Content/Modules/Procurement/SCO/SCOOverview.htm
+- Intacct P2P / workflow (organization compliance — not CM-specific UI):
+  https://www.intacct.com/ia/docs/en_US/help_action/More/Compliance/Workflow_Controls/procure-to-pay-controls.htm
+
+6. USIS_CM implementation note (schema)
+-------------------------------------
+Alembic revision ``0025_commitments`` adds ``commitments``, ``commitment_line_items``,
+and ``commitment_bill_allocations`` with Sage-aligned status/kind fields; see
+``backend/migrations/versions/0025_commitments_sage_cm_alignment.py`` and
+``backend/app/models/commitment.py``.

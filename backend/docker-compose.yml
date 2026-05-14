@@ -1,0 +1,19 @@
+# Local PostgreSQL for USIS CM (optional). From this directory:
+#   docker compose up -d
+# Matches DATABASE_URL in .env when created by scripts/setup_dev.ps1
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: usis_cm_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: usis_app
+      POSTGRES_PASSWORD: USIS_Local_Dev_2026
+      POSTGRES_DB: usis_cm
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U usis_app -d usis_cm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-hr-employee.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "HR employee",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">USIS HR — employee</h6>
+								<p class="text-muted small mb-0">Detail from <code>users</code> plus <code>hr_*</code> rows for this person (Plan 19).</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="core-hr.html">Core HR</a><span class="text-muted mx-1">|</span><a href="usis-hr-dashboard.html">HR dashboard</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-hr.html">HR landing</a><span class="text-muted mx-1">|</span><a href="usis-hr-quickbooks-employee-reference.html">QuickBooks reference</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Open from the HR dashboard table (<code>?id=</code> user UUID).</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<div class="alert alert-info border-0 shadow-sm mb-3" role="region" aria-label="Safety certifications">
+					<strong>Safety certifications</strong> (OSHA, site programs, expirations) are owned by the <strong>Safety</strong> module, not this HR page. Use read-only summaries on the HR dashboard where wired; edit certs in Safety.
+					<a href="usis-safety.html" class="btn btn-sm btn-outline-primary ms-2 mt-1 mt-sm-0">Open Safety module</a>
+				</div>
+
+				<p class="text-muted small mb-3" id="usis-hr-emp-api-status">Loading…</p>
+
+				<div class="row d-none" id="usis-hr-emp-content">
+					<div class="col-12 mb-3">
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<h4 class="card-title mb-1" id="usis-hr-emp-name">—</h4>
+								<p class="text-muted small mb-1"><span id="usis-hr-emp-email">—</span></p>
+								<dl class="row small mb-0">
+									<dt class="col-sm-3 col-md-2 text-muted">Phone</dt>
+									<dd class="col-sm-9 col-md-4 mb-1" id="usis-hr-emp-phone">—</dd>
+									<dt class="col-sm-3 col-md-2 text-muted">Account</dt>
+									<dd class="col-sm-9 col-md-4 mb-1" id="usis-hr-emp-active">—</dd>
+									<dt class="col-sm-3 col-md-2 text-muted">Last login</dt>
+									<dd class="col-sm-9 col-md-4 mb-1" id="usis-hr-emp-last-login">—</dd>
+									<dt class="col-sm-3 col-md-2 text-muted">User id</dt>
+									<dd class="col-sm-9 col-md-10 mb-0"><code class="small" id="usis-hr-emp-id">—</code></dd>
+								</dl>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 mb-3 d-none" id="usis-hr-emp-pending-approvals-wrap">
+						<div class="card border-warning border-opacity-50 h-100">
+							<div class="card-body">
+								<h5 class="card-title">Pending HR approvals</h5>
+								<p class="text-muted small mb-2">Policy acknowledgments waiting on an approval gate (<code>approval_request_id</code> set, not yet signed).</p>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Policy</th>
+												<th>Approval request</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-pending-approvals-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 mb-3 d-none" id="usis-hr-emp-doc-links-wrap">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">Linked documents</h5>
+								<p class="text-muted small mb-2">Deep link to the documents hub (filtering by document may be wired later).</p>
+								<ul class="list-unstyled small mb-0" id="usis-hr-emp-doc-links-list"></ul>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 mb-3">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body">
+								<h5 class="card-title">Licenses & certifications</h5>
+								<p class="text-muted small mb-2">Regulatory and site training is stored in <code>safety_training_records</code> and owned by <strong>Safety</strong>. This table is <strong>read-only</strong> on the HR employee page; use <a href="usis-safety.html">Safety</a> when edits are available there.</p>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Type</th>
+												<th class="text-end">Completed</th>
+												<th class="text-end">Expires</th>
+												<th>Credential #</th>
+												<th class="text-end">Document</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-certs-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 mb-3 d-none" id="usis-hr-emp-pay-edit-hint">
+						<div class="alert alert-secondary border-0 shadow-sm mb-0 py-2 small" role="status">
+							Pay scales and HR document links are edited via the HR API (<code>POST/PATCH/DELETE …/pay-scales</code> and <code>…/employee-documents</code>) for users with <code>hr_admin</code>, <code>admin</code>, or <code>executive</code> roles.
+						</div>
+					</div>
+
+					<div class="col-12 mb-3">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body">
+								<h5 class="card-title">Pay scales</h5>
+								<p class="text-muted small mb-2">Multiple schedules per person (<code>hr_employee_pay_scales</code>). Not the same as prevailing-wage <code>wage_rates</code> lookup rows; optional <code>wage_rate_id</code> links a reference rate when applicable.</p>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Label</th>
+												<th>Basis</th>
+												<th class="text-end">Hourly</th>
+												<th class="text-end">Annual</th>
+												<th class="text-end">From</th>
+												<th class="text-end">To</th>
+												<th>Prevailing ref</th>
+												<th class="text-end">Document</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-pay-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 mb-3">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body">
+								<h5 class="card-title">HR documents</h5>
+								<p class="text-muted small mb-2">Links to files in the documents hub (<code>hr_employee_documents</code>). Upload the file in Documents, then attach its id via the HR API.</p>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Category</th>
+												<th>Title</th>
+												<th class="text-end">Document</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-hrdocs-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-lg-4 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">Onboarding</h5>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Step</th>
+												<th class="text-end">#</th>
+												<th class="text-end">Completed</th>
+												<th class="text-end">Doc</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-onb-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-4 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">Policies</h5>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Policy</th>
+												<th>Status</th>
+												<th class="text-end">Signed</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-pol-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-4 mb-3">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">HR training</h5>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Course</th>
+												<th class="text-end">Due</th>
+												<th class="text-end">Completed</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-trn-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/usis-hr-employee.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+
+</body>
+</html>

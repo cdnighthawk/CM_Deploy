@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "blog.html",
+	})
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+	
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+        
+		@@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+            
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Blog",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Blog</h6>
+								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="app-profile.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="chat.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container">
+				<div class="row">
+					
+					<div class="col-lg-3 col-6">
+						<div class="card text-center">
+							<div class="card-body">
+								<img src="assets/images/books.png" alt="" class="avatar mb-2 rounded-0"> 
+								<h5 class="mb-0"><a href="javascript:void(0);" class="stretched-link">Education</a></h5>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-6">
+						<div class="card text-center">
+							<div class="card-body">
+								<img src="assets/images/news.png" alt="" class="avatar mb-2 rounded-0">
+								<h5 class="mb-0"><a href="javascript:void(0);" class="stretched-link">News</a></h5>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-6">
+						<div class="card text-center">
+							<div class="card-body">
+								<img src="assets/images/heart.png" alt="" class="avatar mb-2 rounded-0"> 
+								<h5 class="mb-0"><a href="javascript:void(0);" class="stretched-link">Ranking</a></h5>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-3 col-6">
+						<div class="card text-center">
+							<div class="card-body">
+								<img src="assets/images/file.png" alt="" class="avatar mb-2 rounded-0">
+								<h5 class="mb-0"><a href="javascript:void(0);" class="stretched-link">File Manager</a></h5>
+							</div>
+						</div>
+					</div>
+					
+					<div class="col-xl-12">
+						<div class="card">
+							<div class="card-header border-0 pb-0">
+								<h4 class="card-title">Feature Post</h4>
+								<a href="javascript:void(0)" class="btn btn-primary light btn-sm">More Blogs</a>
+							</div>
+							<div class="card-body">
+								<div class="row g-4">
+									<div class="col-xl-6 col-lg-6 col-md-12">
+										<div class="card card-cover overflow-hidden position-relative mb-0 h-100">
+											<img src="assets/images/blog/professional.jpg" alt="" class="h-100 w-100 object-fit-cover">
+											<div class="d-flex flex-column p-3 p-sm-4 text-white position-absolute bottom-0 start-0">
+												<h2 class="text-white mb-3 fw-semibold">This quote highlights the importance of writing clear.</h2>
+												<div class="gap-2 d-flex align-items-center">
+													<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle" alt="" width="20">
+													<small><a href="javascript:void(0);">Elijah James</a> in April 05, 2023</small>
+												</div>
+											</div>
+										</div>
+									</div>	
+									<div class="col-xl-6 col-lg-6 col-md-12">
+										<div class="d-flex align-items-center mb-3">
+											<img src="assets/images/avatar/middle/avatar1.webp" class="avatar avatar-lg rounded-circle me-3" alt="">
+											<div class="clearfix">
+												<span class="badge text-bg-secondary rounded-pill badge-xs mb-1">Designer</span>
+												<h4 class="h6 mb-1"><a href="javascript:void(0);">Good programmers write code that humans can understand.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar4.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Liam Risher</a> in March 05, 2023</small>
+												</div>
+											</div>
+										</div>
+										<div class="d-flex align-items-center mb-3">
+											<img src="assets/images/avatar/middle/avatar3.webp" class="avatar avatar-lg rounded-circle me-3" alt="">
+											<div class="clearfix">
+												<span class="badge text-bg-primary rounded-pill badge-xs mb-1">Software</span>
+												<h4 class="h6 mb-1"><a href="javascript:void(0);">Programming isn't about what you know; it's about what you can figure out.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar6.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Ethan Cole</a> in April 05, 2023</small>
+												</div>
+											</div>
+										</div>
+										<div class="d-flex align-items-center mb-3">
+											<img src="assets/images/avatar/middle/avatar5.webp" class="avatar avatar-lg rounded-circle me-3" alt="">
+											<div class="clearfix">
+												<span class="badge text-bg-warning rounded-pill badge-xs mb-1">Markting</span>
+												<h4 class="h6 mb-1"><a href="javascript:void(0);">Debugging is like being a detective in a crime movie where you're also the murderer.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar8.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Henry Mason</a> in April 05, 2023</small>
+												</div>
+											</div>
+										</div>
+										<div class="d-flex align-items-center mb-3">
+											<img src="assets/images/avatar/middle/avatar7.webp" class="avatar avatar-lg rounded-circle me-3" alt="">
+											<div class="clearfix">
+												<span class="badge text-bg-success rounded-pill badge-xs mb-1">Software</span>
+												<h4 class="h6 mb-1"><a href="javascript:void(0);">The best way to predict the future is to invent it.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar10.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Lucas Bennett</a> in April 05, 2023</small>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>	
+					</div>
+					
+					<div class="col-xl-9">
+						<div class="row">
+							<div class="col-xl-12">
+								<div class="card h-auto">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Active Users</h4>
+										<a href="javascript:void(0)" class="btn btn-primary light btn-sm">More Blogs</a>
+									</div>
+									<div class="card-body">
+										<div class="card h-auto card-cover overflow-hidden position-relative">
+											<img src="assets/images/blog/s3.jpg" alt="">
+											<div class="d-flex flex-column p-3 p-sm-4 text-white position-absolute bottom-0 start-0">
+												<h2 class="text-white mb-3 fw-semibold">This quote highlights the importance of writing clear</h2>
+												<div class="gap-2 d-flex align-items-center">
+													<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle" alt="" width="20">
+													<small><a href="javascript:void(0);">Sophia Jane</a> in April 05, 2023</small>
+												</div>
+											</div>
+										</div>
+										<div class="row mt-4">
+											<div class="col-sm-6">
+												<div class="row g-3 mb-2">
+													<div class="col-lg-5">
+														<img src="assets/images/blog/s3.jpg" alt="" class="rounded">
+													</div>
+													<div class="col-lg-7">
+														<span class="badge text-bg-secondary rounded-pill badge-sm mb-1">SEO Tools</span>
+														<h6><a href="javascript:void(0);">Debugging is like being a detective movie.</a></h6>
+														<div class="gap-2 d-flex align-items-center mb-2">
+															<img src="assets/images/avatar/small/avatar3.webp" class="rounded-circle" alt="" width="20">
+															<small class="text-body-secondary"><a href="javascript:void(0);">Isabella Claire</a> in April 05, 2023</small>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-sm-6">
+												<div class="row g-3 mb-2">
+													<div class="col-lg-5">
+														<img src="assets/images/blog/s4.jpg" alt="" class="rounded">
+													</div>
+													<div class="col-lg-7">
+														<span class="badge text-bg-info rounded-pill badge-sm mb-1">Markting</span>
+														<h6><a href="javascript:void(0);">There are many variations of passages available.</a></h6>
+														<div class="gap-2 d-flex align-items-center mb-2">
+															<img src="assets/images/avatar/small/avatar5.webp" class="rounded-circle" alt="" width="20">
+															<small class="text-body-secondary"><a href="javascript:void(0);">Charlotte Mae</a> in April 05, 2023</small>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-sm-6">
+												<div class="row g-3 mb-2">
+													<div class="col-lg-5">
+														<img src="assets/images/blog/s5.jpg" alt="" class="rounded">
+													</div>
+													<div class="col-lg-7">
+														<span class="badge text-bg-warning rounded-pill badge-sm mb-1">Software</span>
+														<h6><a href="javascript:void(0);">Debugging is like being a detective movie.</a></h6>
+														<div class="gap-2 d-flex align-items-center mb-2">
+															<img src="assets/images/avatar/small/avatar7.webp" class="rounded-circle" alt="" width="20">
+															<small class="text-body-secondary"><a href="javascript:void(0);">Amelia Rose</a> in April 05, 2023</small>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="col-sm-6">
+												<div class="row g-3 mb-2">
+													<div class="col-lg-5">
+														<img src="assets/images/blog/s6.jpg" alt="" class="rounded">
+													</div>
+													<div class="col-lg-7">
+														<span class="badge text-bg-warning rounded-pill badge-sm mb-1">Software</span>
+														<h6><a href="javascript:void(0);">Contrary to popular belief, Lorem Ipsum is not.</a></h6>
+														<div class="gap-2 d-flex align-items-center mb-2">
+															<img src="assets/images/avatar/small/avatar9.webp" class="rounded-circle" alt="" width="20">
+															<small class="text-body-secondary"><a href="javascript:void(0);">Olivia Grace</a> in April 05, 2023</small>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="col-xl-12">
+								<div class="card">
+									<div class="card-header border-0 pb-0">
+										<h4 class="card-title">Most Popular</h4>
+									</div>
+									<div class="card-body">
+										<div class="row g-3 mb-2">
+											<div class="col-md-5 col-lg-4">
+												<img src="assets/images/blog/s3.jpg" alt="" class="rounded">
+											</div>
+											<div class="col-md-7 col-lg-8">
+												<span class="badge text-bg-secondary rounded-pill badge-sm mb-1">SEO Tools</span>
+												<h4><a href="javascript:void(0);">Debugging is like being a detective movie where you're also the murderer.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Sophia Jane</a> in April 05, 2023</small>
+												</div>
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum the industry's standard dummy.</p>
+											</div>
+										</div>
+										<div class="row g-3 mb-2">
+											<div class="col-md-5 col-lg-4">
+												<img src="assets/images/blog/s4.jpg" alt="" class="rounded">
+											</div>
+											<div class="col-md-7 col-lg-8">
+												<span class="badge text-bg-info rounded-pill badge-sm mb-1">Markting</span>
+												<h4><a href="javascript:void(0);">There are many variations of passages of Lorem Ipsum available.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar3.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Evelyn Hope</a> in April 05, 2023</small>
+												</div>
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum the industry's standard dummy.</p>
+											</div>
+										</div>
+										<div class="row g-3 mb-2">
+											<div class="col-md-5 col-lg-4">
+												<img src="assets/images/blog/s5.jpg" alt="" class="rounded">
+											</div>
+											<div class="col-md-7 col-lg-8">
+												<span class="badge text-bg-warning rounded-pill badge-sm mb-1">Software</span>
+												<h4><a href="javascript:void(0);">Debugging is like being a detective movie where you're also the murderer.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar5.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Scarlett Elise</a> in April 05, 2023</small>
+												</div>
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum the industry's standard dummy.</p>
+											</div>
+										</div>
+										<div class="row g-3 mb-2">
+											<div class="col-md-5 col-lg-4">
+												<img src="assets/images/blog/s6.jpg" alt="" class="rounded">
+											</div>
+											<div class="col-md-7 col-lg-8">
+												<span class="badge text-bg-warning rounded-pill badge-sm mb-1">Software</span>
+												<h4><a href="javascript:void(0);">Contrary to popular belief, Lorem Ipsum is not simply random text.</a></h4>
+												<div class="gap-2 d-flex align-items-center mb-2">
+													<img src="assets/images/avatar/small/avatar7.webp" class="rounded-circle" alt="" width="20">
+													<small class="text-body-secondary"><a href="javascript:void(0);">Evelyn Hope</a> in April 05, 2023</small>
+												</div>
+												<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum the industry's standard dummy.</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class="col-xl-3">
+					
+						<div class="mb-3">
+							<h4>Popular Posts</h4>
+							<ul class="list-unstyled">
+								<li>
+									<a class="d-flex gap-3 align-items-center py-3 link-body-emphasis border-top" href="javascript:void(0);">
+										<img src="assets/images/blog/s3.jpg" alt="" class="rounded avatar avatar-lg">
+										<div class="col-lg-8">
+											<h6 class="mb-1">Boost Your Frontend Skills Fast</h6>
+											<div class="gap-2 d-flex align-items-center">
+												<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle" alt="" width="20">
+												<small class="text-body-secondary">January 15, 2024</small>
+											</div>
+										</div>
+									</a>
+								</li>
+								<li>
+									<a class="d-flex gap-3 align-items-center py-3 link-body-emphasis border-top" href="javascript:void(0);">
+										<img src="assets/images/blog/s1.jpg" alt="" class="rounded avatar avatar-lg">
+										<div class="col-lg-8">
+											<h6 class="mb-1">Improve Web Design Like Pro</h6>
+											<div class="gap-2 d-flex align-items-center">
+												<img src="assets/images/avatar/small/avatar4.webp" class="rounded-circle" alt="" width="20">
+												<small class="text-body-secondary">April 05, 2023</small>
+											</div>
+										</div>
+									</a>
+								</li>
+								<li>
+									<a class="d-flex gap-3 align-items-center py-3 link-body-emphasis border-top" href="javascript:void(0);">
+										<img src="assets/images/blog/s3.jpg" alt="" class="rounded avatar avatar-lg">
+										<div class="col-lg-8">
+											<h6 class="mb-1">Craft Pixel-Perfect UI Designs Easily</h6>
+											<div class="gap-2 d-flex align-items-center">
+												<img src="assets/images/avatar/small/avatar8.webp" class="rounded-circle" alt="" width="20">
+												<small class="text-body-secondary">April 05, 2023</small>
+											</div>
+										</div>
+									</a>
+								</li>
+							</ul>
+						</div>
+						
+						<div class="mb-3">
+							<h4>Social Media</h4>
+							<div class="pt-3 mb-3 border-top d-flex flex-wrap gap-2">
+								<a href="javascript:void(0);" class="btn btn-square btn-sm btn-facebook"><i class="fa-brands fa-facebook-f"></i></a>
+								<a href="javascript:void(0);" class="btn btn-square btn-sm btn-whatsapp"><i class="fa-brands fa-whatsapp"></i></a>
+								<a href="javascript:void(0);" class="btn btn-square btn-sm btn-linkedin"><i class="fa-brands fa-linkedin-in"></i></a>
+								<a href="javascript:void(0);" class="btn btn-square btn-sm btn-twitter"><i class="fa-brands fa-x-twitter"></i></a>
+								<a href="javascript:void(0);" class="btn btn-square btn-sm btn-flickr"><i class="fa-brands fa-flickr"></i></a>
+							</div>
+						</div>
+						
+						<div class="mb-3">
+							<div class="card h-auto mt-5">
+								<div class="card-body px-3 pb-3 pt-4">
+									<div class="rounded-circle avatar avatar-xs bg-primary border-0 position-absolute top-0 start-50 translate-middle">
+										<i class="fa-solid fa-bell text-white"></i>
+									</div>
+									<div class="text-center">
+										<div class="mb-2">
+											<h6 class="mb-1">Follow by Email</h6>
+											<small class="d-block">Get Notified About Next Update Direct to Your inbox</small>
+										</div>
+										<form>
+											<div class="mb-0">
+												<input type="email" class="form-control form-control-sm" placeholder="Enter Email">
+												<a href="javascript:void(0)" class="btn btn-primary btn-sm mt-2 w-100">Subscribe</a>
+											</div>
+											<div class="form-text text-danger">*We promise that we don't spam !</div>
+										</form>	
+									</div>	
+								</div>
+							</div>
+						</div>
+						
+						<div class="mb-3">
+							<h4>Recent Posts</h4>
+							<ul class="list-unstyled">
+								<li>
+									<a class="d-flex gap-3 align-items-center py-3 link-body-emphasis border-top" href="javascript:void(0);">
+										<img src="assets/images/blog/s3.jpg" alt="" class="rounded avatar avatar-lg">
+										<div class="col-lg-8">
+											<h6 class="mb-0">Boost Your Frontend Skills Fast</h6>
+											<small class="text-body-secondary">January 15, 2024</small>
+										</div>
+									</a>
+								</li>
+								<li>
+									<a class="d-flex gap-3 align-items-center py-3 link-body-emphasis border-top" href="javascript:void(0);">
+										<img src="assets/images/blog/s1.jpg" alt="" class="rounded avatar avatar-lg">
+										<div class="col-lg-8">
+											<h6 class="mb-0">Improve Web Design Like Pro</h6>
+											<small class="text-body-secondary">April 05, 2023</small>
+										</div>
+									</a>
+								</li>
+								<li>
+									<a class="d-flex gap-3 align-items-center py-3 link-body-emphasis border-top" href="javascript:void(0);">
+										<img src="assets/images/blog/s3.jpg" alt="" class="rounded avatar avatar-lg">
+										<div class="col-lg-8">
+											<h6 class="mb-0">Craft Pixel-Perfect UI Designs Easily</h6>
+											<small class="text-body-secondary">April 05, 2023</small>
+										</div>
+									</a>
+								</li>
+							</ul>
+						</div>
+						
+						<div class="mb-3">
+							<h4>Comments</h4>
+							<ul class="list-unstyled">
+								<li>
+									<a class="d-flex gap-2 align-items-center py-2 border-top" href="javascript:void(0);">
+										<img src="assets/images/avatar/small/avatar2.webp" alt="" class="rounded-circle avatar avatar-sm">
+										<div class="col-lg-8">
+											<h6 class="mb-0">Oliver Noah</h6>
+											<small class="text-body-secondary">This is Comments!</small>
+										</div>
+									</a>
+								</li>
+								<li>
+									<a class="d-flex gap-2 align-items-center py-2 border-top" href="javascript:void(0);">
+										<img src="assets/images/avatar/small/avatar8.webp" alt="" class="rounded-circle avatar avatar-sm">
+										<div class="col-lg-8">
+											<h6 class="mb-0">Elijah James</h6>
+											<small class="text-body-secondary">This is Comments!</small>
+										</div>
+									</a>
+								</li>
+								<li>
+									<a class="d-flex gap-2 align-items-center py-2 border-top" href="javascript:void(0);">
+										<img src="assets/images/avatar/small/avatar6.webp" alt="" class="rounded-circle avatar avatar-sm">
+										<div class="col-lg-8">
+											<h6 class="mb-0">Liam Risher</h6>
+											<small class="text-body-secondary">This is Comments!</small>
+										</div>
+									</a>
+								</li>
+							</ul>
+						</div>
+						
+					</div>
+					
+				</div>
+			
+			</div>
+        
+		</main>
+		<!-- End - Content Body -->
+		
+		@@include("elements/footer.html")
+
+	</div>
+    <!-- End - Main Wrapper -->
+
+
+    <!-- Start - Page Scripts -->
+    @@include("elements/script.html")
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

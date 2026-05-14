@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+    
+	@@include("../elements/meta.html", {
+		"fileName": "aikit/setting.html",
+	})
+	
+	<link rel="stylesheet" href="assets/vendor/nouislider/nouislider.min.css">
+	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+    <!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("../elements/nav-header.html")
+		
+		@@include("../elements/chatbox.html")
+		
+		@@include("../elements/header.html")
+		
+		@@include("../elements/deznav.html")
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html",{
+					"fileName": "Settings",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Setting</h6>
+								<p class="text-muted small mb-0">AI kit demo pages. Reference for AI-related settings and prompts.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="scheduled.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="../app-calender.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<!-- row -->
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-xl-12">
+						<div class="alert alert-card-warning alert-alt alert-dismissible fade show">
+							This is a demo of AIKit plugin made for you to test the experience of using the plugin.
+							<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						</div>
+						<ul class="nav nav-tabs-standard pt-4 mb-3 nav-scroll nav-scroll-auto-xl">
+							<li class="nav-item"><a class="nav-link" aria-current="true" href="aikit/auto-write.html">Auto Writer</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/scheduled.html">Scheduler</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/repurpose.html">Repurpose</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/rss.html">RSS</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/chatbot.html">Chatbot</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/fine-tune-models.html">Fine-tune Models</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/prompt.html">AI Menu Prompts</a></li>
+							<li class="nav-item"><a class="nav-link active" href="aikit/setting.html">Settings</a></li>
+							<li class="nav-item"><a class="nav-link" href="aikit/import.html">Export/Import Settings</a></li>
+						</ul>
+						<div class="card h-auto">
+							<div class="card-header d-block border-0 pb-0">
+								<h4 class="card-title mb-0">OpenAI Settings</h4>
+								<p class="mb-0">Adjust the plugin to your needs by editing the settings here.</p>
+							</div>
+							<div class="card-body">
+								<div class="row">
+									<div class="col-xl-6 col-sm-6 mb-3">
+										<label for="exampleFormControlInput1" class="form-label">OpenAI Key</label>
+										<input type="email" class="form-control" id="exampleFormControlInput1" placeholder="this-is-a-secret-key">
+										<div id="emailHelp" class="form-text">
+											For instructions on how to get an OpenAI key, please visit 
+											<a href="javascript:void(0);" class="text-primary">https://example.com</a>
+										</div>
+									</div>
+									<div class="col-xl-6 col-sm-6 mb-3">
+										<label for="exampleFormControlInput2" class="form-label">Rapid API Key</label>
+										<input type="email" class="form-control" id="exampleFormControlInput2" placeholder="this-is-rapid-api-key">
+										<div id="emailHelp-1" class="form-text">
+											Enter your RapidAPI key for Subtitles for YouTube here. This API is used to read YouTube video subtitles to allow you to fetch.
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-3 col-sm-6 mb-3">
+										<label class="form-label">Post category</label>
+										<select class="selectpicker form-select">
+											<option data-content="<img src='assets/images/svg/england.svg' alt=''> England">England</option>
+											<option data-content="<img src='assets/images/svg/india.svg' alt=''> India">India</option>
+											<option data-content="<img src='assets/images/svg/uae.svg' alt=''> UAE">UAE</option>
+										</select>
+										<div id="emailHelp-2" class="form-text">
+											The language of the text you want to generate.
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-3 col-sm-6 mb-3">
+										<label class="form-label">OpenAI Preferred Model</label>
+										<select class="selectpicker form-select">
+											<option selected>GPT-3.5-turbo</option>
+											<option value="1">GPT-4.5-turbo</option>
+										</select>
+										<div id="emailHelp-3" class="form-text">
+											The language of the text you want to generate.
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-3 col-sm-6 mb-3">
+										<label for="exampleFormControlInput10" class="form-label">Prompt Stop Sequence</label>
+										<input type="text" class="form-control" id="exampleFormControlInput10">
+										<div id="emailHelp-4" class="form-text">
+											The language of the text you want to generate.
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-3 col-sm-6 mb-3">
+										<label for="exampleFormControlInput11" class="form-label">Completion Stop Sequence</label>
+										<input type="text" class="form-control" id="exampleFormControlInput11">
+										<div id="emailHelp-5" class="form-text">
+											The language of the text you want to generate.  
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-6 mb-3">
+										<label for="exampleFormMultiplier" class="form-label">Multiplier</label>
+										<p class="text-end mb-2">2.7x</p>
+										<div id="multiplierSlider" class="mb-4"></div>
+									</div>
+									<div class="col-xl-3 col-sm-6 mb-3">
+										<label for="exampleFormControlInput1" class="form-label">Autocompleted Text Background Color</label>
+										<div class="d-flex flex-wrap gap-2">
+											<div class="form-check form-check-palette">
+												<input class="form-check-input bg-light" type="radio" name="flexRadioDefault" id="flexRadioDefault0">
+												<label class="form-check-label border" for="flexRadioDefault0"></label>
+												<svg class="position-absolute top-50 start-50 translate-middle" width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+													<path d="M13.5 6.5L6.5 13.5" stroke="var(--bs-danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+													<path d="M6.5 6.5L13.5 13.5" stroke="var(--bs-danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+												</svg>
+											</div>
+											<div class="form-check form-check-palette">
+												<input class="form-check-input bg-primary" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+												<label class="form-check-label border-primary" for="flexRadioDefault1"></label>
+											</div>
+											<div class="form-check form-check-palette">
+												<input class="form-check-input bg-success" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
+												<label class="form-check-label border-success" for="flexRadioDefault2"></label>
+											</div>
+											<div class="form-check form-check-palette">
+												<input class="form-check-input bg-info" type="radio" name="flexRadioDefault" id="flexRadioDefault3">
+												<label class="form-check-label border-info" for="flexRadioDefault3"></label>
+											</div>
+											<div class="form-check form-check-palette">
+												<input class="form-check-input bg-secondary" type="radio" name="flexRadioDefault" id="flexRadioDefault4">
+												<label class="form-check-label border-secondary" for="flexRadioDefault4"></label>
+											</div>
+											<div class="form-check form-check-palette">
+												<input class="form-check-input bg-warning" type="radio" name="flexRadioDefault" id="flexRadioDefault5">
+												<label class="form-check-label border-warning" for="flexRadioDefault5"></label>
+											</div>
+										</div>
+										<div id="emailHelp-6" class="form-text mb-2">
+											AIKit's builtin prompts are already.
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-3 col-sm-6 mb-3">
+										<label for="exampleFormControlInput1" class="form-label">Default view</label>
+										<div class="border form-control position-relative">
+											<div class="form-check mb-0">
+												<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+												<label class="form-check-label mb-0 stretched-link" for="flexCheckDefault">Elementor supported?</label>
+											</div>
+										</div>
+										<div id="emailHelp-7" class="form-text mb-2">
+											The language of the text you want to generate.  
+											<a href="javascript:void(0);" class="text-primary">Read More</a>
+											<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+										</div>
+									</div>
+									<div class="col-xl-9">
+										<label for="exampleFormControlInput1" class="form-label">Default view</label>
+										<div class="row">
+											<div class="col-xl-4 col-lg-4 col-sm-6 mb-3">
+												<div class="bg-success form-control position-relative">
+													<div class="form-check mb-0">
+														<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-1">
+														<label class="form-check-label mb-0 stretched-link text-white" for="flexCheckDefault-1">Small (256x256)</label>
+													</div>
+												</div>
+												<div id="emailHelp-8" class="form-text mb-2">
+													When enabled, you will be able to use AIKit right.
+													<a href="javascript:void(0);" class="text-primary">Read More</a>
+													<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+												</div>
+											</div>
+											<div class="col-xl-4 col-lg-4 col-sm-6 mb-3">
+												<div class="bg-success form-control position-relative">
+													<div class="form-check mb-0">
+														<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault-2">
+														<label class="form-check-label mb-0 stretched-link text-white" for="flexCheckDefault-2">Medium (512x512)</label>
+													</div>
+												</div>
+												<div id="emailHelp-9" class="form-text mb-2">
+													When enabled, you will be able to use AIKit right.
+													<a href="javascript:void(0);" class="text-primary">Read More</a>
+													<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+												</div>
+											</div>
+											<div class="col-xl-4 col-lg-4 col-sm-6 mb-3">
+												<div class="border form-control position-relative">
+													<div class="form-check mb-0">
+														<input class="form-check-input" type="checkbox" id="flexCheckDefault-3">
+														<label class="form-check-label mb-0 stretched-link" for="flexCheckDefault-3">Large (1024x1204)</label>
+													</div>
+												</div>
+												<div id="emailHelp-10" class="form-text mb-2">
+													When enabled, you will be able to use AIKit right.
+													<a href="javascript:void(0);" class="text-primary">Read More</a>
+													<a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-title="Enter your RapidAPI key for Subtitles for YouTube here."><i class="fa-solid fa-circle-info"></i></a>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-xl-3 mb-3">
+										<label for="exampleInputEmail1" class="form-label">Image counts for each size</label>
+										<input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+									</div>
+									<div class="col-xl-6 mb-3">
+										<label for="exampleInputEmail1" class="form-label">Image generation styles</label>
+										<input type="text" class="form-control basic-tagify" value="Watercolor, Vector Art, Portrait, Pencil Drawing, Digital Painting, Abstract, Oil Painting, Cartoon, Black And White">
+										<div id="emailHelp-11" class="form-text mb-2">System message help set the behaviour of the model. You can use it to ask the model to mimic a certain style or take a certain perspective for all text generations. For example, if you set this to "Shakespeare' style", the mode will follow the style of Shakespeare in all text generations when possible. System message should work ONLY with GPT-4 and to a lesser extent with gpt-3.5-turbo models.</div>
+									</div>
+									<div class="col-xl-6 mb-3">
+										<label class="form-label" for="floatingTextarea">OpenAI System Message</label>
+										<textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea"></textarea>
+										<div id="emailHelp-12" class="form-text mb-2">
+											System message help set the behaviour of the model. You can use it to ask the model to mimic a certain style or take a certain perspective for all text generations. For example, if you set this to "Shakespeare' style", the mode will follow the style of Shakespeare in all text generations when possible. System message should work ONLY with GPT-4 and to a lesser extent with gpt-3.5-turbo models.
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+					</div>
+				</div>
+			</div>
+        
+		</main>
+       	<!-- End - Content Body -->
+		
+		@@include("../elements/footer.html")
+
+	</div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("../elements/script.html")
+	
+	<!-- Script For nouislider -->		
+	<script src="assets/vendor/nouislider/nouislider.min.js"></script>
+    <script src="assets/vendor/wnumb/wNumb.js"></script>
+	
+	<!-- Script For AIKIT Pages -->
+	<script src="assets/js/dashboard/aikit.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script></body>
+</html>

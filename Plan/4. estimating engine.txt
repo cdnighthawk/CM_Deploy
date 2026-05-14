@@ -1,0 +1,107 @@
+✅ Estimating Engine – Detailed Breakdown
+
+This is the heart of winning more work — a powerful, finish-trade-focused estimating workspace purpose-built for drywall, painting, flooring, ceilings, trim, and related scopes on California commercial and government projects.
+Front-end: W3CRM pages + Bootstrap (see Plan\0). Replace prior React/MUI layout with HTML/CSS/JS below.
+1. Core Philosophy
+
+    Built on top of the Unified Takeoff Engine (TakeoffLineItem).
+    Bidirectional sync with RFP (awarded pricing), Budget, Scheduling, and Financials.
+    Heavy Local AI integration for speed and accuracy.
+    Designed for both quick ROM estimates in the bid stage and full detailed estimates.
+
+2. Database Models
+
+estimates (header table)
+
+    id (UUID)
+    project_id or bid_opportunity_id
+    version (integer)
+    status (Draft, Under Review, Submitted, Awarded, etc.)
+    total (calculated)
+    markup_labor, markup_material, etc.
+    notes, exclusions
+
+estimate_line_items (links to unified takeoff)
+
+    takeoff_line_item_id (FK to the single engine)
+    estimate_id
+    unit_cost (can differ from takeoff for what-if scenarios)
+    markup_percentage
+    vendor_quote (populated from awarded RFP)
+    ai_flag / ai_review_id
+
+3. Overall Layout (W3CRM + Bootstrap)
+
+    Top header (elements/header.html): Project name, estimate version <select>, buttons “Create New Version”, “Generate Proposal PDF”, “Send RFP for Unpriced Scopes”, “AI Full Review” (opens AI offcanvas).
+    Left column: Estimate navigator — nested Bootstrap collapse or MetisMenu-style list (Divisions → Rooms/Phases → Trades).
+    Main row (Bootstrap grid):
+        col-lg-8 → Takeoff table (core working area)
+        col-lg-4 → Card stack: tabs for “AI Assistant” and “Cost Library”
+    Bottom: Bootstrap collapse “Summary” — live totals, markups, exclusions, what-if notes.
+
+Mobile: Single column; Bootstrap nav-tabs switch Table | AI | Library; table rows become cards (d-md-none card layout).
+
+4. Key Sections & Features
+
+A. Takeoff & Line Items Table (usis-estimating.html + usis-takeoff-table.js)
+
+    Bootstrap table (or Tabulator/DataTables) with columns:
+        CSI Division / Trade (Bootstrap badges)
+        Location (Room / Area / Floor)
+        Description (contenteditable or modal edit)
+        Quantity (+ unit conversion helpers)
+        Unit Cost (auto from library)
+        Labor / Material breakdown
+        Vendor Quote (from RFP)
+        Extended Total
+        Markup %
+        AI Flag column (colored dots / badges)
+    Features:
+        Inline edit with debounced PATCH; bulk actions via toolbar dropdown
+        “Pull Measurement from Drawing” per row → usis-drawing-viewer.html
+        Row classes for AI-flagged highlights
+        Drag handle column optional (SortableJS)
+
+B. Integrated AI Assistant panel
+
+    Bootstrap offcanvas or sticky card; usis-ai-drawer.js calls Flask with mode=estimating_review (default Local Llama)
+    Quick chip buttons (btn-outline-primary)
+    AI can push updates via aiReviewBus.js listeners that refresh the table body from JSON
+
+C. Cost Library Panel
+
+    Searchable historical rates (trade, California labor zones, project type)
+    Filters + “AI Suggest Rate”
+    “Import from Past Project”
+
+D. Summary & Proposal Panel (Bottom)
+
+    Live grand total with trade breakdown (pie chart)
+    Markup sliders with AI recommendations
+    Exclusions / Clarifications list (editable + AI-generated)
+    “Generate Professional Proposal” → Flask Jinja2 branded PDF
+    Version history & side-by-side comparison
+
+5. Key Integrations
+
+    Unified Takeoff: All lines are TakeoffLineItem records
+    RFP: Awarded pricing flows into “Vendor Quote” column
+    DrawingViewer: Measurements feed quantities directly
+    Local AI + aiReviewBus.js: Reviews refresh table, totals, and exclusions
+    Budget / Financials: Takeoff becomes baseline budget on award
+    Safety: AI can flag safety-related add-ons (e.g., extra PPE, substrate repairs)
+    Scheduling: Quantities drive task durations
+
+6. Mobile & Offline Behavior
+
+    Table collapses to rich cards
+    Large touch targets for quantity editing
+    Full offline editing with sync on reconnect
+    Field crews can do quick production estimates from site photos
+
+7. Government & Polish Features
+
+    Prevailing wage auto-application
+    DBE tracking flags
+    CSV/Excel import/export
+    What-if scenario engine (duplicate estimate + AI adjustments)

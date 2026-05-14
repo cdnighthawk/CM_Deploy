@@ -1,0 +1,106 @@
+USIS CRM — HR and Safety operating model (Plan 21)
+===================================================
+How **HR** (Plan 19) and **Safety** (Plan 7) work together in one platform: responsibilities, data ownership, user journeys, and integrations. Complements Plan 19 §1 (training split) and Plan 7 §11 (HR dashboard linkage).
+
+External patterns (high level — not endorsements)
+-------------------------------------------------
+Construction-oriented **HR + compliance** products commonly combine:
+
+• **Central employee / worker profile** with training and certification history, often paired with an **LMS** for assigned courses and renewals (e.g. vendor messaging around Arcoro: HR + compliance + learning paths).
+• **OSHA-focused modules**: incident / near-miss capture, **OSHA 300/300A/301** style recordkeeping automation, multi-site tracking, JHA / program documents (e.g. WorkSafely-style construction compliance positioning).
+• **Four-pillar EHS** style products: **enforce** (incidents), **inspect** (audits/field), **train** (content + completion), **develop** (document control) — useful mental model when splitting USIS screens (e.g. Sequence-style messaging).
+
+USIS does not need to replicate a full third-party suite; we **borrow the separation of concerns**: identity and policy in HR-ish tables; regulatory site safety, JHAs, pretasks, incidents, and OSHA-cert rows in Safety; **single employee key** (`User`) everywhere; **read-only bridges** where HR needs a compliance snapshot.
+
+1. Guiding principles
+----------------------
+• **One person record** — Same `User` (or future employee profile) for HR onboarding, policy acks, and Safety training/incident roles. No duplicate “HR person” vs “Safety person” without sync.
+• **Single write path per domain** — Safety writes **safety_training_records**, incidents, JHAs, pretasks. HR writes **hr_*** onboarding/ack/general-assignment tables. Cross-domain reads use APIs or DB views, not double-entry (Plan 19 §1).
+• **Project context for Safety, company context for much of HR** — Pretasks and project JHAs are **project_id**-scoped. Onboarding and handbook acks are typically **company-scoped** with optional project assignment for job-specific orientation packs.
+• **Approvals everywhere it matters** — Policy distribution, major JHA revisions, incident closure, and sensitive HR exports use the shared approval engine (Plan 14).
+• **Documents hub as neutral file store** — SDS, signed policies, orientation PDFs, incident photos: `Document` + type tags; RBAC decides who sees which folder (Plans 6, 18).
+
+2. Responsibility matrix (RACI-style)
+-------------------------------------
+| Topic | Primary owner (data + workflow UI) | HR dashboard | Safety module |
+|--------|--------------------------------------|----------------|----------------|
+| OSHA 10/30, First Aid, fall protection, scaffold certs | Safety | Read-only KPI + deep link | Full CRUD, expirations, exports |
+| Harassment prevention, handbook, code of conduct ack | HR | Full widget + approvals | N/A (or link to doc only) |
+| New hire onboarding checklist | HR | Full | Optional “assign safety courses” handoff |
+| Near-miss / observation / incident | Safety | Link or count “open critical” if role allows | Full workflow, AI photo review |
+| Project JHA + daily pretask | Safety | N/A (project safety) | Full |
+| Return-to-work / restricted duty (if ever scoped) | HR + Safety shared | HR case file | Safety restrictions on site access flags (TBD) |
+| OSHA 300 log / restricted work day flags | Safety (recordable) | HR notified for payroll/HRIS export only if policy says | Canonical injury metrics |
+
+3. Data flow (conceptual)
+-------------------------
+```mermaid
+flowchart LR
+  subgraph people [People layer]
+    User[User_identity]
+    HRTables[hr_onboarding_hr_policy_hr_training_assignment]
+    SafetyTrain[safety_training_records]
+  end
+  subgraph projectSafety [Project safety layer]
+    JHA[project_jhas]
+    Pretask[daily_pretasks]
+    Incidents[incidents_observations]
+  end
+  subgraph shared [Shared platform]
+    Docs[Documents_hub]
+    Approve[Approval_engine]
+    Audit[Audit_log]
+  end
+  User --> HRTables
+  User --> SafetyTrain
+  User --> Pretask
+  JHA --> Pretask
+  HRTables --> Docs
+  SafetyTrain --> Docs
+  Incidents --> Docs
+  Pretask --> Audit
+  HRTables --> Approve
+  JHA --> Approve
+```
+
+4. User journeys (outline)
+---------------------------
+**A. HR / People admin — weekly**
+1. Open `usis-hr-dashboard.html` → widgets: overdue policy acks, onboarding %, pending approvals, **safety cert snapshot** (read-only).
+2. Drill into onboarding or policy flows; assign documents from Documents hub.
+3. For “missing OSHA 30” — do **not** edit in HR; click **Open Safety module** → Safety assigns/refreshes training record.
+
+**B. Safety officer — daily / incident-driven**
+1. Open `usis-safety.html` / future `usis-safety-dashboard.html` → TRIR, open incidents, expiring certs.
+2. Publish or revise **project JHA**; field crews complete **daily pretask** (Plan 7 §10) in field log.
+3. On recordable injury: complete incident wizard; optional notification to HR for workers’ comp / return-to-work (integration TBD).
+
+**C. Foreman / competent person — start of shift**
+1. Mobile or `usis-field.html`: **Daily pretask** → confirms JHA version, weather, PPE, signatures.
+2. **Daily safety log** tab → checklist + photos → optional AI `safety_review`.
+3. Not expected to use HR dashboard except self-service acks if assigned.
+
+**D. Executive — monthly**
+1. HR dashboard aggregate cards (counts only) + Safety dashboard for lagging indicators.
+2. No PII export without role and audit (Plan 19 §6).
+
+5. Integration touchpoints
+---------------------------
+• **Notifications** — Expiring safety cert: notify Safety role + optionally HR (Plan 13). Overdue handbook: HR only.
+• **Vendor / sub portal** — Safety docs and attestations (Plan 7, Plan 5); HR does not duplicate sub compliance unless you add subcontractor HR onboarding later.
+• **Financials** — Incidents → CO / cost (Plan 10); HR payroll hooks out of scope unless integrated (Plan 15).
+• **APIs** — `GET /api/v1/hr/dashboard-summary` already stubs safety snapshot counts; add `GET /api/v1/safety/compliance-summary?scope=company|project` for HR read model when models exist.
+
+6. Phasing recommendation
+---------------------------
+1. **Phase 1** — Safety training records + expirations + HR dashboard read-only widget (no HR tables yet beyond stub).
+2. **Phase 2** — HR onboarding + policy acks + approvals; Documents types already include `onboarding_packet`, `policy_acknowledgment` (Plan 19 / API).
+3. **Phase 3** — Project JHA + daily pretask (Plan 7 §9–10) wired to field log; Safety dashboard KPIs.
+4. **Phase 4** — Incident workflows + optional HR handoff; analytics joining HR + Safety metrics (`usis-analytics.html`).
+
+7. References
+-------------
+• Plan 7 — Safety module, JHA, pretask, `safety_training_records`, §11 HR linkage.
+• Plan 19 — HR dashboard, RBAC, PII, training split.
+• Plan 14 — Approvals, single API model.
+• Plan 20 — Navigation: HR vs Safety entry points.

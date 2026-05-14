@@ -1,0 +1,1732 @@
+<!-- Start - Invoice Details Modal -->
+			<div class="modal TriggerModal fade" id="invoiceDetail" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h3 class="modal-title" id="date-filter">Invoice Details</h3>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="align-items-center mb-3">
+								<div>
+									<div class="dropdown-slt">
+										<label class="form-label text-uppercase">Client Name</label>
+										<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#clientName" type="text" readonly="">
+										<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="clientName" style="display: none;">
+											<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+												<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+												<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<div class="fw-semibold text-black">Alexander</div>
+														<span class="fs-12">+91 764302****</span>
+													</div>
+													<div>
+														<div>Client</div>
+													</div>
+												</div>
+											</div>
+											<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+												<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+												<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+													<div>
+														<div class="fw-semibold text-black">Michael Johnson</div>
+														<span class="fs-12">+15 1343025***</span>
+													</div>
+													<div>
+														<div>Staff</div>
+													</div>
+												</div>
+											</div>
+											<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+												+ Create Party
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="d-flex justify-content-end align-items-center">
+								<a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#createsalesInvoice">Next<i class="icon feather icon-chevron-right"></i></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Invoice Details Modal -->
+
+			<!-- Start - Create Sales Invoice Offcanvas -->
+			<div class="custom-offcanvas-width TriggerOffcanvas offcanvas offcanvas-end" tabindex="-1" id="createsalesInvoice" aria-labelledby="createsalesInvoice" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-3">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<div class="flex-column">
+							<h5 class="fs-14 fw-bold m-0">BOQ List</h5>
+						</div>
+					</div>
+					<div>
+						<a href="javascript:void(0);" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createsalesInvoice_CreateBOQ">+ Create BOQ</a>
+					</div>
+				</div>
+				<div class="offcanvas-body">
+					<div class="dropdown-slt mb-3">
+						<label class="form-label text-uppercase">Party Name</label>
+						<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#clientName1" type="text" readonly="">
+						<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="clientName1" style="display: none;">
+							<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+								<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+								<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+									<div>
+										<div class="fw-semibold text-black">Alexander</div>
+										<span class="fs-12">+91 764302****</span>
+									</div>
+									<div>
+										<div>Client</div>
+									</div>
+								</div>
+							</div>
+							<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+								<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+								<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+									<div>
+										<div class="fw-semibold text-black">Michael Johnson</div>
+										<span class="fs-12">+15 1343025***</span>
+									</div>
+									<div>
+										<div>Staff</div>
+									</div>
+								</div>
+							</div>
+							<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+								+ Create Party
+							</div>
+						</div>
+					</div>
+					<div>
+						<div class="mb-2">
+							<label class="form-label mb-2">Alexander</label>
+							<div class="mb-4 d-flex justify-content-between align-items-center p-2 bg-primary-subtle rounded pointer" data-bs-toggle="offcanvas" data-bs-target="#salesInvoice_detail">
+								<p class="m-0 text-black">Sales - 2</p>
+								<i class="icon feather icon-chevron-right fs-20"></i>
+							</div>
+							<div class="d-flex justify-content-between align-items-center p-2 bg-primary-subtle rounded pointer" data-bs-toggle="offcanvas" data-bs-target="#salesInvoice_detail">
+								<p class="m-0 text-black">Sales - 1</p>
+								<i class="icon feather icon-chevron-right fs-20"></i>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Create Sales Invoice Offcanvas -->
+
+			<!-- Start - Sale Invoice Detail Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="salesInvoice_detail" aria-labelledby="salesInvoice_detail" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+                        <a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#saleInvoice">Next</a>
+                    </div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    
+					<div class="mb-4 d-flex justify-content-between align-items-center gap-2">
+						<div class="input-group message-search-area w-75">
+							<input type="text" class="form-control border-end-0" placeholder="Search Party">
+							<div class="input-group-append">
+								<button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
+							</div>
+						</div>
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#salesInvoice_detail_newItems">+ New Items</a>
+					</div>
+
+					<div class="d-flex gap-2 align-items-center mb-4">
+						<div class="form-check">
+  							<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+						</div>
+						<div class="w-100 border rounded py-2 px-3 d-flex justify-content-between">
+							<div class="d-grid">
+								<h6 class="mb-1">Furniture</h6>
+								<span class="fs-12">Invoicing Done: 0/500 sqft</span>
+							</div>
+							<div class="d-flex align-items-center gap-3">
+								<div class="d-grid">
+									<h6 class="mb-1">489.6/sqft</h6>
+									<span class="fs-12">+ 18% GST</span>
+								</div>
+								<div>
+									<div class="dropdown custom-dropdown mb-0">
+										<div class="p-1 pointer" data-bs-toggle="dropdown" aria-expanded="false">
+											<i class="fa-solid fa-ellipsis-vertical"></i>
+										</div>
+										<div class="dropdown-menu dropdown-menu-end">
+											<a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#salesInvoice_detail_editItems">Edit</a>
+											<a class="dropdown-item text-danger" href="javascript:void(0);">Delete</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Sale Invoice Detail Offcanvas -->
+
+            <!-- Start - Sale Invoice Detail New Items Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="salesInvoice_detail_newItems" aria-labelledby="salesInvoice_detail_newItems" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">New Item</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control" placeholder="Enter Item Name">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Code</label>
+						<input type="text" class="form-control" placeholder="Enter Item Code">
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="w-50">
+							<label class="form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+						<div class="w-50">
+							<label for="est-quality" class="form-label">GST %</label>
+							<select class="form-select selectpicker">
+								<option>0%</option>
+								<option>5%</option>
+								<option>12%</option>
+								<option>18%</option>
+								<option>28%</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<div class="form-check mb-3">
+							<input class="form-check-input" type="checkbox" value="" id="addMeasurment">
+							<label class="form-check-label" for="addMeasurment">Add Measurement</label>
+						</div>
+
+						<div class="d-flex align-items-center mb-3 gap-2">
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Number</label>
+								<input type="number" class="form-control" placeholder="Number">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Length</label>
+								<input type="number" class="form-control" placeholder="Length">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Width</label>
+								<input type="number" class="form-control" placeholder="Width">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Estimated Qty.</label>
+						<input type="number" class="form-control" placeholder="0">
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Cost Price</label>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Mark Up</label>
+						<div class="input-group position-relative w-50">
+							<input type="number" class="form-control" placeholder="0">
+							<div>
+								<select class="form-select selectpicker">
+									<option>%</option>
+									<option>$</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Cost Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="10">
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Sales Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="mb-3">
+						<div class="position-relative">
+							<input class="form-control" placeholder="Add Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ HSN/SAC</a>
+						</div>
+						<div class="input-content">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">HSN/SAC</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Description</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div>
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">Note</label>
+								</div>
+								<textarea class="form-control mt-3"></textarea>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+            </div>
+            <!-- End - Sale Invoice Detail New Items Offcanvas -->
+
+            <!-- Start - Sale Invoice Detail Edit Items Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="salesInvoice_detail_editItems" aria-labelledby="salesInvoice_detail_editItems" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Edit Item</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control" placeholder="Enter Item Name">
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Item Code</label>
+						<input type="text" class="form-control" placeholder="Enter Item Code">
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="w-50">
+							<label class="form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+						<div class="w-50">
+							<label for="est-quality" class="form-label">GST %</label>
+							<select class="form-select selectpicker">
+								<option>0%</option>
+								<option>5%</option>
+								<option>12%</option>
+								<option>18%</option>
+								<option>28%</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="mb-4">
+						<div class="form-check mb-3">
+							<input class="form-check-input" type="checkbox" value="" id="addMeasurment">
+							<label class="form-check-label" for="addMeasurment">Add Measurement</label>
+						</div>
+
+						<div class="d-flex align-items-center mb-3 gap-2">
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Number</label>
+								<input type="number" class="form-control" placeholder="Number">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Length</label>
+								<input type="number" class="form-control" placeholder="Length">
+							</div>
+							
+							<div class="position-relative">
+								<label class="form-label text-uppercase">Width</label>
+								<input type="number" class="form-control" placeholder="Width">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label text-uppercase">Estimated Qty.</label>
+						<input type="number" class="form-control" placeholder="0">
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Cost Price</label>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Mark Up</label>
+						<div class="input-group position-relative w-50">
+							<input type="number" class="form-control" placeholder="0">
+							<div>
+								<select class="form-select selectpicker">
+									<option>%</option>
+									<option>$</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Unit Cost Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="10">
+						</div>
+					</div>
+
+					<hr class="my-4">
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<label class="form-label m-0 fs-16">Sales Price</label>
+						<div class="position-relative">
+							<input type="number" class="form-control" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="mb-3">
+						<div class="position-relative">
+							<input class="form-control" placeholder="Add Cost Code">
+							<span class="position-absolute end-0 top-50 translate-middle">
+								<i class="icon feather icon-chevron-right fs-18"></i>
+							</span>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ HSN/SAC</a>
+						</div>
+						<div class="input-content">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">HSN/SAC</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Description</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div>
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">Note</label>
+								</div>
+								<textarea class="form-control mt-3"></textarea>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Bills<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+            </div>
+            <!-- End - Sale Invoice Detail Edit Items Offcanvas -->
+
+            <!-- Start - Sale Invoice Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="saleInvoice" aria-labelledby="saleInvoice" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="m-0">Sales Invoice</h5>
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#InvoiceSetting" class="btn btn-xs"><i class="icon feather icon-settings fs-16"></i></a>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="javascript:void(0);" class="btn btn-primary">Save</a>
+                    </div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    
+					<div class="d-flex justify-content-between align-items-center mb-3">
+						<h6 class="m-0">Item Level Tax</h6>
+						<div class="form-check form-switch">
+							<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-3">
+						<div>
+							<p class="m-0">Client</p>
+							<h6 class="m-0">John</h6>
+						</div>
+						<div class="d-flex gap-3 align-items-center">
+							<div class="text-end">
+								<p class="m-0">16 Jul, 2025</p>
+								<h6 class="m-0 text-end">INV- 2</h6>
+							</div>
+							<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#InvoiceDetails"><i class="icon feather icon-edit fs-20"></i></a>
+						</div>
+					</div>
+
+					<div class="bg-primary-subtle minh180 rounded mb-4 p-2">
+						<div class="d-flex justify-content-between mb-4">
+							<a href="javascript:void(0);" class="fw-medium" data-bs-toggle="offcanvas" data-bs-target="#salesInvoice_detail">Select BOQ Items(1)</a>
+							<a href="javascript:void(0);" class="fw-medium" data-bs-toggle="offcanvas" data-bs-target="#saleInvoice_AddItem">+ Add Item</a>
+						</div>
+						<div class="d-flex flex-column gap-3">
+							<div class="bg-white rounded p-3 d-flex gap-2">
+								<div>
+									<a class="rounded" href="javascript:void(0);">
+										<i class="icon feather icon-x fs-18 lh-base"></i>
+									</a>	
+								</div>
+								<div class="d-flex gap-2">
+									<div class="w-50">
+										<h6 class="m-0">Furniture</h6>
+										<p class="mb-2 fs-12">Invoicing done: $ 0 sqft</p>
+										<div class="mb-2 position-relative">
+											<label class="form-label text-uppercase">Unit rate ($)</label>
+											<input type="number" class="form-control" placeholder="489.6">
+										</div>
+										<a href="javascript:void(0);" class="mt-1" data-bs-toggle="modal" data-bs-target="#saleInvoice_AddDescription">+ Add Description</a>
+									</div>
+									<div class="w-50">
+										<h6 class="mb-4 text-end">$ 0</h6>
+										<div class="mb-2 position-relative">
+											<label class="form-label text-uppercase">Invoice Qty. (sqft)</label>
+											<input type="number" class="form-control">
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-2 d-flex justify-content-between">
+						<p class="m-0 text-dark">Item Subtotal</p>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+
+					<div class="mb-2 d-flex justify-content-between">
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#saleInvoice_PreTaxDeduction">+ Pre Tax Deduction</a>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+					
+					<div class="mb-2 d-flex justify-content-between">
+						<p class="m-0 text-dark">Net Subtotal</p>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+					
+					<div class="mb-3 d-flex justify-content-between align-items-center">
+						<div class="d-flex align-items-baseline gap-2">
+							<p class="mb-2">Tax</p>
+							<select class="form-select form-select-sm selectpicker">
+								<option>18%</option>
+								<option>12%</option>
+								<option>5%</option>
+								<option selected="">0%</option>
+								<option>28%</option>
+								<option>0.1%</option>
+								<option>0.25%</option>
+								<option>1.5%</option>
+								<option>3%</option>
+								<option>6%</option>
+								<option>7.5%</option>
+								<option>14%</option>
+							</select>
+						</div>
+						<span>$ 0</span>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<a class="add-input-btn" href="javascript:void(0);">+ Discount</a>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2 remove-input-btn">
+                                    <i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+                                    <label class="pointer">Discount</label>
+                                </div>
+                                <input type="number" class="form-control form-control-sm w-50" placeholder="0">
+                            </div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<a class="add-input-btn" href="javascript:void(0);">+ Additional Charges</a>
+						<div class="input-content" style="display: none;">
+							<div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2 remove-input-btn">
+                                    <i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+                                    <label class="pointer">Additional Charges</label>
+                                </div>
+                                <input type="number" class="form-control form-control-sm w-50" placeholder="0">
+                            </div>
+						</div>
+					</div>
+
+					<hr>
+					
+					<div class="mb-2 d-flex justify-content-between">
+						<p class="m-0 text-dark fw-medium">Total Amount</p>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+
+					<div class="mb-2 d-flex justify-content-between">
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#saleInvoice_Deduction">+ Deduction</a>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+					
+					<div class="mb-2 d-flex justify-content-between">
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#saleInvoice_Retention">+ Retention</a>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+					
+					<hr>
+					
+					<div class="mb-4 d-flex justify-content-between align-items-center">
+						<div>
+							<p class="m-0 text-dark fw-medium">Net Amount</p>
+							<div class="form-check lh-sm align-items-center">
+								<input class="form-check-input fs-12" type="checkbox" value="" id="roundOff">
+								<label class="form-check-label fs-12" for="roundOff">Round Off</label>
+							</div>
+						</div>
+						<p class="m-0 text-dark">$ 0</p>
+					</div>
+
+					<div class="form-control pointer d-flex justify-content-between align-items-center mb-3" data-bs-toggle="modal" data-bs-target="#saleInvoice_BillTo">
+						<p class="m-0 text-dark fw-medium">Bill To/Ship To</p>
+						<a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#saleInvoice_BillTo">+ Add</a>
+					</div>
+
+					<div>
+						<form action="javascript:void(0);" class="custom-dropzone dropzone pointer dz-clickable">
+							<div class="dz-default dz-message pointer">
+								<button class="dz-button" type="button">Upload Files<i class="ms-2 icon feather icon-upload-cloud text-primary fs-18"></i></button>
+							</div>
+						</form>
+					</div>
+					
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Sale Invoice Offcanvas -->
+
+            <!-- Start - Sale Invoice Settings Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="InvoiceSetting" aria-labelledby="InvoiceSetting" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="m-0">Invoice Settings</h5>
+                    </div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    <div class="mb-4 mt-2 position-relative">
+						<label class="form-label text-uppercase">Terms and Conditions</label>
+						<textarea class="form-control" rows="2">Late payments may result in late payment fees. Please reach out to us in case of any Invoice errors.  All disputes are subject to India jurisdiction only</textarea>
+					</div>
+
+					<div>
+						<div class="dropdown-slt mt-1 position-relative">
+							<label class="form-label text-uppercase">Bank Account</label>
+							<input class="form-control w-100 border rounded on-dropdown-input" type="text" placeholder="Select Bank Account" data-dropdown-target="#dropdownAccountList2" readonly="">
+							<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" style="display: none;" id="dropdownAccountList2">
+								<div class="align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="John Smith - JUNIO">
+									<div class="d-flex align-items-center gap-3">
+										<img src="../assets/images/construction/bank-logo.jpg" width="25" height="25" alt="Your Bank">
+										<h4 class="fw-semibold m-0">JUNIO</h4>
+									</div>
+									<div class="px-5">
+										<p class="m-0 fs-12">John Smith</p>
+										<p class="m-0 fs-12">AC : <span class="fw-semibold">65233465213221</span></p>
+										<p class="m-0 fs-12">Bank Code : <span class="fw-semibold">Hbs8522</span></p>
+										<p class="m-0 fs-12">UPI : <span class="fw-semibold">John Smith478@ybl</span></p>
+									</div>
+									<div class="d-flex justify-content-end">
+										<p class="badge bg-primary fs-8 m-0">Primary Account</p>
+									</div>
+								</div>
+								<div class="p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="John - HDFC">
+									<div class="d-flex align-items-center gap-3">
+										<img src="../assets/images/construction/bank-logo.jpg" width="25" height="25" alt="Your Bank">
+										<h4 class="fw-semibold m-0">HDFC</h4>
+									</div>
+									<div class="px-5">
+										<p class="m-0 fs-12">John</p>
+										<p class="m-0 fs-12">AC : <span class="fw-semibold">98741566521687</span></p>
+										<p class="m-0 fs-12">Bank Code : <span class="fw-semibold">SBIN0111</span></p>
+										<p class="m-0 fs-12">UPI : <span class="fw-semibold">945961465@ybl</span></p>
+									</div>
+									<div class="d-flex justify-content-end">
+										<p class="badge bg-warning fs-8 m-0">Secondary Account</p>
+									</div>
+								</div>
+								<div class="d-flex justify-content-center">
+									<div class="btn btn-outline-primary mt-2" data-bs-toggle="offcanvas" data-bs-target="#add-bank-account">
+										+ New Account
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Sale Invoice Settings Offcanvas -->
+
+            <!-- Start - Invoice Detail Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="InvoiceDetails" aria-labelledby="InvoiceDetails" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="m-0">Invoice Details</h5>
+                    </div>
+					<div class="d-flex gap-2">
+						<a href="javascript:void(0);" class="btn btn-light">Cancel</a>
+						<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+					</div>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    <div class="d-flex justify-content-end mb-4">
+						<input class="form-control w-25" type="text" id="bsDatepicker5" placeholder="07/18/2025"/>	
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Party Name</label>
+						<input type="text" class="form-control">
+					</div>
+					
+					<div class="d-flex gap-2 mb-4">
+						<div class="position-relative w-50">
+							<label class="form-label text-uppercase">Invoice No</label>
+							<input type="text" class="form-control" data-bs-toggle="modal" data-bs-target="#InvoiceDetails_invoiceNumber">
+						</div>
+						<div class="position-relative w-50">
+							<label class="form-label text-uppercase">Reference No</label>
+							<input type="text" class="form-control">
+						</div>
+					</div>
+
+					<div class="position-relative mb-4">
+						<label class="form-label text-uppercase">Due Date</label>
+						<input class="form-control" type="text" id="bsDatepicker9" />
+					</div>
+
+					<div>
+						<label class="form-label text-uppercase">Note</label>
+						<textarea class="form-control" rows="6"></textarea>
+					</div>
+					
+                </div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Invoice Detail Offcanvas -->
+
+            <!-- Start - Invoice Detail_Edit Invoice Number Modal -->
+            <div class="modal fade" id="InvoiceDetails_invoiceNumber" data-bs-keyboard="false" tabindex="-1" aria-labelledby="InvoiceDetails_invoiceNumber" aria-modal="true" role="dialog">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-4 border-primary">
+                            <h4 class="modal-title">Edit Invoice Number</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            
+							<div class="d-flex gap-2 mb-3">
+								<div class="position-relative w-50">
+									<label class="form-label text-uppercase">Prefix</label>
+									<input type="text" class="form-control" placeholder="INV">
+								</div>
+								<div class="position-relative w-50">
+									<label class="form-label text-uppercase">Number</label>
+									<input type="number" class="form-control" placeholder="1">
+								</div>
+							</div>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary w-100">Save</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Invoice Detail_Edit Invoice Number Modal -->
+
+            <!-- Start - Sale Invoice_Add Item Offcanvas -->
+            <div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="saleInvoice_AddItem" aria-labelledby="saleInvoice_AddItem" aria-modal="true" role="dialog">
+                <div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="m-0">Add Item</h5>
+                    </div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+                </div>
+
+                <!-- Start - Offcanvas Body -->
+                <div class="offcanvas-body">
+                    
+					<div class="mb-4 position-relative">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control">
+					</div>
+
+					<div class="mb-4 position-relative">
+						<label class="form-label text-uppercase">Item Code</label>
+						<input type="text" class="form-control">
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="position-relative w-75">
+							<label class="form-label">Invoice Qty.</label>
+							<input type="number" class="form-control">
+						</div>
+						<div class="position-relative w-25">
+							<label class="form-label form-label text-uppercase">Unit</label>
+							<select class="form-select selectpicker">
+								<option>sqft</option>
+								<option>number</option>
+								<option>cum</option>
+								<option>meter</option>
+								<option>sqm</option>
+								<option>ft</option>
+								<option>cft</option>
+								<option>tonne</option>
+								<option>kg</option>
+								<option>quintal</option>
+								<option>In</option>
+								<option>Trips</option>
+								<option>cm</option>
+								<option>yard</option>
+								<option>yd</option>
+								<option>km</option>
+								<option>%</option>
+								<option>hours</option>
+								<option>pair</option>
+								<option>Brass</option>
+								<option>Bundle</option>
+								<option>CKM</option>
+								<option>sqmm</option>
+								<option>Day</option>
+								<option>Item</option>
+								<option>Shift</option>
+								<option>set</option>
+								<option>KL</option>
+								<option>points</option>
+								<option>pcs</option>
+								<option>bags</option>
+								<option>KW</option>
+								<option>nos</option>
+								<option>Litre</option>
+								<option>manday</option>
+								<option>lumpsum</option>
+								<option>Mm</option>
+								<option>Monthly</option>
+								<option>RFT</option>
+								<option>RMT</option>
+								<option>Stage</option>
+								<option>each</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="d-flex gap-2 mb-4">
+						<div class="position-relative w-75">
+							<label class="form-label">Rate Per Unit</label>
+							<input type="number" class="form-control">
+						</div>
+						<div class="position-relative w-25">
+							<label class="form-label form-label text-uppercase">GST %</label>
+							<select class="form-select selectpicker">
+								<option>18%</option>
+								<option>12%</option>
+								<option>5%</option>
+								<option selected>0%</option>
+								<option>28%</option>
+								<option>0.1%</option>
+								<option>0.25%</option>
+								<option>1.5%</option>
+								<option>3%</option>
+								<option>6%</option>
+								<option>7.5%</option>
+								<option>14%</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="form-control form-control-lg d-flex justify-content-between align-items-center pointer mb-4">
+						<p class="m-0">Add Cost Code</p>
+						<span><i class="icon feather icon-chevron-right"></i></span>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ HSN/SAC</a>
+						</div>
+						<div class="input-content">
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">HSN/SAC</label>
+								</div>
+								<input type="text" class="form-control w-50">
+							</div>
+						</div>
+					</div>
+
+					<div class="mb-3 add-input-box">
+						<div class="d-flex justify-content-end">
+							<a class="add-input-btn" href="javascript:void(0);">+ Description</a>
+						</div>
+						<div class="input-content" style="display: none;">
+							<div>
+								<div class="d-flex align-items-center gap-2 remove-input-btn">
+									<i class="icon feather icon-x-circle fs-18 pointer fw-medium"></i>
+									<label class="pointer">Note</label>
+								</div>
+								<textarea class="form-control mt-3"></textarea>
+							</div>
+						</div>
+					</div>
+
+				</div>
+                <!-- End - Offcanvas Body -->
+            
+            </div>
+            <!-- End - Invoice Detail Offcanvas -->
+
+            <!-- Start - Invoice Detail_Edit Invoice Number Modal -->
+            <div class="modal fade" id="saleInvoice_AddDescription" data-bs-keyboard="false" tabindex="-1" aria-labelledby="saleInvoice_AddDescription" aria-modal="true" role="dialog">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-4 border-primary">
+                            <h4 class="modal-title">Add Description</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            
+							<textarea class="form-control mb-3" rows="5"></textarea>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary w-100">Save</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Invoice Detail_Edit Invoice Number Modal -->
+
+			<!-- Start - Sale Invoice Pre Tax Detuction Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="saleInvoice_PreTaxDeduction" aria-labelledby="saleInvoice_PreTaxDeduction" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Pre Tax Deduction</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-4 d-flex justify-content-between">
+						<h6 class="m-0">Items</h6>
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#preTaxDetuction_AddDeduction">+ Add Deductions</a>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction1">
+							</div>
+							<h5 class="m-0">Furniture</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" id="deduction2" />
+							</div>
+							<h5 class="m-0">Glass</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0" id="amountInput" />
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction3">
+							</div>
+							<h5 class="m-0">Wooden Frame</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+				<div class="offcanvas-footer border-top">
+					<div class="d-flex justify-content-between">
+						<p class="m-0 text-black fs-16 fw-semibold">Total</p>
+						<p class="m-0 text-black fs-16">$ 0</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Sale Invoice Pre Tax Detuction Offcanvas -->
+			
+			<!-- Start - Sale Invoice New Pre Tax Detuction Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="preTaxDetuction_AddDeduction" aria-labelledby="preTaxDetuction_AddDeduction" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">New Deduction</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control">
+					</div>
+					
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Sale Invoice New Pre Tax Detuction Offcanvas -->
+
+			<!-- Start - Sale Invoice Detuction Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="saleInvoice_Deduction" aria-labelledby="saleInvoice_Deduction" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Deduction</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-4 d-flex justify-content-between">
+						<h6 class="m-0">Items</h6>
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#Detuction_AddDeduction">+ Add Deductions</a>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction1">
+							</div>
+							<h5 class="m-0">Furniture</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" id="deduction2" />
+							</div>
+							<h5 class="m-0">Glass</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0" id="amountInput" />
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction3">
+							</div>
+							<h5 class="m-0">Wooden Frame</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+				<div class="offcanvas-footer border-top">
+					<div class="d-flex justify-content-between">
+						<p class="m-0 text-black fs-16 fw-semibold">Total</p>
+						<p class="m-0 text-black fs-16">$ 0</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Sale Invoice Detuction Offcanvas -->
+			
+			<!-- Start - Sale Invoice New Pre Tax Detuction Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="Detuction_AddDeduction" aria-labelledby="Detuction_AddDeduction" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">New Deduction</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control">
+					</div>
+					
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Sale Invoice New Pre Tax Detuction Offcanvas -->
+
+			<!-- Start - Sale Invoice Retentions Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="saleInvoice_Retention" aria-labelledby="saleInvoice_Retention" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Retentions</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="mb-4 d-flex justify-content-between">
+						<h6 class="m-0">Items</h6>
+						<a href="javascript:void(0);" data-bs-toggle="offcanvas" data-bs-target="#Retention_AddRetention">+ Add Retentions</a>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction1">
+							</div>
+							<h5 class="m-0">Furniture</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+					
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" id="deduction2" />
+							</div>
+							<h5 class="m-0">Glass</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0" id="amountInput" />
+						</div>
+					</div>
+
+					<div class="d-flex justify-content-between align-items-center mb-4 amount-row">
+						<div class="d-flex gap-3">
+							<div class="form-check">
+								<input class="form-check-input controlled-checkbox" type="checkbox" value="" id="deduction3">
+							</div>
+							<h5 class="m-0">Wooden Frame</h5>
+						</div>
+						<div class="position-relative">
+							<label class="form-label text-uppercase">Amount</label>
+							<input type="number" class="form-control amount-input" placeholder="0">
+						</div>
+					</div>
+
+				</div>
+				<!-- End - Offcanvas Body -->
+				<div class="offcanvas-footer border-top">
+					<div class="d-flex justify-content-between">
+						<p class="m-0 text-black fs-16 fw-semibold">Total</p>
+						<p class="m-0 text-black fs-16">$ 0</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Sale Invoice Retentions Offcanvas -->
+			
+			<!-- Start - Sale Invoice New Pre Tax Retentions Offcanvas -->
+			<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="Retention_AddRetention" aria-labelledby="Retention_AddRetention" aria-modal="true" role="dialog">
+				<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
+					<div class="d-flex align-items-center gap-2">
+						<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+						<h5 class="offcanvas-title fw-semibold text-uppercase">Retentions</h5>
+					</div>
+					<a href="javascript:void(0);" class="btn btn-primary">Save</a>
+				</div>
+
+				<!-- Start - Offcanvas Body -->
+				<div class="offcanvas-body">
+					
+					<div class="position-relative">
+						<label class="form-label text-uppercase">Item Name</label>
+						<input type="text" class="form-control">
+					</div>
+					
+				</div>
+				<!-- End - Offcanvas Body -->
+			
+			</div>
+			<!-- End - Sale Invoice New Pre Tax Retentions Offcanvas -->
+
+            <!-- Start - Sale Invoice Bill/Ship To Modal -->
+            <div class="modal fade" id="saleInvoice_BillTo" data-bs-keyboard="false" tabindex="-1" aria-labelledby="saleInvoice_BillTo" aria-modal="true" role="dialog">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-4 border-primary">
+                            <h4 class="modal-title">Add Description</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            
+							<div class="col-12">
+								<div class="row">
+									<div class="col-6 mb-3">
+										<h6 class="mb-2 fs-16">Bill From</h6>
+										<div class="mb-4 address w-75" style="display: none;">
+											<div class="d-flex justify-content-between">
+												<p class="m-0 text-black">Test</p>
+												<button class="btn btn-xs remove-btn fs-18 text-danger" type="button"><i class="icon feather icon-x-circle"></i></button>
+											</div>
+											<div class="d-flex flex-column">
+												<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+												<span>Gautam Buddha Nagar</span>
+												<span>Noida, Uttar Pradesh, 201301</span>
+											</div>
+										</div>
+										<div class="dropdown-slt mb-3 w-75">
+											<div class="position-relative">
+												<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#dropdownBillFrom" type="text" placeholder="Select Address" readonly="">
+												<span class="dropdown-arrow"><i class="icon feather icon-chevron-down"></i></span>
+											</div>
+											<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="dropdownBillFrom" style="display: none;">
+												<ul class="nav nav-pills nav-pills-all mb-3 justify-content-between" id="1justify-tab" role="tablist">
+													<li class="nav-item" role="presentation">
+														<label for="company" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link active" id="justify-home-tab" data-bs-toggle="pill" data-bs-target="#justify-home" role="tab" aria-controls="justify-home" aria-selected="true">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault" id="company" checked>
+																<p class="m-0">Company</p>
+															</div>
+														</label>
+													</li>
+													<li class="nav-item" role="presentation">
+														<label for="project" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link" id="justify-profile-tab" data-bs-toggle="pill" data-bs-target="#justify-profile" role="tab" aria-controls="justify-profile" aria-selected="false" tabindex="-1">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault" id="project">
+																<p class="m-0">Project</p>
+															</div>
+														</label>
+													</li>
+												</ul>
+												<div class="tab-content" id="justify-tabContent">
+													<div class="tab-pane fade show active" id="justify-home" role="tabpanel" aria-labelledby="justify-home-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="W3ITEXPERTS">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">W3ITEXPERTS</p>
+																	<div class="d-flex flex-column">
+																		<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+																		<span>Gautam Buddha Nagar</span>
+																		<span>Noida, Uttar Pradesh, 201301</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div class="tab-pane fade" id="justify-profile" role="tabpanel" aria-labelledby="justify-profile-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Test">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">Test</p>
+																	<div class="d-flex flex-column">
+																		<span>A-23, Sector A</span>
+																		<span>R.K. Puram</span>
+																		<span>Kota, Rajasthan, 324010</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-6 mb-3">
+										<h6 class="mb-2 fs-16">Bill To</h6>
+										<div class="mb-4 address w-75" style="display: none;">
+											<div class="d-flex justify-content-between">
+												<p class="m-0 text-black">Test 2</p>
+												<button class="btn btn-xs remove-btn fs-18 text-danger" type="button"><i class="icon feather icon-x-circle"></i></button>
+											</div>
+											<div class="d-flex flex-column">
+												<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+												<span>Gautam Buddha Nagar</span>
+												<span>Noida, Uttar Pradesh, 201301</span>
+											</div>
+										</div>
+										<div class="dropdown-slt mb-3 w-75">
+											<div class="position-relative">
+												<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#dropdownBillTo" type="text" placeholder="Select Address" readonly="">
+												<span class="dropdown-arrow"><i class="icon feather icon-chevron-down"></i></span>
+											</div>
+											<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="dropdownBillTo" style="display: none;">
+												<ul class="nav nav-pills nav-pills-all mb-3 justify-content-between" id="1justify-tab" role="tablist">
+													<li class="nav-item" role="presentation">
+														<label for="1company" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link active" id="1justify-home-tab" data-bs-toggle="pill" data-bs-target="#1justify-home" type="button" role="tab" aria-controls="1justify-home" aria-selected="true">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault1" id="1company" checked>
+																<p class="m-0">Company</p>
+															</div>
+														</label>
+													</li>
+													<li class="nav-item" role="presentation">
+														<label for="1project" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link" id="1justify-profile-tab" data-bs-toggle="pill" data-bs-target="#1justify-profile" type="button" role="tab" aria-controls="1ustify-profile" aria-selected="false" tabindex="-1">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault1" id="1project">
+																<p class="m-0">Project</p>
+															</div>
+														</label>
+													</li>
+												</ul>
+												<div class="tab-content" id="1justify-tabContent">
+													<div class="tab-pane fade show active" id="1justify-home" role="tabpanel" aria-labelledby="1justify-home-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="W3ITEXPERTS">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">W3ITEXPERTS</p>
+																	<div class="d-flex flex-column">
+																		<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+																		<span>Gautam Buddha Nagar</span>
+																		<span>Noida, Uttar Pradesh, 201301</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div class="tab-pane fade" id="1justify-profile" role="tabpanel" aria-labelledby="1justify-profile-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Test">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">Test</p>
+																	<div class="d-flex flex-column">
+																		<span>A-23, Sector A</span>
+																		<span>R.K. Puram</span>
+																		<span>Kota, Rajasthan, 324010</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="col-6 mb-3">
+										<h6 class="mb-2 fs-16">Ship From</h6>
+										<div class="mb-4 address w-75" style="display: none;">
+											<div class="d-flex justify-content-between">
+												<p class="m-0 text-black">Test 3</p>
+												<button class="btn btn-xs remove-btn fs-18 text-danger" type="button"><i class="icon feather icon-x-circle"></i></button>
+											</div>
+											<div class="d-flex flex-column">
+												<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+												<span>Gautam Buddha Nagar</span>
+												<span>Noida, Uttar Pradesh, 201301</span>
+											</div>
+										</div>
+										<div class="dropdown-slt mb-3 w-75">
+											<div class="position-relative">
+												<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#dropdownShipFrom" type="text" placeholder="Select Address" readonly="">
+												<span class="dropdown-arrow"><i class="icon feather icon-chevron-down"></i></span>
+											</div>
+											<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="dropdownShipFrom" style="display: none;">
+												<ul class="nav nav-pills nav-pills-all mb-3 justify-content-between" id="2justify-tab" role="tablist">
+													<li class="nav-item" role="presentation">
+														<label for="2company" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link active" id="2justify-home-tab" data-bs-toggle="pill" data-bs-target="#2justify-home" type="button" role="tab" aria-controls="2justify-home" aria-selected="true">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault3" id="2company" checked>
+																<p class="m-0">Company</p>
+															</div>
+														</label>
+													</li>
+													<li class="nav-item" role="presentation">
+														<label for="2project" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link" id="2justify-profile-tab" data-bs-toggle="pill" data-bs-target="#2justify-profile" type="button" role="tab" aria-controls="2justify-profile" aria-selected="false" tabindex="-1">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault3" id="2project">
+																<p class="m-0">Project</p>
+															</div>
+														</label>
+													</li>
+												</ul>
+												<div class="tab-content" id="2justify-tabContent">
+													<div class="tab-pane fade show active" id="2justify-home" role="tabpanel" aria-labelledby="2justify-home-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="W3ITEXPERTS">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">W3ITEXPERTS</p>
+																	<div class="d-flex flex-column">
+																		<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+																		<span>Gautam Buddha Nagar</span>
+																		<span>Noida, Uttar Pradesh, 201301</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div class="tab-pane fade" id="2justify-profile" role="tabpanel" aria-labelledby="2justify-profile-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Test">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">Test 3</p>
+																	<div class="d-flex flex-column">
+																		<span>A-23, Sector A</span>
+																		<span>R.K. Puram</span>
+																		<span>Kota, Rajasthan, 324010</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div>
+											<div class="form-check">
+												<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault1">
+												<label class="form-check-label" for="flexCheckDefault1">Same as Bill From</label>
+											</div>
+										</div>
+									</div>
+									<div class="col-6 mb-3">
+										<h6 class="mb-2 fs-16">Ship To</h6>
+										<div class="mb-4 address w-75" style="display: none;">
+											<div class="d-flex justify-content-between">
+												<p class="m-0 text-black">Test 4</p>
+												<button class="btn btn-xs remove-btn fs-18 text-danger" type="button"><i class="icon feather icon-x-circle"></i></button>
+											</div>
+											<div class="d-flex flex-column">
+												<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+												<span>Gautam Buddha Nagar</span>
+												<span>Noida, Uttar Pradesh, 201301</span>
+											</div>
+										</div>
+										<div class="dropdown-slt mb-3 w-75">
+											<div class="position-relative">
+												<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#dropdownShipTo" type="text" placeholder="Select Address" readonly="">
+												<span class="dropdown-arrow"><i class="icon feather icon-chevron-down"></i></span>
+											</div>
+											<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="dropdownShipTo" style="display: none;">
+												<ul class="nav nav-pills nav-pills-all mb-3 justify-content-between" id="3justify-tab" role="tablist">
+													<li class="nav-item" role="presentation">
+														<label for="3company" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link active" id="3justify-home-tab" data-bs-toggle="pill" data-bs-target="#3justify-home" type="button" role="tab" aria-controls="3justify-home" aria-selected="true">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault4" id="3company" checked>
+																<p class="m-0">Company</p>
+															</div>
+														</label>
+													</li>
+													<li class="nav-item" role="presentation">
+														<label for="3project" class="width180 d-flex justify-content-center align-items-center py-2 border rounded bill-ship nav-link" id="3justify-profile-tab" data-bs-toggle="pill" data-bs-target="#3justify-profile" type="button" role="tab" aria-controls="3justify-profile" aria-selected="false" tabindex="-1">
+															<div class="d-flex gap-2">
+																<input class="form-check-input" type="radio" name="flexRadioDefault4" id="3project">
+																<p class="m-0">Project</p>
+															</div>
+														</label>
+													</li>
+												</ul>
+												<div class="tab-content" id="3justify-tabContent">
+													<div class="tab-pane fade show active" id="3justify-home" role="tabpanel" aria-labelledby="3justify-home-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="W3ITEXPERTS">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">W3ITEXPERTS</p>
+																	<div class="d-flex flex-column">
+																		<span>C-97, Metro Station Road, C Block, Sector 2,</span>
+																		<span>Gautam Buddha Nagar</span>
+																		<span>Noida, Uttar Pradesh, 201301</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div class="tab-pane fade" id="3justify-profile" role="tabpanel" aria-labelledby="2justify-profile-tab" tabindex="0">
+														<div class="d-flex flex-column gap-2">
+															<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Test">
+																<div class="mb-0">
+																	<p class="m-0 text-dark fw-semibold fs-16">Test</p>
+																	<div class="d-flex flex-column">
+																		<span>A-23, Sector A</span>
+																		<span>R.K. Puram</span>
+																		<span>Kota, Rajasthan, 324010</span>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+										<div>
+											<div class="form-check">
+												<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault2">
+												<label class="form-check-label" for="flexCheckDefault2">Same as Bill To</label>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-light">Cancel</a>
+                                <button type="submit" class="btn btn-primary">Save</a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End - Sale Invoice Bill/Ship To Modal -->
+
+			<!-- Start - Invoice Details Modal -->
+			<div class="modal TriggerModal fade" id="createsalesInvoice_CreateBOQ" data-bs-keyboard="false" tabindex="-1" aria-labelledby="approval-setting" aria-modal="true" role="dialog">
+				<div class="modal-dialog modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header border-4 border-primary">
+							<h3 class="modal-title">Create BOQ</h3>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+
+							<div class="position-relative mb-3">
+								<label class="form-label text-uppercase">BOQ subject</label>
+								<input type="text" class="form-control">
+							</div>
+
+							<div class="mb-3">
+								<div class="dropdown-slt position-relative">
+									<label class="form-label text-uppercase">Client Name</label>
+									<input class="form-control w-100 border rounded on-dropdown-input" data-dropdown-target="#CreateBOQ_Client" type="text" readonly="">
+									<div class="dropdown-list border rounded mt-2 p-2 on-dropdown-menu" id="CreateBOQ_Client" style="display: none;">
+										<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="Alexander">
+											<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">AX</div>
+											<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+												<div>
+													<div class="fw-semibold text-black">Alexander</div>
+													<span class="fs-12">+91 764302****</span>
+												</div>
+												<div>
+													<div>Client</div>
+												</div>
+											</div>
+										</div>
+										<div class="party-item d-flex align-items-center p-2 border-bottom pointer gap-2 on-dropdown-item" data-val="+15 1343025***">
+											<div class="bg-primary text-white rounded-circle width40 height40 d-flex align-items-center gap-1 justify-content-center fw-medium">UN</div>
+											<div class="flex-grow-1 d-flex justify-content-between align-items-center">
+												<div>
+													<div class="fw-semibold text-black">Michael Johnson</div>
+													<span class="fs-12">+15 1343025***</span>
+												</div>
+												<div>
+													<div>Staff</div>
+												</div>
+											</div>
+										</div>
+										<div class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="offcanvas" data-bs-target="#create-party">
+											+ Create Party
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="d-flex justify-content-end align-items-center">
+								<a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#createsalesInvoice">Next<i class="icon feather icon-chevron-right"></i></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- End - Invoice Details Modal -->

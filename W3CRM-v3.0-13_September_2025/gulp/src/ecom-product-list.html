@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+	@@include("elements/meta.html", {
+		"fileName": "ecom-product-list.html",
+	})
+	
+	<link rel="stylesheet" href="assets/vendor/star-rating/star-rating-svg.css">
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+
+</head>
+<body>
+		
+	@@include("elements/preloader.html")
+
+	<!-- Start - Main Wrapper -->
+    <div id="main-wrapper">
+
+        @@include("elements/nav-header.html")
+		
+		@@include("elements/chatbox.html")
+		
+		@@include("elements/header.html")
+		
+		@@include("elements/deznav.html")
+
+		<!-- Start - Content Body -->
+		<main class="content-body">
+			
+			<!-- Start - Page Title & Breadcrumb -->
+			<div class="page-title">
+				@@include("elements/breadcrumb.html",{
+					"fileName": "Product List",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">E-commerce Product List</h6>
+								<p class="text-muted small mb-0">E-commerce demo template. Reference for catalog and checkout UI patterns.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="ecom-product-grid.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="ecom-product-order.html">Next</a>
+							</div>
+						</div>
+						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+					</div>
+				</div>
+			</div>
+			<!-- End - Page Title & Breadcrumb -->
+			
+			<div class="container-fluid mh-auto">
+                <div class="row">
+				
+                    <div class="col-xl-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-xxl-4 col-sm-5">
+										<img class="img-fluid rounded" src="assets/images/product/2.jpg" alt="">
+									</div>
+                                    <div class="col-xxl-8 col-sm-7 p-2 p-sm-3">
+										<h3 class="mb-2 fs-5 fw-semibold">
+											<a href="ecom-product-detail.html">Solid Women's V-neck Dark T-Shirt</a>
+										</h3>
+										<div class="mb-3">
+											<ul class="d-flex align-items-start gap-1 mb-1">
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+											</ul>
+											<div class="d-flex align-items-center justify-content-between gap-2">
+												<div class="clearfix d-flex flex-wrap">
+													<span>(34 reviews) / </span>
+													<a class="text-decoration-underline" href="javascript:void(0)"  data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+												</div>
+												<span class="fs-5 text-primary fw-semibold">$320.00</span>
+											</div>
+										</div>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-check-circle text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+					
+					<div class="col-xl-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-xxl-4 col-sm-5">
+										<img class="img-fluid" src="assets/images/product/3.jpg" alt="">
+                                    </div>
+                                    <div class="col-xxl-8 col-sm-7 p-2 p-sm-3">
+										<h3 class="mb-2 fs-5 fw-semibold">
+											<a href="ecom-product-detail.html">Solid Women's V-neck Dark T-Shirt</a>
+										</h3>
+										<div class="mb-3">
+											<ul class="d-flex align-items-start gap-1 mb-1">
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+											</ul>
+											<div class="d-flex align-items-center justify-content-between gap-2">
+												<div class="clearfix d-flex flex-wrap">
+													<span>(34 reviews) / </span>
+													<a class="text-decoration-underline" href="javascript:void(0)"  data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+												</div>
+												<span class="fs-5 text-primary fw-semibold">$325.00</span>
+											</div>
+										</div>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-check-circle text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+					
+					<div class="col-xl-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-xxl-4 col-sm-5">
+										<img class="img-fluid" src="assets/images/product/4.jpg" alt="">
+                                    </div>
+                                    <div class="col-xxl-8 col-sm-7 p-2 p-sm-3">
+										<h3 class="mb-2 fs-5 fw-semibold">
+											<a href="ecom-product-detail.html">Solid Women's V-neck Dark T-Shirt</a>
+										</h3>
+										<div class="mb-3">
+											<ul class="d-flex align-items-start gap-1 mb-1">
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+											</ul>
+											<div class="d-flex align-items-center justify-content-between gap-2">
+												<div class="clearfix d-flex flex-wrap">
+													<span>(34 reviews) / </span>
+													<a class="text-decoration-underline" href="javascript:void(0)"  data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+												</div>
+												<span class="fs-5 text-primary fw-semibold">$480.00</span>
+											</div>
+										</div>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-check-circle text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+                    
+					<div class="col-xl-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-xxl-4 col-sm-5">
+										<img class="img-fluid" src="assets/images/product/5.jpg" alt="">
+                                    </div>
+                                    <div class="col-xxl-8 col-sm-7 p-2 p-sm-3">
+										<h3 class="mb-2 fs-5 fw-semibold">
+											<a href="ecom-product-detail.html">Solid Women's V-neck Dark T-Shirt</a>
+										</h3>
+										<div class="mb-3">
+											<ul class="d-flex align-items-start gap-1 mb-1">
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+											</ul>
+											<div class="d-flex align-items-center justify-content-between gap-2">
+												<div class="clearfix d-flex flex-wrap">
+													<span>(34 reviews) / </span>
+													<a class="text-decoration-underline" href="javascript:void(0)"  data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+												</div>
+												<span class="fs-5 text-primary fw-semibold">$658.00</span>
+											</div>
+										</div>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-check-circle text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+					
+                    <div class="col-xl-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-xxl-4 col-sm-5">
+										<img class="img-fluid" src="assets/images/product/6.jpg" alt="">
+									</div>
+                                    <div class="col-xxl-8 col-sm-7 p-2 p-sm-3">
+										<h3 class="mb-2 fs-5 fw-semibold">
+											<a href="ecom-product-detail.html">Solid Women's V-neck Dark T-Shirt</a>
+										</h3>
+										<div class="mb-3">
+											<ul class="d-flex align-items-start gap-1 mb-1">
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+											</ul>
+											<div class="d-flex align-items-center justify-content-between gap-2">
+												<div class="clearfix d-flex flex-wrap">
+													<span>(34 reviews) / </span>
+													<a class="text-decoration-underline" href="javascript:void(0)"  data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+												</div>
+												<span class="fs-5 text-primary fw-semibold">$290.00</span>
+											</div>
+										</div>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-check-circle text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+					
+                    <div class="col-xl-6">
+                        <div class="card">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-xxl-4 col-sm-5">
+										<img class="img-fluid" src="assets/images/product/7.jpg" alt="">
+                                    </div>
+                                    <div class="col-xxl-8 col-sm-7 p-2 p-sm-3">
+										<h3 class="mb-2 fs-5 fw-semibold">
+											<a href="ecom-product-detail.html">Solid Women's V-neck Dark T-Shirt</a>
+										</h3>
+										<div class="mb-3">
+											<ul class="d-flex align-items-start gap-1 mb-1">
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa fa-star text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+												<li><i class="fa-solid fa-star-half-stroke text-orange"></i></li>
+											</ul>
+											<div class="d-flex align-items-center justify-content-between gap-2">
+												<div class="clearfix d-flex flex-wrap">
+													<span>(34 reviews) / </span>
+													<a class="text-decoration-underline" href="javascript:void(0)"  data-bs-toggle="modal" data-bs-target="#reviewModal">Write a review?</a>
+												</div>
+												<span class="fs-5 text-primary fw-semibold">$600.00</span>
+											</div>
+										</div>
+										<ul class="small mb-3">
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Availability:</span> In Stock <i class="fa fa-check-circle text-success"></i>
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Product Code:</span> 0405689
+											</li>
+											<li class="mb-1">
+												<span class="fw-medium text-dark me-1">Brand:</span> Lee
+											</li>
+										</ul>
+										<p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+					</div>
+					
+                </div>
+				
+				<!-- Start - Product Review Modal -->
+				<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-dialog-centered">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="reviewModalLabel">Review</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+							</div>
+							<div class="modal-body">
+								<form>
+									<div class="text-center mb-4">
+										<img src="assets/images/product/1.jpg" class="avatar avatar-lg" alt="">
+										<div class="rating-stars mt-3">
+											<ul id="stars">
+												<li class="star" title="Poor" data-value="1">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="Fair" data-value="2">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="Good" data-value="3">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="Excellent" data-value="4">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+												<li class="star" title="WOW!!!" data-value="5">
+													<i class="fa fa-star fa-fw fs-4"></i>
+												</li>
+											</ul>
+										</div>
+									</div>
+									<div class="mb-3">
+										<textarea class="form-control" placeholder="Comment" rows="5"></textarea>
+									</div>
+									<button class="btn btn-success w-100">RATE</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End - Product Review Modal -->
+				
+            </div>
+			
+        </main>
+		<!-- End - Content Body -->
+
+        @@include("elements/footer.html")
+
+    </div>
+	<!-- End - Main Wrapper -->
+
+	
+	<!-- Start - Page Scripts -->
+	@@include("elements/script.html")
+	
+	<!-- Script For Star Rating -->
+	<script src="assets/vendor/star-rating/jquery.star-rating-svg.js"></script>
+	
+	<!-- Script For Multiple Languages -->
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	
+	<!-- Script For Custom JS -->
+	<script src="assets/js/deznav-init.js"></script>
+    <script src="assets/js/custom.js"></script>
+	
+	
+	
+</body>
+</html>

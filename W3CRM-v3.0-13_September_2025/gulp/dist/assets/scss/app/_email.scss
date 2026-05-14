@@ -1,0 +1,265 @@
+/* Email Wrapper */
+.email-wrapper{
+	min-height: 800px !important;
+}
+
+/* Mail List Group */
+.mail-list-group{
+	margin-bottom: 25px;
+	
+	.list-group-item{
+		border-radius: var(--bs-border-radius);
+		color: var(--bs-secondary);
+		vertical-align: middle;
+		padding: 12px 20px;
+		font-size: 1rem;
+		font-weight: 500;
+		margin-bottom: 6px;
+		overflow: hidden;
+		@include transitionFast;
+
+		i{
+			padding-right: 10px;
+		}
+		&.active,
+		&:hover{
+			color: var(--bs-secondary);
+			background-color: rgba(var(--bs-secondary-rgb), 0.05);
+			
+			span.badge{
+				background-color: var(--bs-secondary);
+			}
+		}
+	}
+}
+
+/* Compose Wrapper */
+.compose-wrapper{
+	padding: 20px;
+}
+
+/* Compose Wrapper */
+.mobile-email-panel{
+	&:before{
+		content: "";
+		display: block;
+		position: fixed;
+		top: 0;
+		left: -10px;
+		width: 0;
+		height: 100vh;
+		background-color: #000;
+		opacity: 0.3;
+		z-index: 4;
+		@include transitionFast;
+	}
+	&.active{
+		&:before{
+			left: 0;
+			width: 100%;			
+		}
+	}
+}
+
+/* Email Left Column */
+.email-left-column{
+	height: calc(100vh - 120px);
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid var(--bs-border-color);
+	
+	@include respond('phone-land') {
+		width: 100%;
+		height: 100%;
+		float: none;
+        border: none;
+		padding-bottom: 1.875rem !important;
+	}
+}
+
+/* Email Left Body */
+.email-left-body{
+	@include respond ('tab-port'){
+		width: 18rem;
+		position: fixed;
+		height: 100vh;
+		z-index: 2;
+		@include transitionFast;
+		left: -22rem;
+		top: 0px;
+		z-index: 999;
+		
+		&.active{
+			left:0;
+			background: var(--bs-body-bg);
+			transition: all 0.5s;
+			overflow-y: scroll;
+		}
+	}
+}
+
+/* Email List Box */
+.email-list {
+    display: block;
+    padding-left: 0;
+    background: var(--bs-body-bg);
+    height: calc(100vh - 212px);
+    overflow-y: scroll;
+    
+	label{
+        margin-bottom: 0px;
+    }
+    .message{
+        position: relative;
+        display: block;
+        height: 3.438rem;
+		padding: 0 15px;
+        line-height: 3.438rem;
+        cursor: default;
+        transition-duration: 0.3s;
+       
+		a {
+            color: var(--bs-primary);
+        }
+        &-single{
+            display: flex;
+			
+			.email-checkbox{
+				margin: 0;
+				display: flex;
+				align-items: center;
+            }
+            i{
+                color: var(--bs-secondary-color);
+                font-size: 1.125rem;
+                padding-left: .4rem;
+            }
+        }
+		.on-hover{
+			position: absolute;
+			top: 0;
+			right: 10px;
+			opacity: 0;
+			transition-duration: 0.3s;
+			padding: 0 10px;
+			
+			@include respond ('phone'){
+				display: none;
+			}
+		}
+        &:hover {
+            transition-duration: 0.05s;
+            background: var(--bs-light);
+			
+			.on-hover{
+				opacity: 1;
+			}
+			.email-date{
+				opacity: 0;
+			}
+            .message-single .form-check-input{
+				opacity: 1;
+            }
+        }
+        .col-mail {
+            float: left;
+            position: relative;
+        }
+        .col-mail-1 {
+            width: 5.625rem;
+
+            .star-toggle {
+                display: block;
+                float: left;
+                margin-top: 1.125rem;
+                font-size: 1rem;
+                margin-left: 0.3125rem;
+            }
+            .email-checkbox {
+                display: block;
+                float: left;
+                margin: 0.9375rem 0.625rem 0 1.25rem;
+            }
+        }
+        .col-mail-2{
+            position: absolute;
+            top: 0;
+            left: 5.625rem;
+            right: 0;
+            bottom: 0;
+        }
+		.message-single {
+			.bookmark-btn{
+				width: 40px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				
+				input{
+					position: absolute;
+					cursor: pointer;
+					height: 0;
+					width: 0;
+					display: none;
+				}
+				.checkmark{
+					font-weight: 900;
+					font-family: 'font awesome 5 free';
+					
+					&:before{
+						content: "\f005";
+						font-size: 1.25rem;
+						border-color: #666666;
+						font-weight: 100;
+                        color: #C4C4C4;
+					} 
+				}
+				input:checked ~ .checkmark:before{
+					color: #ff9838;
+					font-weight: 900;
+				}
+			}
+            .form-check-input{
+                margin-top: 0;
+            }
+		}
+		.email-date{
+			position: absolute;
+			top: 0;
+			right: 15px;
+			opacity: 1;
+			transition-duration: 0.3s;
+			font-weight: 500;
+			color: var(--bs-primary);
+			font-size: 1em;
+		}
+		.email-subject{
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 5.5rem;
+			font-weight: 400;
+			color: var(--bs-secondary);
+			margin: 0 220px;
+			text-overflow: ellipsis;
+			overflow: hidden;
+			white-space: nowrap;
+			
+			span {
+				color: var(--bs-body-color);
+			}
+		}
+        .email-hader{
+            font-size: 0.938rem;
+            font-weight: 400;
+            padding: 0 1.25rem;
+        }
+    }
+}
+
+/* Read Wapper */
+.read-wapper{
+    height: calc(100vh - 180px); 
+	padding: 0 1.25rem;
+}

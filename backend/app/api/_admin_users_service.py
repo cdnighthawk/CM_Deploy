@@ -1,6 +1,7 @@
 """Admin directory: users and roles (requires admin / superuser)."""
 from __future__ import annotations
 
+import os
 import re
 import uuid
 from typing import Any
@@ -197,6 +198,27 @@ def create_user(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
     _set_roles(u, role_ids)
     db.session.flush()
     db.session.refresh(u)
+
+    send_invite = data.get("send_invite")
+    if send_invite is None:
+        send_invite = os.environ.get("USIS_SEND_USER_INVITE_EMAIL", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+    elif not isinstance(send_invite, bool):
+        send_invite = str(send_invite).strip().lower() in ("1", "true", "yes", "on")
+    if send_invite:
+        from ._notifications import send_user_invite_email
+
+        inviter = cu.user.email if cu.user and cu.user.email else None
+        send_user_invite_email(
+            to=u.email,
+            temporary_password_set=bool(pwd_hash),
+            invited_by=inviter,
+        )
+
     return user_public(u)
 
 

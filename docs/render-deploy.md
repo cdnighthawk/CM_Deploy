@@ -53,6 +53,22 @@ After saving env vars, trigger **Manual Deploy** (or push to `main`) so the serv
 
 If any B2 secret was pasted in chat or committed, **rotate** the application key in Backblaze and update Render env vars.
 
+### Email (invites, RFI, playbooks)
+
+Transactional mail uses SMTP env vars (SendGrid recommended). Without them, the app logs **dry-run** and does not send. Full setup, flows, and troubleshooting: **[email.md](email.md)**.
+
+| Variable | Example (SendGrid) |
+|----------|-------------------|
+| `MAIL_SERVER` | `smtp.sendgrid.net` |
+| `MAIL_PORT` | `587` |
+| `MAIL_USERNAME` | `apikey` |
+| `MAIL_PASSWORD` | *(API key — secret)* |
+| `MAIL_FROM` | `noreply@yourdomain.com` |
+| `USIS_APP_PUBLIC_URL` | `https://your-service.onrender.com` |
+| `USIS_SEND_USER_INVITE_EMAIL` | `1` to email new users from User admin |
+
+Staff invites: **User admin** (`/usis-user-directory.html`) or `POST /api/v1/admin/users` with `"send_invite": true`. Applicant self-register (`/apply.html`) does **not** send email today.
+
 ## 3. First deploy
 
 - **Build**: `npm ci` + `gulp build` in `W3CRM-v3.0-13_September_2025/gulp`, then `pip install`

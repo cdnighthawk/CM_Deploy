@@ -146,6 +146,63 @@ def send_plain_notification_email(*, to: str, subject: str, body: str) -> None:
         current_app.logger.warning("Failed to send plain email to %s: %s", to, exc)
 
 
+def public_login_url() -> str:
+    """Sign-in page URL for outbound mail (same origin as the static shell)."""
+    from urllib.parse import urlparse
+
+    explicit = (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip().rstrip("/")
+    if explicit:
+        return f"{explicit}/page-login.html"
+
+    redirect = (current_app.config.get("USIS_POST_LOGIN_REDIRECT") or "").strip()
+    if redirect:
+        parsed = urlparse(redirect)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}/page-login.html"
+
+    render_base = (os.environ.get("RENDER_EXTERNAL_URL") or "").strip().rstrip("/")
+    if render_base:
+        return f"{render_base}/page-login.html"
+
+    return "http://127.0.0.1:5000/page-login.html"
+
+
+def send_user_invite_email(
+    *,
+    to: str,
+    login_url: str | None = None,
+    temporary_password_set: bool = False,
+    invited_by: str | None = None,
+) -> None:
+    """Best-effort invite when an admin creates a user (``POST /api/v1/admin/users``)."""
+    url = login_url or public_login_url()
+    lines = [
+        "You have been invited to use USIS Construction Management.",
+        "",
+        f"Sign in: {url}",
+        f"Email: {to}",
+    ]
+    if temporary_password_set:
+        lines.extend(
+            [
+                "",
+                "Your administrator set a temporary password. Sign in and change it under your profile.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "",
+                "If you use Microsoft sign-in for your organization, choose “Sign in with Microsoft”.",
+                "Otherwise ask your administrator for a password or to set one for you.",
+            ]
+        )
+    if invited_by:
+        lines.extend(["", f"— invited by {invited_by}"])
+    subject = "You're invited to USIS Construction Management"
+    send_plain_notification_email(to=to, subject=subject, body="\n".join(lines))
+
+
 def _mark_log_delivered(log_id: str, *, error: Optional[str] = None) -> None:
     """Stamp ``rfi_notification_log.delivered_at`` / ``.error``."""
     from sqlalchemy import update

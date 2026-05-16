@@ -99,6 +99,18 @@ const sassCompiler = require("sass");
 const sass = require("gulp-sass")(sassCompiler);
 const sourcemaps = require("gulp-sourcemaps");
 
+// Bootstrap 5.3 + theme @import graph triggers Dart Sass deprecations; silence until BS/@use migration.
+const sassCompileOptions = {
+  quietDeps: true,
+  silenceDeprecations: [
+    "color-functions",
+    "global-builtin",
+    "import",
+    "if-function",
+    "legacy-js-api",
+  ],
+};
+
 //==============================
 // Folder paths
 //==============================
@@ -212,7 +224,7 @@ function compileSCSS_LTR() {
     "./src/assets/scss/switcher.scss"
   ])
     .pipe(sourcemaps.init())
-    .pipe(sass().on("error", sass.logError))
+    .pipe(sass(sassCompileOptions).on("error", sass.logError))
     .pipe(postcss([autoprefixer()]))
     .pipe(rename(function (path) {
       if (path.basename === "main") path.basename = "style";
@@ -230,7 +242,7 @@ function compileSCSS_RTL() {
     "./src/assets/scss/switcher.scss"
   ])
     .pipe(sourcemaps.init())
-    .pipe(sass().on("error", sass.logError))
+    .pipe(sass(sassCompileOptions).on("error", sass.logError))
     .pipe(postcss([autoprefixer()]))
     .pipe(rtlcss())
     .pipe(rename(function (path) {

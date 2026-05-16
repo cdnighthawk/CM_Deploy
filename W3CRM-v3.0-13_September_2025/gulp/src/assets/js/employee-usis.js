@@ -1,28 +1,12 @@
 /**
- * Core HR (core-hr.html) — load employee rows from HR dashboard summary API;
- * name cells link to usis-hr-employee.html?id=<user UUID>.
+ * employee.html — load rows from HR dashboard summary API (same source as core-hr.html).
  */
 (function () {
 	"use strict";
 
 	var DEV_SERVER_PORTS = {
-		3000: 1,
-		3001: 1,
-		3002: 1,
-		3003: 1,
-		3004: 1,
-		3005: 1,
-		3006: 1,
-		4173: 1,
-		5173: 1,
-		5174: 1,
-		5500: 1,
-		5501: 1,
-		8080: 1,
-		4200: 1,
-		4321: 1,
-		9630: 1,
-		1234: 1,
+		3000: 1, 3001: 1, 3002: 1, 3003: 1, 3004: 1, 3005: 1, 3006: 1,
+		4173: 1, 5173: 1, 5174: 1, 5500: 1, 5501: 1, 8080: 1, 4200: 1, 4321: 1, 9630: 1, 1234: 1,
 	};
 
 	function explicitWindowApiBase() {
@@ -69,17 +53,16 @@
 
 	function shortId(uuid) {
 		if (!uuid || String(uuid).length < 10) return esc(uuid || "—");
-		var u = String(uuid);
-		return esc(u.slice(0, 8) + "…");
+		return esc(String(uuid).slice(0, 8) + "…");
 	}
 
 	function renderRows(rows) {
-		var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
+		var tbody = document.querySelector("#employeesTable tbody");
 		if (!tbody) return;
 		tbody.innerHTML = "";
 		if (!rows || !rows.length) {
 			tbody.innerHTML =
-				'<tr><td colspan="8" class="text-muted text-center py-4">No employees with HR activity yet. Open <a href="usis-user-directory.html">User admin</a> for all staff, or <a href="usis-hr-dashboard.html">HR dashboard</a> for KPIs.</td></tr>';
+				'<tr><td colspan="8" class="text-muted text-center py-4">No employees with HR activity yet. Open <a href="usis-user-directory.html">User admin</a> for all staff, or <a href="core-hr.html">Core HR</a>.</td></tr>';
 			return;
 		}
 		rows.forEach(function (row) {
@@ -88,35 +71,20 @@
 			var href = "usis-hr-employee.html?id=" + encodeURIComponent(uid);
 			var tr = document.createElement("tr");
 			tr.innerHTML =
-				'<td><div class="form-check custom-checkbox">' +
-				'<input type="checkbox" class="form-check-input check-input" disabled aria-label="Row select">' +
-				"</div></td>" +
-				"<td><code class=\"small\">" +
-				shortId(uid) +
-				"</code></td>" +
-				"<td>" +
-				'<div class="d-flex align-items-center">' +
-				'<div class="clearfix">' +
-				'<h6 class="mb-0"><a href="' +
-				href +
-				'" class="text-decoration-none text-body">' +
-				esc(name) +
-				"</a></h6>" +
-				'<small class="text-muted">Employee record</small>' +
-				"</div></div></td>" +
-				"<td>" +
-				(row.email ? '<a href="mailto:' + esc(row.email) + '" class="text-primary">' + esc(row.email) + "</a>" : "—") +
-				"</td>" +
+				"<td><code class=\"small\">" + shortId(uid) + "</code></td>" +
+				"<td><h6 class=\"mb-0\"><a href=\"" + href + "\" class=\"text-decoration-none text-body\">" + esc(name) + "</a></h6></td>" +
+				'<td><span class="text-muted">—</span></td>' +
+				(row.email ? '<td><a href="mailto:' + esc(row.email) + '" class="text-primary">' + esc(row.email) + "</a></td>" : "<td>—</td>") +
 				'<td><span class="text-muted">—</span></td>' +
 				'<td><span class="text-muted">—</span></td>' +
 				'<td><span class="text-muted">—</span></td>' +
-				'<td><span class="badge badge-sm badge-success light">Active</span></td>';
+				'<td><span class="badge badge-success light">Active</span></td>';
 			tbody.appendChild(tr);
 		});
 	}
 
 	function load() {
-		var statusEl = document.getElementById("usis-core-hr-api-status");
+		var statusEl = document.getElementById("usis-employee-api-status");
 		var base = apiBase();
 		fetch(base + "/api/v1/hr/dashboard-summary", { credentials: "omit" })
 			.then(function (r) {
@@ -125,7 +93,7 @@
 			})
 			.then(function (data) {
 				if (statusEl) {
-					statusEl.classList.remove("d-none", "text-danger", "text-warning");
+					statusEl.classList.remove("text-danger", "text-warning");
 					if (data.stub) {
 						statusEl.textContent = "Placeholder data — restart the API for a live directory.";
 						statusEl.classList.add("text-warning");
@@ -141,13 +109,12 @@
 			.catch(function (err) {
 				if (statusEl) {
 					statusEl.textContent = "Could not load employees: " + (err && err.message ? err.message : err);
-					statusEl.classList.remove("d-none");
 					statusEl.classList.add("text-danger");
 				}
-				var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
+				var tbody = document.querySelector("#employeesTable tbody");
 				if (tbody) {
 					tbody.innerHTML =
-						'<tr><td colspan="8" class="text-danger text-center py-4">Could not load employees. Check that the API is running and try again.</td></tr>';
+						'<tr><td colspan="8" class="text-danger text-center py-4">Could not load employees. Check that the API is running.</td></tr>';
 				}
 			});
 	}

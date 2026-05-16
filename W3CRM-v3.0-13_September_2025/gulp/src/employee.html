@@ -48,8 +48,8 @@
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
-								<h6 class="mb-1">Employee</h6>
-								<p class="text-muted small mb-0">General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</p>
+								<h6 class="mb-1">Employee directory</h6>
+								<p class="text-muted small mb-0">Live rows from the HR API. For the full USIS HR shell use <a href="core-hr.html">Core HR</a>; for all staff accounts use <a href="usis-user-directory.html">User admin</a>.</p>
 							</div>
 							<div class="text-nowrap small">
 								<a href="email-read.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="empty-page.html">Next</a>
@@ -123,9 +123,10 @@
 									</div>
 								</form>
 							</div>
+							<p class="small text-muted px-3 mb-0 pt-2" id="usis-employee-api-status" role="status"></p>
 							<div class="card-body table-card-body px-0 pt-0 pb-2">
 								<div class="table-responsive">
-									<table id="employeesTable" class="table">
+									<table id="employeesTable" class="table" data-usis-api-load="1">
 										<thead class="table-light">
 											<tr>
 												<th class="mw-120">Employee ID</th>
@@ -139,222 +140,7 @@
 											</tr>
 										</thead>
 										<tbody>
-											<tr>
-												<td><span>1001</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar1.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Amelia Rose</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">abc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>mumbai</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1002</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Elijah James</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">mbc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Female</span></td>	
-												<td><span>Kota</span></td>
-												<td><span class="badge badge-danger light">Inactive</span></td>
-											</tr>
-											<tr>
-												<td><span>1003</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar3.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Charlotte Mae</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">kbc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Indor</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1003</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar4.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Liam Risher</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">lbc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Kota</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1004</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Isabella Claire</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">sbc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Female</span></td>	
-												<td><span>Delhi</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1005</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar6.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Ethan Cole</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">abc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Kota</span></td>
-												<td><span class="badge badge-danger light">Inactive</span></td>
-											</tr>
-											<tr>
-												<td><span>1006</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar7.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Sophia Jane</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">abc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Delhi</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1007</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar8.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Henry Mason</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">mcb@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Female</span></td>	
-												<td><span>Indor</span></td>
-												<td><span class="badge badge-danger light">Inactive</span></td>
-											</tr>
-											<tr>
-												<td><span>1008</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar9.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Evelyn Hope</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">obc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Delhi</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1009</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar10.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Lucas Bennett</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">cbc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Kota</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1010</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar5.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Scarlett Elise</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">abc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Female</span></td>	
-												<td><span>Delhi</span></td>
-												<td><span class="badge badge-success light">Active</span></td>
-											</tr>
-											<tr>
-												<td><span>1011</span></td>
-												<td>
-													<div class="d-flex">
-														<img src="assets/images/avatar/small/avatar2.webp" class="avatar avatar-sm me-2" alt="">
-														<div class="clearfix">
-															<h6 class="mb-0">Samuel Owen</h6>
-															<small>Web Designer</small>	
-														</div>	
-													</div>
-												</td>
-												<td><span>Computer Science</span></td>
-												<td><span class="text-primary">abc@gmail.com</span></td>
-												<td><span>+91 123 456 7890</span></td>
-												<td><span>Male</span></td>	
-												<td><span>Delhi</span></td>
-												<td><span class="badge badge-danger light border-0">Inactive</span></td>
-											</tr>
+											<tr id="usis-employee-loading-row"><td colspan="8" class="text-muted text-center py-4">Loading employees…</td></tr>
 										</tbody>
 									</table>
 								</div>
@@ -573,6 +359,7 @@
 	<!-- Script For Custom JS -->
 	<script src="assets/js/deznav-init.js"></script>
     <script src="assets/js/custom.js"></script>
+	<script src="assets/js/employee-usis.js"></script>
 	
 	
 	

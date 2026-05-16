@@ -79,7 +79,7 @@
 		tbody.innerHTML = "";
 		if (!rows || !rows.length) {
 			tbody.innerHTML =
-				'<tr><td colspan="8" class="text-muted text-center py-4">No employees in the HR sample set yet. Run <code>python seed_hr_employees.py</code> from the backend folder, or open <a href="usis-hr-dashboard.html">HR dashboard</a> for KPIs.</td></tr>';
+				'<tr><td colspan="8" class="text-muted text-center py-4">No employees with HR activity yet. Open <a href="usis-user-directory.html">User admin</a> for all staff, or <a href="usis-hr-dashboard.html">HR dashboard</a> for KPIs.</td></tr>';
 			return;
 		}
 		rows.forEach(function (row) {

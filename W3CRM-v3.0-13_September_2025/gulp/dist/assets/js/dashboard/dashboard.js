@@ -1128,7 +1128,7 @@
 		}
 		
 		var handleEmployeesTable = function(){
-			if(jQuery('#employeesTable').length > 0){
+			if(jQuery('#employeesTable').length > 0 && !jQuery('#employeesTable').attr('data-usis-api-load')){
 				var empoloyeesTable = $('#employeesTable').DataTable({
 					dom: 'Bfrtip',
 					buttons: [{

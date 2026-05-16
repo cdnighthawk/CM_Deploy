@@ -30,8 +30,9 @@ Optional overrides:
 | Variable | Default on Render |
 |----------|---------------------|
 | `USIS_ALLOW_SELF_REGISTER` | `1` (applicants can register on `/apply.html`) |
-| `CORS_ORIGINS` | Auto from `RENDER_EXTERNAL_URL` if unset |
-| `USIS_POST_LOGIN_REDIRECT` | `{RENDER_EXTERNAL_URL}/usis-dashboard.html` if unset |
+| `CORS_ORIGINS` | Auto from `USIS_APP_PUBLIC_URL`, else `RENDER_EXTERNAL_URL` |
+| `USIS_POST_LOGIN_REDIRECT` | `{USIS_APP_PUBLIC_URL}/usis-dashboard.html` if public URL set, else Render default |
+| `USIS_APP_PUBLIC_URL` | Canonical HTTPS origin (required for custom domain; see §8) |
 
 ### Object storage (Backblaze B2, recommended for production uploads)
 
@@ -100,7 +101,7 @@ Uses `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` from the environment.
 
 ## 6. Smoke test
 
-Replace `https://usis-cm.onrender.com` with your service URL (`RENDER_EXTERNAL_URL`).
+Replace `https://usis-cm.onrender.com` with your public URL (`USIS_APP_PUBLIC_URL` or `RENDER_EXTERNAL_URL`).
 
 | Check | URL |
 |-------|-----|
@@ -111,7 +112,58 @@ Replace `https://usis-cm.onrender.com` with your service URL (`RENDER_EXTERNAL_U
 
 In browser DevTools → Network, API calls should go to **same origin** (not `127.0.0.1:5000`).
 
-## 7. Employee testing entry points
+## 7. Custom domain (e.g. www.usiscm.com)
+
+Use a custom domain when you own DNS (e.g. `usiscm.com`) and want staff/applicants on your brand URL instead of `*.onrender.com`. The app serves UI and API on **one origin**; session cookies and `usis-api-base-default.js` rely on that.
+
+### 7.1 Render Dashboard
+
+1. [Render Dashboard](https://dashboard.render.com) → **usis-cm** → **Settings** → **Custom Domains**
+2. **Add custom domain** → `www.usiscm.com` → save. Render shows DNS instructions and a target hostname (e.g. `usis-cm.onrender.com` — use the value shown in the dashboard).
+3. Optional apex: add `usiscm.com` if you want bare-domain access. Render may offer **redirect** from apex → `www` (recommended so you have one canonical origin).
+4. Wait until domain status is **Verified** and **Certificate issued** (Let’s Encrypt; automatic, no upload).
+
+### 7.2 DNS at your registrar
+
+Use the exact hostnames Render displays for your service.
+
+| Host | Type | Value |
+|------|------|--------|
+| `www` | `CNAME` | Render hostname from step 7.1 (e.g. `usis-cm.onrender.com`) |
+| `@` (apex) | `A` / `ALIAS` / `ANAME` | Per Render’s apex instructions for your registrar (or enable Render’s apex → `www` redirect and only serve `www`) |
+
+TTL: default is fine. Propagation can take up to 48 hours; often minutes.
+
+### 7.3 Environment variables (after DNS is live)
+
+Set in **usis-cm** → **Environment** (then **Save** and redeploy if the service does not restart automatically):
+
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `USIS_APP_PUBLIC_URL` | `https://www.usiscm.com` | No trailing slash. Drives invite/login email links, default CORS, and post-login redirect. |
+| `USIS_POST_LOGIN_REDIRECT` | *(optional)* `https://www.usiscm.com/usis-dashboard.html` | Only if you need a path other than the default. |
+| `CORS_ORIGINS` | *(optional)* `https://www.usiscm.com` | Only if you serve the app on **multiple** origins (e.g. `https://www.usiscm.com,https://usiscm.com`). With a single canonical host, leave unset when `USIS_APP_PUBLIC_URL` is set. |
+
+`RENDER_EXTERNAL_URL` remains `https://<service>.onrender.com` and is **not** updated for custom domains. Do not rely on it alone after adding `www.usiscm.com`.
+
+Also update third-party redirect URIs if used:
+
+| Integration | Variable | Example |
+|-------------|----------|---------|
+| Microsoft Entra SSO | `MS_ENTRA_REDIRECT_URI` | `https://www.usiscm.com/auth/microsoft/callback` |
+| Autodesk / BuildingConnected | `AUTODESK_OAUTH_REDIRECT_URI` | `https://www.usiscm.com/api/v1/integrations/buildingconnected/oauth/callback` |
+
+### 7.4 Smoke test on custom domain
+
+| Check | URL |
+|-------|-----|
+| Health | `https://www.usiscm.com/healthz` |
+| Apply | `https://www.usiscm.com/apply.html` |
+| Login | `https://www.usiscm.com/page-login.html` |
+
+In DevTools → Network, API requests should stay on `https://www.usiscm.com` (not `127.0.0.1:5000` or `*.onrender.com` unless you intentionally split hosts).
+
+## 8. Employee testing entry points
 
 | Audience | Start here |
 |----------|------------|
@@ -121,7 +173,8 @@ In browser DevTools → Network, API calls should go to **same origin** (not `12
 ## Troubleshooting
 
 - **502 on static pages**: Build failed or `USIS_STATIC_ROOT` wrong — confirm `gulp/dist` exists in build logs.
-- **API NetworkError / CORS**: `CORS_ORIGINS` must match the browser origin exactly (scheme + host, no trailing path).
+- **API NetworkError / CORS**: `CORS_ORIGINS` (or `USIS_APP_PUBLIC_URL` when CORS is unset) must match the browser origin exactly (scheme + host, no trailing path). After a custom domain, set `USIS_APP_PUBLIC_URL` — `RENDER_EXTERNAL_URL` alone will not match `www.usiscm.com`.
+- **Login loops / wrong redirect**: Set `USIS_APP_PUBLIC_URL=https://www.usiscm.com` so post-login and `?next=` redirects use the custom host.
 - **Uploads lost after redeploy**: Use B2 ([backblaze-b2.md](backblaze-b2.md)) or confirm persistent disk is mounted at `backend/instance`.
 - **I-9 / W-4 errors**: Set `TOKEN_ENCRYPTION_KEY` (Fernet); do not change it after data is stored.
 

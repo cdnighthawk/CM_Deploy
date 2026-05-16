@@ -35,10 +35,18 @@ def _render_external_url() -> str:
     return (os.environ.get("RENDER_EXTERNAL_URL") or "").strip().rstrip("/")
 
 
+def _public_app_url() -> str:
+    """Canonical public site origin (custom domain). ``RENDER_EXTERNAL_URL`` stays ``*.onrender.com``."""
+    return (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip().rstrip("/")
+
+
 def _default_post_login_redirect() -> str:
     explicit = (os.environ.get("USIS_POST_LOGIN_REDIRECT") or "").strip()
     if explicit:
         return explicit
+    public_base = _public_app_url()
+    if public_base:
+        return f"{public_base}/usis-dashboard.html"
     render_base = _render_external_url()
     if render_base:
         return f"{render_base}/usis-dashboard.html"
@@ -49,6 +57,9 @@ def _default_cors_origins() -> tuple[str, ...]:
     explicit = (os.environ.get("CORS_ORIGINS") or "").strip()
     if explicit:
         return tuple(o.strip() for o in explicit.split(",") if o.strip())
+    public_base = _public_app_url()
+    if public_base:
+        return (public_base,)
     render_base = _render_external_url()
     if render_base:
         return (render_base,)

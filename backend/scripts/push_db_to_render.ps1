@@ -110,7 +110,7 @@ function Test-DatabaseConnection([string]$Label, [string]$DbUri) {
         Write-Host "    alembic_version: $($alembic.Trim())" -ForegroundColor DarkGray
     }
     else {
-        Write-Host "    alembic_version: (missing — run flask db upgrade on this database first)" -ForegroundColor Yellow
+        Write-Host "    alembic_version: (missing - run flask db upgrade on this database first)" -ForegroundColor Yellow
     }
 }
 
@@ -169,7 +169,7 @@ Test-DatabaseConnection -Label 'Local' -DbUri $localUri
 Test-DatabaseConnection -Label 'Render' -DbUri $renderUri
 
 if ($localUri -eq $renderUri) {
-    throw "LOCAL and RENDER database URLs are identical — refusing to run."
+    throw "LOCAL and RENDER database URLs are identical - refusing to run."
 }
 
 if ($ConnectivityOnly) {

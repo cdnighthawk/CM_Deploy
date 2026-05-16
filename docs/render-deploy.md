@@ -35,15 +35,23 @@ Optional overrides:
 
 ### Object storage (Backblaze B2, recommended for production uploads)
 
-Set all four variables to store drawings, spec PDFs, RFI attachments, and HR document photos in B2 instead of the Render disk. Full setup: [backblaze-b2.md](backblaze-b2.md).
+Set all four **required** variables to store drawings, spec PDFs, RFI attachments, and HR document photos in B2 instead of the Render disk. Full setup: [backblaze-b2.md](backblaze-b2.md).
 
-| Variable | Purpose |
-|----------|---------|
-| `B2_APPLICATION_KEY_ID` | B2 application key ID |
-| `B2_APPLICATION_KEY` | B2 application key secret |
-| `B2_BUCKET_NAME` | Private bucket name |
-| `B2_ENDPOINT` | S3-compatible endpoint (region-specific) |
-| `B2_PREFIX` | Optional key prefix (e.g. `prod/usis-cm`) |
+**Your bucket:** `USIS-construction-docs` (private, default encryption on). The app does not expose a public bucket URL; authenticated users download through Flask after login.
+
+**Credentials:** Backblaze gives **keyID** and **applicationKey** (two fields). Do not use a single env var such as `back_blaze` — delete it on Render if present and use the table below.
+
+| Variable | Value to enter on Render |
+|----------|---------------------------|
+| `B2_APPLICATION_KEY_ID` | Application key **keyID** from B2 (e.g. `003…`) |
+| `B2_APPLICATION_KEY` | Application key **applicationKey** secret (paste once; treat as password) |
+| `B2_BUCKET_NAME` | `USIS-construction-docs` |
+| `B2_ENDPOINT` | Copy **S3 Endpoint** from B2 → bucket **USIS-construction-docs** → Bucket Settings (e.g. `https://s3.us-west-004.backblazeb2.com`) |
+| `B2_PREFIX` | Optional, e.g. `prod/usis-cm` |
+
+After saving env vars, trigger **Manual Deploy** (or push to `main`) so the service restarts with B2 enabled. New uploads use B2; existing files on the Render disk are not migrated automatically ([backblaze-b2.md](backblaze-b2.md) §6).
+
+If any B2 secret was pasted in chat or committed, **rotate** the application key in Backblaze and update Render env vars.
 
 ## 3. First deploy
 

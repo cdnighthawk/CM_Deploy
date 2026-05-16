@@ -20,7 +20,7 @@ Local development without B2 vars continues to use `backend/instance/` (same as 
 ## 1. Create a B2 bucket
 
 1. Sign in to [Backblaze](https://www.backblaze.com/) → **B2 Cloud Storage** → **Buckets** → **Create a Bucket**.
-2. **Bucket name**: e.g. `usis-cm-uploads` (globally unique in your account).
+2. **Bucket Unique Name**: `USIS-construction-docs` (globally unique in your account).
 3. **Files in bucket are**: **Private** (the app serves downloads through Flask with session auth).
 4. Note the **S3 endpoint** for your region (B2 bucket → **Bucket Settings** → **S3 Endpoint**), e.g. `https://s3.us-west-004.backblazeb2.com`.
 
@@ -31,6 +31,17 @@ Local development without B2 vars continues to use `backend/instance/` (same as 
 3. **Allow access to Bucket(s)**: restrict to the upload bucket.
 4. Capabilities: at least **readFiles**, **writeFiles**, **deleteFiles**, **listBuckets** (or use a template that includes object read/write/delete).
 5. Save **keyID** → `B2_APPLICATION_KEY_ID` and **applicationKey** → `B2_APPLICATION_KEY` (shown once).
+
+Backblaze shows **two** values when you create an application key. They are not interchangeable:
+
+| B2 UI label | Render / `.env` variable | Notes |
+|-------------|--------------------------|--------|
+| **keyID** | `B2_APPLICATION_KEY_ID` | Public identifier (often starts with `003`) |
+| **applicationKey** | `B2_APPLICATION_KEY` | Secret; shown **once** at creation |
+
+The app does **not** read a single `back_blaze` (or similar) variable. If you only stored one value on Render, delete that variable and add both rows above. Putting the application key secret in the wrong variable (e.g. only `B2_APPLICATION_KEY_ID`) will fail S3 auth.
+
+**Private bucket:** files are not served from a public B2 URL. Uploads and downloads go through the Flask API (`save_upload` / `send_stored_file`), which uses your session after login. Do not set the bucket to Public unless you intentionally want objects reachable without the app.
 
 ## 3. CORS (browser uploads)
 
@@ -58,9 +69,11 @@ In **Dashboard → usis-cm → Environment**, add:
 |----------|---------|----------|
 | `B2_APPLICATION_KEY_ID` | `003...` | Yes (for B2) |
 | `B2_APPLICATION_KEY` | (secret) | Yes |
-| `B2_BUCKET_NAME` | `usis-cm-uploads` | Yes |
-| `B2_ENDPOINT` | `https://s3.us-west-004.backblazeb2.com` | Yes |
+| `B2_BUCKET_NAME` | `USIS-construction-docs` | Yes |
+| `B2_ENDPOINT` | From bucket **S3 Endpoint** (region-specific) | Yes |
 | `B2_PREFIX` | `prod/usis-cm` | No |
+
+**Remove** any unused custom name such as `back_blaze` — the app ignores it.
 
 All four required vars must be set or the app falls back to local `instance/` paths.
 
@@ -76,7 +89,7 @@ If you already have files under `backend/instance/` on Render:
 
 ```bash
 # Example with AWS CLI pointed at B2 (install awscli, configure profile with B2 key + endpoint)
-aws s3 sync ./instance/drawing_uploads s3://usis-cm-uploads/prod/usis-cm/drawings/ \
+aws s3 sync ./instance/drawing_uploads s3://USIS-construction-docs/prod/usis-cm/drawings/ \
   --endpoint-url https://s3.us-west-004.backblazeb2.com
 ```
 

@@ -106,6 +106,7 @@ Replace `https://usis-cm.onrender.com` with your public URL (`USIS_APP_PUBLIC_UR
 | Check | URL |
 |-------|-----|
 | Health | `GET /healthz` → `{"status":"ok",...}` |
+| Site root | `/` → redirects to `/page-login.html` (staff sign-in) |
 | Public apply | `/apply.html` |
 | Register / hire | Apply → register → `/usis-hr-hire.html` |
 | Staff login | `/page-login.html` → dashboard |
@@ -158,6 +159,7 @@ Also update third-party redirect URIs if used:
 | Check | URL |
 |-------|-----|
 | Health | `https://www.usiscm.com/healthz` |
+| Site root | `https://www.usiscm.com/` → `/page-login.html` |
 | Apply | `https://www.usiscm.com/apply.html` |
 | Login | `https://www.usiscm.com/page-login.html` |
 

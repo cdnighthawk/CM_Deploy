@@ -48,9 +48,9 @@ def serve_static(subpath: str):
         )
 
     if req_path == "/":
-        apply = root / "apply.html"
-        if apply.is_file():
-            return redirect("/apply.html", code=302)
+        login = root / "page-login.html"
+        if login.is_file():
+            return redirect("/page-login.html", code=302)
         index = root / "index.html"
         if index.is_file():
             return send_from_directory(root, "index.html")

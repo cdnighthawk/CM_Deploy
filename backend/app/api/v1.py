@@ -10,13 +10,14 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Mapping
 
-from flask import Blueprint, Response, current_app, jsonify, request, send_file
+from flask import Blueprint, Response, current_app, jsonify, request
 from sqlalchemy import and_, func, literal, or_, select
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from ..config import client_debug_log_dev_open
 from ..extensions import db
+from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists
 from ..models import (
     AuditLog,
     Company,
@@ -1097,11 +1098,8 @@ def list_drawing_revisions(drawing_id: str):
     )
 
 
-def _drawing_upload_dir() -> Path:
-    raw = current_app.config.get("DRAWING_UPLOAD_FOLDER")
-    if raw:
-        return Path(str(raw)).expanduser().resolve()
-    return Path(current_app.instance_path).resolve() / "drawing_uploads"
+def _drawing_object_name(drawing_id: uuid.UUID) -> str:
+    return f"{drawing_id}.pdf"
 
 
 def _drawing_resolved_file_url(d: Drawing) -> str | None:
@@ -1109,24 +1107,9 @@ def _drawing_resolved_file_url(d: Drawing) -> str | None:
     raw = d.file_url
     if raw is not None and str(raw).strip():
         return str(raw).strip()
-    path = _drawing_upload_dir() / f"{d.id}.pdf"
-    if path.is_file():
+    if stored_exists(UploadCategory.DRAWINGS, _drawing_object_name(d.id)):
         return f"/api/v1/drawings/{d.id}/file"
     return None
-
-
-def _spec_section_upload_dir() -> Path:
-    raw = current_app.config.get("SPEC_SECTION_UPLOAD_FOLDER")
-    if raw:
-        return Path(str(raw)).expanduser().resolve()
-    return Path(current_app.instance_path).resolve() / "spec_section_uploads"
-
-
-def _rfi_attachment_upload_dir() -> Path:
-    raw = current_app.config.get("RFI_ATTACHMENT_UPLOAD_FOLDER")
-    if raw:
-        return Path(str(raw)).expanduser().resolve()
-    return Path(current_app.instance_path).resolve() / "rfi_attachment_uploads"
 
 
 @bp.get("/drawings/<drawing_id>/file")
@@ -1138,13 +1121,19 @@ def get_drawing_pdf_file(drawing_id: str):
     row = db.session.get(Drawing, did)
     if row is None:
         return _jsonify({"error": "drawing not found"}), 404
-    path = _drawing_upload_dir() / f"{did}.pdf"
-    if not path.is_file():
-        return _jsonify({"error": "file not found on server"}), 404
+    name = _drawing_object_name(did)
     dl = (row.original_filename or "drawing.pdf").replace('"', "")
     if not dl.lower().endswith(".pdf"):
         dl = dl + ".pdf"
-    return send_file(path, mimetype="application/pdf", as_attachment=False, download_name=dl[:200])
+    resp = send_stored_file(
+        UploadCategory.DRAWINGS,
+        name,
+        mimetype="application/pdf",
+        download_name=dl[:200],
+    )
+    if resp is None:
+        return _jsonify({"error": "file not found on server"}), 404
+    return resp
 
 
 @bp.post("/projects/<project_id>/drawings")
@@ -1188,31 +1177,22 @@ def upload_project_drawing(project_id: str):
     db.session.add(d)
     db.session.flush()
 
-    dest_dir = _drawing_upload_dir()
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = dest_dir / f"{d.id}.pdf"
+    obj_name = _drawing_object_name(d.id)
     try:
-        f.save(str(dest_path))
+        sz = save_upload(UploadCategory.DRAWINGS, obj_name, f)
     except OSError as exc:
         db.session.rollback()
         return _jsonify({"error": f"could not save file: {exc}"}), 500
+    except Exception as exc:
+        db.session.rollback()
+        return _jsonify({"error": f"could not save file: {exc}"}), 500
 
-    try:
-        sz = dest_path.stat().st_size
-    except OSError:
-        sz = None
     if sz == 0:
-        try:
-            dest_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        delete_stored(UploadCategory.DRAWINGS, obj_name)
         db.session.rollback()
         return _jsonify({"error": "empty upload"}), 400
-    if sz is not None and sz > max_bytes:
-        try:
-            dest_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+    if sz > max_bytes:
+        delete_stored(UploadCategory.DRAWINGS, obj_name)
         db.session.rollback()
         return _jsonify({"error": "file too large (max 50MB)"}), 400
 
@@ -1231,12 +1211,18 @@ def get_spec_section_pdf_file(spec_section_id: str):
     row = db.session.get(SpecSection, sid)
     if row is None:
         return _jsonify({"error": "spec section not found"}), 404
-    path = _spec_section_upload_dir() / f"{sid}.pdf"
-    if not path.is_file():
-        return _jsonify({"error": "file not found on server"}), 404
+    name = f"{sid}.pdf"
     base = secure_filename(f"{row.code} {row.title}".strip()) or "spec"
     dl = (base + ".pdf")[:200].replace('"', "")
-    return send_file(path, mimetype="application/pdf", as_attachment=False, download_name=dl)
+    resp = send_stored_file(
+        UploadCategory.SPEC_SECTIONS,
+        name,
+        mimetype="application/pdf",
+        download_name=dl,
+    )
+    if resp is None:
+        return _jsonify({"error": "file not found on server"}), 404
+    return resp
 
 
 def _rfi_list_filters_from_request() -> rfi_svc.ListFilters:
@@ -1554,30 +1540,21 @@ def upload_rfi_attachment_multipart(rfi_id: str):
     db.session.add(doc)
     db.session.flush()
 
-    dest_dir = _rfi_attachment_upload_dir()
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = dest_dir / f"{doc.id}{ext}"
+    obj_name = f"{doc.id}{ext}"
     try:
-        f.save(str(dest_path))
+        sz = save_upload(UploadCategory.RFI_ATTACHMENTS, obj_name, f)
     except OSError as exc:
         db.session.rollback()
         return _jsonify({"error": f"could not save file: {exc}"}), 500
-    try:
-        sz = dest_path.stat().st_size
-    except OSError:
-        sz = None
+    except Exception as exc:
+        db.session.rollback()
+        return _jsonify({"error": f"could not save file: {exc}"}), 500
     if sz == 0:
-        try:
-            dest_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        delete_stored(UploadCategory.RFI_ATTACHMENTS, obj_name)
         db.session.rollback()
         return _jsonify({"error": "empty upload"}), 400
-    if sz is not None and sz > max_bytes:
-        try:
-            dest_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+    if sz > max_bytes:
+        delete_stored(UploadCategory.RFI_ATTACHMENTS, obj_name)
         db.session.rollback()
         return _jsonify({"error": "file too large (max 50MB)"}), 400
 
@@ -1611,12 +1588,18 @@ def get_rfi_attachment_file(document_id: str):
     if str(tags.get("rfi_id") or "") == "" or tags.get("entity") != "rfi":
         return _jsonify({"error": "not found"}), 404
     ext = str(tags.get("suffix") or ".bin")
-    path = _rfi_attachment_upload_dir() / f"{did}{ext}"
-    if not path.is_file():
-        return _jsonify({"error": "file not found on server"}), 404
+    name = f"{did}{ext}"
     dl = (row.original_filename or "attachment").replace('"', "")[:200]
     mt = row.mime_type or "application/octet-stream"
-    return send_file(path, mimetype=mt, as_attachment=False, download_name=dl)
+    resp = send_stored_file(
+        UploadCategory.RFI_ATTACHMENTS,
+        name,
+        mimetype=mt,
+        download_name=dl,
+    )
+    if resp is None:
+        return _jsonify({"error": "file not found on server"}), 404
+    return resp
 
 
 @bp.post("/rfis/<rfi_id>/email")
@@ -1791,29 +1774,19 @@ def upload_spec_section_pdf(project_id: str, row_id: str):
     if cl is not None and cl > max_bytes:
         return _jsonify({"error": "file too large (max 50MB)"}), 400
 
-    dest_dir = _spec_section_upload_dir()
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = dest_dir / f"{row.id}.pdf"
+    obj_name = f"{row.id}.pdf"
     try:
-        f.save(str(dest_path))
+        sz = save_upload(UploadCategory.SPEC_SECTIONS, obj_name, f)
     except OSError as exc:
         return _jsonify({"error": f"could not save file: {exc}"}), 500
+    except Exception as exc:
+        return _jsonify({"error": f"could not save file: {exc}"}), 500
 
-    try:
-        sz = dest_path.stat().st_size
-    except OSError:
-        sz = None
     if sz == 0:
-        try:
-            dest_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        delete_stored(UploadCategory.SPEC_SECTIONS, obj_name)
         return _jsonify({"error": "empty upload"}), 400
-    if sz is not None and sz > max_bytes:
-        try:
-            dest_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+    if sz > max_bytes:
+        delete_stored(UploadCategory.SPEC_SECTIONS, obj_name)
         return _jsonify({"error": "file too large (max 50MB)"}), 400
 
     row.pdf_url = f"/api/v1/spec-sections/{row.id}/file"

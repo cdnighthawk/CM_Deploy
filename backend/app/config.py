@@ -182,6 +182,13 @@ class Config:
         os.environ.get("HR_UNION_DOCUMENT_UPLOAD_FOLDER") or ""
     ).strip() or None
 
+    # Backblaze B2 (S3-compatible) for uploads when all four core vars are set.
+    B2_APPLICATION_KEY_ID: str | None = (os.environ.get("B2_APPLICATION_KEY_ID") or "").strip() or None
+    B2_APPLICATION_KEY: str | None = (os.environ.get("B2_APPLICATION_KEY") or "").strip() or None
+    B2_BUCKET_NAME: str | None = (os.environ.get("B2_BUCKET_NAME") or "").strip() or None
+    B2_ENDPOINT: str | None = (os.environ.get("B2_ENDPOINT") or "").strip() or None
+    B2_PREFIX: str | None = (os.environ.get("B2_PREFIX") or "").strip() or None
+
     # --- Microsoft Entra ID (Azure AD) SSO for ``/auth/microsoft/*`` ---
     # Register a single-page / web app in Entra, add redirect URI = MS_ENTRA_REDIRECT_URI
     # (e.g. ``http://127.0.0.1:5000/auth/microsoft/callback``). Token ``tid`` must match tenant when not common.

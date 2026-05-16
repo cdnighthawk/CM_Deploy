@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from flask import Blueprint, request, send_file
+from flask import Blueprint, request
 from sqlalchemy import func, select
 from werkzeug.utils import secure_filename
 
@@ -16,10 +16,9 @@ from ..services.hr_union_documents import (
     UNION_DOC_KINDS,
     UNION_DOC_MAX_BYTES,
     UNION_DOC_MAX_PER_KIND,
-    disk_path,
     serialize_union_document,
-    union_document_upload_dir,
 )
+from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file
 from ._perms import current_user
 from .v1 import _jsonify
 
@@ -168,31 +167,22 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
         db.session.add(row)
         db.session.flush()
 
-        dest_dir = union_document_upload_dir()
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        dest_path = disk_path(row.id, ext)
+        obj_name = f"{row.id}{ext}"
         try:
-            f.save(str(dest_path))
+            sz = save_upload(UploadCategory.HR_UNION, obj_name, f)
         except OSError as exc:
             db.session.rollback()
             return _jsonify({"entity": "hr_union_document", "error": f"could not save file: {exc}"}), 500
+        except Exception as exc:
+            db.session.rollback()
+            return _jsonify({"entity": "hr_union_document", "error": f"could not save file: {exc}"}), 500
 
-        try:
-            sz = dest_path.stat().st_size
-        except OSError:
-            sz = None
         if sz == 0:
-            try:
-                dest_path.unlink(missing_ok=True)
-            except OSError:
-                pass
+            delete_stored(UploadCategory.HR_UNION, obj_name)
             db.session.rollback()
             return _jsonify({"entity": "hr_union_document", "error": "empty upload"}), 400
-        if sz is not None and sz > UNION_DOC_MAX_BYTES:
-            try:
-                dest_path.unlink(missing_ok=True)
-            except OSError:
-                pass
+        if sz > UNION_DOC_MAX_BYTES:
+            delete_stored(UploadCategory.HR_UNION, obj_name)
             db.session.rollback()
             return _jsonify({"entity": "hr_union_document", "error": "file too large (max 10MB)"}), 400
 
@@ -224,13 +214,18 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
         if hire_row is None or hire_row.user_id != cu.user.id:
             return _jsonify({"entity": "hr_union_document", "error": "not found"}), 404
 
-        path = disk_path(row.id, row.file_ext)
-        if not path.is_file():
-            return _jsonify({"entity": "hr_union_document", "error": "file not found on server"}), 404
-
+        obj_name = f"{row.id}{row.file_ext}"
         dl = (row.original_filename or "document-photo").replace('"', "")[:200]
         mt = row.mime_type or "image/jpeg"
-        return send_file(path, mimetype=mt, as_attachment=False, download_name=dl)
+        resp = send_stored_file(
+            UploadCategory.HR_UNION,
+            obj_name,
+            mimetype=mt,
+            download_name=dl,
+        )
+        if resp is None:
+            return _jsonify({"entity": "hr_union_document", "error": "file not found on server"}), 404
+        return resp
 
     @bp.delete("/hr/me/hire-wizard/union-documents/<uuid:file_id>")
     def hr_me_union_document_delete(file_id: uuid.UUID):
@@ -249,7 +244,7 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
         if _hire_wizard_locked(hire_row):
             return _jsonify({"entity": "hr_union_document", "error": "Hire wizard is complete and locked"}), 409
 
-        path = disk_path(row.id, row.file_ext)
+        obj_name = f"{row.id}{row.file_ext}"
         kind = row.document_kind
         db.session.delete(row)
         db.session.add(
@@ -263,8 +258,5 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
             )
         )
         db.session.commit()
-        try:
-            path.unlink(missing_ok=True)
-        except OSError:
-            pass
+        delete_stored(UploadCategory.HR_UNION, obj_name)
         return _jsonify({"entity": "hr_union_document", "ok": True, "deleted": True, "id": str(file_id)})

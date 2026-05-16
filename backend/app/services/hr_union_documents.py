@@ -6,9 +6,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from flask import current_app
-
 from ..models import HrHireUnionDocumentFile
+from .object_storage import UploadCategory, local_path, local_root
 
 UNION_DOC_KINDS = frozenset({"union_card", "union_dispatch"})
 UNION_DOC_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"})
@@ -17,14 +16,11 @@ UNION_DOC_MAX_BYTES = 10_485_760  # 10 MB
 
 
 def union_document_upload_dir() -> Path:
-    cfg = (current_app.config.get("HR_UNION_DOCUMENT_UPLOAD_FOLDER") or "").strip()
-    if cfg:
-        return Path(cfg).expanduser().resolve()
-    return Path(current_app.instance_path).resolve() / "hr_union_document_uploads"
+    return local_root(UploadCategory.HR_UNION)
 
 
 def disk_path(file_id: uuid.UUID, ext: str) -> Path:
-    return union_document_upload_dir() / f"{file_id}{ext}"
+    return local_path(UploadCategory.HR_UNION, f"{file_id}{ext}")
 
 
 def serialize_union_document(row: HrHireUnionDocumentFile) -> dict[str, Any]:

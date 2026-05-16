@@ -6,9 +6,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from flask import current_app
-
 from ..models import HrHireI9DocumentFile
+from .object_storage import UploadCategory, local_path, local_root
 
 I9_DOC_SLOTS = frozenset({"list_a", "list_b", "list_c"})
 I9_DOC_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"})
@@ -17,14 +16,11 @@ I9_DOC_MAX_BYTES = 10_485_760  # 10 MB
 
 
 def i9_document_upload_dir() -> Path:
-    cfg = (current_app.config.get("HR_I9_DOCUMENT_UPLOAD_FOLDER") or "").strip()
-    if cfg:
-        return Path(cfg).expanduser().resolve()
-    return Path(current_app.instance_path).resolve() / "hr_i9_document_uploads"
+    return local_root(UploadCategory.HR_I9)
 
 
 def disk_path(file_id: uuid.UUID, ext: str) -> Path:
-    return i9_document_upload_dir() / f"{file_id}{ext}"
+    return local_path(UploadCategory.HR_I9, f"{file_id}{ext}")
 
 
 def serialize_i9_document(row: HrHireI9DocumentFile) -> dict[str, Any]:

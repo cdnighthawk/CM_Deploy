@@ -1400,17 +1400,9 @@ def remove_attachment(rfi_id: uuid.UUID, document_id: uuid.UUID, cu: CurrentUser
     if doc is not None and isinstance(doc.tags, dict):
         suf = doc.tags.get("suffix")
         if suf and doc.file_url and "/rfi-attachments/" in (doc.file_url or ""):
-            from pathlib import Path as _Path
+            from ..services.object_storage import UploadCategory, delete_stored
 
-            from flask import current_app as _ca
-
-            raw = _ca.config.get("RFI_ATTACHMENT_UPLOAD_FOLDER")
-            base = _Path(str(raw)).expanduser().resolve() if raw else _Path(_ca.instance_path).resolve() / "rfi_attachment_uploads"
-            p = base / f"{document_id}{suf}"
-            try:
-                p.unlink(missing_ok=True)
-            except OSError:
-                pass
+            delete_stored(UploadCategory.RFI_ATTACHMENTS, f"{document_id}{suf}")
     db.session.execute(text("DELETE FROM documents WHERE id = :id"), {"id": str(document_id)})
     _audit(rfi, cu, "attachment_remove", summary="Removed attachment", before={"document_id": str(document_id)})
     db.session.commit()

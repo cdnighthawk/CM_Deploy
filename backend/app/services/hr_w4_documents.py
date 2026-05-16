@@ -6,9 +6,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from flask import current_app
-
 from ..models import HrHireW4DocumentFile
+from .object_storage import UploadCategory, local_path, local_root
 
 W4_DOC_SLOTS = frozenset({"supporting"})
 W4_DOC_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"})
@@ -17,14 +16,11 @@ W4_DOC_MAX_BYTES = 10_485_760  # 10 MB
 
 
 def w4_document_upload_dir() -> Path:
-    cfg = (current_app.config.get("HR_W4_DOCUMENT_UPLOAD_FOLDER") or "").strip()
-    if cfg:
-        return Path(cfg).expanduser().resolve()
-    return Path(current_app.instance_path).resolve() / "hr_w4_document_uploads"
+    return local_root(UploadCategory.HR_W4)
 
 
 def disk_path(file_id: uuid.UUID, ext: str) -> Path:
-    return w4_document_upload_dir() / f"{file_id}{ext}"
+    return local_path(UploadCategory.HR_W4, f"{file_id}{ext}")
 
 
 def serialize_w4_document(row: HrHireW4DocumentFile) -> dict[str, Any]:

@@ -46,3 +46,13 @@ From `backend\`, run `powershell -ExecutionPolicy Bypass -File scripts\smoke.ps1
 ## Database backup
 
 Run `scripts\backup_usis_cm.ps1` (edit `DATABASE_URL` / output path inside the script or pass parameters as documented there).
+
+## Push local database to Render
+
+One-time (or repeatable) data migration from dev Postgres to Render production:
+
+1. Set `RENDER_DATABASE_URL` to the **External** connection string from Render Dashboard → `usis-cm-db` → Connect.
+2. From `backend\`: `powershell -ExecutionPolicy Bypass -File scripts\push_db_to_render.ps1 -ConnectivityOnly`
+3. Then run without `-ConnectivityOnly` to backup Render, dump local data, and restore.
+
+Full procedure, encryption keys, and instance file caveats: [docs/migrate-local-db-to-render.md](../docs/migrate-local-db-to-render.md).

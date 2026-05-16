@@ -41,7 +41,18 @@ Optional overrides:
 
 Watch logs for `Serving W3CRM static shell from .../gulp/dist` and `flask db upgrade` success.
 
-## 4. Bootstrap staff user
+## 4. Migrate local database (optional)
+
+If you already have data in local PostgreSQL and want it on Render (instead of only bootstrap admin):
+
+1. Ensure first deploy finished (`flask db upgrade` on Render).
+2. Follow [migrate-local-db-to-render.md](migrate-local-db-to-render.md) — `backend/scripts/push_db_to_render.ps1`.
+3. Copy `TOKEN_ENCRYPTION_KEY` (and `SECRET_KEY` if used for encryption fallback) from local `.env` to Render env when I-9/W-4/integrations were encrypted locally.
+4. Copy `backend/instance/` uploads separately; they are not in the DB dump.
+
+Skip this section if you are starting fresh and only need a bootstrap user (step 5).
+
+## 5. Bootstrap staff user
 
 Render Shell (service `usis-cm`, root `backend/`):
 
@@ -51,7 +62,7 @@ python scripts/create_bootstrap_admin.py
 
 Uses `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` from the environment.
 
-## 5. Smoke test
+## 6. Smoke test
 
 Replace `https://usis-cm.onrender.com` with your service URL (`RENDER_EXTERNAL_URL`).
 
@@ -64,7 +75,7 @@ Replace `https://usis-cm.onrender.com` with your service URL (`RENDER_EXTERNAL_U
 
 In browser DevTools → Network, API calls should go to **same origin** (not `127.0.0.1:5000`).
 
-## 6. Employee testing entry points
+## 7. Employee testing entry points
 
 | Audience | Start here |
 |----------|------------|

@@ -1,4 +1,5 @@
 import Utilities from '../../utils/Utils'
+import Graphics from '../Graphics'
 
 /**
  * ApexCharts Tooltip.Utils Class to support Tooltip functionality.
@@ -24,13 +25,12 @@ export default class Utils {
   getNearestValues({ hoverArea, elGrid, clientX, clientY }) {
     let w = this.w
 
-    const hoverWidth = w.globals.gridWidth
-    const hoverHeight = w.globals.gridHeight
+    const seriesBound = elGrid.getBoundingClientRect()
+    const hoverWidth = seriesBound.width
+    const hoverHeight = seriesBound.height
 
     let xDivisor = hoverWidth / (w.globals.dataPoints - 1)
     let yDivisor = hoverHeight / w.globals.dataPoints
-
-    const seriesBound = elGrid.getBoundingClientRect()
 
     const hasBars = this.hasBars()
 
@@ -45,10 +45,7 @@ export default class Utils {
     let hoverY = clientY - seriesBound.top
 
     const notInRect =
-      hoverX < 0 ||
-      hoverY < 0 ||
-      hoverX > w.globals.gridWidth ||
-      hoverY > w.globals.gridHeight
+      hoverX < 0 || hoverY < 0 || hoverX > hoverWidth || hoverY > hoverHeight
 
     if (notInRect) {
       hoverArea.classList.remove('hovering-zoom')
@@ -73,30 +70,28 @@ export default class Utils {
 
     let capturedSeries = null
     let closest = null
-    let seriesXValArr = []
-    let seriesYValArr = []
 
-    for (let s = 0; s < w.globals.seriesXvalues.length; s++) {
-      seriesXValArr.push(
-        [w.globals.seriesXvalues[s][0] - 0.000001].concat(
-          w.globals.seriesXvalues[s]
-        )
-      )
-    }
-
-    seriesXValArr = seriesXValArr.map((seriesXVal) => {
-      return seriesXVal.filter((s) => s)
+    let seriesXValArr = w.globals.seriesXvalues.map((seriesXVal) => {
+      return seriesXVal.filter((s) => Utilities.isNumber(s))
     })
-
-    seriesYValArr = w.globals.seriesYvalues.map((seriesYVal) => {
+    let seriesYValArr = w.globals.seriesYvalues.map((seriesYVal) => {
       return seriesYVal.filter((s) => Utilities.isNumber(s))
     })
 
     // if X axis type is not category and tooltip is not shared, then we need to find the cursor position and get the nearest value
     if (w.globals.isXNumeric) {
+      // Change origin of cursor position so that we can compute the relative nearest point to the cursor on our chart
+      // we only need to scale because all points are relative to the bounds.left and bounds.top => origin is virtually (0, 0)
+      const chartGridEl = this.ttCtx.getElGrid()
+      const chartGridElBoundingRect = chartGridEl.getBoundingClientRect()
+      const transformedHoverX =
+        hoverX * (chartGridElBoundingRect.width / hoverWidth)
+      const transformedHoverY =
+        hoverY * (chartGridElBoundingRect.height / hoverHeight)
+
       closest = this.closestInMultiArray(
-        hoverX,
-        hoverY,
+        transformedHoverX,
+        transformedHoverY,
         seriesXValArr,
         seriesYValArr
       )
@@ -107,7 +102,7 @@ export default class Utils {
         // initial push, it should be a little smaller than the 1st val
         seriesXValArr = w.globals.seriesXvalues[capturedSeries]
 
-        closest = this.closestInArray(hoverX, seriesXValArr)
+        closest = this.closestInArray(transformedHoverX, seriesXValArr)
 
         j = closest.index
       }
@@ -117,13 +112,18 @@ export default class Utils {
       capturedSeries === null ? -1 : capturedSeries
 
     if (!j || j < 1) j = 0
-    w.globals.capturedDataPointIndex = j
+
+    if (w.globals.isBarHorizontal) {
+      w.globals.capturedDataPointIndex = jHorz
+    } else {
+      w.globals.capturedDataPointIndex = j
+    }
 
     return {
       capturedSeries,
       j: w.globals.isBarHorizontal ? jHorz : j,
       hoverX,
-      hoverY
+      hoverY,
     }
   }
 
@@ -139,36 +139,43 @@ export default class Utils {
       currIndex = 0
     }
 
-    let currY = Yarrays[activeIndex][0]
     let currX = Xarrays[activeIndex][0]
-
     let diffX = Math.abs(hoverX - currX)
-    let diffY = Math.abs(hoverY - currY)
-    let diff = diffY + diffX
 
-    Yarrays.map((arrY, arrIndex) => {
-      arrY.map((y, innerKey) => {
-        let newdiffY = Math.abs(hoverY - Yarrays[arrIndex][innerKey])
-        let newdiffX = Math.abs(hoverX - Xarrays[arrIndex][innerKey])
-        let newdiff = newdiffX + newdiffY
-
-        if (newdiff < diff) {
-          diff = newdiff
-          diffX = newdiffX
-          diffY = newdiffY
-          currIndex = arrIndex
-          j = innerKey
+    // find nearest point on x-axis
+    Xarrays.forEach((arrX) => {
+      arrX.forEach((x, iX) => {
+        const newDiff = Math.abs(hoverX - x)
+        if (newDiff <= diffX) {
+          diffX = newDiff
+          j = iX
         }
       })
     })
 
+    if (j !== -1) {
+      // find nearest graph on y-axis relevanted to nearest point on x-axis
+      let currY = Yarrays[activeIndex][j]
+      let diffY = Math.abs(hoverY - currY)
+      currIndex = activeIndex
+
+      Yarrays.forEach((arrY, iAY) => {
+        const newDiff = Math.abs(hoverY - arrY[j])
+        if (newDiff <= diffY) {
+          diffY = newDiff
+          currIndex = iAY
+        }
+      })
+    }
+
     return {
       index: currIndex,
-      j
+      j,
     }
   }
 
   getFirstActiveXArray(Xarrays) {
+    const w = this.w
     let activeIndex = 0
 
     let firstActiveSeriesIndex = Xarrays.map((xarr, index) => {
@@ -176,7 +183,11 @@ export default class Utils {
     })
 
     for (let a = 0; a < firstActiveSeriesIndex.length; a++) {
-      if (firstActiveSeriesIndex[a] !== -1) {
+      if (
+        firstActiveSeriesIndex[a] !== -1 &&
+        w.globals.collapsedSeriesIndices.indexOf(a) === -1 &&
+        w.globals.ancillaryCollapsedSeriesIndices.indexOf(a) === -1
+      ) {
         activeIndex = firstActiveSeriesIndex[a]
         break
       }
@@ -199,7 +210,7 @@ export default class Utils {
     }
 
     return {
-      index: currIndex
+      index: currIndex,
     }
   }
 
@@ -260,9 +271,16 @@ export default class Utils {
     return totalHeight
   }
 
-  getElMarkers() {
+  getElMarkers(capturedSeries) {
+    // The selector .apexcharts-series-markers-wrap > * includes marker groups for which the
+    // .apexcharts-series-markers class is not added due to null values or discrete markers
+    if (typeof capturedSeries == 'number') {
+      return this.w.globals.dom.baseEl.querySelectorAll(
+        `.apexcharts-series[data\\:realIndex='${capturedSeries}'] .apexcharts-series-markers-wrap > *`
+      )
+    }
     return this.w.globals.dom.baseEl.querySelectorAll(
-      ' .apexcharts-series-markers'
+      '.apexcharts-series-markers-wrap > *'
     )
   }
 
@@ -275,10 +293,9 @@ export default class Utils {
 
     markersWraps = [...markersWraps]
     markersWraps.sort((a, b) => {
-      return Number(b.getAttribute('data:realIndex')) <
-        Number(a.getAttribute('data:realIndex'))
-        ? 0
-        : -1
+      var indexA = Number(a.getAttribute('data:realIndex'))
+      var indexB = Number(b.getAttribute('data:realIndex'))
+      return indexB < indexA ? 1 : indexB > indexA ? -1 : 0
     })
 
     let markers = []
@@ -289,9 +306,16 @@ export default class Utils {
     return markers
   }
 
-  hasMarkers() {
-    const markers = this.getElMarkers()
+  hasMarkers(capturedSeries) {
+    const markers = this.getElMarkers(capturedSeries)
     return markers.length > 0
+  }
+
+  getPathFromPoint(point, size) {
+    let cx = Number(point.getAttribute('cx'))
+    let cy = Number(point.getAttribute('cy'))
+    let shape = point.getAttribute('shape')
+    return new Graphics(this.ctx).getMarkerPath(cx, cy, shape, size)
   }
 
   getElBars() {

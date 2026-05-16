@@ -43,6 +43,7 @@ export namespace AnnotationEditorParamsType {
     let HIGHLIGHT_THICKNESS: number;
     let HIGHLIGHT_FREE: number;
     let HIGHLIGHT_SHOW_ALL: number;
+    let DRAW_STEP: number;
 }
 export const AnnotationEditorPrefix: "pdfjs_internal_editor_";
 export namespace AnnotationEditorType {
@@ -139,11 +140,6 @@ export function assert(cond: any, msg: any): void;
 export const BaseException: any;
 export const BASELINE_FACTOR: number;
 export function bytesToString(bytes: any): string;
-export namespace CMapCompressionType {
-    let NONE_1: number;
-    export { NONE_1 as NONE };
-    export let BINARY: number;
-}
 /**
  * Attempts to create a valid absolute URL.
  *
@@ -152,7 +148,7 @@ export namespace CMapCompressionType {
  * @param {Object} [options]
  * @returns Either a valid {URL}, or `null` otherwise.
  */
-export function createValidAbsoluteUrl(url: URL | string, baseUrl?: string | URL | undefined, options?: Object | undefined): URL | null;
+export function createValidAbsoluteUrl(url: URL | string, baseUrl?: URL | string, options?: Object): URL | null;
 export namespace DocumentActionEventType {
     let WC: string;
     let WS: string;
@@ -164,21 +160,11 @@ export class FeatureTest {
     static get isLittleEndian(): any;
     static get isEvalSupported(): any;
     static get isOffscreenCanvasSupported(): any;
+    static get isImageDecoderSupported(): any;
     static get platform(): any;
     static get isCSSRoundSupported(): any;
 }
 export const FONT_IDENTITY_MATRIX: number[];
-export namespace FontRenderOps {
-    let BEZIER_CURVE_TO: number;
-    let MOVE_TO: number;
-    let LINE_TO: number;
-    let QUADRATIC_CURVE_TO: number;
-    let RESTORE: number;
-    let SAVE: number;
-    let SCALE: number;
-    let TRANSFORM: number;
-    let TRANSLATE: number;
-}
 declare const FormatError_base: any;
 /**
  * Error caused during parsing PDF data.
@@ -187,9 +173,11 @@ export class FormatError extends FormatError_base {
     [x: string]: any;
     constructor(msg: any);
 }
+export function fromBase64Util(str: any): any;
 export function getModificationDate(date?: Date): string;
 export function getUuid(): string;
 export function getVerbosityLevel(): number;
+export const hexNumbers: string[];
 export const IDENTITY_MATRIX: number[];
 export namespace ImageKind {
     let GRAYSCALE_1BPP: number;
@@ -304,6 +292,8 @@ export namespace OPS {
     let paintImageMaskXObjectRepeat: number;
     let paintSolidColorImageMask: number;
     let constructPath: number;
+    let setStrokeTransparent: number;
+    let setFillTransparent: number;
 }
 export namespace PageActionEventType {
     export let O: string;
@@ -336,17 +326,17 @@ export namespace RenderingIntentFlag {
     export let DISPLAY: number;
     let PRINT_2: number;
     export { PRINT_2 as PRINT };
-    let SAVE_1: number;
-    export { SAVE_1 as SAVE };
+    export let SAVE: number;
     export let ANNOTATIONS_FORMS: number;
     export let ANNOTATIONS_STORAGE: number;
     export let ANNOTATIONS_DISABLE: number;
+    export let IS_EDITING: number;
     export let OPLIST: number;
 }
 export function setVerbosityLevel(level: any): void;
 export function shadow(obj: any, prop: any, value: any, nonSerializable?: boolean): any;
 export function string32(value: any): string;
-export function stringToBytes(str: any): Uint8Array;
+export function stringToBytes(str: any): Uint8Array<any>;
 export function stringToPDFString(str: any): string;
 export function stringToUTF8String(str: any): string;
 export namespace TextRenderingMode {
@@ -362,6 +352,8 @@ export namespace TextRenderingMode {
     export let FILL_STROKE_MASK: number;
     export let ADD_TO_PATH_FLAG: number;
 }
+export function toBase64Util(arr: any): any;
+export function toHexUtil(arr: any): any;
 declare const UnexpectedResponseException_base: any;
 export class UnexpectedResponseException extends UnexpectedResponseException_base {
     [x: string]: any;

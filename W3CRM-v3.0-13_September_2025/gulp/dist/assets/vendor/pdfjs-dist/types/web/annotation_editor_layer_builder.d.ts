@@ -4,14 +4,16 @@ export type AnnotationEditorUIManager = import("../src/display/editor/tools.js")
 export type TextAccessibilityManager = import("./text_accessibility.js").TextAccessibilityManager;
 export type IL10n = import("./interfaces").IL10n;
 export type AnnotationLayer = import("../src/display/annotation_layer.js").AnnotationLayer;
+export type StructTreeLayerBuilder = any;
 export type AnnotationEditorLayerBuilderOptions = {
     uiManager?: import("../src/pdf").AnnotationEditorUIManager | undefined;
     pdfPage: PDFPageProxy;
     l10n?: import("./interfaces").IL10n | undefined;
+    structTreeLayer?: StructTreeLayerBuilder;
     accessibilityManager?: import("./text_accessibility.js").TextAccessibilityManager | undefined;
     annotationLayer?: import("../src/pdf").AnnotationLayer | undefined;
-    textLayer?: any;
-    drawLayer?: any;
+    textLayer?: TextLayer;
+    drawLayer?: DrawLayer;
     onAppend?: Function | undefined;
 };
 /**
@@ -19,6 +21,7 @@ export type AnnotationEditorLayerBuilderOptions = {
  * @property {AnnotationEditorUIManager} [uiManager]
  * @property {PDFPageProxy} pdfPage
  * @property {IL10n} [l10n]
+ * @property {StructTreeLayerBuilder} [structTreeLayer]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationLayer} [annotationLayer]
  * @property {TextLayer} [textLayer]

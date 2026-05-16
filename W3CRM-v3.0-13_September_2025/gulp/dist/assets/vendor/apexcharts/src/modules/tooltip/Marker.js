@@ -5,6 +5,9 @@ import Utils from '../../utils/Utils'
 
 /**
  * ApexCharts Tooltip.Marker Class to draw texts on the tooltip.
+ * This file deals with the markers that appear near tooltip in line/area charts.
+ * These markers helps the user to associate the data-points and the values
+ * that are shown in the tooltip
  *
  * @module Tooltip.Marker
  **/
@@ -56,7 +59,10 @@ export default class Marker {
           PointClasses += ' no-pointer-events'
         }
 
-        let elPointOptions = marker.getMarkerConfig(PointClasses, i)
+        let elPointOptions = marker.getMarkerConfig({
+          cssClass: PointClasses,
+          seriesIndex: Number(pointsMain.getAttribute('data:realIndex')), // fixes apexcharts/apexcharts.js #1427
+        })
 
         point = graphics.drawMarker(0, 0, elPointOptions)
 
@@ -153,13 +159,19 @@ export default class Marker {
           w.globals.markers.size[index] + w.config.markers.hover.sizeOffset
       }
 
-      elPoint.setAttribute('r', newSize)
+      if (newSize < 0) {
+        newSize = 0
+      }
+
+      const path = this.ttCtx.tooltipUtil.getPathFromPoint(point, newSize)
+      point.setAttribute('d', path)
     }
   }
 
   oldPointSize(point) {
     const size = parseFloat(point.getAttribute('default-marker-size'))
-    point.setAttribute('r', size)
+    const path = this.ttCtx.tooltipUtil.getPathFromPoint(point, size)
+    point.setAttribute('d', path)
   }
 
   resetPointsSize() {
@@ -171,10 +183,12 @@ export default class Marker {
 
     for (let p = 0; p < points.length; p++) {
       const size = parseFloat(points[p].getAttribute('default-marker-size'))
-      if (Utils.isNumber(size)) {
-        points[p].setAttribute('r', size)
+
+      if (Utils.isNumber(size) && size >= 0) {
+        const path = this.ttCtx.tooltipUtil.getPathFromPoint(points[p], size)
+        points[p].setAttribute('d', path)
       } else {
-        points[p].setAttribute('r', 0)
+        points[p].setAttribute('d', 'M0,0')
       }
     }
   }

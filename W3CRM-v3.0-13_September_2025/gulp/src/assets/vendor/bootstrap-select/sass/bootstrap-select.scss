@@ -23,7 +23,7 @@
 
 @function fade($color, $amnt) {
   @if $amnt > 1 {
-    $amnt: $amnt / 100; // convert to percentage if int
+    $amnt: $amnt * 0.01; // convert to percentage if int
   }
   @return rgba($color, $amnt);
 }
@@ -36,7 +36,7 @@ select.selectpicker {
 }
 
 .bootstrap-select {
-  width: 220px \0; /*IE9 and below*/
+  width: 220px;
   vertical-align: middle;
 
   // The selectpicker button

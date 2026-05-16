@@ -1630,8 +1630,7 @@ table.dataTable .sorting-disabled:after {
 .apexcharts-canvas .apexcharts-tooltip.apexcharts-theme-light {
   border: 1px solid var(--bs-border-color);
   background: rgba(var(--bs-body-bg-rgb), 0.85);
-  -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   padding-bottom: 5px;
 }
 .apexcharts-canvas .apexcharts-tooltip {
@@ -1671,8 +1670,7 @@ table.dataTable .sorting-disabled:after {
   border-radius: 4px;
   background: rgba(var(--bs-body-bg-rgb), 0.8);
   border: 1px solid var(--bs-border-color);
-  -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 .apexcharts-canvas .apexcharts-xaxistooltip-bottom:before {
   border-bottom-color: var(--bs-border-color);
@@ -2150,13 +2148,15 @@ div:where(.swal2-icon).swal2-question {
   --td-active-color: #fff;
   --td-widget-background: var(--bs-body-bg);
   --td-alternate-color: rgba(0, 0, 0, .25);
+}
+[data-bs-theme=dark] .tempus-dominus-widget {
+  --td-alternate-color: rgba(255, 255, 255, .38);
+}
+.tempus-dominus-widget {
   padding: 1rem 0.5rem 0.5rem 0.5rem;
   box-shadow: var(--bs-box-shadow-sm);
   border-radius: 8px;
   border: 1px solid var(--bs-border-color);
-}
-[data-bs-theme=dark] .tempus-dominus-widget {
-  --td-alternate-color: rgba(255, 255, 255, .38);
 }
 .tempus-dominus-widget .picker-switch {
   font-weight: 600;

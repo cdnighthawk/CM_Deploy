@@ -40,6 +40,25 @@ export default class Dimensions {
     let gl = w.globals
 
     this.lgRect = this.dimHelpers.getLegendsRect()
+    this.datalabelsCoords = { width: 0, height: 0 }
+
+    const maxStrokeWidth = Array.isArray(w.config.stroke.width)
+      ? Math.max(...w.config.stroke.width)
+      : w.config.stroke.width
+
+    if (this.isSparkline) {
+      if (w.config.markers.discrete.length > 0 || w.config.markers.size > 0) {
+        Object.entries(this.gridPad).forEach(([k, v]) => {
+          this.gridPad[k] = Math.max(
+            v,
+            this.w.globals.markers.largestSize / 1.5
+          )
+        })
+      }
+
+      this.gridPad.top = Math.max(maxStrokeWidth / 2, this.gridPad.top)
+      this.gridPad.bottom = Math.max(maxStrokeWidth / 2, this.gridPad.bottom)
+    }
 
     if (gl.axisCharts) {
       // for line / area / scatter / column
@@ -69,7 +88,7 @@ export default class Dimensions {
       gl.translateX +
       this.gridPad.left +
       this.xPadLeft +
-      (barWidth > 0 ? barWidth + 4 : 0)
+      (barWidth > 0 ? barWidth : 0)
     gl.translateY = gl.translateY + this.gridPad.top
   }
 
@@ -80,26 +99,35 @@ export default class Dimensions {
     let yaxisLabelCoords = this.dimYAxis.getyAxisLabelsCoords()
     let yTitleCoords = this.dimYAxis.getyAxisTitleCoords()
 
+    if (gl.isSlopeChart) {
+      this.datalabelsCoords = this.dimHelpers.getDatalabelsRect()
+    }
+
     w.globals.yLabelsCoords = []
     w.globals.yTitleCoords = []
     w.config.yaxis.map((yaxe, index) => {
       // store the labels and titles coords in global vars
       w.globals.yLabelsCoords.push({
         width: yaxisLabelCoords[index].width,
-        index
+        index,
       })
       w.globals.yTitleCoords.push({
         width: yTitleCoords[index].width,
-        index
+        index,
       })
     })
 
     this.yAxisWidth = this.dimYAxis.getTotalYAxisWidth()
 
     let xaxisLabelCoords = this.dimXAxis.getxAxisLabelsCoords()
+    let xaxisGroupLabelCoords = this.dimXAxis.getxAxisGroupLabelsCoords()
     let xtitleCoords = this.dimXAxis.getxAxisTitleCoords()
 
-    this.conditionalChecksForAxisCoords(xaxisLabelCoords, xtitleCoords)
+    this.conditionalChecksForAxisCoords(
+      xaxisLabelCoords,
+      xtitleCoords,
+      xaxisGroupLabelCoords
+    )
 
     gl.translateXAxisY = w.globals.rotateXLabels ? this.xAxisHeight / 8 : -4
     gl.translateXAxisX =
@@ -121,19 +149,20 @@ export default class Dimensions {
     let yAxisWidth = this.yAxisWidth
     let xAxisHeight = this.xAxisHeight
     gl.xAxisLabelsHeight = this.xAxisHeight - xtitleCoords.height
+    gl.xAxisGroupLabelsHeight = gl.xAxisLabelsHeight - xaxisLabelCoords.height
     gl.xAxisLabelsWidth = this.xAxisWidth
     gl.xAxisHeight = this.xAxisHeight
     let translateY = 10
 
     if (w.config.chart.type === 'radar' || this.isSparkline) {
       yAxisWidth = 0
-      xAxisHeight = gl.goldenPadding
+      xAxisHeight = 0
     }
 
     if (this.isSparkline) {
       this.lgRect = {
         height: 0,
-        width: 0
+        width: 0,
       }
     }
 
@@ -143,12 +172,12 @@ export default class Dimensions {
       translateY = 0
     }
 
-    if (!this.isSparkline) {
+    if (!this.isSparkline && w.config.chart.type !== 'treemap') {
       this.dimXAxis.additionalPaddingXLabels(xaxisLabelCoords)
     }
 
     const legendTopBottom = () => {
-      gl.translateX = yAxisWidth
+      gl.translateX = yAxisWidth + this.datalabelsCoords.width
       gl.gridHeight =
         gl.svgHeight -
         this.lgRect.height -
@@ -158,7 +187,7 @@ export default class Dimensions {
             ? 10
             : 15
           : 0)
-      gl.gridWidth = gl.svgWidth - yAxisWidth
+      gl.gridWidth = gl.svgWidth - yAxisWidth - this.datalabelsCoords.width * 2
     }
 
     if (w.config.xaxis.position === 'top')
@@ -175,15 +204,25 @@ export default class Dimensions {
         break
       case 'left':
         gl.translateY = translateY
-        gl.translateX = this.lgRect.width + yAxisWidth
+        gl.translateX =
+          this.lgRect.width + yAxisWidth + this.datalabelsCoords.width
         gl.gridHeight = gl.svgHeight - xAxisHeight - 12
-        gl.gridWidth = gl.svgWidth - this.lgRect.width - yAxisWidth
+        gl.gridWidth =
+          gl.svgWidth -
+          this.lgRect.width -
+          yAxisWidth -
+          this.datalabelsCoords.width * 2
         break
       case 'right':
         gl.translateY = translateY
-        gl.translateX = yAxisWidth
+        gl.translateX = yAxisWidth + this.datalabelsCoords.width
         gl.gridHeight = gl.svgHeight - xAxisHeight - 12
-        gl.gridWidth = gl.svgWidth - this.lgRect.width - yAxisWidth - 5
+        gl.gridWidth =
+          gl.svgWidth -
+          this.lgRect.width -
+          yAxisWidth -
+          this.datalabelsCoords.width * 2 -
+          5
         break
       default:
         throw new Error('Legend position not supported')
@@ -217,25 +256,25 @@ export default class Dimensions {
     let offX = cnf.plotOptions[type].offsetX
 
     if (!cnf.legend.show || cnf.legend.floating) {
-      gl.gridHeight =
-        gl.svgHeight - cnf.grid.padding.left + cnf.grid.padding.right
-      gl.gridWidth = gl.gridHeight
+      gl.gridHeight = gl.svgHeight
+
+      const maxWidth = gl.dom.elWrap.getBoundingClientRect().width
+      gl.gridWidth = Math.min(maxWidth, gl.gridHeight)
 
       gl.translateY = offY
       gl.translateX = offX + (gl.svgWidth - gl.gridWidth) / 2
-
       return
     }
 
     switch (cnf.legend.position) {
       case 'bottom':
-        gl.gridHeight = gl.svgHeight - this.lgRect.height - gl.goldenPadding
+        gl.gridHeight = gl.svgHeight - this.lgRect.height
         gl.gridWidth = gl.svgWidth
         gl.translateY = offY - 10
         gl.translateX = offX + (gl.svgWidth - gl.gridWidth) / 2
         break
       case 'top':
-        gl.gridHeight = gl.svgHeight - this.lgRect.height - gl.goldenPadding
+        gl.gridHeight = gl.svgHeight - this.lgRect.height
         gl.gridWidth = gl.svgWidth
         gl.translateY = this.lgRect.height + offY + 10
         gl.translateX = offX + (gl.svgWidth - gl.gridWidth) / 2
@@ -259,12 +298,31 @@ export default class Dimensions {
     }
   }
 
-  conditionalChecksForAxisCoords(xaxisLabelCoords, xtitleCoords) {
+  conditionalChecksForAxisCoords(
+    xaxisLabelCoords,
+    xtitleCoords,
+    xaxisGroupLabelCoords
+  ) {
     const w = this.w
+
+    const xAxisNum = w.globals.hasXaxisGroups ? 2 : 1
+
+    const baseXAxisHeight =
+      xaxisGroupLabelCoords.height +
+      xaxisLabelCoords.height +
+      xtitleCoords.height
+    const xAxisHeightMultiplicate = w.globals.isMultiLineX
+      ? 1.2
+      : w.globals.LINE_HEIGHT_RATIO
+    const rotatedXAxisOffset = w.globals.rotateXLabels ? 22 : 10
+    const rotatedXAxisLegendOffset =
+      w.globals.rotateXLabels && w.config.legend.position === 'bottom'
+    const additionalOffset = rotatedXAxisLegendOffset ? 10 : 0
+
     this.xAxisHeight =
-      (xaxisLabelCoords.height + xtitleCoords.height) *
-        (w.globals.isMultiLineX ? 1.2 : w.globals.LINE_HEIGHT_RATIO) +
-      (w.globals.rotateXLabels ? 22 : 10)
+      baseXAxisHeight * xAxisHeightMultiplicate +
+      xAxisNum * rotatedXAxisOffset +
+      additionalOffset
 
     this.xAxisWidth = xaxisLabelCoords.width
 

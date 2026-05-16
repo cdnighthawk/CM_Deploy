@@ -6,6 +6,7 @@ import TEXTS from './parts/texts'
 import templates from './parts/templates'
 import EventDispatcher from './parts/EventDispatcher'
 import events, { triggerChangeEvent } from './parts/events'
+import { UPDATE_DELAY } from './parts/constants'
 
 /**
  * @constructor
@@ -120,12 +121,14 @@ Tagify.prototype = {
         DEFAULTS.templates = this.templates
 
         var mixModeDefaults = {
+            pasteAsTags: false,
             dropdown: {
                 position: "text"
             }
         }
 
         var mergedDefaults = extend({}, DEFAULTS, (settings.mode == 'mix' ? mixModeDefaults : {}));
+        this.origSettings = extend({}, settings);
         var _s = this.settings = extend({}, mergedDefaults, settings)
 
         _s.disabled = input.hasAttribute('disabled')
@@ -176,7 +179,7 @@ Tagify.prototype = {
             catch(e){}
         }
 
-        if( _s.disabled )
+        if( _s.disabled || _s.readonly )
             _s.userInput = false;
 
         this.TEXTS = {...TEXTS, ...(_s.texts || {})}
@@ -189,6 +192,11 @@ Tagify.prototype = {
         // make sure the dropdown will be shown on "focus" and not only after typing something (in "select" mode)
         if( (_s.mode == 'select' && !settings.dropdown?.enabled) || !_s.userInput ){
             _s.dropdown.enabled = 0
+        }
+
+        // additional override
+        if( _s.disabled ) {
+            _s.dropdown.enabled = false;
         }
 
         _s.dropdown.appendTarget = settings.dropdown?.appendTarget || document.body;
@@ -310,7 +318,7 @@ Tagify.prototype = {
         this.dropdown.hide(true)
         this.removeAllCustomListeners()
         clearTimeout(this.dropdownHide__bindEventsTimeout)
-        clearInterval(this.listeners.main.originalInputValueObserverInterval)
+        clearInterval(this.listeners?.main?.originalInputValueObserverInterval)
     },
 
     /**
@@ -708,16 +716,38 @@ Tagify.prototype = {
     injectAtCaret( injectedNode, range ){
         range = range || this.state.selection?.range
 
-        if(typeof injectedNode === 'string')
+        if( typeof injectedNode === 'string' )
             injectedNode = document.createTextNode(injectedNode)
 
-        if( !range && injectedNode ) {
+        if( !injectedNode )
+            return this
+
+        const DOCUMENT_FRAGMENT_NODE = 11
+        const insertedNodes = injectedNode.nodeType === DOCUMENT_FRAGMENT_NODE
+            ? Array.prototype.slice.call(injectedNode.childNodes)
+            : [injectedNode]
+
+        if( !insertedNodes.length )
+            return this
+
+        if( !range ){
             this.appendMixTags(injectedNode)
-            return this;
+            return this
         }
 
-        let node = injectAtCaret(injectedNode, range)
-        this.setRangeAtStartEnd(false, node)
+        const isValidInjectionPoint = this.DOM.scope.contains(range?.startContainer)
+
+        if( !isValidInjectionPoint )
+            return this
+
+        injectAtCaret(injectedNode, range)
+
+        const caretTarget = insertedNodes[insertedNodes.length - 1] || injectedNode
+
+        if( caretTarget?.parentNode )
+            placeCaretAfterNode(caretTarget)
+
+        this.setStateSelection()
 
         this.updateValueByDOMTags() // updates internal "this.value"
         this.update() // updates original input/textarea
@@ -876,6 +906,16 @@ Tagify.prototype = {
     },
 
     /**
+     * Tag element immediately before {@link Tagify#DOM.input} in the scope (sibling order).
+     * Used for Backspace and for ArrowLeft in {@link Tagify#repositionScopeInput} when the input may sit between tags.
+     * @returns {HTMLElement|undefined}
+     */
+    getTagElmBeforeInput(){
+        var prev = this.DOM.input && this.DOM.input.previousElementSibling;
+        return isNodeTag.call(this, prev) ? prev : undefined;
+    },
+
+    /**
      * Searches if any tag with a certain value already exis
      * @param  {String/Object} value [text value / tag data object]
      * @param  {Boolean} caseSensitive
@@ -1030,11 +1070,23 @@ Tagify.prototype = {
 
         this.settings.userInput = true;
         this.setContentEditable(!toggle)
+
+        // when readonly is toggled to false, re-bind all events and change back auto-modified settings
+        if( !toggle ) {
+            // first unbind all events
+            this.events.binding.call(this, true)
+            // re-bind all events
+            this.events.binding.call(this)
+
+            _s.dropdown.enabled = this.origSettings.dropdown.enabled;
+        }
     },
 
     setContentEditable(state){
-        this.DOM.input.contentEditable = state
-        this.DOM.input.tabIndex = !!state ? 0 : -1;
+        this.DOM.scope.querySelectorAll("[data-can-editable]").forEach(elm => {
+            elm.contentEditable = state
+            elm.tabIndex = !!state ? 0 : -1;
+        })
     },
 
     setDisabled( isDisabled ){
@@ -1139,8 +1191,17 @@ Tagify.prototype = {
      * https://stackoverflow.com/a/57598892/104380
      * @param {String} s
      */
-    parseMixTags( s ){
+    /**
+     * Parses interpolated text (e.g., "text [[{"value":"tag"}]] more text") into tags
+     * @param {String} s - Text with interpolated tags
+     * @param {Object} [options] - Optional settings
+     * @param {Boolean} [options.skipDOM=false] - If true, returns a DocumentFragment instead of updating DOM
+     * @returns {String|DocumentFragment} - HTML string (default) or DocumentFragment (if skipDOM=true)
+     */
+    parseMixTags( s, options ){
         var {mixTagsInterpolator, duplicates, transformTag, enforceWhitelist, maxTags, tagTextProp} = this.settings,
+            skipDOM = options?.skipDOM,
+            fragment = skipDOM ? document.createDocumentFragment() : null,
             tagsDataSet = [];
 
         s = s.split(mixTagsInterpolator[0]).map((s1, i) => {
@@ -1150,6 +1211,12 @@ Tagify.prototype = {
                 textProp,
                 tagData,
                 tagElm;
+
+            // For fragment mode: handle text before first tag
+            if( skipDOM && i == 0 && s1 ){
+                fragment.appendChild(document.createTextNode(s1))
+                return ''
+            }
 
             try{
                 // skip numbers and go straight to the "catch" statement
@@ -1175,15 +1242,38 @@ Tagify.prototype = {
                 tagsDataSet.push( tagData )
                 tagElm.classList.add(this.settings.classNames.tagNoAnimation)
 
-                s2[0] = tagElm.outerHTML //+ "&#8288;"  // put a zero-space at the end so the caret won't jump back to the start (when the last input's child element is a tag)
-                this.value.push(tagData)
+                if( skipDOM ){
+                    fragment.appendChild(tagElm)
+                    // Add text after tag
+                    if( s2[1] ){
+                        fragment.appendChild(document.createTextNode(s2[1]))
+                    }
+                    return ''
+                }
+                else {
+                    s2[0] = tagElm.outerHTML //+ "&#8288;"  // put a zero-space at the end so the caret won't jump back to the start (when the last input's child element is a tag)
+                    this.value.push(tagData)
+                }
             }
-            else if(s1)
+            else if(s1){
+                if( skipDOM ){
+                    // Invalid tag - add back the interpolator and content as text
+                    fragment.appendChild(document.createTextNode(mixTagsInterpolator[0] + s1))
+                    return ''
+                }
                 return i ? mixTagsInterpolator[0] + s1 : s1
+            }
 
             return s2.join('')
         }).join('')
 
+        // Fragment mode: return the fragment with tags data attached
+        if( skipDOM ){
+            fragment.__tagifyTagsData = tagsDataSet
+            return fragment
+        }
+
+        // DOM mode: update the input element
         this.DOM.input.innerHTML = s
         this.DOM.input.appendChild(document.createTextNode(''))
         this.DOM.input.normalize()
@@ -1195,6 +1285,126 @@ Tagify.prototype = {
 
         fixCaretBetweenTags(tagNodes, this.state.hasFocus)
         return s
+    },
+
+    /**
+     * Converts pasted text in mix-mode into tags by detecting pattern-prefixed text
+     * that matches items in the whitelist
+     * @param {String} text - The pasted text to process
+     * @returns {String} - Text with matched items wrapped in mixTagsInterpolator
+     */
+    convertPastedTextToMixTags( text ){
+        const { pattern, whitelist, mixTagsInterpolator, mixTagsAllowedAfter, tagTextProp } = this.settings
+
+        if( !pattern || !whitelist?.length )
+            return text
+
+        // Extract all possible prefix patterns (e.g., [@, #] from /@|#/)
+        const prefixPatterns = pattern.source ? pattern.source.split('|') : [pattern]
+
+        // Build a mapping of prefix -> whitelist items
+        const prefixWhitelistMap = {}
+
+        prefixPatterns.forEach(prefix => {
+            // Normalize prefix (remove escape chars if any)
+            const normalizedPrefix = prefix.replace(/\\/g, '')
+            prefixWhitelistMap[normalizedPrefix] = whitelist.map(item => {
+                // Get the text to match against - use tagTextProp for objects, or the string itself
+                let textValue
+                if( typeof item === 'string' ) {
+                    textValue = item
+                } else {
+                    // For objects, use tagTextProp (e.g., 'text' or 'value')
+                    textValue = item[tagTextProp] || item.value
+                }
+
+                // Convert to string (in case value is a number or other type)
+                textValue = String(textValue)
+
+                return {
+                    originalItem: item,
+                    value: textValue,
+                    searchValue: textValue.toLowerCase()
+                }
+            })
+            // Sort by length (longest first) for greedy matching
+            .sort((a, b) => b.value.length - a.value.length)
+        })
+
+        // Find all pattern prefix positions
+        const patternRegex = new RegExp(pattern.source, 'g')
+        const replacements = [] // Store replacements to apply in reverse order
+        let match
+
+        while ((match = patternRegex.exec(text)) !== null) {
+            const prefix = match[0]
+            const startIndex = match.index
+            const afterPrefixIndex = startIndex + prefix.length
+
+            // Get text after the prefix
+            const textAfterPrefix = text.slice(afterPrefixIndex)
+
+            // Try to match whitelist items (longest first)
+            const whitelistItems = prefixWhitelistMap[prefix]
+            if( !whitelistItems ) continue
+
+            let matchedItem = null
+            let matchedLength = 0
+
+            // Try each whitelist item starting with longest
+            for( const item of whitelistItems ){
+                const itemValue = item.value
+                const itemLength = itemValue.length
+
+                // Extract the same length from text after prefix (case-insensitive comparison)
+                const textSegment = textAfterPrefix.slice(0, itemLength)
+
+                if( textSegment.toLowerCase() === item.searchValue ){
+                    // Check if this match ends at a valid boundary or end of text
+                    const charAfterMatch = textAfterPrefix[itemLength]
+                    const isValidBoundary = !charAfterMatch || // end of string
+                                           mixTagsAllowedAfter.test(charAfterMatch) // or boundary char
+
+                    if( isValidBoundary ){
+                        matchedItem = item
+                        matchedLength = itemLength
+                        break // Found longest match
+                    }
+                }
+            }
+
+            if( matchedItem ){
+                // Build tag data: full whitelist object + prefix
+                const tagData = typeof matchedItem.originalItem === 'string'
+                    ? { value: matchedItem.value, prefix }
+                    : { ...matchedItem.originalItem, prefix }
+
+                // Validate the tag
+                const isValid = this.validateTag(tagData)
+
+                if( isValid === true ){
+                    // Wrap with interpolator
+                    const replacement = `${mixTagsInterpolator[0]}${JSON.stringify(tagData)}${mixTagsInterpolator[1]}`
+
+                    replacements.push({
+                        start: startIndex,
+                        end: afterPrefixIndex + matchedLength,
+                        replacement
+                    })
+
+                    // Skip ahead past this match to avoid re-processing
+                    patternRegex.lastIndex = afterPrefixIndex + matchedLength
+                }
+            }
+        }
+
+        // Apply replacements in reverse order to maintain indices
+        let result = text
+        replacements.reverse().forEach(({ start, end, replacement }) => {
+            result = result.slice(0, start) + replacement + result.slice(end)
+        })
+
+        return result
     },
 
     /**
@@ -1449,39 +1659,61 @@ Tagify.prototype = {
             return this.prefixedTextToTag(tagsData[0])
         }
 
-        var frag = document.createDocumentFragment()
+        var frag = document.createDocumentFragment();
+        var addedTags = [];
 
         tagsData.forEach(tagData => {
             const newTagNode = this.prepareNewTagNode(tagData)
             frag.appendChild(newTagNode.tagElm)
             this.insertAfterTag(newTagNode.tagElm)
             this.postProcessNewTagNode(newTagNode.tagElm, newTagNode.tagData)
+            addedTags.push({tagElm: newTagNode.tagElm, tagData: newTagNode.tagData})
         })
 
-        this.appendMixTags(frag)
+        this.appendMixTags(frag, addedTags)
 
         return frag.children
     },
 
-    appendMixTags( node ) {
-        var selection = !!this.state.selection;
+    appendMixTags( node, addedTags ) {
+        const DOCUMENT_FRAGMENT_NODE = 11
+        const savedRange = this.state.selection?.range
+        const hasSavedSelection = !!savedRange && this.DOM.scope.contains(savedRange.startContainer)
+        const insertedNodes = node
+            ? (node.nodeType === DOCUMENT_FRAGMENT_NODE ? Array.prototype.slice.call(node.childNodes) : [node])
+            : []
 
-        // if "selection" exists, assumes intention of inecting the new tag at the last
-        // saved location of the caret inside "this.DOM.input"
-        if( selection ){
+        if( hasSavedSelection ){
             this.injectAtCaret(node)
         }
-        // else, create a range and inject the new tag as the last child of "this.DOM.input"
         else{
             this.DOM.input.focus()
-            selection = this.setStateSelection()
-            selection.range.setStart(this.DOM.input, selection.range.endOffset)
-            selection.range.setEnd(this.DOM.input, selection.range.endOffset)
+            const selection = this.setStateSelection()
+
+            if( selection?.range ){
+                selection.range.setStart(this.DOM.input, selection.range.endOffset)
+                selection.range.setEnd(this.DOM.input, selection.range.endOffset)
+            }
+
             this.DOM.input.appendChild(node)
 
             this.updateValueByDOMTags() // updates internal "this.value"
             this.update() // updates original input/textarea
+
+            const caretTarget = insertedNodes[insertedNodes.length - 1]
+
+            if( caretTarget?.parentNode )
+                placeCaretAfterNode(caretTarget)
+
+            this.setStateSelection()
         }
+
+        const tagsPayload = addedTags?.length
+            ? addedTags
+            : insertedNodes.filter(node => node.nodeType === 1)
+
+        if( tagsPayload?.length )
+            this.trigger('add', {tags: tagsPayload})
     },
 
     /**
@@ -1521,6 +1753,8 @@ Tagify.prototype = {
 
         this.postProcessNewTagNode(tagElm, newTag.tagData)
 
+        this.trigger('add', {tag: newTag, data:tagData})
+
         return tagElm
     },
 
@@ -1538,6 +1772,68 @@ Tagify.prototype = {
     },
 
     /**
+     * Moves the contenteditable input among tag siblings (when `allowCaretBetweenTags`), or places it immediately
+     * after the last tag (`reset`). No-op in `mix` mode, wrong parent, `reset` with no tags or input already after
+     * last tag, or when `left`/`right` but `allowCaretBetweenTags` is off.
+     * @param {'left'|'right'|'ArrowLeft'|'ArrowRight'|'reset'} direction
+     * @param {{focus?: boolean}} [options] - Whether to call `focus()` on the input after a successful move. Defaults to `true` for `left`/`right`, `false` for `reset` (e.g. blur should not steal focus back).
+     * @returns {boolean} `true` if the input’s position in the DOM changed
+     */
+    repositionScopeInput(direction, options = {}){
+        var input = this.DOM.input,
+            scope = this.DOM.scope,
+            _s = this.settings,
+            parent = input && input.parentNode,
+            isReset = direction === 'reset',
+            focus = options.focus !== undefined ? options.focus : !isReset;
+
+        // mix-mode layout is not “tags + input siblings”; moving the input would corrupt the DOM
+        if( _s.mode == 'mix' || this.state.dropdown.visible )
+            return false;
+
+        if( !input || !scope || parent != scope )
+            return false;
+
+        if( isReset ){
+            var tagElms = this.getTagElms(),
+                lastTag = tagElms[tagElms.length - 1];
+
+            if( !lastTag )
+                return false;
+
+            if( lastTag.nextElementSibling === input )
+                return false;
+
+            lastTag.after(input);
+            focus && input.focus();
+            return true;
+        }
+
+        if( !_s.allowCaretBetweenTags )
+            return false;
+
+        if( direction === 'left' || direction === 'ArrowLeft' ){
+            var tagBefore = this.getTagElmBeforeInput();
+            if( !tagBefore )
+                return false;
+            scope.insertBefore(input, tagBefore);
+            focus && input.focus();
+            return true;
+        }
+
+        if( direction === 'right' || direction === 'ArrowRight' ){
+            var nextSibling = input.nextElementSibling;
+            if( !isNodeTag.call(this, nextSibling) )
+                return false;
+            nextSibling.after(input);
+            focus && input.focus();
+            return true;
+        }
+
+        return false;
+    },
+
+    /**
      * creates a DOM tag element and injects it into the component (this.DOM.scope)
      * @param  {Object}  tagData [text value & properties for the created tag]
      * @param  {Object}  extraData [properties which are for the HTML template only]
@@ -1547,7 +1843,12 @@ Tagify.prototype = {
         tagData.__tagId = getUID()
 
         var tagElm,
-            templateData = extend({}, tagData, { value:escapeHTML(tagData.value+""), ...extraData });
+            templateData = extend({}, tagData, {
+                [this.settings.tagTextProp]: escapeHTML((tagData[this.settings.tagTextProp] || tagData.value) + ""),
+                title: escapeHTML((tagData.title || tagData.value) + ""),
+                value: escapeHTML(tagData.value + ""),
+                ...extraData
+            });
 
         // if( this.settings.readonly )
         //     tagData.readonly = true
@@ -1662,7 +1963,6 @@ Tagify.prototype = {
 
                     if( !silent ){
                         // this.removeValueById(tagData.__uid)
-                        this.trigger('remove', { tag:tag.node, index:tag.idx, data:tag.data })
                         this.dropdown.refilter()
                         this.dropdown.position()
                         this.DOM.input.normalize() // best-practice when in mix-mode (safe to do always anyways)
@@ -1674,9 +1974,11 @@ Tagify.prototype = {
                         // below code is unfinished. it should iterate all currently invalid edited tags, which their edits have not
                         // changed the value yet, and should re-trigger the check, but since nothing has changed, it does not work...
                         // this.getTagElms(_s.classNames.tagEditing).forEach( this.events.callbacks.onEditTagBlur.bind )
+
+                            this.trigger('remove', { tag:tag.node, index:tag.idx, data:tag.data })
                     }
                     else if( _s.keepInvalidTags )
-                        this.trigger('remove', { tag:tag.node, index:tag.idx })
+                            this.trigger('remove', { tag:tag.node, index:tag.idx })
                 }
 
                 function animation( tag ){
@@ -1688,11 +1990,6 @@ Tagify.prototype = {
                     setTimeout(removeNode.bind(this), tranDuration, tag)
                 }
 
-                if( tranDuration && tranDuration > 10 && tagsToRemove.length == 1 )
-                    animation.call(this, tagsToRemove[0])
-                else
-                    tagsToRemove.forEach(removeNode.bind(this))
-
                 // update state regardless of animation
                 if( !silent ){
                     this.removeTagsFromValue(tagsToRemove.map(tag => tag.node))
@@ -1701,6 +1998,13 @@ Tagify.prototype = {
                     if( _s.mode == 'select' && _s.userInput )
                         this.setContentEditable(true);
                 }
+
+                // "removeNode" should be called AFTER "removeTagsFromValue" has been called,
+                // so the "remove" event is triggered after the tag is removed from the DOM
+                if( tranDuration && tranDuration > 10 && tagsToRemove.length == 1 )
+                    animation.call(this, tagsToRemove[0])
+                else
+                    tagsToRemove.forEach(removeNode.bind(this))
             })
             .catch(reason => {})
     },
@@ -1748,9 +2052,14 @@ Tagify.prototype = {
             this.settings.userInput && this.setContentEditable(true)
         }
 
+        const updateCallback = this.state.blockChangeEvent ? undefined : () => {
+            !this.state.blockChangeEvent && this.trigger('remove', {})
+        }
+
         // technically for now only "withoutChangeEvent" exists in the opts.
         // if more properties will be added later, only pass what's needed to "update"
-        this.update(opts)
+        this.update(opts, updateCallback)
+
     },
 
     postUpdate(){
@@ -1780,29 +2089,31 @@ Tagify.prototype = {
         if( !this.settings.mixMode.integrated ){
             inputElm.value = v
             inputElm.tagifyValue = inputElm.value // must set to "inputElm.value" and not again to "inputValue" because for some reason the browser changes the string afterwards a bit.
-            this.setPersistedData(v, 'value')
         }
     },
 
     /**
-     * update the origianl (hidden) input field's value
+     * update the origianl (hidden) input field's value.
+     * uses a debounced timeout to prevent multiple rapid updates
      * see - https://stackoverflow.com/q/50957841/104380
      */
-    update( args ){
-        const UPDATE_DELAY = 100
+    update( args, cb ){
         clearTimeout(this.debouncedUpdateTimeout)
         this.debouncedUpdateTimeout = setTimeout(reallyUpdate.bind(this), UPDATE_DELAY)
         this.events.bindOriginaInputListener.call(this, UPDATE_DELAY)
 
-        function reallyUpdate() {
-            var inputValue = this.getInputValue();
+        var inputValue = this.getInputValue();
+        this.setOriginalInputValue(inputValue)
 
-            this.setOriginalInputValue(inputValue)
+        function reallyUpdate() {
+            this.setPersistedData(inputValue, 'value')
 
             if( (!this.settings.onChangeAfterBlur || !(args||{}).withoutChangeEvent) && !this.state.blockChangeEvent )
                 this.triggerChangeEvent()
 
             this.postUpdate()
+
+            cb?.()
         }
     },
 

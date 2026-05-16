@@ -26,10 +26,10 @@ export type TextLayerBuilderOptions = {
  * contain text that matches the PDF text they are overlaying.
  */
 export class TextLayerBuilder {
-    static "__#67@#textLayers": Map<any, any>;
-    static "__#67@#selectionChangeAbortController": null;
-    static "__#67@#removeGlobalSelectionListener"(textLayerDiv: any): void;
-    static "__#67@#enableGlobalSelectionListener"(): void;
+    static "__#75@#textLayers": Map<any, any>;
+    static "__#75@#selectionChangeAbortController": null;
+    static "__#75@#removeGlobalSelectionListener"(textLayerDiv: any): void;
+    static "__#75@#enableGlobalSelectionListener"(): void;
     constructor({ pdfPage, highlighter, accessibilityManager, enablePermissions, onAppend, }: {
         pdfPage: any;
         highlighter?: null | undefined;
@@ -46,7 +46,7 @@ export class TextLayerBuilder {
      * @param {PageViewport} viewport
      * @param {Object} [textContentParams]
      */
-    render(viewport: PageViewport, textContentParams?: Object | undefined): Promise<void>;
+    render(viewport: PageViewport, textContentParams?: Object): Promise<void>;
     hide(): void;
     show(): void;
     /**

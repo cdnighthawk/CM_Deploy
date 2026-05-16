@@ -10,7 +10,15 @@ export default class AxesUtils {
   }
 
   // Based on the formatter function, get the label text and position
-  getLabel(labels, timescaleLabels, x, i, drawnLabels = [], fontSize = '12px') {
+  getLabel(
+    labels,
+    timescaleLabels,
+    x,
+    i,
+    drawnLabels = [],
+    fontSize = '12px',
+    isLeafGroup = true
+  ) {
     const w = this.w
     let rawLabel = typeof labels[i] === 'undefined' ? '' : labels[i]
     let label = rawLabel
@@ -22,18 +30,21 @@ export default class AxesUtils {
 
     let xFormat = new Formatters(this.ctx)
     let timestamp = rawLabel
-    label = xFormat.xLabelFormat(xlbFormatter, rawLabel, timestamp, {
-      i,
-      dateFormatter: new DateTime(this.ctx).formatDate,
-      w
-    })
 
-    if (customFormatter !== undefined) {
-      label = customFormatter(rawLabel, labels[i], {
+    if (isLeafGroup) {
+      label = xFormat.xLabelFormat(xlbFormatter, rawLabel, timestamp, {
         i,
         dateFormatter: new DateTime(this.ctx).formatDate,
-        w
+        w,
       })
+
+      if (customFormatter !== undefined) {
+        label = customFormatter(rawLabel, labels[i], {
+          i,
+          dateFormatter: new DateTime(this.ctx).formatDate,
+          w,
+        })
+      }
     }
 
     const determineHighestUnit = (unit) => {
@@ -68,7 +79,7 @@ export default class AxesUtils {
 
     let graphics = new Graphics(this.ctx)
     let textRect = {}
-    if (w.globals.rotateXLabels) {
+    if (w.globals.rotateXLabels && isLeafGroup) {
       textRect = graphics.getTextRects(
         label,
         parseInt(fontSize, 10),
@@ -85,9 +96,7 @@ export default class AxesUtils {
 
     if (
       !Array.isArray(label) &&
-      (label.indexOf('NaN') === 0 ||
-        label.toLowerCase().indexOf('invalid') === 0 ||
-        label.toLowerCase().indexOf('infinity') >= 0 ||
+      (String(label) === 'NaN' ||
         (drawnLabels.indexOf(label) >= 0 && allowDuplicatesInTimeScale))
     ) {
       label = ''
@@ -97,7 +106,7 @@ export default class AxesUtils {
       x,
       text: label,
       textRect,
-      isBold
+      isBold,
     }
   }
 
@@ -166,17 +175,47 @@ export default class AxesUtils {
     }
     return labels
   }
+  
+  yAxisAllSeriesCollapsed(index) {
+    const gl = this.w.globals
+
+    return !gl.seriesYAxisMap[index].some((si) => {
+      return gl.collapsedSeriesIndices.indexOf(si) === -1
+    })
+    
+  }
+  
+  // Method to translate annotation.yAxisIndex values from
+  // seriesName-as-a-string values to seriesName-as-an-array values (old style
+  // series mapping to new style).
+  translateYAxisIndex(index) {
+    const w = this.w
+    const gl = w.globals
+    const yaxis = w.config.yaxis
+    let newStyle =
+          gl.series.length > yaxis.length
+          || yaxis.some((a) => Array.isArray(a.seriesName))
+    if (newStyle) {
+      return index
+    } else {
+      return gl.seriesYAxisReverseMap[index]
+    }
+  }
 
   isYAxisHidden(index) {
     const w = this.w
-    const coreUtils = new CoreUtils(this.ctx)
+    const yaxis = w.config.yaxis[index]
 
-    return (
-      !w.config.yaxis[index].show ||
-      (!w.config.yaxis[index].showForNullSeries &&
-        coreUtils.isSeriesNull(index) &&
-        w.globals.collapsedSeriesIndices.indexOf(index) === -1)
-    )
+    if (!yaxis.show || this.yAxisAllSeriesCollapsed(index) 
+    ) {
+      return true
+    }
+    if (!yaxis.showForNullSeries) {
+      const seriesIndices = w.globals.seriesYAxisMap[index]
+      const coreUtils = new CoreUtils(this.ctx)
+      return seriesIndices.every((si) => coreUtils.isSeriesNull(si))
+    }
+    return false
   }
 
   // get the label color for y-axis
@@ -206,21 +245,17 @@ export default class AxesUtils {
     let graphics = new Graphics(this.ctx)
 
     // initial label position = 0;
-    let t = w.globals.translateY
+    let tY = w.globals.translateY + w.config.yaxis[realIndex].labels.offsetY
+    if (w.globals.isBarHorizontal) {
+      tY = 0
+    } else if (w.config.chart.type === 'heatmap') {
+      tY += labelsDivider / 2
+    }
 
     if (axisTicks.show && tickAmount > 0) {
       if (w.config.yaxis[realIndex].opposite === true) x = x + axisTicks.width
 
       for (let i = tickAmount; i >= 0; i--) {
-        let tY =
-          t + tickAmount / 10 + w.config.yaxis[realIndex].labels.offsetY - 1
-        if (w.globals.isBarHorizontal) {
-          tY = labelsDivider * i
-        }
-
-        if (w.config.chart.type === 'heatmap') {
-          tY = tY + labelsDivider / 2
-        }
         let elTick = graphics.drawLine(
           x + axisBorder.offsetX - axisTicks.width + axisTicks.offsetX,
           tY + axisTicks.offsetY,
@@ -229,7 +264,7 @@ export default class AxesUtils {
           axisTicks.color
         )
         elYaxis.add(elTick)
-        t = t + labelsDivider
+        tY += labelsDivider
       }
     }
   }

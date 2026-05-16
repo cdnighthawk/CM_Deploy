@@ -8,6 +8,7 @@ import Crosshairs from '../Crosshairs'
 import Grid from '../axes/Grid'
 import Graphics from '../Graphics'
 import Exports from '../Exports'
+import Fill from '../Fill.js'
 import Options from '../settings/Options'
 import Responsive from '../Responsive'
 import Series from '../Series'
@@ -30,9 +31,6 @@ import 'svg.draggable.js'
 import 'svg.select.js'
 import 'svg.resize.js'
 
-import '../../assets/apexcharts.css'
-import '../../utils/DetectElementResize'
-
 // global Apex object which user can use to override chart's defaults globally
 if (typeof window.Apex === 'undefined') {
   window.Apex = {}
@@ -50,6 +48,8 @@ export default class InitCtxVariables {
       'updateSeries',
       'appendData',
       'appendSeries',
+      'isSeriesHidden',
+      'highlightSeries',
       'toggleSeries',
       'showSeries',
       'hideSeries',
@@ -58,23 +58,26 @@ export default class InitCtxVariables {
       'zoomX',
       'toggleDataPointSelection',
       'dataURI',
+      'exportToCSV',
       'addXaxisAnnotation',
       'addYaxisAnnotation',
       'addPointAnnotation',
       'clearAnnotations',
       'removeAnnotation',
       'paper',
-      'destroy'
+      'destroy',
     ]
 
     this.ctx.eventList = [
       'click',
       'mousedown',
       'mousemove',
+      'mouseleave',
       'touchstart',
       'touchmove',
+      'touchleave',
       'mouseup',
-      'touchend'
+      'touchend',
     ]
 
     this.ctx.animations = new Animations(this.ctx)
@@ -88,6 +91,7 @@ export default class InitCtxVariables {
     this.ctx.crosshairs = new Crosshairs(this.ctx)
     this.ctx.events = new Events(this.ctx)
     this.ctx.exports = new Exports(this.ctx)
+    this.ctx.fill = new Fill(this.ctx)
     this.ctx.localization = new Localization(this.ctx)
     this.ctx.options = new Options()
     this.ctx.responsive = new Responsive(this.ctx)
@@ -97,6 +101,7 @@ export default class InitCtxVariables {
     this.ctx.titleSubtitle = new TitleSubtitle(this.ctx)
     this.ctx.legend = new Legend(this.ctx)
     this.ctx.toolbar = new Toolbar(this.ctx)
+    this.ctx.tooltip = new Tooltip(this.ctx)
     this.ctx.dimensions = new Dimensions(this.ctx)
     this.ctx.updateHelpers = new UpdateHelpers(this.ctx)
     this.ctx.zoomPanSelection = new ZoomPanSelection(this.ctx)

@@ -42,8 +42,9 @@ export default {
             action = bindUnbind ? 'addEventListener' : 'removeEventListener';
 
         // do not allow the main events to be bound more than once
-        if( this.state.mainEvents && bindUnbind )
+        if( (this.state.mainEvents && bindUnbind ) || _s.disabled || _s.readonly )
             return;
+
 
         // set the binding state of the main events, so they will not be bound more than once
         this.state.mainEvents = bindUnbind;
@@ -83,6 +84,10 @@ export default {
         }
 
         this.events.bindOriginaInputListener.call(this)
+
+        if( bindUnbind ) {
+            this.listeners.main = undefined
+        }
     },
 
     bindOriginaInputListener(delay) {
@@ -134,6 +139,10 @@ export default {
 
         for( e of this.listeners.global )
             e.target[action](e.type, e.cb, !!e.useCapture);
+
+        if( unbind ) {
+            this.listeners.global = undefined
+        }
     },
 
     unbindGlobal() {
@@ -148,7 +157,7 @@ export default {
             // when focusing within a tag which is in edit-mode
             var _s = this.settings,
                 nodeTag = isWithinNodeTag.call(this, e.relatedTarget),
-                targetIsTagNode = isNodeTag.call(this, e.relatedTarget),
+                targetIsTagNode = isNodeTag.call(this, e.target),
                 isTargetXBtn = e.target.classList.contains(_s.classNames.tagX),
                 isFocused = e.type == 'focusin',
                 lostFocus = e.type == 'focusout';
@@ -157,7 +166,7 @@ export default {
             // and not the X button or any other custom element thatmight be there
             // var tagTextNode = e.target?.closest(this.settings.classNames.tagTextSelector)
 
-            if(isTargetXBtn && _s.mode != 'mix') {
+            if(isTargetXBtn && _s.mode != 'mix' && _s.focusInputOnRemove) {
                 this.DOM.input.focus()
             }
 
@@ -179,6 +188,13 @@ export default {
                 shouldAddTags;
 
             if( lostFocus ){
+                // normalize input to end of scope; skip while focus moves into the portaled dropdown (avoid layout jump mid-selection)
+                if( _s.mode != 'mix' ){
+                    var focusWentToDropdown = e.relatedTarget && this.DOM.dropdown?.contains(e.relatedTarget);
+                    if( !focusWentToDropdown )
+                        this.repositionScopeInput('reset', { focus: false })
+                }
+
                 if( e.relatedTarget === this.DOM.scope ){
                     this.dropdown.hide()
                     this.DOM.input.focus()
@@ -223,15 +239,21 @@ export default {
             if( isFocused ){
                 if( !_s.focusable ) return;
 
+                // if( !targetIsTagNode && _s.mode != 'select' ){
+                //     this.DOM.input.focus()
+                // }
+
                 var dropdownCanBeShown = _s.dropdown.enabled === 0 && !this.state.dropdown.visible,
-                    condition2 = !targetIsTagNode || _s.mode === 'select',
                     tagText = this.DOM.scope.querySelector(this.settings.classNames.tagTextSelector)
 
                 this.trigger("focus", eventData)
                 //  e.target.classList.remove('placeholder');
-                if( dropdownCanBeShown && condition2 ){  // && _s.mode != "select"
+                if( dropdownCanBeShown && !targetIsTagNode ){  // && _s.mode != "select"
                     this.dropdown.show(this.value.length ? '' : undefined)
-                    this.setRangeAtStartEnd(false, tagText)
+
+                    if(_s.mode === 'select') {
+                        this.setRangeAtStartEnd(false, tagText)
+                    }
                 }
 
                 return
@@ -464,8 +486,16 @@ export default {
                                 break;
                             }
                             // currently commented to allow new lines in mixed-mode
-                            // case 'Enter' :
-                            //     // e.preventDefault(); // solves Chrome bug - http://stackoverflow.com/a/20398191/104380
+                            case 'Enter' : {
+                                e.preventDefault(); // solves Chrome bug - http://stackoverflow.com/a/20398191/104380
+
+                                if(this.state.tag) return; // assume a tag has just been added, so no need to create a new line
+                                // https://stackoverflow.com/a/72279112/104380
+                                let selection = window.getSelection();
+                                let range = selection.getRangeAt(0);
+                                range.insertNode(document.createElement('br'));
+                                selection.collapseToEnd();
+                            }
                         }
 
                         return true
@@ -474,19 +504,22 @@ export default {
                     var isManualDropdown = _s.dropdown.position == 'manual';
 
                     switch( e.key ){
-                        case 'Backspace' :
+                        case 'Backspace' : {
+                            var tagBefore = this.getTagElmBeforeInput();
+
                             if( _s.mode == 'select' && _s.enforceWhitelist && this.value.length)
-                                this.removeTags()
+                                tagBefore && this.removeTags(tagBefore)
 
                             else if( !this.state.dropdown.visible || _s.dropdown.position == 'manual' ){
                                 if( e.target.textContent == "" || s.charCodeAt(0) == 8203 ){  // 8203: ZERO WIDTH SPACE unicode
                                     if( _s.backspace === true )
-                                        this.removeTags()
+                                        tagBefore && this.removeTags(tagBefore)
                                     else if( _s.backspace == 'edit' )
-                                        setTimeout(this.editTag.bind(this), 0) // timeout reason: when edited tag gets focused and the caret is placed at the end, the last character gets deletec (because of backspace)
+                                        tagBefore && setTimeout(() => this.editTag(tagBefore), 0) // timeout reason: when edited tag gets focused and the caret is placed at the end, the last character gets deletec (because of backspace)
                                 }
                             }
                             break;
+                        }
 
                         case 'Esc' :
                         case 'Escape' :
@@ -501,28 +534,47 @@ export default {
                                 this.dropdown.show()
                             break;
 
+                        case 'ArrowLeft' : {
+                            if( this.repositionScopeInput('left') )
+                                e.preventDefault();
+                            break;
+                        }
+
                         case 'ArrowRight' : {
+                            if( this.repositionScopeInput('right') ){
+                                e.preventDefault();
+                                break;
+                            }
                             let tagData = this.state.inputSuggestion || this.state.ddItemData
                             if( tagData && _s.autoComplete.rightKey ){
                                 this.addTags([tagData], true)
                                 return;
                             }
-                            break
+                            break;
                         }
 
                         case 'Tab' : {
-                            return true;
+                            const shouldAddTag = _s.addTagOn.includes(e.key.toLowerCase());
+                            if(!shouldAddTag) {
+                                break;
+                            }
                         }
 
-                        case 'Enter' :
+                        case 'Enter' : {
                             // manual suggestion boxes are assumed to always be visible
                             if( this.state.dropdown.visible && !isManualDropdown ) return
+
+                            var thingToAdd = this.state.autoCompleteData || s;
+
+                            // if nothing to add and tab key was pressed, return true (must be before preventDefault)
+                            if(!thingToAdd && e.key === "Tab") return true
+
                             e.preventDefault(); // solves Chrome bug - http://stackoverflow.com/a/20398191/104380
                             // because the main "keydown" event is bound before the dropdown events, this will fire first and will not *yet*
                             // know if an option was just selected from the dropdown menu. If an option was selected,
                             // the dropdown events should handle adding the tag
 
-                            var thingToAdd = this.state.autoCompleteData || s;
+
 
                             setTimeout(()=>{
                                 if( (!this.state.dropdown.visible || isManualDropdown) && !this.state.actions.selectOption && _s.addTagOn.includes(e.key.toLowerCase()) ) {
@@ -530,6 +582,7 @@ export default {
                                     this.state.autoCompleteData = null
                                 }
                             })
+                        }
                     }
                 })
                 .catch(err => err)
@@ -744,13 +797,7 @@ export default {
                 isScope = e.target === this.DOM.scope,
                 timeDiffFocus = +new Date() - this.state.hasFocus;
 
-            if( isScope && _s.mode != 'select' ){
-                // if( !this.state.hasFocus )
-                    this.DOM.input.focus()
-                return
-            }
-
-            else if( e.target.classList.contains(_s.classNames.tagX) ){
+            if( e.target.classList.contains(_s.classNames.tagX) ){
                 this.removeTags( e.target.parentNode )
                 return
             }
@@ -812,22 +859,47 @@ export default {
                     if( result === undefined )
                         result = pastedText;
 
-                    if( result ){
-                        this.injectAtCaret(result, window.getSelection().getRangeAt(0))
+            if( result ){
+                if( this.settings.mode == 'mix' ){
+                    // Auto-convert pasted pattern-prefixed text to tags if pasteAsTags is enabled
+                    if( this.settings.pasteAsTags ){
+                        const interpolatedText = this.convertPastedTextToMixTags(result)
+                        const fragment = this.parseMixTags(interpolatedText, { skipDOM: true })
+                        const tagsData = fragment.__tagifyTagsData || []
 
-                        if( this.settings.mode == 'mix' ){
-                            this.events.callbacks.onMixTagsInput.call(this, e);
-                        }
+                        // Inject the fragment (contains text nodes + tag elements)
+                        this.injectAtCaret(fragment, window.getSelection().getRangeAt(0))
 
-                        else if( this.settings.pasteAsTags ){
-                            tagsElems = this.addTags(this.state.inputText + result, true)
-                        }
+                        // Update internal state with new tags
+                        // Note: duplicates are already filtered out by parseMixTags based on settings
+                        tagsData.forEach(tagData => this.value.push(tagData))
 
-                        else {
-                            this.state.inputText = result
-                            this.dropdown.show(result)
-                        }
+                        // Get the newly added tag elements and set their data
+                        const addedTags = this.getTagElms().slice(-tagsData.length)
+                        addedTags.forEach((elm, idx) => getSetTagData(elm, tagsData[idx]))
+
+                        this.update()
+                        fixCaretBetweenTags(addedTags)
                     }
+                    else {
+                        this.injectAtCaret(result, window.getSelection().getRangeAt(0))
+                    }
+
+                    this.events.callbacks.onMixTagsInput.call(this, e);
+                }
+
+                else {
+                    this.injectAtCaret(result, window.getSelection().getRangeAt(0))
+
+                    if( this.settings.pasteAsTags ){
+                        tagsElems = this.addTags(this.state.inputText + result, true)
+                    }
+                    else {
+                        this.state.inputText = result
+                        this.dropdown.show(result)
+                    }
+                }
+            }
 
                     this.trigger('paste', {event: e, pastedText, clipboardData, tagsElems})
                 })
@@ -1063,6 +1135,9 @@ export default {
          * @param {Object} m an object representing the observed DOM changes
          */
         onInputDOMChange(m){
+            // get the last child BEFORE processing mutations
+            var lastInputChild = this.DOM.input.lastChild;
+
             // iterate all DOM mutation
             m.forEach(record => {
                 // only the ADDED nodes
@@ -1128,7 +1203,7 @@ export default {
             // 1. after a single line, press ENTER once - should add only 1 BR
             // 2. presss ENTER right before a tag
             // 3. press enter within a text node before a tag
-            var lastInputChild = this.DOM.input.lastChild;
+
 
             if( lastInputChild && lastInputChild.nodeValue == '' )
                 lastInputChild.remove()

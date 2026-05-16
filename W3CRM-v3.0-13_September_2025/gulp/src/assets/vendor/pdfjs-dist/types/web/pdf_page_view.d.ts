@@ -110,9 +110,8 @@ export class PDFPageView implements IRenderableView {
     _container: HTMLDivElement | undefined;
     _annotationCanvasMap: any;
     annotationLayer: AnnotationLayerBuilder | null;
-    annotationEditorLayer: AnnotationEditorLayerBuilder | null;
+    annotationEditorLayer: any;
     textLayer: TextLayerBuilder | null;
-    zoomLayer: ParentNode | null;
     xfaLayer: XfaLayerBuilder | null;
     structTreeLayer: any;
     drawLayer: any;
@@ -121,18 +120,17 @@ export class PDFPageView implements IRenderableView {
     get renderingState(): number;
     setPdfPage(pdfPage: any): void;
     destroy(): void;
+    hasEditableAnnotations(): boolean;
     get _textHighlighter(): any;
-    /**
-     * @private
-     */
-    private _resetZoomLayer;
-    reset({ keepZoomLayer, keepAnnotationLayer, keepAnnotationEditorLayer, keepXfaLayer, keepTextLayer, }?: {
-        keepZoomLayer?: boolean | undefined;
+    canvas: HTMLCanvasElement | null | undefined;
+    reset({ keepAnnotationLayer, keepAnnotationEditorLayer, keepXfaLayer, keepTextLayer, keepCanvasWrapper, }?: {
         keepAnnotationLayer?: boolean | undefined;
         keepAnnotationEditorLayer?: boolean | undefined;
         keepXfaLayer?: boolean | undefined;
         keepTextLayer?: boolean | undefined;
+        keepCanvasWrapper?: boolean | undefined;
     }): void;
+    toggleEditingMode(isEditing: any): void;
     /**
      * @typedef {Object} PDFPageViewUpdateParameters
      * @property {number} [scale] The new scale, if specified.
@@ -172,8 +170,7 @@ export class PDFPageView implements IRenderableView {
         keepTextLayer?: boolean | undefined;
         cancelExtraDelay?: number | undefined;
     }): void;
-    cssTransform({ target, redrawAnnotationLayer, redrawAnnotationEditorLayer, redrawXfaLayer, redrawTextLayer, hideTextLayer, }: {
-        target: any;
+    cssTransform({ redrawAnnotationLayer, redrawAnnotationEditorLayer, redrawXfaLayer, redrawTextLayer, hideTextLayer, }: {
         redrawAnnotationLayer?: boolean | undefined;
         redrawAnnotationEditorLayer?: boolean | undefined;
         redrawXfaLayer?: boolean | undefined;
@@ -184,7 +181,6 @@ export class PDFPageView implements IRenderableView {
     get height(): number;
     getPagePoint(x: any, y: any): any[];
     draw(): Promise<any>;
-    canvas: HTMLCanvasElement | undefined;
     outputScale: OutputScale | undefined;
     /**
      * @param {string|null} label
@@ -199,7 +195,6 @@ export class PDFPageView implements IRenderableView {
 }
 import { GenericL10n } from "./genericl10n";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
-import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
-import { OutputScale } from "./ui_utils.js";
+import { OutputScale } from "../src/pdf";

@@ -209,5 +209,5 @@ declare const extend: (plugin: any, option?: any) => {
         ordinal?: (n: number) => any;
     };
 };
-declare const version = "6.9.4";
+declare const version = "6.10.3";
 export { TempusDominus, extend, loadLocale, locale, Namespace, DefaultOptions, DateTime, Unit, version, DateTimeFormatOptions, Options, DefaultEnLocalization, };

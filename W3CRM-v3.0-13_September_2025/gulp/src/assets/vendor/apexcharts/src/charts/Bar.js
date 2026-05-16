@@ -4,6 +4,7 @@ import CoreUtils from '../modules/CoreUtils'
 import Utils from '../utils/Utils'
 import Filters from '../modules/Filters'
 import Graphics from '../modules/Graphics'
+import Series from '../modules/Series'
 
 /**
  * ApexCharts Bar Class responsible for drawing both Columns and Bars.
@@ -22,15 +23,18 @@ class Bar {
     this.strokeWidth = w.config.stroke.width
     this.isNullValue = false
 
-    this.isTimelineBar =
-      w.config.xaxis.type === 'datetime' &&
-      w.globals.seriesRangeBarTimeline.length
+    this.isRangeBar = w.globals.seriesRange.length && this.isHorizontal
 
+    this.isVerticalGroupedRangeBar =
+      !w.globals.isBarHorizontal &&
+      w.globals.seriesRange.length &&
+      w.config.plotOptions.bar.rangeBarGroupRows
+
+    this.isFunnel = this.barOptions.isFunnel
     this.xyRatios = xyRatios
 
     if (this.xyRatios !== null) {
       this.xRatio = xyRatios.xRatio
-      this.initialXRatio = xyRatios.initialXRatio
       this.yRatio = xyRatios.yRatio
       this.invertedXRatio = xyRatios.invertedXRatio
       this.invertedYRatio = xyRatios.invertedYRatio
@@ -38,7 +42,28 @@ class Bar {
       this.baseLineInvertedY = xyRatios.baseLineInvertedY
     }
     this.yaxisIndex = 0
+    this.translationsIndex = 0
     this.seriesLen = 0
+    this.pathArr = []
+
+    const ser = new Series(this.ctx)
+    this.lastActiveBarSerieIndex = ser.getActiveConfigSeriesIndex('desc', [
+      'bar',
+      'column',
+    ])
+
+    this.columnGroupIndices = []
+    const barSeriesIndices = ser.getBarSeriesIndices()
+    const coreUtils = new CoreUtils(this.ctx)
+    this.stackedSeriesTotals = coreUtils.getStackedSeriesTotals(
+      this.w.config.series
+        .map((s, i) => {
+          return barSeriesIndices.indexOf(i) === -1 ? i : -1
+        })
+        .filter((s) => {
+          return s !== -1
+        })
+    )
 
     this.barHelpers = new BarHelpers(this)
   }
@@ -61,13 +86,13 @@ class Bar {
     this.barHelpers.initVariables(series)
 
     let ret = graphics.group({
-      class: 'apexcharts-bar-series apexcharts-plot-series'
+      class: 'apexcharts-bar-series apexcharts-plot-series',
     })
 
     if (w.config.dataLabels.enabled) {
       if (this.totalItems > this.barOptions.dataLabels.maxItems) {
         console.warn(
-          'WARNING: DataLabels are enabled but there are too many to display. This may cause performance issue when rendering.'
+          'WARNING: DataLabels are enabled but there are too many to display. This may cause performance issue when rendering - ApexCharts'
         )
       }
     }
@@ -85,12 +110,14 @@ class Bar {
 
       let realIndex = w.globals.comboCharts ? seriesIndex[i] : i
 
+      let { columnGroupIndex } = this.barHelpers.getGroupIndex(realIndex)
+
       // el to which series will be drawn
       let elSeries = graphics.group({
         class: `apexcharts-series`,
         rel: i + 1,
         seriesName: Utils.escapeString(w.globals.seriesNames[realIndex]),
-        'data:realIndex': realIndex
+        'data:realIndex': realIndex,
       })
 
       this.ctx.series.addCollapsedClassToSeries(elSeries, realIndex)
@@ -103,8 +130,10 @@ class Bar {
       let barWidth = 0
 
       if (this.yRatio.length > 1) {
-        this.yaxisIndex = realIndex
+        this.yaxisIndex = w.globals.seriesYAxisReverseMap[realIndex]
+        this.translationsIndex = realIndex
       }
+      let translationsIndex = this.translationsIndex
 
       this.isReversed =
         w.config.yaxis[this.yaxisIndex] &&
@@ -129,10 +158,28 @@ class Bar {
       // eldatalabels
       let elDataLabelsWrap = graphics.group({
         class: 'apexcharts-datalabels',
-        'data:realIndex': realIndex
+        'data:realIndex': realIndex,
       })
 
-      for (let j = 0; j < w.globals.dataPoints; j++) {
+      w.globals.delayedElements.push({
+        el: elDataLabelsWrap.node,
+      })
+      elDataLabelsWrap.node.classList.add('apexcharts-element-hidden')
+
+      let elGoalsMarkers = graphics.group({
+        class: 'apexcharts-bar-goals-markers',
+      })
+
+      let elBarShadows = graphics.group({
+        class: 'apexcharts-bar-shadows',
+      })
+
+      w.globals.delayedElements.push({
+        el: elBarShadows.node,
+      })
+      elBarShadows.node.classList.add('apexcharts-element-hidden')
+
+      for (let j = 0; j < series[i].length; j++) {
         const strokeWidth = this.barHelpers.getStrokeWidth(i, j, realIndex)
 
         let paths = null
@@ -141,19 +188,20 @@ class Bar {
             i,
             j,
             realIndex,
-            bc
+            translationsIndex,
+            bc,
           },
           x,
           y,
           strokeWidth,
-          elSeries
+          elSeries,
         }
         if (this.isHorizontal) {
           paths = this.drawBarPaths({
             ...pathsParams,
             barHeight,
             zeroW,
-            yDivision
+            yDivision,
           })
           barWidth = this.series[i][j] / this.invertedYRatio
         } else {
@@ -161,9 +209,45 @@ class Bar {
             ...pathsParams,
             xDivision,
             barWidth,
-            zeroH
+            zeroH,
           })
-          barHeight = this.series[i][j] / this.yRatio[this.yaxisIndex]
+          barHeight = this.series[i][j] / this.yRatio[translationsIndex]
+        }
+
+        let pathFill = this.barHelpers.getPathFillColor(series, i, j, realIndex)
+
+        if (
+          this.isFunnel &&
+          this.barOptions.isFunnel3d &&
+          this.pathArr.length &&
+          j > 0
+        ) {
+          const barShadow = this.barHelpers.drawBarShadow({
+            color:
+              typeof pathFill === 'string' && pathFill?.indexOf('url') === -1
+                ? pathFill
+                : Utils.hexToRgba(w.globals.colors[i]),
+            prevPaths: this.pathArr[this.pathArr.length - 1],
+            currPaths: paths,
+          })
+
+          if (barShadow) {
+            elBarShadows.add(barShadow)
+          }
+        }
+        this.pathArr.push(paths)
+
+        const barGoalLine = this.barHelpers.drawGoalLine({
+          barXPosition: paths.barXPosition,
+          barYPosition: paths.barYPosition,
+          goalX: paths.goalX,
+          goalY: paths.goalY,
+          barHeight,
+          barWidth,
+        })
+
+        if (barGoalLine) {
+          elGoalsMarkers.add(barGoalLine)
         }
 
         y = paths.y
@@ -176,13 +260,12 @@ class Bar {
 
         yArrj.push(y)
 
-        let pathFill = this.barHelpers.getPathFillColor(series, i, j, realIndex)
-
         this.renderSeries({
           realIndex,
           pathFill,
           j,
           i,
+          columnGroupIndex,
           pathFrom: paths.pathFrom,
           pathTo: paths.pathTo,
           strokeWidth,
@@ -190,11 +273,13 @@ class Bar {
           x,
           y,
           series,
-          barHeight,
-          barWidth,
+          barHeight: Math.abs(paths.barHeight ? paths.barHeight : barHeight),
+          barWidth: Math.abs(paths.barWidth ? paths.barWidth : barWidth),
           elDataLabelsWrap,
+          elGoalsMarkers,
+          elBarShadows,
           visibleSeries: this.visibleI,
-          type: 'bar'
+          type: 'bar',
         })
       }
 
@@ -214,30 +299,59 @@ class Bar {
     lineFill,
     j,
     i,
+    columnGroupIndex,
     pathFrom,
     pathTo,
     strokeWidth,
     elSeries,
-    x,
-    y,
-    y1,
-    y2,
+    x, // x pos
+    y, // y pos
+    y1, // absolute value
+    y2, // absolute value
     series,
     barHeight,
     barWidth,
+    barXPosition,
     barYPosition,
     elDataLabelsWrap,
+    elGoalsMarkers,
+    elBarShadows,
     visibleSeries,
-    type
+    type,
+    classes,
   }) {
     const w = this.w
     const graphics = new Graphics(this.ctx)
 
     if (!lineFill) {
+      // if user provided a function in colors, we need to eval here
+      // Note: the position of this function logic (ex. stroke: { colors: ["",function(){}] }) i.e array index 1 depicts the realIndex/seriesIndex.
+      function fetchColor(i) {
+        const exp = w.config.stroke.colors
+        let c
+        if (Array.isArray(exp) && exp.length > 0) {
+          c = exp[i]
+          if (!c) c = ''
+          if (typeof c === 'function') {
+            return c({
+              value: w.globals.series[i][j],
+              dataPointIndex: j,
+              w,
+            })
+          }
+        }
+        return c
+      }
+
+      const checkAvailableColor =
+        typeof w.globals.stroke.colors[realIndex] === 'function'
+          ? fetchColor(realIndex)
+          : w.globals.stroke.colors[realIndex]
+
       /* fix apexcharts#341 */
       lineFill = this.barOptions.distributed
         ? w.globals.stroke.colors[j]
-        : w.globals.stroke.colors[realIndex]
+        : checkAvailableColor
     }
 
     if (w.config.series[i].data[j] && w.config.series[i].data[j].strokeColor) {
@@ -266,10 +380,21 @@ class Bar {
       animationDelay: delay,
       initialSpeed: w.config.chart.animations.speed,
       dataChangeSpeed: w.config.chart.animations.dynamicAnimation.speed,
-      className: `apexcharts-${type}-area`
+      className: `apexcharts-${type}-area ${classes}`,
+      chartType: type,
     })
 
-    renderedPath.attr('clip-path', `url(#gridRectMask${w.globals.cuid})`)
+    renderedPath.attr('clip-path', `url(#gridRectBarMask${w.globals.cuid})`)
+
+    const forecast = w.config.forecastDataPoints
+    if (forecast.count > 0) {
+      if (j >= w.globals.dataPoints - forecast.count) {
+        renderedPath.node.setAttribute('stroke-dasharray', forecast.dashArray)
+        renderedPath.node.setAttribute('stroke-width', forecast.strokeWidth)
+        renderedPath.node.setAttribute('fill-opacity', forecast.fillOpacity)
+      }
+    }
+
     if (typeof y1 !== 'undefined' && typeof y2 !== 'undefined') {
       renderedPath.attr('data-range-y1', y1)
       renderedPath.attr('data-range-y2', y2)
@@ -280,7 +405,7 @@ class Bar {
     elSeries.add(renderedPath)
 
     let barDataLabels = new BarDataLabels(this)
-    let dataLabels = barDataLabels.handleBarDataLabels({
+    let dataLabelsObj = barDataLabels.handleBarDataLabels({
       x,
       y,
       y1,
@@ -289,17 +414,31 @@ class Bar {
       j,
       series,
       realIndex,
+      columnGroupIndex,
       barHeight,
       barWidth,
+      barXPosition,
       barYPosition,
       renderedPath,
-      visibleSeries
+      visibleSeries,
     })
-    if (dataLabels !== null) {
-      elDataLabelsWrap.add(dataLabels)
+    if (dataLabelsObj.dataLabels !== null) {
+      elDataLabelsWrap.add(dataLabelsObj.dataLabels)
+    }
+
+    if (dataLabelsObj.totalDataLabels) {
+      elDataLabelsWrap.add(dataLabelsObj.totalDataLabels)
     }
 
     elSeries.add(elDataLabelsWrap)
+
+    if (elGoalsMarkers) {
+      elSeries.add(elGoalsMarkers)
+    }
+
+    if (elBarShadows) {
+      elSeries.add(elBarShadows)
+    }
     return elSeries
   }
 
@@ -311,32 +450,50 @@ class Bar {
     x,
     y,
     yDivision,
-    elSeries
+    elSeries,
   }) {
     let w = this.w
 
     let i = indexes.i
     let j = indexes.j
+    let barYPosition
 
     if (w.globals.isXNumeric) {
       y =
         (w.globals.seriesX[i][j] - w.globals.minX) / this.invertedXRatio -
         barHeight
-    }
-
-    let barYPosition = y + barHeight * this.visibleI
-
-    if (
-      typeof this.series[i][j] === 'undefined' ||
-      this.series[i][j] === null
-    ) {
-      x = zeroW
+      barYPosition = y + barHeight * this.visibleI
     } else {
-      x =
-        zeroW +
-        this.series[i][j] / this.invertedYRatio -
-        (this.isReversed ? this.series[i][j] / this.invertedYRatio : 0) * 2
+      if (w.config.plotOptions.bar.hideZeroBarsWhenGrouped) {
+        let nonZeroColumns = 0
+        let zeroEncounters = 0
+        w.globals.seriesPercent.forEach((_s, _si) => {
+          if (_s[j]) {
+            nonZeroColumns++
+          }
+
+          if (_si < i && _s[j] === 0) {
+            zeroEncounters++
+          }
+        })
+
+        if (nonZeroColumns > 0) {
+          barHeight = (this.seriesLen * barHeight) / nonZeroColumns
+        }
+        barYPosition = y + barHeight * this.visibleI
+        barYPosition -= barHeight * zeroEncounters
+      } else {
+        barYPosition = y + barHeight * this.visibleI
+      }
     }
+
+    if (this.isFunnel) {
+      zeroW =
+        zeroW -
+        (this.barHelpers.getXForValue(this.series[i][j], zeroW) - zeroW) / 2
+    }
+
+    x = this.barHelpers.getXForValue(this.series[i][j], zeroW)
 
     const paths = this.barHelpers.getBarpaths({
       barYPosition,
@@ -344,11 +501,12 @@ class Bar {
       x1: zeroW,
       x2: x,
       strokeWidth,
+      isReversed: this.isReversed,
       series: this.series,
       realIndex: indexes.realIndex,
       i,
       j,
-      w
+      w,
     })
 
     if (!w.globals.isXNumeric) {
@@ -360,15 +518,18 @@ class Bar {
       i,
       y1: barYPosition - barHeight * this.visibleI,
       y2: barHeight * this.seriesLen,
-      elSeries
+      elSeries,
     })
 
     return {
       pathTo: paths.pathTo,
       pathFrom: paths.pathFrom,
+      x1: zeroW,
       x,
       y,
-      barYPosition
+      goalX: this.barHelpers.getGoalValues('x', zeroW, null, i, j),
+      barYPosition,
+      barHeight,
     }
   }
 
@@ -380,42 +541,46 @@ class Bar {
     barWidth,
     zeroH,
     strokeWidth,
-    elSeries
+    elSeries,
   }) {
     let w = this.w
 
     let realIndex = indexes.realIndex
+    let translationsIndex = indexes.translationsIndex
     let i = indexes.i
     let j = indexes.j
     let bc = indexes.bc
+    let barXPosition
 
     if (w.globals.isXNumeric) {
-      let sxI = realIndex
-      if (!w.globals.seriesX[realIndex].length) {
-        sxI = w.globals.maxValsInArrayIndex
-      }
-
-      x =
-        (w.globals.seriesX[sxI][j] - w.globals.minX) / this.xRatio -
-        (barWidth * this.seriesLen) / 2
-    }
-
-    let barXPosition = x + barWidth * this.visibleI
-
-    if (
-      typeof this.series[i][j] === 'undefined' ||
-      this.series[i][j] === null
-    ) {
-      y = zeroH
+      const xForNumericX = this.getBarXForNumericXAxis({
+        x,
+        j,
+        realIndex,
+        barWidth,
+      })
+      x = xForNumericX.x
+      barXPosition = xForNumericX.barXPosition
     } else {
-      y =
-        zeroH -
-        this.series[i][j] / this.yRatio[this.yaxisIndex] +
-        (this.isReversed
-          ? this.series[i][j] / this.yRatio[this.yaxisIndex]
-          : 0) *
-          2
+      if (w.config.plotOptions.bar.hideZeroBarsWhenGrouped) {
+        const { nonZeroColumns, zeroEncounters } =
+          this.barHelpers.getZeroValueEncounters({ i, j })
+
+        if (nonZeroColumns > 0) {
+          barWidth = (this.seriesLen * barWidth) / nonZeroColumns
+        }
+        barXPosition = x + barWidth * this.visibleI
+        barXPosition -= barWidth * zeroEncounters
+      } else {
+        barXPosition = x + barWidth * this.visibleI
+      }
     }
+
+    y = this.barHelpers.getYForValue(
+      this.series[i][j],
+      zeroH,
+      translationsIndex
+    )
 
     const paths = this.barHelpers.getColumnPaths({
       barXPosition,
@@ -423,11 +588,12 @@ class Bar {
       y1: zeroH,
       y2: y,
       strokeWidth,
+      isReversed: this.isReversed,
       series: this.series,
-      realIndex: indexes.realIndex,
+      realIndex: realIndex,
       i,
       j,
-      w
+      w,
     })
 
     if (!w.globals.isXNumeric) {
@@ -440,7 +606,7 @@ class Bar {
       i,
       x1: barXPosition - strokeWidth / 2 - barWidth * this.visibleI,
       x2: barWidth * this.seriesLen + strokeWidth / 2,
-      elSeries
+      elSeries,
     })
 
     return {
@@ -448,7 +614,34 @@ class Bar {
       pathFrom: paths.pathFrom,
       x,
       y,
-      barXPosition
+      goalY: this.barHelpers.getGoalValues(
+        'y',
+        null,
+        zeroH,
+        i,
+        j,
+        translationsIndex
+      ),
+      barXPosition,
+      barWidth,
+    }
+  }
+
+  getBarXForNumericXAxis({ x, barWidth, realIndex, j }) {
+    const w = this.w
+    let sxI = realIndex
+    if (!w.globals.seriesX[realIndex].length) {
+      sxI = w.globals.maxValsInArrayIndex
+    }
+    if (w.globals.seriesX[sxI][j]) {
+      x =
+        (w.globals.seriesX[sxI][j] - w.globals.minX) / this.xRatio -
+        (barWidth * this.seriesLen) / 2
+    }
+
+    return {
+      barXPosition: x + barWidth * this.visibleI,
+      x,
     }
   }
 

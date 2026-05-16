@@ -3,7 +3,7 @@
   "title": "bootstrap-select",
   "main": "dist/js/bootstrap-select.js",
   "description": "The jQuery plugin that brings select elements into the 21st century with intuitive multiselection, searching, and much more. Now with Bootstrap 4 support.",
-  "version": "1.14.0-beta2",
+  "version": "1.14.0-beta3",
   "homepage": "https://developer.snapappointments.com/bootstrap-select",
   "author": {
     "name": "Casey Holzer",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^9.7.6",
+    "cypress": "^9.5.0",
     "grunt": "^1.1.0",
     "grunt-banner": "^0.6.0",
     "grunt-contrib-clean": "^2.0.0",
@@ -45,7 +46,11 @@
     "grunt-eslint": "^22.0.0",
     "grunt-postcss": "^0.9.0",
     "grunt-version": "^2.0.0",
-    "load-grunt-tasks": "^5.1.0"
+    "load-grunt-tasks": "^5.1.0",
+    "uuid": "^8.3.2"
+  },
+  "scripts": {
+    "cypress:open": "cypress open"
   },
   "browserslist": [
     "Android 2.3",

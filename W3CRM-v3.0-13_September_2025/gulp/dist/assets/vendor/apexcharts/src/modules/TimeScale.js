@@ -2,6 +2,11 @@ import DateTime from '../utils/DateTime'
 import Dimensions from './dimensions/Dimensions'
 import Graphics from './Graphics'
 import Utils from '../utils/Utils'
+
+const MINUTES_IN_DAY = 24 * 60
+const SECONDS_IN_DAY = MINUTES_IN_DAY * 60
+const MIN_ZOOM_DAYS = 10 / SECONDS_IN_DAY
+
 /**
  * ApexCharts TimeScale Class for generating time ticks for x-axis.
  *
@@ -28,13 +33,13 @@ class TimeScale {
 
     let dt = new DateTime(this.ctx)
 
-    const daysDiff = (maxX - minX) / (1000 * 60 * 60 * 24)
+    const daysDiff = (maxX - minX) / (1000 * SECONDS_IN_DAY)
     this.determineInterval(daysDiff)
 
     w.globals.disableZoomIn = false
     w.globals.disableZoomOut = false
 
-    if (daysDiff < 0.005) {
+    if (daysDiff < MIN_ZOOM_DAYS) {
       w.globals.disableZoomIn = true
     } else if (daysDiff > 50000) {
       w.globals.disableZoomOut = true
@@ -48,21 +53,23 @@ class TimeScale {
     const secondsWidthOnXAxis = minutesWidthOnXAxis / 60
 
     let numberOfHours = Math.floor(daysDiff * 24)
-    let numberOfMinutes = Math.floor(daysDiff * 24 * 60)
-    let numberOfSeconds = Math.floor(daysDiff * 24 * 60 * 60)
+    let numberOfMinutes = Math.floor(daysDiff * MINUTES_IN_DAY)
+    let numberOfSeconds = Math.floor(daysDiff * SECONDS_IN_DAY)
     let numberOfDays = Math.floor(daysDiff)
     let numberOfMonths = Math.floor(daysDiff / 30)
     let numberOfYears = Math.floor(daysDiff / 365)
 
     const firstVal = {
+      minMillisecond: timeIntervals.minMillisecond,
       minSecond: timeIntervals.minSecond,
       minMinute: timeIntervals.minMinute,
       minHour: timeIntervals.minHour,
       minDate: timeIntervals.minDate,
       minMonth: timeIntervals.minMonth,
-      minYear: timeIntervals.minYear
+      minYear: timeIntervals.minYear,
     }
 
+    let currentMillisecond = firstVal.minMillisecond
     let currentSecond = firstVal.minSecond
     let currentMinute = firstVal.minMinute
     let currentHour = firstVal.minHour
@@ -73,6 +80,7 @@ class TimeScale {
 
     const params = {
       firstVal,
+      currentMillisecond,
       currentSecond,
       currentMinute,
       currentHour,
@@ -89,7 +97,7 @@ class TimeScale {
       numberOfHours,
       numberOfDays,
       numberOfMonths,
-      numberOfYears
+      numberOfYears,
     }
 
     switch (this.tickInterval) {
@@ -113,8 +121,14 @@ class TimeScale {
         this.generateHourScale(params)
         break
       }
+      case 'minutes_fives':
       case 'minutes':
         this.generateMinuteScale(params)
+        break
+      case 'seconds_tens':
+      case 'seconds_fives':
+      case 'seconds':
+        this.generateSecondScale(params)
         break
     }
 
@@ -128,24 +142,31 @@ class TimeScale {
         year: ts.year,
         day: ts.day ? ts.day : 1,
         hour: ts.hour ? ts.hour : 0,
-        month: ts.month + 1
+        month: ts.month + 1,
       }
       if (ts.unit === 'month') {
         return {
           ...defaultReturn,
           day: 1,
-          value: ts.value + 1
+          value: ts.value + 1,
         }
       } else if (ts.unit === 'day' || ts.unit === 'hour') {
         return {
           ...defaultReturn,
-          value: ts.value
+          value: ts.value,
         }
       } else if (ts.unit === 'minute') {
         return {
           ...defaultReturn,
           value: ts.value,
-          minute: ts.value
+          minute: ts.value,
+        }
+      } else if (ts.unit === 'second') {
+        return {
+          ...defaultReturn,
+          value: ts.value,
+          minute: ts.minute,
+          second: ts.second,
         }
       }
 
@@ -220,14 +241,29 @@ class TimeScale {
             shouldNotSkipUnit = true
           }
           break
-        case 'minutes':
+        case 'minutes_fives':
+          if (value % 5 !== 0) {
+            shouldNotPrint = true
+          }
+          break
+        case 'seconds_tens':
+          if (value % 10 !== 0) {
+            shouldNotPrint = true
+          }
+          break
+        case 'seconds_fives':
           if (value % 5 !== 0) {
             shouldNotPrint = true
           }
           break
       }
 
-      if (this.tickInterval === 'minutes' || this.tickInterval === 'hours') {
+      if (
+        this.tickInterval === 'hours' ||
+        this.tickInterval === 'minutes_fives' ||
+        this.tickInterval === 'seconds_tens' ||
+        this.tickInterval === 'seconds_fives'
+      ) {
         if (!shouldNotPrint) {
           return true
         }
@@ -260,36 +296,49 @@ class TimeScale {
   }
 
   determineInterval(daysDiff) {
+    const yearsDiff = daysDiff / 365
+    const hoursDiff = daysDiff * 24
+    const minutesDiff = hoursDiff * 60
+    const secondsDiff = minutesDiff * 60
     switch (true) {
-      case daysDiff > 1825: // difference is more than 5 years
+      case yearsDiff > 5:
         this.tickInterval = 'years'
         break
-      case daysDiff > 800 && daysDiff <= 1825:
+      case daysDiff > 800:
         this.tickInterval = 'half_year'
         break
-      case daysDiff > 180 && daysDiff <= 800:
+      case daysDiff > 180:
         this.tickInterval = 'months'
         break
-      case daysDiff > 90 && daysDiff <= 180:
+      case daysDiff > 90:
         this.tickInterval = 'months_fortnight'
         break
-      case daysDiff > 60 && daysDiff <= 90:
+      case daysDiff > 60:
         this.tickInterval = 'months_days'
         break
-      case daysDiff > 30 && daysDiff <= 60:
+      case daysDiff > 30:
         this.tickInterval = 'week_days'
         break
-      case daysDiff > 2 && daysDiff <= 30:
+      case daysDiff > 2:
         this.tickInterval = 'days'
         break
-      case daysDiff > 0.1 && daysDiff <= 2: // less than  2 days
+      case hoursDiff > 2.4:
         this.tickInterval = 'hours'
         break
-      case daysDiff < 0.1:
+      case minutesDiff > 15:
+        this.tickInterval = 'minutes_fives'
+        break
+      case minutesDiff > 5:
         this.tickInterval = 'minutes'
         break
+      case minutesDiff > 1:
+        this.tickInterval = 'seconds_tens'
+        break
+      case secondsDiff > 20:
+        this.tickInterval = 'seconds_fives'
+        break
       default:
-        this.tickInterval = 'days'
+        this.tickInterval = 'seconds'
         break
     }
   }
@@ -299,7 +348,7 @@ class TimeScale {
     currentMonth,
     currentYear,
     daysWidthOnXAxis,
-    numberOfYears
+    numberOfYears,
   }) {
     let firstTickValue = firstVal.minYear
     let firstTickPosition = 0
@@ -327,7 +376,7 @@ class TimeScale {
         value: firstTickValue,
         unit,
         year: firstTickValue,
-        month: Utils.monthMod(currentMonth + 1)
+        month: Utils.monthMod(currentMonth + 1),
       })
     } else if (firstVal.minDate === 1 && firstVal.minMonth === 0) {
       // push the first tick in the array
@@ -336,7 +385,7 @@ class TimeScale {
         value: firstTickValue,
         unit,
         year: currentYear,
-        month: Utils.monthMod(currentMonth + 1)
+        month: Utils.monthMod(currentMonth + 1),
       })
     }
 
@@ -352,7 +401,7 @@ class TimeScale {
         value: year,
         unit,
         year,
-        month: 1
+        month: 1,
       })
     }
   }
@@ -363,7 +412,7 @@ class TimeScale {
     currentMonth,
     currentYear,
     daysWidthOnXAxis,
-    numberOfMonths
+    numberOfMonths,
   }) {
     let firstTickValue = currentMonth
     let firstTickPosition = 0
@@ -400,7 +449,7 @@ class TimeScale {
         value,
         unit,
         year,
-        month
+        month,
       })
     } else {
       // push the first tick in the array
@@ -409,7 +458,7 @@ class TimeScale {
         value: firstTickValue,
         unit,
         year: currentYear,
-        month: Utils.monthMod(currentMonth)
+        month: Utils.monthMod(currentMonth),
       })
     }
 
@@ -435,7 +484,7 @@ class TimeScale {
         value: monthVal,
         unit,
         year,
-        month: month === 0 ? 1 : month
+        month: month === 0 ? 1 : month,
       })
       month++
     }
@@ -446,7 +495,7 @@ class TimeScale {
     currentMonth,
     currentYear,
     hoursWidthOnXAxis,
-    numberOfDays
+    numberOfDays,
   }) {
     const dt = new DateTime(this.ctx)
     let unit = 'day'
@@ -482,7 +531,20 @@ class TimeScale {
       val = Utils.monthMod(firstVal.minMonth)
       unit = 'month'
       date = firstVal.minDate
-      numberOfDays++
+      // numberOfDays++
+      // removed the above line to fix https://github.com/apexcharts/apexcharts.js/issues/305#issuecomment-1019520513
+    } else if (
+      firstVal.minDate !== 1 &&
+      firstVal.minHour === 0 &&
+      firstVal.minMinute === 0
+    ) {
+      // fixes apexcharts/apexcharts.js/issues/1730
+      firstTickPosition = 0
+      firstTickValue = firstVal.minDate
+      date = firstTickValue
+      val = firstTickValue
+      // in case it's the last date of month, we need to check it
+      month = changeMonth(date, currentMonth, currentYear)
     }
 
     // push the first tick in the array
@@ -492,7 +554,7 @@ class TimeScale {
       unit,
       year: this._getYear(currentYear, month, yrCounter),
       month: Utils.monthMod(month),
-      day: date
+      day: date,
     })
 
     let pos = firstTickPosition
@@ -516,7 +578,7 @@ class TimeScale {
         unit,
         year,
         month: Utils.monthMod(month),
-        day: value
+        day: value,
       })
     }
   }
@@ -527,7 +589,7 @@ class TimeScale {
     currentMonth,
     currentYear,
     minutesWidthOnXAxis,
-    numberOfHours
+    numberOfHours,
   }) {
     const dt = new DateTime(this.ctx)
 
@@ -558,17 +620,27 @@ class TimeScale {
 
     let firstTickPosition = remainingMins * minutesWidthOnXAxis
     let firstTickValue = firstVal.minHour + 1
-    let hour = firstTickValue + 1
+    let hour = firstTickValue
 
     if (remainingMins === 60) {
       firstTickPosition = 0
       firstTickValue = firstVal.minHour
-      hour = firstTickValue + 1
+      hour = firstTickValue
     }
 
     let date = currentDate
 
-    let month = changeMonth(date, currentMonth)
+    // we need to apply date switching logic here as well, to avoid duplicated labels
+    if (hour >= 24) {
+      hour = 0
+      date += 1
+      unit = 'day'
+    }
+
+    const checkNextMonth = changeDate(date, currentMonth)
+
+    let month = checkNextMonth.month
+    month = changeMonth(date, month)
 
     // push the first tick in the array
     this.timeScaleArray.push({
@@ -578,8 +650,10 @@ class TimeScale {
       day: date,
       hour,
       year: currentYear,
-      month: Utils.monthMod(month)
+      month: Utils.monthMod(month),
     })
+
+    hour++
 
     let pos = firstTickPosition
     // keep drawing rest of the ticks
@@ -598,10 +672,7 @@ class TimeScale {
       }
 
       let year = this._getYear(currentYear, month, yrCounter)
-      pos =
-        hour === 0 && i === 0
-          ? remainingMins * minutesWidthOnXAxis
-          : 60 * minutesWidthOnXAxis + pos
+      pos = 60 * minutesWidthOnXAxis + pos
       let val = hour === 0 ? date : hour
       this.timeScaleArray.push({
         position: pos,
@@ -610,7 +681,7 @@ class TimeScale {
         hour,
         day: date,
         year,
-        month: Utils.monthMod(month)
+        month: Utils.monthMod(month),
       })
 
       hour++
@@ -618,7 +689,7 @@ class TimeScale {
   }
 
   generateMinuteScale({
-    firstVal,
+    currentMillisecond,
     currentSecond,
     currentMinute,
     currentHour,
@@ -627,36 +698,22 @@ class TimeScale {
     currentYear,
     minutesWidthOnXAxis,
     secondsWidthOnXAxis,
-    numberOfMinutes
+    numberOfMinutes,
   }) {
     let yrCounter = 0
     let unit = 'minute'
 
-    let remainingSecs = 60 - firstVal.minSecond
-
-    let firstTickPosition = remainingSecs * secondsWidthOnXAxis
-    let firstTickValue = firstVal.minMinute + 1
-    let minute = firstTickValue + 1
+    let remainingSecs = 60 - currentSecond
+    let firstTickPosition =
+      (remainingSecs - currentMillisecond / 1000) * secondsWidthOnXAxis
+    let minute = currentMinute + 1
 
     let date = currentDate
     let month = currentMonth
     let year = currentYear
     let hour = currentHour
 
-    // push the first tick in the array
-    this.timeScaleArray.push({
-      position: firstTickPosition,
-      value: firstTickValue,
-      unit,
-      day: date,
-      hour,
-      minute,
-      year,
-      month: Utils.monthMod(month)
-    })
-
     let pos = firstTickPosition
-    // keep drawing rest of the ticks
     for (let i = 0; i < numberOfMinutes; i++) {
       if (minute >= 60) {
         minute = 0
@@ -666,7 +723,6 @@ class TimeScale {
         }
       }
 
-      pos = minutesWidthOnXAxis + pos
       this.timeScaleArray.push({
         position: pos,
         value: minute,
@@ -674,17 +730,77 @@ class TimeScale {
         hour,
         minute,
         day: date,
-        year: this._getYear(currentYear, month, yrCounter),
-        month: Utils.monthMod(month)
+        year: this._getYear(year, month, yrCounter),
+        month: Utils.monthMod(month),
       })
 
+      pos += minutesWidthOnXAxis
       minute++
+    }
+  }
+
+  generateSecondScale({
+    currentMillisecond,
+    currentSecond,
+    currentMinute,
+    currentHour,
+    currentDate,
+    currentMonth,
+    currentYear,
+    secondsWidthOnXAxis,
+    numberOfSeconds,
+  }) {
+    let yrCounter = 0
+    let unit = 'second'
+
+    const remainingMillisecs = 1000 - currentMillisecond
+    let firstTickPosition = (remainingMillisecs / 1000) * secondsWidthOnXAxis
+
+    let second = currentSecond + 1
+    let minute = currentMinute
+    let date = currentDate
+    let month = currentMonth
+    let year = currentYear
+    let hour = currentHour
+
+    let pos = firstTickPosition
+    for (let i = 0; i < numberOfSeconds; i++) {
+      if (second >= 60) {
+        minute++
+        second = 0
+        if (minute >= 60) {
+          hour++
+          minute = 0
+          if (hour === 24) {
+            hour = 0
+          }
+        }
+      }
+
+      this.timeScaleArray.push({
+        position: pos,
+        value: second,
+        unit,
+        hour,
+        minute,
+        second,
+        day: date,
+        year: this._getYear(year, month, yrCounter),
+        month: Utils.monthMod(month),
+      })
+
+      pos += secondsWidthOnXAxis
+      second++
     }
   }
 
   createRawDateString(ts, value) {
     let raw = ts.year
 
+    if (ts.month === 0) {
+      // invalid month, correct it
+      ts.month = 1
+    }
     raw += '-' + ('0' + ts.month.toString()).slice(-2)
 
     // unit is day
@@ -701,9 +817,17 @@ class TimeScale {
       raw += 'T' + ('0' + (ts.hour ? ts.hour : '0')).slice(-2)
     }
 
-    // unit is minute
-    raw +=
-      ts.unit === 'minute' ? ':' + ('0' + value).slice(-2) + ':00' : ':00:00'
+    if (ts.unit === 'minute') {
+      raw += ':' + ('0' + value).slice(-2)
+    } else {
+      raw += ':' + (ts.minute ? ('0' + ts.minute).slice(-2) : '00')
+    }
+
+    if (ts.unit === 'second') {
+      raw += ':' + ('0' + value).slice(-2)
+    } else {
+      raw += ':00'
+    }
 
     if (this.utc) {
       raw += '.000Z'
@@ -735,6 +859,7 @@ class TimeScale {
         if (ts.unit === 'day') customFormat = dtFormatter.day
         if (ts.unit === 'hour') customFormat = dtFormatter.hour
         if (ts.unit === 'minute') customFormat = dtFormatter.minute
+        if (ts.unit === 'second') customFormat = dtFormatter.second
 
         value = dt.formatDate(dateToFormat, customFormat)
       } else {
@@ -747,7 +872,7 @@ class TimeScale {
         value,
         unit: ts.unit,
         year: ts.year,
-        month: ts.month
+        month: ts.month,
       }
     })
 

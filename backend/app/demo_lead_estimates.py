@@ -61,6 +61,23 @@ def _demo_rows() -> list[LeadEstimate]:
     ]
 
 
+_DEMO_EXTERNAL_IDS = (
+    "usis-seed-demo-bc-1",
+    "usis-seed-demo-corecon-1",
+    "usis-seed-demo-bc-2",
+)
+
+
+def purge_demo_lead_estimates(sess: Session) -> int:
+    """Remove canonical template demo rows (safe for production)."""
+    rows = sess.scalars(
+        select(LeadEstimate).where(LeadEstimate.external_id.in_(_DEMO_EXTERNAL_IDS))
+    ).all()
+    for row in rows:
+        sess.delete(row)
+    return len(rows)
+
+
 def upsert_demo_lead_estimates(sess: Session, *, force: bool = False) -> int:
     """Insert or update canonical demo rows (keyed by ``external_id``).
 

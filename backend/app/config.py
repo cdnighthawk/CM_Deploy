@@ -123,7 +123,8 @@ class Config:
     elif _auto_seed_raw in ("1", "true", "yes", "on"):
         AUTO_SEED_DEMO_LEADS_IF_EMPTY: bool = True
     else:
-        AUTO_SEED_DEMO_LEADS_IF_EMPTY: bool = os.environ.get("FLASK_ENV", "").strip().lower() == "development"
+        # Off by default; set AUTO_SEED_DEMO_LEADS_IF_EMPTY=1 for local template rows.
+        AUTO_SEED_DEMO_LEADS_IF_EMPTY: bool = False
 
     # Mutating takeoff/estimate line APIs (POST/PATCH/DELETE). Off by default outside development.
     _tw_raw = (os.environ.get("TAKEOFF_API_WRITES_ENABLED") or "").strip().lower()

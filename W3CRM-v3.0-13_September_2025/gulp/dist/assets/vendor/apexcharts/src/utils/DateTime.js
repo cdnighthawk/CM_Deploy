@@ -18,6 +18,9 @@ class DateTime {
   }
 
   isValidDate(date) {
+    if (typeof date === 'number') {
+      return false // don't test for timestamps
+    }
     return !isNaN(this.parseDate(date))
   }
 
@@ -159,10 +162,12 @@ class DateTime {
     const tsMin = this.getDate(minX)
     const tsMax = this.getDate(maxX)
 
-    const minD = this.formatDate(tsMin, 'yyyy MM dd HH mm ss').split(' ')
-    const maxD = this.formatDate(tsMax, 'yyyy MM dd HH mm ss').split(' ')
+    const minD = this.formatDate(tsMin, 'yyyy MM dd HH mm ss fff').split(' ')
+    const maxD = this.formatDate(tsMax, 'yyyy MM dd HH mm ss fff').split(' ')
 
     return {
+      minMillisecond: parseInt(minD[6], 10),
+      maxMillisecond: parseInt(maxD[6], 10),
       minSecond: parseInt(minD[5], 10),
       maxSecond: parseInt(maxD[5], 10),
       minMinute: parseInt(minD[4], 10),
@@ -174,7 +179,7 @@ class DateTime {
       minMonth: parseInt(minD[1], 10) - 1,
       maxMonth: parseInt(maxD[1], 10) - 1,
       minYear: parseInt(minD[0], 10),
-      maxYear: parseInt(maxD[0], 10)
+      maxYear: parseInt(maxD[0], 10),
     }
   }
 

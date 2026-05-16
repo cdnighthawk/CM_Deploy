@@ -28,7 +28,7 @@ export default class DimXAxis {
       const coords = this.getxAxisTimeScaleLabelsCoords()
       rect = {
         width: coords.width,
-        height: coords.height
+        height: coords.height,
       }
       w.globals.rotateXLabels = false
     } else {
@@ -62,12 +62,12 @@ export default class DimXAxis {
       val = xFormat.xLabelFormat(xlbFormatter, val, timestamp, {
         i: undefined,
         dateFormatter: new DateTime(this.dCtx.ctx).formatDate,
-        w
+        w,
       })
       valArr = xFormat.xLabelFormat(xlbFormatter, valArr, timestamp, {
         i: undefined,
         dateFormatter: new DateTime(this.dCtx.ctx).formatDate,
-        w
+        w,
       })
 
       if (
@@ -99,7 +99,7 @@ export default class DimXAxis {
         height:
           xLabelrect.height >= xArrLabelrect.height
             ? xLabelrect.height
-            : xArrLabelrect.height
+            : xArrLabelrect.height,
       }
 
       if (
@@ -145,13 +145,71 @@ export default class DimXAxis {
     if (!w.config.xaxis.labels.show) {
       rect = {
         width: 0,
-        height: 0
+        height: 0,
       }
     }
 
     return {
       width: rect.width,
-      height: rect.height
+      height: rect.height,
+    }
+  }
+
+  /**
+   * Get X Axis Label Group height
+   * @memberof Dimensions
+   * @return {{width, height}}
+   */
+  getxAxisGroupLabelsCoords() {
+    let w = this.w
+
+    if (!w.globals.hasXaxisGroups) {
+      return { width: 0, height: 0 }
+    }
+
+    const fontSize =
+      w.config.xaxis.group.style?.fontSize ||
+      w.config.xaxis.labels.style.fontSize
+
+    let xaxisLabels = w.globals.groups.map((g) => g.title)
+
+    let rect
+
+    // prevent changing xaxisLabels to avoid issues in multi-yaxes - fix #522
+    let val = Utils.getLargestStringFromArr(xaxisLabels)
+    let valArr = this.dCtx.dimHelpers.getLargestStringFromMultiArr(
+      val,
+      xaxisLabels
+    )
+
+    let graphics = new Graphics(this.dCtx.ctx)
+    let xLabelrect = graphics.getTextRects(val, fontSize)
+    let xArrLabelrect = xLabelrect
+    if (val !== valArr) {
+      xArrLabelrect = graphics.getTextRects(valArr, fontSize)
+    }
+
+    rect = {
+      width:
+        xLabelrect.width >= xArrLabelrect.width
+          ? xLabelrect.width
+          : xArrLabelrect.width,
+      height:
+        xLabelrect.height >= xArrLabelrect.height
+          ? xLabelrect.height
+          : xArrLabelrect.height,
+    }
+
+    if (!w.config.xaxis.labels.show) {
+      rect = {
+        width: 0,
+        height: 0,
+      }
+    }
+
+    return {
+      width: rect.width,
+      height: rect.height,
     }
   }
 
@@ -179,7 +237,7 @@ export default class DimXAxis {
 
     return {
       width,
-      height
+      height,
     }
   }
 
@@ -240,28 +298,40 @@ export default class DimXAxis {
       if (this.dCtx.timescaleLabels && this.dCtx.timescaleLabels.length) {
         // for timeline labels, we take the last label and check if it exceeds gridWidth
         const firstimescaleLabel = this.dCtx.timescaleLabels[0]
-        const lastTimescaleLabel = this.dCtx.timescaleLabels[
-          this.dCtx.timescaleLabels.length - 1
-        ]
+        const lastTimescaleLabel =
+          this.dCtx.timescaleLabels[this.dCtx.timescaleLabels.length - 1]
 
         const lastLabelPosition =
           lastTimescaleLabel.position +
           lbWidth / 1.75 -
-          // replace + with - ;
-          // allow the last label to intersect with the right y axis
           this.dCtx.yAxisWidthRight
 
         const firstLabelPosition =
           firstimescaleLabel.position -
           lbWidth / 1.75 +
-          // remove conditional since the first label is always at the very left
-          // allow the first label to intersect with the left y axes
           this.dCtx.yAxisWidthLeft
 
-        if (lastLabelPosition > gl.svgWidth - gl.translateX) {
+        let lgRightRectWidth =
+          w.config.legend.position === 'right' && this.dCtx.lgRect.width > 0
+            ? this.dCtx.lgRect.width
+            : 0
+        if (
+          lastLabelPosition >
+          gl.svgWidth - gl.translateX - lgRightRectWidth
+        ) {
           gl.skipLastTimelinelabel = true
         }
-        if (firstLabelPosition < 0) {
+
+        if (
+          firstLabelPosition <
+          -((!yaxe.show || yaxe.floating) &&
+          (cnf.chart.type === 'bar' ||
+            cnf.chart.type === 'candlestick' ||
+            cnf.chart.type === 'rangeBar' ||
+            cnf.chart.type === 'boxPlot')
+            ? lbWidth / 1.75
+            : 10)
+        ) {
           gl.skipFirstTimelinelabel = true
         }
       } else if (xtype === 'datetime') {
@@ -273,8 +343,7 @@ export default class DimXAxis {
         if (
           this.dCtx.gridPad.right < lbWidth / 2 - this.dCtx.yAxisWidthRight &&
           !gl.rotateXLabels &&
-          (w.config.xaxis.tickPlacement !== 'between' ||
-            w.globals.isBarHorizontal)
+          !w.config.xaxis.labels.trim
         ) {
           this.dCtx.xPadRight = lbWidth / 2 + 1
         }
@@ -282,19 +351,7 @@ export default class DimXAxis {
     }
 
     const padYAxe = (yaxe, i) => {
-      if (isCollapsed(i)) return
-
-      // the code below causes issue apexcharts.js#1989
-      // after testing with other use-cases, this has no actual value, hence commented
-      // if (xtype !== 'datetime') {
-      //   if (
-      //     this.dCtx.gridPad.left < lbWidth / 2 - this.dCtx.yAxisWidthLeft &&
-      //     !gl.rotateXLabels &&
-      //     !cnf.xaxis.labels.trim
-      //   ) {
-      //     this.dCtx.xPadLeft = lbWidth / 2 + 1
-      //   }
-      // }
+      if (cnf.yaxis.length > 1 && isCollapsed(i)) return
 
       rightPad(yaxe)
     }

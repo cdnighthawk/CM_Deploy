@@ -12,6 +12,8 @@ import XAxis from './modules/axes/XAxis'
 import YAxis from './modules/axes/YAxis'
 import InitCtxVariables from './modules/helpers/InitCtxVariables'
 import Destroy from './modules/helpers/Destroy'
+import { addResizeListener, removeResizeListener } from './utils/Resize'
+import apexCSS from './assets/apexcharts.css'
 
 /**
  *
@@ -56,7 +58,7 @@ export default class ApexCharts {
           Apex._chartInstances.push({
             id: this.w.globals.chartID,
             group: this.w.config.chart.group,
-            chart: this
+            chart: this,
           })
         }
 
@@ -69,7 +71,32 @@ export default class ApexCharts {
 
         this.events.fireEvent('beforeMount', [this, this.w])
         window.addEventListener('resize', this.windowResizeHandler)
-        window.addResizeListener(this.el.parentNode, this.parentResizeHandler)
+        addResizeListener(this.el.parentNode, this.parentResizeHandler)
+
+        let rootNode = this.el.getRootNode && this.el.getRootNode()
+        let inShadowRoot = Utils.is('ShadowRoot', rootNode)
+        let doc = this.el.ownerDocument
+        let css = inShadowRoot
+          ? rootNode.getElementById('apexcharts-css')
+          : doc.getElementById('apexcharts-css')
+
+        if (!css) {
+          css = document.createElement('style')
+          css.id = 'apexcharts-css'
+          css.textContent = apexCSS
+          const nonce = this.opts.chart?.nonce || this.w.config.chart.nonce
+          if (nonce) {
+            css.setAttribute('nonce', nonce)
+          }
+
+          if (inShadowRoot) {
+            // We are in Shadow DOM, add to shadow root
+            rootNode.prepend(css)
+          } else {
+            // Add to <head> of element's document
+            doc.head.appendChild(css)
+          }
+        }
 
         let graphData = this.create(this.w.config.series, {})
         if (!graphData) return resolve(this)
@@ -127,20 +154,32 @@ export default class ApexCharts {
       return null
     }
 
-    const combo = CoreUtils.checkComboSeries(ser)
+    let series = ser
+    ser.forEach((s, realIndex) => {
+      if (s.hidden) {
+        series = this.legend.legendHelpers.getSeriesAfterCollapsing({
+          realIndex,
+        })
+      }
+    })
+
+    const combo = CoreUtils.checkComboSeries(series, w.config.chart.type)
     gl.comboCharts = combo.comboCharts
     gl.comboBarCount = combo.comboBarCount
 
-    const allSeriesAreEmpty = ser.every((s) => s.data && s.data.length === 0)
+    const allSeriesAreEmpty = series.every((s) => s.data && s.data.length === 0)
 
-    if (ser.length === 0 || allSeriesAreEmpty) {
+    if (
+      series.length === 0 ||
+      (allSeriesAreEmpty && gl.collapsedSeries.length < 1)
+    ) {
       this.series.handleNoData()
     }
 
     this.events.setupEventHandlers()
 
     // Handle the data inputted by user and set some of the global variables (for eg, if data is datetime / numeric / category). Don't calculate the range / min / max at this time
-    this.data.parseData(ser)
+    this.data.parseData(series)
 
     // this is a good time to set theme colors first
     this.theme.init()
@@ -181,6 +220,10 @@ export default class ApexCharts {
     // Also we need to do this before calculating Dimensions plotCoords() method of Dimensions
     this.formatters.heatmapLabelFormatters()
 
+    // get the largest marker size which will be needed in dimensions calc
+    const coreUtils = new CoreUtils(this)
+    coreUtils.getLargestMarkerSize()
+
     // We got plottable area here, next task would be to calculate axis areas
     this.dimensions.plotCoords()
 
@@ -188,7 +231,7 @@ export default class ApexCharts {
 
     this.grid.createGridMask()
 
-    const elGraph = this.core.plotChartType(ser, xyRatios)
+    const elGraph = this.core.plotChartType(series, xyRatios)
 
     const dataLabels = new DataLabels(this)
     dataLabels.bringForward()
@@ -204,15 +247,14 @@ export default class ApexCharts {
         left: w.globals.translateX,
         top: w.globals.translateY,
         width: w.globals.gridWidth,
-        height: w.globals.gridHeight
-      }
+        height: w.globals.gridHeight,
+      },
     }
 
     return {
       elGraph,
       xyRatios,
-      elInner: w.globals.dom.elGraphical,
-      dimensions: dim
+      dimensions: dim,
     }
   }
 
@@ -229,9 +271,6 @@ export default class ApexCharts {
       } else if (graphData === null || w.globals.allSeriesCollapsed) {
         me.series.handleNoData()
       }
-      if (w.config.chart.type !== 'treemap') {
-        me.axes.drawAxis(w.config.chart.type, graphData.xyRatios)
-      }
 
       me.grid = new Grid(me)
       let elgrid = me.grid.drawGrid()
@@ -240,12 +279,46 @@ export default class ApexCharts {
       me.annotations.drawImageAnnos()
       me.annotations.drawTextAnnos()
 
-      if (w.config.grid.position === 'back' && elgrid) {
-        w.globals.dom.elGraphical.add(elgrid.el)
+      if (w.config.grid.position === 'back') {
+        if (elgrid) {
+          w.globals.dom.elGraphical.add(elgrid.el)
+        }
+        if (elgrid?.elGridBorders?.node) {
+          w.globals.dom.elGraphical.add(elgrid.elGridBorders)
+        }
       }
 
-      let xAxis = new XAxis(this.ctx)
-      let yaxis = new YAxis(this.ctx)
+      if (Array.isArray(graphData.elGraph)) {
+        for (let g = 0; g < graphData.elGraph.length; g++) {
+          w.globals.dom.elGraphical.add(graphData.elGraph[g])
+        }
+      } else {
+        w.globals.dom.elGraphical.add(graphData.elGraph)
+      }
+
+      if (w.config.grid.position === 'front') {
+        if (elgrid) {
+          w.globals.dom.elGraphical.add(elgrid.el)
+        }
+        if (elgrid?.elGridBorders?.node) {
+          w.globals.dom.elGraphical.add(elgrid.elGridBorders)
+        }
+      }
+
+      if (w.config.xaxis.crosshairs.position === 'front') {
+        me.crosshairs.drawXCrosshairs()
+      }
+
+      if (w.config.yaxis[0].crosshairs.position === 'front') {
+        me.crosshairs.drawYCrosshairs()
+      }
+
+      if (w.config.chart.type !== 'treemap') {
+        me.axes.drawAxis(w.config.chart.type, elgrid)
+      }
+
+      let xAxis = new XAxis(this.ctx, elgrid)
+      let yaxis = new YAxis(this.ctx, elgrid)
       if (elgrid !== null) {
         xAxis.xAxisLabelCorrections(elgrid.xAxisTickWidth)
         yaxis.setYAxisTextAlignments()
@@ -257,35 +330,7 @@ export default class ApexCharts {
         })
       }
 
-      if (w.config.annotations.position === 'back') {
-        w.globals.dom.Paper.add(w.globals.dom.elAnnotations)
-        me.annotations.drawAxesAnnotations()
-      }
-
-      if (Array.isArray(graphData.elGraph)) {
-        for (let g = 0; g < graphData.elGraph.length; g++) {
-          w.globals.dom.elGraphical.add(graphData.elGraph[g])
-        }
-      } else {
-        w.globals.dom.elGraphical.add(graphData.elGraph)
-      }
-
-      if (w.config.grid.position === 'front' && elgrid) {
-        w.globals.dom.elGraphical.add(elgrid.el)
-      }
-
-      if (w.config.xaxis.crosshairs.position === 'front') {
-        me.crosshairs.drawXCrosshairs()
-      }
-
-      if (w.config.yaxis[0].crosshairs.position === 'front') {
-        me.crosshairs.drawYCrosshairs()
-      }
-
-      if (w.config.annotations.position === 'front') {
-        w.globals.dom.Paper.add(w.globals.dom.elAnnotations)
-        me.annotations.drawAxesAnnotations()
-      }
+      me.annotations.drawAxesAnnotations()
 
       if (!w.globals.noData) {
         // draw tooltips at the end
@@ -297,7 +342,7 @@ export default class ApexCharts {
           w.globals.axisCharts &&
           (w.globals.isXNumeric ||
             w.config.xaxis.convertedCatToNumeric ||
-            w.globals.isTimelineBar)
+            w.globals.isRangeBar)
         ) {
           if (
             w.config.chart.zoom.enabled ||
@@ -305,7 +350,7 @@ export default class ApexCharts {
             (w.config.chart.pan && w.config.chart.pan.enabled)
           ) {
             me.zoomPanSelection.init({
-              xyRatios: graphData.xyRatios
+              xyRatios: graphData.xyRatios,
             })
           }
         } else {
@@ -316,7 +361,7 @@ export default class ApexCharts {
             'zoomout',
             'selection',
             'pan',
-            'reset'
+            'reset',
           ]
           toolsArr.forEach((t) => {
             tools[t] = false
@@ -347,7 +392,7 @@ export default class ApexCharts {
   destroy() {
     window.removeEventListener('resize', this.windowResizeHandler)
 
-    window.removeResizeListener(this.el.parentNode, this.parentResizeHandler)
+    removeResizeListener(this.el.parentNode, this.parentResizeHandler)
     // remove the chart's instance from the global Apex._chartInstances
     const chartID = this.w.config.chart.id
     if (chartID) {
@@ -530,6 +575,8 @@ export default class ApexCharts {
 
   static getChartByID(id) {
     const chartId = Utils.escapeString(id)
+    if (!Apex._chartInstances) return undefined
+
     const c = Apex._chartInstances.filter((ch) => ch.id === chartId)[0]
     return c && c.chart
   }
@@ -585,12 +632,24 @@ export default class ApexCharts {
     return this.series.toggleSeries(seriesName)
   }
 
+  highlightSeriesOnLegendHover(e, targetElement) {
+    return this.series.toggleSeriesOnHover(e, targetElement)
+  }
+
   showSeries(seriesName) {
     this.series.showSeries(seriesName)
   }
 
   hideSeries(seriesName) {
     this.series.hideSeries(seriesName)
+  }
+
+  highlightSeries(seriesName) {
+    this.series.highlightSeries(seriesName)
+  }
+
+  isSeriesHidden(seriesName) {
+    this.series.isSeriesHidden(seriesName)
   }
 
   resetSeries(shouldUpdateChart = true, shouldResetZoom = true) {
@@ -686,9 +745,14 @@ export default class ApexCharts {
     this.localization.setCurrentLocaleValues(localeName)
   }
 
-  dataURI() {
+  dataURI(options) {
     const exp = new Exports(this.ctx)
-    return exp.dataURI()
+    return exp.dataURI(options)
+  }
+
+  exportToCSV(options = {}) {
+    const exp = new Exports(this.ctx)
+    return exp.exportToCSV(options)
   }
 
   paper() {

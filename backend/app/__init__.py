@@ -253,19 +253,24 @@ def create_app(config_object: str | None = None) -> Flask:
                     except Exception as exc:
                         app.logger.warning("BuildingConnected CSV autoload failed: %s", exc)
 
-                if app.config.get("AUTO_SEED_DEMO_LEADS_IF_EMPTY"):
-                    try:
-                        from .demo_lead_estimates import upsert_demo_lead_estimates
+                try:
+                    from .demo_lead_estimates import purge_demo_lead_estimates, upsert_demo_lead_estimates
 
+                    if app.config.get("AUTO_SEED_DEMO_LEADS_IF_EMPTY"):
                         written = upsert_demo_lead_estimates(db.session, force=False)
                         if written:
                             db.session.commit()
                             app.logger.info("Upserted %s demo lead_estimates row(s).", written)
-                    except IntegrityError:
-                        db.session.rollback()
-                    except Exception as exc:
-                        db.session.rollback()
-                        app.logger.warning("Demo lead_estimates seed failed: %s", exc)
+                    else:
+                        removed = purge_demo_lead_estimates(db.session)
+                        if removed:
+                            db.session.commit()
+                            app.logger.info("Removed %s template demo lead_estimates row(s).", removed)
+                except IntegrityError:
+                    db.session.rollback()
+                except Exception as exc:
+                    db.session.rollback()
+                    app.logger.warning("Demo lead_estimates maintenance failed: %s", exc)
         except Exception:
             app.logger.exception("Unexpected error during lead_estimates bootstrap")
 

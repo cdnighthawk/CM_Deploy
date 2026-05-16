@@ -1,141 +1,122 @@
 import Utils from '../../utils/Utils'
-import CoreUtils from '../CoreUtils'
+import Helpers from './Helpers'
 
 export default class PointAnnotations {
   constructor(annoCtx) {
     this.w = annoCtx.w
     this.annoCtx = annoCtx
+    this.helpers = new Helpers(this.annoCtx)
   }
 
   addPointAnnotation(anno, parent, index) {
     const w = this.w
 
-    let x = 0
-    let y = 0
-    let pointY = 0
-
-    if (this.annoCtx.invertAxis) {
-      console.warn(
-        'Point annotation is not supported in horizontal bar charts.'
-      )
+    if (w.globals.collapsedSeriesIndices.indexOf(anno.seriesIndex) > -1) {
+      return
     }
 
-    let annoY = parseFloat(anno.y)
-
-    if (typeof anno.x === 'string') {
-      let catIndex = w.globals.labels.indexOf(anno.x)
-
-      if (w.config.xaxis.convertedCatToNumeric) {
-        catIndex = w.globals.categoryLabels.indexOf(anno.x)
-      }
-
-      x = this.annoCtx.helpers.getStringX(anno.x)
-
-      if (anno.y === null) {
-        annoY = w.globals.series[anno.seriesIndex][catIndex]
-      }
-    } else {
-      x = (anno.x - w.globals.minX) / (w.globals.xRange / w.globals.gridWidth)
-    }
-    let yPos
-    if (w.config.yaxis[anno.yAxisIndex].logarithmic) {
-      const coreUtils = new CoreUtils(this.annoCtx.ctx)
-      annoY = coreUtils.getLogVal(annoY, anno.yAxisIndex)
-      yPos = annoY / w.globals.yLogRatio[anno.yAxisIndex]
-    } else {
-      yPos =
-        (annoY - w.globals.minYArr[anno.yAxisIndex]) /
-        (w.globals.yRange[anno.yAxisIndex] / w.globals.gridHeight)
-    }
-
-    y =
-      w.globals.gridHeight -
-      yPos -
-      parseFloat(anno.label.style.fontSize) -
-      anno.marker.size
-
-    pointY = w.globals.gridHeight - yPos
-
-    if (
-      w.config.yaxis[anno.yAxisIndex] &&
-      w.config.yaxis[anno.yAxisIndex].reversed
-    ) {
-      y = yPos + parseFloat(anno.label.style.fontSize) + anno.marker.size
-      pointY = yPos
-    }
+    let result = this.helpers.getX1X2('x1', anno)
+    let x = result.x
+    let clipX = result.clipped
+    result = this.helpers.getY1Y2('y1', anno)
+    let y = result.yP
+    let clipY = result.clipped
 
     if (!Utils.isNumber(x)) return
 
-    let optsPoints = {
-      pSize: anno.marker.size,
-      pointStrokeWidth: anno.marker.strokeWidth,
-      pointFillColor: anno.marker.fillColor,
-      pointStrokeColor: anno.marker.strokeColor,
-      shape: anno.marker.shape,
-      pRadius: anno.marker.radius,
-      class: `apexcharts-point-annotation-marker ${anno.marker.cssClass} ${
-        anno.id ? anno.id : ''
-      }`
-    }
+    if (!(clipY || clipX)) {
+      let optsPoints = {
+        pSize: anno.marker.size,
+        pointStrokeWidth: anno.marker.strokeWidth,
+        pointFillColor: anno.marker.fillColor,
+        pointStrokeColor: anno.marker.strokeColor,
+        shape: anno.marker.shape,
+        pRadius: anno.marker.radius,
+        class: `apexcharts-point-annotation-marker ${anno.marker.cssClass} ${
+          anno.id ? anno.id : ''
+        }`,
+      }
 
-    let point = this.annoCtx.graphics.drawMarker(
-      x + anno.marker.offsetX,
-      pointY + anno.marker.offsetY,
-      optsPoints
-    )
+      let point = this.annoCtx.graphics.drawMarker(
+        x + anno.marker.offsetX,
+        y + anno.marker.offsetY,
+        optsPoints
+      )
 
-    parent.appendChild(point.node)
+      parent.appendChild(point.node)
 
-    const text = anno.label.text ? anno.label.text : ''
+      const text = anno.label.text ? anno.label.text : ''
 
-    let elText = this.annoCtx.graphics.drawText({
-      x: x + anno.label.offsetX,
-      y: y + anno.label.offsetY,
-      text,
-      textAnchor: anno.label.textAnchor,
-      fontSize: anno.label.style.fontSize,
-      fontFamily: anno.label.style.fontFamily,
-      fontWeight: anno.label.style.fontWeight,
-      foreColor: anno.label.style.color,
-      cssClass: `apexcharts-point-annotation-label ${
-        anno.label.style.cssClass
-      } ${anno.id ? anno.id : ''}`
-    })
-
-    elText.attr({
-      rel: index
-    })
-
-    parent.appendChild(elText.node)
-
-    // TODO: deprecate this as we will use custom
-    if (anno.customSVG.SVG) {
-      let g = this.annoCtx.graphics.group({
-        class:
-          'apexcharts-point-annotations-custom-svg ' + anno.customSVG.cssClass
+      let elText = this.annoCtx.graphics.drawText({
+        x: x + anno.label.offsetX,
+        y:
+          y +
+          anno.label.offsetY -
+          anno.marker.size -
+          parseFloat(anno.label.style.fontSize) / 1.6,
+        text,
+        textAnchor: anno.label.textAnchor,
+        fontSize: anno.label.style.fontSize,
+        fontFamily: anno.label.style.fontFamily,
+        fontWeight: anno.label.style.fontWeight,
+        foreColor: anno.label.style.color,
+        cssClass: `apexcharts-point-annotation-label ${
+          anno.label.style.cssClass
+        } ${anno.id ? anno.id : ''}`,
       })
 
-      g.attr({
-        transform: `translate(${x + anno.customSVG.offsetX}, ${y +
-          anno.customSVG.offsetY})`
+      elText.attr({
+        rel: index,
       })
 
-      g.node.innerHTML = anno.customSVG.SVG
-      parent.appendChild(g.node)
-    }
+      parent.appendChild(elText.node)
 
-    if (anno.image.path) {
-      let imgWidth = anno.image.width ? anno.image.width : 20
-      let imgHeight = anno.image.height ? anno.image.height : 20
+      // TODO: deprecate this as we will use custom
+      if (anno.customSVG.SVG) {
+        let g = this.annoCtx.graphics.group({
+          class:
+            'apexcharts-point-annotations-custom-svg ' + anno.customSVG.cssClass,
+        })
 
-      this.annoCtx.addImage({
-        x: x + anno.image.offsetX - imgWidth / 2,
-        y: y + anno.image.offsetY - imgHeight / 2,
-        width: imgWidth,
-        height: imgHeight,
-        path: anno.image.path,
-        appendTo: '.apexcharts-point-annotations'
-      })
+        g.attr({
+          transform: `translate(${x + anno.customSVG.offsetX}, ${
+            y + anno.customSVG.offsetY
+          })`,
+        })
+
+        g.node.innerHTML = anno.customSVG.SVG
+        parent.appendChild(g.node)
+      }
+
+      if (anno.image.path) {
+        let imgWidth = anno.image.width ? anno.image.width : 20
+        let imgHeight = anno.image.height ? anno.image.height : 20
+
+        point = this.annoCtx.addImage({
+          x: x + anno.image.offsetX - imgWidth / 2,
+          y: y + anno.image.offsetY - imgHeight / 2,
+          width: imgWidth,
+          height: imgHeight,
+          path: anno.image.path,
+          appendTo: '.apexcharts-point-annotations',
+        })
+      }
+
+      if (anno.mouseEnter) {
+        point.node.addEventListener(
+          'mouseenter',
+          anno.mouseEnter.bind(this, anno)
+        )
+      }
+      if (anno.mouseLeave) {
+        point.node.addEventListener(
+          'mouseleave',
+          anno.mouseLeave.bind(this, anno)
+        )
+      }
+      if (anno.click) {
+        point.node.addEventListener('click', anno.click.bind(this, anno))
+      }
     }
   }
 
@@ -143,7 +124,7 @@ export default class PointAnnotations {
     let w = this.w
 
     let elg = this.annoCtx.graphics.group({
-      class: 'apexcharts-point-annotations'
+      class: 'apexcharts-point-annotations',
     })
 
     w.config.annotations.points.map((anno, index) => {

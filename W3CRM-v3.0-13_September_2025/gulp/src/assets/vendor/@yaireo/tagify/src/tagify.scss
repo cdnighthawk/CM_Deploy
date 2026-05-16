@@ -85,7 +85,7 @@
         }
         @else {
             opacity: 0;
-            transform: translatex(6px);
+            transform: translateX(6px);
         }
     }
 
@@ -132,6 +132,7 @@
 
     display       : inline-flex;
     align-items   : flex-start;
+    align-content : baseline;
     flex-wrap     : wrap;
     border        : 1px solid var(--tags-border-color);
     padding       : 0;
@@ -154,6 +155,14 @@
         filter: saturate(0);
         opacity: .5;
         pointer-events: none;
+
+        &#{$self}--empty{
+            > #{$self}__input{
+                &::before{
+                    position: relative;
+                }
+            }
+        }
     }
 
     // Global "read-only" mode (no input button)
@@ -162,7 +171,7 @@
             pointer-events: none;
         }
 
-        &:not(#{$self}--mix):not(#{$self}--select){
+        &:not(#{$self}--mix):not(#{$self}--select):not(#{$self}--empty){
             cursor: default;
             > #{$self}__input{
                 visibility: hidden;
@@ -179,7 +188,6 @@
         }
 
         #{ $self }__tag__removeBtn{ display:none; }
-
     }
 
     &--loading{
@@ -220,6 +228,11 @@
         line-height  : normal;
         cursor       : default;
         transition   : .13s ease-out;
+
+        // needed when "allowCaretBetweenTags" an the input has been moved (by the user) so it's not the last element
+        &:last-child {
+            margin-right: $tagMargin;
+        }
 
         > div{  // :not([contenteditable])
             display        : flex;
@@ -423,17 +436,65 @@
     // Holds the placeholder & the tags input
     &__input{
         $placeholder-width : 110px;
-        flex-grow: 1;
+
         display: inline-block;
-        min-width: $placeholder-width;
         margin: $tagMargin;
         padding: var(--tag-pad);
         line-height: normal;
+        min-width: fit-content;
+        min-height: 1.5lh;
         position: relative;
         white-space: pre-wrap; // #160 Line break (\n) as delimeter
         color: var(--input-color);
         box-sizing: inherit;
         overflow: hidden;
+
+        &:focus{
+            outline:none;
+        }
+
+        &:last-child {
+            flex-grow: 1;
+            min-width: $placeholder-width;
+
+            &:focus{
+                &::before{
+                    @include placeholder(false);
+
+                    /* ALL MS BROWSERS: hide placeholder (on focus) otherwise the caret is placed after it, which is weird */
+                    /* IE Edge 12+ CSS styles go here */
+                    @supports ( -ms-ime-align:auto ) {
+                        display: none;
+                    }
+                }
+
+                &:empty{
+                    &::before{
+                        @include placeholder(true);
+
+                        // Seems to be fixed! no need for the below hack
+                        // @include firefox {
+                        //     // remove ":after" pseudo element: https://bugzilla.mozilla.org/show_bug.cgi?id=904846#c45
+                        //     content: unset;
+                        //     // display:inline-block;
+                        // }
+
+                        color: $placeholder-color-focus;
+                        color: var(--placeholder-color-focus);
+                    }
+
+                     &::after{
+                        @include firefox {
+                            display: none;
+                        }
+                    }
+                }
+            }
+
+            &::before{
+                content: attr(data-placeholder);
+            }
+        }
 
         &:empty{
             @include firefox {
@@ -443,44 +504,7 @@
             }
         }
 
-        &:focus{
-            outline:none;
-
-            &::before{
-                @include placeholder(false);
-
-                /* ALL MS BROWSERS: hide placeholder (on focus) otherwise the caret is placed after it, which is weird */
-                /* IE Edge 12+ CSS styles go here */
-                @supports ( -ms-ime-align:auto ) {
-                    display: none;
-                }
-            }
-
-            &:empty{
-                &::before{
-                    @include placeholder(true);
-
-                    // Seems to be fixed! no need for the below hack
-                    // @include firefox {
-                    //     // remove ":after" pseudo element: https://bugzilla.mozilla.org/show_bug.cgi?id=904846#c45
-                    //     content: unset;
-                    //     // display:inline-block;
-                    // }
-
-                    color: $placeholder-color-focus;
-                    color: var(--placeholder-color-focus);
-                }
-
-                 &::after{
-                    @include firefox {
-                        display: none;
-                    }
-                }
-            }
-        }
-
         &::before{
-            content: attr(data-placeholder);
             width: 100%;
             height: 100%;
             margin: auto 0;

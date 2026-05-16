@@ -60,13 +60,19 @@ export default class Events {
         event,
         (e) => {
           const opts = Object.assign({}, w, {
-            seriesIndex: w.globals.capturedSeriesIndex,
-            dataPointIndex: w.globals.capturedDataPointIndex
+            seriesIndex: w.globals.axisCharts
+              ? w.globals.capturedSeriesIndex
+              : 0,
+            dataPointIndex: w.globals.capturedDataPointIndex,
           })
 
           if (e.type === 'mousemove' || e.type === 'touchmove') {
             if (typeof w.config.chart.events.mouseMove === 'function') {
               w.config.chart.events.mouseMove(e, me, opts)
+            }
+          } else if (e.type === 'mouseleave' || e.type === 'touchleave') {
+            if (typeof w.config.chart.events.mouseLeave === 'function') {
+              w.config.chart.events.mouseLeave(e, me, opts)
             }
           } else if (
             (e.type === 'mouseup' && e.which === 1) ||
@@ -84,7 +90,7 @@ export default class Events {
 
     this.ctx.eventList.forEach((event) => {
       w.globals.dom.baseEl.addEventListener(event, this.documentEvent, {
-        passive: true
+        passive: true,
       })
     })
 

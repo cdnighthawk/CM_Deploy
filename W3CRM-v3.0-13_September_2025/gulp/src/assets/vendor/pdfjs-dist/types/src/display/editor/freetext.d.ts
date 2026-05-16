@@ -19,7 +19,7 @@ export class FreeTextEditor extends AnnotationEditor {
     static "__#18@#getNodeContent"(node: any): any;
     static "__#18@#deserializeContent"(content: any): any;
     /** @inheritdoc */
-    static deserialize(data: any, parent: any, uiManager: any): AnnotationEditor | null;
+    static deserialize(data: any, parent: any, uiManager: any): Promise<AnnotationEditor | null>;
     constructor(params: any);
     /** @inheritdoc */
     updateParams(type: any, value: any): void;
@@ -31,6 +31,8 @@ export class FreeTextEditor extends AnnotationEditor {
      * @param {number} y in page units.
      */
     _translateEmpty(x: number, y: number): void;
+    /** @inheritdoc */
+    onceAdded(focus: any): void;
     /**
      * Commit the content we have in this editor.
      * @returns {undefined}
@@ -49,22 +51,9 @@ export class FreeTextEditor extends AnnotationEditor {
     overlayDiv: HTMLDivElement | undefined;
     editorDivPaste(event: any): void;
     /** @inheritdoc */
-    serialize(isForCopying?: boolean): {
-        annotationType: number;
-        color: number[];
-        fontSize: any;
-        value: string;
-        pageIndex: number;
-        rect: any[];
-        rotation: number;
-        structTreeParentId: any;
-    } | {
-        pageIndex: number;
-        id: any;
-        deleted: boolean;
-    } | null;
+    serialize(isForCopying?: boolean): Object | null;
     /** @inheritdoc */
-    renderAnnotationElement(annotation: any): HTMLElement;
+    renderAnnotationElement(annotation: any): HTMLElement | null;
     #private;
 }
 import { AnnotationEditor } from "./editor.js";

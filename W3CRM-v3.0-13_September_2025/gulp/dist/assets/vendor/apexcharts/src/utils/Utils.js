@@ -4,7 +4,7 @@
 
 class Utils {
   static bind(fn, me) {
-    return function() {
+    return function () {
       return fn.apply(me, arguments)
     }
   }
@@ -13,6 +13,11 @@ class Utils {
     return (
       item && typeof item === 'object' && !Array.isArray(item) && item != null
     )
+  }
+
+  // Type checking that works across different window objects
+  static is(type, val) {
+    return Object.prototype.toString.call(val) === '[object ' + type + ']'
   }
 
   static listToArray(list) {
@@ -28,8 +33,8 @@ class Utils {
   // credit: http://stackoverflow.com/questions/27936772/deep-object-merging-in-es6-es7#answer-34749873
   static extend(target, source) {
     if (typeof Object.assign !== 'function') {
-      ;(function() {
-        Object.assign = function(target) {
+      ;(function () {
+        Object.assign = function (target) {
           'use strict'
           // We must check against these specific cases.
           if (target === undefined || target === null) {
@@ -58,14 +63,14 @@ class Utils {
         if (this.isObject(source[key])) {
           if (!(key in target)) {
             Object.assign(output, {
-              [key]: source[key]
+              [key]: source[key],
             })
           } else {
             output[key] = this.extend(target[key], source[key])
           }
         } else {
           Object.assign(output, {
-            [key]: source[key]
+            [key]: source[key],
           })
         }
       })
@@ -88,16 +93,16 @@ class Utils {
   }
 
   static clone(source) {
-    if (Object.prototype.toString.call(source) === '[object Array]') {
+    if (Utils.is('Array', source)) {
       let cloneResult = []
       for (let i = 0; i < source.length; i++) {
         cloneResult[i] = this.clone(source[i])
       }
       return cloneResult
-    } else if (Object.prototype.toString.call(source) === '[object Null]') {
+    } else if (Utils.is('Null', source)) {
       // fixes an issue where null values were converted to {}
       return null
-    } else if (Object.prototype.toString.call(source) === '[object Date]') {
+    } else if (Utils.is('Date', source)) {
       return source
     } else if (typeof source === 'object') {
       let cloneResult = {}
@@ -127,6 +132,10 @@ class Utils {
   static parseNumber(val) {
     if (val === null) return val
     return parseFloat(val)
+  }
+
+  static stripNumber(num, precision = 2) {
+    return Number.isInteger(num) ? num : parseFloat(num.toPrecision(precision))
   }
 
   static randomId() {
@@ -177,7 +186,7 @@ class Utils {
       width: element.clientWidth,
       height: element.clientHeight,
       x: rect.left,
-      y: rect.top
+      y: rect.top,
     }
   }
 
@@ -293,14 +302,14 @@ class Utils {
 
     return {
       x: centerX + radius * Math.cos(angleInRadians),
-      y: centerY + radius * Math.sin(angleInRadians)
+      y: centerY + radius * Math.sin(angleInRadians),
     }
   }
 
   static escapeString(str, escapeWith = 'x') {
     let newStr = str.toString().slice()
     newStr = newStr.replace(
-      /[` ~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi,
+      /[` ~!@#$%^&*()|+\=?;:'",.<>{}[\]\\/]/gi,
       escapeWith
     )
     return newStr
@@ -337,6 +346,15 @@ class Utils {
       }
     }
   }
+  // prevents JS prevision errors when adding
+  static preciseAddition(a, b) {
+    let aDecimals = (String(a).split('.')[1] || '').length
+    let bDecimals = (String(b).split('.')[1] || '').length
+
+    let factor = Math.pow(10, Math.max(aDecimals, bDecimals))
+
+    return (Math.round(a * factor) + Math.round(b * factor)) / factor
+  }
 
   static isNumber(value) {
     return (
@@ -358,30 +376,8 @@ class Utils {
     return navigator.userAgent.toLowerCase().indexOf('firefox') > -1
   }
 
-  static isIE11() {
-    if (
-      window.navigator.userAgent.indexOf('MSIE') !== -1 ||
-      window.navigator.appVersion.indexOf('Trident/') > -1
-    ) {
-      return true
-    }
-  }
-
-  static isIE() {
+  static isMsEdge() {
     let ua = window.navigator.userAgent
-
-    let msie = ua.indexOf('MSIE ')
-    if (msie > 0) {
-      // IE 10 or older => return version number
-      return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10)
-    }
-
-    let trident = ua.indexOf('Trident/')
-    if (trident > 0) {
-      // IE 11 => return version number
-      let rv = ua.indexOf('rv:')
-      return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10)
-    }
 
     let edge = ua.indexOf('Edge/')
     if (edge > 0) {
@@ -391,6 +387,44 @@ class Utils {
 
     // other browser
     return false
+  }
+  //
+  // Find the Greatest Common Divisor of two numbers
+  //
+  static getGCD(a, b, p = 7) {
+    let big = Math.pow(10, p - Math.floor(Math.log10(Math.max(a, b))))
+    a = Math.round(Math.abs(a) * big)
+    b = Math.round(Math.abs(b) * big)
+
+    while (b) {
+      let t = b
+      b = a % b
+      a = t
+    }
+    return a / big
+  }
+
+  static getPrimeFactors(n) {
+    const factors = []
+    let divisor = 2
+
+    while (n >= 2) {
+      if (n % divisor == 0) {
+        factors.push(divisor)
+        n = n / divisor
+      } else {
+        divisor++
+      }
+    }
+    return factors
+  }
+
+  static mod(a, b, p = 7) {
+    let big = Math.pow(10, p - Math.floor(Math.log10(Math.max(a, b))))
+    a = Math.round(Math.abs(a) * big)
+    b = Math.round(Math.abs(b) * big)
+
+    return (a % b) / big
   }
 }
 

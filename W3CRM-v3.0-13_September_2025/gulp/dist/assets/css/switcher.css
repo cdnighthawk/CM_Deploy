@@ -56,8 +56,7 @@
   z-index: -1;
   background: rgba(0, 0, 0, 0.85);
   display: block;
-  -webkit-backdrop-filter: blur(4px);
-          backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 .dz-demo-panel.show {
   right: 0;

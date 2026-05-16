@@ -15,6 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin
+from .auth import User
 
 
 class LeadEstimate(UUIDPKMixin, TimestampMixin, db.Model):
@@ -137,6 +138,30 @@ class LeadEstimate(UUIDPKMixin, TimestampMixin, db.Model):
         index=True,
         comment="USIS CRM pipeline: New Lead, Invited, Estimating, Submitted, Awarded, Lost",
     )
+
+    estimate_locked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+        comment="When set, takeoff / door-schedule mutations are blocked until unlock.",
+    )
+    estimate_approved_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+        comment="Formal estimate approval timestamp (implies lock when set).",
+    )
+    estimate_approved_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    estimate_approved_by: Mapped[Optional[User]] = relationship(
+        "User",
+        foreign_keys=[estimate_approved_by_user_id],
+    )
+
     primary_estimate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), nullable=True, comment="FK to estimates when Plan 4 table exists"
     )
@@ -149,4 +174,10 @@ class LeadEstimate(UUIDPKMixin, TimestampMixin, db.Model):
         back_populates="lead_estimate",
         cascade="all, delete-orphan",
         order_by="TakeoffLineItem.sort_order",
+    )
+    door_openings = relationship(
+        "DoorOpening",
+        back_populates="lead_estimate",
+        cascade="all, delete-orphan",
+        order_by="DoorOpening.sort_order",
     )

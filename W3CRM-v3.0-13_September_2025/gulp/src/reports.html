@@ -50,7 +50,7 @@
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
 								<h6 class="mb-1">Reports</h6>
-								<p class="text-muted small mb-0">Construction-style report catalog (W3CRM template demo). Categories and download modal are static placeholders until wired to USIS data.</p>
+								<p class="text-muted small mb-0">Construction-style report catalog. <strong>Print reports (USIS)</strong> below loads live catalog from the API; Power BI section embeds when configured. Legacy W3CRM category cards remain design references.</p>
 							</div>
 							<div class="text-nowrap small">
 								<a href="construction/quotation.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="construction/rfi-create.html">Next</a>
@@ -69,6 +69,21 @@
 					<div class="card-body py-3">
 						<div id="usis-powerbi-status" class="small text-muted mb-2" role="status"></div>
 						<div id="usis-powerbi-embed" class="d-none w-100 border rounded bg-light" style="min-height: 520px;"></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid mb-3 px-0">
+				<div class="card rounded border-0 shadow-sm">
+					<div class="card-header border-bottom py-2">
+						<h5 class="mb-0 text-primary">Print reports (USIS)</h5>
+					</div>
+					<div class="card-body py-3">
+						<p class="small text-muted mb-2">Opens a print-ready HTML page in a new tab (same login session). Use <strong>Print…</strong> on that page or the browser&apos;s print dialog (Ctrl+P) to print or save as PDF.</p>
+						<div id="usis-reports-catalog-error" class="alert alert-danger py-2 d-none small" role="alert"></div>
+						<div id="usis-reports-catalog-root" class="row g-3">
+							<p class="text-muted small mb-0">Loading catalog…</p>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -718,6 +733,25 @@
     </div>
     <!-- End - Download -->
 
+	<!-- USIS: parameterized report open -->
+	<div class="modal fade" id="usis-report-open-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-report-open-title">
+		<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title fs-6" id="usis-report-open-title">Open report</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body py-2" id="usis-report-open-body">
+					<div id="usis-report-open-fields"></div>
+				</div>
+				<div class="modal-footer py-2">
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-report-open-submit">Open in new tab</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Start - Page Scripts -->
 	@@include("elements/script.html")
 	
@@ -753,6 +787,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/powerbi-models@1.15.2/dist/models.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.23.1/dist/powerbi.min.js"></script>
 	<script src="assets/js/reports-powerbi.js"></script>
+	<script src="assets/js/usis-reports.js"></script>
     <script src="assets/js/construction.js"></script>
 		
 </body>

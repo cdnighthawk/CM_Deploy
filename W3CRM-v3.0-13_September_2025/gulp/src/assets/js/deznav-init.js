@@ -389,6 +389,20 @@ dzSettings.prototype.managePrimaryColor = function() {
 }
 
 var dzSettingsOptions = {};
+
+function usisResolvedColorScheme() {
+	try {
+		if (typeof USISThemeBoot !== "undefined" && USISThemeBoot.resolve) {
+			return USISThemeBoot.resolve();
+		}
+		var stored = localStorage.getItem("usis-color-scheme");
+		if (stored === "light" || stored === "dark") {
+			return stored;
+		}
+	} catch (e) { /* ignore */ }
+	return "light";
+}
+
 function getUrlParams(dParam){
 	var dPageURL = window.location.search.substring(1),
 		dURLVariables = dPageURL.split('&'),
@@ -412,7 +426,7 @@ function getUrlParams(dParam){
 	dzSettingsOptions = {
 		language: "en_GB",
 		typography: "poppins",
-		version: "light",
+		version: usisResolvedColorScheme(),
 		layout: "vertical",
 		primary: "color_1",
 		headerBg: "color_12",
@@ -426,6 +440,7 @@ function getUrlParams(dParam){
 	};
 	
 	new dzSettings(dzSettingsOptions);
+	window.dzSettingsOptions = dzSettingsOptions;
 	
 	jQuery(document).ready(function () {
 

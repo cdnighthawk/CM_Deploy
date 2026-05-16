@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "hardware-schedules.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		#usis-hs-set-list { max-height: min(70vh, 640px); overflow-y: auto; }
+		#usis-hs-set-list .list-group-item.active { font-weight: 600; }
+		#usis-hs-lines-table input.form-control-sm,
+		#usis-hs-lines-table select.form-select-sm { font-size: 0.8125rem; min-width: 3rem; }
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+		@@include("../elements/chatbox-construction.html")
+		@@include("../elements/header-construction.html")
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Hardware schedules",
+				})
+			</div>
+
+			<div class="container-fluid">
+
+				<div class="alert alert-danger d-none py-2 mb-2" id="usis-hs-error" role="alert"></div>
+
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h5 class="mb-0">Hardware schedules (HD-1 … HD-N)</h5>
+						<p class="text-muted small mb-0">Company templates for door hardware. Catalog picker: <strong>CSI 08 71 00</strong> only.</p>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<button type="button" class="btn btn-primary btn-sm" id="usis-hs-add-set">+ Add set</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-hs-refresh">Refresh</button>
+						<a class="btn btn-outline-secondary btn-sm" href="construction/door-schedule.html">Door schedule</a>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-xl-3">
+						<div class="card">
+							<div class="card-header py-2 fw-semibold">Sets</div>
+							<div class="card-body p-2">
+								<div class="list-group list-group-flush" id="usis-hs-set-list">
+									<div class="list-group-item text-muted small">Loading…</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-9">
+						<div class="card">
+							<div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+								<span class="fw-semibold" id="usis-hs-set-title">Select a set</span>
+								<button type="button" class="btn btn-outline-primary btn-sm d-none" id="usis-hs-add-line">+ Add line</button>
+							</div>
+							<div class="card-body p-0">
+								<p class="text-muted small px-3 pt-2 mb-0 d-none" id="usis-hs-set-desc"></p>
+								<div class="table-responsive">
+									<table class="table table-sm table-hover mb-0" id="usis-hs-lines-table">
+										<thead class="table-light">
+											<tr>
+												<th>Component</th>
+												<th class="text-nowrap">Type</th>
+												<th class="text-end">Qty</th>
+												<th>UOM</th>
+												<th class="text-end">Unit $</th>
+												<th>08 71 00 catalog</th>
+												<th class="text-end"></th>
+											</tr>
+										</thead>
+										<tbody id="usis-hs-lines-tbody">
+											<tr><td colspan="7" class="text-muted">Select a hardware set on the left.</td></tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div class="card-footer py-2 small text-muted">
+								<span>Material total (catalog unit costs): </span><strong id="usis-hs-lines-total">—</strong>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Catalog search modal -->
+				<div class="modal fade" id="usis-hs-catalog-modal" tabindex="-1" aria-hidden="true">
+					<div class="modal-dialog modal-lg modal-dialog-scrollable">
+						<div class="modal-content">
+							<div class="modal-header py-2">
+								<h5 class="modal-title">08 71 00 — Door hardware catalog</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+								<div class="input-group input-group-sm mb-2">
+									<input type="search" class="form-control" id="usis-hs-catalog-q" placeholder="Manufacturer, item, description…" autocomplete="off">
+									<button type="button" class="btn btn-outline-secondary" id="usis-hs-catalog-search">Search</button>
+								</div>
+								<ul class="list-group list-group-flush small" id="usis-hs-catalog-results"></ul>
+							</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-hardware-schedules.js"></script>
+
+</body>
+</html>

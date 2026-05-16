@@ -158,7 +158,7 @@
 						if (!id || !window.confirm("Delete this takeoff line?")) return;
 						fetch(apiBase() + "/api/v1/takeoff-lines/" + encodeURIComponent(id), {
 							method: "DELETE",
-							credentials: "omit",
+							credentials: "include",
 						})
 							.then(function (res) {
 								return res.json().then(function (j) {
@@ -182,7 +182,8 @@
 
 	function reloadTakeoff(pid) {
 		return fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/takeoff-lines", {
-			credentials: "omit",
+			credentials: "include",
+			headers: { Accept: "application/json" },
 		})
 			.then(function (r) {
 				return r.json();
@@ -239,8 +240,8 @@
 
 				fetch(apiBase() + "/api/v1/takeoff-lines/" + encodeURIComponent(id), {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
 					body: JSON.stringify(body),
 				})
 					.then(function (res) {
@@ -276,8 +277,8 @@
 				if (desc == null) return;
 				fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/takeoff-lines", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
 					body: JSON.stringify({
 						description: String(desc).slice(0, 500),
 						quantity: 1,

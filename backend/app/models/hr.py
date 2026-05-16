@@ -65,6 +65,106 @@ class HrTrainingAssignment(UUIDPKMixin, TimestampMixin, db.Model):
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
 
 
+class HrHireApplication(UUIDPKMixin, TimestampMixin, db.Model):
+    """Hire wizard intake; I-9 / W-4 PII stored encrypted in ``*_json_encrypted`` columns."""
+
+    __tablename__ = "hr_hire_applications"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+    application_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    i9_section1_json_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    i9_section1_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    i9_signature_png: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    i9_signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    w4_json_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    w4_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    w4_signature_png: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    w4_signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    i9_document_files: Mapped[list["HrHireI9DocumentFile"]] = relationship(
+        back_populates="hire_application",
+        cascade="all, delete-orphan",
+        order_by="HrHireI9DocumentFile.sort_order",
+    )
+    w4_document_files: Mapped[list["HrHireW4DocumentFile"]] = relationship(
+        back_populates="hire_application",
+        cascade="all, delete-orphan",
+        order_by="HrHireW4DocumentFile.sort_order",
+    )
+    union_document_files: Mapped[list["HrHireUnionDocumentFile"]] = relationship(
+        back_populates="hire_application",
+        cascade="all, delete-orphan",
+        order_by="HrHireUnionDocumentFile.sort_order",
+    )
+
+
+class HrHireI9DocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
+    """Photo of an I-9 List A / B / C supporting document for a hire wizard application."""
+
+    __tablename__ = "hr_hire_i9_document_files"
+
+    hire_application_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hr_hire_applications.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    slot: Mapped[str] = mapped_column(String(16), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    original_filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    mime_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    file_ext: Mapped[str] = mapped_column(String(16), nullable=False)
+    file_size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    hire_application: Mapped["HrHireApplication"] = relationship(back_populates="i9_document_files")
+
+
+class HrHireW4DocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
+    """Photo of a signed W-4 or other W-4 supporting document for a hire wizard application."""
+
+    __tablename__ = "hr_hire_w4_document_files"
+
+    hire_application_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hr_hire_applications.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    slot: Mapped[str] = mapped_column(String(16), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    original_filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    mime_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    file_ext: Mapped[str] = mapped_column(String(16), nullable=False)
+    file_size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    hire_application: Mapped["HrHireApplication"] = relationship(back_populates="w4_document_files")
+
+
+class HrHireUnionDocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
+    """Photo of a union card or union dispatch slip for a hire wizard application."""
+
+    __tablename__ = "hr_hire_union_document_files"
+
+    hire_application_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("hr_hire_applications.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    document_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    original_filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    mime_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    file_ext: Mapped[str] = mapped_column(String(16), nullable=False)
+    file_size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    hire_application: Mapped["HrHireApplication"] = relationship(back_populates="union_document_files")
+
+
 class HrEmployeePayScale(UUIDPKMixin, TimestampMixin, db.Model):
     """Multiple pay schedules per employee (union scales, stipends, etc.). HR-owned; not prevailing wage reference rows."""
 

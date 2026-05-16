@@ -8,6 +8,10 @@
 		3000: 1,
 		3001: 1,
 		3002: 1,
+		3003: 1,
+		3004: 1,
+		3005: 1,
+		3006: 1,
 		4173: 1,
 		5173: 1,
 		5174: 1,
@@ -19,6 +23,13 @@
 		9630: 1,
 		1234: 1,
 	};
+
+	function isLikelyStaticDevPort(portStr) {
+		if (DEV_SERVER_PORTS[portStr]) return true;
+		var n = parseInt(portStr, 10);
+		/* BrowserSync often uses 3000–3008 (or similar) when defaults are busy. */
+		return !isNaN(n) && n >= 3000 && n <= 3099;
+	}
 
 	function explicitWindowApiBase() {
 		if (typeof window.USIS_API_BASE !== "string") return null;
@@ -50,7 +61,7 @@
 		var host = loc.hostname || "";
 		var proto = loc.protocol || "http:";
 		var port = String(loc.port || "");
-		if (DEV_SERVER_PORTS[port]) return proto + "//" + host + ":5000";
+		if (isLikelyStaticDevPort(port)) return proto + "//" + host + ":5000";
 		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
 		if (loopback) {
 			if (port === "5000") return "";
@@ -144,7 +155,7 @@
 		var url = embedUrl(apiBase());
 		var headers = Object.assign({ Accept: "application/json" }, actorHeaders());
 
-		fetch(url, { method: "GET", credentials: "omit", headers: headers })
+		fetch(url, { method: "GET", credentials: "include", headers: headers })
 			.then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {

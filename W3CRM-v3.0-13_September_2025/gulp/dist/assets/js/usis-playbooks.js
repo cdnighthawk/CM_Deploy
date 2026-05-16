@@ -33,8 +33,8 @@
 
 	function apiFetch(path, opts) {
 		opts = opts || {};
-		opts.credentials = opts.credentials || "omit";
-		opts.headers = Object.assign({}, actorHeaders(), opts.headers || {});
+		if (!opts.credentials) opts.credentials = "include";
+		opts.headers = Object.assign({ Accept: "application/json" }, actorHeaders(), opts.headers || {});
 		return fetch(apiBase() + path, opts);
 	}
 

@@ -8,8 +8,7 @@
  * - Companies (Responsible Contractor) load once.
  * - "Create as Draft" + "Create as Open" footer buttons mirror Procore.
  * - "Draft with AI" modal calls /rfis/draft-assist.
- * - Attachments are queued in-page; after successful create the page posts
- *   them via /rfis/<id>/attachments.
+ * - Attachments: files are uploaded after create via ``POST /rfis/<id>/attachments/upload``.
  */
 (function () {
 	"use strict";
@@ -24,7 +23,7 @@
 		configurable: [],
 		assignees: [],
 		distribution: [],
-		queuedAttachments: [],
+		queuedFiles: [],
 	};
 
 	function $(id) { return document.getElementById(id); }
@@ -245,11 +244,12 @@
 	}
 
 	function postAttachments(rfiId) {
-		if (!state.queuedAttachments.length) return Promise.resolve();
-		var path = "/api/v1/rfis/" + encodeURIComponent(rfiId) + "/attachments";
-		return Promise.all(state.queuedAttachments.map(function (a) {
-			return U.fetchJson(path, { method: "POST", body: a }).catch(function () {});
-		}));
+		if (!state.queuedFiles.length) return Promise.resolve();
+		return Promise.all(state.queuedFiles.map(function (file) {
+			return U.uploadRfiAttachment(rfiId, file);
+		})).then(function () {
+			state.queuedFiles = [];
+		});
 	}
 
 	function submit(status) {
@@ -268,6 +268,9 @@
 			});
 		}).catch(function (err) {
 			U.flashError($("usis-rfi-error"), err.message || String(err));
+			if (window.USISNotify && window.USISNotify.error) {
+				window.USISNotify.error(err.message || String(err));
+			}
 		});
 	}
 
@@ -318,17 +321,7 @@
 
 	function queueFiles(files) {
 		Array.from(files || []).forEach(function (f) {
-			// We don't have an upload endpoint yet (binary upload + storage is
-			// out of scope for this phase). Stash a placeholder URL so the
-			// user sees the file in the list; the create flow will POST the
-			// metadata via /rfis/<id>/attachments after the RFI is saved.
-			state.queuedAttachments.push({
-				file_url: "pending-upload://" + f.name,
-				title: f.name,
-				filename: f.name,
-				mime_type: f.type || null,
-				file_size_bytes: f.size,
-			});
+			state.queuedFiles.push(f);
 		});
 		renderQueuedAttachments();
 	}
@@ -367,13 +360,13 @@
 	function renderQueuedAttachments() {
 		var list = $("usis-rfi-attach-list");
 		if (!list) return;
-		list.innerHTML = state.queuedAttachments.map(function (a, i) {
+		list.innerHTML = state.queuedFiles.map(function (f, i) {
 			return '<div class="d-flex align-items-center gap-2 small mb-1"><i class="fa fa-file"></i> ' +
-				U.esc(a.title) + ' <a href="javascript:void(0);" class="text-danger" data-rm="' + i + '">remove</a></div>';
+				U.esc(f.name) + ' <a href="javascript:void(0);" class="text-danger" data-rm="' + i + '">remove</a></div>';
 		}).join("");
 		Array.prototype.forEach.call(list.querySelectorAll("[data-rm]"), function (a) {
 			a.addEventListener("click", function () {
-				state.queuedAttachments.splice(parseInt(a.dataset.rm, 10), 1);
+				state.queuedFiles.splice(parseInt(a.dataset.rm, 10), 1);
 				renderQueuedAttachments();
 			});
 		});

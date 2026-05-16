@@ -1,0 +1,38 @@
+/* Form W-4 review / questionnaire layout */
+.usis-w4-form .usis-w4-field-row label {
+	font-weight: 500;
+}
+.usis-w4-review-panel {
+	border: 1px solid var(--bs-border-color, #dee2e6);
+	border-radius: 0.375rem;
+	padding: 1rem;
+	background: var(--bs-body-bg, #fff);
+}
+.usis-w4-sign-canvas-wrap {
+	border: 1px dashed var(--bs-border-color, #adb5bd);
+	border-radius: 0.25rem;
+	background: #fff;
+	touch-action: none;
+}
+#usis-w4-sign-canvas {
+	display: block;
+	width: 100%;
+	height: 10rem;
+	cursor: crosshair;
+}
+.usis-w4-sign-typed-preview {
+	font-family: "Segoe Script", "Brush Script MT", cursive;
+	font-size: 1.75rem;
+	min-height: 3rem;
+	padding: 0.5rem;
+	border-bottom: 1px solid #333;
+}
+.usis-w4-doc-thumb img {
+	width: 6rem;
+	height: 6rem;
+	object-fit: cover;
+}
+.usis-w4-doc-thumb .usis-w4-doc-remove {
+	line-height: 1;
+	font-size: 0.85rem;
+}

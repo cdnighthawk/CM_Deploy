@@ -1,147 +1,624 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
+
 
 	<base href="../">
 
+
+
 	@@include("../elements/meta.html", {
+
 		"fileName": "drawing-viewer.html",
+
 	})
 
+
+
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
 	<style>
-		.usis-dv-toolbar {
-			position: sticky;
-			top: 0;
-			z-index: 1020;
+
+		/* Full-page viewer shell: hide normal CRM chrome on this page only. */
+
+		body.usis-drawing-viewer #main-wrapper {
+
+			display: none !important;
+
+		}
+
+		body.usis-drawing-viewer {
+
+			overflow: hidden;
+
+		}
+
+		#usis-dv-fullscreen {
+
+			position: fixed;
+
+			inset: 0;
+
+			z-index: 10050;
+
+			display: flex;
+
+			flex-direction: column;
+
 			background: var(--bs-body-bg, #fff);
-			border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+
 		}
-		.usis-dv-canvas-wrap {
-			overflow: auto;
-			max-height: calc(100vh - 11rem);
+
+		.usis-dv-fs-top {
+
+			flex: 0 0 auto;
+
+		}
+
+		.usis-dv-fs-body {
+
+			flex: 1 1 auto;
+
+			min-height: 0;
+
+			display: flex;
+
+			flex-direction: row;
+
+		}
+
+		.usis-dv-rail {
+
+			width: min(17.5rem, 32vw);
+
+			flex: 0 0 min(17.5rem, 32vw);
+
+			min-width: 0;
+
+		}
+
+		.usis-dv-fs-center {
+
+			flex: 1 1 auto;
+
+			min-width: 0;
+
+			min-height: 0;
+
+			display: flex;
+
+			flex-direction: column;
+
 			background: #525659;
+
 		}
+
+		.usis-dv-toolbar {
+
+			background: var(--bs-body-bg, #fff);
+
+			border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+
+		}
+
+		.usis-dv-canvas-wrap {
+
+			flex: 1 1 auto;
+
+			min-height: 0;
+
+			overflow: auto;
+
+			background: #525659;
+
+		}
+
 		#usis-dv-canvas {
+
 			display: block;
-			margin: 1rem auto;
+
+			margin: 0;
+
 			box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.35);
+
 		}
+
 		.usis-dv-meta {
+
 			font-size: 0.8125rem;
+
 		}
+
+		#usis-dv-pdf-stack {
+
+			position: relative;
+
+			display: block;
+
+			text-align: center;
+
+			vertical-align: top;
+
+		}
+
+		.usis-dv-pdf-inner {
+
+			position: relative;
+
+			display: inline-block;
+
+			margin: 0.5rem auto;
+
+			vertical-align: top;
+
+		}
+
+		#usis-dv-overlay {
+
+			position: absolute;
+
+			left: 0;
+
+			top: 0;
+
+			touch-action: none;
+
+			cursor: crosshair;
+
+			margin: 0;
+
+		}
+
+		#usis-dv-picker {
+
+			max-width: 42rem;
+
+		}
+
+		#usis-dv-thumb-list {
+
+			max-height: 6rem;
+
+			overflow: auto;
+
+		}
+
+		.usis-dv-takeoff-row {
+
+			text-align: left;
+
+			border-radius: 0.25rem;
+
+		}
+
+		.usis-dv-takeoff-row.active {
+
+			outline: 2px solid var(--bs-primary);
+
+			background: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.08);
+
+		}
+
+		body.usis-drawing-viewer .modal {
+			z-index: 10060;
+		}
+
+		body.usis-drawing-viewer .modal-backdrop {
+			z-index: 10055;
+		}
+
+		.usis-dv-takeoff-sum-click {
+			cursor: pointer;
+		}
+
+		.usis-dv-takeoff-sum-click:hover {
+			text-decoration: underline;
+		}
+
 	</style>
+
 </head>
-<body>
+
+<body class="usis-drawing-viewer">
+
+
 
 	@@include("../elements/preloader.html")
 
+
+
 	<div id="main-wrapper">
+
+
 
 		@@include("../elements/nav-header-construction.html")
 
+
+
 		@@include("../elements/chatbox-construction.html")
+
+
 
 		@@include("../elements/header-construction.html")
 
+
+
 		@@include("../elements/deznav-construction.html")
 
-		<main class="content-body">
-			<div class="page-title">
-				@@include("../elements/breadcrumb.html", {
-					"fileName": "Drawing viewer",
-				})
-			</div>
 
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-							<div class="me-2">
-								<h6 class="mb-1">Construction — Drawing Viewer</h6>
-								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
-							</div>
-							<div class="text-nowrap small">
-								<a href="contact-us.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="edit-quotation.html">Next</a>
-							</div>
-						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
-					</div>
-				</div>
-			</div>
 
-			<div class="container-fluid">
-				<div class="mb-2">
-					<a id="usis-dv-back" href="construction/project-detail.html" class="small">&larr; Back to project</a>
-				</div>
+		<main class="content-body d-none" aria-hidden="true"></main>
 
-				<div class="alert alert-danger d-none py-2" id="usis-dv-error" role="alert"></div>
-				<div class="alert alert-light border py-2 mb-2 d-none" id="usis-dv-loading">Loading drawing…</div>
 
-				<div class="alert alert-info py-2 px-3 mb-2 d-none" id="usis-dv-takeoff-strip" role="region" aria-label="Takeoff line">
-					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-						<div>
-							<strong class="small text-muted text-uppercase">Takeoff line</strong>
-							<div class="small mb-0 mt-1" id="usis-dv-takeoff-summary">—</div>
-						</div>
-						<button type="button" class="btn btn-sm btn-primary" id="usis-dv-takeoff-save">Save measurement to line</button>
-					</div>
-				</div>
-
-				<div class="card border-0 shadow-sm mb-2 usis-dv-toolbar">
-					<div class="card-body py-2 px-3">
-						<div class="row g-2 align-items-center flex-wrap">
-							<div class="col-auto">
-								<strong class="small text-muted text-uppercase">Revision</strong>
-								<select class="form-select form-select-sm mt-1" id="usis-dv-revision" style="min-width: 14rem" aria-label="Drawing revision"></select>
-							</div>
-							<div class="col-auto d-flex gap-1 align-items-end">
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Arrow Right)">&larr; Newer</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Arrow Left)">Older &rarr;</button>
-							</div>
-							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out">−</button>
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in">+</button>
-								<span class="small text-muted align-self-center ms-1" id="usis-dv-zoom-label">100%</span>
-							</div>
-							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page">Page −</button>
-								<span class="small text-muted align-self-center" id="usis-dv-page-label">1 / 1</span>
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page">Page +</button>
-							</div>
-							<div class="col text-md-end usis-dv-meta text-muted" id="usis-dv-sheetline"></div>
-						</div>
-						<div class="row g-2 mt-2 pt-2 border-top align-items-center">
-							<div class="col-md-8">
-								<strong class="small text-muted text-uppercase">Annotations</strong>
-								<ul class="list-unstyled small mb-0 mt-1" id="usis-dv-annotations-list"></ul>
-							</div>
-							<div class="col-md-4 text-md-end">
-								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-dv-ann-add">Save note</button>
-								<button type="button" class="btn btn-sm btn-primary" id="usis-dv-ai-stub">Review with AI (stub)</button>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="usis-dv-canvas-wrap rounded border">
-					<canvas id="usis-dv-canvas" width="0" height="0"></canvas>
-				</div>
-				<p class="small text-muted mt-2 mb-0" id="usis-dv-hint">
-					Shortcuts: <kbd>Arrow Left</kbd> older revision, <kbd>Arrow Right</kbd> newer, <kbd>Arrow Up</kbd> / <kbd>Arrow Down</kbd> same as Procore (newer / older), <kbd>+</kbd> / <kbd>-</kbd> zoom.
-				</p>
-			</div>
-		</main>
 
 		@@include("../elements/footer.html")
 
+
+
+	</div>
+
+
+
+	<div id="usis-dv-fullscreen" class="usis-dv-fs">
+
+		<header class="usis-dv-fs-top border-bottom shadow-sm bg-body">
+
+			<div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2">
+
+				<a id="usis-dv-back" href="construction/project-detail.html" class="btn btn-outline-secondary btn-sm">&larr; Project</a>
+
+				<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fs-close" title="Leave drawing viewer">Close</button>
+
+				<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1" id="usis-dv-error" role="alert"></div>
+
+				<div class="alert alert-light border py-1 px-2 mb-0 small d-none" id="usis-dv-loading" role="status">
+
+					<span id="usis-dv-loading-text">Loading drawing…</span>
+
+				</div>
+
+			</div>
+
+			<div class="px-2 pb-2 d-none" id="usis-dv-picker-wrap">
+
+				<div class="card border shadow-sm mb-0" id="usis-dv-picker">
+
+					<div class="card-body py-2 px-3">
+
+						<h6 class="mb-2 small">Choose a drawing</h6>
+
+						<p class="text-muted small mb-2">No <code>drawing_id</code> in the URL. Pick a sheet for this project.</p>
+
+						<div class="row g-2 align-items-end">
+
+							<div class="col-md-8">
+
+								<label class="form-label small mb-0" for="usis-dv-pick-drawing">Drawing</label>
+
+								<select class="form-select form-select-sm" id="usis-dv-pick-drawing"></select>
+
+							</div>
+
+							<div class="col-md-4">
+
+								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-dv-pick-open">Open selected</button>
+
+							</div>
+
+						</div>
+
+					</div>
+
+				</div>
+
+			</div>
+
+		</header>
+
+
+
+		<div class="usis-dv-fs-body">
+
+			<aside id="usis-dv-rail-left" class="usis-dv-rail border-end bg-light d-flex flex-column">
+
+				<div class="p-2 border-bottom small text-uppercase text-muted fw-semibold">Takeoffs (this job)</div>
+
+				<div id="usis-dv-takeoff-list" class="flex-grow-1 overflow-auto p-2 small">
+
+					<p class="text-muted mb-0" id="usis-dv-takeoff-list-placeholder">Load a project to list takeoffs.</p>
+
+				</div>
+
+				<div class="p-2 border-top">
+
+					<button type="button" class="btn btn-primary btn-sm w-100" id="usis-dv-takeoff-new">New takeoff</button>
+
+				</div>
+
+			</aside>
+
+
+
+			<div class="usis-dv-fs-center">
+
+				<div class="card border-0 rounded-0 shadow-none mb-0 usis-dv-toolbar">
+
+					<div class="card-body py-2 px-3">
+
+						<div class="row g-2 align-items-center flex-wrap">
+
+							<div class="col-auto">
+
+								<strong class="small text-muted text-uppercase">Revision</strong>
+
+								<select class="form-select form-select-sm mt-1" id="usis-dv-revision" style="min-width: 12rem" aria-label="Drawing revision"></select>
+
+							</div>
+
+							<div class="col-auto d-flex gap-1 align-items-end">
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Arrow Right)">&larr; Newer</button>
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Arrow Left)">Older &rarr;</button>
+
+							</div>
+
+							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out">−</button>
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in">+</button>
+
+								<span class="small text-muted align-self-center ms-1" id="usis-dv-zoom-label">100%</span>
+
+							</div>
+
+							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page">Page −</button>
+
+								<span class="small text-muted align-self-center" id="usis-dv-page-label">1 / 1</span>
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page">Page +</button>
+
+							</div>
+
+							<div class="col text-md-end usis-dv-meta text-muted" id="usis-dv-sheetline"></div>
+
+						</div>
+
+						<div class="row g-2 mt-2 pt-2 border-top align-items-center" id="usis-dv-measure-toolbar">
+
+							<div class="col-12">
+
+								<strong class="small text-muted text-uppercase">Measure (takeoff)</strong>
+
+							</div>
+
+							<div class="col-auto d-flex flex-wrap gap-1 align-items-center">
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Pan / no measure tool">Pan</button>
+
+								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-cal" title="Two clicks + known length (LF)">Calibrate</button>
+
+								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-line" title="Click vertices, double-click or Done to finish">Linear</button>
+
+								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-poly" title="Polygon — click corners; close near first point, double-click, or Done">Area</button>
+
+								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-rect" title="Axis-aligned rectangle — two diagonal clicks (gross area)">Rectangle</button>
+
+								<button type="button" class="btn btn-outline-danger btn-sm" id="usis-dv-m-deduct" title="Inner rectangle subtracted from last gross rectangle (two clicks)">Deduction</button>
+
+								<button type="button" class="btn btn-outline-info btn-sm" id="usis-dv-m-count" title="Click to place count markers">Count</button>
+
+								<button type="button" class="btn btn-outline-danger btn-sm" id="usis-dv-m-clear">Clear measure</button>
+
+								<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done line</button>
+
+							</div>
+
+							<div class="col-auto small text-muted" id="usis-dv-m-status">Calibration: none · Measured: —</div>
+
+						</div>
+
+						<div class="row g-2 mt-2 pt-2 border-top align-items-center">
+
+							<div class="col-md-8">
+
+								<strong class="small text-muted text-uppercase">Annotations</strong>
+
+								<ul class="list-unstyled small mb-0 mt-1" id="usis-dv-annotations-list"></ul>
+
+							</div>
+
+							<div class="col-md-4 text-md-end">
+
+								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-dv-ann-add">Save note</button>
+
+								<button type="button" class="btn btn-sm btn-primary" id="usis-dv-ai-stub">Review with AI (stub)</button>
+
+							</div>
+
+						</div>
+
+					</div>
+
+				</div>
+
+
+
+				<div class="px-2 py-1 d-none border-bottom bg-body" id="usis-dv-sheets-wrap">
+
+					<strong class="small text-muted text-uppercase">Sheets in series</strong>
+
+					<ul class="list-unstyled small mb-0 mt-1 border rounded p-2 bg-light" id="usis-dv-thumb-list"></ul>
+
+				</div>
+
+
+
+				<div class="usis-dv-canvas-wrap text-center">
+
+					<div id="usis-dv-pdf-stack">
+
+						<div class="usis-dv-pdf-inner">
+
+							<canvas id="usis-dv-canvas" width="0" height="0"></canvas>
+
+							<canvas id="usis-dv-overlay" width="0" height="0"></canvas>
+
+						</div>
+
+					</div>
+
+				</div>
+
+				<p class="small text-muted mb-0 px-2 py-1 bg-body border-top" id="usis-dv-hint">
+
+					Shortcuts: <kbd>Arrow Left</kbd> / <kbd>Arrow Right</kbd> revisions; <kbd>+</kbd> / <kbd>-</kbd> zoom.
+
+				</p>
+
+			</div>
+
+
+
+			<aside id="usis-dv-rail-right" class="usis-dv-rail border-start bg-body d-flex flex-column">
+
+				<div class="p-2 border-bottom small text-uppercase text-muted fw-semibold">Takeoff details</div>
+
+				<div class="flex-grow-1 overflow-auto p-2">
+
+					<p class="text-muted small mb-3" id="usis-dv-takeoff-empty">Select a takeoff on the left, or create <strong>New takeoff</strong>.</p>
+
+					<div class="d-none" id="usis-dv-takeoff-strip" role="region" aria-label="Takeoff line">
+
+						<div class="mb-2">
+
+							<div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+
+								<strong class="small text-muted text-uppercase mb-0">Summary</strong>
+
+								<button type="button" class="btn btn-link btn-sm p-0 small" id="usis-dv-takeoff-open-modal">Details…</button>
+
+							</div>
+
+							<div
+								class="small mt-1 usis-dv-takeoff-sum-click"
+								role="button"
+								tabindex="0"
+								id="usis-dv-takeoff-summary"
+								title="Edit label, location, and material catalog link"
+							>—</div>
+
+						</div>
+
+						<div class="mb-2">
+
+							<label class="form-label small mb-0 text-muted" for="usis-dv-takeoff-qty">Quantity</label>
+
+							<input type="number" class="form-control form-control-sm" id="usis-dv-takeoff-qty" step="0.0001" min="0" placeholder="—">
+
+						</div>
+
+						<div class="mb-3">
+
+							<label class="form-label small mb-0 text-muted" for="usis-dv-takeoff-unit">Unit</label>
+
+							<select class="form-select form-select-sm" id="usis-dv-takeoff-unit">
+
+								<option>LF</option>
+
+								<option>SF</option>
+
+								<option>EA</option>
+
+								<option>CY</option>
+
+							</select>
+
+						</div>
+
+						<button type="button" class="btn btn-sm btn-primary w-100" id="usis-dv-takeoff-save">Apply to line</button>
+
+					</div>
+
+				</div>
+
+			</aside>
+
+		</div>
+
+	</div>
+
+	<div class="modal fade" id="usis-dv-modal-takeoff-line" tabindex="-1" aria-hidden="true" aria-labelledby="usis-dv-modal-takeoff-line-title">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-dv-modal-takeoff-line-title">Takeoff line details</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-dv-takeoff-modal-err" role="alert"></div>
+					<div id="usis-dv-takeoff-modal-no-catalog" class="d-none">
+						<p class="small text-muted mb-2">No rows in the company material catalog yet. You can still save the line with a label and location.</p>
+						<button type="button" class="btn btn-primary btn-sm mb-3" id="usis-dv-takeoff-modal-new-bare">New takeoff</button>
+					</div>
+					<div class="mb-2" id="usis-dv-takeoff-modal-mat-wrap">
+						<label class="form-label small mb-0" for="usis-dv-takeoff-modal-material">Material (catalog)</label>
+						<input type="text" class="form-control form-control-sm mb-1" id="usis-dv-takeoff-modal-mat-filter" placeholder="Filter list" maxlength="120" aria-label="Filter materials list" autocomplete="off">
+						<select class="form-select form-select-sm" id="usis-dv-takeoff-modal-material" size="8" aria-label="Material catalog row"></select>
+						<p class="small text-muted mb-0 mt-1">Optional — links this line to a <code>material_pricing</code> row for costing.</p>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-dv-takeoff-modal-label">Item label</label>
+						<input type="text" class="form-control form-control-sm" id="usis-dv-takeoff-modal-label" maxlength="500" placeholder="e.g. Storefront — Grid C">
+					</div>
+					<div class="mb-0">
+						<label class="form-label small mb-0" for="usis-dv-takeoff-modal-loc">Location</label>
+						<input type="text" class="form-control form-control-sm" id="usis-dv-takeoff-modal-loc" maxlength="500" placeholder="e.g. Level 3 — East elevation">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-dv-takeoff-modal-save">Save</button>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+
+	<script src="assets/js/translator.js"></script>
+
 	<script src="assets/js/aiReviewBus.js"></script>
+
 	<script src="assets/js/usis-notify.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+	<script src="assets/js/usis-project-context.js"></script>
+
+	<script src="assets/js/usis-command-palette.js"></script>
+
+	<script src="assets/js/deznav-init-construction.js"></script>
+
+	<script src="assets/js/custom.js"></script>
+
+	<script src="assets/js/construction.js"></script>
+
+	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 	<script src="assets/js/drawing-viewer.js"></script>
+
 </body>
+
 </html>
+

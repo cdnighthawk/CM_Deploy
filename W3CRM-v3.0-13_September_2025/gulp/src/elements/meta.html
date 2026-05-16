@@ -36,15 +36,8 @@
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
 
 	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
 	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
-	<script>
-	(function () {
-		var existing = window.USIS_API_BASE;
-		if (existing != null && String(existing).trim() !== "") return;
-		var h = window.location.hostname || "";
-		var local = h === "localhost" || h === "127.0.0.1";
-		window.USIS_API_BASE = local
-			? (window.location.protocol + "//" + h + ":5000")
-			: "http://127.0.0.1:5000";
-	})();
-	</script>
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>

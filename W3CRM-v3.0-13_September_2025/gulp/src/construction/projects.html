@@ -56,13 +56,13 @@
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
 								<h6 class="mb-1">Construction — Projects</h6>
-								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+								
 							</div>
 							<div class="text-nowrap small">
 								<a href="project-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="quotation.html">Next</a>
 							</div>
 						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+						
 					</div>
 				</div>
 			</div>
@@ -104,13 +104,6 @@
 
 			<div class="container-fluid">
 
-				<div class="col-xl-12 mb-3">
-					<div class="alert alert-primary border-0 mb-0">
-						<strong>Projects</strong> - Active jobs from PostgreSQL table <code>projects</code> via <code>GET /api/v1/projects</code>.
-						<span class="d-block small mt-1 text-dark" id="usis-projects-load-status"></span>
-					</div>
-				</div>
-
 				<div class="col-xl-12">
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<div class="input-group message-search-area width200 w-xs-100">
@@ -119,7 +112,7 @@
 								<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-projects-filter-clear" aria-label="Clear filter"><i class="flaticon-381-search-2"></i></button>
 							</div>
 						</div>
-						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Reload from Flask (GET /api/v1/projects)">
+						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Reload project list">
 							<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
 						</button>
 					</div>
@@ -174,9 +167,8 @@
 
 	<script>
 	(function () {
-		var API = window.USIS_API_BASE || "http://127.0.0.1:5000";
+		var API = typeof window.usisApiBase === "function" ? window.usisApiBase() : "";
 		var tbody = document.getElementById("usis-projects-tbody");
-		var statusEl = document.getElementById("usis-projects-load-status");
 		var filterInput = document.getElementById("usis-projects-filter");
 		var lastItems = [];
 
@@ -266,23 +258,19 @@
 		function loadProjects() {
 			if (!tbody) return;
 			tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading…</td></tr>';
-			if (statusEl) statusEl.textContent = "Requesting " + API + "/api/v1/projects …";
-			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000")
+			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000", {
+					credentials: "include",
+					headers: { Accept: "application/json" },
+				})
 				.then(function (r) {
 					if (!r.ok) throw new Error("HTTP " + r.status);
 					return r.json();
 				})
 				.then(function (data) {
 					lastItems = data.items || [];
-					var total = data.total != null ? data.total : lastItems.length;
-					if (statusEl) {
-						var ent = data.entity ? " Table: <code>" + data.entity + "</code>." : "";
-						statusEl.innerHTML =
-							"Showing " + lastItems.length + " of " + total + " row(s). API base: <code>" + esc(API) + "</code>." + ent;
-					}
 					if (!lastItems.length) {
 						tbody.innerHTML =
-							'<tr><td colspan="7" class="text-muted">No rows in <code>projects</code> yet. Import jobs or create records in the database, then reload.</td></tr>';
+							'<tr><td colspan="7" class="text-muted">No projects yet. Add projects in your system, then reload.</td></tr>';
 						return;
 					}
 					applyFilter();
@@ -292,7 +280,6 @@
 						'<tr><td colspan="7" class="text-danger">Could not load projects: ' +
 						esc(err.message) +
 						".</td></tr>";
-					if (statusEl) statusEl.textContent = "";
 				});
 		}
 

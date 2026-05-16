@@ -1,10 +1,8 @@
-"""Load material_pricing rows from the Bobrick / multi-vendor material CSV."""
+"""Load material_pricing rows from Bobrick / updated vendor material CSV exports."""
 from __future__ import annotations
 
 import argparse
-import csv
 import sys
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 _BACKEND_ROOT = Path(__file__).resolve().parent.parent
@@ -14,66 +12,64 @@ for _p in (_BACKEND_ROOT, _SCRIPTS):
         sys.path.insert(0, str(_p))
 
 from db_csv_paths import database_files_dir  # noqa: E402
+from material_csv_row import read_material_csv  # noqa: E402
 
-_DEFAULT_CSV = str(database_files_dir() / "BOBRICK MATERIAL PRICING.CSV")
-
-
-def _blank_to_none(s: str | None) -> str | None:
-    if s is None:
-        return None
-    stripped = s.strip()
-    return None if stripped == "" else stripped
+_DEFAULT_BOBRICK = database_files_dir() / "BOBRICK MATERIAL PRICING.CSV"
+_DEFAULT_UPDATED = database_files_dir() / "uPDATED PRICING.CSV"
 
 
-def _parse_decimal(raw: str | None) -> Decimal | None:
-    s = (raw or "").strip()
-    if s == "":
-        return None
-    try:
-        return Decimal(s)
-    except InvalidOperation as exc:
-        raise ValueError(f"invalid decimal: {raw!r}") from exc
+def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> None:
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    from sqlalchemy.sql import func
 
-
-def _row_to_payload(row: dict[str, str]) -> dict[str, object]:
-    manufacturer = _blank_to_none(row.get("Manufacturer"))
-    item = _blank_to_none(row.get("Item"))
-    if not manufacturer or not item:
-        raise ValueError("Manufacturer and Item are required (got blank values)")
-
-    category = _blank_to_none(row.get("Category"))
-    description = _blank_to_none(row.get("Description"))
-    mounting_type = _blank_to_none(row.get("Mounting Type"))
-    cost = _parse_decimal(row.get("Cost"))
-    labor_per = _parse_decimal(row.get("Labor Per"))
-
-    return {
-        "manufacturer": manufacturer,
-        "item": item,
-        "category": category,
-        "description": description,
-        "mounting_type": mounting_type,
-        "cost": cost,
-        "labor_per": labor_per,
-        "currency": "USD",
-        "unit_of_measure": "EA",
-    }
+    table = MaterialPrice.__table__
+    for p in payloads:
+        ins = pg_insert(table).values(**p)
+        stmt = ins.on_conflict_do_update(
+            index_elements=["manufacturer", "item"],
+            set_={
+                "category": ins.excluded.category,
+                "csi_spec_section": ins.excluded.csi_spec_section,
+                "description": ins.excluded.description,
+                "mounting_type": ins.excluded.mounting_type,
+                "cost": ins.excluded.cost,
+                "labor_per": ins.excluded.labor_per,
+                "currency": ins.excluded.currency,
+                "unit_of_measure": ins.excluded.unit_of_measure,
+                "updated_at": func.now(),
+            },
+        )
+        db.session.execute(stmt)
+    db.session.commit()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Load material_pricing from CSV.")
-    parser.add_argument("--csv", default=_DEFAULT_CSV, help="Path to the source CSV file.")
+    parser.add_argument(
+        "--csv",
+        action="append",
+        dest="csv_paths",
+        help="Path to a source CSV (repeat for multiple files).",
+    )
+    parser.add_argument(
+        "--all-defaults",
+        action="store_true",
+        help="Load BOBRICK (truncate) then uPDATED PRICING (upsert) from DATABASE_FILES_ROOT.",
+    )
     parser.add_argument(
         "--truncate",
         action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Truncate table before load (default: true). Use --no-truncate to upsert.",
+        default=None,
+        help="Truncate table before load. Default: true for first file only when using --all-defaults.",
+    )
+    parser.add_argument(
+        "--tag-door-hardware",
+        action="store_true",
+        help="Set csi_spec_section=087100 (08 71 00) on every row in this load.",
     )
     args = parser.parse_args()
 
     from sqlalchemy import text
-    from sqlalchemy.dialects.postgresql import insert as pg_insert
-    from sqlalchemy.sql import func
 
     from app.script_env import skip_startup_lead_bootstrap
 
@@ -84,60 +80,44 @@ def main() -> None:
     from app.models.material_pricing import MaterialPrice
 
     app = create_app()
-    csv_path = Path(args.csv)
-    if not csv_path.is_file():
-        raise SystemExit(f"CSV not found: {csv_path}")
 
-    payloads: list[dict[str, object]] = []
-    with csv_path.open(newline="", encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-        expected = {
-            "Manufacturer",
-            "Item",
-            "Category",
-            "Cost",
-            "Description",
-            "Mounting Type",
-            "Labor Per",
-        }
-        if reader.fieldnames is None:
-            raise SystemExit("CSV has no header row")
-        missing = expected - set(reader.fieldnames)
-        if missing:
-            raise SystemExit(f"CSV missing columns: {sorted(missing)}")
-
-        for row in reader:
-            payloads.append(_row_to_payload(row))
+    if args.all_defaults:
+        paths = [_DEFAULT_BOBRICK, _DEFAULT_UPDATED]
+    elif args.csv_paths:
+        paths = [Path(p) for p in args.csv_paths]
+    else:
+        paths = [_DEFAULT_BOBRICK]
 
     with app.app_context():
-        if args.truncate:
-            db.session.execute(text("TRUNCATE material_pricing RESTART IDENTITY"))
-            db.session.commit()
+        total = 0
+        for i, csv_path in enumerate(paths):
+            if not csv_path.is_file():
+                print(f"Skipping missing CSV: {csv_path}")
+                continue
+            payloads = read_material_csv(csv_path)
+            if args.tag_door_hardware:
+                for p in payloads:
+                    p["csi_spec_section"] = "087100"
+            if args.truncate is not None:
+                do_truncate = bool(args.truncate) and i == 0
+            elif args.all_defaults:
+                do_truncate = i == 0
+            elif len(paths) == 1:
+                do_truncate = True
+            else:
+                do_truncate = False
 
-        if args.truncate:
-            db.session.bulk_insert_mappings(MaterialPrice, payloads)
-            db.session.commit()
-        else:
-            table = MaterialPrice.__table__
-            for p in payloads:
-                ins = pg_insert(table).values(**p)
-                stmt = ins.on_conflict_do_update(
-                    index_elements=["manufacturer", "item"],
-                    set_={
-                        "category": ins.excluded.category,
-                        "description": ins.excluded.description,
-                        "mounting_type": ins.excluded.mounting_type,
-                        "cost": ins.excluded.cost,
-                        "labor_per": ins.excluded.labor_per,
-                        "currency": ins.excluded.currency,
-                        "unit_of_measure": ins.excluded.unit_of_measure,
-                        "updated_at": func.now(),
-                    },
-                )
-                db.session.execute(stmt)
-            db.session.commit()
+            if do_truncate:
+                db.session.execute(text("TRUNCATE material_pricing RESTART IDENTITY"))
+                db.session.commit()
+                db.session.bulk_insert_mappings(MaterialPrice, payloads)
+                db.session.commit()
+            else:
+                _upsert_payloads(db, MaterialPrice, payloads)
+            print(f"Loaded {len(payloads)} rows from {csv_path.name}")
+            total += len(payloads)
 
-    print(f"Loaded {len(payloads)} rows into material_pricing")
+    print(f"Done — {total} row(s) processed across {len(paths)} file(s).")
 
 
 if __name__ == "__main__":

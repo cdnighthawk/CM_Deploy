@@ -1,5 +1,53 @@
 // Gulp JS plugins and modules
+const http = require("http");
+const { URL } = require("url");
 const { src, dest, watch, parallel, series } = require("gulp");
+
+const FLASK_API_TARGET = process.env.USIS_FLASK_PROXY || "http://127.0.0.1:5000";
+
+/** Proxy /api, /auth, /healthz to Flask so session cookies work from :3000 pages. */
+function flaskApiProxyMiddleware(req, res, next) {
+  const raw = req.url || "";
+  const pathOnly = raw.split("?")[0];
+  if (
+    !pathOnly.startsWith("/api/") &&
+    !pathOnly.startsWith("/auth/") &&
+    pathOnly !== "/healthz"
+  ) {
+    return next();
+  }
+  let target;
+  try {
+    target = new URL(raw, FLASK_API_TARGET);
+  } catch (e) {
+    res.writeHead(400, { "Content-Type": "text/plain" });
+    res.end("Bad proxy URL");
+    return;
+  }
+  const headers = Object.assign({}, req.headers, { host: target.host });
+  const proxyReq = http.request(
+    {
+      hostname: target.hostname,
+      port: target.port || (target.protocol === "https:" ? 443 : 80),
+      path: target.pathname + target.search,
+      method: req.method,
+      headers: headers,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+  proxyReq.on("error", (err) => {
+    res.writeHead(502, { "Content-Type": "text/plain" });
+    res.end("Flask API unreachable at " + FLASK_API_TARGET + " (" + err.message + ")");
+  });
+  if (req.method === "GET" || req.method === "HEAD") {
+    proxyReq.end();
+  } else {
+    req.pipe(proxyReq);
+  }
+}
 
 // Rename file names like main.scss > style.css
 const rename = require("gulp-rename");
@@ -121,6 +169,10 @@ function FileTemp() {
     .pipe(replace(/src="(?:\.\/)?(.*)node_modules/g, 'src="assets/vendor'))
     .pipe(replace(/href="(?:\.\/)?(.*)node_modules/g, 'href="assets/vendor'))
     .pipe(dest(filePath.temp.basetemp));
+}
+
+function dzPdfjs311ToTemp() {
+  return src("src/assets/vendor/pdfjs-3.11/**/*").pipe(dest(".temp/assets/vendor/pdfjs-3.11"));
 }
 
 //==============================
@@ -253,6 +305,19 @@ function browserSyncServe(callback) {
           filePath.src.root,
           filePath.base.base,
         ],
+        middleware: [
+          flaskApiProxyMiddleware,
+          function drawingViewerRootRedirect(req, res, next) {
+            var pathOnly = (req.url || "").split("?")[0];
+            if (pathOnly === "/drawing-viewer.html") {
+              var q = (req.url || "").indexOf("?") >= 0 ? (req.url || "").slice((req.url || "").indexOf("?")) : "";
+              res.writeHead(302, { Location: "/construction/drawing-viewer.html" + q });
+              res.end();
+              return;
+            }
+            next();
+          },
+        ],
       },
       startPath: "/construction/index.html",
       notify: true,
@@ -296,7 +361,7 @@ function watchTask() {
 //==============================
 // Default Task (development)
 exports.default = series(
-  parallel(FileTemp, dzVendor, dzVendorToTemp, dzVendorToSrc),
+  parallel(FileTemp, dzVendor, dzVendorToTemp, dzVendorToSrc, dzPdfjs311ToTemp),
   browserSyncServe,
   watchTask
 );
@@ -316,6 +381,7 @@ exports.build = series(
 // Individual Exports (for CLI)
 exports.FileIncludeHtml = FileIncludeHtml;
 exports.FileTemp = FileTemp;
+exports.dzPdfjs311ToTemp = dzPdfjs311ToTemp;
 exports.dzAssetsBuild = dzAssetsBuild;
 exports.dzVendor = dzVendor;
 exports.dzVendorToTemp = dzVendorToTemp;

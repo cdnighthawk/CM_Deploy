@@ -456,7 +456,10 @@
 		sumEl.textContent = "Loading SOV summary…";
 		sumEl.className = "small mb-0 text-muted";
 		var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(projectId) + "/prime-contract/sov";
-		var opts = { credentials: "omit", headers: Object.assign({}, actorHeaders()) };
+		var opts = {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		};
 		fetch(url, opts)
 			.then(function (res) {
 				if (!res.ok) {
@@ -494,7 +497,10 @@
 		tbody.innerHTML =
 			"<tr><td colspan=\"4\" class=\"text-muted text-center py-2\">Loading SOV…</td></tr>";
 		var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(projectId) + "/prime-contract/sov";
-		var opts = { credentials: "omit", headers: Object.assign({}, actorHeaders()) };
+		var opts = {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		};
 		fetch(url, opts)
 			.then(function (res) {
 				if (!res.ok) {
@@ -539,8 +545,11 @@
 		var body = { lines: collectPrimeSovLinesForPut(PRIME_SOV_MODAL_IDS) };
 		var opts = {
 			method: "PUT",
-			credentials: "omit",
-			headers: Object.assign({ "Content-Type": "application/json" }, actorHeaders()),
+			credentials: "include",
+			headers: Object.assign(
+				{ "Content-Type": "application/json", Accept: "application/json" },
+				actorHeaders()
+			),
 			body: JSON.stringify(body),
 		};
 		fetch(url, opts)
@@ -637,7 +646,10 @@
 		var sumEl = document.getElementById("usis-ca-proc-summary");
 		if (!sumEl || !projectId) return;
 		var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments";
-		fetch(url, { credentials: "omit" })
+		fetch(url, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
 			.then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {
@@ -713,7 +725,10 @@
 		var pid = lastProjectId || projectIdFromQuery();
 		if (!pid) return;
 		var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid);
-		fetch(url, { credentials: "omit" })
+		fetch(url, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
 			.then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {
@@ -931,7 +946,10 @@
 		}
 		setJobPaneLoading(true);
 		var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid);
-		fetch(url, { credentials: "omit" })
+		fetch(url, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
 			.then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {

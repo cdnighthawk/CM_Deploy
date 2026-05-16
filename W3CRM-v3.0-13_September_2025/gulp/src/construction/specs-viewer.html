@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "specs-viewer.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		#usis-specs-viewer-root { min-height: calc(100vh - 12rem); }
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+		@@include("../elements/chatbox-construction.html")
+		@@include("../elements/header-construction.html")
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Specifications",
+				})
+			</div>
+
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h5 class="mb-0">Project specifications</h5>
+						<p class="text-muted small mb-0" id="usis-specs-viewer-subtitle">CSI spec book — full page view.</p>
+					</div>
+					<a class="btn btn-sm btn-outline-secondary" id="usis-specs-viewer-back" href="javascript:history.back()">Back</a>
+				</div>
+				<div id="usis-specs-viewer-no-id" class="alert alert-warning d-none">No <code>project_id</code> in the URL. Open from a project, lead, or estimate Specs tab.</div>
+				<div id="usis-specs-viewer-root"></div>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+
+	</div>
+
+	@@include("../elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-specs-book-tab.js"></script>
+	<script>
+	(function () {
+		var pid = new URLSearchParams(window.location.search).get("project_id");
+		var root = document.getElementById("usis-specs-viewer-root");
+		var noId = document.getElementById("usis-specs-viewer-no-id");
+		var sub = document.getElementById("usis-specs-viewer-subtitle");
+		if (!pid || !String(pid).trim()) {
+			if (noId) noId.classList.remove("d-none");
+			if (root) root.innerHTML = "";
+			return;
+		}
+		if (sub) sub.textContent = "Project id: " + pid;
+		if (typeof window.USISSpecsBook !== "undefined" && root) {
+			window.USISSpecsBook.mount(root, pid.trim());
+		} else if (root) {
+			root.innerHTML = '<div class="alert alert-danger">Spec book script failed to load.</div>';
+		}
+	})();
+	</script>
+
+</body>
+</html>

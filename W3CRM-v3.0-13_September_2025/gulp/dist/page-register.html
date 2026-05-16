@@ -38,6 +38,13 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
 	
 	<!-- Start - Style CSS -->
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
@@ -92,51 +99,68 @@
 			</div>
 			<div class="col-xl-6 col-lg-6 mx-auto align-self-center">
 				<div class="auth-form">
+					<div id="usis-register-signed-in" class="d-none">
+						<div class="text-center mb-4">
+							<h3 class="mb-0">You are already signed in</h3>
+							<p class="mb-0 text-muted">Continue your job application or sign out to create a different account.</p>
+						</div>
+						<div class="card border-primary shadow-sm mb-4">
+							<div class="card-body">
+								<p class="mb-3 small">
+									You are signed in as <strong id="usis-register-signed-email">your account</strong>.
+								</p>
+								<div class="d-grid gap-2">
+									<a class="btn btn-primary btn-lg" id="usis-register-continue-link" href="usis-hr-hire.html">Continue to your application</a>
+									<a class="btn btn-outline-secondary btn-lg usis-logout-link" id="usis-register-signout-link" href="#">Sign out and create a different account</a>
+								</div>
+							</div>
+						</div>
+						<p class="text-center small mb-0">
+							<a class="btn-link text-primary" href="apply.html">Back to careers page</a>
+						</p>
+					</div>
+					<div id="usis-register-guest">
 					<div class="text-center mb-4">
 						<h3 class="mb-0">Sign up your account</h3>
 						<p class="mb-0">Create an account and start your journey today!</p>
 					</div>
-					<form action="index.html">
-						<div class="mb-3">
-							<label class="form-label">Username</label>
-							<input type="text" class="form-control form-control-lg" placeholder="e.g. John Joe">
+					<form id="usis-register-form">
+						<div id="usis-register-err" class="alert alert-danger py-2 small d-none" role="alert"></div>
+						<div class="row g-2 mb-3">
+							<div class="col-md-6">
+								<label class="form-label" for="usis-register-fn">First name</label>
+								<input type="text" class="form-control form-control-lg" id="usis-register-fn" autocomplete="given-name" required>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label" for="usis-register-ln">Last name</label>
+								<input type="text" class="form-control form-control-lg" id="usis-register-ln" autocomplete="family-name" required>
+							</div>
 						</div>
 						<div class="mb-3">
-							<label class="form-label">Email</label>
-							<input type="email" class="form-control form-control-lg" placeholder="hello@example.com">
+							<label class="form-label" for="usis-register-email">Email</label>
+							<input type="email" class="form-control form-control-lg" id="usis-register-email" autocomplete="email" required placeholder="hello@example.com">
 						</div>
 						<div class="mb-3">
-							<label class="form-label">Password</label>
+							<label class="form-label" for="usis-register-password">Password</label>
 							<div class="position-relative">
-								<input type="password" autocomplete="new-password" class="form-control form-control-lg dz-password" placeholder="Enter your password">
+								<input type="password" id="usis-register-password" autocomplete="new-password" class="form-control form-control-lg dz-password" required minlength="8" placeholder="At least 8 characters">
 								<span class="show-pass position-absolute top-50 end-0 me-2 translate-middle">
 									<span class="show"><i class="fa fa-eye-slash"></i></span>
 									<span class="hide"><i class="fa fa-eye"></i></span>
 								</span>
 							</div>
 						</div>
-						<div class="d-flex gap-2 flex-wrap justify-content-between mb-4 mb-lg-5">
-							<div class="form-check custom-checkbox mb-0">
-								<input type="checkbox" class="form-check-input" id="customCheckBox1" required="">
-								<label class="form-check-label" for="customCheckBox1">Remember me</label>
-							</div>
-							<a href="page-forgot-password.html" class="btn-link text-primary">Forgot Password?</a>
-						</div>
 						<div class="text-center mb-4">
-							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Sign Up</button>
+							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="usis-register-submit">Create account</button>
 						</div>
-						<div class="text-center border-bottom border-grey position-relative my-3">
-							<span class="small bg-light position-absolute top-50 start-50 translate-middle px-2 ">Or continue with</span>
-						</div>
-						<div class="d-flex align-self-center justify-content-center gap-2 py-3">
-							<a target="_blank" href="https://www.facebook.com/" class="btn btn-sm btn-facebook btn-square rounded-circle"><i class="fab fa-facebook-f"></i></a>
-							<a target="_blank" href="https://twitter.com/" class="btn btn-sm btn-twitter btn-square rounded-circle"><i class="fab fa-x-twitter"></i></a>
-							<a target="_blank" href="https://www.linkedin.com/" class="btn btn-sm btn-linkedin btn-square rounded-circle"><i class="fab fa-linkedin-in"></i></a>
-						</div>
-						<p class="text-center">Not registered?  
-							<a class="btn-link text-primary" href="page-register.html">Register</a>
+						<p class="text-center small mb-0">Already have an account?
+							<a class="btn-link text-primary" id="usis-register-login-link" href="page-login.html">Sign in</a>
+						</p>
+						<p class="text-center small mt-2 mb-0">
+							<a class="btn-link text-primary" href="apply.html">Back to careers page</a>
 						</p>
 					</form>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -144,7 +168,10 @@
 	<!-- End - Authentication Wrapper -->
 
 	<!-- Start - Page Scripts -->
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
@@ -153,8 +180,83 @@
 	<!-- Script For Custom JS -->
 	<script src="assets/js/deznav-init.js"></script>
     <script src="assets/js/custom.js"></script>
-	
-	
-	
+	<script>
+	(function () {
+		function apiBase() {
+			if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
+				return window.USIS_API_BASE.trim().replace(/\/$/, "");
+			}
+			var h = window.location.hostname || "";
+			if (h === "localhost" || h === "127.0.0.1") return window.location.protocol + "//" + h + ":5000";
+			return "http://127.0.0.1:5000";
+		}
+		function nextUrl() {
+			return new URLSearchParams(window.location.search).get("next") || "usis-hr-hire.html";
+		}
+		function setSignedInView(user) {
+			var signed = document.getElementById("usis-register-signed-in");
+			var guest = document.getElementById("usis-register-guest");
+			if (signed) signed.classList.remove("d-none");
+			if (guest) guest.classList.add("d-none");
+			var emailEl = document.getElementById("usis-register-signed-email");
+			if (emailEl && user && user.email) emailEl.textContent = user.email;
+			var cont = document.getElementById("usis-register-continue-link");
+			if (cont) cont.setAttribute("href", nextUrl());
+		}
+		var loginLink = document.getElementById("usis-register-login-link");
+		if (loginLink) loginLink.href = "page-login.html?next=" + encodeURIComponent(nextUrl());
+		var contLink = document.getElementById("usis-register-continue-link");
+		if (contLink) contLink.setAttribute("href", nextUrl());
+		fetch(apiBase() + "/api/v1/auth/status", {
+			credentials: "include",
+			cache: "no-store",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (r) {
+				return r.json();
+			})
+			.then(function (body) {
+				if (body && body.authenticated && body.user) setSignedInView(body.user);
+			})
+			.catch(function () { /* offline */ });
+		var form = document.getElementById("usis-register-form");
+		if (!form) return;
+		form.addEventListener("submit", function (e) {
+			e.preventDefault();
+			var errEl = document.getElementById("usis-register-err");
+			if (errEl) {
+				errEl.classList.add("d-none");
+				errEl.textContent = "";
+			}
+			var body = {
+				email: (document.getElementById("usis-register-email") || {}).value,
+				password: (document.getElementById("usis-register-password") || {}).value,
+				first_name: (document.getElementById("usis-register-fn") || {}).value,
+				last_name: (document.getElementById("usis-register-ln") || {}).value,
+			};
+			fetch(apiBase() + "/api/v1/auth/register", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify(body),
+			})
+				.then(function (r) {
+					return r.json().then(function (j) {
+						return { ok: r.ok, status: r.status, body: j };
+					});
+				})
+				.then(function (res) {
+					if (!res.ok) throw new Error((res.body && res.body.error) || "Registration failed");
+					window.location.href = nextUrl();
+				})
+				.catch(function (ex) {
+					if (errEl) {
+						errEl.textContent = ex.message || String(ex);
+						errEl.classList.remove("d-none");
+					}
+				});
+		});
+	})();
+	</script>
 </body>
 </html>

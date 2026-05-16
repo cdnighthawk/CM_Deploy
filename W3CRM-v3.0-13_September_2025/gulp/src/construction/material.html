@@ -17,6 +17,10 @@
 	<!-- Start - Style CSS -->
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
+	<style>
+		#usis-mat-tabulator .tabulator { font-size: 0.875rem; }
+	</style>
 	<!-- End - Style CSS -->
 
 </head>
@@ -40,7 +44,7 @@
 			
 			<div class="page-title">
 				@@include("../elements/breadcrumb.html", {
-					"fileName": "Transaction",
+					"fileName": "Material",
 				})
 				
 			</div>
@@ -50,14 +54,14 @@
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
-								<h6 class="mb-1">Construction — Material</h6>
-								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+								<h6 class="mb-1">Construction — Material catalog</h6>
+								<p class="mb-0 small text-muted">Company pricing from BOBRICK and updated vendor CSVs (<code>material_pricing</code>).</p>
 							</div>
 							<div class="text-nowrap small">
 								<a href="leads.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="mom-detail.html">Next</a>
 							</div>
 						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+						
 					</div>
 				</div>
 			</div>
@@ -124,54 +128,35 @@
                         <!-- Start - Material List -->
                         <div class="tab-pane fade show active" id="material-list" role="tabpanel" aria-labelledby="all" tabindex="0">
                             <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center pb-3 mb-3 border-bottom">
-                                <div class="input-group message-search-area width250 w-xs-100">
-                                    <input type="text" class="form-control border-end-0" placeholder="Search Material">
-                                    <div class="input-group-append">
-                                        <button class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></button>
-                                    </div>
-                                </div>
                                 <div class="d-flex flex-wrap align-items-center gap-2">
-                                    <a href="javascript:void(0);" class="btn btn-primary light w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#mateial-request">Material Request <i class="icon feather icon-info"></i></a>
-                                    <a href="javascript:void(0);" class="btn btn-primary light w-xs-100" data-bs-toggle="modal" data-bs-target="#download">Download <i class="icon feather icon-download"></i></a>
-                                    <a href="javascript:void(0);" class="btn btn-outline-primary w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#add-material">+ Add Material</a>
-                                    
-                                    <!-- Start - + Dropdown -->
-                                    <div class="dropdown w-xs-100">
-                                        <button type="button" class="btn btn-primary w-xs-100" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                                            +
-                                        </button>
-                                        <form class="dropdown-menu p-4 width440">
-                                            <div class="mb-2">
-                                                <p class="m-0 fs-12 text-gray py-1 border-bottom fs-18">Material</p>
-                                                <div class="d-flex align-items-center gap-2 pt-2">
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-secondary light w-50">+ Request</a>
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-secondary light w-50">+ Purchased</a>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2 pt-2">
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-success light w-50">+ Received</a>
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-danger light w-50">+ Used</a>
-                                                </div>
-                                                <div class="d-flex align-items-center gap-2 pt-2">
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-secondary light w-50">+ Subcon Issue</a>
-                                                    <a href="javascript:void(0);" class="btn btn-sm btn-secondary light w-50">+ Material Transfer</a>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                    <!-- End - + Dropdown -->
-
-                                </div>
-                            </div>
-                            <div class="vh-50 position-relative">
-                                <div class="clearfix">
-                                    <div class="row justify-content-center align-items-center h-100">
-                                        <div class="col-xl-4 position-absolute start-50 top-50 translate-middle text-center">
-                                            <h2 class="fw-bold">Add Material</h6>
-                                            <p>You have’nt added any material data yet, you can upload material data or can add manually</p>
-                                            <a href="javascript:void(0);" class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#mateial-received">Add Received +</a>
+                                    <div class="input-group message-search-area width250 w-xs-100">
+                                        <input type="search" id="usis-mat-search" class="form-control border-end-0" placeholder="Search item, MFG, category…" autocomplete="off">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></span>
                                         </div>
                                     </div>
+                                    <select id="usis-mat-mfg-filter" class="form-select width200" aria-label="Manufacturer filter">
+                                        <option value="">All manufacturers</option>
+                                    </select>
                                 </div>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <span id="usis-mat-status" class="small text-muted"></span>
+                                    <button type="button" id="usis-mat-refresh" class="btn btn-outline-primary btn-sm">Refresh</button>
+                                    <button type="button" id="usis-mat-prev" class="btn btn-outline-secondary btn-sm" disabled>Prev</button>
+                                    <button type="button" id="usis-mat-next" class="btn btn-outline-secondary btn-sm" disabled>Next</button>
+                                </div>
+                            </div>
+                            <div id="usis-mat-empty" class="d-none card border-0 shadow-none mb-3">
+                                <div class="card-body text-center py-5">
+                                    <h5 class="fw-bold mb-2">No material catalog loaded</h5>
+                                    <p class="text-muted mb-3">Import CSVs from your Database files folder, then refresh this page.</p>
+                                    <pre class="text-start small bg-light p-3 d-inline-block">cd backend
+.venv\Scripts\python scripts\load_material_pricing.py --all-defaults</pre>
+                                    <p class="small text-muted mt-3 mb-0">Set <code>DATABASE_FILES_ROOT</code> in <code>backend\.env</code> if files are not under OneDrive.</p>
+                                </div>
+                            </div>
+                            <div id="usis-mat-grid-wrap">
+                                <div id="usis-mat-tabulator"></div>
                             </div>
                         </div>
                         <!-- End - Material List -->
@@ -1160,6 +1145,8 @@
 	<script src="assets/js/usis-project-context.js"></script>
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
+    <script src="assets/js/construction-material.js"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	    

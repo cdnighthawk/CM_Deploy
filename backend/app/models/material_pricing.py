@@ -21,6 +21,7 @@ class MaterialPrice(UUIDPKMixin, TimestampMixin, db.Model):
     manufacturer: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     item: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     category: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
+    csi_spec_section: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     mounting_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)

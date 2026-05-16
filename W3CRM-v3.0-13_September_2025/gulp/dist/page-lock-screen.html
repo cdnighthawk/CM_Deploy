@@ -38,6 +38,13 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
 	
 	<!-- Start - Style CSS -->
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
@@ -136,7 +143,10 @@
 	<!-- End - Authentication Wrapper -->
     
 	<!-- Start - Page Scripts -->
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>

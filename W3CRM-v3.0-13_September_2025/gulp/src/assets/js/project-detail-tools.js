@@ -308,7 +308,7 @@
 					if (cr && cr.id && pid) {
 						var a = document.createElement("a");
 						a.href =
-							"drawing-viewer.html?project_id=" +
+							"construction/drawing-viewer.html?project_id=" +
 							encodeURIComponent(pid) +
 							"&drawing_id=" +
 							encodeURIComponent(cr.id);
@@ -676,6 +676,12 @@
 		var create = document.getElementById("usis-rfi-open-create");
 		if (open) open.setAttribute("href", "construction/rfis.html?project_id=" + encodeURIComponent(pid));
 		if (create) create.setAttribute("href", "construction/rfi-create.html?project_id=" + encodeURIComponent(pid));
+		var pricing = document.getElementById("usis-pricing-open");
+		if (pricing)
+			pricing.setAttribute(
+				"href",
+				"construction/construction-pricing.html?project_id=" + encodeURIComponent(pid)
+			);
 	}
 
 	function init() {

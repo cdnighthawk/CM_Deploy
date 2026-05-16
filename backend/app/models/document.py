@@ -139,8 +139,14 @@ class Drawing(Document):
 
 @event.listens_for(Drawing, "before_insert")
 def _drawing_default_series_id(mapper, connection, target: Drawing) -> None:
-    """First revision of a sheet defaults to its own ``drawing_series_id``; upload code must reuse series for later revisions."""
-    if target.drawing_series_id is None and target.id is not None:
+    """Ensure ``drawing_series_id`` is set (NOT NULL). Match the PK for the first revision.
+
+    The PK may still be ``None`` here when the database would otherwise supply it via
+    ``server_default``—that leaves ``drawing_series_id`` unset and causes INSERT failures.
+    """
+    if target.id is None:
+        target.id = uuid.uuid4()
+    if target.drawing_series_id is None:
         target.drawing_series_id = target.id
 
 

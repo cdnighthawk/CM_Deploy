@@ -352,20 +352,24 @@
 	
 		var overviewChart = function(){
 			if(jQuery("#overiewChart").length>0) {
+				var usisCommercial = jQuery("#usis-dashboard-dark-page").length > 0;
+				var overviewNames = usisCommercial
+					? { col: "Invoiced MTD", area: "Billings", line: "Active jobs" }
+					: { col: "Number of Projects", area: "Revenue", line: "Active Projects" };
 				var options = {
 					series: [
 						{
-							name: 'Number of Projects',
+							name: overviewNames.col,
 							type: 'column',
 							data: [75, 85, 72, 100, 50, 100, 80, 75, 95, 35, 75,100]
 						},
 						{
-							name: 'Revenue',
+							name: overviewNames.area,
 							type: 'area',
 							data: [44, 65, 55, 75, 45, 55, 40, 60, 75, 45, 50,42]
 						},
 						{
-							name: 'Active Projects',
+							name: overviewNames.line,
 							type: 'line',
 							data: [30, 25, 45, 30, 25, 35, 20, 45, 35, 20, 35,20]
 						}
@@ -520,31 +524,37 @@
 					}
 					chart.updateSeries([
 						{
-							name: "Number of Projects",
+							name: overviewNames.col,
 							type: 'column',
 							data: columnData
 						},{
-							name: 'Revenue',
+							name: overviewNames.area,
 							type: 'area',
 							data: areaData
 						},{
-							name: 'Active Projects',
+							name: overviewNames.line,
 							type: 'line',
 							data: lineData
 						}
 					]);
 				})
+				if (usisCommercial) {
+					setTimeout(function () {
+						jQuery("#pills-month-tab").trigger("click");
+					}, 200);
+				}
 			}
 		}
 	
 		var earningChart = function(){
 			if(jQuery("#earningChart").length>0) {
+				var usisCommercialEarn = jQuery("#usis-dashboard-dark-page").length > 0;
 				var chartWidth = $("#earningChart").width();
 			
 				var options = {
 					series: [
 						{
-							name: 'Net Profit',
+							name: usisCommercialEarn ? 'Collections' : 'Net Profit',
 							data: [700, 650, 680, 600, 700, 610, 710, 620],
 						},
 					],
@@ -681,11 +691,16 @@
 					}
 					chartBar1.updateSeries([
 						{
-							name: "Net Profit",
+							name: usisCommercialEarn ? "Collections" : "Net Profit",
 							data: columnData
 						}
 					]);
 				})
+				if (usisCommercialEarn) {
+					setTimeout(function () {
+						jQuery("#pills-month-tab1").trigger("click");
+					}, 200);
+				}
 			}
 		}
 		

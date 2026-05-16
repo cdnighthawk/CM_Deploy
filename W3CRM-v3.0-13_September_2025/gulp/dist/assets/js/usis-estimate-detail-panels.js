@@ -6,10 +6,46 @@
 (function () {
 	"use strict";
 
-	var cache = { drawingSheets: [], rfis: [] };
-	var filtersWired = false;
-	var drawingsTabulator = null;
-	var activeProjectId = null;
+	var docPanels =
+		typeof window.USISProjectDocPanels !== "undefined"
+			? window.USISProjectDocPanels.init({
+					returnUrl: true,
+					projectIdGlobalKey: "__USIS_ESTIMATE_PROJECT_ID__",
+					panes: {
+						drawings: "estd-pane-drawings",
+						specs: "estd-pane-specs",
+						rfi: "estd-pane-rfi",
+					},
+					ids: {
+						drawingsNoProject: "usis-estd-drawings-no-project",
+						drawingsTools: "usis-estd-drawings-tools",
+						drawingUploadOpen: "usis-estd-drawing-upload-open",
+						gridDrawings: "usis-estd-grid-drawings",
+						searchDrawings: "usis-estd-search-drawings",
+						filterDrawingDiscipline: "usis-estd-filter-drawing-discipline",
+						filterDrawingSet: "usis-estd-filter-drawing-set",
+						specsNoProject: "usis-estd-specs-no-project",
+						specsRoot: "usis-estd-specs-root",
+						specsOpenFull: "usis-estd-specs-open-full",
+						rfiNoProject: "usis-estd-rfi-no-project",
+						rfiTools: "usis-estd-rfi-tools",
+						rfiOpenLog: "usis-estd-rfi-open-log",
+						rfiOpenCreate: "usis-estd-rfi-open-create",
+						searchRfis: "usis-estd-search-rfis",
+						filterRfiStatus: "usis-estd-filter-rfi-status",
+						tbodyRfis: "usis-estd-tbody-rfis",
+						drawingUploadSubmit: "usis-estd-drawing-upload-submit",
+						drawingUploadErr: "usis-estd-drawing-upload-err",
+						drawingFile: "usis-estd-drawing-file",
+						drawingSheetno: "usis-estd-drawing-sheetno",
+						drawingTitle: "usis-estd-drawing-title",
+						drawingDisc: "usis-estd-drawing-disc",
+						drawingSet: "usis-estd-drawing-set",
+						drawingRev: "usis-estd-drawing-rev",
+						modalDrawingCreate: "usis-estd-modal-drawing-create",
+					},
+			  })
+			: null;
 
 	function explicitWindowApiBase() {
 		if (typeof window.USIS_API_BASE !== "string") return null;
@@ -32,6 +68,9 @@
 	}
 
 	function apiBase() {
+		if (typeof window.usisApiBase === "function") {
+			return window.usisApiBase();
+		}
 		var fromWin = explicitWindowApiBase();
 		if (fromWin) return fromWin;
 		var fromMeta = metaApiBase();
@@ -56,7 +95,7 @@
 			9630: 1,
 			1234: 1,
 		};
-		if (devPorts[port]) return proto + "//" + host + ":5000";
+		if (devPorts[port]) return "";
 		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
 		if (loopback) {
 			if (port === "5000") return "";
@@ -70,6 +109,17 @@
 			return proto + "//" + host + ":5000";
 		}
 		return "";
+	}
+
+	function actorHeaders() {
+		var id = null;
+		try {
+			id = window.localStorage.getItem("usisActorUserId");
+		} catch (e) {}
+		if (id && id.trim()) {
+			return { "X-Usis-User-Id": id.trim() };
+		}
+		return {};
 	}
 
 	function resolveAssetUrl(u) {
@@ -172,7 +222,10 @@
 	function fetchJson(path) {
 		var base = apiBase();
 		var url = base + path;
-		return fetch(url, { credentials: "omit" }).then(function (res) {
+		return fetch(url, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		}).then(function (res) {
 			if (!res.ok) {
 				return res.text().then(function (t) {
 					throw new Error(res.status + " " + (t || res.statusText));
@@ -332,438 +385,27 @@
 			});
 	}
 
-	function showNoProjectDrawRfi() {
-		var nd = document.getElementById("usis-estd-drawings-no-project");
-		var nr = document.getElementById("usis-estd-rfi-no-project");
-		var td = document.getElementById("usis-estd-drawings-tools");
-		var tr = document.getElementById("usis-estd-rfi-tools");
-		var upb = document.getElementById("usis-estd-drawing-upload-open");
-		var snp = document.getElementById("usis-estd-specs-no-project");
-		var sroot = document.getElementById("usis-estd-specs-root");
-		var sfull = document.getElementById("usis-estd-specs-open-full");
-		if (nd) {
-			nd.classList.remove("d-none");
-		}
-		if (nr) nr.classList.remove("d-none");
-		if (td) td.classList.add("d-none");
-		if (tr) tr.classList.add("d-none");
-		if (upb) upb.classList.add("d-none");
-		if (snp) snp.classList.remove("d-none");
-		if (sroot) {
-			sroot.classList.add("d-none");
-			sroot.innerHTML = "";
-		}
-		if (sfull) sfull.classList.add("d-none");
-		setPaneLoading("estd-pane-drawings", false);
-		setPaneLoading("estd-pane-rfi", false);
-	}
-
-	function showProjectDrawRfi() {
-		var nd = document.getElementById("usis-estd-drawings-no-project");
-		var nr = document.getElementById("usis-estd-rfi-no-project");
-		var td = document.getElementById("usis-estd-drawings-tools");
-		var tr = document.getElementById("usis-estd-rfi-tools");
-		var upb = document.getElementById("usis-estd-drawing-upload-open");
-		var snp = document.getElementById("usis-estd-specs-no-project");
-		var sroot = document.getElementById("usis-estd-specs-root");
-		var sfull = document.getElementById("usis-estd-specs-open-full");
-		if (nd) nd.classList.add("d-none");
-		if (nr) nr.classList.add("d-none");
-		if (td) td.classList.remove("d-none");
-		if (tr) tr.classList.remove("d-none");
-		if (upb) upb.classList.remove("d-none");
-		if (snp) snp.classList.add("d-none");
-		if (sroot) sroot.classList.remove("d-none");
-		if (sfull) sfull.classList.remove("d-none");
-	}
-
-	function updateRfiLinks(pid) {
-		var open = document.getElementById("usis-estd-rfi-open-log");
-		var create = document.getElementById("usis-estd-rfi-open-create");
-		if (open) open.setAttribute("href", "construction/rfis.html?project_id=" + encodeURIComponent(pid));
-		if (create) create.setAttribute("href", "construction/rfi-create.html?project_id=" + encodeURIComponent(pid));
-	}
-
-	function repopulateDrawingFacetSelects(items) {
-		var discSel = document.getElementById("usis-estd-filter-drawing-discipline");
-		var setSel = document.getElementById("usis-estd-filter-drawing-set");
-		var discSet = {};
-		var setSet = {};
-		(items || []).forEach(function (s) {
-			if (s.discipline) discSet[s.discipline] = 1;
-			if (s.drawing_set) setSet[s.drawing_set] = 1;
-		});
-		if (discSel) {
-			var curD = discSel.value;
-			discSel.innerHTML = '<option value="">All disciplines</option>';
-			Object.keys(discSet)
-				.sort(function (a, b) {
-					return a.localeCompare(b);
-				})
-				.forEach(function (k) {
-					var o = document.createElement("option");
-					o.value = k;
-					o.textContent = k;
-					discSel.appendChild(o);
-				});
-			if (curD && discSet[curD]) discSel.value = curD;
-		}
-		if (setSel) {
-			var curS = setSel.value;
-			setSel.innerHTML = '<option value="">All sets</option>';
-			Object.keys(setSet)
-				.sort(function (a, b) {
-					return a.localeCompare(b);
-				})
-				.forEach(function (k) {
-					var o = document.createElement("option");
-					o.value = k;
-					o.textContent = k;
-					setSel.appendChild(o);
-				});
-			if (curS && setSet[curS]) setSel.value = curS;
-		}
-	}
-
-	function filterDrawingSheetsClient(items) {
-		var inp = document.getElementById("usis-estd-search-drawings");
-		var discSel = document.getElementById("usis-estd-filter-drawing-discipline");
-		var setSel = document.getElementById("usis-estd-filter-drawing-set");
-		var q = inp && inp.value ? inp.value.trim().toLowerCase() : "";
-		var disc = discSel ? discSel.value : "";
-		var setv = setSel ? setSel.value : "";
-		return (items || []).filter(function (s) {
-			if (disc && (s.discipline || "") !== disc) return false;
-			if (setv && (s.drawing_set || "") !== setv) return false;
-			if (!q) return true;
-			return JSON.stringify(s).toLowerCase().indexOf(q) !== -1;
-		});
-	}
-
-	function buildOrRefreshDrawingsTabulator() {
-		var el = document.getElementById("usis-estd-grid-drawings");
-		if (!el) return;
-		var rows = filterDrawingSheetsClient(cache.drawingSheets);
-		if (typeof Tabulator === "undefined") {
-			el.innerHTML =
-				'<div class="alert alert-warning mb-0">Drawing grid requires Tabulator (CDN). Check your network or CSP.</div>';
-			return;
-		}
-		var pid = activeProjectId || "";
-		var cols = [
-			{ title: "Sheet #", field: "sheet_number", headerFilter: "input", minWidth: 100, widthGrow: 1 },
-			{ title: "Title", field: "sheet_title", headerFilter: "input", minWidth: 160, widthGrow: 2 },
-			{ title: "Discipline", field: "discipline", headerFilter: "input", minWidth: 100, widthGrow: 1 },
-			{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 90, widthGrow: 1 },
-			{
-				title: "Current rev",
-				field: "current_revision",
-				minWidth: 110,
-				formatter: function (cell) {
-					var cr = cell.getValue();
-					if (!cr) return "";
-					var r = cr.revision != null ? String(cr.revision) : "";
-					var v = cr.version != null ? String(cr.version) : "";
-					return esc(r) + (v ? " · v" + esc(v) : "");
-				},
-			},
-			{ title: "Revisions", field: "revision_count", hozAlign: "right", width: 100 },
-			{
-				title: "Updated",
-				field: "current_revision",
-				width: 170,
-				formatter: function (cell) {
-					var cr = cell.getValue();
-					if (!cr || !cr.updated_at) return "—";
-					try {
-						return esc(new Date(cr.updated_at).toLocaleString());
-					} catch (e) {
-						return esc(cr.updated_at);
-					}
-				},
-			},
-			{
-				title: "",
-				hozAlign: "right",
-				headerSort: false,
-				width: 150,
-				formatter: function (cell) {
-					var wrap = document.createElement("div");
-					wrap.className = "d-flex gap-1 flex-wrap justify-content-end";
-					var data = cell.getRow().getData();
-					var cr = data.current_revision;
-					if (cr && cr.id && pid) {
-						var a = document.createElement("a");
-						a.href =
-							"drawing-viewer.html?project_id=" +
-							encodeURIComponent(pid) +
-							"&drawing_id=" +
-							encodeURIComponent(cr.id);
-						a.className = "btn btn-primary btn-sm py-0";
-						a.textContent = "View";
-						wrap.appendChild(a);
-					}
-					if (cr && cr.file_url) {
-						var p = document.createElement("a");
-						p.href = resolveAssetUrl(cr.file_url);
-						p.target = "_blank";
-						p.rel = "noopener noreferrer";
-						p.className = "btn btn-outline-secondary btn-sm py-0";
-						p.textContent = "PDF";
-						wrap.appendChild(p);
-					}
-					if (!wrap.childNodes.length) wrap.textContent = "—";
-					return wrap;
-				},
-			},
-		];
-		if (drawingsTabulator) {
-			drawingsTabulator.setData(rows);
-			return;
-		}
-		drawingsTabulator = new Tabulator(el, {
-			data: rows,
-			layout: "fitColumns",
-			pagination: "local",
-			paginationSize: 25,
-			paginationSizeSelector: [10, 25, 50, 100],
-			movableColumns: true,
-			placeholder: "No drawings for this project yet.",
-			columns: cols,
-		});
-	}
-
-	function applyDrawingFilter() {
-		buildOrRefreshDrawingsTabulator();
-	}
-
-	function filterRows(rows, q, statusVal, getStatus) {
-		var qq = (q || "").trim().toLowerCase();
-		var st = (statusVal || "").trim().toLowerCase();
-		return rows.filter(function (r) {
-			if (st && String(getStatus(r) || "").toLowerCase() !== st) return false;
-			if (!qq) return true;
-			return JSON.stringify(r).toLowerCase().indexOf(qq) !== -1;
-		});
-	}
-
-	function renderRfiTable(tbody, items) {
-		if (!tbody) return;
-		tbody.innerHTML = "";
-		if (!items.length) {
-			tbody.innerHTML =
-				'<tr><td colspan="8" class="text-muted text-center py-4">No RFIs yet. Use "+ Create RFI" to start the log.</td></tr>';
-			return;
-		}
-		items.forEach(function (row) {
-			var tr = document.createElement("tr");
-			var num = row.display_number || "RFI-" + row.number;
-			var detail = "construction/rfi-detail.html?id=" + encodeURIComponent(row.id);
-			var assignees = (row.assignees || [])
-				.map(function (a) {
-					return esc(a.user ? a.user.name : "");
-				})
-				.filter(Boolean)
-				.join(", ") || "—";
-			var mgr = row.rfi_manager ? esc(row.rfi_manager.name) : "—";
-			var status = '<span class="text-uppercase small fw-semibold">' + esc(row.status) + "</span>";
-			var due = row.due_at ? esc(new Date(row.due_at).toLocaleDateString()) : "—";
-			tr.innerHTML =
-				'<td><a class="link-primary text-decoration-none" href="' + detail + '">' + esc(num) + "</a></td>" +
-				'<td><a class="text-decoration-none text-black fw-semibold" href="' + detail + '">' + esc(row.subject) + "</a></td>" +
-				"<td>" + status + "</td>" +
-				"<td>" + esc(row.ball_in_court || "—") + "</td>" +
-				"<td>" + assignees + "</td>" +
-				"<td>" + mgr + "</td>" +
-				"<td>" + due + "</td>" +
-				'<td class="text-end"><a class="btn btn-link btn-sm" href="' + detail + '">Open</a></td>';
-			tbody.appendChild(tr);
-		});
-	}
-
-	function applyRfiFilter() {
-		var inp = document.getElementById("usis-estd-search-rfis");
-		var sel = document.getElementById("usis-estd-filter-rfi-status");
-		var q = inp ? inp.value : "";
-		var st = sel ? sel.value : "";
-		var rows = filterRows(cache.rfis, q, st, function (r) {
-			return r.status;
-		});
-		renderRfiTable(document.getElementById("usis-estd-tbody-rfis"), rows);
-	}
-
-	function wireFiltersOnce() {
-		if (filtersWired) return;
-		filtersWired = true;
-		var d = document.getElementById("usis-estd-search-drawings");
-		if (d) d.addEventListener("input", applyDrawingFilter);
-		var dd = document.getElementById("usis-estd-filter-drawing-discipline");
-		var ds = document.getElementById("usis-estd-filter-drawing-set");
-		if (dd) dd.addEventListener("change", applyDrawingFilter);
-		if (ds) ds.addEventListener("change", applyDrawingFilter);
-		var r1 = document.getElementById("usis-estd-search-rfis");
-		var r2 = document.getElementById("usis-estd-filter-rfi-status");
-		if (r1) r1.addEventListener("input", applyRfiFilter);
-		if (r2) r2.addEventListener("change", applyRfiFilter);
-
-		var estdDrawUp = document.getElementById("usis-estd-drawing-upload-submit");
-		if (estdDrawUp && !estdDrawUp.dataset.usisWired) {
-			estdDrawUp.dataset.usisWired = "1";
-			estdDrawUp.addEventListener("click", function () {
-				var pid = activeProjectId || window.__USIS_ESTIMATE_PROJECT_ID__;
-				if (!pid) return;
-				var err = document.getElementById("usis-estd-drawing-upload-err");
-				var fileEl = document.getElementById("usis-estd-drawing-file");
-				if (err) {
-					err.classList.add("d-none");
-					err.textContent = "";
-				}
-				if (!fileEl || !fileEl.files || !fileEl.files[0]) {
-					if (err) {
-						err.textContent = "Choose a PDF file.";
-						err.classList.remove("d-none");
-					}
-					return;
-				}
-				var fd = new FormData();
-				fd.append("file", fileEl.files[0]);
-				var sn = document.getElementById("usis-estd-drawing-sheetno");
-				var st = document.getElementById("usis-estd-drawing-title");
-				var dc = document.getElementById("usis-estd-drawing-disc");
-				var dsetForm = document.getElementById("usis-estd-drawing-set");
-				var rv = document.getElementById("usis-estd-drawing-rev");
-				if (sn && sn.value) fd.append("sheet_number", sn.value);
-				if (st && st.value) fd.append("sheet_title", st.value);
-				if (dc && dc.value) fd.append("discipline", dc.value);
-				if (dsetForm && dsetForm.value) fd.append("drawing_set", dsetForm.value);
-				if (rv && rv.value) fd.append("revision", rv.value);
-				var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
-				fetch(url, { method: "POST", body: fd, credentials: "omit" })
-					.then(function (res) {
-						if (!res.ok) {
-							return res.text().then(function (t) {
-								throw new Error(res.status + " " + (t || res.statusText));
-							});
-						}
-						return res.json();
-					})
-					.then(function () {
-						var modalEl = document.getElementById("usis-estd-modal-drawing-create");
-						if (modalEl && window.bootstrap && window.bootstrap.Modal) {
-							var inst = window.bootstrap.Modal.getInstance(modalEl);
-							if (inst) inst.hide();
-						}
-						if (fileEl) fileEl.value = "";
-						return loadDrawingsAndRfis(pid);
-					})
-					.catch(function (e) {
-						if (err) {
-							err.textContent = e.message || String(e);
-							err.classList.remove("d-none");
-						}
-					});
-			});
-		}
-	}
-
-	function mountEstimateSpecs(projectId) {
-		var sroot = document.getElementById("usis-estd-specs-root");
-		var sfull = document.getElementById("usis-estd-specs-open-full");
-		if (sfull && projectId) {
-			sfull.setAttribute("href", "construction/specs-viewer.html?project_id=" + encodeURIComponent(projectId));
-		}
-		if (!sroot || !projectId || typeof window.USISSpecsBook === "undefined") return;
-		sroot.innerHTML = "";
-		window.USISSpecsBook.mount(sroot, projectId);
-	}
-
-	function loadDrawingsAndRfis(projectId) {
-		wireFiltersOnce();
-		var pathD =
-			"/api/v1/projects/" + encodeURIComponent(projectId) + "/drawings?limit=2000&offset=0";
-		var pathR = "/api/v1/projects/" + encodeURIComponent(projectId) + "/rfis";
-
-		setPaneLoading("estd-pane-drawings", true);
-		setPaneLoading("estd-pane-rfi", true);
-		setPaneError("estd-pane-drawings", "");
-		setPaneError("estd-pane-rfi", "");
-
-		return Promise.all([
-			fetchJson(pathD)
-				.then(function (d) {
-					cache.drawingSheets = d.items || [];
-					repopulateDrawingFacetSelects(cache.drawingSheets);
-					setPaneLoading("estd-pane-drawings", false);
-					if (drawingsTabulator) {
-						drawingsTabulator.destroy();
-						drawingsTabulator = null;
-					}
-					applyDrawingFilter();
-				})
-				.catch(function (err) {
-					cache.drawingSheets = [];
-					setPaneLoading("estd-pane-drawings", false);
-					setPaneError("estd-pane-drawings", err.message || String(err));
-					if (drawingsTabulator) {
-						drawingsTabulator.destroy();
-						drawingsTabulator = null;
-					}
-					applyDrawingFilter();
-				}),
-			fetchJson(pathR)
-				.then(function (d) {
-					cache.rfis = d.items || [];
-					setPaneLoading("estd-pane-rfi", false);
-					applyRfiFilter();
-				})
-				.catch(function (err) {
-					cache.rfis = [];
-					setPaneLoading("estd-pane-rfi", false);
-					setPaneError("estd-pane-rfi", err.message || String(err));
-					applyRfiFilter();
-				}),
-		]);
-	}
-
 	function onLeadEstimateLoaded(ev) {
 		var d = ev.detail || {};
 		var item = d.item;
 		var err = d.error;
 
-		activeProjectId = null;
-		window.__USIS_ESTIMATE_PROJECT_ID__ = null;
-		cache.drawingSheets = [];
-		cache.rfis = [];
-		if (drawingsTabulator) {
-			try {
-				drawingsTabulator.destroy();
-			} catch (e) {
-				/* ignore */
-			}
-			drawingsTabulator = null;
-		}
+		if (docPanels) docPanels.reset();
 
 		if (err || !item) {
 			setJobLoading(false);
 			setJobErr(err || "Estimate not loaded.");
 			var jr = document.getElementById("usis-estd-job-root");
 			if (jr) jr.classList.add("d-none");
-			showNoProjectDrawRfi();
+			if (docPanels) docPanels.showNoProject();
 			return;
 		}
 
-		window.__USIS_ESTIMATE_PROJECT_ID__ = item.project_id || null;
-		activeProjectId = item.project_id || null;
 		loadJobPanel(item);
 
-		if (activeProjectId) {
-			showProjectDrawRfi();
-			updateRfiLinks(activeProjectId);
-			loadDrawingsAndRfis(activeProjectId).then(function () {
-				mountEstimateSpecs(activeProjectId);
-			});
-		} else {
-			showNoProjectDrawRfi();
+		if (docPanels) {
+			if (item.project_id) docPanels.loadProject(item.project_id);
+			else docPanels.showNoProject();
 		}
 	}
 
@@ -774,7 +416,7 @@
 		if (!id || !String(id).trim()) {
 			setJobLoading(false);
 			setJobErr("No lead id in URL — open this page from the Estimates table.");
-			showNoProjectDrawRfi();
+			if (docPanels) docPanels.showNoProject();
 		}
 	});
 })();

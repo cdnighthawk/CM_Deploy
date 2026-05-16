@@ -27,6 +27,8 @@ from .v1 import _iso, _jsonify
 # Human-readable labels for known seeded keys (fallback: format the key).
 _POLICY_TITLES: dict[str, str] = {
     "handbook-2025-01": "Employee handbook (2025-01)",
+    "hire-federal-i9-attestation-v1": "Federal Form I-9 — eligibility attestation (wizard)",
+    "hire-federal-w4-attestation-v1": "Federal Form W-4 — withholding attestation (wizard)",
 }
 _COURSE_TITLES: dict[str, str] = {
     "company-orientation-video": "Company orientation (video)",
@@ -675,6 +677,8 @@ def register_hr_routes(bp: Blueprint) -> None:
                 if e:
                     return e[0], e[1]
                 row.document_id = doc_id
+        db.session.commit()
+        return _jsonify({"entity": "hr_employee_document", "item": _serialize_hr_employee_document(row)})
 
     @bp.delete("/hr/employees/<uuid:user_id>/employee-documents/<uuid:doc_row_id>")
     def hr_delete_employee_document(user_id: uuid.UUID, doc_row_id: uuid.UUID):

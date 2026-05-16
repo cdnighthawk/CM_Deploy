@@ -3,11 +3,15 @@ from __future__ import annotations
 
 import uuid
 from decimal import Decimal
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from sqlalchemy import ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from .door_opening import DoorOpening
+    from .material_pricing import MaterialPrice
 
 from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin
@@ -57,3 +61,32 @@ class TakeoffLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     status: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    takeoff_location: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    material_pricing_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("material_pricing.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    material_price: Mapped[Optional["MaterialPrice"]] = relationship(
+        "MaterialPrice",
+        foreign_keys=[material_pricing_id],
+    )
+
+    door_opening_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("door_openings.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    door_opening: Mapped[Optional["DoorOpening"]] = relationship(
+        "DoorOpening",
+        back_populates="takeoff_lines",
+    )
+    line_role: Mapped[Optional[str]] = mapped_column(
+        String(40),
+        nullable=True,
+        index=True,
+        comment="door, frame, hardware — UI grouping for door schedule lines",
+    )

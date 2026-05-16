@@ -173,3 +173,29 @@ def test_logout_clears_session(client, no_dev_admin):
     out = client.get("/auth/logout", follow_redirects=False)
     assert out.status_code == 302
     assert client.get("/api/v1/auth/status").get_json()["authenticated"] is False
+
+
+def test_auth_register_creates_session_and_hire_wizard(client, no_dev_admin, monkeypatch):
+    monkeypatch.setitem(client.application.config, "USIS_ALLOW_SELF_REGISTER", True)
+    email = "hire_" + uuid.uuid4().hex[:10] + "@t.com"
+    r = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "hire-test-pw",
+            "first_name": "Pat",
+            "last_name": "Applicant",
+        },
+    )
+    assert r.status_code == 201
+    assert r.get_json().get("ok") is True
+
+    st = client.get("/api/v1/auth/status")
+    assert st.get_json()["authenticated"] is True
+
+    w = client.get("/api/v1/hr/me/hire-wizard")
+    assert w.status_code == 200
+    body = w.get_json()
+    assert body.get("tasks")
+    assert body["tasks"][0]["key"] == "account"
+    assert body["tasks"][0]["status"] == "complete"

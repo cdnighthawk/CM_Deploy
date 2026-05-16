@@ -61,6 +61,7 @@ A. Built USIS pages (`usis-*.html` at `gulp/src/`)
 | usis-documents-hub.html | Project documents list | deznav “Documents”; usis-dashboard card; usis-hr-dashboard quick links |
 | usis-safety.html | Safety module hub — Plan 7 pillars (company / project / field / incidents); stubbed deep links per Plan 7 §3 | deznav “Safety”; usis-hr-dashboard “Safety module” |
 | usis-hr-dashboard.html | HR KPI dashboard (Plan 19 snapshot widgets) | deznav “HR” → `usis-hr-dashboard.html`; usis-dashboard card “HR dashboard”; links to **HR suite** |
+| usis-hr-hire.html | Self-service hire wizard — application intake + I-9 / W-4 attestations (`GET/POST /api/v1/hr/me/hire-wizard`, `hire-application`, policy sign) | deznav “Hire wizard”; usis-hr-dashboard quick links; usis-hr, usis-dashboard HR card; usis-all-pages-index |
 | usis-hrms-home.html | HRMS hub — Sage-style roadmap; live cards from ``GET /api/v1/hrms/dashboard`` | deznav “HR suite”; `Plan/HRMS/README.md` |
 | usis-hr-employee.html | HR employee detail (`?id=` user UUID) — `users` + `hr_*` lists | JS from usis-hr-dashboard (name links in sample table) |
 | usis-hr.html | HR landing — narrative and deep links only; KPIs stay on dashboard (Plan 19 section 7) | usis-hr-dashboard “HR landing”; links to QuickBooks reference |
@@ -86,6 +87,8 @@ B. Built construction shell pages (`construction/*.html`) in active USIS flows
 | construction/lead-detail.html | Lead detail | JS/list from leads.html (pattern `?id=` or internal links — verify when wiring) |
 | construction/project-detail.html | Project detail — tabs include Job info, Schedule (installation windows + calendar), **Tasks** (W3CRM-style grid on the same `schedule-items` API), Drawings, RFIs, … | JS/list from projects.html |
 | construction/estimate-detail.html | Estimate detail | JS from estimate.html |
+| construction/door-schedule.html | Door schedule takeoff (Div 08) | estimate-detail Takeoff tab; deznav Construction |
+| construction/hardware-schedules.html | Company hardware schedules HD-1…N (08 71 00 catalog) | deznav; door-schedule “Hardware schedules” link |
 | construction/rfi-detail.html | RFI detail | JS from rfis.html |
 | construction/submittal-detail.html | Submittal detail | Linked from submittal flows when implemented |
 
@@ -96,7 +99,7 @@ C. W3CRM template / demo pages (non-product unless promoted)
 --------------------------------------------------------------------
 Linked primarily from **deznav → Construction template (demos)** or **deznav → Other W3CRM demos**. Treat as design references unless moved to USIS block.
 
-**Construction template (demos)** — construction/index.html, projects.html (dup), overview.html, finance.html, reports.html, services.html, contact-us.html; workspace tabs: estimate_legacy.html, party.html, transaction.html, leads.html (dup), task.html, attendance.html, material.html, files.html; quotation.html, add-quotation.html, edit-quotation.html; time-sheet.html, timesheet-detail.html, todo.html, todo-detail.html; mom.html, mom-detail.html.
+**Construction template (demos)** — construction/index.html, projects.html (dup), overview.html, finance.html, **reports.html** (USIS: `GET /api/v1/reports/catalog`, parameterized print views under `/api/v1/lead-estimates/.../render/...` and existing procurement HTML routes; `assets/js/usis-reports.js`), services.html, contact-us.html; workspace tabs: estimate_legacy.html, party.html, transaction.html, leads.html (dup), task.html, attendance.html, material.html, files.html; quotation.html, add-quotation.html, edit-quotation.html; time-sheet.html, timesheet-detail.html, todo.html, todo-detail.html; mom.html, mom-detail.html.
 
 **Other W3CRM demos** — index.html, index-2.html, project.html, manage-client.html, finance.html (root), task.html (root), app-calender.html, email-inbox.html, empty-page.html.
 

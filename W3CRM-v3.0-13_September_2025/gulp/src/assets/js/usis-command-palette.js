@@ -6,7 +6,11 @@
   "use strict";
 
   function apiBase() {
-    return global.USIS_API_BASE || "http://127.0.0.1:5000";
+    if (typeof global.usisApiBase === "function") return global.usisApiBase();
+    if (typeof global.USIS_API_BASE === "string") {
+      return global.USIS_API_BASE.trim().replace(/\/$/, "");
+    }
+    return "http://127.0.0.1:5000";
   }
 
   function ensureModal() {
@@ -54,7 +58,7 @@
   function runSearch(q, outEl) {
     outEl.innerHTML = '<div class="list-group-item text-muted">Searching…</div>';
     var url = apiBase().replace(/\/$/, "") + "/api/v1/search?q=" + encodeURIComponent(q);
-    fetch(url, { credentials: "omit" })
+    fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
       .then(function (r) {
         if (r.status === 404) throw new Error("no_search_endpoint");
         if (!r.ok) throw new Error("http_" + r.status);

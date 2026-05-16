@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	<!-- Title -->
+	<title>W3CRM - Bootstrap Admin Dashboard Template</title>
+	
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="DexignZone">
+	<meta name="robots" content="index, follow">
+	<meta name="format-detection" content="telephone=no">
+	
+	<meta name="keywords" content="admin, admin dashboard, bootstrap, template, analytics, dark mode, modern, responsive admin dashboard, sass, ui kit">
+	<meta name="description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	
+	<meta property="og:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta property="og:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta property="og:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	
+	<!-- TWITTER META -->
+	<meta name="twitter:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta name="twitter:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta name="twitter:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	
+	<!-- FAVICONS ICON -->
+	<link rel="shortcut icon" type="image/png" href="assets/images/favicon.png">
+	
+	<!-- MOBILE SPECIFIC -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<!-- Canonical URL -->
+	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/specs-viewer.html">
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		#usis-specs-viewer-root { min-height: calc(100vh - 12rem); }
+	</style>
+
+</head>
+<body>
+
+	<!-- Start - Preloader -->
+	<div id="preloader">
+		<div class="lds-ripple">
+			<div></div>
+			<div></div>
+		</div>
+	</div>
+	<!-- End - Preloader -->
+
+	<div id="main-wrapper">
+
+		<!-- Start - Nav Header -->
+		<div class="nav-header">
+			<a href="usis-dashboard.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
+	<img class="logo-abbr usis-logo-mark" src="assets/images/branding/usis-eagle-logo.png" alt="" width="36" height="36">
+	<span class="brand-title usis-logo-title">USIS CM</span>
+</a>
+
+			<div class="nav-control">
+				<div class="hamburger">
+					<span class="line"></span>
+					<span class="line"></span>
+					<span class="line"></span>
+				</div>
+			</div>
+		</div>
+		<!-- End - Nav Header -->
+		<!-- Start - Sidebar Chat Box  -->
+		<div class="chatbox">
+			<div class="chatbox-close"></div>
+			<div class="clearfix">
+				<ul class="nav nav-underline">
+					<li class="nav-item">
+						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div class="tab-pane fade active show" id="chat">
+						<div class="card mb-sm-3 mb-md-0 contacts_card dz-chat-user-box">
+							<div class="card-header chat-list-header text-center">
+								<a href="javascript:void(0);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<rect fill="var(--bs-heading-color)" x="4" y="11" width="16" height="2" rx="1"/>
+											<rect fill="var(--bs-heading-color)" opacity="1.0" transform="translate(12.000000, 12.000000) rotate(-270.000000) translate(-12.000000, -12.000000) " x="4" y="11" width="16" height="2" rx="1"/>
+										</g>
+									</svg>
+								</a>
+								<div class="clearfix">
+									<h6 class="mb-1">Chat List</h6>
+									<p class="mb-0">Show All</p>
+								</div>
+								<a href="javascript:void(0);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<rect x="0" y="0" width="24" height="24"/>
+											<circle fill="var(--bs-heading-color)" cx="5" cy="12" r="2"/>
+											<circle fill="var(--bs-heading-color)" cx="12" cy="12" r="2"/>
+											<circle fill="var(--bs-heading-color)" cx="19" cy="12" r="2"/>
+										</g>
+									</svg>
+								</a>
+							</div>
+							<div class="card-body contacts_body p-0 dz-scroll  " id="DZ_W_Contacts_Body">
+								<ul class="contacts">
+									<li class="name-first-letter">A</li>
+									<li class="active dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon"></span>
+											</div>
+											<div class="user_info">
+												<span>Archie Parker</span>
+												<p>Kalid is online</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Alfie Mason</span>
+												<p>Taherah left 7 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar3.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon"></span>
+											</div>
+											<div class="user_info">
+												<span>AharlieKane</span>
+												<p>Sami is online</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar4.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Athan Jacoby</span>
+												<p>Nargis left 30 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="name-first-letter">B</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar5.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Bashid Samim</span>
+												<p>Rashid left 50 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz- -user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar6.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon"></span>
+											</div>
+											<div class="user_info">
+												<span>Breddie Ronan</span>
+												<p>Kalid is online</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar7.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Ceorge Carson</span>
+												<p>Taherah left 7 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="name-first-letter">D</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar8.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon"></span>
+											</div>
+											<div class="user_info">
+												<span>Darry Parker</span>
+												<p>Sami is online</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar9.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Denry Hunter</span>
+												<p>Nargis left 30 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="name-first-letter">J</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar10.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Jack Ronan</span>
+												<p>Rashid left 50 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon"></span>
+											</div>
+											<div class="user_info">
+												<span>Jacob Tucker</span>
+												<p>Kalid is online</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>James Logan</span>
+												<p>Taherah left 7 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar3.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon"></span>
+											</div>
+											<div class="user_info">
+												<span>Joshua Weston</span>
+												<p>Sami is online</p>
+											</div>
+										</div>
+									</li>
+									<li class="name-first-letter">O</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar4.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Oliver Acker</span>
+												<p>Nargis left 30 mins ago</p>
+											</div>
+										</div>
+									</li>
+									<li class="dz-chat-user">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont">
+												<img src="assets/images/avatar/small/avatar5.webp" class="rounded-circle user_img" alt="">
+												<span class="online_icon offline"></span>
+											</div>
+											<div class="user_info">
+												<span>Oscar Weston</span>
+												<p>Rashid left 50 mins ago</p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<div class="card chat dz-chat-history-box d-none">
+							<div class="card-header chat-list-header text-center">
+								<a href="javascript:void(0);" class="dz-chat-history-back">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<polJSon points="0 0 24 0 24 24 0 24"/>
+											<rect fill="var(--bs-heading-color)" opacity="0.3" transform="translate(15.000000, 12.000000) scale(-1, 1) rotate(-90.000000) translate(-15.000000, -12.000000)" x="14" y="7" width="2" height="10" rx="1"/>
+											<path d="M3.7071045,15.7071045 C3.3165802,16.0976288 2.68341522,16.0976288 2.29289093,15.7071045 C1.90236664,15.3165802 1.90236664,14.6834152 2.29289093,14.2928909 L8.29289093,8.29289093 C8.67146987,7.914312 9.28105631,7.90106637 9.67572234,8.26284357 L15.6757223,13.7628436 C16.0828413,14.136036 16.1103443,14.7686034 15.7371519,15.1757223 C15.3639594,15.5828413 14.7313921,15.6103443 14.3242731,15.2371519 L9.03007346,10.3841355 L3.7071045,15.7071045 Z" fill="var(--bs-heading-color)" fill-rule="nonzero" transform="translate(9.000001, 11.999997) scale(-1, -1) rotate(90.000000) translate(-9.000001, -11.999997) "/>
+										</g>
+									</svg>
+								</a>
+								<div class="clearfix">
+									<h6 class="mb-1">Chat with Verla Morgano</h6>
+									<p class="mb-0 text-success">Online</p>
+								</div>							
+								<div class="dropdown">
+									<a href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="dz-chat-dropdown dz-chatbox-btn">
+										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+											<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+												<rect x="0" y="0" width="24" height="24"/>
+												<circle fill="var(--bs-heading-color)" cx="5" cy="12" r="2"/>
+												<circle fill="var(--bs-heading-color)" cx="12" cy="12" r="2"/>
+												<circle fill="var(--bs-heading-color)" cx="19" cy="12" r="2"/>
+											</g>
+										</svg>
+									</a>
+									<ul class="dropdown-menu dropdown-menu-end">
+										<li><a class="dropdown-item" href="javascript:void(0);"><i class="fa fa-user-circle text-primary me-1"></i> View profile</a></li>
+										<li><a class="dropdown-item" href="javascript:void(0);"><i class="fa fa-users text-primary me-1"></i> Add to Friends</a></li>
+										<li><a class="dropdown-item" href="javascript:void(0);"><i class="fa fa-plus text-primary me-1"></i> Add to group</a></li>
+										<li><a class="dropdown-item" href="javascript:void(0);"><i class="fa fa-ban text-primary me-1"></i> Block</a></li>
+									</ul>
+								</div>
+							</div>
+							<div class="card-body msg_card_body dz-scroll" id="DZ_W_Contacts_Body3">
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										Hi, how are you samim?
+										<span class="msg_time">8:40 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end mb-4">
+									<div class="msg_cotainer_send">
+										Hi Khalid i am good tnx how about you?
+										<span class="msg_time_send">8:55 AM, Today</span>
+									</div>
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										I am good too, thank you for your chat template
+										<span class="msg_time">9:00 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end mb-4">
+									<div class="msg_cotainer_send">
+										You are welcome
+										<span class="msg_time_send">9:05 AM, Today</span>
+									</div>
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										I am looking for your next templates
+										<span class="msg_time">9:07 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end mb-4">
+									<div class="msg_cotainer_send">
+										Ok, thank you have a good day
+										<span class="msg_time_send">9:10 AM, Today</span>
+									</div>
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										Bye, see you
+										<span class="msg_time">9:12 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										Hi, how are you samim?
+										<span class="msg_time">8:40 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end mb-4">
+									<div class="msg_cotainer_send">
+										Hi Khalid i am good tnx how about you?
+										<span class="msg_time_send">8:55 AM, Today</span>
+									</div>
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										I am good too, thank you for your chat template
+										<span class="msg_time">9:00 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end mb-4">
+									<div class="msg_cotainer_send">
+										You are welcome
+										<span class="msg_time_send">9:05 AM, Today</span>
+									</div>
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										I am looking for your next templates
+										<span class="msg_time">9:07 AM, Today</span>
+									</div>
+								</div>
+								<div class="d-flex justify-content-end mb-4">
+									<div class="msg_cotainer_send">
+										Ok, thank you have a good day
+										<span class="msg_time_send">9:10 AM, Today</span>
+									</div>
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar2.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+								</div>
+								<div class="d-flex justify-content-start mb-4">
+									<div class="img_cont_msg">
+										<img src="assets/images/avatar/small/avatar1.webp" class="rounded-circle user_img_msg" alt="">
+									</div>
+									<div class="msg_cotainer">
+										Bye, see you
+										<span class="msg_time">9:12 AM, Today</span>
+									</div>
+								</div>
+							</div>
+							<div class="card-footer type_msg">
+								<div class="input-group">
+									<textarea class="form-control" placeholder="Type your message..."></textarea>
+									<div class="input-group-append">
+										<button type="button" class="btn btn-primary"><i class="fa fa-location-arrow"></i></button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="alerts">
+						<div class="card mb-sm-3 mb-md-0 contacts_card">
+							<div class="card-header chat-list-header text-center">
+								<a href="javascript:void(0);" class="dz-chatbox-btn">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<rect x="0" y="0" width="24" height="24"/>
+											<circle fill="var(--bs-heading-color)" cx="5" cy="12" r="2"/>
+											<circle fill="var(--bs-heading-color)" cx="12" cy="12" r="2"/>
+											<circle fill="var(--bs-heading-color)" cx="19" cy="12" r="2"/>
+										</g>
+									</svg>
+								</a>
+								<div class="clearfix">
+									<h6 class="mb-1">Notications</h6>
+									<p class="mb-0">Show All</p>
+								</div>
+								<a href="javascript:void(0);" class="dz-chatbox-btn">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<rect x="0" y="0" width="24" height="24"/>
+											<path d="M14.2928932,16.7071068 C13.9023689,16.3165825 13.9023689,15.6834175 14.2928932,15.2928932 C14.6834175,14.9023689 15.3165825,14.9023689 15.7071068,15.2928932 L19.7071068,19.2928932 C20.0976311,19.6834175 20.0976311,20.3165825 19.7071068,20.7071068 C19.3165825,21.0976311 18.6834175,21.0976311 18.2928932,20.7071068 L14.2928932,16.7071068 Z" fill="var(--bs-heading-color)" fill-rule="nonzero" opacity="1"/>
+											<path d="M11,16 C13.7614237,16 16,13.7614237 16,11 C16,8.23857625 13.7614237,6 11,6 C8.23857625,6 6,8.23857625 6,11 C6,13.7614237 8.23857625,16 11,16 Z M11,18 C7.13400675,18 4,14.8659932 4,11 C4,7.13400675 7.13400675,4 11,4 C14.8659932,4 18,7.13400675 18,11 C18,14.8659932 14.8659932,18 11,18 Z" fill="var(--bs-heading-color)" fill-rule="nonzero"/>
+										</g>
+									</svg>
+								</a>
+							</div>
+							<div class="card-body contacts_body p-0 dz-scroll" id="DZ_W_Contacts_Body1">
+								<ul class="contacts">
+									<li class="name-first-letter">SEVER STATUS</li>
+									<li class="active">
+										<div class="d-flex bd-highlight">
+											<div class="img_cont primary">KK</div>
+											<div class="user_info">
+												<span>David Nester Birthday</span>
+												<p class="text-primary">Today</p>
+											</div>
+										</div>
+									</li>
+									<li class="name-first-letter">SOCIAL</li>
+									<li>
+										<div class="d-flex bd-highlight">
+											<div class="img_cont success">RU</div>
+											<div class="user_info">
+												<span>Perfection Simplified</span>
+												<p>Jame Smith commented on your status</p>
+											</div>
+										</div>
+									</li>
+									<li class="name-first-letter">SEVER STATUS</li>
+									<li>
+										<div class="d-flex bd-highlight">
+											<div class="img_cont primary">AU</div>
+											<div class="user_info">
+												<span>AharlieKane</span>
+												<p>Sami is online</p>
+											</div>
+										</div>
+									</li>
+									<li>
+										<div class="d-flex bd-highlight">
+											<div class="img_cont info">MO</div>
+											<div class="user_info">
+												<span>Athan Jacoby</span>
+												<p>Nargis left 30 mins ago</p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<div class="card-footer"></div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="notes">
+						<div class="card mb-sm-3 mb-md-0 note_card">
+							<div class="card-header chat-list-header text-center">
+								<a href="javascript:void(0);" class="dz-chatbox-btn">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<rect fill="var(--bs-heading-color)" x="4" y="11" width="16" height="2" rx="1"/>
+											<rect fill="var(--bs-heading-color)" opacity="1.0" transform="translate(12.000000, 12.000000) rotate(-270.000000) translate(-12.000000, -12.000000) " x="4" y="11" width="16" height="2" rx="1"/>
+										</g>
+									</svg>
+								</a>
+								<div class="clarfix">
+									<h6 class="mb-1">Notes</h6>
+									<p class="mb-0">Add New Nots</p>
+								</div>
+								<a href="javascript:void(0);" class="dz-chatbox-btn">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+										<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+											<rect x="0" y="0" width="24" height="24"/>
+											<path d="M14.2928932,16.7071068 C13.9023689,16.3165825 13.9023689,15.6834175 14.2928932,15.2928932 C14.6834175,14.9023689 15.3165825,14.9023689 15.7071068,15.2928932 L19.7071068,19.2928932 C20.0976311,19.6834175 20.0976311,20.3165825 19.7071068,20.7071068 C19.3165825,21.0976311 18.6834175,21.0976311 18.2928932,20.7071068 L14.2928932,16.7071068 Z" fill="var(--bs-heading-color)" fill-rule="nonzero" opacity="1"/>
+											<path d="M11,16 C13.7614237,16 16,13.7614237 16,11 C16,8.23857625 13.7614237,6 11,6 C8.23857625,6 6,8.23857625 6,11 C6,13.7614237 8.23857625,16 11,16 Z M11,18 C7.13400675,18 4,14.8659932 4,11 C4,7.13400675 7.13400675,4 11,4 C14.8659932,4 18,7.13400675 18,11 C18,14.8659932 14.8659932,18 11,18 Z" fill="var(--bs-heading-color)" fill-rule="nonzero"/>
+										</g>
+									</svg>
+								</a>
+							</div>
+							<div class="card-body contacts_body p-0 dz-scroll" id="DZ_W_Contacts_Body2">
+								<ul class="contacts">
+									<li class="active">
+										<div class="d-flex bd-highlight">
+											<div class="user_info">
+												<span>New order placed..</span>
+												<p>10 Aug 2020</p>
+											</div>
+											<div class="ms-auto">
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-primary light ms-1"><i class="fas fa-pencil-alt"></i></a>
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-danger light"><i class="fa fa-trash"></i></a>
+											</div>
+										</div>
+									</li>
+									<li>
+										<div class="d-flex bd-highlight">
+											<div class="user_info">
+												<span>Youtube, a video-sharing website..</span>
+												<p>10 Aug 2020</p>
+											</div>
+											<div class="ms-auto">
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-primary light ms-1"><i class="fas fa-pencil-alt"></i></a>
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-danger light"><i class="fa fa-trash"></i></a>
+											</div>
+										</div>
+									</li>
+									<li>
+										<div class="d-flex bd-highlight">
+											<div class="user_info">
+												<span>john just buy your product..</span>
+												<p>10 Aug 2020</p>
+											</div>
+											<div class="ms-auto">
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-primary light ms-1"><i class="fas fa-pencil-alt"></i></a>
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-danger light"><i class="fa fa-trash"></i></a>
+											</div>
+										</div>
+									</li>
+									<li>
+										<div class="d-flex bd-highlight">
+											<div class="user_info">
+												<span>Athan Jacoby</span>
+												<p>10 Aug 2020</p>
+											</div>
+											<div class="ms-auto">
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-primary light ms-1"><i class="fas fa-pencil-alt"></i></a>
+												<a href="javascript:void(0);" class="btn btn-square btn-xs btn-danger light"><i class="fa fa-trash"></i></a>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Sidebar Chat Box  -->
+		<!-- Start - Header -->
+		<div class="header">
+			<div class="header-content">
+				<nav class="navbar navbar-expand">
+					<div class="collapse navbar-collapse justify-content-between">
+						<div class="header-left">
+							<form>
+								<div class="header-search input-group">
+									<span class="input-group-text">
+										<button class="bg-transparent border-0" aria-label="Header Search">
+											<svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<circle cx="8.78605" cy="8.78605" r="8.23951" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+												<path d="M14.5168 14.9447L17.7471 18.1667" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+										</button>
+									</span>
+									<input type="text" class="form-control" placeholder="Search">
+								</div>
+							</form>	
+						</div>
+						<ul class="navbar-nav header-right">
+							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
+								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
+									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
+									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
+										<a class="btn btn-outline-secondary px-2" href="email-inbox.html" title="Email inbox" aria-label="Email inbox">
+											<i class="icon feather icon-mail"></i>
+											<span class="d-none d-lg-inline ms-1">Email</span>
+										</a>
+										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
+											<i class="icon feather icon-message-square"></i>
+											<span class="d-none d-lg-inline ms-1">Chat</span>
+										</button>
+									</div>
+								</div>
+							</li>
+							<li class="nav-item align-self-center">
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
+									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
+									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								</button>
+							</li>
+							<li class="nav-item">
+								<select class="selectpicker form-select i18n-select" id="langSwitcher">
+									<option value="en_GB" title="English" data-content="<img src='assets/images/flags/gb-eng.svg' alt=''> English">English</option>
+									<option value="pt_BR" title="Portuguese" data-content="<img src='assets/images/flags/pt.svg' alt=''> Português">Português</option>
+									<option value="fr_FR" title="French" data-content="<img src='assets/images/flags/fr.svg' alt=''> Français">Français</option>
+									<option value="de_DE" title="German" data-content="<img src='assets/images/flags/de.svg' alt=''> Deutsch">Deutsch</option>
+									<option value="it_IT" title="Italian" data-content="<img src='assets/images/flags/it.svg' alt=''> Italiano">Italiano</option>
+									<option value="jp_JP" title="Japanese" data-content="<img src='assets/images/flags/jp.svg' alt=''> 日本語">日本語</option>
+									<option value="es_ES" title="Spanish" data-content="<img src='assets/images/flags/es.svg' alt=''> Español">Español</option>
+									<option value="ar_TN" title="Arabic" data-content="<img src='assets/images/flags/arab.svg' alt=''> العربية">العربية</option>
+									<option value="tr_TR" title="Turkish" data-content="<img src='assets/images/flags/tr.svg' alt=''> Türkçe">Türkçe</option>
+								</select>
+							</li>
+							<li class="nav-item dropdown notification_dropdown">
+								<div class="dropdown">
+									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
+										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+										</svg>
+									</button>
+									<div class="dropdown-menu dropdown-menu-end py-0">
+										<div class="dz-scroll p-2" style="height: 380px;">
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<img src="assets/images/avatar/small/avatar1.webp" alt="" class="rounded-circle avatar avatar-sm">
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Dr sultads Send you Photo</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<div class="avatar avatar-sm avatar-success rounded-circle">KG</div>
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Resport created successfully</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<div class="avatar avatar-sm avatar-primary rounded-circle"><i class="fa fa-home"></i></div>
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Reminder : Treatment Time!</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<img src="assets/images/avatar/small/avatar2.webp" alt="" class="rounded-circle avatar avatar-sm">
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Resport created successfully</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<img src="assets/images/avatar/small/avatar3.webp" alt="" class="rounded-circle avatar avatar-sm">
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Dr sultads Send you Photo</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<div class="avatar avatar-sm avatar-success rounded-circle">KG</div>
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Resport created successfully</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<div class="avatar avatar-sm avatar-primary rounded-circle"><i class="fa fa-home"></i></div>
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Reminder : Treatment Time!</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+											<div class="d-flex align-items-center p-2 bg-action-light rounded">
+												<div class="d-inline-block">
+													<img src="assets/images/avatar/small/avatar4.webp" alt="" class="rounded-circle avatar avatar-sm">
+												</div>
+												<div class="clearfix ms-2">
+													<h6 class="fs-13 mb-0 fw-semibold">Resport created successfully</h6>
+													<small>29 July 2020 - 02:26 PM</small>
+												</div>
+											</div>
+										</div>
+										<a class="d-block text-center p-3 border-top" href="javascript:void(0);">See all notifications <i class="fa fa-arrow-right"></i></a>
+									</div>
+								</div>
+							</li>
+							<li class="nav-item notification_dropdown d-none d-sm-flex">
+								<a class="nav-link dz-fullscreen" href="javascript:void(0);" aria-label="Fullscreen">
+									<svg id="icon-full" viewBox="0 0 24 24" width="20" height="20" stroke="var(--bs-body-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
+									</svg>
+									<svg id="icon-minimize" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bs-body-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minimize">
+										<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
+									</svg>
+								</a>
+							</li>	
+							<li class="nav-item header-profile-dropdown">
+								<div class="dropdown d-flex align-items-center">
+									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="../account/settings.html" title="Account settings">
+										<div class="profile-head mb-0">
+											<div class="profile-media">
+												<img src="assets/images/tab/1.jpg" alt="">
+											</div>
+											<div class="header-info">
+												<h6 class="author-name mb-0 usis-header-session-name">Thomas Fleming</h6>
+												<small class="text-truncate d-block usis-header-session-email" style="max-width:10rem;">info@gmail.com</small>
+											</div>
+										</div>
+									</a>
+									<a class="nav-link py-0 ps-0 pe-2 dropdown-toggle text-body d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Account menu">
+										<i class="fa fa-angle-down" aria-hidden="true"></i>
+									</a>
+									<ul class="dropdown-menu dropdown-menu-end">
+									<li>
+										<div class="py-2 d-flex px-3">
+											<img src="assets/images/tab/1.jpg" class="avatar avatar-sm rounded-circle" alt="">
+											<div class="ms-2 overflow-hidden">
+												<h6 class="mb-0 text-truncate usis-header-session-name">Thomas Fleming</h6>
+												<small class="text-muted text-truncate d-block usis-header-session-email">info@gmail.com</small>
+											</div>	
+										</div>
+									</li>
+									<li><hr class="dropdown-divider"></li>
+									<li>
+										<a class="dropdown-item" href="../account/settings.html">
+											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+											<span class="ms-2">Account settings</span>
+										</a>
+									</li>
+									<li>
+										<a class="dropdown-item" href="../usis-dashboard.html">
+											<svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pie-chart">
+												<path stroke="var(--bs-primary)" d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+												<path stroke="var(--bs-primary)" d="M22 12A10 10 0 0 0 12 2v10z"></path>
+											</svg>
+											<span class="ms-2">My Project</span>
+											<span class="badge badge-sm badge-primary light rounded-circle float-end">4</span>
+										</a>
+									</li>
+									<li><hr class="dropdown-divider"></li>
+									<li>
+										<a href="#" class="dropdown-item usis-logout-link">
+											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bs-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<path stroke="var(--bs-danger)" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
+												<line x1="21" y1="12" x2="9" y2="12"></line>
+											</svg>
+											<span class="ms-2 text-danger">Logout </span>
+										</a>
+									</li>
+								</ul>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</nav>
+			</div>
+		</div>
+		<!-- End - Header -->
+		<!-- Start - Sidebar Navigation -->
+		<div class="deznav">
+			<div class="deznav-scroll">
+				<ul class="metismenu" id="menu">
+					<li class="menu-title" data-i18n="USIS">USIS</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-home"></i>
+							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="usis-dashboard.html">USIS Dashboard</a></li>
+							<li><a href="usis-dashboard-dark.html">USIS Dark Dashboard</a></li>
+						</ul>
+					</li>
+					<li>
+						<a href="usis-all-pages-index.html" aria-expanded="false">
+							<i class="icon feather icon-list"></i>
+							<span class="nav-text">All pages (tour)</span>
+						</a>
+					</li>
+					<li>
+						<a href="construction/leads.html" aria-expanded="false">
+							<i class="icon feather icon-users"></i>
+							<span class="nav-text" data-i18n="Leads">Leads</span>
+						</a>
+					</li>
+					<li>
+						<a href="construction/estimate.html" aria-expanded="false">
+							<i class="icon feather icon-file-text"></i>
+							<span class="nav-text" data-i18n="Estimate">Estimate</span>
+						</a>
+					</li>
+					<li>
+						<a href="construction/projects.html" aria-expanded="false">
+							<i class="icon feather icon-layers"></i>
+							<span class="nav-text" data-i18n="Projects">Projects</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-safety.html" aria-expanded="false">
+							<i class="icon feather icon-shield"></i>
+							<span class="nav-text" data-i18n="Safety">Safety</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-crm-leads.html" aria-expanded="false">
+							<i class="icon feather icon-git-branch"></i>
+							<span class="nav-text">CRM pipeline</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-documents-hub.html" aria-expanded="false">
+							<i class="icon feather icon-folder"></i>
+							<span class="nav-text">Documents</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-hr-dashboard.html" aria-expanded="false">
+							<i class="icon feather icon-user-check"></i>
+							<span class="nav-text" data-i18n="HR">HR</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-hr-hire.html" aria-expanded="false">
+							<i class="icon feather icon-edit"></i>
+							<span class="nav-text">Hire wizard</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-hrms-home.html" aria-expanded="false">
+							<i class="icon feather icon-briefcase"></i>
+							<span class="nav-text">HR suite</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-playbooks.html" aria-expanded="false">
+							<i class="icon feather icon-check-square"></i>
+							<span class="nav-text">Playbooks</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-user-directory.html" aria-expanded="false">
+							<i class="icon feather icon-settings"></i>
+							<span class="nav-text">User admin</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-procurement.html" aria-expanded="false">
+							<i class="icon feather icon-shopping-cart"></i>
+							<span class="nav-text">Procurement</span>
+						</a>
+					</li>
+					<li>
+						<a href="reports.html" aria-expanded="false">
+							<i class="icon feather icon-pie-chart"></i>
+							<span class="nav-text">Reports</span>
+						</a>
+					</li>
+
+					<li class="menu-title"><span>Construction template (demos)</span></li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-layers"></i>
+							<span class="nav-text">Dashboard &amp; reports</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="construction/index.html">Projects (index)</a></li>
+							<li><a href="construction/projects.html">Projects (directory)</a></li>
+							<li><a href="construction/overview.html">Overview</a></li>
+							<li><a href="construction/finance.html">Finance</a></li>
+							<li><a href="reports.html">Reports</a></li>
+							<li><a href="construction/services.html">Services</a></li>
+							<li><a href="construction/contact-us.html">Contact us</a></li>
+						</ul>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-hard-drive"></i>
+							<span class="nav-text">Project workspace tabs</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="construction/estimate.html">Estimate (will bid)</a></li>
+							<li><a href="construction/estimate_legacy.html">Estimate (legacy template)</a></li>
+							<li><a href="construction/party.html">Party</a></li>
+							<li><a href="construction/transaction.html">Transaction</a></li>
+							<li><a href="construction/leads.html">Leads (Building Connected)</a></li>
+							<li><a href="construction/task.html">Task</a></li>
+							<li><a href="construction/attendance.html">Attendance</a></li>
+							<li><a href="construction/material.html">Material</a></li>
+							<li><a href="construction/door-schedule.html">Door schedule</a></li>
+							<li><a href="construction/hardware-schedules.html">Hardware schedules</a></li>
+							<li><a href="construction/files.html">Files</a></li>
+						</ul>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-file-plus"></i>
+							<span class="nav-text">Quotation</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="construction/quotation.html">Quotation</a></li>
+							<li><a href="construction/add-quotation.html">Add quotation</a></li>
+							<li><a href="construction/edit-quotation.html">Edit quotation</a></li>
+							<li><a href="construction/construction-pricing.html">Construction pricing (LEMOS)</a></li>
+						</ul>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-clock"></i>
+							<span class="nav-text">Time &amp; tasks</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="construction/time-sheet.html">Time sheet</a></li>
+							<li><a href="construction/timesheet-detail.html">Timesheet detail</a></li>
+							<li><a href="construction/todo.html">Todo</a></li>
+							<li><a href="construction/todo-detail.html">Todo detail</a></li>
+						</ul>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-printer"></i>
+							<span class="nav-text">Minutes of meeting</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="construction/mom.html">MOM list</a></li>
+							<li><a href="construction/mom-detail.html">MOM detail</a></li>
+						</ul>
+					</li>
+
+					<li class="menu-title"><span>Other W3CRM demos</span></li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-grid"></i>
+							<span class="nav-text">Classic shell pages</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="index.html">Index (redirects)</a></li>
+							<li><a href="index-2.html">Index 2 (KPI, classic shell)</a></li>
+							<li><a href="usis-dashboard-dark.html">USIS Dark Dashboard</a></li>
+							<li><a href="project.html">Project</a></li>
+							<li><a href="manage-client.html">Manage client</a></li>
+							<li><a href="finance.html">Finance (main)</a></li>
+							<li><a href="task.html">Task (main)</a></li>
+							<li><a href="app-calender.html">App calendar</a></li>
+							<li><a href="email-inbox.html">Email inbox</a></li>
+							<li><a href="empty-page.html">Empty page shell</a></li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+			<div class="deznav-footer">
+				<a href="https://coreui.w3itexperts.com/?theme=W3CRM" target="_blank" class="btn btn-docs btn-success w-100">
+					<span>Docs & Components</span>
+					<i class="fa-solid fa-arrow-up rotate-x"></i>
+				</a>
+			</div>
+		</div>
+		<!-- End - Sidebar Navigation -->
+
+
+		<main class="content-body">
+			<div class="page-title">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li><h1>Specifications</h1></li>
+						<li class="breadcrumb-item">
+							<a href="index.html">
+								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								Home
+							</a>
+						</li>
+						<li class="breadcrumb-item active" aria-current="page">Specifications</li>
+					</ol>
+				</nav>
+			</div>
+
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h5 class="mb-0">Project specifications</h5>
+						<p class="text-muted small mb-0" id="usis-specs-viewer-subtitle">CSI spec book — full page view.</p>
+					</div>
+					<a class="btn btn-sm btn-outline-secondary" id="usis-specs-viewer-back" href="javascript:history.back()">Back</a>
+				</div>
+				<div id="usis-specs-viewer-no-id" class="alert alert-warning d-none">No <code>project_id</code> in the URL. Open from a project, lead, or estimate Specs tab.</div>
+				<div id="usis-specs-viewer-root"></div>
+			</div>
+		</main>
+
+		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
+<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard.html">
+		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
+		<span class="fs-11">Home</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/leads.html">
+		<i class="icon feather icon-users d-block fs-5 mb-0"></i>
+		<span class="fs-11">Leads</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
+		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
+		<span class="fs-11">Projects</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
+		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
+		<span class="fs-11">Estimate</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
+		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
+		<span class="fs-11">Drawings</span>
+	</a>
+</nav>
+
+<!-- Start - Footer -->
+		<div class="footer">
+			<div class="copyright text-center">
+			   <p class="mb-0">Copyright © Developed by <a href="https://dexignzone.com/" target="_blank">DexignZone</a> <span class="current-year">2025</span></p>
+			</div>
+		</div>
+		<!-- End - Footer -->
+
+	</div>
+
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-require-auth.js"></script>
+	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
+	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-specs-book-tab.js"></script>
+	<script>
+	(function () {
+		var pid = new URLSearchParams(window.location.search).get("project_id");
+		var root = document.getElementById("usis-specs-viewer-root");
+		var noId = document.getElementById("usis-specs-viewer-no-id");
+		var sub = document.getElementById("usis-specs-viewer-subtitle");
+		if (!pid || !String(pid).trim()) {
+			if (noId) noId.classList.remove("d-none");
+			if (root) root.innerHTML = "";
+			return;
+		}
+		if (sub) sub.textContent = "Project id: " + pid;
+		if (typeof window.USISSpecsBook !== "undefined" && root) {
+			window.USISSpecsBook.mount(root, pid.trim());
+		} else if (root) {
+			root.innerHTML = '<div class="alert alert-danger">Spec book script failed to load.</div>';
+		}
+	})();
+	</script>
+
+</body>
+</html>

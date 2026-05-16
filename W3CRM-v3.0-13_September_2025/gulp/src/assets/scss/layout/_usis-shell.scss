@@ -1,3 +1,39 @@
+/* USIS brand — eagle mark + wordmark in nav header */
+.usis-brand-logo {
+	gap: 0.5rem;
+
+	.usis-logo-mark {
+		display: block;
+		width: 2.25rem;
+		height: auto;
+		max-height: 2.25rem;
+		object-fit: contain;
+		flex-shrink: 0;
+		background: transparent;
+		border-radius: 0;
+		padding: 0;
+		min-width: 0;
+	}
+
+	.usis-logo-title {
+		font-size: 1.0625rem !important;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		color: #fff;
+		margin-top: 0;
+		margin-left: 0;
+		max-width: none;
+		white-space: nowrap;
+
+		[data-nav-headerbg="color_1"] & {
+			color: #212529;
+		}
+		[data-bs-theme="dark"][data-nav-headerbg="color_1"] & {
+			color: #fff;
+		}
+	}
+}
+
 /* USIS shell — bottom nav clears fixed footer on small screens */
 .usis-mobile-bottomnav {
 	position: fixed;

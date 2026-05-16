@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	
+
 	<base href="../">
-	
+
 	<!-- Title -->
 	<title>W3CRM - Bootstrap Admin Dashboard Template</title>
 	
@@ -40,15 +40,17 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
-	
-	<link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet">	
-	<link href="assets/vendor/@yaireo/tagify/dist/tagify.css" rel="stylesheet">
-	
-	<!-- Start - Style CSS -->
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
-	<!-- End - Style CSS -->
-	
+
 </head>
 <body>
 
@@ -61,25 +63,15 @@
 	</div>
 	<!-- End - Preloader -->
 
-    <!-- Start - Main Wrapper --> 
-    <div id="main-wrapper" class="show">
-       
+	<div id="main-wrapper" class="show">
+
 		<!-- Start - Nav Header -->
 		<div class="nav-header">
-			<a href="index.html" class="brand-logo" aria-label="Brand Logo">
-				<svg class="logo-abbr" width="39" height="23" viewBox="0 0 39 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path class="w3" d="M32.0362 22H19.0466L20.7071 18.7372C20.9559 18.2484 21.455 17.9378 22.0034 17.9305L31.1036 17.8093C33.0753 17.6497 33.6571 15.9246 33.7015 15.0821C33.7015 13.2196 32.1916 12.5765 31.4367 12.4878H23.7095L25.9744 8.49673H30.4375C31.8763 8.3903 32.236 7.03332 32.236 6.36814C32.3426 4.93133 30.9482 4.61648 30.2376 4.63865H28.6955C28.2646 4.63865 27.9788 4.19212 28.1592 3.8008L29.7047 0.44798C31.0903 0.394765 32.8577 0.780573 33.5683 0.980129C38.6309 3.42801 37.0988 7.98676 35.6999 9.96014C38.1513 11.9291 38.4976 14.3282 38.3644 15.2816C38.098 20.1774 34.0346 21.8005 32.0362 22Z" fill="var(--bs-primary)"/>
-					<path class="react-w" d="M9.89261 21.4094L0 2.80536H4.86354C5.41354 2.80536 5.91795 3.11106 6.17246 3.59864L12.4032 15.5355C12.6333 15.9762 12.6261 16.5031 12.3842 16.9374L9.89261 21.4094Z" fill="#fff"/>
-					<path class="react-w" d="M17.5705 21.4094L7.67786 2.80536H12.5372C13.0894 2.80536 13.5954 3.11351 13.8489 3.60412L20.302 16.0939L17.5705 21.4094Z" fill="#fff"/>
-					<path class="react-w" d="M17.6443 21.4094L28.2751 0H23.4513C22.8806 0 22.361 0.328884 22.1168 0.844686L14.8271 16.2416L17.6443 21.4094Z" fill="#fff"/>
-					<path class="react-w" d="M9.89261 21.4094L0 2.80536H4.86354C5.41354 2.80536 5.91795 3.11106 6.17246 3.59864L12.4032 15.5355C12.6333 15.9762 12.6261 16.5031 12.3842 16.9374L9.89261 21.4094Z" stroke="#fff"/>
-					<path class="react-w" d="M17.5705 21.4094L7.67786 2.80536H12.5372C13.0894 2.80536 13.5954 3.11351 13.8489 3.60412L20.302 16.0939L17.5705 21.4094Z" stroke="#fff"/>
-					<path class="react-w" d="M17.6443 21.4094L28.2751 0H23.4513C22.8806 0 22.361 0.328884 22.1168 0.844686L14.8271 16.2416L17.6443 21.4094Z" stroke="#fff"/>
-				</svg>
-				<svg class="brand-title" width="47" height="16" viewBox="0 0 47 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M8.36 15.2C7.2933 15.2 6.3 15.0267 5.38 14.68C4.4733 14.32 3.68 13.82 3 13.18C2.3333 12.5267 1.8133 11.76 1.44 10.88C1.0667 9.99999 0.880005 9.03999 0.880005 7.99999C0.880005 6.95999 1.0667 5.99999 1.44 5.11999C1.8133 4.23999 2.34 3.47999 3.02 2.83999C3.7 2.18666 4.49331 1.68666 5.40001 1.33999C6.30671 0.979988 7.3 0.799988 8.38 0.799988C9.5267 0.799988 10.5733 0.999988 11.52 1.39999C12.4667 1.78666 13.2667 2.36666 13.92 3.13999L12.24 4.71999C11.7333 4.17332 11.1667 3.76666 10.54 3.49999C9.9133 3.21999 9.2333 3.07999 8.5 3.07999C7.7667 3.07999 7.0933 3.19999 6.48 3.43999C5.88 3.67999 5.35331 4.01999 4.90001 4.45999C4.46001 4.89999 4.1133 5.41999 3.86 6.01999C3.62 6.61999 3.5 7.27999 3.5 7.99999C3.5 8.71999 3.62 9.37999 3.86 9.97999C4.1133 10.58 4.46001 11.1 4.90001 11.54C5.35331 11.98 5.88 12.32 6.48 12.56C7.0933 12.8 7.7667 12.92 8.5 12.92C9.2333 12.92 9.9133 12.7867 10.54 12.52C11.1667 12.24 11.7333 11.82 12.24 11.26L13.92 12.86C13.2667 13.62 12.4667 14.2 11.52 14.6C10.5733 15 9.52 15.2 8.36 15.2ZM16.4113 15V0.999988H22.1713C23.4113 0.999988 24.4713 1.19999 25.3513 1.59999C26.2446 1.99999 26.9313 2.57332 27.4113 3.31999C27.8913 4.06666 28.1313 4.95332 28.1313 5.97999C28.1313 7.00669 27.8913 7.89329 27.4113 8.63999C26.9313 9.37329 26.2446 9.93999 25.3513 10.34C24.4713 10.7267 23.4113 10.92 22.1713 10.92H17.8513L19.0113 9.73999V15H16.4113ZM25.5713 15L22.0313 9.91999H24.8112L28.3713 15H25.5713ZM19.0113 10.02L17.8513 8.77999H22.0513C23.1979 8.77999 24.0579 8.53329 24.6312 8.03999C25.2179 7.54669 25.5113 6.85999 25.5113 5.97999C25.5113 5.08666 25.2179 4.39999 24.6312 3.91999C24.0579 3.43999 23.1979 3.19999 22.0513 3.19999H17.8513L19.0113 1.91999V10.02ZM31.0402 15V0.999988H33.1802L39.3002 11.22H38.1802L44.2002 0.999988H46.3402L46.3602 15H43.9002L43.8802 4.85999H44.4002L39.2802 13.4H38.1202L32.9202 4.85999H33.5202V15H31.0402Z" fill="#fff"/>
-				</svg>
-			</a>
+			<a href="usis-dashboard.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
+	<img class="logo-abbr usis-logo-mark" src="assets/images/branding/usis-eagle-logo.png" alt="" width="36" height="36">
+	<span class="brand-title usis-logo-title">USIS CM</span>
+</a>
+
 			<div class="nav-control">
 				<div class="hamburger">
 					<span class="line"></span>
@@ -89,7 +81,7 @@
 			</div>
 		</div>
 		<!-- End - Nav Header -->
-		
+
 		<!-- Start - Sidebar Chat Box  -->
 		<div class="chatbox">
 			<div class="chatbox-close"></div>
@@ -650,7 +642,7 @@
 			</div>
 		</div>
 		<!-- End - Sidebar Chat Box  -->
-		
+
 		<!-- Start - Header -->
 		<div class="header">
 			<div class="header-content">
@@ -672,6 +664,13 @@
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
+							<li class="nav-item align-self-center">
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
+									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
+									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								</button>
+							</li>
 							<li class="nav-item">
 								<select class="selectpicker form-select i18n-select" id="langSwitcher">
 									<option value="en_GB" title="English" data-content="<img src='assets/images/flags/gb-eng.svg' alt=''> English">English</option>
@@ -790,40 +789,44 @@
 									</svg>
 								</a>
 							</li>	
-							<li class="nav-item dropdown header-profile-dropdown">
-								<a class="nav-link" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-									<div class="profile-head">
-										<div class="profile-media">
-											<img src="assets/images/tab/1.jpg" alt="">
+							<li class="nav-item header-profile-dropdown">
+								<div class="dropdown d-flex align-items-center">
+									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="account/settings.html" title="Account settings">
+										<div class="profile-head mb-0">
+											<div class="profile-media">
+												<img src="assets/images/tab/1.jpg" alt="">
+											</div>
+											<div class="header-info">
+												<h6 class="author-name mb-0 usis-header-session-name">Thomas Fleming</h6>
+												<small class="text-truncate d-block usis-header-session-email" style="max-width:10rem;">info@gmail.com</small>
+											</div>
 										</div>
-										<div class="header-info">
-											<h6 class="author-name">Thomas Fleming</h6>
-											<small>info@gmail.com</small>
-										</div>
-									</div>
-								</a>
-								<ul class="dropdown-menu dropdown-menu-end">
+									</a>
+									<a class="nav-link py-0 ps-0 pe-2 dropdown-toggle text-body d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Account menu">
+										<i class="fa fa-angle-down" aria-hidden="true"></i>
+									</a>
+									<ul class="dropdown-menu dropdown-menu-end">
 									<li>
 										<div class="py-2 d-flex px-3">
 											<img src="assets/images/tab/1.jpg" class="avatar avatar-sm rounded-circle" alt="">
-											<div class="ms-2">
-												<h6 class="mb-0">Thomas Fleming</h6>
-												<small>Web Designer</small>
+											<div class="ms-2 overflow-hidden">
+												<h6 class="mb-0 text-truncate usis-header-session-name">Thomas Fleming</h6>
+												<small class="text-muted text-truncate d-block usis-header-session-email">info@gmail.com</small>
 											</div>	
 										</div>
 									</li>
 									<li><hr class="dropdown-divider"></li>
 									<li>
-										<a class="dropdown-item" href="app-profile.html">
+										<a class="dropdown-item" href="account/settings.html">
 											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
-											<span class="ms-2">Profile</span>
+											<span class="ms-2">Account settings</span>
 										</a>
 									</li>
 									<li>
-										<a class="dropdown-item" href="app-profile.html">
+										<a class="dropdown-item" href="usis-dashboard.html">
 											<svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pie-chart">
 												<path stroke="var(--bs-primary)" d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
 												<path stroke="var(--bs-primary)" d="M22 12A10 10 0 0 0 12 2v10z"></path>
@@ -850,18 +853,9 @@
 											<span class="ms-2">Notification </span>
 										</a>
 									</li>
-									<li>
-										<a href="javascript:void(0);" class="dropdown-item">
-											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<path fill-rule="evenodd" clip-rule="evenodd" d="M20.8066 7.62355L20.1842 6.54346C19.6576 5.62954 18.4907 5.31426 17.5755 5.83866V5.83866C17.1399 6.09528 16.6201 6.16809 16.1307 6.04103C15.6413 5.91396 15.2226 5.59746 14.9668 5.16131C14.8023 4.88409 14.7139 4.56833 14.7105 4.24598V4.24598C14.7254 3.72916 14.5304 3.22834 14.17 2.85761C13.8096 2.48688 13.3145 2.2778 12.7975 2.27802H11.5435C11.0369 2.27801 10.5513 2.47985 10.194 2.83888C9.83666 3.19791 9.63714 3.68453 9.63958 4.19106V4.19106C9.62457 5.23686 8.77245 6.07675 7.72654 6.07664C7.40418 6.07329 7.08843 5.98488 6.8112 5.82035V5.82035C5.89603 5.29595 4.72908 5.61123 4.20251 6.52516L3.53432 7.62355C3.00838 8.53633 3.31937 9.70255 4.22997 10.2322V10.2322C4.82187 10.574 5.1865 11.2055 5.1865 11.889C5.1865 12.5725 4.82187 13.204 4.22997 13.5457V13.5457C3.32053 14.0719 3.0092 15.2353 3.53432 16.1453V16.1453L4.16589 17.2345C4.41262 17.6797 4.82657 18.0082 5.31616 18.1474C5.80575 18.2865 6.33061 18.2248 6.77459 17.976V17.976C7.21105 17.7213 7.73116 17.6515 8.21931 17.7821C8.70746 17.9128 9.12321 18.233 9.37413 18.6716C9.53867 18.9488 9.62708 19.2646 9.63043 19.5869V19.5869C9.63043 20.6435 10.4869 21.5 11.5435 21.5H12.7975C13.8505 21.5 14.7055 20.6491 14.7105 19.5961V19.5961C14.7081 19.088 14.9088 18.6 15.2681 18.2407C15.6274 17.8814 16.1154 17.6806 16.6236 17.6831C16.9451 17.6917 17.2596 17.7797 17.5389 17.9393V17.9393C18.4517 18.4653 19.6179 18.1543 20.1476 17.2437V17.2437L20.8066 16.1453C21.0617 15.7074 21.1317 15.1859 21.0012 14.6963C20.8706 14.2067 20.5502 13.7893 20.111 13.5366V13.5366C19.6717 13.2839 19.3514 12.8665 19.2208 12.3769C19.0902 11.8872 19.1602 11.3658 19.4153 10.9279C19.5812 10.6383 19.8213 10.3981 20.111 10.2322V10.2322C21.0161 9.70283 21.3264 8.54343 20.8066 7.63271V7.63271V7.62355Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-												<circle cx="12.175" cy="11.889" r="2.63616" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-											</svg>
-											<span class="ms-2">Settings </span>
-										</a>
-									</li>
 									<li><hr class="dropdown-divider"></li>
 									<li>
-										<a href="page-login.html" class="dropdown-item">
+										<a href="#" class="dropdown-item usis-logout-link">
 											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bs-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 												<path stroke="var(--bs-danger)" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
 												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
@@ -871,6 +865,7 @@
 										</a>
 									</li>
 								</ul>
+								</div>
 							</li>
 						</ul>
 					</div>
@@ -878,7 +873,7 @@
 			</div>
 		</div>
 		<!-- End - Header -->
-		
+
 		<!-- Start - Sidebar Navigation -->
 		<div class="deznav">
 			<div class="deznav-scroll">
@@ -896,7 +891,8 @@
 						</a>
 						<ul aria-expanded="false">
 							<li><a href="index.html" data-i18n="Dashboard Light">Dashboard Light</a></li>
-							<li><a href="index-2.html" data-i18n="Dashboard Dark">Dashboard Dark</a></li>
+							<li><a href="usis-dashboard-dark.html" data-i18n="Dashboard Dark">USIS Dark Dashboard</a></li>
+							<li><a href="index-2.html">Dashboard Dark (classic)</a></li>
 							<li><a href="construction/index.html" data-i18n="Construction" onclick="deleteAllCookie()">Construction</a></li>
 						</ul>
 					</li>
@@ -1183,7 +1179,7 @@
 							<span class="nav-text" data-i18n="Pages">Pages</span>
 						</a>
 						<ul aria-expanded="false">
-							<li><a href="page-login.html" data-i18n="Login">Login</a></li>
+							<li><a href="#" class="usis-flask-login-link" data-i18n="Login">Login</a></li>
 							<li><a href="page-register.html" data-i18n="Register">Register</a></li>
 							<li><a class="has-arrow" href="javascript:void(0);" aria-expanded="false" data-i18n="Error">Error</a>
 								<ul aria-expanded="false">
@@ -1208,16 +1204,13 @@
 			</div>
 		</div>
 		<!-- End - Sidebar Navigation -->
-		
-		<!-- Start - Content Body -->
-        <main class="content-body">
-		
-		
-			<!-- Start - Page Title & Breadcrumb -->
+
+		<main class="content-body">
+
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1>Settings</h1></li>
+						<li><h1>Account settings</h1></li>
 						<li class="breadcrumb-item">
 							<a href="index.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1227,10 +1220,9 @@
 								Home
 							</a>
 						</li>
-						<li class="breadcrumb-item active" aria-current="page">Settings</li>
+						<li class="breadcrumb-item active" aria-current="page">Account settings</li>
 					</ol>
 				</nav>
-				<a class="text-primary fs-13" data-bs-toggle="offcanvas" href="#addTaskmodal" role="button" aria-controls="addTaskmodal">+ Add Task</a>
 			</div>
 
 			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
@@ -1238,490 +1230,78 @@
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
-								<h6 class="mb-1">Settings</h6>
-								<p class="text-muted small mb-0">End-user account settings template (billing, security, API keys).</p>
+								<h6 class="mb-1">Account settings</h6>
+								<p class="text-muted small mb-0">Update your name, contact email, phone, and password. Changes are saved to your signed-in account.</p>
 							</div>
 							<div class="text-nowrap small">
-								<a href="security.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="statements.html">Next</a>
+								<a href="../usis-dashboard.html">Dashboard</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a>
 							</div>
 						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
 					</div>
 				</div>
 			</div>
-			<!-- End - Page Title & Breadcrumb -->
-			
-			<div class="card border-top-0 border-start-0 border-end-0 rounded-0 h-auto mb-0 px-md-2 pt-md-2">
-				<div class="card-body d-flex py-md-4">
-					<div class="clearfix">
-						<div class="d-inline-block position-relative me-sm-4 me-3 mb-3 mb-lg-0">
-							<img src="assets/images/avatar/large/avatar5.webp" class="avatar avatar-xxl" alt="">
-							<span class="fa fa-circle border border-3 border-white text-success position-absolute bottom-0 end-0 rounded-circle"></span>
-						</div>
-					</div>
-					<div class="clearfix d-xl-flex flex-grow-1">
-						<div class="clearfix pe-md-5">
-							<h3 class="fw-semibold mb-1">Amelia Rose<img src="assets/images/blue-tick.png" alt="Blue Tick"></h3>
-							<ul class="d-flex flex-wrap align-items-center">
-								<li class="me-3 d-inline-flex align-items-center"><i class="las la-user me-1"></i>Web Designer</li>
-								<li class="me-3 d-inline-flex align-items-center"><i class="las la-map-marker me-1"></i>420 City Path, AU 123-456</li>
-								<li class="me-3 d-inline-flex align-items-center"><i class="las la-envelope me-1"></i>info@gmail.com</li>
-							</ul>
-							<div class="d-md-flex d-none flex-wrap">
-								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
-									<div class="avatar avatar-sm avatar-primary">
-										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M12 1V23" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-											<path d="M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-										</svg>
-									</div>
-									<div class="clearfix ms-2">
-										<h3 class="mb-0 fw-semibold lh-1">$1,250</h3>
-										<span class="small">Total Earnings</span>
-									</div>
-								</div>
-								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
-									<div class="avatar avatar-sm avatar-primary">
-										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-											<path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-											<path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-											<path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-										</svg>
-									</div>
-									<div class="clearfix ms-2">
-										<h3 class="mb-0 fw-semibold lh-1">125</h3>
-										<span class="small">New Referrals</span>
-									</div>
-								</div>
-								<div class="border outline-dashed rounded p-2 d-flex align-items-center me-3 mt-3">
-									<div class="avatar avatar-sm avatar-primary">
-										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-											<path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="var(--bs-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-										</svg>
-									</div>
-									<div class="clearfix ms-2">
-										<h3 class="mb-0 fw-semibold lh-1">25</h3>
-										<span class="small">New Deals</span>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="clearfix mt-3 mt-xl-0 ms-auto d-flex flex-column col-xl-3">
-							<div class="clearfix mb-3 text-xl-end">
-								<a href="javascript:void(0);" class="btn btn-light me-1 me-sm-2 mb-1 btn-active">
-									<span class="active-before">Follow</span>
-									<span class="active-after">Following</span>
-								</a>
-								<a href="javascript:void(0);" class="btn btn-primary mb-1">Offer a Deal</a>
-							</div>
-							<div class="mt-auto d-flex align-items-center">
-								<div class="clearfix me-3">
-									<span class="fw-medium text-black d-block mb-1">Progress</span>
-									<p class="mb-0 d-flex">
-										<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M5.83334 14.1668L14.1667 5.8335" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-											<path d="M5.83334 5.8335H14.1667V14.1668" stroke="var(--bs-success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-										</svg>
-										<span class="text-success me-1">+3.50%</span>
-									</p>
-								</div>
-								<div id="chartProfileProgress"></div>
+
+			<div class="container-fluid" id="usis-account-remote-body">
+				<div class="row justify-content-center">
+					<div class="col-xl-3 col-lg-4 mb-4">
+						<div class="card h-auto">
+							<div class="card-body text-center py-4">
+								<div class="avatar avatar-xl mx-auto mb-3 rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:5rem;height:5rem;font-size:1.75rem;" id="usis-profile-avatar-initials" aria-hidden="true">—</div>
+								<h5 class="mb-1" id="usis-profile-card-name">—</h5>
+								<p class="text-muted small mb-1" id="usis-profile-card-email">—</p>
+								<p class="text-muted small mb-0" id="usis-profile-card-roles">—</p>
 							</div>
 						</div>
 					</div>
-				</div>
-				<div class="card-footer py-0 d-flex flex-wrap justify-content-between align-items-center mx-sm-4 px-0">
-					<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl px-3 px-sm-0" id="tabMyProfileBottom" role="tablist">
-						<li class="nav-item" role="presentation">
-							<a href="account/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/settings.html" class="nav-link py-3 px-1 border-3 active">Settings</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/security.html" class="nav-link py-3 px-1 border-3">Security</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/activity.html" class="nav-link py-3 px-1 border-3">Activity</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/billing.html" class="nav-link py-3 px-1 border-3">Billing</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/statements.html" class="nav-link py-3 px-1 border-3">Statements</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/referrals.html" class="nav-link py-3 px-1 border-3">Referrals</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/api-keys.html" class="nav-link py-3 px-1 border-3">API Keys</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a href="account/logs.html" class="nav-link py-3 px-1 border-3">Logs</a>
-						</li>
-					</ul>
-					<ul class="d-xl-flex d-none py-2">
-						<li class="px-1">
-							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
-								<i class="fa-brands fa-linkedin-in"></i>
-							</a>
-						</li>
-						<li class="px-1">
-							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
-								<i class="fa-brands fa-instagram"></i>
-							</a>
-						</li>
-						<li class="px-1">
-							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
-								<i class="fa-brands fa-facebook-f"></i>
-							</a>
-						</li>
-						<li class="px-1">
-							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
-								<i class="fa-brands fa-telegram"></i>
-							</a>
-						</li>
-						<li class="px-1">
-							<a class="btn btn-square btn-light btn-sm" href="javascript:void(0);">
-								<i class="fa-brands fa-youtube"></i>
-							</a>
-						</li>
-					</ul>
-				</div>
-			</div>
-			
-			<div class="container-fluid">
-				<div class="tab-content" id="tabContentMyProfileBottom">
-					<div class="row">
-						<div class="col-xxl-8">
+					<div class="col-xl-7 col-lg-8">
+						<div id="usis-profile-alert" class="alert d-none" role="alert"></div>
+						<form id="usis-profile-form" class="needs-validation" novalidate>
 							<div class="card">
 								<div class="card-header">
-									<h6 class="card-title">Basic Info</h6>
+									<h6 class="card-title mb-0">Account</h6>
 								</div>
 								<div class="card-body">
-									<form action="#" class="mt-2">
-										<div class="row mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Avatar</label>
-											</div>
-											<div class="col-md-9">
-												<div class="avatar avatar-xl me-4 mb-3 mb-lg-0 avatar-preview">
-													<img src="assets/images/avatar/middle/avatar2.webp" alt="" class="rounded-4 imagePreview w-100 h-100">
-													<input type="file" class="imageUpload d-none" accept=".png, .jpg, .jpeg">
-													<a href="javascript:void(0);" class="btn btn-primary btn-square btn-sm position-absolute bottom-0 end-0 shadow-sm upload-trigger">
-														<i class="fa-solid fa-pen-to-square"></i>
-													</a>
-												</div>
-											</div>
+									<div class="row">
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-first">First name</label>
+											<input type="text" class="form-control" id="usis-pf-first" name="first_name" maxlength="120" autocomplete="given-name">
 										</div>
-										<div class="row align-items-center mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Full Name</label>
-											</div>
-											<div class="col-md-9">
-												<div class="row">
-													<div class="col-sm-6">
-														<input type="text" class="form-control" placeholder="First Name">
-													</div>
-													<div class="col-sm-6 mt-2 mt-sm-0">
-														<input type="text" class="form-control" placeholder="Last Name">
-													</div>
-												</div>
-											</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-last">Last name</label>
+											<input type="text" class="form-control" id="usis-pf-last" name="last_name" maxlength="120" autocomplete="family-name">
 										</div>
-										<div class="row align-items-center mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Company</label>
-											</div>
-											<div class="col-md-9">
-												<input type="text" class="form-control" placeholder="DexignZone">
-											</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-email">Email</label>
+											<input type="email" class="form-control" id="usis-pf-email" name="email" required maxlength="255" autocomplete="username">
 										</div>
-										<div class="row align-items-center mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Contact Phone</label>
-											</div>
-											<div class="col-md-9">
-												<input type="number" class="form-control type-number" placeholder="044 3276 454 935">
-											</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-phone">Phone</label>
+											<input type="text" class="form-control" id="usis-pf-phone" name="phone" maxlength="50" autocomplete="tel">
 										</div>
-										<div class="row align-items-center mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Company Site</label>
-											</div>
-											<div class="col-md-9">
-												<input type="text" class="form-control" placeholder="https://dexignzone.com/">
-											</div>
+										<div class="col-12"><hr class="my-2"></div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-password">New password</label>
+											<input type="password" class="form-control" id="usis-pf-password" name="password" autocomplete="new-password" placeholder="Leave blank to keep current">
 										</div>
-										<div class="row align-items-center mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Country</label>
-											</div>
-											<div class="col-md-9">
-												<select class="selectpicker form-select">
-													<option>Please select</option>
-													<option>India</option>
-													<option>China</option>
-													<option>USA</option>
-												</select>
-											</div>
+										<div class="col-sm-6 mb-3">
+											<label class="form-label" for="usis-pf-password2">Confirm new password</label>
+											<input type="password" class="form-control" id="usis-pf-password2" autocomplete="new-password" placeholder="Repeat if changing">
 										</div>
-										<div class="row align-items-center mb-4">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Notifications</label>
-											</div>
-											<div class="col-md-9">
-												<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-													<input type="checkbox" class="form-check-input mb-0" id="checkboxEmail" required>
-													<label class="form-check-label" for="checkboxEmail">Email</label>
-												</div>
-												<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-													<input type="checkbox" class="form-check-input mb-0" id="checkboxPhone" required>
-													<label class="form-check-label" for="checkboxPhone">Phone</label>
-												</div>
-											</div>
-										</div>
-										<div class="row align-items-center mb-3">
-											<div class="col-md-3">
-												<label class="form-label mb-md-0">Allow Changes</label>
-											</div>
-											<div class="col-md-9">
-												<div class="form-check form-switch">
-													<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" checked>
-												</div>
-											</div>
-										</div>
-									</form>
+									</div>
 								</div>
-								<div class="card-footer text-end">
-									<a href="javascript:void(0);" class="btn btn-light">Discard</a>
-									<a href="javascript:void(0);" class="btn btn-primary ms-2">Save Changes</a>
+								<div class="card-footer d-flex flex-wrap gap-2 align-items-center">
+									<button type="submit" class="btn btn-primary" id="usis-pf-save">Save changes</button>
+									<a href="../usis-dashboard.html" class="btn btn-outline-secondary">Cancel</a>
 								</div>
 							</div>
-						</div>
-						
-						<div class="col-xxl-4">
-							<div class="row">
-								<div class="col-12 col-xl-6 col-xxl-12">
-									<div class="card">
-										<div class="card-header">
-											<div class="clearfix">
-												<h4 class="card-title">Connected Accounts</h4>
-											</div>
-										</div>
-										<div class="card-body">
-											<div class="alert alert-primary outline-dashed border-2 py-3 px-3 mt-1 mb-3 mb-0 text-dark d-flex">
-												<div class="clearfix">
-													<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-														<path opacity="0.3" fill-rule="evenodd" clip-rule="evenodd" d="M27.75 12C29.8211 12 31.5 10.3211 31.5 8.25C31.5 6.17893 29.8211 4.5 27.75 4.5C25.6789 4.5 24 6.17893 24 8.25C24 10.3211 25.6789 12 27.75 12ZM27.75 31.5C29.8211 31.5 31.5 29.8211 31.5 27.75C31.5 25.6789 29.8211 24 27.75 24C25.6789 24 24 25.6789 24 27.75C24 29.8211 25.6789 31.5 27.75 31.5ZM12 27.75C12 29.8211 10.3211 31.5 8.25 31.5C6.17893 31.5 4.5 29.8211 4.5 27.75C4.5 25.6789 6.17893 24 8.25 24C10.3211 24 12 25.6789 12 27.75Z" fill="var(--bs-primary)"/>
-														<path fill-rule="evenodd" clip-rule="evenodd" d="M8.25 12C10.3211 12 12 10.3211 12 8.25C12 6.17893 10.3211 4.5 8.25 4.5C6.17893 4.5 4.5 6.17893 4.5 8.25C4.5 10.3211 6.17893 12 8.25 12ZM15 7C15 6.44772 15.4477 6 16 6H20C20.5523 6 21 6.44772 21 7V8C21 8.55229 20.5523 9 20 9H16C15.4477 9 15 8.55229 15 8V7ZM16 27C15.4477 27 15 27.4477 15 28V29C15 29.5523 15.4477 30 16 30H20C20.5523 30 21 29.5523 21 29V28C21 27.4477 20.5523 27 20 27H16ZM6 16C6 15.4477 6.44772 15 7 15H8C8.55229 15 9 15.4477 9 16V20C9 20.5523 8.55229 21 8 21H7C6.44772 21 6 20.5523 6 20V16ZM28 15C27.4477 15 27 15.4477 27 16V20C27 20.5523 27.4477 21 28 21H29C29.5523 21 30 20.5523 30 20V16C30 15.4477 29.5523 15 29 15H28Z" fill="var(--bs-primary)"/>
-													</svg>
-												</div>
-												<div class="mx-3">
-													Two-factor authentication enhances your account's security. To access your account, you will need to enter an impressive 4-digit code. <a href="javascript:void(0);" class="text-primary">Learn More</a>
-												</div>
-											</div>
-											<div class="d-flex align-items-center border-bottom py-3">
-												<div class="avatar avatar-sm p-2">
-													<img src="assets/images/logo/google.png" alt="">
-												</div>
-												<div class="clearfix ms-2">
-													<h6 class="mb-0 fw-semibold">Google</h6>
-													<span class="fs-13">Plan properly your workflow</span>
-												</div>
-												<div class="clearfix ms-auto">
-													<div class="form-check form-switch">
-														<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchGoogle" checked="">
-													</div>
-												</div>
-											</div>
-											<div class="d-flex align-items-center border-bottom py-3">
-												<div class="avatar avatar-sm p-2">
-													<img src="assets/images/logo/github.png" alt="">
-												</div>
-												<div class="clearfix ms-2">
-													<h6 class="fs-14 mb-0 fw-semibold">Github</h6>
-													<span class="fs-13">Keep eye on on your Repositories</span>
-												</div>
-												<div class="clearfix ms-auto">
-													<div class="form-check form-switch">
-														<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchGithub" checked="">
-													</div>
-												</div>
-											</div>
-											<div class="d-flex align-items-center py-3">
-												<div class="avatar avatar-sm p-2">
-													<img src="assets/images/logo/slack.png" alt="">
-												</div>
-												<div class="clearfix ms-2">
-													<h6 class="fs-14 mb-0 fw-semibold">Slack</h6>
-													<span class="fs-13">Integrate Projects Discussions</span>
-												</div>
-												<div class="clearfix ms-auto">
-													<div class="form-check form-switch">
-														<input class="form-check-input" type="checkbox" role="switch" id="flexSwitchSlack">
-													</div>
-												</div>
-											</div>
-										</div>
-										<div class="card-footer text-end">
-											<a href="javascript:void(0);" class="btn btn-light">Discard</a>
-											<a href="javascript:void(0);" class="btn btn-primary ms-2">Save Changes</a>
-										</div>
-									</div>
-								</div>
-								
-								<div class="col-12 col-xl-6 col-xxl-12">
-									<div class="card">
-										<div class="card-header">
-											<h4 class="card-title">Notifications</h4>
-										</div>
-										<div class="card-body">
-											<form action="#">
-												<div class="clearfix border-bottom py-3">
-													<div class="row align-items-center">
-														<div class="col-sm-6">
-															<label class="form-label mb-md-0">Notifications</label>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxNotEmail" required="">
-																<label class="form-check-label mb-0" for="checkboxNotEmail">Email</label>
-															</div>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxNotPhone" required="">
-																<label class="form-check-label mb-0" for="checkboxNotPhone">Phone</label>
-															</div>
-														</div>
-													</div>
-												</div>
-												<div class="clearfix border-bottom py-3">
-													<div class="row align-items-center">
-														<div class="col-sm-6">
-															<label class="form-label mb-md-0">Billing Updates</label>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxBillEmail" required="">
-																<label class="form-check-label mb-0" for="checkboxBillEmail">Email</label>
-															</div>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxBillPhone" required="">
-																<label class="form-check-label mb-0" for="checkboxBillPhone">Phone</label>
-															</div>
-														</div>
-													</div>
-												</div>
-												<div class="clearfix border-bottom py-3">
-													<div class="row align-items-center">
-														<div class="col-sm-6">
-															<label class="form-label mb-md-0">New Team Members</label>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxTeamEmail" required="">
-																<label class="form-check-label mb-0" for="checkboxTeamEmail">Email</label>
-															</div>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxTeamPhone" required="">
-																<label class="form-check-label mb-0" for="checkboxTeamPhone">Phone</label>
-															</div>
-														</div>
-													</div>
-												</div>
-												<div class="clearfix border-bottom py-3">
-													<div class="row align-items-center">
-														<div class="col-sm-6">
-															<label class="form-label mb-md-0">Completed Projects</label>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxProEmail" required="">
-																<label class="form-check-label mb-0" for="checkboxProEmail">Email</label>
-															</div>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxProPhone" required="">
-																<label class="form-check-label mb-0" for="checkboxProPhone">Phone</label>
-															</div>
-														</div>
-													</div>
-												</div>
-												<div class="clearfix py-3">
-													<div class="row align-items-center">
-														<div class="col-sm-6">
-															<label class="form-label mb-md-0">Newsletters</label>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxNewsEmail" required="">
-																<label class="form-check-label mb-0" for="checkboxNewsEmail">Email</label>
-															</div>
-														</div>
-														<div class="col-sm-3 col-6">
-															<div class="form-check custom-checkbox me-4 mb-0 d-inline-block">
-																<input type="checkbox" class="form-check-input mb-0" id="checkboxNewsPhone" required="">
-																<label class="form-check-label mb-0" for="checkboxNewsPhone">Phone</label>
-															</div>
-														</div>
-													</div>
-												</div>
-											</form>
-										</div>
-										<div class="card-footer text-end">
-											<a href="javascript:void(0);" class="btn btn-light">Discard</a>
-											<a href="javascript:void(0);" class="btn btn-primary ms-2">Save Changes</a>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-xl-12">
-							<div class="card">
-								<div class="card-header">
-									<h4 class="card-title">Deactivate Account</h4>
-								</div>
-								<div class="card-body">
-									<div class="alert alert-warning outline-dashed border-2 py-3 px-3 mt-1 mb-4 mb-0 text-dark d-flex align-items-center">
-										<div class="clearfix">
-											<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<path d="M15 30C18.9782 30 22.7936 28.4196 25.6066 25.6066C28.4196 22.7936 30 18.9782 30 15C30 11.0218 28.4196 7.20644 25.6066 4.3934C22.7936 1.58035 18.9782 0 15 0C11.0218 0 7.20644 1.58035 4.3934 4.3934C1.58035 7.20644 0 11.0218 0 15C0 18.9782 1.58035 22.7936 4.3934 25.6066C7.20644 28.4196 11.0218 30 15 30ZM12.6562 19.6875H14.0625V15.9375H12.6562C11.877 15.9375 11.25 15.3105 11.25 14.5312C11.25 13.752 11.877 13.125 12.6562 13.125H15.4688C16.248 13.125 16.875 13.752 16.875 14.5312V19.6875H17.3438C18.123 19.6875 18.75 20.3145 18.75 21.0938C18.75 21.873 18.123 22.5 17.3438 22.5H12.6562C11.877 22.5 11.25 21.873 11.25 21.0938C11.25 20.3145 11.877 19.6875 12.6562 19.6875ZM15 7.5C15.4973 7.5 15.9742 7.69754 16.3258 8.04918C16.6775 8.40081 16.875 8.87772 16.875 9.375C16.875 9.87228 16.6775 10.3492 16.3258 10.7008C15.9742 11.0525 15.4973 11.25 15 11.25C14.5027 11.25 14.0258 11.0525 13.6742 10.7008C13.3225 10.3492 13.125 9.87228 13.125 9.375C13.125 8.87772 13.3225 8.40081 13.6742 8.04918C14.0258 7.69754 14.5027 7.5 15 7.5Z" fill="#FF8A11"/>
-											</svg>
-										</div>
-										<div class="mx-3">
-											<h6 class="mb-0 fw-semibold">You are about to deactivate your account.</h6>
-											<p class="mb-0">To enhance security, please confirm your email or phone number when resetting your password. <a href="javascript:void(0);" class="text-warning">Find Out More.</a></p>
-										</div>
-									</div>
-									<div class="form-check custom-checkbox me-4 my-3 d-inline-block">
-										<input type="checkbox" class="form-check-input mb-0" id="checkboxDeactivation" required="">
-										<label class="form-check-label mb-0 text-secondary" for="checkboxDeactivation">Confirm Account Deactivation</label>
-									</div>
-								</div>
-								<div class="card-footer text-end">
-									<a href="javascript:void(0);" class="btn btn-danger ms-2">Deactivate Account</a>
-								</div>
-							</div>
-						</div>
-						
+						</form>
 					</div>
 				</div>
 			</div>
-		
+
 		</main>
-		<!-- End - Content Body -->
-		
-        <!-- USIS mobile bottom nav (Plan 1) — visible below md -->
+
+		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
 <nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard.html">
 		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
@@ -1752,144 +1332,20 @@
 			</div>
 		</div>
 		<!-- End - Footer -->
-		
-		<!-- Start - Modal Add New Task -->
-		<div class="offcanvas offcanvas-end custom-offcanvas" tabindex="-1" id="addTaskmodal">
-			<div class="offcanvas-header pb-0">
-				<h2 class="modal-title fs-5" id="#gridSystemModal1">Add New Task</h2>
-				<button type="button" class="btn btn-square btn-danger light btn-sm ms-auto" data-bs-dismiss="offcanvas" aria-label="Close">
-					<i class="fa-solid fa-xmark"></i>
-				</button>
-			</div>
-			<div class="offcanvas-body">
-				<form class="row">
-					<div class="col-xl-6 mb-3">
-						<label for="exampleFormControlInputfirst" class="form-label">Title<span class="text-danger">*</span></label>
-						<input type="text" class="form-control" id="exampleFormControlInputfirst" placeholder="Title">
-					</div>	
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Project<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Project</option>
-							<option value="html">HTML</option>
-							<option value="css">CSS</option>
-							<option value="javascript">JavaScript</option>
-						</select>
-					</div>	
-					<div class="col-xl-6 mb-3">
-						<label for="exampleFormControlInputthree" class="form-label">Start Date<span class="text-danger">*</span></label>
-						<input type="text" class="form-control bs-datepicker" id="exampleFormControlInputthree">
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label for="exampleFormControlInputfour" class="form-label">End Date<span class="text-danger">*</span></label>
-						<input type="text" class="form-control bs-datepicker" id="exampleFormControlInputfour">
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Estimated Hour<span class="text-danger">*</span></label>
-						<input type="text" class="form-control bs-datepicker" value="09:30">
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Status<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Status</option>
-							<option value="In Progess">In Progess</option>
-							<option value="Pending">Pending</option>
-							<option value="Completed">Completed</option>
-						</select>
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Priority<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Priority</option>
-							<option value="Hight">Hight</option>
-							<option value="Medium">Medium</option>
-							<option value="Low">Low</option>
-						</select>
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Category<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Category</option>
-							<option value="Designing">Designing</option>
-							<option value="Development">Development</option>
-							<option value="react developer">React Developer</option>
-						</select>
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Permission<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Permission</option>
-							<option value="Public">Public</option>
-							<option value="Private">Private</option>
-						</select>
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Deadline add<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Deadline</option>
-							<option value="Yes">Yes</option>
-							<option value="No">No</option>
-						</select>
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Assigned to<span class="text-danger">*</span></label>
-						<select class="selectpicker form-select">
-							<option data-display="Select">Assigned</option>
-							<option value="Bernard">Bernard</option>
-							<option value="Sergey Brin">Sergey Brin</option>
-							<option value="Larry Ellison">Larry Ellison</option>
-						</select>
-					</div>
-					<div class="col-xl-6 mb-3">
-						<label class="form-label">Responsible Person<span class="text-danger">*</span></label>
-						<input name='tagify' class="form-control basic-tagify" value='James, Harry'>
-					</div>
-					<div class="col-xl-12 mb-3">
-						<label class="form-label">Description<span class="text-danger">*</span></label>
-						<textarea rows="3" class="form-control"></textarea>
-					</div>
-					<div class="col-xl-12 mb-3">
-						<label class="form-label">Summary<span class="text-danger">*</span></label>
-						<textarea rows="3" class="form-control"></textarea>
-					</div>
-					<div class="col-xl-12">					
-						<button class="btn btn-danger light">Cancel</button>
-						<button class="btn btn-primary ms-2">Submit</button>
-					</div>
-				</form>
-			</div>
-		</div>
-		<!-- End - Modal Add New Task -->
 
 	</div>
-    <!-- End - Main Wrapper -->
-	
 
-	<!-- Start - Page Scripts -->
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
-	
-	<!-- Script For Apexchart -->
-	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
-	
-	<!-- Script For Bootstrap Datepicker -->
-	<script src="assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
-	
-	<!-- Script For Account And Profile -->
-	<script src="assets/js/dashboard/profile.js"></script>
-	
-	<!-- Script For Multiple Languages -->
-	<script src="assets/vendor/i18n/i18n.js"></script>
-	<script src="assets/js/translator.js"></script>
-	
-	<!-- Script For Custom JS -->
 	<script src="assets/js/deznav-init.js"></script>
-    <script src="assets/js/custom.js"></script>
-	
-	
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/usis-profile.js"></script>
 
 </body>
 </html>

@@ -1370,4 +1370,10 @@ jQuery(window).on('resize',function () {
 	
 });
 
+window.USISProfileDashboardReload = function () {
+	if (typeof dzProfile !== "undefined" && dzProfile && typeof dzProfile.load === "function") {
+		dzProfile.load();
+	}
+};
+
 })(jQuery);

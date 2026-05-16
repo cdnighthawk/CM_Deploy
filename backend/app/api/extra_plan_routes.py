@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 from flask import Blueprint, request
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import joinedload
 
 from ..extensions import db
 from ..models import (
@@ -48,6 +49,105 @@ def _project_takeoff_filter(project_id: uuid.UUID):
     return or_(TakeoffLineItem.project_id == project_id, TakeoffLineItem.lead_estimate_id.in_(lead_ids))
 
 
+def _decimal_str_for_rollup(d: Decimal) -> str:
+    """Plain decimal string without scientific notation; trim trailing zeros."""
+    s = format(d, "f")
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
+    return s if s else "0"
+
+
+def _coerce_decimal_for_rollup(val: Any) -> Decimal | None:
+    if val is None:
+        return None
+    if isinstance(val, Decimal):
+        return val
+    if isinstance(val, bool):
+        return None
+    if isinstance(val, int):
+        return Decimal(val)
+    if isinstance(val, float):
+        if val != val or val in (float("inf"), float("-inf")):  # NaN / inf
+            return None
+        return Decimal(str(val))
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return None
+        try:
+            return Decimal(s)
+        except Exception:
+            return None
+    return None
+
+
+def _measurement_quantity_hint(md: Any) -> Decimal | None:
+    """Optional numeric hints from measurement JSON (only well-known keys, safe parse)."""
+    if not isinstance(md, dict):
+        return None
+    for key in ("quantity", "length", "total_length", "distance", "area", "area_sf", "computed_quantity"):
+        q = _coerce_decimal_for_rollup(md.get(key))
+        if q is not None:
+            return q
+    return None
+
+
+def _measurement_unit_hint(md: Any) -> str | None:
+    if not isinstance(md, dict):
+        return None
+    for key in ("unit", "measure_unit", "measurement_unit", "uom"):
+        raw = md.get(key)
+        if not isinstance(raw, str):
+            continue
+        u = raw.strip()[:50]
+        if not u:
+            continue
+        if len(u) > 40 or any(ch.isspace() for ch in u):
+            continue
+        if not all(ch.isalnum() or ch in "/-._" for ch in u):
+            continue
+        return u
+    return None
+
+
+def _effective_qty_and_unit(t: TakeoffLineItem) -> tuple[Decimal | None, str | None]:
+    """Resolve quantity and unit for rollups; return (None, None) if quantity unusable."""
+    qty = _coerce_decimal_for_rollup(t.quantity)
+    if qty is None:
+        return None, None
+    if qty == 0:
+        hint = _measurement_quantity_hint(t.measurement_data)
+        if hint is not None:
+            qty = hint
+    u = (t.unit or "").strip()[:50]
+    if not u:
+        u = _measurement_unit_hint(t.measurement_data) or ""
+    if not u:
+        u = "EA"
+    return qty, u
+
+
+def _takeoff_rollups(lines: list[TakeoffLineItem]) -> dict[str, Any]:
+    """Lightweight job totals from line quantity/unit (+ safe measurement_data hints)."""
+    out: dict[str, Any] = {"line_count": len(lines)}
+    if not lines:
+        return out
+    total = Decimal("0")
+    by_unit: dict[str, Decimal] = {}
+    any_qty = False
+    for t in lines:
+        qty, unit = _effective_qty_and_unit(t)
+        if qty is None or not unit:
+            continue
+        any_qty = True
+        total += qty
+        by_unit[unit] = by_unit.get(unit, Decimal("0")) + qty
+    if any_qty:
+        out["qty_sum_decimal"] = _decimal_str_for_rollup(total)
+        out["by_unit"] = {k: _decimal_str_for_rollup(v) for k, v in sorted(by_unit.items())}
+    return out
+
+
 def register_extra_routes(bp: Blueprint) -> None:
     @bp.get("/projects/<project_id>/takeoff-lines")
     def list_project_takeoff_lines(project_id: str):
@@ -60,8 +160,16 @@ def register_extra_routes(bp: Blueprint) -> None:
             select(TakeoffLineItem)
             .where(_project_takeoff_filter(pid))
             .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
+            .options(joinedload(TakeoffLineItem.material_price))
         ).all()
-        return _jsonify({"items": [_takeoff_line_public(x) for x in lines], "entity": "takeoff_line_items"})
+        items = [_takeoff_line_public(x) for x in lines]
+        return _jsonify(
+            {
+                "items": items,
+                "entity": "takeoff_line_items",
+                "rollups": _takeoff_rollups(lines),
+            }
+        )
 
     @bp.post("/projects/<project_id>/takeoff-lines")
     def create_project_takeoff_line(project_id: str):

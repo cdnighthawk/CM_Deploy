@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
+from .config import client_debug_log_dev_open
 from .extensions import db, migrate
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -43,14 +44,42 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
     if os.environ.get("FLASK_ENV", "").strip().lower() != "development":
         return out
     hosts = ("127.0.0.1", "localhost")
-    ports = (3000, 3001, 3002, 3003, 3004, 3005, 5173, 5174, 4173, 8080, 5500, 5501, 9630, 1234)
+    ports = (
+        3000,
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        5173,
+        5174,
+        4173,
+        8080,
+        5500,
+        5501,
+        9630,
+        1234,
+        4200,
+        4321,
+    )
     for h in hosts:
         for p in ports:
             o = f"http://{h}:{p}"
             if o not in seen:
                 out.append(o)
                 seen.add(o)
-    return out
+        return out
+
+
+def _apply_production_middleware(app: Flask) -> None:
+    """Trust Render reverse proxy and secure session cookies in production."""
+    if os.environ.get("FLASK_ENV", "").strip().lower() != "production":
+        return
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 
 def _should_autoload_bc_csv() -> bool:
@@ -101,7 +130,13 @@ def create_app(config_object: str | None = None) -> Flask:
         path = request.path.rstrip("/")
         if not path.startswith("/api/v1"):
             return None
-        if path == "/api/v1/auth/status":
+        # CORS preflight has no session; must not return 401 or the browser blocks the real request.
+        if request.method == "OPTIONS":
+            return None
+        if path in ("/api/v1/auth/status", "/api/v1/auth/register"):
+            return None
+        # Cursor debug: client logs to workspace NDJSON (dev only; see POST handler in api.v1).
+        if path == "/api/v1/__debug/client-log" and client_debug_log_dev_open():
             return None
         from .api._perms import allow_dev_anonymous_access, current_user
 
@@ -145,6 +180,10 @@ def create_app(config_object: str | None = None) -> Flask:
             out["lead_estimates_count"] = None
         return out
 
+    from .static_shell import register_static_shell
+
+    register_static_shell(app)
+    _apply_production_middleware(app)
 
     if os.environ.get("USIS_BOOTSTRAP_LEADS_ON_STARTUP", "true").strip().lower() in (
         "0",

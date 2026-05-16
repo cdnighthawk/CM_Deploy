@@ -53,18 +53,14 @@
 			</div>
 
 			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
+				<div class="card border-0 shadow-none mb-0 bg-light">
 					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-							<div class="me-2">
-								<h6 class="mb-1">Construction — Project Detail</h6>
-								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
-							</div>
+						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+							<h6 class="mb-0">Project detail</h6>
 							<div class="text-nowrap small">
 								<a href="party.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="projects.html">Next</a>
 							</div>
 						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
 					</div>
 				</div>
 			</div>
@@ -217,7 +213,7 @@
 							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 								<div>
 									<h5 class="mb-0">Tasks</h5>
-									<p class="text-muted small mb-0">Construction template layout: sortable-style columns, filters, and row actions. Each row is an <strong>installation window</strong> (same records as <strong>Schedule → Installation dates</strong> and the calendar).</p>
+									<p class="text-muted small mb-0">Each row is an <strong>installation window</strong> (same records as <strong>Schedule</strong> and the calendar).</p>
 								</div>
 							</div>
 							<div class="col-xl-12 px-0">
@@ -325,8 +321,14 @@
 						</div>
 
 						<div class="tab-pane fade" id="proj-pane-estimate" role="tabpanel" aria-labelledby="proj-tab-estimate" tabindex="0">
-							<h5 class="mb-2">Estimate</h5>
-							<p class="text-muted mb-0">Placeholder — working estimate for the active job.</p>
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-0">Pricing</h5>
+									<p class="text-muted small mb-0">LEMOS cost types (Labor, Material, Equipment, Subcontract, Other) on project takeoff lines.</p>
+								</div>
+								<a class="btn btn-primary btn-sm" id="usis-pricing-open" href="construction/construction-pricing.html">Open pricing workspace</a>
+							</div>
+							<p class="text-muted mb-0 small">Formal estimate summary for this job is not wired here yet.</p>
 						</div>
 
 						<!-- RFIs -->
@@ -667,7 +669,6 @@
 											</div>
 										</div>
 										<div class="card-body small">
-											<p class="text-muted mb-2">Live fields from <code>GET /api/v1/projects/&lt;id&gt;</code> (same source as Job info).</p>
 											<div class="table-responsive">
 												<table class="table table-sm table-borderless mb-0">
 													<tbody>
@@ -715,7 +716,6 @@
 											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-ca-proc-refresh" title="Reload from commitments API">Refresh</button>
 										</div>
 										<div class="card-body small">
-											<p class="text-muted mb-2">Counts from <code>/api/v1/projects/&lt;id&gt;/commitments</code>. Edit lines and bills on the <strong>Procurement</strong> tab.</p>
 											<ul class="list-unstyled mb-2 text-body" id="usis-ca-proc-summary">
 												<li class="text-muted">Loading snapshot…</li>
 											</ul>
@@ -751,7 +751,7 @@
 						</div>
 						<div class="tab-pane fade" id="proj-pane-costing" role="tabpanel" aria-labelledby="proj-tab-costing" tabindex="0">
 							<h5 class="mb-2">Job costing</h5>
-							<p class="text-muted mb-0">Placeholder — actuals vs budget, cost codes, Corecon / ERP sync.</p>
+							<p class="text-muted mb-0 small">Costing views are not configured for this screen yet.</p>
 						</div>
 					</div>
 				</div>
@@ -771,7 +771,7 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<p class="text-muted small mb-0">Placeholder from the W3CRM construction task template. USIS can chart earned value / % complete here when task progress fields exist.</p>
+					<p class="text-muted small mb-0">Earned value and percent complete will appear here when task progress is wired to chart data.</p>
 					<div class="position-relative mt-3" style="min-height: 12rem">
 						<p class="position-absolute top-50 start-50 translate-middle text-danger fw-semibold mb-0">No chart data</p>
 					</div>
@@ -790,7 +790,7 @@
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 		</div>
 		<div class="offcanvas-body">
-			<p class="text-muted small">Placeholder from the W3CRM task template (PDF / labour summary, etc.). Export from live task data can reuse the same <code>schedule-items</code> API later.</p>
+			<p class="text-muted small">Task exports (work summary, labour, PDF) are not available yet.</p>
 			<div class="form-check mt-3">
 				<input class="form-check-input" type="checkbox" id="usis-task-dl-stub1" checked disabled>
 				<label class="form-check-label small text-muted" for="usis-task-dl-stub1">Work summary (not wired)</label>
@@ -846,7 +846,7 @@
 				</div>
 				<div class="modal-body">
 					<div class="alert alert-danger py-2 d-none" id="usis-drawing-upload-err" role="alert"></div>
-					<p class="text-muted small">Saves to the server and appears in the drawing log. The upload must reach <strong>Flask</strong> (port <code>5000</code>), not the static preview port — if you see <strong>405 Method Not Allowed</strong>, check <code>window.USIS_API_BASE</code> in the console (avoid mixing <code>localhost</code> vs <code>127.0.0.1</code> for the dev server URL). PDF.js loads from <code>/api/v1/drawings/&lt;id&gt;/file</code>.</p>
+					<p class="text-muted small">PDFs are stored with the sheet on the server and open in the drawing viewer.</p>
 					<div class="mb-2">
 						<label class="form-label small mb-0" for="usis-drawing-file">PDF file <span class="text-danger">*</span></label>
 						<input class="form-control form-control-sm" type="file" id="usis-drawing-file" accept=".pdf,application/pdf">
@@ -1136,9 +1136,6 @@
 				</div>
 				<div class="modal-body">
 					<p class="text-muted small mb-2">
-						Rows are saved to <code>PUT /api/v1/projects/&lt;id&gt;/prime-contract/sov</code> (replace all lines). Close without saving to discard modal-only edits.
-					</p>
-					<p class="text-muted small mb-2">
 						<strong>Import CSV:</strong> comma-separated, optional header row (e.g. Phase, Description, Scheduled value). Phase is the first column, scheduled value is the <strong>last</strong> column; any columns in between are combined into the description. Then click <strong>Save SOV</strong> to persist.
 					</p>
 					<input type="file" id="usis-ca-sov-modal-import-file" class="d-none" accept=".csv,text/csv,text/plain" />
@@ -1206,7 +1203,7 @@
 		var el = document.getElementById("usis-proj-detail-idline");
 		if (el) {
 			el.textContent = id
-				? "Project id: " + id + " (PostgreSQL projects.id)"
+				? "Project id: " + id
 				: "No project id in URL — open this page from the Projects table (click the project name).";
 		}
 		var specsFull = document.getElementById("usis-specs-open-fullpage");

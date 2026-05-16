@@ -254,6 +254,11 @@
 		if (item.workflow_bucket) addBadge(item.workflow_bucket, "bg-dark");
 		if (item.source) addBadge(String(item.source).replace(/_/g, " "), "bg-light text-dark border");
 		if (item.trade_name) addBadge("Trade: " + item.trade_name, "bg-light text-dark border");
+		if (item.estimate_approved_at) {
+			addBadge("Estimate approved", "bg-success");
+		} else if (item.estimate_locked_at) {
+			addBadge("Estimate locked", "bg-secondary");
+		}
 		if (item.priority) addBadge("Priority: " + item.priority, "bg-info text-dark");
 		if (item.request_type) addBadge(item.request_type, "bg-secondary");
 		if (item.market_sector) addBadge(item.market_sector, "bg-secondary");
@@ -269,6 +274,13 @@
 		var el = document.getElementById("usis-crm-toolbar");
 		if (!el || !item || !item.id) return;
 		el.classList.remove("d-none");
+		var linkId = item.external_id || item.id;
+		var linkEnc = encodeURIComponent(String(linkId));
+		var estHref = "construction/estimate-detail.html?id=" + linkEnc;
+		var quoteHref = apiBase() + "/api/v1/lead-estimates/" + linkEnc + "/render/quote-report";
+		var lockTitle = item.estimate_locked_at
+			? "Takeoff may be read-only while locked."
+			: "Open takeoff grid for this lead.";
 		var stages = ["New Lead", "Invited", "Estimating", "Submitted", "Awarded", "Lost"];
 		var stage = item.crm_stage || "New Lead";
 		var opts = stages
@@ -285,6 +297,14 @@
 			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-crm-save-stage">Save stage</button>' +
 			'<button type="button" class="btn btn-sm btn-success" id="usis-crm-award">Award (new project)</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-crm-ai">AI feasibility</button>' +
+			'<a class="btn btn-sm btn-outline-dark" href="' +
+			estHref +
+			'" title="' +
+			esc(lockTitle) +
+			'">Takeoff</a>' +
+			'<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer" href="' +
+			quoteHref +
+			'" title="Print / save PDF from browser">Quote report</a>' +
 			'<a class="btn btn-sm btn-outline-dark" href="usis-rfp-list.html?lead_estimate_id=' +
 			encodeURIComponent(item.id) +
 			'">RFP list</a>' +
@@ -296,8 +316,8 @@
 			save.addEventListener("click", function () {
 				fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(idForApi), {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
 					body: JSON.stringify({ crm_stage: sel.value }),
 				})
 					.then(function (res) {
@@ -320,8 +340,8 @@
 				if (!window.confirm("Create a project and mark this lead Awarded?")) return;
 				fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(idForApi) + "/award", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
 					body: JSON.stringify({}),
 				})
 					.then(function (res) {
@@ -344,8 +364,8 @@
 			ai.addEventListener("click", function () {
 				fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(idForApi) + "/ai-feasibility", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
 					body: JSON.stringify({}),
 				})
 					.then(function (res) {
@@ -556,7 +576,7 @@
 			return;
 		}
 		var url = apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(lid);
-		fetch(url, { credentials: "omit" })
+		fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {

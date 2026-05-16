@@ -127,14 +127,13 @@
 				if (statusEl) {
 					statusEl.classList.remove("d-none", "text-danger", "text-warning");
 					if (data.stub) {
-						statusEl.textContent =
-							"API stub: restart Flask from the USIS_CM backend for live HR data.";
+						statusEl.textContent = "Placeholder data — restart the API for a live directory.";
 						statusEl.classList.add("text-warning");
 					} else if (typeof data.hint === "string" && data.hint.trim()) {
 						statusEl.textContent = data.hint.trim();
 						statusEl.classList.add("text-warning");
 					} else {
-						statusEl.textContent = "Directory from users with hr_* rows (up to 15). Name opens employee detail.";
+						statusEl.textContent = "";
 					}
 				}
 				renderRows(data.sample_employees || []);
@@ -148,7 +147,7 @@
 				var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
 				if (tbody) {
 					tbody.innerHTML =
-						'<tr><td colspan="8" class="text-danger text-center py-4">Failed to reach API. Add <code>&lt;meta name="usis-api-base" content="http://127.0.0.1:5000"&gt;</code> if you serve this page from BrowserSync.</td></tr>';
+						'<tr><td colspan="8" class="text-danger text-center py-4">Could not load employees. Check that the API is running and try again.</td></tr>';
 				}
 			});
 	}

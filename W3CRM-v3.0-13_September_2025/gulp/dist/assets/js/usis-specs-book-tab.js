@@ -5,18 +5,6 @@
 (function (global) {
 	"use strict";
 
-	function explicitWindowApiBase() {
-		if (typeof global.USIS_API_BASE !== "string") return null;
-		var s = global.USIS_API_BASE.trim().replace(/\/$/, "");
-		if (!s) return null;
-		try {
-			if (new URL(s).origin === global.location.origin) return null;
-		} catch (e) {
-			/* keep */
-		}
-		return s;
-	}
-
 	function metaApiBase() {
 		var m = document.querySelector('meta[name="usis-api-base"]');
 		if (!m) return null;
@@ -25,30 +13,100 @@
 	}
 
 	function apiBase() {
-		var fromWin = explicitWindowApiBase();
-		if (fromWin) return fromWin;
-		var fromMeta = metaApiBase();
-		if (fromMeta) return fromMeta;
 		var loc = global.location;
-		if (loc.protocol === "file:") return "http://127.0.0.1:5000";
-		var host = loc.hostname || "";
-		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
-		var devPorts = { 3000: 1, 3001: 1, 3002: 1, 4173: 1, 5173: 1, 5174: 1, 5500: 1, 5501: 1, 8080: 1, 4200: 1, 4321: 1, 9630: 1, 1234: 1 };
-		if (devPorts[port]) return proto + "//" + host + ":5000";
-		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
-		if (loopback) {
-			if (port === "5000") return "";
-			return proto + "//" + host + ":5000";
+		var devPorts = {
+			3000: 1,
+			3001: 1,
+			3002: 1,
+			4173: 1,
+			5173: 1,
+			5174: 1,
+			5500: 1,
+			5501: 1,
+			8080: 1,
+			4200: 1,
+			4321: 1,
+			9630: 1,
+			1234: 1,
+		};
+
+		function isLoopbackHost(h) {
+			return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "::1";
 		}
-		var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-		if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
-			return proto + "//" + host + ":5000";
+
+		function flaskDevBase() {
+			if (loc.protocol === "file:") {
+				return "http://127.0.0.1:5000";
+			}
+			var host = loc.hostname || "";
+			var proto = loc.protocol || "http:";
+			var port = String(loc.port || "");
+			if (devPorts[port]) {
+				return proto + "//" + host + ":5000";
+			}
+			var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
+			if (loopback) {
+				if (port === "5000") {
+					return "";
+				}
+				return proto + "//" + host + ":5000";
+			}
+			var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+			if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
+				return proto + "//" + host + ":5000";
+			}
+			if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
+				return proto + "//" + host + ":5000";
+			}
+			return "";
 		}
-		if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
-			return proto + "//" + host + ":5000";
+
+		function resolveOverride(s) {
+			if (!s || !String(s).trim()) return null;
+			var t = String(s).trim().replace(/\/$/, "");
+			try {
+				var u = new URL(t);
+				if (u.origin === loc.origin) {
+					return flaskDevBase();
+				}
+				if (isLoopbackHost(u.hostname) && devPorts[String(u.port || "")]) {
+					var p = loc.protocol || "http:";
+					return p + "//" + (loc.hostname || u.hostname) + ":5000";
+				}
+				return t;
+			} catch (e) {
+				return t;
+			}
 		}
-		return "";
+
+		if (typeof global.USIS_API_BASE === "string" && global.USIS_API_BASE.trim()) {
+			var w = resolveOverride(global.USIS_API_BASE);
+			if (w !== null) return w;
+		}
+		var fromMeta = metaApiBase();
+		if (fromMeta) {
+			var m = resolveOverride(fromMeta);
+			if (m !== null) return m;
+		}
+		return flaskDevBase();
+	}
+
+	function actorHeaders() {
+		var id = null;
+		try {
+			id = global.localStorage.getItem("usisActorUserId");
+		} catch (e) {}
+		if (id && id.trim()) {
+			return { "X-Usis-User-Id": id.trim() };
+		}
+		return {};
+	}
+
+	function jsonFetchHeaders() {
+		return Object.assign(
+			{ "Content-Type": "application/json", Accept: "application/json" },
+			actorHeaders()
+		);
 	}
 
 	function resolveUrl(u) {
@@ -98,10 +156,14 @@
 			'<iframe class="usis-specs-iframe w-100 h-100 border-0 d-none" title="Specification PDF"></iframe>' +
 			"</div>" +
 			'<div class="p-2 border-top bg-white usis-specs-linkpanel d-none">' +
-			'<label class="form-label small mb-0">PDF URL for this section (optional)</label>' +
+			'<label class="form-label small mb-0">PDF URL for this section (optional), or import a PDF below</label>' +
 			'<div class="input-group input-group-sm">' +
 			'<input type="url" class="form-control usis-specs-pdfurl" placeholder="https://… or /api/v1/…">' +
 			'<button type="button" class="btn btn-primary usis-specs-saveurl">Save</button>' +
+			"</div>" +
+			'<div class="d-flex flex-wrap gap-2 align-items-center mt-2">' +
+			'<input type="file" class="d-none usis-specs-file" accept="application/pdf,.pdf">' +
+			'<button type="button" class="btn btn-sm btn-outline-secondary usis-specs-import">Import PDF</button>' +
 			"</div>" +
 			'<div class="usis-specs-link-err text-danger small mt-1 d-none"></div>' +
 			"</div>" +
@@ -117,6 +179,8 @@
 		var linkPanel = container.querySelector(".usis-specs-linkpanel");
 		var urlInput = container.querySelector(".usis-specs-pdfurl");
 		var saveBtn = container.querySelector(".usis-specs-saveurl");
+		var importBtn = container.querySelector(".usis-specs-import");
+		var fileInput = container.querySelector(".usis-specs-file");
 		var linkErr = container.querySelector(".usis-specs-link-err");
 
 		function showPdf(url) {
@@ -214,7 +278,8 @@
 		function load() {
 			var base = apiBase();
 			fetch(base + "/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/spec_sections", {
-				credentials: "omit",
+				credentials: "include",
+				headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
 			})
 				.then(function (res) {
 					if (!res.ok) return res.text().then(function (t) {
@@ -251,9 +316,60 @@
 						encodeURIComponent(selectedId),
 					{
 						method: "PATCH",
-						credentials: "omit",
-						headers: { "Content-Type": "application/json" },
+						credentials: "include",
+						headers: jsonFetchHeaders(),
 						body: JSON.stringify(body),
+					}
+				)
+					.then(function (res) {
+						if (!res.ok) return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+						return res.json();
+					})
+					.then(function (data) {
+						var it = data.item;
+						if (it) {
+							var idx = sections.findIndex(function (x) {
+								return String(x.id) === String(it.id);
+							});
+							if (idx >= 0) sections[idx] = it;
+							selectSection(it);
+						}
+					})
+					.catch(function (e) {
+						linkErr.textContent = e.message || String(e);
+						linkErr.classList.remove("d-none");
+					});
+			});
+		}
+
+		if (importBtn && fileInput) {
+			importBtn.addEventListener("click", function () {
+				if (!selectedId) return;
+				fileInput.click();
+			});
+			fileInput.addEventListener("change", function () {
+				if (!selectedId) return;
+				var f = fileInput.files && fileInput.files[0];
+				fileInput.value = "";
+				if (!f) return;
+				linkErr.classList.add("d-none");
+				var base = apiBase();
+				var fd = new FormData();
+				fd.append("file", f, f.name || "spec.pdf");
+				fetch(
+					base +
+						"/api/v1/projects/" +
+						encodeURIComponent(projectId) +
+						"/rfi-lookups/spec_sections/" +
+						encodeURIComponent(selectedId) +
+						"/file",
+					{
+						method: "POST",
+						credentials: "include",
+						headers: Object.assign({}, actorHeaders()),
+						body: fd,
 					}
 				)
 					.then(function (res) {

@@ -20,21 +20,45 @@
 		return d.innerHTML;
 	}
 
+	function estimateStatusBadges(x) {
+		var parts = [];
+		if (x.estimate_approved_at) {
+			var t = x.estimate_approved_at ? String(x.estimate_approved_at).slice(0, 16) : "";
+			parts.push(
+				'<span class="badge bg-success" title="Approved' +
+					(t ? " · " + esc(t) : "") +
+					'">Approved</span>'
+			);
+		} else if (x.estimate_locked_at) {
+			parts.push(
+				'<span class="badge bg-secondary" title="Locked (draft) · ' +
+					esc(String(x.estimate_locked_at).slice(0, 16)) +
+					'">Locked</span>'
+			);
+		} else {
+			parts.push('<span class="text-muted small">—</span>');
+		}
+		return parts.join(" ");
+	}
+
 	function load() {
 		var stage = document.getElementById("usis-crm-filter-stage");
 		var v = stage && stage.value ? "&crm_stage=" + encodeURIComponent(stage.value) : "";
 		var url = apiBase() + "/api/v1/lead-estimates?submission_state=undecided&limit=100" + v;
 		var tb = document.getElementById("usis-crm-tbody");
 		if (!tb) return;
-		tb.innerHTML = '<tr><td colspan="4" class="text-muted">Loading…</td></tr>';
-		fetch(url, { credentials: "omit" })
+		tb.innerHTML = '<tr><td colspan="5" class="text-muted">Loading…</td></tr>';
+		fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) {
-				return r.json();
+				return r.json().then(function (j) {
+					if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+					return j;
+				});
 			})
 			.then(function (data) {
 				var rows = data.items || [];
 				if (!rows.length) {
-					tb.innerHTML = '<tr><td colspan="4" class="text-muted">No rows.</td></tr>';
+					tb.innerHTML = '<tr><td colspan="5" class="text-muted">No rows.</td></tr>';
 					return;
 				}
 				tb.innerHTML = rows
@@ -46,6 +70,8 @@
 							esc(x.crm_stage || "—") +
 							"</td><td>" +
 							esc(x.name || x.number || "") +
+							'</td><td class="text-nowrap">' +
+							estimateStatusBadges(x) +
 							"</td><td>" +
 							esc(x.due_at || "—") +
 							'</td><td><a class="btn btn-sm btn-outline-primary" href="' +
@@ -55,8 +81,10 @@
 					})
 					.join("");
 			})
-			.catch(function () {
-				tb.innerHTML = '<tr><td colspan="4" class="text-danger">Failed to load.</td></tr>';
+			.catch(function (e) {
+				tb.innerHTML =
+					'<tr><td colspan="5" class="text-danger">' + esc(e.message || "Failed to load.") + "</td></tr>";
+				if (window.USISNotify) window.USISNotify.error(e.message || "Failed to load leads.");
 			});
 	}
 

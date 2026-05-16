@@ -89,7 +89,13 @@
 							</a>
 						</div>
 						<div id="usis-ms-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
-						<p class="text-center text-muted small mt-3 mb-0">
+						<p class="text-center small mt-3 mb-0">
+							Need an account? <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html">Create one</a>
+						</p>
+						<p class="text-center small mt-2 mb-0">
+							Applying for a job? <a class="btn-link text-primary" href="apply.html">Start at the careers page</a>
+						</p>
+						<p class="text-center text-muted small mt-2 mb-0">
 							<a class="btn-link text-primary" href="https://www.gousis.com/" target="_blank" rel="noopener">www.gousis.com</a>
 						</p>
 					</form>
@@ -131,6 +137,11 @@
 			if (!el) return;
 			el.textContent = MS_ERR[code] || ("Sign-in issue: " + code);
 			el.classList.remove("d-none");
+		}
+		var reg = document.getElementById("usis-login-register-link");
+		if (reg) {
+			var nxt = new URLSearchParams(window.location.search).get("next") || "";
+			reg.href = "page-register.html" + (nxt ? "?next=" + encodeURIComponent(nxt) : "");
 		}
 		fetch(apiBase() + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) { return r.json(); })

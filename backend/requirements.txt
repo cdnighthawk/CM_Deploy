@@ -10,6 +10,7 @@ httpx==0.28.1
 PyJWT==2.10.1
 cryptography==44.0.0
 pytest==8.3.4
+gunicorn==23.0.0
 
 # Phase 3 — email notifications + background fan-out for the RFI tool.
 # Flask-Mail handles SMTP when ``MAIL_SERVER`` is set; otherwise the API

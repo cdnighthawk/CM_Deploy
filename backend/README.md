@@ -156,7 +156,7 @@ migration first (`flask db upgrade`), then the loader.
 | Migration | Table | Loader | Source CSV (default) |
 |---|---|---|---|
 | `0002_wage_rates` | `wage_rates` | `scripts\load_wage_rates.py` | `…\Database files\all_wage_rates.csv` |
-| `0003_material_pricing` | `material_pricing` | `scripts\load_material_pricing.py` | `…\Database files\BOBRICK MATERIAL PRICING.CSV` |
+| `0003_material_pricing` | `material_pricing` | `scripts\load_material_pricing.py` | `…\BOBRICK MATERIAL PRICING.CSV` (truncate) + `uPDATED PRICING.CSV` (upsert); use `--all-defaults` |
 | `0004_sales_tax_rates` | `sales_tax_rates` | `scripts\load_sales_tax_rates.py` | `…\Database files\cdtfa_sales_use_tax_rates_raw.csv.csv` |
 | `0005_lead_estimates` | `lead_estimates` | `scripts\load_lead_estimates.py` | `…\Database files\bc_projects_*.csv` |
 | `0006_corecon_transactions` | `corecon_transactions` | `scripts\load_corecon_transactions.py` | `…\Database files\corecon_transactiondetailsapi_export*_by_TransactionSource_*.csv` (all 7 files) |

@@ -11,25 +11,7 @@
 	var activeProjectId = null;
 
 	function apiBase() {
-		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
-			var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
-			try {
-				if (s && new URL(s).origin === window.location.origin) {
-					/* fall through to auto */
-				} else if (s) {
-					return s;
-				}
-			} catch (e) {
-				if (s) return s;
-			}
-		}
 		var loc = window.location;
-		if (loc.protocol === "file:") {
-			return "http://127.0.0.1:5000";
-		}
-		var host = loc.hostname || "";
-		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
 		var devPorts = {
 			3000: 1,
 			3001: 1,
@@ -45,24 +27,67 @@
 			9630: 1,
 			1234: 1,
 		};
-		if (devPorts[port]) {
-			return proto + "//" + host + ":5000";
+
+		function isLoopbackHost(h) {
+			return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "::1";
 		}
-		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
-		if (loopback) {
-			if (port === "5000") {
-				return "";
+
+		function flaskDevBase() {
+			if (loc.protocol === "file:") {
+				return "http://127.0.0.1:5000";
 			}
-			return proto + "//" + host + ":5000";
+			var host = loc.hostname || "";
+			var proto = loc.protocol || "http:";
+			var port = String(loc.port || "");
+			if (devPorts[port]) {
+				return proto + "//" + host + ":5000";
+			}
+			var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
+			if (loopback) {
+				if (port === "5000") {
+					return "";
+				}
+				return proto + "//" + host + ":5000";
+			}
+			var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+			if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
+				return proto + "//" + host + ":5000";
+			}
+			if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
+				return proto + "//" + host + ":5000";
+			}
+			return "";
 		}
-		var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-		if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
-			return proto + "//" + host + ":5000";
+
+		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
+			var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
+			try {
+				var u = new URL(s);
+				if (u.origin === loc.origin) {
+					return flaskDevBase();
+				}
+				/* e.g. meta says http://localhost:3000 but page is http://127.0.0.1:3000 — still the static dev server, not Flask */
+				if (isLoopbackHost(u.hostname) && devPorts[String(u.port || "")]) {
+					var p = loc.protocol || "http:";
+					return p + "//" + (loc.hostname || u.hostname) + ":5000";
+				}
+				return s;
+			} catch (e) {
+				if (s) return s;
+			}
 		}
-		if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
-			return proto + "//" + host + ":5000";
+		return flaskDevBase();
+	}
+
+	function actorHeaders() {
+		var id = null;
+		try {
+			id = window.localStorage.getItem("usisActorUserId");
+		} catch (e) {}
+		if (id && id.trim()) {
+			return { "X-Usis-User-Id": id.trim() };
 		}
-		return "";
+		return {};
 	}
 
 	function resolveAssetUrl(u) {
@@ -89,7 +114,10 @@
 	function fetchJson(path) {
 		var base = apiBase();
 		var url = base + path;
-		return fetch(url, { credentials: "omit" }).then(function (res) {
+		return fetch(url, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		}).then(function (res) {
 			if (!res.ok) {
 				return res.text().then(function (t) {
 					throw new Error(res.status + " " + (t || res.statusText));
@@ -104,8 +132,11 @@
 		var url = base + path;
 		var opts = {
 			method: method,
-			credentials: "omit",
-			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			headers: Object.assign(
+				{ "Content-Type": "application/json", Accept: "application/json" },
+				actorHeaders()
+			),
 		};
 		if (bodyObj !== undefined && bodyObj !== null) {
 			opts.body = JSON.stringify(bodyObj);
@@ -277,7 +308,7 @@
 					if (cr && cr.id && pid) {
 						var a = document.createElement("a");
 						a.href =
-							"drawing-viewer.html?project_id=" +
+							"construction/drawing-viewer.html?project_id=" +
 							encodeURIComponent(pid) +
 							"&drawing_id=" +
 							encodeURIComponent(cr.id);
@@ -493,7 +524,12 @@
 				if (ds && ds.value) fd.append("drawing_set", ds.value);
 				if (rv && rv.value) fd.append("revision", rv.value);
 				var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
-				fetch(url, { method: "POST", body: fd, credentials: "omit" })
+				fetch(url, {
+					method: "POST",
+					body: fd,
+					credentials: "include",
+					headers: actorHeaders(),
+				})
 					.then(function (res) {
 						if (!res.ok) {
 							return res.text().then(function (t) {
@@ -640,6 +676,12 @@
 		var create = document.getElementById("usis-rfi-open-create");
 		if (open) open.setAttribute("href", "construction/rfis.html?project_id=" + encodeURIComponent(pid));
 		if (create) create.setAttribute("href", "construction/rfi-create.html?project_id=" + encodeURIComponent(pid));
+		var pricing = document.getElementById("usis-pricing-open");
+		if (pricing)
+			pricing.setAttribute(
+				"href",
+				"construction/construction-pricing.html?project_id=" + encodeURIComponent(pid)
+			);
 	}
 
 	function init() {

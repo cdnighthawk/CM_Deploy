@@ -10,17 +10,79 @@ import os
 from datetime import timedelta
 
 
+def _normalize_database_url(url: str) -> str:
+    """Render/Heroku often provide ``postgres://``; SQLAlchemy needs ``postgresql+psycopg://``."""
+    u = (url or "").strip()
+    if not u:
+        return u
+    if u.startswith("postgres://"):
+        return "postgresql+psycopg://" + u[len("postgres://") :]
+    if u.startswith("postgresql://") and not u.startswith("postgresql+psycopg://"):
+        return "postgresql+psycopg://" + u[len("postgresql://") :]
+    return u
+
+
+def _env_database_url() -> str:
+    return _normalize_database_url(
+        os.environ.get(
+            "DATABASE_URL",
+            "postgresql+psycopg://usis_app:CHANGE_ME_APP_PASSWORD@localhost:5432/usis_cm",
+        )
+    )
+
+
+def _render_external_url() -> str:
+    return (os.environ.get("RENDER_EXTERNAL_URL") or "").strip().rstrip("/")
+
+
+def _default_post_login_redirect() -> str:
+    explicit = (os.environ.get("USIS_POST_LOGIN_REDIRECT") or "").strip()
+    if explicit:
+        return explicit
+    render_base = _render_external_url()
+    if render_base:
+        return f"{render_base}/usis-dashboard.html"
+    return "http://127.0.0.1:3000/usis-dashboard.html"
+
+
+def _default_cors_origins() -> tuple[str, ...]:
+    explicit = (os.environ.get("CORS_ORIGINS") or "").strip()
+    if explicit:
+        return tuple(o.strip() for o in explicit.split(",") if o.strip())
+    render_base = _render_external_url()
+    if render_base:
+        return (render_base,)
+    return tuple(
+        o.strip()
+        for o in (
+            "http://127.0.0.1:3000,http://localhost:3000,"
+            "http://127.0.0.1:3001,http://localhost:3001,"
+            "http://127.0.0.1:3002,http://localhost:3002,"
+            "http://127.0.0.1:3003,http://localhost:3003,"
+            "http://127.0.0.1:5000,http://localhost:5000,"
+            "http://127.0.0.1:5500,http://localhost:5500"
+        ).split(",")
+        if o.strip()
+    )
+
+
 class Config:
     SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-insecure-change-me")
 
     # After successful ``POST /auth/login``, redirect browser here (Gulp / static shell).
-    USIS_POST_LOGIN_REDIRECT: str = (
-        os.environ.get("USIS_POST_LOGIN_REDIRECT", "").strip()
-        or "http://127.0.0.1:3000/usis-dashboard.html"
-    )
+    USIS_POST_LOGIN_REDIRECT: str = _default_post_login_redirect()
 
     # Optional override for the marketing logo on ``/auth/login`` (defaults to GoUSIS header asset).
     USIS_PUBLIC_LOGO_URL: str | None = (os.environ.get("USIS_PUBLIC_LOGO_URL") or "").strip() or None
+
+    # Allow ``POST /api/v1/auth/register`` for hire / self-service account creation.
+    _self_reg_raw = (os.environ.get("USIS_ALLOW_SELF_REGISTER") or "").strip().lower()
+    if _self_reg_raw in ("0", "false", "no", "off"):
+        USIS_ALLOW_SELF_REGISTER: bool = False
+    elif _self_reg_raw in ("1", "true", "yes", "on"):
+        USIS_ALLOW_SELF_REGISTER: bool = True
+    else:
+        USIS_ALLOW_SELF_REGISTER: bool = os.environ.get("FLASK_ENV", "").strip().lower() == "development"
 
     _perm_days_raw = (os.environ.get("PERMANENT_SESSION_DAYS") or "14").strip()
     try:
@@ -30,24 +92,12 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=_perm_days)
 
     # Comma-separated browser origins allowed to call ``/api/*`` (W3CRM / Live Server / etc.).
-    CORS_ORIGINS: tuple[str, ...] = tuple(
-        o.strip()
-        for o in os.environ.get(
-            "CORS_ORIGINS",
-            "http://127.0.0.1:3000,http://localhost:3000,"
-            "http://127.0.0.1:3001,http://localhost:3001,"
-            "http://127.0.0.1:3002,http://localhost:3002,"
-            "http://127.0.0.1:3003,http://localhost:3003,"
-            "http://127.0.0.1:5000,http://localhost:5000,"
-            "http://127.0.0.1:5500,http://localhost:5500",
-        ).split(",")
-        if o.strip()
-    )
+    CORS_ORIGINS: tuple[str, ...] = _default_cors_origins()
 
-    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
-        "DATABASE_URL",
-        "postgresql+psycopg://usis_app:CHANGE_ME_APP_PASSWORD@localhost:5432/usis_cm",
-    )
+    SQLALCHEMY_DATABASE_URI: str = _env_database_url()
+
+    # Gulp ``dist`` folder for production static shell (Render sets this in render.yaml).
+    USIS_STATIC_ROOT: str | None = (os.environ.get("USIS_STATIC_ROOT") or "").strip() or None
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     SQLALCHEMY_ENGINE_OPTIONS: dict = {
         "pool_pre_ping": True,
@@ -118,6 +168,18 @@ class Config:
     SPEC_SECTION_UPLOAD_FOLDER: str | None = (os.environ.get("SPEC_SECTION_UPLOAD_FOLDER") or "").strip() or None
     # RFI attachment binaries (``POST /api/v1/rfis/<id>/attachments/upload``).
     RFI_ATTACHMENT_UPLOAD_FOLDER: str | None = (os.environ.get("RFI_ATTACHMENT_UPLOAD_FOLDER") or "").strip() or None
+    # I-9 supporting document photos (hire wizard); defaults under Flask ``instance/``.
+    HR_I9_DOCUMENT_UPLOAD_FOLDER: str | None = (
+        os.environ.get("HR_I9_DOCUMENT_UPLOAD_FOLDER") or ""
+    ).strip() or None
+    # W-4 supporting document photos (hire wizard); defaults under Flask ``instance/``.
+    HR_W4_DOCUMENT_UPLOAD_FOLDER: str | None = (
+        os.environ.get("HR_W4_DOCUMENT_UPLOAD_FOLDER") or ""
+    ).strip() or None
+    # Union card / dispatch photos (hire wizard); defaults under Flask ``instance/``.
+    HR_UNION_DOCUMENT_UPLOAD_FOLDER: str | None = (
+        os.environ.get("HR_UNION_DOCUMENT_UPLOAD_FOLDER") or ""
+    ).strip() or None
 
     # --- Microsoft Entra ID (Azure AD) SSO for ``/auth/microsoft/*`` ---
     # Register a single-page / web app in Entra, add redirect URI = MS_ENTRA_REDIRECT_URI
@@ -141,3 +203,22 @@ class Config:
         for d in (os.environ.get("MS_ENTRA_ALLOWED_EMAIL_DOMAINS") or "").split(",")
         if d.strip()
     )
+
+
+def client_debug_log_dev_open() -> bool:
+    """True when anonymous ``POST /api/v1/__debug/client-log`` is allowed (local dev only).
+
+    ``FLASK_ENV=development`` is the explicit signal; ``FLASK_DEBUG`` / ``app.debug`` cover
+    typical ``flask run`` defaults when ``FLASK_ENV`` is unset. Production should keep
+    ``debug=False`` and avoid ``FLASK_DEBUG=1`` so this stays off.
+    """
+    if os.environ.get("FLASK_ENV", "").strip().lower() == "development":
+        return True
+    if (os.environ.get("FLASK_DEBUG") or "").strip().lower() in ("1", "true", "yes", "on"):
+        return True
+    try:
+        from flask import current_app, has_app_context
+
+        return bool(has_app_context() and current_app.debug)
+    except RuntimeError:
+        return False

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<!-- Title -->
+	<title>W3CRM - Bootstrap Admin Dashboard Template</title>
+	
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="DexignZone">
+	<meta name="robots" content="index, follow">
+	<meta name="format-detection" content="telephone=no">
+	
+	<meta name="keywords" content="admin, admin dashboard, bootstrap, template, analytics, dark mode, modern, responsive admin dashboard, sass, ui kit">
+	<meta name="description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	
+	<meta property="og:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta property="og:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta property="og:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	
+	<!-- TWITTER META -->
+	<meta name="twitter:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta name="twitter:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta name="twitter:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	
+	<!-- FAVICONS ICON -->
+	<link rel="shortcut icon" type="image/png" href="assets/images/favicon.png">
+	
+	<!-- MOBILE SPECIFIC -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<!-- Canonical URL -->
+	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/apply.html">
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+
+	<title>Careers — Apply at USIS</title>
+	<meta name="description" content="Apply for a job with US Interior Specialties. Veteran-owned commercial construction and specialty interiors.">
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+
+</head>
+<body class="usis-public-page">
+
+	<header class="usis-public-header border-bottom bg-white">
+	<div class="container py-3">
+		<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+			<a href="apply.html" class="d-inline-flex align-items-center gap-2 text-decoration-none usis-public-brand">
+				<img src="assets/images/branding/usis-eagle-logo.png" alt="" width="44" height="44" class="usis-public-logo-mark">
+				<span class="usis-public-brand-title mb-0">US Interior Specialties</span>
+			</a>
+			<nav class="d-flex align-items-center gap-2" aria-label="Careers">
+				<a class="btn btn-outline-secondary btn-sm d-none usis-logout-link" id="usis-public-sign-out" href="#">Sign out</a>
+				<a class="btn btn-outline-primary btn-sm" id="usis-public-sign-in" href="page-login.html">Sign in</a>
+			</nav>
+		</div>
+	</div>
+</header>
+
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero">
+			<div class="container">
+				<div class="row align-items-center g-4 g-lg-5">
+					<div class="col-lg-7">
+						<img class="usis-public-hero-logo mb-4"
+							src="assets/images/branding/usis-eagle-logo.png"
+							alt="US Interior Specialties">
+						<p class="text-primary fw-semibold text-uppercase small mb-2">Careers</p>
+						<h1 class="mb-3">Want to work with USIS?</h1>
+						<p class="lead text-muted mb-4">
+							US Interior Specialties is a veteran-owned contractor delivering commercial construction,
+							specialty interiors, and field services across the region. If you are ready to join our team,
+							start your application online — it only takes a few minutes to create your account.
+						</p>
+						<div class="d-flex flex-wrap gap-2 mb-3">
+							<a class="btn btn-primary btn-lg" id="usis-apply-cta" href="page-register.html?next=usis-hr-hire.html">Apply now</a>
+							<a class="btn btn-outline-primary btn-lg" id="usis-apply-signin" href="page-login.html?next=usis-hr-hire.html">Sign in</a>
+							<a class="btn btn-outline-secondary btn-lg d-none usis-logout-link" id="usis-apply-signout" href="#">Sign out</a>
+							<a class="btn btn-outline-primary btn-lg d-none" id="usis-apply-register-alt" href="page-register.html?next=usis-hr-hire.html">Create a different account</a>
+						</div>
+						<p class="text-muted small mb-0" id="usis-apply-auth-hint"></p>
+					</div>
+					<div class="col-lg-5">
+						<div class="card border-0 shadow-sm usis-public-steps">
+							<div class="card-body p-0">
+								<div class="px-4 py-3 border-bottom bg-light">
+									<h2 class="h6 mb-0 fw-semibold">How it works</h2>
+								</div>
+								<ol class="list-group list-group-flush mb-0">
+									<li class="list-group-item d-flex gap-3 align-items-start">
+										<span class="step-num" aria-hidden="true">1</span>
+										<div>
+											<strong>Create your account</strong>
+											<p class="text-muted small mb-0">Register with your email so we can save your progress.</p>
+										</div>
+									</li>
+									<li class="list-group-item d-flex gap-3 align-items-start">
+										<span class="step-num" aria-hidden="true">2</span>
+										<div>
+											<strong>Complete the hiring checklist</strong>
+											<p class="text-muted small mb-0">Employment application, union documents, I-9, and W-4 — finish at your own pace.</p>
+										</div>
+									</li>
+									<li class="list-group-item d-flex gap-3 align-items-start">
+										<span class="step-num" aria-hidden="true">3</span>
+										<div>
+											<strong>HR review</strong>
+											<p class="text-muted small mb-0">Our team reviews your submission and follows up with next steps.</p>
+										</div>
+									</li>
+								</ol>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<footer class="usis-public-footer border-top mt-auto">
+	<div class="container py-4">
+		<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">
+			<span>&copy; US Interior Specialties</span>
+			<a href="https://www.gousis.com/" target="_blank" rel="noopener" class="text-muted">www.gousis.com</a>
+		</div>
+	</div>
+</footer>
+
+
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script>
+	(function () {
+		"use strict";
+		var hireNext = "usis-hr-hire.html";
+		var registerHref = "page-register.html?next=" + encodeURIComponent(hireNext);
+		var loginHref = "page-login.html?next=" + encodeURIComponent(hireNext);
+		function setHref(id, href) {
+			var el = document.getElementById(id);
+			if (el) el.setAttribute("href", href);
+		}
+		setHref("usis-apply-cta", registerHref);
+		setHref("usis-apply-signin", loginHref);
+		setHref("usis-apply-register-alt", registerHref);
+		setHref("usis-public-sign-in", loginHref);
+		function apiBase() {
+			if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
+				return window.USIS_API_BASE.trim().replace(/\/$/, "");
+			}
+			var h = window.location.hostname || "";
+			if (h === "localhost" || h === "127.0.0.1") return window.location.protocol + "//" + h + ":5000";
+			return "";
+		}
+		var base = apiBase();
+		if (!base) return;
+		fetch(base + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
+			.then(function (r) { return r.json(); })
+			.then(function (body) {
+				if (!body || !body.authenticated) return;
+				var cta = document.getElementById("usis-apply-cta");
+				if (cta) {
+					cta.textContent = "Continue your application";
+					cta.setAttribute("href", hireNext);
+				}
+				var signIn = document.getElementById("usis-apply-signin");
+				if (signIn) signIn.classList.add("d-none");
+				var signOut = document.getElementById("usis-apply-signout");
+				if (signOut) signOut.classList.remove("d-none");
+				var regAlt = document.getElementById("usis-apply-register-alt");
+				if (regAlt) regAlt.classList.remove("d-none");
+				var headerSignOut = document.getElementById("usis-public-sign-out");
+				if (headerSignOut) headerSignOut.classList.remove("d-none");
+				var headerSignIn = document.getElementById("usis-public-sign-in");
+				if (headerSignIn) headerSignIn.classList.add("d-none");
+				var hint = document.getElementById("usis-apply-auth-hint");
+				if (hint) hint.textContent = "You are signed in. Continue where you left off, create a different account, or sign out.";
+			})
+			.catch(function () { /* offline */ });
+	})();
+	</script>
+
+</body>
+</html>

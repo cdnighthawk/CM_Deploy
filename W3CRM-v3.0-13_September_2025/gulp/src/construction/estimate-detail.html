@@ -15,7 +15,32 @@
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
 		#usis-est-lines-table input.form-control-sm,
 		#usis-est-lines-table select.form-select-sm { font-size: 0.8125rem; min-width: 3rem; }
+		#usis-est-lines-table.usis-est-lines-compact input.form-control-sm,
+		#usis-est-lines-table.usis-est-lines-compact select.form-select-sm {
+			font-size: 0.75rem;
+			padding: 0.15rem 0.3rem;
+			min-width: 2.25rem;
+		}
 		#usis-est-lines-table .usis-est-ext { white-space: nowrap; }
+		.usis-est-grid-scroll {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			max-width: 100%;
+		}
+		@media (max-width: 1199.98px) {
+			#usis-est-grid-wrap #usis-est-lines-table thead th:nth-child(3),
+			#usis-est-grid-wrap #usis-est-lines-table tbody td:nth-child(3) {
+				position: sticky;
+				left: 0;
+				z-index: 2;
+				background-color: var(--bs-body-bg, #fff);
+				box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.12);
+			}
+			#usis-est-grid-wrap #usis-est-lines-table thead th:nth-child(3) {
+				z-index: 3;
+				background-color: var(--bs-table-bg, #f8f9fa);
+			}
+		}
 		#usis-estd-grid-drawings { min-height: 18rem; }
 		#usis-estd-grid-drawings .tabulator { font-size: 0.875rem; }
 		.usis-tool-toolbar .form-control,
@@ -51,13 +76,13 @@
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
 								<h6 class="mb-1">Construction — Estimate Detail</h6>
-								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+								
 							</div>
 							<div class="text-nowrap small">
 								<a href="edit-quotation.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="estimate.html">Next</a>
 							</div>
 						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+						
 					</div>
 				</div>
 			</div>
@@ -222,22 +247,47 @@
 						</div>
 
 						<div class="tab-pane fade show active" id="estd-pane-takeoff" role="tabpanel" aria-labelledby="estd-tab-takeoff" tabindex="0">
-							<h5 class="mb-2">Takeoff</h5>
-							<p class="text-muted mb-0">Placeholder — unified takeoff engine / quantities (see project plan).</p>
+							<p id="usis-estimate-takeoff-no-lead" class="text-muted mb-0">Open this page with a lead id in the URL (<code>?id=…</code>) to load takeoff lines.</p>
+							<div id="usis-estimate-takeoff-root" class="d-none">
+								<div class="mb-3">
+									<a class="btn btn-outline-primary btn-sm" id="usis-estd-goto-door-schedule" href="construction/door-schedule.html">Door schedule takeoff (Div 08)</a>
+								</div>
+							</div>
 						</div>
 						<div class="tab-pane fade" id="estd-pane-estimate" role="tabpanel" aria-labelledby="estd-tab-estimate" tabindex="0">
 							<div id="usis-est-detail-root" class="d-none">
 								<div id="usis-est-detail-err" class="alert alert-danger d-none mb-3" role="alert"></div>
+								<div id="usis-est-lock-banner" class="alert alert-secondary border py-2 small d-none mb-2" role="status"></div>
 								<div id="usis-est-header" class="row mb-3"></div>
 								<div class="row g-3">
 									<div class="col-xl-8">
 										<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 											<h5 class="mb-0">Line items</h5>
+											<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-sm btn-success d-none" id="usis-est-approve-lock" title="Record approval and lock editing">
+												Approve &amp; lock
+											</button>
+											<button type="button" class="btn btn-sm btn-outline-secondary d-none" id="usis-est-lock-draft" title="Lock without formal approval">
+												Lock
+											</button>
+											<button type="button" class="btn btn-sm btn-warning d-none" id="usis-est-unlock" title="Admin: allow editing again">
+												Unlock
+											</button>
+											<button type="button" class="btn btn-sm btn-outline-primary" id="usis-est-quote-report">
+												Quote report…
+											</button>
 											<button type="button" class="btn btn-sm btn-primary" id="usis-est-add-line">
 												<i class="icon feather icon-plus me-1"></i> Add line
 											</button>
+											<button type="button" class="btn btn-sm btn-outline-secondary d-none" id="usis-est-compact-toggle" aria-pressed="false" title="Tighter row height on small screens">
+												Compact density
+											</button>
+											</div>
 										</div>
-										<div class="table-responsive border rounded">
+										<p class="text-muted small mb-2 d-xl-none" id="usis-est-scroll-hint" role="note">
+											<span class="text-body-secondary">Tip:</span> scroll horizontally to see all columns; description stays pinned on narrow widths.
+										</p>
+										<div class="usis-est-grid-scroll border rounded" id="usis-est-grid-wrap">
 											<table class="table table-sm table-hover mb-0" id="usis-est-lines-table">
 												<thead class="table-light">
 													<tr>
@@ -249,6 +299,7 @@
 														<th>UOM</th>
 														<th class="text-end">Unit cost</th>
 														<th class="text-end">Extended</th>
+														<th class="text-center text-muted small" style="width:2.75rem" title="Save status">Save</th>
 														<th class="text-end"></th>
 													</tr>
 												</thead>
@@ -299,12 +350,31 @@
 						</div>
 						<div class="tab-pane fade" id="estd-pane-rfp" role="tabpanel" aria-labelledby="estd-tab-rfp" tabindex="0">
 							<h5 class="mb-2">RFP</h5>
-							<p class="text-muted mb-0">Placeholder — request for proposal documents and responses.</p>
+							<p class="text-muted mb-0 small">RFP documents and responses will appear here when this estimate is linked to an RFP workspace.</p>
 						</div>
 					</div>
 				</div>
 			</div>
 		</main>
+
+	<div class="modal fade" id="usis-est-quote-report-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-quote-report-title">
+		<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title fs-6" id="usis-est-quote-report-title">Quote report columns</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body py-2">
+					<p class="text-muted small mb-2">Choose columns for the printable quote, then open in a new tab (use Print to save PDF).</p>
+					<div id="usis-est-quote-report-cols" class="small">Loading…</div>
+				</div>
+				<div class="modal-footer py-2">
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-est-quote-report-open">Open report</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<div class="modal fade" id="usis-estd-modal-drawing-create" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-centered">
@@ -366,8 +436,10 @@
 	<script src="assets/js/construction.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
 	<script src="assets/js/usis-specs-book-tab.js"></script>
+	<script src="assets/js/usis-project-doc-panels.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
 	<script src="assets/js/usis-estimate-detail.js"></script>
+	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

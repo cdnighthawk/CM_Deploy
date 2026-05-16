@@ -1,20 +1,28 @@
 """Versioned read+write API for projects, lead_estimates, and Procore-parity RFIs."""
 from __future__ import annotations
 
+import json
+import os
 import uuid
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Mapping
 
 from flask import Blueprint, Response, current_app, jsonify, request, send_file
 from sqlalchemy import and_, func, literal, or_, select
+from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
+from ..config import client_debug_log_dev_open
 from ..extensions import db
 from ..models import (
+    AuditLog,
     Company,
+    DoorHardwareSet,
+    DoorHardwareSetItem,
+    DoorOpening,
     Drawing,
     Document,
     LeadEstimate,
@@ -27,10 +35,13 @@ from ..models import (
     User,
     WageRate,
 )
+from ..models.hrms_core import HrmsTimesheetEntry
+from ..services import door_schedule as door_schedule_svc
 from . import _commitment_service as commitment_svc
 from . import _admin_users_service as admin_users_svc
 from . import _document_render_service as document_render_svc
 from . import _pay_application_service as pay_app_svc
+from . import _reports_catalog_service as reports_catalog_svc
 from . import _power_bi_service as power_bi_svc
 from . import _prime_contract_sov_service as prime_sov_svc
 from . import _project_schedule_service as project_schedule_svc
@@ -40,9 +51,52 @@ from ._perms import can_edit_rfi, current_user, users_for_picker
 
 bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
+# Repo root: backend/app/api/v1.py → parents[3] == USIS_CM
+_CLIENT_DEBUG_LOG = Path(__file__).resolve().parents[3] / "debug-ff8612.log"
+
 
 def _jsonify(obj: Any):
     return jsonify(obj)
+
+
+def _append_lead_estimate_audit(
+    cu,
+    lead_id: uuid.UUID,
+    action: str,
+    *,
+    message: str | None = None,
+    changes: dict[str, Any] | None = None,
+) -> None:
+    db.session.add(
+        AuditLog(
+            user_id=cu.user.id if cu.user else None,
+            entity_type="lead_estimate",
+            entity_id=lead_id,
+            action=action,
+            changes=changes,
+            message=message,
+        )
+    )
+
+
+@bp.post("/__debug/client-log")
+def client_debug_log():
+    """Append one NDJSON line for in-browser debug (local dev / debug app only)."""
+    if not client_debug_log_dev_open():
+        return jsonify({"error": "not found"}), 404
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "expected JSON object"}), 400
+    if payload.get("sessionId") != "ff8612":
+        return jsonify({"ok": True})
+    try:
+        _CLIENT_DEBUG_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with _CLIENT_DEBUG_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(payload, separators=(",", ":")) + "\n")
+    except OSError:
+        current_app.logger.exception("client_debug_log write failed")
+        return jsonify({"error": "write failed"}), 500
+    return jsonify({"ok": True})
 
 
 @bp.get("/auth/status")
@@ -52,13 +106,22 @@ def auth_status():
 
     cu = current_user()
     ms_on = entra_fully_configured(current_app.config)
+    allow_register = bool(current_app.config.get("USIS_ALLOW_SELF_REGISTER"))
     if cu.user is None:
-        return _jsonify({"authenticated": False, "user": None, "microsoft_sso_enabled": ms_on})
+        return _jsonify(
+            {
+                "authenticated": False,
+                "user": None,
+                "microsoft_sso_enabled": ms_on,
+                "self_register_enabled": allow_register,
+            }
+        )
     u = cu.user
     return _jsonify(
         {
             "authenticated": True,
             "microsoft_sso_enabled": ms_on,
+            "self_register_enabled": allow_register,
             "user": {
                 "id": str(u.id),
                 "email": u.email,
@@ -67,6 +130,71 @@ def auth_status():
             },
         }
     )
+
+
+@bp.post("/auth/register")
+def auth_register():
+    """Create a USIS user account and start a browser session (hire wizard / self-service)."""
+    from werkzeug.security import generate_password_hash
+
+    from sqlalchemy import select
+
+    from ..models import User
+    from . import _admin_users_service as admin_users_svc
+
+    if not current_app.config.get("USIS_ALLOW_SELF_REGISTER"):
+        return _jsonify({"entity": "auth_register", "error": "self-registration is disabled"}), 403
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"entity": "auth_register", "error": "JSON body required"}), 400
+
+    try:
+        email = admin_users_svc._normalize_email(str(body.get("email") or ""))
+    except admin_users_svc.ApiError as exc:
+        return _jsonify({"entity": "auth_register", "error": exc.message}), exc.status
+
+    password = str(body.get("password") or "")
+    if len(password) < 8:
+        return _jsonify({"entity": "auth_register", "error": "password must be at least 8 characters"}), 400
+
+    existing = db.session.scalar(select(User.id).where(User.email == email))
+    if existing is not None:
+        return _jsonify({"entity": "auth_register", "error": "an account with this email already exists"}), 409
+
+    fn = str(body.get("first_name") or "").strip()[:120] or None
+    ln = str(body.get("last_name") or "").strip()[:120] or None
+    phone = str(body.get("phone") or "").strip()[:50] or None
+
+    u = User(
+        email=email,
+        first_name=fn,
+        last_name=ln,
+        phone=phone,
+        password_hash=generate_password_hash(password),
+        is_active=True,
+        is_superuser=False,
+    )
+    db.session.add(u)
+    db.session.commit()
+
+    from flask import session
+
+    session["user_id"] = str(u.id)
+    session.permanent = True
+
+    return _jsonify(
+        {
+            "entity": "auth_register",
+            "ok": True,
+            "user": {
+                "id": str(u.id),
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+            },
+        }
+    ), 201
 
 
 @bp.get("/me")
@@ -164,6 +292,11 @@ def _lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
         "win_probability": _num_or_none(row.win_probability),
         "primary_estimate_id": str(row.primary_estimate_id) if row.primary_estimate_id else None,
         "primary_rfp_id": str(row.primary_rfp_id) if row.primary_rfp_id else None,
+        "estimate_locked_at": _iso(row.estimate_locked_at),
+        "estimate_approved_at": _iso(row.estimate_approved_at),
+        "estimate_approved_by_user_id": str(row.estimate_approved_by_user_id)
+        if row.estimate_approved_by_user_id
+        else None,
     }
 
 
@@ -298,7 +431,7 @@ def _drawing_public(d: Drawing) -> dict[str, Any]:
         "drawing_set": d.drawing_set,
         "revision": d.revision,
         "version": d.version,
-        "file_url": d.file_url,
+        "file_url": _drawing_resolved_file_url(d),
         "title": d.title,
         "parent_document_id": str(d.parent_document_id) if d.parent_document_id else None,
         "created_at": _iso(d.created_at),
@@ -386,6 +519,42 @@ def _takeoff_writes_enabled() -> bool:
     return bool(current_app.config.get("TAKEOFF_API_WRITES_ENABLED"))
 
 
+def _lead_estimate_is_locked(row: LeadEstimate) -> bool:
+    return row.estimate_locked_at is not None
+
+
+def _takeoff_locked_response():
+    return (
+        _jsonify(
+            {
+                "error": "estimate is locked (approved or manually locked); admin unlock required to edit takeoff",
+                "error_code": "ESTIMATE_LOCKED",
+            }
+        ),
+        403,
+    )
+
+
+def _require_lead_unlocked_for_takeoff(lead: LeadEstimate | None):
+    if lead is not None and _lead_estimate_is_locked(lead):
+        return _takeoff_locked_response()
+    return None
+
+
+def _takeoff_line_parent_lead(t: TakeoffLineItem) -> LeadEstimate | None:
+    if t.lead_estimate_id:
+        return db.session.get(LeadEstimate, t.lead_estimate_id)
+    if t.door_opening_id:
+        op = db.session.get(DoorOpening, t.door_opening_id)
+        if op is not None and op.lead_estimate_id:
+            return db.session.get(LeadEstimate, op.lead_estimate_id)
+    return None
+
+
+def _can_unlock_lead_estimate(cu) -> bool:
+    return bool(cu.is_dev_admin or cu.has_role("admin", "superuser"))
+
+
 def _resolve_lead(identifier: str) -> LeadEstimate | None:
     """Resolve by UUID PK, ``external_id`` (BC CSV ``id``), case-insensitive id, or ``raw_row.id``."""
     raw = (identifier or "").strip()
@@ -423,6 +592,11 @@ def _resolve_lead(identifier: str) -> LeadEstimate | None:
 
 
 def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
+    mat_cat = None
+    if t.material_pricing_id is not None:
+        mp = t.material_price
+        if mp is not None:
+            mat_cat = {"id": str(mp.id), "manufacturer": mp.manufacturer, "item": mp.item}
     return {
         "id": str(t.id),
         "lead_estimate_id": str(t.lead_estimate_id) if t.lead_estimate_id else None,
@@ -442,6 +616,11 @@ def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
         "version": t.version,
         "drawing_id": str(t.drawing_id) if t.drawing_id else None,
         "measurement_data": t.measurement_data,
+        "takeoff_location": t.takeoff_location,
+        "material_pricing_id": str(t.material_pricing_id) if t.material_pricing_id else None,
+        "material_catalog": mat_cat,
+        "door_opening_id": str(t.door_opening_id) if t.door_opening_id else None,
+        "line_role": t.line_role,
         "created_at": _iso(t.created_at),
         "updated_at": _iso(t.updated_at),
     }
@@ -495,10 +674,16 @@ def _lead_estimate_detail(row: LeadEstimate) -> dict[str, Any]:
             "is_parent": row.is_parent,
         }
     )
+    if row.estimate_approved_by_user_id:
+        u = db.session.get(User, row.estimate_approved_by_user_id)
+        out["estimate_approved_by_email"] = u.email if u is not None else None
+    else:
+        out["estimate_approved_by_email"] = None
     lines = db.session.scalars(
         select(TakeoffLineItem)
         .where(TakeoffLineItem.lead_estimate_id == row.id)
         .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
+        .options(joinedload(TakeoffLineItem.material_price))
     ).all()
     out["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
     out["takeoff_line_count"] = len(lines)
@@ -512,6 +697,18 @@ def _next_sort_order(lead_estimate_id: uuid.UUID) -> int:
         )
     )
     return int(m if m is not None else -1) + 1
+
+
+def _apply_takeoff_material_pricing_fk(t: TakeoffLineItem, raw: Any) -> None:
+    if raw is None or raw == "":
+        t.material_pricing_id = None
+        return
+    mid = _parse_uuid_param(str(raw).strip())
+    if not mid:
+        raise ValueError("invalid material_pricing_id")
+    if db.session.get(MaterialPrice, mid) is None:
+        raise ValueError("material catalog row not found")
+    t.material_pricing_id = mid
 
 
 def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, partial: bool) -> None:
@@ -549,6 +746,11 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
             t.drawing_id = _drawing_id_from_payload(data["drawing_id"])
         if "measurement_data" in data:
             t.measurement_data = _measurement_data_from_payload(data["measurement_data"])
+        if "takeoff_location" in data:
+            v = data["takeoff_location"]
+            t.takeoff_location = (str(v).strip()[:500] or None) if v is not None else None
+        if "material_pricing_id" in data:
+            _apply_takeoff_material_pricing_fk(t, data["material_pricing_id"])
     else:
         v = data.get("section")
         t.section = (str(v).strip()[:120] or None) if v is not None else None
@@ -572,6 +774,10 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
         t.drawing_id = _drawing_id_from_payload(data.get("drawing_id"))
         if "measurement_data" in data:
             t.measurement_data = _measurement_data_from_payload(data["measurement_data"])
+        v = data.get("takeoff_location")
+        t.takeoff_location = (str(v).strip()[:500] or None) if v is not None else None
+        if "material_pricing_id" in data:
+            _apply_takeoff_material_pricing_fk(t, data.get("material_pricing_id"))
     t.extended_total = _compute_extended(t.quantity, t.unit_cost)
 
 
@@ -896,6 +1102,17 @@ def _drawing_upload_dir() -> Path:
     if raw:
         return Path(str(raw)).expanduser().resolve()
     return Path(current_app.instance_path).resolve() / "drawing_uploads"
+
+
+def _drawing_resolved_file_url(d: Drawing) -> str | None:
+    """DB ``file_url`` or, when missing, the standard upload path if a PDF exists on disk."""
+    raw = d.file_url
+    if raw is not None and str(raw).strip():
+        return str(raw).strip()
+    path = _drawing_upload_dir() / f"{d.id}.pdf"
+    if path.is_file():
+        return f"/api/v1/drawings/{d.id}/file"
+    return None
 
 
 def _spec_section_upload_dir() -> Path:
@@ -2187,6 +2404,62 @@ def render_project_client_proposal_html(project_id: str):
         return _document_render_err(exc)
 
 
+@bp.get("/reports/catalog")
+def get_reports_catalog():
+    return _jsonify(reports_catalog_svc.reports_catalog_public())
+
+
+@bp.get("/lead-estimates/<identifier>/render/estimate-summary")
+def render_lead_estimate_summary_html(identifier: str):
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    try:
+        limit = int(request.args.get("line_limit", 500))
+    except ValueError:
+        return _jsonify({"error": "invalid line_limit"}), 400
+    limit = max(0, min(limit, 5000))
+    try:
+        html = document_render_svc.render_estimate_summary_html(
+            row, current_user(), line_limit=limit
+        )
+        return Response(html, mimetype="text/html; charset=utf-8")
+    except rfi_svc.ApiError as exc:
+        return _document_render_err(exc)
+
+
+@bp.get("/lead-estimates/<identifier>/render/quote-report")
+def render_lead_quote_report_html(identifier: str):
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    try:
+        limit = int(request.args.get("line_limit", 500))
+    except ValueError:
+        return _jsonify({"error": "invalid line_limit"}), 400
+    limit = max(0, min(limit, 5000))
+    columns = request.args.get("columns")
+    try:
+        html = document_render_svc.render_quote_report_html(
+            row, current_user(), columns_raw=columns, line_limit=limit
+        )
+        return Response(html, mimetype="text/html; charset=utf-8")
+    except rfi_svc.ApiError as exc:
+        return _document_render_err(exc)
+
+
+@bp.get("/lead-estimates/<identifier>/render/door-schedule-html")
+def render_lead_door_schedule_report_html(identifier: str):
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    try:
+        html = document_render_svc.render_door_schedule_report_html(row, current_user())
+        return Response(html, mimetype="text/html; charset=utf-8")
+    except rfi_svc.ApiError as exc:
+        return _document_render_err(exc)
+
+
 def _pay_app_err(exc: rfi_svc.ApiError):
     return _jsonify({"error": exc.message}), exc.status
 
@@ -2309,12 +2582,37 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
         "manufacturer": m.manufacturer,
         "item": m.item,
         "category": m.category,
+        "csi_spec_section": m.csi_spec_section,
         "description": m.description,
+        "mounting_type": m.mounting_type,
         "cost": _num_or_none(m.cost),
         "labor_per": _num_or_none(m.labor_per),
         "unit_of_measure": m.unit_of_measure,
         "currency": m.currency,
     }
+
+
+def _material_prices_query(q: str, manufacturer: str, csi_spec_section: str | None = None):
+    from ..csi_spec import normalize_csi_spec_section
+
+    stmt = select(MaterialPrice)
+    if manufacturer:
+        stmt = stmt.where(MaterialPrice.manufacturer.ilike(f"%{manufacturer}%"))
+    if csi_spec_section:
+        norm = normalize_csi_spec_section(csi_spec_section)
+        if norm:
+            stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
+    if q:
+        like = f"%{q}%"
+        stmt = stmt.where(
+            or_(
+                MaterialPrice.item.ilike(like),
+                MaterialPrice.manufacturer.ilike(like),
+                MaterialPrice.description.ilike(like),
+                MaterialPrice.category.ilike(like),
+            )
+        )
+    return stmt.order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
 
 
 def _wage_rate_public(w: WageRate) -> dict[str, Any]:
@@ -2384,12 +2682,119 @@ def patch_lead_estimate(identifier: str):
     return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
 
 
+@bp.post("/lead-estimates/<identifier>/approve-estimate")
+def approve_lead_estimate_for_takeoff(identifier: str):
+    """Record formal approval, lock takeoff & door-schedule edits. Requires takeoff writes enabled."""
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    if row.estimate_approved_at is not None:
+        return _jsonify({"error": "estimate already approved"}), 400
+    if _lead_estimate_is_locked(row):
+        return _jsonify({"error": "estimate is locked; unlock before approving"}), 400
+    cu = current_user()
+    now = datetime.now(timezone.utc)
+    row.estimate_approved_at = now
+    row.estimate_approved_by_user_id = cu.user.id if cu.user else None
+    row.estimate_locked_at = now
+    _append_lead_estimate_audit(
+        cu,
+        row.id,
+        "estimate_approved",
+        changes={"estimate_approved_at": _iso(now), "estimate_locked_at": _iso(now)},
+    )
+    db.session.commit()
+    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+
+
+@bp.post("/lead-estimates/<identifier>/lock-estimate")
+def lock_lead_estimate_for_takeoff(identifier: str):
+    """Lock takeoff without recording approval (e.g. freeze draft for bid day)."""
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    if _lead_estimate_is_locked(row):
+        return _jsonify({"error": "estimate already locked"}), 400
+    cu = current_user()
+    lock_at = datetime.now(timezone.utc)
+    row.estimate_locked_at = lock_at
+    _append_lead_estimate_audit(
+        cu,
+        row.id,
+        "estimate_locked",
+        changes={"estimate_locked_at": _iso(lock_at)},
+    )
+    db.session.commit()
+    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+
+
+@bp.post("/lead-estimates/<identifier>/unlock-estimate")
+def unlock_lead_estimate_for_takeoff(identifier: str):
+    """Clear takeoff lock. Admin / superuser only (or dev-unrestricted)."""
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    cu = current_user()
+    if not _can_unlock_lead_estimate(cu):
+        return _jsonify({"error": "admin or superuser role required to unlock estimates", "error_code": "UNLOCK_FORBIDDEN"}), 403
+    if not _lead_estimate_is_locked(row):
+        return _jsonify({"error": "estimate is not locked"}), 400
+    prev_iso = _iso(row.estimate_locked_at)
+    row.estimate_locked_at = None
+    _append_lead_estimate_audit(
+        cu,
+        row.id,
+        "estimate_unlocked",
+        changes={"previous_locked_at": prev_iso},
+    )
+    db.session.commit()
+    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+
+
+@bp.get("/lead-estimates/<identifier>/audit-trail")
+def get_lead_estimate_audit_trail(identifier: str):
+    """Last audit rows for estimate lock/approve (admin / superuser)."""
+    cu = current_user()
+    if not _can_unlock_lead_estimate(cu):
+        return _jsonify({"error": "admin or superuser role required", "error_code": "UNLOCK_FORBIDDEN"}), 403
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    rows = db.session.scalars(
+        select(AuditLog)
+        .where(AuditLog.entity_type == "lead_estimate", AuditLog.entity_id == row.id)
+        .order_by(AuditLog.created_at.desc())
+        .limit(100)
+    ).all()
+    items = [
+        {
+            "id": str(a.id),
+            "action": a.action,
+            "message": a.message,
+            "changes": a.changes,
+            "user_id": str(a.user_id) if a.user_id else None,
+            "created_at": _iso(a.created_at),
+        }
+        for a in rows
+    ]
+    return _jsonify({"items": items, "entity": "lead_estimate_audit"})
+
+
 @bp.post("/lead-estimates/<identifier>/award")
 def award_lead_estimate(identifier: str):
     """Create or attach a ``Project``, mark CRM stage Awarded, propagate ``project_id`` to takeoff lines."""
     row = _resolve_lead(identifier)
     if row is None:
         return _jsonify({"error": "lead estimate not found"}), 404
+    if _lead_estimate_is_locked(row):
+        return (
+            _jsonify({"error": "estimate is locked; unlock before awarding / linking project", "error_code": "ESTIMATE_LOCKED"}),
+            403,
+        )
     data = request.get_json(silent=True)
     if not isinstance(data, Mapping):
         data = {}
@@ -2410,6 +2815,8 @@ def award_lead_estimate(identifier: str):
     row.crm_stage = "Awarded"
     for line in row.takeoff_lines:
         line.project_id = row.project_id
+    for opening in row.door_openings:
+        opening.project_id = row.project_id
     db.session.commit()
     return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
 
@@ -2489,6 +2896,7 @@ def list_takeoff_lines(identifier: str):
         select(TakeoffLineItem)
         .where(TakeoffLineItem.lead_estimate_id == lead.id)
         .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
+        .options(joinedload(TakeoffLineItem.material_price))
     ).all()
     return _jsonify(
         {
@@ -2502,10 +2910,13 @@ def list_takeoff_lines(identifier: str):
 @bp.post("/lead-estimates/<identifier>/takeoff-lines")
 def create_takeoff_line(identifier: str):
     if not _takeoff_writes_enabled():
-        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)"}), 403
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
     lead = _resolve_lead(identifier)
     if lead is None:
         return _jsonify({"error": "lead estimate not found"}), 404
+    blocked = _require_lead_unlocked_for_takeoff(lead)
+    if blocked:
+        return blocked
     data = request.get_json(silent=True)
     if not isinstance(data, Mapping):
         data = {}
@@ -2526,13 +2937,17 @@ def create_takeoff_line(identifier: str):
 @bp.patch("/takeoff-lines/<line_id>")
 def patch_takeoff_line(line_id: str):
     if not _takeoff_writes_enabled():
-        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)"}), 403
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
     lid = _parse_uuid_param(line_id)
     if not lid:
         return _jsonify({"error": "invalid line id"}), 400
     t = db.session.get(TakeoffLineItem, lid)
     if t is None:
         return _jsonify({"error": "takeoff line not found"}), 404
+    lead = _takeoff_line_parent_lead(t)
+    blocked = _require_lead_unlocked_for_takeoff(lead)
+    if blocked:
+        return blocked
     data = request.get_json(silent=True)
     if not isinstance(data, Mapping):
         return _jsonify({"error": "expected JSON object body"}), 400
@@ -2547,35 +2962,469 @@ def patch_takeoff_line(line_id: str):
 @bp.delete("/takeoff-lines/<line_id>")
 def delete_takeoff_line(line_id: str):
     if not _takeoff_writes_enabled():
-        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)"}), 403
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
     lid = _parse_uuid_param(line_id)
     if not lid:
         return _jsonify({"error": "invalid line id"}), 400
     t = db.session.get(TakeoffLineItem, lid)
     if t is None:
         return _jsonify({"error": "takeoff line not found"}), 404
+    lead = _takeoff_line_parent_lead(t)
+    blocked = _require_lead_unlocked_for_takeoff(lead)
+    if blocked:
+        return blocked
     db.session.delete(t)
     db.session.commit()
     return _jsonify({"ok": True})
 
 
+def _door_opening_detail(opening: DoorOpening) -> dict[str, Any]:
+    base = door_schedule_svc.door_opening_public(opening, include_lines=False)
+    lines = db.session.scalars(
+        select(TakeoffLineItem)
+        .where(TakeoffLineItem.door_opening_id == opening.id)
+        .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
+        .options(joinedload(TakeoffLineItem.material_price))
+    ).all()
+    base["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
+    base["takeoff_line_count"] = len(lines)
+    return base
+
+
+@bp.get("/door-hardware-sets")
+def list_door_hardware_sets():
+    rows = db.session.scalars(
+        select(DoorHardwareSet)
+        .options(joinedload(DoorHardwareSet.items))
+        .order_by(DoorHardwareSet.code.asc())
+    ).unique().all()
+    return _jsonify(
+        {
+            "items": [door_schedule_svc.hardware_set_public(hs) for hs in rows],
+            "entity": "door_hardware_sets",
+        }
+    )
+
+
+@bp.get("/door-hardware-sets/<code>")
+def get_door_hardware_set(code: str):
+    hs = door_schedule_svc.get_hardware_set_by_code(code)
+    if hs is None:
+        return _jsonify({"error": "hardware set not found"}), 404
+    return _jsonify({"item": door_schedule_svc.hardware_set_public(hs), "entity": "door_hardware_sets"})
+
+
+@bp.post("/door-hardware-sets")
+def create_door_hardware_set():
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    data = request.get_json(silent=True)
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    try:
+        hs = door_schedule_svc.create_hardware_set(
+            str(data.get("code") or ""),
+            str(data.get("name") or ""),
+            data.get("description"),
+        )
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    db.session.commit()
+    return _jsonify({"item": door_schedule_svc.hardware_set_public(hs), "entity": "door_hardware_sets"}), 201
+
+
+@bp.patch("/door-hardware-sets/<code>")
+def patch_door_hardware_set(code: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    hs = door_schedule_svc.get_hardware_set_by_code(code)
+    if hs is None:
+        return _jsonify({"error": "hardware set not found"}), 404
+    data = request.get_json(silent=True)
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    door_schedule_svc.update_hardware_set(
+        hs,
+        name=data.get("name") if "name" in data else None,
+        description=data.get("description") if "description" in data else None,
+    )
+    db.session.commit()
+    return _jsonify({"item": door_schedule_svc.hardware_set_public(hs), "entity": "door_hardware_sets"})
+
+
+@bp.post("/door-hardware-sets/<code>/items")
+def create_door_hardware_set_item(code: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    hs = door_schedule_svc.get_hardware_set_by_code(code)
+    if hs is None:
+        return _jsonify({"error": "hardware set not found"}), 404
+    data = request.get_json(silent=True)
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    try:
+        item = door_schedule_svc.add_hardware_set_item(hs, data)
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    db.session.commit()
+    hs = door_schedule_svc.get_hardware_set_by_code(code)
+    return _jsonify(
+        {"item": door_schedule_svc.hardware_set_public(hs), "entity": "door_hardware_sets"}
+    ), 201
+
+
+@bp.patch("/door-hardware-set-items/<item_id>")
+def patch_door_hardware_set_item(item_id: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    iid = _parse_uuid_param(item_id)
+    if not iid:
+        return _jsonify({"error": "invalid item id"}), 400
+    item = db.session.get(DoorHardwareSetItem, iid)
+    if item is None:
+        return _jsonify({"error": "hardware set item not found"}), 404
+    data = request.get_json(silent=True)
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    try:
+        door_schedule_svc.update_hardware_set_item(item, data)
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    db.session.commit()
+    hs = door_schedule_svc.get_hardware_set_by_id(item.hardware_set_id)
+    return _jsonify(
+        {"item": door_schedule_svc.hardware_set_public(hs), "entity": "door_hardware_sets"}
+    )
+
+
+@bp.delete("/door-hardware-set-items/<item_id>")
+def delete_door_hardware_set_item(item_id: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    iid = _parse_uuid_param(item_id)
+    if not iid:
+        return _jsonify({"error": "invalid item id"}), 400
+    item = db.session.get(DoorHardwareSetItem, iid)
+    if item is None:
+        return _jsonify({"error": "hardware set item not found"}), 404
+    hs_id = item.hardware_set_id
+    door_schedule_svc.delete_hardware_set_item(item)
+    db.session.commit()
+    hs = door_schedule_svc.get_hardware_set_by_id(hs_id)
+    return _jsonify(
+        {"item": door_schedule_svc.hardware_set_public(hs), "entity": "door_hardware_sets"}
+    )
+
+
+@bp.get("/lead-estimates/<identifier>/door-schedule")
+def get_door_schedule(identifier: str):
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    openings = db.session.scalars(
+        select(DoorOpening)
+        .where(DoorOpening.lead_estimate_id == row.id)
+        .order_by(DoorOpening.sort_order.asc(), DoorOpening.created_at.asc())
+    ).all()
+    items = [_door_opening_detail(op) for op in openings]
+    grand = sum(float(x.get("extended_total") or 0) for x in items)
+    return _jsonify(
+        {
+            "lead_estimate_id": str(row.id),
+            "external_id": row.external_id,
+            "project_id": str(row.project_id) if row.project_id else None,
+            "openings": items,
+            "opening_count": len(items),
+            "grand_total": grand,
+            "entity": "door_schedule",
+        }
+    )
+
+
+@bp.post("/lead-estimates/<identifier>/door-schedule/import")
+def import_door_schedule(identifier: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    blocked = _require_lead_unlocked_for_takeoff(row)
+    if blocked:
+        return blocked
+    data = request.get_json(silent=True)
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    rows_in = data.get("rows")
+    if not isinstance(rows_in, list):
+        return _jsonify({"error": "rows must be an array"}), 400
+    column_map = data.get("column_map")
+    if not isinstance(column_map, Mapping):
+        return _jsonify({"error": "column_map must be an object"}), 400
+    mode = str(data.get("mode") or "merge").strip().lower()
+    try:
+        summary = door_schedule_svc.import_door_schedule(
+            row, rows_in, column_map, mode=mode
+        )
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    db.session.commit()
+    openings = db.session.scalars(
+        select(DoorOpening)
+        .where(DoorOpening.lead_estimate_id == row.id)
+        .order_by(DoorOpening.sort_order.asc(), DoorOpening.created_at.asc())
+    ).all()
+    summary["openings"] = [_door_opening_detail(op) for op in openings]
+    return _jsonify(summary), 201
+
+
+@bp.post("/lead-estimates/<identifier>/door-openings")
+def create_door_opening(identifier: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    blocked = _require_lead_unlocked_for_takeoff(row)
+    if blocked:
+        return blocked
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    mark = str(data.get("mark") or "").strip()[:60]
+    if not mark:
+        n = db.session.scalar(
+            select(func.count()).select_from(DoorOpening).where(
+                DoorOpening.lead_estimate_id == row.id
+            )
+        ) or 0
+        mark = f"NEW-{int(n) + 1}"
+    sort_ix = db.session.scalar(
+        select(func.coalesce(func.max(DoorOpening.sort_order), -1)).where(
+            DoorOpening.lead_estimate_id == row.id
+        )
+    )
+    op = DoorOpening(
+        lead_estimate_id=row.id,
+        project_id=row.project_id,
+        mark=mark,
+        room=door_schedule_svc._str_field(data.get("room"), 255),
+        sort_order=int(sort_ix if sort_ix is not None else -1) + 1,
+    )
+    db.session.add(op)
+    db.session.flush()
+    door_schedule_svc.rebuild_opening_lines(op, preserve_priced=False)
+    db.session.commit()
+    return _jsonify({"item": _door_opening_detail(op), "entity": "door_opening"}), 201
+
+
+@bp.patch("/door-openings/<opening_id>")
+def patch_door_opening(opening_id: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    oid = _parse_uuid_param(opening_id)
+    if not oid:
+        return _jsonify({"error": "invalid opening id"}), 400
+    op = db.session.get(DoorOpening, oid)
+    if op is None:
+        return _jsonify({"error": "door opening not found"}), 404
+    if op.lead_estimate_id:
+        lead = db.session.get(LeadEstimate, op.lead_estimate_id)
+        blocked = _require_lead_unlocked_for_takeoff(lead)
+        if blocked:
+            return blocked
+    data = request.get_json(silent=True)
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    for field, max_len in (        ("mark", 60),
+        ("room", 255),
+        ("width", 40),
+        ("height", 40),
+        ("door_type", 120),
+        ("frame_type", 120),
+        ("hardware_set_code", 60),
+        ("fire_rating", 60),
+        ("handing", 60),
+    ):
+        if field in data:
+            val = door_schedule_svc._str_field(data.get(field), max_len) or ""
+            if field == "hardware_set_code":
+                val = door_schedule_svc.normalize_hardware_set_code(val) or ""
+            setattr(op, field, val)
+    if "remarks" in data:
+        v = data.get("remarks")
+        op.remarks = str(v) if v is not None else None
+    if data.get("rebuild_lines") in (True, "true", 1, "1"):
+        door_schedule_svc.rebuild_opening_lines(op, preserve_priced=True)
+    db.session.commit()
+    return _jsonify({"item": _door_opening_detail(op), "entity": "door_opening"})
+
+
+@bp.post("/door-openings/<opening_id>/expand-hardware")
+def expand_door_opening_hardware(opening_id: str):
+    if not _takeoff_writes_enabled():
+        return _jsonify({"error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)", "error_code": "TAKEOFF_WRITES_DISABLED"}), 403
+    oid = _parse_uuid_param(opening_id)
+    if not oid:
+        return _jsonify({"error": "invalid opening id"}), 400
+    op = db.session.get(DoorOpening, oid)
+    if op is None:
+        return _jsonify({"error": "door opening not found"}), 404
+    if op.lead_estimate_id:
+        lead = db.session.get(LeadEstimate, op.lead_estimate_id)
+        blocked = _require_lead_unlocked_for_takeoff(lead)
+        if blocked:
+            return blocked
+    created = door_schedule_svc.expand_hardware_for_opening(op)
+    db.session.commit()
+    return _jsonify(
+        {
+            "item": _door_opening_detail(op),
+            "hardware_lines_added": len(created),
+            "entity": "door_opening",
+        }
+    )
+
+
+def _dashboard_period_bounds(period: str) -> tuple[date, date]:
+    today = date.today()
+    if period == "day":
+        return today, today
+    if period == "week":
+        return today - timedelta(days=6), today
+    if period == "year":
+        return date(today.year, 1, 1), today
+    return date(today.year, today.month, 1), today
+
+
+@bp.get("/dashboard/hours-by-project")
+def dashboard_hours_by_project():
+    """Sum ``hrms_timesheet_entries.hours_worked`` by project for dashboard chart."""
+    period = (request.args.get("period") or "month").strip().lower()
+    if period not in ("day", "week", "month", "year"):
+        return _jsonify({"error": "invalid period; use day, week, month, or year"}), 400
+    start, end = _dashboard_period_bounds(period)
+    try:
+        limit = int(request.args.get("limit") or 15)
+    except ValueError:
+        limit = 15
+    limit = max(1, min(limit, 30))
+
+    stmt = (
+        select(
+            Project.id,
+            Project.name,
+            func.coalesce(func.sum(HrmsTimesheetEntry.hours_worked), 0).label("hours"),
+        )
+        .select_from(HrmsTimesheetEntry)
+        .join(Project, Project.id == HrmsTimesheetEntry.project_id)
+        .where(
+            HrmsTimesheetEntry.work_date >= start,
+            HrmsTimesheetEntry.work_date <= end,
+        )
+        .group_by(Project.id, Project.name)
+        .having(func.sum(HrmsTimesheetEntry.hours_worked) > 0)
+        .order_by(func.sum(HrmsTimesheetEntry.hours_worked).desc())
+        .limit(limit)
+    )
+    rows = db.session.execute(stmt).all()
+    projects: list[dict[str, Any]] = []
+    total_hours = Decimal("0")
+    for pid, pname, hours in rows:
+        h = Decimal(str(hours or 0))
+        total_hours += h
+        projects.append(
+            {
+                "project_id": str(pid),
+                "project_name": (pname or "Unnamed project").strip(),
+                "hours": float(h.quantize(Decimal("0.01"))),
+            }
+        )
+    n = len(projects)
+    avg = float((total_hours / n).quantize(Decimal("0.01"))) if n else 0.0
+    return _jsonify(
+        {
+            "entity": "dashboard_hours_by_project",
+            "period": period,
+            "period_start": start.isoformat(),
+            "period_end": end.isoformat(),
+            "projects": projects,
+            "summary": {
+                "total_hours": float(total_hours.quantize(Decimal("0.01"))),
+                "project_count": n,
+                "avg_hours_per_project": avg,
+                "top_project_name": projects[0]["project_name"] if projects else None,
+            },
+        }
+    )
+
+
+@bp.get("/material-prices")
+def list_material_prices():
+    """Company material catalog (``material_pricing``) for pickers; optional ``q`` / ``manufacturer``."""
+    try:
+        limit = int(request.args.get("limit") or 250)
+    except ValueError:
+        limit = 250
+    try:
+        offset = int(request.args.get("offset") or 0)
+    except ValueError:
+        offset = 0
+    limit = max(1, min(limit, 500))
+    offset = max(0, offset)
+    q = (request.args.get("q") or "").strip()
+    manufacturer = (request.args.get("manufacturer") or "").strip()
+    csi = (request.args.get("csi_spec_section") or "").strip() or None
+    base = _material_prices_query(q, manufacturer, csi)
+    total = db.session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    rows = db.session.scalars(base.offset(offset).limit(limit)).all()
+    return _jsonify(
+        {
+            "items": [_material_price_public(m) for m in rows],
+            "entity": "material_prices",
+            "total": int(total),
+            "limit": limit,
+            "offset": offset,
+        }
+    )
+
+
+@bp.get("/material-prices/manufacturers")
+def list_material_price_manufacturers():
+    """Distinct manufacturers for catalog filters."""
+    q = (request.args.get("q") or "").strip()
+    stmt = select(MaterialPrice.manufacturer).distinct().order_by(MaterialPrice.manufacturer.asc())
+    if q:
+        stmt = stmt.where(MaterialPrice.manufacturer.ilike(f"%{q}%"))
+    try:
+        limit = int(request.args.get("limit") or 200)
+    except ValueError:
+        limit = 200
+    limit = max(1, min(limit, 500))
+    names = [r for r in db.session.scalars(stmt.limit(limit)).all() if r]
+    return _jsonify({"items": names, "entity": "material_manufacturers"})
+
+
 @bp.get("/cost-suggestions/material")
 def cost_suggestions_material():
+    from ..csi_spec import normalize_csi_spec_section
+
     q = (request.args.get("q") or "").strip()
     if len(q) < 2:
         return _jsonify({"items": [], "entity": "material_prices", "hint": "pass q= with at least 2 characters"})
     like = f"%{q}%"
-    stmt = (
-        select(MaterialPrice)
-        .where(
-            or_(
-                MaterialPrice.item.ilike(like),
-                MaterialPrice.manufacturer.ilike(like),
-                MaterialPrice.description.ilike(like),
-            )
+    stmt = select(MaterialPrice).where(
+        or_(
+            MaterialPrice.item.ilike(like),
+            MaterialPrice.manufacturer.ilike(like),
+            MaterialPrice.description.ilike(like),
         )
-        .limit(25)
     )
+    csi = (request.args.get("csi_spec_section") or "").strip() or None
+    if csi:
+        norm = normalize_csi_spec_section(csi)
+        if norm:
+            stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
+    stmt = stmt.limit(25)
     rows = db.session.scalars(stmt).all()
     return _jsonify({"items": [_material_price_public(m) for m in rows], "entity": "material_prices"})
 
@@ -2625,6 +3474,9 @@ from .extra_plan_routes import register_extra_routes  # noqa: E402
 
 register_extra_routes(bp)
 _hr_dashboard.register_hr_routes(bp)
+from . import _hr_hire_wizard  # noqa: E402
+
+_hr_hire_wizard.register_hr_hire_wizard_routes(bp)
 from . import _playbooks as _playbooks_mod  # noqa: E402
 
 _playbooks_mod.register_playbook_routes(bp)

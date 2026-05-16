@@ -8,30 +8,61 @@
 	"use strict";
 
 	function apiBase() {
-		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE) {
-			return window.USIS_API_BASE.replace(/\/$/, "");
-		}
-		var p = String(window.location.port || "");
-		var pn = parseInt(p, 10);
+		var loc = window.location;
 		var devPorts = {
-			3000: 1,
-			3001: 1,
-			3002: 1,
-			4173: 1,
-			5173: 1,
-			5174: 1,
-			5500: 1,
-			5501: 1,
-			8080: 1,
-			4200: 1,
-			4321: 1,
-			9630: 1,
-			1234: 1,
+			3000: 1, 3001: 1, 3002: 1, 4173: 1, 5173: 1, 5174: 1, 5500: 1, 5501: 1,
+			8080: 1, 4200: 1, 4321: 1, 9630: 1, 1234: 1,
 		};
-		if (devPorts[p] || (!isNaN(pn) && pn >= 3000 && pn <= 3099)) {
-			return window.location.protocol + "//" + window.location.hostname + ":5000";
+		function isLoopbackHost(h) {
+			return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "::1";
 		}
-		return "";
+		function flaskDevBase() {
+			if (loc.protocol === "file:") return "http://127.0.0.1:5000";
+			var host = loc.hostname || "";
+			var proto = loc.protocol || "http:";
+			var port = String(loc.port || "");
+			if (devPorts[port]) return proto + "//" + host + ":5000";
+			if (host === "localhost" || host === "127.0.0.1" || host === "::1") {
+				return port === "5000" ? "" : proto + "//" + host + ":5000";
+			}
+			var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+			if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
+				return proto + "//" + host + ":5000";
+			}
+			if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
+				return proto + "//" + host + ":5000";
+			}
+			return "";
+		}
+		function resolveOverride(s) {
+			if (!s || !String(s).trim()) return null;
+			var t = String(s).trim().replace(/\/$/, "");
+			try {
+				var u = new URL(t);
+				if (u.origin === loc.origin) return flaskDevBase();
+				if (isLoopbackHost(u.hostname) && devPorts[String(u.port || "")]) {
+					var p = loc.protocol || "http:";
+					return p + "//" + (loc.hostname || u.hostname) + ":5000";
+				}
+				return t;
+			} catch (e) {
+				return t;
+			}
+		}
+		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
+			var w = resolveOverride(window.USIS_API_BASE);
+			if (w !== null) return w;
+		}
+		return flaskDevBase();
+	}
+
+	function actorHeaders() {
+		var id = null;
+		try {
+			id = window.localStorage.getItem("usisActorUserId");
+		} catch (e) {}
+		if (id && id.trim()) return { "X-Usis-User-Id": id.trim() };
+		return {};
 	}
 
 	function buildUrl(path, params) {
@@ -56,15 +87,20 @@
 	function fetchJson(path, opts) {
 		var o = opts || {};
 		var url = typeof path === "string" ? buildUrl(path, o.params) : path;
+		var headers = Object.assign({ Accept: "application/json" }, actorHeaders(), o.headers || {});
 		var init = {
 			method: o.method || "GET",
-			headers: Object.assign(
-				{ Accept: "application/json", "Content-Type": "application/json" },
-				o.headers || {}
-			),
-			credentials: "omit",
+			headers: headers,
+			credentials: "include",
 		};
-		if (o.body !== undefined) init.body = JSON.stringify(o.body);
+		if (o.body !== undefined) {
+			if (typeof FormData !== "undefined" && o.body instanceof FormData) {
+				init.body = o.body;
+			} else {
+				init.headers["Content-Type"] = "application/json";
+				init.body = JSON.stringify(o.body);
+			}
+		}
 		return fetch(url, init).then(function (res) {
 			var ct = res.headers.get("content-type") || "";
 			if (!res.ok) {
@@ -240,6 +276,35 @@
 		);
 	}
 
+	function uploadRfiAttachment(rfiId, file) {
+		var fd = new FormData();
+		fd.append("file", file, file.name || "attachment");
+		var url = buildUrl("/api/v1/rfis/" + encodeURIComponent(rfiId) + "/attachments/upload");
+		return fetch(url, {
+			method: "POST",
+			credentials: "include",
+			headers: actorHeaders(),
+			body: fd,
+		}).then(function (res) {
+			var ct = res.headers.get("content-type") || "";
+			if (!res.ok) {
+				return res.text().then(function (t) {
+					var msg = t;
+					try {
+						if (ct.indexOf("application/json") !== -1) {
+							var j = JSON.parse(t);
+							msg = j.error || j.message || t;
+						}
+					} catch (e) {}
+					var err = new Error(msg || res.statusText || ("HTTP " + res.status));
+					err.status = res.status;
+					throw err;
+				});
+			}
+			return res.json();
+		});
+	}
+
 	function localStore(key) {
 		return {
 			get: function () {
@@ -283,8 +348,10 @@
 
 	window.USIS_RFI = {
 		apiBase: apiBase,
+		actorHeaders: actorHeaders,
 		buildUrl: buildUrl,
 		fetchJson: fetchJson,
+		uploadRfiAttachment: uploadRfiAttachment,
 		esc: esc,
 		escAttr: escAttr,
 		fmtDate: fmtDate,

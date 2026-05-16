@@ -9,10 +9,16 @@ from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
 from .corecon_transaction import CoreconTransaction
 from .document import Document, Drawing, DrawingAnnotation
+from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
+from .door_opening import DoorOpening
 from .estimate import Estimate, EstimateLineItem
 from .hr import (
     HrEmployeeDocument,
     HrEmployeePayScale,
+    HrHireApplication,
+    HrHireI9DocumentFile,
+    HrHireUnionDocumentFile,
+    HrHireW4DocumentFile,
     HrOnboardingItem,
     HrPolicyAcknowledgment,
     HrTrainingAssignment,
@@ -89,12 +95,19 @@ __all__ = [
     "CoreconTransaction",
     "CostCode",
     "Document",
+    "DoorHardwareSet",
+    "DoorHardwareSetItem",
+    "DoorOpening",
     "Drawing",
     "DrawingAnnotation",
     "Estimate",
     "EstimateLineItem",
     "HrEmployeeDocument",
     "HrEmployeePayScale",
+    "HrHireApplication",
+    "HrHireI9DocumentFile",
+    "HrHireUnionDocumentFile",
+    "HrHireW4DocumentFile",
     "HrOnboardingItem",
     "HrPolicyAcknowledgment",
     "HrTrainingAssignment",

@@ -72,13 +72,13 @@
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
 								<h6 class="mb-1">Construction — Leads</h6>
-								<p class="text-muted small mb-0">Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.</p>
+								
 							</div>
 							<div class="text-nowrap small">
 								<a href="lead-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="material.html">Next</a>
 							</div>
 						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
+						
 					</div>
 				</div>
 			</div>
@@ -101,7 +101,7 @@
 							</button>
 						</div>
 						<div class="d-flex flex-wrap gap-2">
-							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-bc-sync-stub" title="Reload rows from Flask (GET /api/v1/lead-estimates?submission_state=undecided)">
+							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-bc-sync-stub" title="Reload lead list">
 								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
 							</button>
 							<a href="javascript:void(0);" class="btn btn-primary w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#lead-detail-offcanvas">
@@ -124,7 +124,7 @@
 									<th>Company</th>
 									<th class="text-nowrap">City</th>
 									<th class="text-nowrap">State</th>
-									<th class="text-center text-nowrap">Estimator</th>
+									<th class="text-center text-nowrap">Estimate</th>
 									<th class="text-end text-nowrap">Action</th>
 								</tr>
 							</thead>
@@ -229,7 +229,7 @@
 
 	<script>
 	(function () {
-		var API = window.USIS_API_BASE || "http://127.0.0.1:5000";
+		var API = typeof window.usisApiBase === "function" ? window.usisApiBase() : "";
 		var COL_CFG = [
 			{ key: "number", label: "Project #" },
 			{ key: "name", label: "Lead" },
@@ -491,6 +491,25 @@
 			});
 		}
 
+		function estimateBadges(row) {
+			if (row.estimate_approved_at) {
+				var t = String(row.estimate_approved_at).slice(0, 16);
+				return (
+					'<span class="badge bg-success" title="Approved · ' +
+					esc(t) +
+					'">Approved</span>'
+				);
+			}
+			if (row.estimate_locked_at) {
+				return (
+					'<span class="badge bg-secondary" title="Locked · ' +
+					esc(String(row.estimate_locked_at).slice(0, 16)) +
+					'">Locked</span>'
+				);
+			}
+			return '<span class="text-muted small">—</span>';
+		}
+
 		function renderRow(row) {
 			var num = esc(row.number || "—");
 			var name = row.name || "";
@@ -510,11 +529,24 @@
 			var company = esc(row.company_name || "—");
 			var city = esc(row.city || "—");
 			var state = esc(row.state || "—");
+			var apiRoot = (API || "").replace(/\/$/, "");
+			var estHref = lidEnc ? "construction/estimate-detail.html?id=" + lidEnc : "javascript:void(0);";
+			var quoteHref = lidEnc
+				? (apiRoot ? apiRoot : "") + "/api/v1/lead-estimates/" + lidEnc + "/render/quote-report"
+				: "javascript:void(0);";
 			var actions =
 				'<div class="dropdown custom-dropdown mb-0 tbl-orders-style">' +
 				'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
 				'<div class="dropdown-menu dropdown-menu-end">' +
-				'<a class="dropdown-item" href="javascript:void(0);">Details (stub)</a>' +
+				'<a class="dropdown-item" href="' +
+				detailHref +
+				'">Lead detail</a>' +
+				'<a class="dropdown-item" href="' +
+				estHref +
+				'">Takeoff (estimate)</a>' +
+				'<a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="' +
+				quoteHref +
+				'">Quote report (print)</a>' +
 				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.external_id || row.id) + "</span>" +
 				"</div></div>";
 			return (
@@ -525,7 +557,7 @@
 				"<td>" + company + "</td>" +
 				'<td class="text-nowrap">' + city + "</td>" +
 				'<td class="text-nowrap">' + state + "</td>" +
-				'<td class="text-center">—</td>' +
+				'<td class="text-center text-nowrap">' + estimateBadges(row) + "</td>" +
 				'<td class="text-end">' + actions + "</td>" +
 				"</tr>"
 			);
@@ -600,9 +632,19 @@
 			updateColFilterBadge();
 			if (filterCount) filterCount.textContent = "";
 			tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
-			fetch(API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided")
+			fetch(API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided", {
+					credentials: "include",
+					headers: { Accept: "application/json" },
+				})
 				.then(function (r) {
-					if (!r.ok) throw new Error("HTTP " + r.status);
+					if (!r.ok) {
+						if (r.status === 401) {
+							throw new Error(
+								"HTTP 401 (not signed in, or API called on the wrong host — use Gulp on :3000 or sign in)"
+							);
+						}
+						throw new Error("HTTP " + r.status);
+					}
 					return r.json();
 				})
 				.then(function (data) {

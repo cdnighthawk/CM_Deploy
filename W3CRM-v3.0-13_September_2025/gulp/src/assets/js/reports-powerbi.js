@@ -155,7 +155,7 @@
 		var url = embedUrl(apiBase());
 		var headers = Object.assign({ Accept: "application/json" }, actorHeaders());
 
-		fetch(url, { method: "GET", credentials: "omit", headers: headers })
+		fetch(url, { method: "GET", credentials: "include", headers: headers })
 			.then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {

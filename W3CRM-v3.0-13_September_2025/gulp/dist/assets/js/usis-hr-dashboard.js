@@ -126,17 +126,14 @@
 				if (statusEl) {
 					statusEl.classList.remove("text-danger", "text-warning");
 					if (data.stub) {
-						statusEl.textContent =
-							"API returned stub: true (placeholder). Stop and restart Flask from the USIS_CM backend so the live HR dashboard handler runs; then run flask db upgrade and python seed_hr_employees.py if the table is still empty.";
+						statusEl.textContent = "Using placeholder data — restart the API server for live HR figures.";
 						statusEl.classList.add("text-warning");
 					} else {
-						statusEl.textContent = "Live aggregates from hr_* tables.";
+						statusEl.textContent = "";
 					}
 				}
 				if (data.stub) {
-					setHint(
-						"Backend build is outdated or a different app is bound to this port. After restart you should see stub: false and employee rows from the database."
-					);
+					setHint("If numbers look wrong, restart the API and refresh this page.");
 				} else {
 					setHint(typeof data.hint === "string" && data.hint ? data.hint : "");
 				}

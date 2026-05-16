@@ -60,3 +60,13 @@ body.usis-has-bottomnav .footer {
 		margin-bottom: 0;
 	}
 }
+
+/* Hide developer site-map tour banners (Prev | Index | Next, Plan refs). */
+#usis-site-guide-root {
+	display: none !important;
+}
+
+/* Hide template vendor docs promo in sidebar footer. */
+.deznav-footer {
+	display: none !important;
+}

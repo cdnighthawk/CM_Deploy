@@ -6,15 +6,23 @@
 	"use strict";
 
 	function apiBase() {
+		if (typeof window.usisApiBase === "function") {
+			return window.usisApiBase();
+		}
 		if (typeof window.USIS_API_BASE === "string") {
 			return window.USIS_API_BASE.trim().replace(/\/$/, "");
 		}
-		var h = window.location.hostname || "";
-		var local = h === "localhost" || h === "127.0.0.1";
-		if (local) {
-			return (window.location.protocol + "//" + h + ":5000").replace(/\/$/, "");
+		var loc = window.location;
+		var h = loc.hostname || "";
+		var port = String(loc.port || "");
+		var protocol = loc.protocol || "";
+		if (protocol === "https:" || port === "443" || port === "10000" || port === "") {
+			return "";
 		}
-		return "http://127.0.0.1:5000";
+		if (h === "localhost" || h === "127.0.0.1") {
+			return (protocol + "//" + h + ":5000").replace(/\/$/, "");
+		}
+		return "";
 	}
 
 	/** Post-login URL: ``?next=`` from Flask redirect wins, else dashboard on this host. */
@@ -29,7 +37,7 @@
 		} catch (e) {
 			/* ignore */
 		}
-		return loc.protocol + "//" + loc.host + "/usis-dashboard.html";
+		return loc.protocol + "//" + loc.host + "/usis-dashboard-dark.html";
 	}
 
 	function shellAfterLogoutUrl() {

@@ -73,7 +73,7 @@
         renderResults(outEl, [
           { label: "Open Leads", href: "construction/leads.html" },
           { label: "Open Projects", href: "construction/projects.html" },
-          { label: "Dashboard", href: "usis-dashboard.html" },
+          { label: "Dashboard", href: "usis-dashboard-dark.html" },
         ]);
       });
   }

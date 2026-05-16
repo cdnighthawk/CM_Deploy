@@ -38,7 +38,7 @@ def test_login_get_redirects_to_shell_template(client):
 
 
 def test_login_get_redirect_preserves_next_query(client):
-    target = "http://127.0.0.1:3000/usis-dashboard.html"
+    target = "http://127.0.0.1:3000/usis-dashboard-dark.html"
     r = client.get(
         "/auth/login",
         query_string={"next": target},
@@ -132,7 +132,7 @@ def test_login_ignores_untrusted_next(client, no_dev_admin):
         follow_redirects=False,
     )
     assert ok.status_code == 302
-    assert ok.headers.get("Location") == "http://127.0.0.1:3000/usis-dashboard.html"
+    assert ok.headers.get("Location") == "http://127.0.0.1:3000/usis-dashboard-dark.html"
 
 
 def test_logout_redirects_to_safe_next(client, no_dev_admin):

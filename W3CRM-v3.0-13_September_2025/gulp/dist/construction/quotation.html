@@ -5,12 +5,12 @@
 	<base href="../">
 	
 	<!-- Title -->
-	<title>W3CRM - Bootstrap Admin Dashboard Template</title>
+	<title>USIS</title>
 	
 	<!-- Meta -->
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="author" content="DexignZone">
+	<meta name="author" content="USIS">
 	<meta name="robots" content="index, follow">
 	<meta name="format-detection" content="telephone=no">
 	
@@ -76,7 +76,7 @@
 
 		<!-- Start - Nav Header -->
 		<div class="nav-header">
-			<a href="usis-dashboard.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
+			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
 	<img class="logo-abbr usis-logo-mark" src="assets/images/branding/usis-eagle-logo.png" alt="" width="36" height="36">
 	<span class="brand-title usis-logo-title">USIS CM</span>
 </a>
@@ -159,10 +159,10 @@
 								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
 									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
 									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
-										<a class="btn btn-outline-secondary px-2" href="email-inbox.html" title="Email inbox" aria-label="Email inbox">
+										<button type="button" class="btn btn-outline-secondary px-2" disabled title="Email integration not configured" aria-label="Email (not configured)">
 											<i class="icon feather icon-mail"></i>
 											<span class="d-none d-lg-inline ms-1">Email</span>
-										</a>
+										</button>
 										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
@@ -252,7 +252,7 @@
 										</a>
 									</li>
 									<li>
-										<a class="dropdown-item" href="../usis-dashboard.html">
+										<a class="dropdown-item" href="../usis-dashboard-dark.html">
 											<svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pie-chart">
 												<path stroke="var(--bs-primary)" d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
 												<path stroke="var(--bs-primary)" d="M22 12A10 10 0 0 0 12 2v10z"></path>
@@ -288,19 +288,9 @@
 				<ul class="metismenu" id="menu">
 					<li class="menu-title" data-i18n="USIS">USIS</li>
 					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+						<a href="usis-dashboard-dark.html" aria-expanded="false">
 							<i class="icon feather icon-home"></i>
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="usis-dashboard.html">USIS Dashboard</a></li>
-							<li><a href="usis-dashboard-dark.html">USIS Dark Dashboard</a></li>
-						</ul>
-					</li>
-					<li>
-						<a href="usis-all-pages-index.html" aria-expanded="false">
-							<i class="icon feather icon-list"></i>
-							<span class="nav-text">All pages (tour)</span>
 						</a>
 					</li>
 					<li>
@@ -381,103 +371,7 @@
 							<span class="nav-text">Reports</span>
 						</a>
 					</li>
-
-					<li class="menu-title"><span>Construction template (demos)</span></li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-layers"></i>
-							<span class="nav-text">Dashboard &amp; reports</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="construction/index.html">Projects (index)</a></li>
-							<li><a href="construction/projects.html">Projects (directory)</a></li>
-							<li><a href="construction/overview.html">Overview</a></li>
-							<li><a href="construction/finance.html">Finance</a></li>
-							<li><a href="reports.html">Reports</a></li>
-							<li><a href="construction/services.html">Services</a></li>
-							<li><a href="construction/contact-us.html">Contact us</a></li>
-						</ul>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-hard-drive"></i>
-							<span class="nav-text">Project workspace tabs</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="construction/estimate.html">Estimate (will bid)</a></li>
-							<li><a href="construction/estimate_legacy.html">Estimate (legacy template)</a></li>
-							<li><a href="construction/party.html">Party</a></li>
-							<li><a href="construction/transaction.html">Transaction</a></li>
-							<li><a href="construction/leads.html">Leads (Building Connected)</a></li>
-							<li><a href="construction/task.html">Task</a></li>
-							<li><a href="construction/attendance.html">Attendance</a></li>
-							<li><a href="construction/material.html">Material</a></li>
-							<li><a href="construction/door-schedule.html">Door schedule</a></li>
-							<li><a href="construction/hardware-schedules.html">Hardware schedules</a></li>
-							<li><a href="construction/files.html">Files</a></li>
-						</ul>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-file-plus"></i>
-							<span class="nav-text">Quotation</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="construction/quotation.html">Quotation</a></li>
-							<li><a href="construction/add-quotation.html">Add quotation</a></li>
-							<li><a href="construction/edit-quotation.html">Edit quotation</a></li>
-							<li><a href="construction/construction-pricing.html">Construction pricing (LEMOS)</a></li>
-						</ul>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-clock"></i>
-							<span class="nav-text">Time &amp; tasks</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="construction/time-sheet.html">Time sheet</a></li>
-							<li><a href="construction/timesheet-detail.html">Timesheet detail</a></li>
-							<li><a href="construction/todo.html">Todo</a></li>
-							<li><a href="construction/todo-detail.html">Todo detail</a></li>
-						</ul>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-printer"></i>
-							<span class="nav-text">Minutes of meeting</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="construction/mom.html">MOM list</a></li>
-							<li><a href="construction/mom-detail.html">MOM detail</a></li>
-						</ul>
-					</li>
-
-					<li class="menu-title"><span>Other W3CRM demos</span></li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-grid"></i>
-							<span class="nav-text">Classic shell pages</span>
-						</a>
-						<ul aria-expanded="false">
-							<li><a href="index.html">Index (redirects)</a></li>
-							<li><a href="index-2.html">Index 2 (KPI, classic shell)</a></li>
-							<li><a href="usis-dashboard-dark.html">USIS Dark Dashboard</a></li>
-							<li><a href="project.html">Project</a></li>
-							<li><a href="manage-client.html">Manage client</a></li>
-							<li><a href="finance.html">Finance (main)</a></li>
-							<li><a href="task.html">Task (main)</a></li>
-							<li><a href="app-calender.html">App calendar</a></li>
-							<li><a href="email-inbox.html">Email inbox</a></li>
-							<li><a href="empty-page.html">Empty page shell</a></li>
-						</ul>
-					</li>
 				</ul>
-			</div>
-			<div class="deznav-footer">
-				<a href="https://coreui.w3itexperts.com/?theme=W3CRM" target="_blank" class="btn btn-docs btn-success w-100">
-					<span>Docs & Components</span>
-					<i class="fa-solid fa-arrow-up rotate-x"></i>
-				</a>
 			</div>
 		</div>
 		<!-- End - Sidebar Navigation -->
@@ -1589,7 +1483,7 @@
 		<!-- End - Content Body -->
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
 <nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard.html">
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
 		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
 		<span class="fs-11">Home</span>
 	</a>
@@ -1614,7 +1508,7 @@
 <!-- Start - Footer -->
 		<div class="footer">
 			<div class="copyright text-center">
-			   <p class="mb-0">Copyright © Developed by <a href="https://dexignzone.com/" target="_blank">DexignZone</a> <span class="current-year">2025</span></p>
+			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
 			</div>
 		</div>
 		<!-- End - Footer -->

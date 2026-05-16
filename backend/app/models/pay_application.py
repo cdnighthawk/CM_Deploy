@@ -53,6 +53,7 @@ class PayApplication(UUIDPKMixin, TimestampMixin, db.Model):
     architect_certified_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     architect_certified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    textura_invoice_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
 
     project: Mapped["Project"] = relationship("Project", back_populates="pay_applications")
     lines: Mapped[List["PayApplicationLine"]] = relationship(

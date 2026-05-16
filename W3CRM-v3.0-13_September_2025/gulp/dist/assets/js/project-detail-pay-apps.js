@@ -107,6 +107,54 @@
 		return String(v);
 	}
 
+	function setTexturaSyncStatus(msg, isError) {
+		var el = document.getElementById("usis-inv-textura-sync-status");
+		if (!el) return;
+		if (!msg) {
+			el.textContent = "";
+			el.classList.add("d-none");
+			el.classList.remove("text-danger");
+			return;
+		}
+		el.textContent = msg;
+		el.classList.remove("d-none");
+		el.classList.toggle("text-danger", !!isError);
+	}
+
+	function syncFromTextura() {
+		if (!projectId) return;
+		var btn = document.getElementById("usis-inv-textura-sync");
+		if (btn) btn.disabled = true;
+		setTexturaSyncStatus("Syncing…", false);
+		return fetchJson(
+			"POST",
+			"/api/v1/projects/" + encodeURIComponent(projectId) + "/integrations/textura/sync",
+			null
+		)
+			.then(function (data) {
+				var loaded = data && data.loaded != null ? data.loaded : 0;
+				var skipped = data && data.skipped != null ? data.skipped : 0;
+				var errors = data && data.errors != null ? data.errors : 0;
+				setTexturaSyncStatus(
+					"Textura: " + loaded + " updated, " + skipped + " skipped" + (errors ? ", " + errors + " errors" : ""),
+					errors > 0 && loaded === 0
+				);
+				if (errors > 0 && loaded === 0) {
+					toastErr("Textura sync failed — check API credentials and project number match.");
+				} else {
+					toastOk("Textura sync complete.");
+				}
+				return loadRegister();
+			})
+			.catch(function (err) {
+				setTexturaSyncStatus(err.message || String(err), true);
+				toastErr(err.message || String(err));
+			})
+			.finally(function () {
+				if (btn) btn.disabled = false;
+			});
+	}
+
 	function loadRegister() {
 		if (!projectId) return;
 		setRegisterErr("");
@@ -126,6 +174,7 @@
 							escapeHtml(row.period_to || "—") +
 							"</td><td><span class=\"badge bg-light text-dark border\">" +
 							escapeHtml(row.status) +
+							(row.textura_invoice_id ? " <span class=\"badge bg-info-subtle text-info border\" title=\"Synced from Textura\">Textura</span>" : "") +
 							"</span></td><td class=\"text-end font-monospace\">" +
 							escapeHtml(row.current_payment_due || "—") +
 							"</td><td class=\"text-end font-monospace\">" +
@@ -398,6 +447,8 @@
 		if (nw) nw.addEventListener("click", newApplication);
 		var cl = document.getElementById("usis-inv-close-editor");
 		if (cl) cl.addEventListener("click", closeEditor);
+		var tx = document.getElementById("usis-inv-textura-sync");
+		if (tx) tx.addEventListener("click", syncFromTextura);
 		var sv = document.getElementById("usis-inv-save-draft");
 		if (sv) sv.addEventListener("click", saveDraft);
 		var sb = document.getElementById("usis-inv-submit-app");

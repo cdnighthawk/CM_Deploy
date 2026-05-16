@@ -46,11 +46,11 @@ def _default_post_login_redirect() -> str:
         return explicit
     public_base = _public_app_url()
     if public_base:
-        return f"{public_base}/usis-dashboard.html"
+        return f"{public_base}/usis-dashboard-dark.html"
     render_base = _render_external_url()
     if render_base:
-        return f"{render_base}/usis-dashboard.html"
-    return "http://127.0.0.1:3000/usis-dashboard.html"
+        return f"{render_base}/usis-dashboard-dark.html"
+    return "http://127.0.0.1:3000/usis-dashboard-dark.html"
 
 
 def _default_cors_origins() -> tuple[str, ...]:
@@ -170,6 +170,27 @@ class Config:
         BUILDINGCONNECTED_INCLUDE_CLOSED: bool = True
     # Optional 32+ byte secret for Fernet; defaults to a SHA256-derived key from SECRET_KEY.
     TOKEN_ENCRYPTION_KEY: str | None = (os.environ.get("TOKEN_ENCRYPTION_KEY") or "").strip() or None
+
+    # --- Oracle Textura Payment Management (TPM REST) ---
+    TEXTURA_API_BASE: str = (
+        (os.environ.get("TEXTURA_API_BASE") or "").strip()
+        or "https://services.texturacorp.com/ebis/api"
+    )
+    TEXTURA_USERNAME: str | None = (os.environ.get("TEXTURA_USERNAME") or "").strip() or None
+    TEXTURA_PASSWORD: str | None = (os.environ.get("TEXTURA_PASSWORD") or "").strip() or None
+    _tx_sync_raw = (os.environ.get("TEXTURA_SYNC_ENABLED") or "").strip().lower()
+    if _tx_sync_raw in ("1", "true", "yes", "on"):
+        TEXTURA_SYNC_ENABLED: bool = True
+    elif _tx_sync_raw in ("0", "false", "no", "off"):
+        TEXTURA_SYNC_ENABLED: bool = False
+    else:
+        TEXTURA_SYNC_ENABLED: bool = os.environ.get("FLASK_ENV", "").strip().lower() == "development"
+    _tx_push_raw = (os.environ.get("TEXTURA_SYNC_PUSH_ENABLED") or "").strip().lower()
+    TEXTURA_SYNC_PUSH_ENABLED: bool = _tx_push_raw in ("1", "true", "yes", "on")
+    _tx_auto_raw = (os.environ.get("TEXTURA_AUTO_CREATE_PROJECTS") or "").strip().lower()
+    TEXTURA_AUTO_CREATE_PROJECTS: bool = _tx_auto_raw in ("1", "true", "yes", "on")
+    TEXTURA_POLL_INTERVAL_SEC: float = float(os.environ.get("TEXTURA_POLL_INTERVAL_SEC") or "2")
+    TEXTURA_POLL_TIMEOUT_SEC: float = float(os.environ.get("TEXTURA_POLL_TIMEOUT_SEC") or "300")
 
     # Letterhead for Jinja2 print documents (``app/templates/documents/``).
     DOCUMENT_PRINT_COMPANY_NAME: str | None = (os.environ.get("DOCUMENT_PRINT_COMPANY_NAME") or "").strip() or None

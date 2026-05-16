@@ -133,7 +133,12 @@ def create_app(config_object: str | None = None) -> Flask:
         # CORS preflight has no session; must not return 401 or the browser blocks the real request.
         if request.method == "OPTIONS":
             return None
-        if path in ("/api/v1/auth/status", "/api/v1/auth/register"):
+        if path in (
+            "/api/v1/auth/status",
+            "/api/v1/auth/register",
+            "/api/v1/auth/mobile/login",
+            "/api/v1/auth/mobile/refresh",
+        ):
             return None
         # Cursor debug: client logs to workspace NDJSON (dev only; see POST handler in api.v1).
         if path == "/api/v1/__debug/client-log" and client_debug_log_dev_open():

@@ -26,7 +26,7 @@ auth_bp = Blueprint("auth", __name__)
 def _post_login_redirect() -> str:
     return (
         current_app.config.get("USIS_POST_LOGIN_REDIRECT")
-        or "http://127.0.0.1:3000/usis-dashboard.html"
+        or "http://127.0.0.1:3000/usis-dashboard-dark.html"
     ).strip()
 
 

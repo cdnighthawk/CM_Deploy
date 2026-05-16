@@ -26,7 +26,7 @@ def test_public_url_drives_cors_and_post_login(reload_config, monkeypatch):
     importlib.reload(reload_config)
 
     assert reload_config.Config.CORS_ORIGINS == ("https://www.usiscm.com",)
-    assert reload_config.Config.USIS_POST_LOGIN_REDIRECT == "https://www.usiscm.com/usis-dashboard.html"
+    assert reload_config.Config.USIS_POST_LOGIN_REDIRECT == "https://www.usiscm.com/usis-dashboard-dark.html"
 
 
 def test_render_external_url_when_no_public_url(reload_config, monkeypatch):
@@ -34,4 +34,4 @@ def test_render_external_url_when_no_public_url(reload_config, monkeypatch):
     importlib.reload(reload_config)
 
     assert reload_config.Config.CORS_ORIGINS == ("https://usis-cm.onrender.com",)
-    assert reload_config.Config.USIS_POST_LOGIN_REDIRECT == "https://usis-cm.onrender.com/usis-dashboard.html"
+    assert reload_config.Config.USIS_POST_LOGIN_REDIRECT == "https://usis-cm.onrender.com/usis-dashboard-dark.html"

@@ -8,6 +8,7 @@ from typing import List, Optional
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin
@@ -42,6 +43,33 @@ class User(UUIDPKMixin, TimestampMixin, db.Model):
     roles: Mapped[List["UserRole"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    mobile_refresh_tokens: Mapped[List["MobileRefreshToken"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class MobileRefreshToken(UUIDPKMixin, db.Model):
+    """Opaque refresh tokens for Expo / native clients (hashed at rest)."""
+
+    __tablename__ = "mobile_refresh_tokens"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    device_label: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    user: Mapped["User"] = relationship(back_populates="mobile_refresh_tokens")
 
 
 class UserRole(db.Model):

@@ -75,6 +75,7 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
         UUID(as_uuid=True), ForeignKey("rfps.id", ondelete="SET NULL"), nullable=True
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    textura_contract_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
 
     project: Mapped["Project"] = relationship("Project", back_populates="commitments")
     vendor: Mapped["Company"] = relationship("Company", foreign_keys=[vendor_company_id])

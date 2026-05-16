@@ -3464,6 +3464,7 @@ def cost_suggestions_wage():
 
 from . import _hr_dashboard  # noqa: E402
 from . import _integration_bc  # noqa: E402
+from . import _integration_textura  # noqa: E402
 from .extra_plan_routes import register_extra_routes  # noqa: E402
 
 register_extra_routes(bp)
@@ -3475,3 +3476,7 @@ from . import _playbooks as _playbooks_mod  # noqa: E402
 
 _playbooks_mod.register_playbook_routes(bp)
 _integration_bc.register_buildingconnected_routes(bp)
+_integration_textura.register_textura_routes(bp)
+from . import _auth_mobile  # noqa: E402
+
+_auth_mobile.register_mobile_auth_routes(bp)

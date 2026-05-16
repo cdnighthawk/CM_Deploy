@@ -36,7 +36,7 @@ def test_microsoft_start_redirects_to_microsoft_when_configured(client, no_dev_a
 
     r = client.get(
         "/auth/microsoft/start",
-        query_string={"next": "http://127.0.0.1:3000/usis-dashboard.html"},
+        query_string={"next": "http://127.0.0.1:3000/usis-dashboard-dark.html"},
         follow_redirects=False,
     )
     assert r.status_code == 302
@@ -59,7 +59,7 @@ def test_microsoft_callback_not_registered(client, no_dev_admin, monkeypatch):
 
     with client.session_transaction() as sess:
         sess["ms_entra_oauth_state"] = "st1"
-        sess["ms_entra_oauth_next"] = "http://127.0.0.1:3000/usis-dashboard.html"
+        sess["ms_entra_oauth_next"] = "http://127.0.0.1:3000/usis-dashboard-dark.html"
 
     fake_payload = {"email": "ms_" + uuid.uuid4().hex[:8] + "@unknown.example", "tid": "11111111-1111-1111-1111-111111111111"}
 
@@ -100,7 +100,7 @@ def test_microsoft_callback_logs_in_existing_user(client, no_dev_admin, monkeypa
 
     with client.session_transaction() as sess:
         sess["ms_entra_oauth_state"] = "st2"
-        sess["ms_entra_oauth_next"] = "http://127.0.0.1:3000/usis-dashboard.html"
+        sess["ms_entra_oauth_next"] = "http://127.0.0.1:3000/usis-dashboard-dark.html"
 
     fake_payload = {"email": email, "tid": "11111111-1111-1111-1111-111111111111"}
 
@@ -110,7 +110,7 @@ def test_microsoft_callback_logs_in_existing_user(client, no_dev_admin, monkeypa
                 r = client.get("/auth/microsoft/callback?code=cc2&state=st2", follow_redirects=False)
 
     assert r.status_code == 302
-    assert r.headers.get("Location") == "http://127.0.0.1:3000/usis-dashboard.html"
+    assert r.headers.get("Location") == "http://127.0.0.1:3000/usis-dashboard-dark.html"
     st = client.get("/api/v1/auth/status").get_json()
     assert st["authenticated"] is True
     assert st["user"]["id"] == uid

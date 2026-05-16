@@ -139,11 +139,12 @@ def current_user() -> CurrentUser:
     Order of resolution:
 
     1. ``flask.g.current_user`` set by an upstream auth middleware.
-    2. Request header ``X-Usis-User-Id`` (UUID) — overrides session for dev / impersonation.
-    3. Query param ``?as_user=<uuid>`` (UUID).
-    4. Signed-in browser session ``session['user_id']`` (see ``/auth/login``).
-    5. ``USIS_DEV_ACTOR_USER_ID`` env var.
-    6. ``USIS_API_DEV_ALLOW_ANY`` explicitly truthy (``1`` / ``true``) → synthetic admin for
+    2. ``Authorization: Bearer`` mobile access JWT.
+    3. Request header ``X-Usis-User-Id`` (UUID) — overrides session for dev / impersonation.
+    4. Query param ``?as_user=<uuid>`` (UUID).
+    5. Signed-in browser session ``session['user_id']`` (see ``/auth/login``).
+    6. ``USIS_DEV_ACTOR_USER_ID`` env var.
+    7. ``USIS_API_DEV_ALLOW_ANY`` explicitly truthy (``1`` / ``true``) → synthetic admin for
        tooling; otherwise anonymous requests are unauthenticated.
     """
 
@@ -151,6 +152,18 @@ def current_user() -> CurrentUser:
         existing = getattr(g, "current_user", None)
         if isinstance(existing, CurrentUser):
             return existing
+
+        from ._auth_mobile import bearer_user_from_request
+
+        bearer_u = bearer_user_from_request()
+        if bearer_u is not None:
+            cu = CurrentUser(
+                user=bearer_u,
+                role_codes=_role_codes_for(bearer_u),
+                granular=_granular_for(bearer_u),
+            )
+            g.current_user = cu
+            return cu
 
         for source in (
             request.headers.get("X-Usis-User-Id"),

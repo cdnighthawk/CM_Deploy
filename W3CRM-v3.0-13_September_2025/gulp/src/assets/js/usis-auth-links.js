@@ -37,7 +37,7 @@
 		} catch (e) {
 			/* ignore */
 		}
-		return loc.protocol + "//" + loc.host + "/usis-dashboard.html";
+		return loc.protocol + "//" + loc.host + "/usis-dashboard-dark.html";
 	}
 
 	function shellAfterLogoutUrl() {

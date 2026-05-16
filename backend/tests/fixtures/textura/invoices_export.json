@@ -1,0 +1,35 @@
+[
+  {
+    "MainJobNumber": "PRJ-3022",
+    "ProjectName": "Sample Tower Renovation",
+    "DrawNumber": "1",
+    "ModifiedInvoiceNumber": "1",
+    "RevisionNumber": "0",
+    "SubcontractNumber": "1",
+    "InvoiceStatus": "1",
+    "InvoiceDate": "20260531",
+    "InvoiceGrossAmount": "5000.00",
+    "InvoiceRetentionHeld": "500.00",
+    "ApprovalDate": "20260601",
+    "ItemPhaseCode": "001",
+    "ItemPhaseCodeDescription": "Mobilization",
+    "ItemGrossAmount": "3000.00",
+    "ItemMaterialStored": "0.00",
+    "ItemRetentionHeld": "300.00"
+  },
+  {
+    "MainJobNumber": "PRJ-3022",
+    "ProjectName": "Sample Tower Renovation",
+    "DrawNumber": "1",
+    "ModifiedInvoiceNumber": "1",
+    "RevisionNumber": "0",
+    "SubcontractNumber": "1",
+    "InvoiceStatus": "1",
+    "InvoiceDate": "20260531",
+    "ItemPhaseCode": "002",
+    "ItemPhaseCodeDescription": "Structure",
+    "ItemGrossAmount": "2000.00",
+    "ItemMaterialStored": "0.00",
+    "ItemRetentionHeld": "200.00"
+  }
+]

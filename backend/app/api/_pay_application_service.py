@@ -103,6 +103,7 @@ def _serialize_header(pa: PayApplication, include_line_count: bool = False) -> d
         "architect_certified_amount": _money_str(pa.architect_certified_amount),
         "architect_certified_at": _iso_dt(pa.architect_certified_at),
         "notes": pa.notes,
+        "textura_invoice_id": pa.textura_invoice_id,
         "created_at": _iso_dt(pa.created_at),
         "updated_at": _iso_dt(pa.updated_at),
     }

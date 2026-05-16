@@ -48,6 +48,9 @@ def serve_static(subpath: str):
         )
 
     if req_path == "/":
+        home = root / "usis-dashboard-dark.html"
+        if home.is_file():
+            return redirect("/usis-dashboard-dark.html", code=302)
         login = root / "page-login.html"
         if login.is_file():
             return redirect("/page-login.html", code=302)

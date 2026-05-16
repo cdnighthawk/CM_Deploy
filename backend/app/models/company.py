@@ -46,6 +46,7 @@ class Company(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     portal_access_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     performance_score: Mapped[Optional[int]] = mapped_column(nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    textura_vendor_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
 
     contacts: Mapped[List["Contact"]] = relationship(
         back_populates="company", cascade="all, delete-orphan"

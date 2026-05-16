@@ -3,7 +3,7 @@
 Append new models here as future migrations land.
 """
 from .audit import AuditLog
-from .auth import Role, User, UserRole
+from .auth import MobileRefreshToken, Role, User, UserRole
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
@@ -76,6 +76,8 @@ from .rfi_lookups import CostCode, Location, ProjectStage, SpecSection, SubJob
 from .rfp import Rfp, RfpLineItem, RfpVendorQuote
 from .safety_training import SafetyTrainingRecord
 from .submittal import Submittal, SubmittalAudit, SubmittalPdfAnnotation
+from .textura_credential import TexturaCredential
+from .textura_sync_log import TexturaSyncLog
 from .sales_tax_rate import SalesTaxRate
 from .takeoff_line_item import TakeoffLineItem
 from .wage_rate import WageRate
@@ -135,6 +137,7 @@ __all__ = [
     "LeadEstimate",
     "Location",
     "MaterialPrice",
+    "MobileRefreshToken",
     "PayApplication",
     "PayApplicationLine",
     "PrimeContractSovLine",
@@ -163,6 +166,8 @@ __all__ = [
     "Submittal",
     "SubmittalAudit",
     "SubmittalPdfAnnotation",
+    "TexturaCredential",
+    "TexturaSyncLog",
     "SalesTaxRate",
     "TakeoffLineItem",
     "User",

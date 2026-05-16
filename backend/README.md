@@ -196,6 +196,17 @@ Set ``HUBSPOT_CONTACTS_CSV`` or place ``hubspot-crm-exports-*.csv`` under ``DATA
 3. Apply migration ``0012_bc_oauth`` (``flask db upgrade``), then start Flask and open ``/api/v1/integrations/buildingconnected/oauth/start`` in a browser while logged into Autodesk as the BC user whose data you want to sync.
 4. After a successful callback, call ``GET`` or ``POST`` ``/api/v1/integrations/buildingconnected/sync`` with ``BUILDINGCONNECTED_SYNC_ENABLED=1`` (defaults on in ``FLASK_ENV=development``). Projects are upserted into ``lead_estimates`` using the same column mapping as the ``bc_projects`` CSV import.
 
+### Textura Payment Management (pull sync)
+
+1. Apply migration ``0041_textura_external_ids`` (``flask db upgrade``).
+2. Set ``TEXTURA_API_BASE`` (production or test tenant), ``TEXTURA_USERNAME``, and ``TEXTURA_PASSWORD`` in ``.env``, **or** save credentials via ``PUT /api/v1/integrations/textura/credentials`` (encrypted with ``TOKEN_ENCRYPTION_KEY``).
+3. Enable sync: ``TEXTURA_SYNC_ENABLED=1`` (defaults on in ``FLASK_ENV=development``).
+4. Match Textura jobs to USIS projects by ``projects.textura_project_id``, ``projects.number`` (Textura ``MainJobNumber``), or project name. Set ``TEXTURA_AUTO_CREATE_PROJECTS=1`` to create stub projects from Textura owner projects.
+5. **Global sync:** ``POST /api/v1/integrations/textura/sync`` — pulls owner projects and invoice export into ``projects`` and ``pay_applications``.
+6. **Per-project sync:** ``POST /api/v1/projects/<id>/integrations/textura/sync`` — same pull, scoped to one project (also available on the project **Invoicing** tab as **Sync from Textura**).
+
+See ``Plan/28_textura_integration_plan.md`` for Phase 2 (push subcontracts) and later phases.
+
 ### Shared job UID
 
 After migration `0007_link_jobs`, both `lead_estimates` and `corecon_transactions`

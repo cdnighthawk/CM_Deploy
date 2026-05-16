@@ -67,7 +67,9 @@ def test_session_login_and_auth_status(client, no_dev_admin):
 
     bad = client.post("/auth/login", data={"email": email, "password": "wrong"})
     assert bad.status_code == 302
-    assert "/auth/login" in (bad.headers.get("Location") or "")
+    loc = unquote(bad.headers.get("Location") or "")
+    assert "page-login.html" in loc
+    assert "login_error=invalid" in loc
 
     ok = client.post(
         "/auth/login",

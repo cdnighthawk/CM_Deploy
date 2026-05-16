@@ -96,7 +96,12 @@ def _shell_template_login_base_url() -> str:
     return "http://127.0.0.1:3000/page-login.html"
 
 
-def _redirect_to_shell_login(*, next_after_login: str | None, ms_error: str | None = None) -> str:
+def _redirect_to_shell_login(
+    *,
+    next_after_login: str | None,
+    ms_error: str | None = None,
+    login_error: str | None = None,
+) -> str:
     base = _shell_template_login_base_url()
     parts: list[tuple[str, str]] = []
     nxt = (next_after_login or "").strip()
@@ -105,6 +110,9 @@ def _redirect_to_shell_login(*, next_after_login: str | None, ms_error: str | No
     err = (ms_error or "").strip()
     if err:
         parts.append(("ms_error", err))
+    login_err = (login_error or "").strip()
+    if login_err:
+        parts.append(("login_error", login_err))
     if not parts:
         return base
     sep = "&" if "?" in base else "?"
@@ -141,16 +149,22 @@ def login():
     form_next = (request.form.get("next") or "").strip() or None
     if not email or not password:
         flash("Email and password are required.", "danger")
-        if form_next and _safe_shell_redirect(form_next):
-            return redirect(url_for("auth.login", next=form_next))
-        return redirect(url_for("auth.login"))
+        return redirect(
+            _redirect_to_shell_login(
+                next_after_login=form_next,
+                login_error="required",
+            )
+        )
 
     u = db.session.scalar(select(User).where(User.email == email, User.is_active.is_(True)))
     if u is None or not u.password_hash or not check_password_hash(u.password_hash, password):
         flash("Invalid email or password.", "danger")
-        if form_next and _safe_shell_redirect(form_next):
-            return redirect(url_for("auth.login", next=form_next))
-        return redirect(url_for("auth.login"))
+        return redirect(
+            _redirect_to_shell_login(
+                next_after_login=form_next,
+                login_error="invalid",
+            )
+        )
 
     session["user_id"] = str(u.id)
     session.permanent = bool(remember)

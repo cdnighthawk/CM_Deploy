@@ -88,7 +88,7 @@
 								<i class="fab fa-microsoft me-2"></i>Sign in with Microsoft
 							</a>
 						</div>
-						<div id="usis-ms-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
+						<div id="usis-login-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
 						<p class="text-center small mt-3 mb-0">
 							Need an account? <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html">Create one</a>
 						</p>
@@ -114,12 +114,14 @@
 	<script>
 	(function () {
 		function apiBase() {
-			var raw = window.USIS_API_BASE;
-			if (raw != null && String(raw).trim() !== "") return String(raw).replace(/\/$/, "");
-			var h = window.location.hostname || "";
-			if (h === "localhost" || h === "127.0.0.1") return window.location.protocol + "//" + h + ":5000";
-			return "http://127.0.0.1:5000";
+			if (typeof window.usisApiBase === "function") return window.usisApiBase();
+			if (typeof window.USIS_API_BASE === "string") return window.USIS_API_BASE.trim().replace(/\/$/, "");
+			return "";
 		}
+		var LOGIN_ERR = {
+			required: "Email and password are required.",
+			invalid: "Invalid email or password. On Render, create a user with the bootstrap script or register first."
+		};
 		var MS_ERR = {
 			not_configured: "Microsoft sign-in is not enabled on this server.",
 			cancelled: "Microsoft sign-in was cancelled or denied.",
@@ -130,13 +132,18 @@
 			not_registered: "No USIS account exists for this Microsoft identity. Ask an administrator to create your user, or enable JIT provisioning.",
 			inactive: "This USIS account is inactive. Contact an administrator."
 		};
-		function showMsError() {
-			var code = new URLSearchParams(window.location.search).get("ms_error");
+		function showLoginAlert(code, map) {
 			if (!code) return;
-			var el = document.getElementById("usis-ms-error-alert");
+			var el = document.getElementById("usis-login-error-alert");
 			if (!el) return;
-			el.textContent = MS_ERR[code] || ("Sign-in issue: " + code);
+			el.textContent = map[code] || ("Sign-in issue: " + code);
 			el.classList.remove("d-none");
+		}
+		function showLoginError() {
+			showLoginAlert(new URLSearchParams(window.location.search).get("login_error"), LOGIN_ERR);
+		}
+		function showMsError() {
+			showLoginAlert(new URLSearchParams(window.location.search).get("ms_error"), MS_ERR);
 		}
 		var reg = document.getElementById("usis-login-register-link");
 		if (reg) {
@@ -157,9 +164,13 @@
 						b.setAttribute("href", href);
 					}
 				}
+				showLoginError();
 				showMsError();
 			})
-			.catch(function () { showMsError(); });
+			.catch(function () {
+				showLoginError();
+				showMsError();
+			});
 	})();
 	</script>
 </body>

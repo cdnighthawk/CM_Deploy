@@ -136,12 +136,9 @@
 	<script>
 	(function () {
 		function apiBase() {
-			if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
-				return window.USIS_API_BASE.trim().replace(/\/$/, "");
-			}
-			var h = window.location.hostname || "";
-			if (h === "localhost" || h === "127.0.0.1") return window.location.protocol + "//" + h + ":5000";
-			return "http://127.0.0.1:5000";
+			if (typeof window.usisApiBase === "function") return window.usisApiBase();
+			if (typeof window.USIS_API_BASE === "string") return window.USIS_API_BASE.trim().replace(/\/$/, "");
+			return "";
 		}
 		function nextUrl() {
 			return new URLSearchParams(window.location.search).get("next") || "usis-hr-hire.html";

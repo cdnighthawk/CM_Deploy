@@ -1614,6 +1614,27 @@ def email_rfi(rfi_id: str):
         return _rfi_err(exc)
 
 
+@bp.post("/messages/email")
+def compose_email():
+    """Outbound mail from ``email-compose.html`` (requires signed-in user)."""
+    cu = current_user()
+    if cu.user is None:
+        return _jsonify({"error": "sign in required"}), 401
+    data = request.get_json(silent=True) or {}
+    to = (data.get("to") or "").strip()
+    if not to:
+        return _jsonify({"error": "'to' is required"}), 400
+    subject = (data.get("subject") or "").strip() or "(no subject)"
+    body = (data.get("message") or data.get("body") or "").strip()
+    cc = (data.get("cc") or "").strip() or None
+    from ._notifications import send_compose_email
+
+    result = send_compose_email(to=to, subject=subject[:500], body=body, cc=cc)
+    if not result.get("ok"):
+        return _jsonify(result), 400
+    return _jsonify(result)
+
+
 @bp.post("/rfis/bulk")
 def bulk_rfi_action():
     data = request.get_json(silent=True) or {}

@@ -75,11 +75,12 @@ def enqueue_rfi_email(
     _dispatch(log_id=str(log.id), subject=log.subject or "RFI Update", body=body, to=log.recipient_email)
 
 
-def enqueue_email(log: "RfiNotificationLog", *, subject: str, body: str, to: str) -> None:
-    _dispatch(log_id=str(log.id), subject=subject, body=body, to=to)
+def enqueue_email(log: "RfiNotificationLog", *, subject: str, body: str, to: str) -> dict[str, object]:
+    return _dispatch(log_id=str(log.id), subject=subject, body=body, to=to)
 
 
-def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> None:
+def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> dict[str, object]:
+    """Send or queue one message. Caller must ``flush()`` the log row so ``log_id`` is valid."""
     celery = _celery_app()
     if celery is not None:
         try:
@@ -87,7 +88,7 @@ def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> None:
                 "rfi.send_email",
                 kwargs={"log_id": log_id, "subject": subject, "body": body, "to": to},
             )
-            return
+            return {"sent": False, "dry_run": False, "queued": True, "error": None}
         except Exception:  # pragma: no cover
             current_app.logger.exception("Celery dispatch failed; falling back to sync")
 
@@ -95,15 +96,20 @@ def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> None:
         current_app.logger.info(
             "RFI email (SMTP unset, dry-run): to=%s subj=%r", to, subject
         )
-        _mark_log_delivered(log_id)
-        return
+        if log_id and log_id != "None":
+            _mark_log_delivered(log_id)
+        return {"sent": False, "dry_run": True, "queued": False, "error": None}
 
     try:
         _send_via_smtplib(subject=subject, body=body, to=to)
-        _mark_log_delivered(log_id)
+        if log_id and log_id != "None":
+            _mark_log_delivered(log_id)
+        return {"sent": True, "dry_run": False, "queued": False, "error": None}
     except Exception as exc:
         current_app.logger.warning("Failed to send RFI email to %s: %s", to, exc)
-        _mark_log_delivered(log_id, error=str(exc))
+        if log_id and log_id != "None":
+            _mark_log_delivered(log_id, error=str(exc))
+        return {"sent": False, "dry_run": False, "queued": False, "error": str(exc)}
 
 
 def _send_via_smtplib(*, subject: str, body: str, to: str) -> None:  # pragma: no cover - I/O
@@ -131,19 +137,57 @@ def _send_via_smtplib(*, subject: str, body: str, to: str) -> None:  # pragma: n
         s.send_message(msg)
 
 
-def send_plain_notification_email(*, to: str, subject: str, body: str) -> None:
-    """Best-effort synchronous SMTP for non-RFI events (playbooks, etc.).
+def send_plain_notification_email(*, to: str, subject: str, body: str) -> dict[str, object]:
+    """Best-effort synchronous SMTP for non-RFI events (playbooks, compose page, etc.).
 
     Celery is not used here: ``rfi.send_email`` expects an ``rfi_notification_log`` row.
+    Returns ``{sent, dry_run, error}`` for API feedback.
     """
     if not _smtp_configured():
         current_app.logger.info("Plain email (SMTP unset, dry-run): to=%s subj=%r", to, subject)
-        return
+        return {"sent": False, "dry_run": True, "error": None}
 
     try:
         _send_via_smtplib(subject=subject, body=body, to=to)
+        return {"sent": True, "dry_run": False, "error": None}
     except Exception as exc:  # pragma: no cover - I/O
         current_app.logger.warning("Failed to send plain email to %s: %s", to, exc)
+        return {"sent": False, "dry_run": False, "error": str(exc)}
+
+
+def send_compose_email(
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    cc: str | None = None,
+) -> dict[str, object]:
+    """Send mail from the W3CRM compose page (``POST /api/v1/messages/email``)."""
+    recipients = [s.strip() for s in to.split(",") if s.strip()]
+    if cc:
+        recipients.extend(s.strip() for s in cc.split(",") if s.strip())
+    if not recipients:
+        return {"ok": False, "error": "'to' must include at least one email address", "sent": 0}
+
+    sent = 0
+    dry_run = False
+    queued = False
+    errors: list[str] = []
+    for em in recipients:
+        result = send_plain_notification_email(to=em, subject=subject, body=body)
+        if result.get("dry_run"):
+            dry_run = True
+        if result.get("sent"):
+            sent += 1
+        elif result.get("error"):
+            errors.append(f"{em}: {result['error']}")
+    return {
+        "ok": sent > 0 or dry_run,
+        "sent": sent,
+        "dry_run": dry_run,
+        "queued": queued,
+        "errors": errors,
+    }
 
 
 def public_login_url() -> str:

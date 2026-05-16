@@ -109,16 +109,19 @@
 											</a>
 										</div>
 										<div class="compose-content">
-											<form action="#">
+											<form id="usis-compose-form" action="#" onsubmit="return false;">
 												<div class="row">
 													<div class="col-sm-12 mb-3">
-														<input type="text" class="form-control" placeholder="To">
+														<label class="form-label small text-muted mb-1" for="usis-compose-to">To</label>
+														<input type="text" class="form-control" id="usis-compose-to" placeholder="name@example.com" autocomplete="off">
 													</div>
 													<div class="col-sm-12 mb-3">
-														<input type="text" class="form-control" placeholder="Subject">
+														<label class="form-label small text-muted mb-1" for="usis-compose-subject">Subject</label>
+														<input type="text" class="form-control" id="usis-compose-subject" placeholder="Subject" autocomplete="off">
 													</div>
 													<div class="col-sm-12 mb-3">
-														<textarea class="form-control" rows="7" placeholder="Type Message"></textarea>
+														<label class="form-label small text-muted mb-1" for="usis-compose-body">Message</label>
+														<textarea class="form-control" id="usis-compose-body" rows="7" placeholder="Type message"></textarea>
 													</div>
 												</div>
 											</form>
@@ -130,8 +133,8 @@
 											</form>
 										</div>
 										<div class="mt-4">
-											<button class="btn btn-danger light" type="button"><i class="fa fa-times"></i> Discard</button>
-											<button class="btn btn-primary ms-2" type="button"><i class="fa fa-paper-plane"></i> Send</button>
+											<button class="btn btn-danger light" type="button" id="usis-compose-discard"><i class="fa fa-times"></i> Discard</button>
+											<button class="btn btn-primary ms-2" type="button" id="usis-compose-send"><i class="fa fa-paper-plane"></i> Send</button>
 										</div>
 									</div>
 								</div>
@@ -163,8 +166,8 @@
 	<!-- Script For Custom JS -->
 	<script src="assets/js/deznav-init.js"></script>
     <script src="assets/js/custom.js"></script>
-	
-	
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/email-compose.js"></script>
 	
 </body>
 </html>

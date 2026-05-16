@@ -359,11 +359,36 @@
 
 	// -------- Actions ------------------------------------------------------
 
+	function notifyEmailResult(data) {
+		var N = window.USISNotify;
+		if (!N) return;
+		if (data.errors && data.errors.length) {
+			N.error("Some messages failed: " + data.errors.join("; "));
+			return;
+		}
+		if (data.dry_run) {
+			N.warning(
+				"SMTP is not configured (MAIL_SERVER, MAIL_USERNAME, MAIL_FROM). " +
+					"Message logged only — set MAIL_* on Render to deliver email."
+			);
+			return;
+		}
+		if (data.queued) {
+			N.info("Email queued for delivery.");
+			return;
+		}
+		var n = data.recipients || data.sent || 1;
+		N.success("Email sent to " + n + " recipient(s).");
+	}
+
 	function postAction(suffix, body) {
 		return U.fetchJson(
 			"/api/v1/rfis/" + encodeURIComponent(state.rfi.id) + suffix,
 			{ method: "POST", body: body || {} }
-		).then(refresh).catch(function (err) { alert(err.message || String(err)); });
+		).then(function (data) {
+			if (suffix === "/email") notifyEmailResult(data || {});
+			return refresh();
+		}).catch(function (err) { alert(err.message || String(err)); });
 	}
 
 	function markOfficial(replyId) {
@@ -437,7 +462,12 @@
 		var emailSend = $("usis-rfi-email-send");
 		if (emailSend) emailSend.addEventListener("click", function () {
 			var to = $("usis-rfi-email-to").value.trim();
-			if (!to) return;
+			if (!to) {
+				if (window.USISNotify) USISNotify.error("Enter at least one recipient in To.");
+				else alert("Enter at least one recipient in To.");
+				return;
+			}
+			emailSend.disabled = true;
 			postAction("/email", {
 				to: to,
 				cc: $("usis-rfi-email-cc").value.trim(),
@@ -445,6 +475,8 @@
 				message: $("usis-rfi-email-body").value,
 			}).then(function () {
 				if (window.bootstrap) bootstrap.Modal.getInstance($("usis-rfi-email-modal")).hide();
+			}).finally(function () {
+				emailSend.disabled = false;
 			});
 		});
 

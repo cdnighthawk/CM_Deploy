@@ -152,3 +152,78 @@ def test_rfi_attachment_upload_and_download(client):
     r3 = client.get(f"/api/v1/rfi-attachments/{doc_id}/file")
     assert r3.status_code == 200
     assert b"%PDF" in r3.data
+
+
+def test_rfi_forward_email_dry_run_and_notification_log(client):
+    with client.application.app_context():
+        u = User(email="em_" + uuid.uuid4().hex[:8] + "@t.com", first_name="E", last_name="M", is_active=True)
+        p = Project(name="P5-" + uuid.uuid4().hex[:6])
+        db.session.add_all([u, p])
+        db.session.flush()
+        pid = str(p.id)
+        uid = str(u.id)
+        db.session.commit()
+
+    due = (date.today() + timedelta(days=5)).isoformat()
+    r1 = client.post(
+        f"/api/v1/projects/{pid}/rfis",
+        json={
+            "status": "open",
+            "subject": "Email me",
+            "question": "Q?",
+            "due_at": due,
+            "rfi_manager_user_id": uid,
+            "assignees": [{"user_id": uid}],
+        },
+    )
+    assert r1.status_code == 201
+    rid = r1.get_json()["item"]["id"]
+
+    r2 = client.post(
+        f"/api/v1/rfis/{rid}/email",
+        json={
+            "to": "recipient@example.com",
+            "subject": "RFI notice",
+            "message": "Please review.",
+        },
+    )
+    assert r2.status_code == 200, r2.get_data(as_text=True)
+    payload = r2.get_json()
+    assert payload.get("dry_run") is True
+    assert payload.get("sent") == 1
+
+    with client.application.app_context():
+        from sqlalchemy import select
+
+        from app.models import RfiNotificationLog
+
+        rows = db.session.scalars(
+            select(RfiNotificationLog).where(RfiNotificationLog.rfi_id == uuid.UUID(rid))
+        ).all()
+        assert len(rows) == 1
+        assert rows[0].id is not None
+        assert rows[0].recipient_email == "recipient@example.com"
+
+
+def test_compose_email_requires_user_and_dry_runs(client):
+    r0 = client.post(
+        "/api/v1/messages/email",
+        json={"to": "x@example.com", "subject": "Hi", "message": "Body"},
+    )
+    assert r0.status_code == 401
+
+    with client.application.app_context():
+        u = User(email="cmp_" + uuid.uuid4().hex[:8] + "@t.com", first_name="C", last_name="P", is_active=True)
+        db.session.add(u)
+        db.session.commit()
+        uid = str(u.id)
+
+    r1 = client.post(
+        "/api/v1/messages/email",
+        json={"to": "out@example.com", "subject": "Hello", "message": "Test"},
+        headers={"X-Usis-User-Id": uid},
+    )
+    assert r1.status_code == 200, r1.get_data(as_text=True)
+    data = r1.get_json()
+    assert data.get("dry_run") is True
+    assert data.get("sent") == 0

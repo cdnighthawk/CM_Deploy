@@ -1430,6 +1430,9 @@ def forward_by_email(rfi_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser
 
     emails = [str(e).strip() for e in (to_raw + cc_raw) if str(e or "").strip()]
     sent = 0
+    dry_run = False
+    queued = False
+    errors: list[str] = []
     for em in emails:
         log = RfiNotificationLog(
             rfi_id=rfi.id,
@@ -1439,11 +1442,28 @@ def forward_by_email(rfi_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser
             body_preview=body[:500],
         )
         db.session.add(log)
-        enqueue_email(log, subject=subject, body=body, to=em)
-        sent += 1
-    _audit(rfi, cu, "email_sent", summary=f"Emailed RFI to {sent} recipient(s)")
+        db.session.flush()
+        result = enqueue_email(log, subject=subject, body=body, to=em)
+        if result.get("dry_run"):
+            dry_run = True
+        if result.get("queued"):
+            queued = True
+        if result.get("sent"):
+            sent += 1
+        elif result.get("error"):
+            errors.append(f"{em}: {result['error']}")
+        elif result.get("dry_run"):
+            sent += 1
+    _audit(rfi, cu, "email_sent", summary=f"Emailed RFI to {len(emails)} recipient(s)")
     db.session.commit()
-    return {"ok": True, "sent": sent}
+    return {
+        "ok": True,
+        "sent": sent,
+        "recipients": len(emails),
+        "dry_run": dry_run,
+        "queued": queued,
+        "errors": errors,
+    }
 
 
 # ---------------------------------------------------------------------------

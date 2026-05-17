@@ -141,7 +141,10 @@
 			'<div class="usis-specs-book row g-0 border rounded overflow-hidden bg-white" style="min-height:420px;">' +
 			'<div class="col-12 col-md-4 col-lg-3 border-end bg-light d-flex flex-column" style="max-height:72vh;">' +
 			'<div class="p-2 border-bottom bg-white">' +
+			'<div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">' +
 			'<label class="form-label small text-muted mb-0">Find spec section</label>' +
+			'<button type="button" class="btn btn-sm btn-primary usis-specs-add">+ Add specification</button>' +
+			"</div>" +
 			'<input type="search" class="form-control form-control-sm usis-specs-q" placeholder="CSI code or title…" autocomplete="off">' +
 			"</div>" +
 			'<div class="usis-specs-tree flex-grow-1 overflow-auto small p-2"></div>' +
@@ -182,6 +185,7 @@
 		var importBtn = container.querySelector(".usis-specs-import");
 		var fileInput = container.querySelector(".usis-specs-file");
 		var linkErr = container.querySelector(".usis-specs-link-err");
+		var addBtn = container.querySelector(".usis-specs-add");
 
 		function showPdf(url) {
 			var full = resolveUrl(url);
@@ -391,6 +395,38 @@
 					.catch(function (e) {
 						linkErr.textContent = e.message || String(e);
 						linkErr.classList.remove("d-none");
+					});
+			});
+		}
+
+		if (addBtn) {
+			addBtn.addEventListener("click", function () {
+				var code = window.prompt("CSI section code (e.g. 08 71 00):", "");
+				if (code === null) return;
+				code = String(code).trim();
+				if (!code) return;
+				var title = window.prompt("Section title:", code);
+				if (title === null) return;
+				title = String(title).trim() || code;
+				var base = apiBase();
+				fetch(base + "/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/spec_sections", {
+					method: "POST",
+					credentials: "include",
+					headers: jsonFetchHeaders(),
+					body: JSON.stringify({ code: code, title: title, is_active: true }),
+				})
+					.then(function (res) {
+						if (!res.ok) return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+						return res.json();
+					})
+					.then(function (data) {
+						load();
+						if (data.item) selectSection(data.item);
+					})
+					.catch(function (e) {
+						window.alert(e.message || String(e));
 					});
 			});
 		}

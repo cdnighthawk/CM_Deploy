@@ -66,6 +66,40 @@ class Submittal(UUIDPKMixin, TimestampMixin, db.Model):
         back_populates="submittal",
         foreign_keys="Document.submittal_id",
     )
+    line_items: Mapped[List["SubmittalLineItem"]] = relationship(
+        back_populates="submittal",
+        cascade="all, delete-orphan",
+        order_by="SubmittalLineItem.sort_order",
+    )
+
+
+class SubmittalLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+    __tablename__ = "submittal_line_items"
+
+    submittal_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("submittals.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    spec_section_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("rfi_spec_sections.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    spec_section_code: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    manufacturer: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    model: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    catalog_product_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("manufacturer_product_data.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    pdf_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+
+    submittal: Mapped["Submittal"] = relationship(back_populates="line_items", foreign_keys=[submittal_id])
 
 
 class SubmittalAudit(UUIDPKMixin, TimestampMixin, db.Model):

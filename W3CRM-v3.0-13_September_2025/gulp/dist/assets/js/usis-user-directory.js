@@ -7,17 +7,11 @@
 	var state = { users: [], roles: [], searchTimer: null };
 
 	function apiBase() {
+		if (typeof window.usisApiBase === "function") {
+			return window.usisApiBase();
+		}
 		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
-			var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
-			try {
-				if (s && new URL(s).origin === window.location.origin) {
-					/* fall through */
-				} else if (s) {
-					return s;
-				}
-			} catch (e) {
-				if (s) return s;
-			}
+			return window.USIS_API_BASE.trim().replace(/\/$/, "");
 		}
 		var loc = window.location;
 		if (loc.protocol === "file:") {
@@ -25,38 +19,8 @@
 		}
 		var host = loc.hostname || "";
 		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
-		var devPorts = {
-			3000: 1,
-			3001: 1,
-			3002: 1,
-			4173: 1,
-			5173: 1,
-			5174: 1,
-			5500: 1,
-			5501: 1,
-			8080: 1,
-			4200: 1,
-			4321: 1,
-			9630: 1,
-			1234: 1,
-		};
-		if (devPorts[port]) {
-			return proto + "//" + host + ":5000";
-		}
-		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
-		if (loopback) {
-			if (port === "5000") {
-				return "";
-			}
-			return proto + "//" + host + ":5000";
-		}
-		var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-		if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
-			return proto + "//" + host + ":5000";
-		}
-		if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
-			return proto + "//" + host + ":5000";
+		if (host === "localhost" || host === "127.0.0.1") {
+			return (proto + "//" + host + ":5000").replace(/\/$/, "");
 		}
 		return "";
 	}
@@ -74,9 +38,22 @@
 
 	function apiFetch(path, opts) {
 		opts = opts || {};
-		opts.credentials = opts.credentials || "omit";
+		opts.credentials = opts.credentials || "include";
 		opts.headers = Object.assign({ Accept: "application/json" }, actorHeaders(), opts.headers || {});
 		return fetch(apiBase() + path, opts);
+	}
+
+	function authErrorMessage(res, body) {
+		if (res.status === 401) {
+			return "Your session expired. Sign in again, then retry.";
+		}
+		if (res.status === 403) {
+			return (
+				(body && body.error) ||
+				"Admin privileges required. Your account must have the admin or superuser role."
+			);
+		}
+		return (body && body.error) || "Request failed (" + res.status + ").";
 	}
 
 	function showPageErr(msg) {
@@ -269,13 +246,7 @@
 			})
 			.then(function (res) {
 				if (!res.ok) {
-					var msg =
-						(res.body && res.body.error) ||
-						"Failed to load users (" + res.status + ").";
-					if (res.status === 403) {
-						msg +=
-							" Use an admin account: set localStorage key usisActorUserId to an admin user UUID, or sign in when session auth is enabled.";
-					}
+					var msg = authErrorMessage(res, res.body);
 					showPageErr(msg);
 					state.users = [];
 					renderUsersTable();
@@ -394,12 +365,19 @@
 		})
 			.then(function (r) {
 				return r.json().then(function (j) {
-					return { ok: r.ok, body: j };
+					return { ok: r.ok, status: r.status, body: j };
 				});
 			})
 			.then(function (res) {
 				if (!res.ok) {
-					modalErr((res.body && res.body.error) || "Save failed.");
+					modalErr(authErrorMessage(res, res.body));
+					if (res.status === 401) {
+						var base = apiBase();
+						window.setTimeout(function () {
+							window.location.href =
+								base + "/auth/login?next=" + encodeURIComponent(window.location.href.split("#")[0]);
+						}, 1200);
+					}
 					return;
 				}
 				var m = userModal();

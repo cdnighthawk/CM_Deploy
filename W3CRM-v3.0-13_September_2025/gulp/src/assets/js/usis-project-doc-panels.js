@@ -441,16 +441,7 @@
 					}
 					var fd = new FormData();
 					fd.append("file", fileEl.files[0]);
-					var sn = el(ids.drawingSheetno);
-					var st = el(ids.drawingTitle);
-					var dc = el(ids.drawingDisc);
-					var dsetForm = el(ids.drawingSet);
-					var rv = el(ids.drawingRev);
-					if (sn && sn.value) fd.append("sheet_number", sn.value);
-					if (st && st.value) fd.append("sheet_title", st.value);
-					if (dc && dc.value) fd.append("discipline", dc.value);
-					if (dsetForm && dsetForm.value) fd.append("drawing_set", dsetForm.value);
-					if (rv && rv.value) fd.append("revision", rv.value);
+					fd.append("split_pages", "true");
 					var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
 					fetch(url, {
 						method: "POST",

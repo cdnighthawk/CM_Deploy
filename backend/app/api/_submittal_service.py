@@ -3,13 +3,22 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, timezone
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional  # noqa: F401 — Mapping used in _apply_line_items
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Document, Drawing, Submittal, SubmittalAudit, SubmittalPdfAnnotation
+from ..models import (
+    Document,
+    Drawing,
+    ManufacturerProductData,
+    SpecSection,
+    Submittal,
+    SubmittalAudit,
+    SubmittalLineItem,
+    SubmittalPdfAnnotation,
+)
 from ._perms import CurrentUser
 from ._rfi_service import ApiError, _parse_dt, _parse_uuid
 
@@ -22,6 +31,8 @@ __all__ = [
     "add_submittal_attachment",
     "get_document_annotations",
     "put_document_annotations",
+    "lookup_product_catalog",
+    "match_catalog_for_manufacturer",
 ]
 
 
@@ -150,8 +161,22 @@ def _document_public(d: Document) -> dict[str, Any]:
     }
 
 
-def _submittal_public(s: Submittal) -> dict[str, Any]:
+def _line_item_public(li: SubmittalLineItem) -> dict[str, Any]:
     return {
+        "id": str(li.id),
+        "sort_order": li.sort_order,
+        "spec_section_id": str(li.spec_section_id) if li.spec_section_id else None,
+        "spec_section_code": li.spec_section_code,
+        "description": li.description,
+        "manufacturer": li.manufacturer,
+        "model": li.model,
+        "catalog_product_id": str(li.catalog_product_id) if li.catalog_product_id else None,
+        "pdf_url": li.pdf_url,
+    }
+
+
+def _submittal_public(s: Submittal, include_lines: bool = False) -> dict[str, Any]:
+    body: dict[str, Any] = {
         "id": str(s.id),
         "project_id": str(s.project_id),
         "number": s.number,
@@ -174,6 +199,124 @@ def _submittal_public(s: Submittal) -> dict[str, Any]:
         "created_at": _iso(s.created_at),
         "updated_at": _iso(s.updated_at),
     }
+    if include_lines:
+        lines = sorted(s.line_items or [], key=lambda x: (x.sort_order, x.created_at or _utcnow()))
+        body["line_items"] = [_line_item_public(li) for li in lines]
+    return body
+
+
+def _catalog_public(row: ManufacturerProductData) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "manufacturer": row.manufacturer,
+        "model": row.model,
+        "product_name": row.product_name,
+        "pdf_url": row.pdf_url,
+        "pattern_key": row.pattern_key,
+        "technical_data_json": row.technical_data_json,
+    }
+
+
+def match_catalog_for_manufacturer(manufacturer: str | None) -> ManufacturerProductData | None:
+    if not manufacturer:
+        return None
+    key = manufacturer.strip().lower()
+    if "asi" in key or "accurate" in key:
+        pattern = "asi"
+    elif "bobrick" in key:
+        pattern = "bobrick"
+    else:
+        return None
+    return db.session.scalar(
+        select(ManufacturerProductData).where(ManufacturerProductData.pattern_key == pattern).limit(1)
+    )
+
+
+def lookup_product_catalog(q: str | None, manufacturer: str | None) -> dict[str, Any]:
+    stmt = select(ManufacturerProductData)
+    if manufacturer:
+        stmt = stmt.where(ManufacturerProductData.manufacturer.ilike(f"%{manufacturer.strip()[:200]}%"))
+    if q:
+        qq = f"%{q.strip()[:200]}%"
+        stmt = stmt.where(
+            ManufacturerProductData.model.ilike(qq)
+            | ManufacturerProductData.product_name.ilike(qq)
+            | ManufacturerProductData.manufacturer.ilike(qq)
+        )
+    rows = db.session.scalars(stmt.order_by(ManufacturerProductData.manufacturer, ManufacturerProductData.model).limit(50)).all()
+    return {"entity": "manufacturer_product_data", "items": [_catalog_public(r) for r in rows]}
+
+
+def _apply_line_items(s: Submittal, raw_items: Any, project_id: uuid.UUID) -> None:
+    if not isinstance(raw_items, list):
+        return
+    for idx, item in enumerate(raw_items):
+        if not isinstance(item, Mapping):
+            continue
+        spec_id = _parse_uuid(item.get("spec_section_id"))
+        spec_code = None
+        if spec_id:
+            spec = db.session.get(SpecSection, spec_id)
+            if spec is None or spec.project_id != project_id:
+                raise ApiError(f"invalid spec_section_id at line {idx + 1}", 400)
+            spec_code = spec.code
+        else:
+            spec_code = (str(item.get("spec_section_code")).strip()[:40] or None) if item.get("spec_section_code") else None
+
+        mfr = (str(item.get("manufacturer")).strip()[:200] or None) if item.get("manufacturer") else None
+        model = (str(item.get("model")).strip()[:200] or None) if item.get("model") else None
+        catalog_id = _parse_uuid(item.get("catalog_product_id"))
+        pdf_url = (str(item.get("pdf_url")).strip()[:1024] or None) if item.get("pdf_url") else None
+
+        catalog_row: ManufacturerProductData | None = None
+        if catalog_id:
+            catalog_row = db.session.get(ManufacturerProductData, catalog_id)
+        if catalog_row is None and mfr:
+            catalog_row = match_catalog_for_manufacturer(mfr)
+            if catalog_row:
+                catalog_id = catalog_row.id
+
+        if catalog_row and not pdf_url:
+            pdf_url = catalog_row.pdf_url
+
+        if mfr and model and not catalog_id:
+            existing = db.session.scalar(
+                select(ManufacturerProductData)
+                .where(
+                    ManufacturerProductData.manufacturer.ilike(mfr),
+                    ManufacturerProductData.model.ilike(model),
+                )
+                .limit(1)
+            )
+            if existing:
+                catalog_id = existing.id
+                if not pdf_url:
+                    pdf_url = existing.pdf_url
+            elif pdf_url or item.get("save_to_catalog"):
+                new_cat = ManufacturerProductData(
+                    manufacturer=mfr,
+                    model=model,
+                    product_name=(str(item.get("description")).strip()[:500] or None)
+                    if item.get("description")
+                    else None,
+                    pdf_url=pdf_url,
+                )
+                db.session.add(new_cat)
+                db.session.flush()
+                catalog_id = new_cat.id
+
+        li = SubmittalLineItem(
+            submittal_id=s.id,
+            sort_order=int(item.get("sort_order") or idx),
+            spec_section_id=spec_id,
+            spec_section_code=spec_code,
+            description=(str(item.get("description")).strip()[:500] or None) if item.get("description") else None,
+            manufacturer=mfr,
+            model=model,
+            catalog_product_id=catalog_id,
+            pdf_url=pdf_url,
+        )
+        db.session.add(li)
 
 
 def _audit_public(a: SubmittalAudit) -> dict[str, Any]:
@@ -192,7 +335,11 @@ def _get_submittal_eager(sid: uuid.UUID) -> Submittal | None:
     stmt = (
         select(Submittal)
         .where(Submittal.id == sid)
-        .options(selectinload(Submittal.documents), selectinload(Submittal.audit_entries))
+        .options(
+            selectinload(Submittal.documents),
+            selectinload(Submittal.audit_entries),
+            selectinload(Submittal.line_items),
+        )
     )
     return db.session.scalars(stmt).first()
 
@@ -216,7 +363,7 @@ def get_submittal_detail(sid: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     audits = sorted(s.audit_entries or [], key=lambda a: a.created_at or _utcnow(), reverse=True)
     docs = sorted(_submittal_docs(s), key=lambda d: (d.version, d.created_at), reverse=True)
     return {
-        "item": _submittal_public(s),
+        "item": _submittal_public(s, include_lines=True),
         "attachments": [_document_public(d) for d in docs],
         "audit": [_audit_public(a) for a in audits],
         "permissions": {
@@ -259,6 +406,7 @@ def create_submittal(project_id: uuid.UUID, data: Mapping[str, Any], cu: Current
     )
     db.session.add(s)
     db.session.flush()
+    _apply_line_items(s, data.get("line_items"), project_id)
     _append_audit(
         s,
         "create",

@@ -453,6 +453,9 @@
 								<li class="nav-item" role="presentation">
 									<button class="nav-link" id="usis-proc-subtab-rfp" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-rfp" type="button" role="tab" aria-controls="usis-proc-subpane-rfp" aria-selected="false">RFPs</button>
 								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="usis-proc-subtab-materials" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-materials" type="button" role="tab" aria-controls="usis-proc-subpane-materials" aria-selected="false">Material orders</button>
+								</li>
 							</ul>
 							<div class="tab-content">
 								<div class="tab-pane fade show active" id="usis-proc-subpane-po" role="tabpanel" aria-labelledby="usis-proc-subtab-po" tabindex="0">
@@ -532,6 +535,35 @@
 												</tr>
 											</thead>
 											<tbody id="usis-proc-rfp-tbody"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="usis-proc-subpane-materials" role="tabpanel" aria-labelledby="usis-proc-subtab-materials" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Track material shipments by vendor. Each row must link to a purchase order. Order date can be derived from schedule date minus lead time.</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-proc-materials-refresh">Refresh</button>
+											<button type="button" class="btn btn-primary btn-sm" id="usis-proc-materials-new">+ Material order</button>
+										</div>
+									</div>
+									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-proc-mat-loading>Loading material orders…</div>
+									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-proc-mat-error role="alert"></div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>Vendor</th>
+													<th>Description</th>
+													<th>PO</th>
+													<th>Order date</th>
+													<th>Expected delivery</th>
+													<th>Carrier</th>
+													<th>Tracking</th>
+													<th>Status</th>
+													<th class="text-end"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-tbody-material-orders"></tbody>
 										</table>
 									</div>
 								</div>
@@ -848,32 +880,10 @@
 				</div>
 				<div class="modal-body">
 					<div class="alert alert-danger py-2 d-none" id="usis-drawing-upload-err" role="alert"></div>
-					<p class="text-muted small">PDFs are stored with the sheet on the server and open in the drawing viewer.</p>
-					<div class="mb-2">
+					<p class="text-muted small mb-2">Choose a PDF drawing set. Each page becomes its own sheet (Page 1, Page 2, …). Edit sheet details later from the drawings list.</p>
+					<div class="mb-0">
 						<label class="form-label small mb-0" for="usis-drawing-file">PDF file <span class="text-danger">*</span></label>
 						<input class="form-control form-control-sm" type="file" id="usis-drawing-file" accept=".pdf,application/pdf">
-					</div>
-					<div class="row g-2">
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-drawing-sheetno">Sheet #</label>
-							<input class="form-control form-control-sm" id="usis-drawing-sheetno" maxlength="50" placeholder="A-101">
-						</div>
-						<div class="col-md-8">
-							<label class="form-label small mb-0" for="usis-drawing-title">Sheet title</label>
-							<input class="form-control form-control-sm" id="usis-drawing-title" maxlength="500" placeholder="Floor plan — Level 1">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-drawing-disc">Discipline</label>
-							<input class="form-control form-control-sm" id="usis-drawing-disc" maxlength="50" placeholder="Architectural">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-drawing-set">Set</label>
-							<input class="form-control form-control-sm" id="usis-drawing-set" maxlength="120" placeholder="IFC">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-drawing-rev">Revision</label>
-							<input class="form-control form-control-sm" id="usis-drawing-rev" maxlength="50" placeholder="0">
-						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -950,6 +960,26 @@
 							<input class="form-control form-control-sm" id="usis-submittal-c-receivedfrom" maxlength="300">
 						</div>
 					</div>
+					<hr class="my-3">
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+						<h6 class="mb-0 small">Line items (Sage CM style)</h6>
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-submittal-c-add-spec">+ Add from spec</button>
+					</div>
+					<div class="table-responsive mb-2" style="max-height: 14rem;">
+						<table class="table table-sm table-bordered align-middle mb-0">
+							<thead class="table-light">
+								<tr>
+									<th>Spec</th>
+									<th>Description</th>
+									<th>Mfr</th>
+									<th>Model</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody id="usis-submittal-c-lines-tbody"></tbody>
+						</table>
+					</div>
+					<p class="text-muted small mb-0">Product data submittals auto-link ASI / Bobrick technical data when manufacturer name matches.</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>

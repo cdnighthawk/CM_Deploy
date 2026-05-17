@@ -17,10 +17,12 @@ from ..models import (
     HrOnboardingItem,
     HrPolicyAcknowledgment,
     HrTrainingAssignment,
+    Project,
     SafetyTrainingRecord,
     User,
     WageRate,
 )
+from . import _hr_dispatch_service as hr_dispatch_svc
 from ._perms import CurrentUser, current_user
 from .v1 import _iso, _jsonify
 
@@ -385,6 +387,12 @@ def register_hr_routes(bp: Blueprint) -> None:
         ).all()
         hr_employee_documents = [_serialize_hr_employee_document(row) for row in hr_doc_rows]
 
+        try:
+            dispatch_body = hr_dispatch_svc.list_employee_dispatches(user_id, cu)
+            employee_dispatches = dispatch_body.get("items") or []
+        except hr_dispatch_svc.ApiError:
+            employee_dispatches = []
+
         document_links: list[dict[str, str]] = []
         seen_doc: set[uuid.UUID] = set()
 
@@ -434,6 +442,7 @@ def register_hr_routes(bp: Blueprint) -> None:
                 "regulatory_certifications": regulatory_certifications,
                 "pay_scales": pay_scales,
                 "hr_employee_documents": hr_employee_documents,
+                "employee_dispatches": employee_dispatches,
                 "capabilities": {
                     "can_edit_hr_employee_records": _can_edit_hr_employee_records(cu),
                 },
@@ -692,3 +701,36 @@ def register_hr_routes(bp: Blueprint) -> None:
         db.session.delete(row)
         db.session.commit()
         return _jsonify({"entity": "hr_employee_document", "deleted": True})
+
+    @bp.get("/hr/employees/<uuid:user_id>/dispatches")
+    def hr_list_employee_dispatches(user_id: uuid.UUID):
+        try:
+            return _jsonify(hr_dispatch_svc.list_employee_dispatches(user_id, current_user()))
+        except hr_dispatch_svc.ApiError as exc:
+            return _jsonify({"entity": "hr_employee_dispatches", "error": exc.message}), exc.status
+
+    @bp.post("/hr/employees/<uuid:user_id>/dispatches")
+    def hr_create_employee_dispatch(user_id: uuid.UUID):
+        u = db.session.get(User, user_id)
+        if u is None:
+            return _jsonify({"entity": "hr_employee_dispatch", "error": "user not found"}), 404
+        body = request.get_json(silent=True) or {}
+        try:
+            return _jsonify(hr_dispatch_svc.create_employee_dispatch(user_id, body, current_user())), 201
+        except hr_dispatch_svc.ApiError as exc:
+            return _jsonify({"entity": "hr_employee_dispatch", "error": exc.message}), exc.status
+
+    @bp.get("/hr/projects-picker")
+    def hr_projects_picker():
+        """Lightweight project list for dispatch / assignment forms."""
+        cu = current_user()
+        if not _can_edit_hr_employee_records(cu) and not cu.is_dev_admin:
+            if not cu.has_role("admin", "superuser", "standard"):
+                return _jsonify({"entity": "hr_projects_picker", "error": "forbidden"}), 403
+        rows = db.session.scalars(select(Project).order_by(Project.name.asc()).limit(500)).all()
+        return _jsonify(
+            {
+                "entity": "hr_projects_picker",
+                "items": [{"id": str(p.id), "name": p.name, "number": p.number} for p in rows],
+            }
+        )

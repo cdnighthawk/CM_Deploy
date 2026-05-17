@@ -9,6 +9,80 @@
 	var filtersWired = false;
 	var drawingsTabulator = null;
 	var activeProjectId = null;
+	var submittalCreateLines = [];
+
+	function renderSubmittalCreateLines() {
+		var tb = document.getElementById("usis-submittal-c-lines-tbody");
+		if (!tb) return;
+		tb.innerHTML = "";
+		if (!submittalCreateLines.length) {
+			tb.innerHTML = '<tr><td colspan="5" class="text-muted small">No line items — use Add from spec.</td></tr>';
+			return;
+		}
+		submittalCreateLines.forEach(function (line, idx) {
+			var tr = document.createElement("tr");
+			tr.innerHTML =
+				"<td class=\"small\">" +
+				esc(line.spec_section_code || "—") +
+				"</td><td class=\"small\">" +
+				esc(line.description || "—") +
+				"</td><td class=\"small\">" +
+				esc(line.manufacturer || "—") +
+				"</td><td class=\"small\">" +
+				esc(line.model || "—") +
+				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 text-danger usis-sub-line-rm" data-idx="' +
+				idx +
+				'">Remove</button></td>';
+			tb.appendChild(tr);
+		});
+		tb.querySelectorAll(".usis-sub-line-rm").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var i = parseInt(btn.getAttribute("data-idx"), 10);
+				if (!isNaN(i)) {
+					submittalCreateLines.splice(i, 1);
+					renderSubmittalCreateLines();
+				}
+			});
+		});
+	}
+
+	function addSubmittalLineFromSpec(projectId) {
+		fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/spec_sections")
+			.then(function (data) {
+				var items = data.items || [];
+				if (!items.length) {
+					window.alert("No spec sections on this project. Add specifications on the Specs tab first.");
+					return;
+				}
+				var list = items
+					.slice(0, 40)
+					.map(function (s, i) {
+						return i + 1 + ") " + (s.code || "") + " — " + (s.title || "");
+					})
+					.join("\n");
+				var pick = window.prompt("Pick spec section (number):\n" + list, "1");
+				if (pick === null) return;
+				var idx = parseInt(pick, 10) - 1;
+				if (isNaN(idx) || idx < 0 || idx >= items.length) return;
+				var spec = items[idx];
+				var mfr = window.prompt("Manufacturer (ASI / Bobrick auto-fill TM data):", "");
+				if (mfr === null) return;
+				var model = window.prompt("Model:", "");
+				if (model === null) return;
+				submittalCreateLines.push({
+					spec_section_id: spec.id,
+					spec_section_code: spec.code,
+					description: spec.title,
+					manufacturer: String(mfr).trim() || null,
+					model: String(model).trim() || null,
+					save_to_catalog: true,
+				});
+				renderSubmittalCreateLines();
+			})
+			.catch(function (e) {
+				window.alert(e.message || String(e));
+			});
+	}
 
 	function apiBase() {
 		var loc = window.location;
@@ -513,16 +587,7 @@
 				}
 				var fd = new FormData();
 				fd.append("file", fileEl.files[0]);
-				var sn = document.getElementById("usis-drawing-sheetno");
-				var st = document.getElementById("usis-drawing-title");
-				var dc = document.getElementById("usis-drawing-disc");
-				var ds = document.getElementById("usis-drawing-set");
-				var rv = document.getElementById("usis-drawing-rev");
-				if (sn && sn.value) fd.append("sheet_number", sn.value);
-				if (st && st.value) fd.append("sheet_title", st.value);
-				if (dc && dc.value) fd.append("discipline", dc.value);
-				if (ds && ds.value) fd.append("drawing_set", ds.value);
-				if (rv && rv.value) fd.append("revision", rv.value);
+				fd.append("split_pages", "true");
 				var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
 				fetch(url, {
 					method: "POST",
@@ -553,6 +618,22 @@
 							err.classList.remove("d-none");
 						}
 					});
+			});
+		}
+
+		var subAddSpec = document.getElementById("usis-submittal-c-add-spec");
+		if (subAddSpec) {
+			subAddSpec.addEventListener("click", function () {
+				var pid = activeProjectId || projectIdFromQuery();
+				if (!pid) return;
+				addSubmittalLineFromSpec(pid);
+			});
+		}
+		var subModal = document.getElementById("usis-modal-submittal-create");
+		if (subModal) {
+			subModal.addEventListener("show.bs.modal", function () {
+				submittalCreateLines = [];
+				renderSubmittalCreateLines();
 			});
 		}
 
@@ -587,6 +668,7 @@
 					submit_by_at: isoFromDateInput(document.getElementById("usis-submittal-c-submitby")),
 					received_at: isoFromDateInput(document.getElementById("usis-submittal-c-received")),
 					received_from: (document.getElementById("usis-submittal-c-receivedfrom") || {}).value || null,
+					line_items: submittalCreateLines.slice(),
 				};
 				fetchJsonBody("POST", "/api/v1/projects/" + encodeURIComponent(pid) + "/submittals", payload)
 					.then(function () {

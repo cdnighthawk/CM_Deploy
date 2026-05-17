@@ -95,3 +95,9 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
         cascade="all, delete-orphan",
         order_by="ProjectScheduleItem.sort_order, ProjectScheduleItem.start_date",
     )
+    material_orders = relationship(
+        "ProjectMaterialOrder",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectMaterialOrder.sort_order, ProjectMaterialOrder.vendor_name",
+    )

@@ -37,11 +37,6 @@
 						drawingUploadSubmit: "usis-estd-drawing-upload-submit",
 						drawingUploadErr: "usis-estd-drawing-upload-err",
 						drawingFile: "usis-estd-drawing-file",
-						drawingSheetno: "usis-estd-drawing-sheetno",
-						drawingTitle: "usis-estd-drawing-title",
-						drawingDisc: "usis-estd-drawing-disc",
-						drawingSet: "usis-estd-drawing-set",
-						drawingRev: "usis-estd-drawing-rev",
 						modalDrawingCreate: "usis-estd-modal-drawing-create",
 					},
 			  })

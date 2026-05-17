@@ -513,16 +513,7 @@
 				}
 				var fd = new FormData();
 				fd.append("file", fileEl.files[0]);
-				var sn = document.getElementById("usis-drawing-sheetno");
-				var st = document.getElementById("usis-drawing-title");
-				var dc = document.getElementById("usis-drawing-disc");
-				var ds = document.getElementById("usis-drawing-set");
-				var rv = document.getElementById("usis-drawing-rev");
-				if (sn && sn.value) fd.append("sheet_number", sn.value);
-				if (st && st.value) fd.append("sheet_title", st.value);
-				if (dc && dc.value) fd.append("discipline", dc.value);
-				if (ds && ds.value) fd.append("drawing_set", ds.value);
-				if (rv && rv.value) fd.append("revision", rv.value);
+				fd.append("split_pages", "true");
 				var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
 				fetch(url, {
 					method: "POST",

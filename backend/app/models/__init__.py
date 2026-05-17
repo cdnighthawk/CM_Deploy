@@ -23,6 +23,9 @@ from .hr import (
     HrPolicyAcknowledgment,
     HrTrainingAssignment,
 )
+from .hr_dispatch import HrEmployeeDispatch
+from .material_order import ProjectMaterialOrder
+from .product_catalog import ManufacturerProductData
 from .hrms_core import (
     HrmsAuditLog,
     HrmsEmployeeProfile,
@@ -75,7 +78,7 @@ from .rfi import (
 from .rfi_lookups import CostCode, Location, ProjectStage, SpecSection, SubJob
 from .rfp import Rfp, RfpLineItem, RfpVendorQuote
 from .safety_training import SafetyTrainingRecord
-from .submittal import Submittal, SubmittalAudit, SubmittalPdfAnnotation
+from .submittal import Submittal, SubmittalAudit, SubmittalLineItem, SubmittalPdfAnnotation
 from .textura_credential import TexturaCredential
 from .textura_sync_log import TexturaSyncLog
 from .sales_tax_rate import SalesTaxRate
@@ -104,6 +107,7 @@ __all__ = [
     "DrawingAnnotation",
     "Estimate",
     "EstimateLineItem",
+    "HrEmployeeDispatch",
     "HrEmployeeDocument",
     "HrEmployeePayScale",
     "HrHireApplication",
@@ -136,12 +140,14 @@ __all__ = [
     "HrmsTimesheetPeriod",
     "LeadEstimate",
     "Location",
+    "ManufacturerProductData",
     "MaterialPrice",
     "MobileRefreshToken",
     "PayApplication",
     "PayApplicationLine",
     "PrimeContractSovLine",
     "Project",
+    "ProjectMaterialOrder",
     "ProjectScheduleItem",
     "ProjectStage",
     "Rfp",
@@ -165,6 +171,7 @@ __all__ = [
     "SubJob",
     "Submittal",
     "SubmittalAudit",
+    "SubmittalLineItem",
     "SubmittalPdfAnnotation",
     "TexturaCredential",
     "TexturaSyncLog",

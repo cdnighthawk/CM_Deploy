@@ -139,6 +139,34 @@
 					<div class="col-12 mb-3">
 						<div class="card border-0 shadow-sm h-100">
 							<div class="card-body">
+								<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+									<div>
+										<h5 class="card-title mb-0">Union dispatch paperwork</h5>
+										<p class="text-muted small mb-0">One dispatch per project; new revision when pay changes (<code>hr_employee_dispatches</code>).</p>
+									</div>
+									<button type="button" class="btn btn-primary btn-sm d-none" id="usis-hr-emp-dispatch-new">+ New dispatch revision</button>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm table-striped mb-0">
+										<thead>
+											<tr>
+												<th>Project</th>
+												<th class="text-end">Rev</th>
+												<th class="text-end">Effective</th>
+												<th class="text-end">Rate snap.</th>
+												<th>Notes</th>
+											</tr>
+										</thead>
+										<tbody id="usis-hr-emp-dispatch-body"></tbody>
+									</table>
+								</motion>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 mb-3">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body">
 								<h5 class="card-title">Pay scales</h5>
 								<p class="text-muted small mb-2">Multiple schedules per person (<code>hr_employee_pay_scales</code>). Not the same as prevailing-wage <code>wage_rates</code> lookup rows; optional <code>wage_rate_id</code> links a reference rate when applicable.</p>
 								<div class="table-responsive">

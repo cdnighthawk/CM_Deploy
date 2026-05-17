@@ -47,6 +47,7 @@ from . import _power_bi_service as power_bi_svc
 from . import _prime_contract_sov_service as prime_sov_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
+from . import _material_order_service as material_order_svc
 from . import _submittal_service as submittal_svc
 from ._perms import can_edit_rfi, current_user, users_for_picker
 
@@ -1138,7 +1139,9 @@ def get_drawing_pdf_file(drawing_id: str):
 
 @bp.post("/projects/<project_id>/drawings")
 def upload_project_drawing(project_id: str):
-    """Multipart upload: field ``file`` (PDF) plus optional form fields for metadata."""
+    """Multipart upload: field ``file`` (PDF). Multi-page PDFs split into one sheet per page by default."""
+    from ..services.drawing_upload import DrawingUploadError, upload_project_drawing_pdf
+
     pid = _parse_uuid_param(project_id)
     if not pid:
         return _jsonify({"error": "invalid project id"}), 400
@@ -1147,9 +1150,6 @@ def upload_project_drawing(project_id: str):
     f = request.files.get("file")
     if f is None or not getattr(f, "filename", None):
         return _jsonify({"error": "missing file field (multipart form-data)"}), 400
-    raw_name = secure_filename(f.filename) or "upload.pdf"
-    if not raw_name.lower().endswith(".pdf"):
-        return _jsonify({"error": "only PDF uploads are supported"}), 400
     max_bytes = 52_428_800  # 50 MiB
     cl = request.content_length
     if cl is not None and cl > max_bytes:
@@ -1160,46 +1160,35 @@ def upload_project_drawing(project_id: str):
     discipline = (request.form.get("discipline") or "").strip()[:50] or None
     drawing_set = (request.form.get("drawing_set") or "").strip()[:120] or None
     revision = (request.form.get("revision") or "").strip()[:50] or "0"
-
-    title = sheet_title or raw_name.rsplit(".", 1)[0][:500]
-
-    d = Drawing(
-        project_id=pid,
-        title=title,
-        sheet_number=sheet_number,
-        sheet_title=sheet_title or title,
-        discipline=discipline,
-        drawing_set=drawing_set,
-        revision=revision,
-        mime_type="application/pdf",
-        original_filename=raw_name[:500],
+    split_raw = request.form.get("split_pages")
+    split_pages = split_raw is None or str(split_raw).strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
     )
-    db.session.add(d)
-    db.session.flush()
 
-    obj_name = _drawing_object_name(d.id)
     try:
-        sz = save_upload(UploadCategory.DRAWINGS, obj_name, f)
-    except OSError as exc:
+        result = upload_project_drawing_pdf(
+            project_id=pid,
+            file_storage=f,
+            sheet_number=sheet_number,
+            sheet_title=sheet_title,
+            discipline=discipline,
+            drawing_set=drawing_set,
+            revision=revision,
+            split_pages=split_pages,
+            max_bytes=max_bytes,
+            drawing_public_fn=_drawing_public,
+        )
+    except DrawingUploadError as exc:
         db.session.rollback()
-        return _jsonify({"error": f"could not save file: {exc}"}), 500
-    except Exception as exc:
-        db.session.rollback()
-        return _jsonify({"error": f"could not save file: {exc}"}), 500
+        return _jsonify({"error": exc.message}), exc.status
 
-    if sz == 0:
-        delete_stored(UploadCategory.DRAWINGS, obj_name)
-        db.session.rollback()
-        return _jsonify({"error": "empty upload"}), 400
-    if sz > max_bytes:
-        delete_stored(UploadCategory.DRAWINGS, obj_name)
-        db.session.rollback()
-        return _jsonify({"error": "file too large (max 50MB)"}), 400
-
-    d.file_url = f"/api/v1/drawings/{d.id}/file"
-    d.file_size_bytes = int(sz) if sz is not None else None
     db.session.commit()
-    return _jsonify({"item": _drawing_public(d), "entity": "drawing"}), 201
+    if result.get("split"):
+        return _jsonify(result), 201
+    return _jsonify({"item": result["item"], "entity": "drawing"}), 201
 
 
 @bp.get("/spec-sections/<spec_section_id>/file")
@@ -2359,6 +2348,75 @@ def delete_commitment_bill_allocation(project_id: str, commitment_id: str, bill_
         return "", 204
     except rfi_svc.ApiError as exc:
         return _commitment_err(exc)
+
+
+def _material_order_err(exc: rfi_svc.ApiError):
+    return _jsonify({"error": exc.message}), exc.status
+
+
+@bp.get("/projects/<project_id>/material-orders")
+def list_project_material_orders(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        return _jsonify(material_order_svc.list_material_orders(pid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _material_order_err(exc)
+
+
+@bp.post("/projects/<project_id>/material-orders")
+def create_project_material_order(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        body = material_order_svc.create_material_order(pid, data, current_user())
+        return _jsonify(body), 201
+    except rfi_svc.ApiError as exc:
+        return _material_order_err(exc)
+
+
+@bp.patch("/projects/<project_id>/material-orders/<order_id>")
+def patch_project_material_order(project_id: str, order_id: str):
+    pid = _parse_uuid_param(project_id)
+    oid = _parse_uuid_param(order_id)
+    if not pid or not oid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify(material_order_svc.patch_material_order(pid, oid, data, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _material_order_err(exc)
+
+
+@bp.delete("/projects/<project_id>/material-orders/<order_id>")
+def delete_project_material_order(project_id: str, order_id: str):
+    pid = _parse_uuid_param(project_id)
+    oid = _parse_uuid_param(order_id)
+    if not pid or not oid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        material_order_svc.delete_material_order(pid, oid, current_user())
+        return "", 204
+    except rfi_svc.ApiError as exc:
+        return _material_order_err(exc)
+
+
+@bp.get("/manufacturer-product-data")
+def list_manufacturer_product_data():
+    q = (request.args.get("q") or "").strip() or None
+    mfr = (request.args.get("manufacturer") or "").strip() or None
+    return _jsonify(submittal_svc.lookup_product_catalog(q, mfr))
 
 
 def _document_render_err(exc: rfi_svc.ApiError):

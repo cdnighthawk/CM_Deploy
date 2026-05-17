@@ -22,6 +22,7 @@ import {
 } from '@/src/api/drawings';
 import {
   cacheSummary,
+  clearDrawingSetCache,
   downloadDrawingSet,
   getPreference,
   listCachedRows,
@@ -191,19 +192,40 @@ export default function ProjectDrawingsScreen() {
             />
           </View>
 
-          <Pressable
-            style={[styles.downloadBtn, downloading && styles.downloadBtnDisabled]}
-            onPress={onDownload}
-            disabled={downloading}
-          >
-            {downloading ? (
-              <Text style={styles.downloadBtnText}>
-                Downloading {progress?.done ?? 0}/{progress?.total ?? 0}…
-              </Text>
-            ) : (
-              <Text style={styles.downloadBtnText}>Download set</Text>
-            )}
-          </Pressable>
+          <View style={styles.actionRow}>
+            <Pressable
+              style={[styles.downloadBtn, downloading && styles.downloadBtnDisabled]}
+              onPress={onDownload}
+              disabled={downloading}
+            >
+              {downloading ? (
+                <Text style={styles.downloadBtnText}>
+                  Downloading {progress?.done ?? 0}/{progress?.total ?? 0}…
+                </Text>
+              ) : (
+                <Text style={styles.downloadBtnText}>Download set</Text>
+              )}
+            </Pressable>
+            <Pressable
+              style={styles.clearBtn}
+              onPress={() => {
+                if (!projectId || !activeSet) return;
+                Alert.alert('Clear cache', `Remove cached PDFs for "${activeSet}"?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Clear',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await clearDrawingSetCache(projectId, activeSet);
+                      await refreshCache();
+                    },
+                  },
+                ]);
+              }}
+            >
+              <Text style={styles.clearBtnText}>Clear cache</Text>
+            </Pressable>
+          </View>
 
           <FlatList
             data={displaySheets}
@@ -247,15 +269,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   wifiLabel: { fontSize: 14, color: '#334155' },
+  actionRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   downloadBtn: {
+    flex: 1,
     backgroundColor: '#1d4ed8',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 12,
   },
   downloadBtnDisabled: { opacity: 0.7 },
   downloadBtnText: { color: '#fff', fontWeight: '600' },
+  clearBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+  },
+  clearBtnText: { color: '#64748b', fontWeight: '600', fontSize: 13 },
   sheetRow: {
     backgroundColor: '#fff',
     padding: 14,

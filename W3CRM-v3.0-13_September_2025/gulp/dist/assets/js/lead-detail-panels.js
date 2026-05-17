@@ -35,11 +35,6 @@
 			drawingUploadSubmit: "usis-lead-drawing-upload-submit",
 			drawingUploadErr: "usis-lead-drawing-upload-err",
 			drawingFile: "usis-lead-drawing-file",
-			drawingSheetno: "usis-lead-drawing-sheetno",
-			drawingTitle: "usis-lead-drawing-title",
-			drawingDisc: "usis-lead-drawing-disc",
-			drawingSet: "usis-lead-drawing-set",
-			drawingRev: "usis-lead-drawing-rev",
 			modalDrawingCreate: "usis-lead-modal-drawing-create",
 		},
 	});

@@ -282,6 +282,149 @@
 				setProcRfpLoading(false);
 			});
 	}
+	var poListCache = [];
+
+	function setProcMatError(msg) {
+		setPaneMsg("[data-usis-proc-mat-error]", msg);
+	}
+	function setProcMatLoading(on) {
+		var el = document.querySelector("[data-usis-proc-mat-loading]");
+		if (!el) return;
+		if (on) el.classList.remove("d-none");
+		else el.classList.add("d-none");
+	}
+	function fmtDateOnly(iso) {
+		if (!iso) return "—";
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return esc(String(iso));
+			return esc(d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }));
+		} catch (e) {
+			return esc(String(iso));
+		}
+	}
+	function renderMaterialOrders(items) {
+		var tb = document.getElementById("usis-tbody-material-orders");
+		if (!tb) return;
+		tb.innerHTML = "";
+		if (!items || !items.length) {
+			tb.innerHTML = '<tr><td colspan="9" class="text-muted small">No material orders yet. Create a PO first, then add tracking rows here.</td></tr>';
+			return;
+		}
+		items.forEach(function (row) {
+			var tr = document.createElement("tr");
+			var poLabel = row.commitment_ref || row.commitment_title || row.commitment_id || "—";
+			tr.innerHTML =
+				"<td>" +
+				esc(row.vendor_name || "—") +
+				"</td><td>" +
+				esc(row.description || "—") +
+				"</td><td class=\"small\">" +
+				esc(poLabel) +
+				"</td><td>" +
+				fmtDateOnly(row.order_date) +
+				"</td><td>" +
+				fmtDateOnly(row.expected_delivery_date) +
+				"</td><td>" +
+				esc(row.shipping_company || "—") +
+				"</td><td class=\"small\">" +
+				esc(row.tracking_number || "—") +
+				"</td><td><span class=\"badge bg-light text-dark border\">" +
+				esc(row.status || "draft") +
+				'</span></td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-mat-edit" data-id="' +
+				esc(row.id) +
+				'">Edit</button></td>';
+			tb.appendChild(tr);
+		});
+		tb.querySelectorAll(".usis-mat-edit").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				openMaterialOrderPrompt(btn.getAttribute("data-id"));
+			});
+		});
+	}
+	function loadMaterialOrders() {
+		if (!projectId) {
+			setProcMatError("No project id.");
+			return Promise.resolve();
+		}
+		setProcMatError("");
+		setProcMatLoading(true);
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/material-orders")
+			.then(function (data) {
+				renderMaterialOrders(data.items || []);
+			})
+			.catch(function (e) {
+				setProcMatError(String(e.message || e));
+				toastErr("Could not load material orders.");
+			})
+			.finally(function () {
+				setProcMatLoading(false);
+			});
+	}
+	function loadPoCache() {
+		if (!projectId) return Promise.resolve([]);
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments").then(function (data) {
+			poListCache = (data.items || []).filter(function (c) {
+				return c.commitment_kind === "purchase_order";
+			});
+			return poListCache;
+		});
+	}
+	function openMaterialOrderPrompt(existingId) {
+		if (!projectId) return;
+		loadPoCache()
+			.then(function (pos) {
+				if (!pos.length) {
+					toastErr("Create a purchase order before adding material orders.");
+					return;
+				}
+				var poOpts = pos
+					.map(function (p, i) {
+						return i + 1 + ") " + (p.reference_number || p.title || p.id);
+					})
+					.join("\n");
+				var pick = window.prompt("Link to PO (enter number):\n" + poOpts, "1");
+				if (pick === null) return;
+				var idx = parseInt(pick, 10) - 1;
+				if (isNaN(idx) || idx < 0 || idx >= pos.length) {
+					toastErr("Invalid PO selection.");
+					return;
+				}
+				var po = pos[idx];
+				var vendor = window.prompt("Vendor name:", po.vendor_name || "");
+				if (vendor === null) return;
+				var desc = window.prompt("Material description:", "");
+				if (desc === null) return;
+				var lead = window.prompt("Lead time (days, optional):", "14");
+				var anchor = window.prompt("Schedule need-by date (YYYY-MM-DD, optional):", "");
+				var ship = window.prompt("Shipping company:", "");
+				var track = window.prompt("Tracking number:", "");
+				var body = {
+					commitment_id: po.id,
+					vendor_name: String(vendor).trim() || po.vendor_name,
+					description: String(desc).trim() || null,
+					lead_time_days: lead && String(lead).trim() ? parseInt(lead, 10) : null,
+					schedule_anchor_date: anchor && String(anchor).trim() ? String(anchor).trim() : null,
+					shipping_company: ship && String(ship).trim() ? String(ship).trim() : null,
+					tracking_number: track && String(track).trim() ? String(track).trim() : null,
+					status: "ordered",
+				};
+				var method = existingId ? "PATCH" : "POST";
+				var path =
+					"/api/v1/projects/" +
+					encodeURIComponent(projectId) +
+					"/material-orders" +
+					(existingId ? "/" + encodeURIComponent(existingId) : "");
+				return fetchJsonBody(method, path, body).then(function () {
+					toastOk(existingId ? "Material order updated." : "Material order created.");
+					return loadMaterialOrders();
+				});
+			})
+			.catch(function (e) {
+				if (e) toastErr(e.message || String(e));
+			});
+	}
+
 	function createRfpDraft() {
 		if (!projectId) {
 			toastErr("No project id in the URL.");
@@ -531,6 +674,25 @@
 			subRfp.addEventListener("shown.bs.tab", function () {
 				activeProcTool = "rfp";
 				loadRfpMiniList();
+			});
+		}
+		var subMat = document.getElementById("usis-proc-subtab-materials");
+		if (subMat) {
+			subMat.addEventListener("shown.bs.tab", function () {
+				activeProcTool = "materials";
+				loadMaterialOrders();
+			});
+		}
+		var matRefresh = document.getElementById("usis-proc-materials-refresh");
+		if (matRefresh) {
+			matRefresh.addEventListener("click", function () {
+				loadMaterialOrders();
+			});
+		}
+		var matNew = document.getElementById("usis-proc-materials-new");
+		if (matNew) {
+			matNew.addEventListener("click", function () {
+				openMaterialOrderPrompt(null);
 			});
 		}
 		var rfpRefresh = document.getElementById("usis-proc-rfp-refresh");

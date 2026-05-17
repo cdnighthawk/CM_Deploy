@@ -357,6 +357,35 @@
 					else payHint.classList.add("d-none");
 				}
 
+				var dispatchNew = document.getElementById("usis-hr-emp-dispatch-new");
+				if (dispatchNew) {
+					if (caps.can_edit_hr_employee_records) dispatchNew.classList.remove("d-none");
+					else dispatchNew.classList.add("d-none");
+					dispatchNew.onclick = function () {
+						createDispatchRevision(uid);
+					};
+				}
+				tbodyRows(
+					"usis-hr-emp-dispatch-body",
+					(data.employee_dispatches || []).map(function (it) {
+						return {
+							html:
+								"<td class=\"small\">" +
+								esc(it.project_name || it.project_id || "—") +
+								'</td><td class="text-end">' +
+								esc(it.revision != null ? it.revision : "—") +
+								'</td><td class="text-end small">' +
+								fmtDate(it.effective_date) +
+								'</td><td class="text-end small">' +
+								esc(it.hourly_rate_snapshot || "—") +
+								"</td><td class=\"small\">" +
+								esc(it.notes || "—") +
+								"</td>",
+						};
+					}),
+					5
+				);
+
 				tbodyRows(
 					"usis-hr-emp-pay-body",
 					(data.pay_scales || []).map(function (it) {
@@ -422,6 +451,61 @@
 					statusEl.classList.add("text-danger");
 				}
 				if (contentEl) contentEl.classList.add("d-none");
+			});
+	}
+
+	function createDispatchRevision(userId) {
+		var base = apiBase();
+		fetch(base + "/api/v1/hr/projects-picker", { credentials: "omit" })
+			.then(function (r) {
+				return r.json().then(function (d) {
+					return { r: r, d: d };
+				});
+			})
+			.then(function (bundle) {
+				if (!bundle.r.ok) throw new Error("Could not load projects");
+				var items = bundle.d.items || [];
+				if (!items.length) {
+					window.alert("No projects available.");
+					return;
+				}
+				var list = items
+					.slice(0, 30)
+					.map(function (p, i) {
+						return i + 1 + ") " + (p.name || p.id);
+					})
+					.join("\n");
+				var pick = window.prompt("Select project (number):\n" + list, "1");
+				if (pick === null) return;
+				var idx = parseInt(pick, 10) - 1;
+				if (isNaN(idx) || idx < 0 || idx >= items.length) return;
+				var proj = items[idx];
+				var eff = window.prompt("Effective date (YYYY-MM-DD):", new Date().toISOString().slice(0, 10));
+				if (eff === null) return;
+				var rate = window.prompt("Hourly rate snapshot (optional):", "");
+				var notes = window.prompt("Notes (optional):", "");
+				var body = {
+					project_id: proj.id,
+					effective_date: String(eff).trim() || null,
+					hourly_rate_snapshot: rate && String(rate).trim() ? String(rate).trim() : null,
+					notes: notes && String(notes).trim() ? String(notes).trim() : null,
+				};
+				return fetch(base + "/api/v1/hr/employees/" + encodeURIComponent(userId) + "/dispatches", {
+					method: "POST",
+					credentials: "omit",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(body),
+				});
+			})
+			.then(function (r) {
+				if (!r) return;
+				return r.json().then(function (d) {
+					if (!r.ok) throw new Error((d && d.error) || "Create failed");
+					loadEmployee();
+				});
+			})
+			.catch(function (e) {
+				window.alert(e.message || String(e));
 			});
 	}
 

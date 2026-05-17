@@ -57,6 +57,23 @@
 		return apiBase() + "/auth/logout?next=" + encodeURIComponent(shellAfterLogoutUrl());
 	}
 
+	function headerInitials(user) {
+		if (!user) return "—";
+		var a = (user.first_name || "").trim().charAt(0);
+		var b = (user.last_name || "").trim().charAt(0);
+		if (a && b) return (a + b).toUpperCase();
+		if (a) return a.toUpperCase();
+		var em = (user.email || "").trim();
+		if (em.length) return em.charAt(0).toUpperCase();
+		return "—";
+	}
+
+	function setHeaderInitials(text) {
+		document.querySelectorAll(".usis-header-avatar-initials").forEach(function (el) {
+			el.textContent = text || "—";
+		});
+	}
+
 	function refreshSessionHeaderDisplay() {
 		var base = apiBase();
 		fetch(base + "/api/v1/auth/status", {
@@ -84,6 +101,7 @@
 				document.querySelectorAll(".usis-header-session-email").forEach(function (el) {
 					el.textContent = email || "—";
 				});
+				setHeaderInitials(headerInitials(u));
 			})
 			.catch(function () {
 				/* ignore */

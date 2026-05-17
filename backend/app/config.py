@@ -127,7 +127,7 @@ class Config:
         BC_PROJECTS_CSV_MERGE_ON_STARTUP: bool = False
 
     # When enabled: upsert three canonical demo ``lead_estimates`` rows on every app startup
-    # (keyed by ``usis-seed-demo-*`` ``external_id``). Defaults on in ``FLASK_ENV=development``.
+    # (keyed by ``usis-seed-demo-*`` ``external_id``). Off by default; set AUTO_SEED_DEMO_LEADS_IF_EMPTY=1 for local dev only.
     _auto_seed_raw = (os.environ.get("AUTO_SEED_DEMO_LEADS_IF_EMPTY") or "").strip().lower()
     if _auto_seed_raw in ("0", "false", "no", "off"):
         AUTO_SEED_DEMO_LEADS_IF_EMPTY: bool = False

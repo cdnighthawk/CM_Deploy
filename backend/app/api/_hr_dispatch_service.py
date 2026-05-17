@@ -14,6 +14,8 @@ from ..models import HrEmployeeDispatch, HrEmployeePayScale, Project
 from ._perms import CurrentUser
 from ._rfi_service import ApiError, _parse_uuid
 
+__all__ = ["ApiError", "list_employee_dispatches", "create_employee_dispatch"]
+
 
 def _can_view_hr_employee_detail(cu: CurrentUser, target_user_id: uuid.UUID) -> bool:
     if cu.is_dev_admin:

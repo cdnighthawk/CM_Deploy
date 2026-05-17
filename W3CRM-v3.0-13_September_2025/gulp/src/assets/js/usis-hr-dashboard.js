@@ -62,7 +62,7 @@
 	}
 
 	function setHint(text) {
-		var el = document.getElementById("usis-hr-sample-hint");
+		var el = document.getElementById("usis-hr-empty-hint") || document.getElementById("usis-hr-sample-hint");
 		if (!el) return;
 		if (text) {
 			el.textContent = text;

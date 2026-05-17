@@ -105,6 +105,8 @@ PostgreSQL native enums are used for `company_type`, `project_status`,
 5. Run ``flask db upgrade`` on deploy; back up the database and ``instance/`` upload folders (drawings, ``spec_section_uploads``, ``rfi_attachment_uploads``) on a schedule — see ``scripts/backup_usis_cm.ps1``.
 6. Run ``scripts/smoke.ps1`` (or hit ``/healthz``) after each deploy. Responses include ``X-Request-Id`` for correlation in logs.
 7. Build the Gulp ``dist`` with the correct API base for production (see ``gulp/src/elements/meta.html`` and ``window.USIS_API_BASE``).
+8. Leave ``AUTO_SEED_DEMO_LEADS_IF_EMPTY`` unset (default **off**). When off, startup removes template demo leads keyed ``usis-seed-demo-*``. Set ``AUTO_SEED_DEMO_LEADS_IF_EMPTY=1`` only on a throwaway local DB if you need sample leads on Leads / Estimate.
+9. After editing active W3CRM pages, run ``python tools/lint_active_pages_no_fake_data.py`` from the repo root (see ``tools/usis-active-pages-checklist.json``).
 
 - Edit a model under `app\models\` → generate a migration:
 

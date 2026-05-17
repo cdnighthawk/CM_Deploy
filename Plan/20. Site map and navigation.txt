@@ -176,6 +176,8 @@ Every first-party shell page under `gulp/src` (excluding `assets/**` and `elemen
 
 After changing the template tree, rebuild with `npx gulp` from `W3CRM-v3.0-13_September_2025/gulp`. The human-facing index is **`usis-all-pages-index.html`** at the Gulp source root; it is linked from **deznav-construction** (“All pages (tour)”) and from a card on **usis-dashboard.html**.
 
+**Active vs template (fake data):** Pages in §A–B and shared construction chrome (`elements/header-construction.html`, etc.) must not ship W3CRM filler (stock avatars, theme names like “Thomas Fleming”, Lorem rows, demo table bodies). Scrub before adding any §C page to **deznav-construction**. Leave §C template files unchanged as design references. Inventory: **`tools/usis-active-pages-checklist.json`**. Guardrail: **`python tools/lint_active_pages_no_fake_data.py`** from the repo root (optionally `--dist` after `npx gulp`).
+
 --------------------------------------------------------------------
 H. Revision history (manual)
 --------------------------------------------------------------------
@@ -190,3 +192,4 @@ H. Revision history (manual)
 • 2026-05-14 — **Tasks** tab on `construction/project-detail.html` + `project-detail-tasks.js` (W3CRM task grid; `GET/POST/PATCH/DELETE` same `schedule-items` as Schedule); `project-detail-schedule.js` emits `usis-project-schedule-changed` and exposes `window.USISProjectScheduleUi` for shared modal.
 • 2026-05-14 — **HRMS scaffold:** `Plan/HRMS/README.md`; Alembic `0030_hrms_foundation`; models `hrms_core`; API ``/api/v1/hrms/*`` (`app/hrms`); `usis-hrms-home.html` + deznav “HR suite”; `tools/usis-site-pages.json`; seed `scripts/seed_hrms_sample.py` (HR roles).
 • 2026-05-13 — §A + deznav + dashboard: `usis-user-directory.html` + `usis-user-directory.js`; admin APIs `/api/v1/admin/users`, `/api/v1/admin/roles`; `tools/usis-site-pages.json` (user admin + repaired `usis-procurement.html` entry); replaces static `user.html` / `user-roles.html` for live directory management.
+• 2026-05-17 — §I: active-page fake-data policy; `tools/usis-active-pages-checklist.json`, `tools/lint_active_pages_no_fake_data.py`; header session chrome uses live user / empty states (no template profile).

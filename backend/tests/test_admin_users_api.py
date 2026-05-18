@@ -57,7 +57,10 @@ def test_admin_users_crud_superuser(client, no_dev_admin):
     r0 = client.get("/api/v1/admin/roles", headers=hdr)
     assert r0.status_code == 200
     roles = r0.get_json()["items"]
-    assert any(x["code"] == "standard" for x in roles)
+    std = next(x for x in roles if x["code"] == "standard")
+    assert std is not None
+    assert "permissions" in std
+    assert isinstance(std["permissions"], dict)
 
     r1 = client.get("/api/v1/admin/users", headers=hdr)
     assert r1.status_code == 200

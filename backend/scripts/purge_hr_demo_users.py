@@ -11,8 +11,11 @@ Preview (dry run, default):
   cd backend
   python scripts/purge_hr_demo_users.py
 
-Apply deletes:
-  python scripts/purge_hr_demo_users.py --execute
+Apply deletes (Render Shell):
+  python scripts/purge_hr_demo_users.py --execute --i-know-this-is-production
+
+Or purge everything fake (pytest + HR demos):
+  python scripts/purge_all_fake_users.py --execute --i-know-this-is-production
 
 Equivalent SQL (preview first):
   SELECT id, email, first_name, last_name FROM users
@@ -38,13 +41,16 @@ import uuid
 from pathlib import Path
 
 _BACKEND = Path(__file__).resolve().parents[1]
+_SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(_BACKEND))
+sys.path.insert(0, str(_SCRIPTS))
 
 from sqlalchemy import or_, select  # noqa: E402
 
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.models import User  # noqa: E402
+from _script_db_guard import require_safe_execute, warn_if_production_preview  # noqa: E402
 
 DEMO_EMAILS = frozenset(
     {
@@ -76,7 +82,20 @@ def main() -> int:
         action="store_true",
         help="Delete matching rows (default is dry-run preview only).",
     )
+    parser.add_argument(
+        "--i-know-this-is-production",
+        action="store_true",
+        help="Required with --execute when DATABASE_URL host is render.com / onrender.com.",
+    )
     args = parser.parse_args()
+
+    require_safe_execute(
+        execute=args.execute,
+        production_ack=args.i_know_this_is_production,
+        script_name="purge_hr_demo_users.py",
+    )
+    if not args.execute:
+        warn_if_production_preview()
 
     app = create_app()
     with app.app_context():

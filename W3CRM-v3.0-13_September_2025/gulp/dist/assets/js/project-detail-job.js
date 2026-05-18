@@ -5,8 +5,11 @@
 	"use strict";
 
 	var lastProjectId = null;
+	var lastProjectItem = null;
 	var lastSageProjectIdStr = "";
 	var lastPrimeContractValueNum = null;
+	var invoiceMethods = [];
+	var INVOICE_ADD_NEW = "__add_new__";
 
 	var DEV_SERVER_PORTS = {
 		3000: 1,
@@ -113,6 +116,11 @@
 
 	function fmtBool(b) {
 		return b ? "Yes" : "No";
+	}
+
+	function isoToInputDate(iso) {
+		if (!iso) return "";
+		return String(iso).slice(0, 10);
 	}
 
 	function fmtDatePlain(iso) {
@@ -740,6 +748,7 @@
 			.then(function (data) {
 				var item = data.item;
 				if (!item) throw new Error("Missing item in response");
+				lastProjectItem = item;
 				render(item);
 				fillContractAdminFromProject(item);
 				loadContractAdminCommitmentSummary(pid);
@@ -824,7 +833,235 @@
 		}
 	}
 
+	function loadInvoiceMethods(cb) {
+		fetch(apiBase() + "/api/v1/invoice-delivery-methods", {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					if (cb) cb(res.body && res.body.error ? res.body.error : "Could not load invoice methods.");
+					return;
+				}
+				invoiceMethods = res.body.items || [];
+				if (cb) cb(null);
+			})
+			.catch(function () {
+				if (cb) cb("Network error loading invoice methods.");
+			});
+	}
+
+	function fillInvoiceMethodSelect(selectedCode) {
+		var sel = document.getElementById("usis-proj-edit-invoice-method");
+		if (!sel) return;
+		var html = '<option value="">— Select —</option>';
+		invoiceMethods.forEach(function (m) {
+			var code = m.code || "";
+			var label = m.label || code;
+			var selAttr = code === selectedCode ? " selected" : "";
+			html += '<option value="' + esc(code) + '"' + selAttr + ">" + esc(label) + "</option>";
+		});
+		html += '<option value="' + INVOICE_ADD_NEW + '">+ Add new method…</option>';
+		sel.innerHTML = html;
+	}
+
+	function toggleInvoiceEmailField() {
+		var sel = document.getElementById("usis-proj-edit-invoice-method");
+		var wrap = document.getElementById("usis-proj-edit-email-wrap");
+		if (!sel || !wrap) return;
+		var show = sel.value === "email";
+		wrap.classList.toggle("d-none", !show);
+	}
+
+	function setEditErr(msg) {
+		var el = document.getElementById("usis-proj-edit-err");
+		if (!el) return;
+		if (msg) {
+			el.textContent = msg;
+			el.classList.remove("d-none");
+		} else {
+			el.classList.add("d-none");
+		}
+	}
+
+	function openEditModal() {
+		if (!lastProjectItem) return;
+		var item = lastProjectItem;
+		setEditErr("");
+		document.getElementById("usis-proj-edit-name").value = item.name || "";
+		document.getElementById("usis-proj-edit-number").value = item.number || "";
+		document.getElementById("usis-proj-edit-status").value = item.status || "active";
+		document.getElementById("usis-proj-edit-type").value = item.project_type || "commercial";
+		document.getElementById("usis-proj-edit-sage").value = item.sage_project_id || "";
+		document.getElementById("usis-proj-edit-textura").value = item.textura_project_id || "";
+		document.getElementById("usis-proj-edit-addr1").value = item.address_line1 || "";
+		document.getElementById("usis-proj-edit-city").value = item.city || "";
+		document.getElementById("usis-proj-edit-state").value = item.state || "";
+		document.getElementById("usis-proj-edit-zip").value = item.postal_code || "";
+		document.getElementById("usis-proj-edit-contract-value").value =
+			item.contract_value != null ? String(item.contract_value) : "";
+		document.getElementById("usis-proj-edit-contract-date").value = isoToInputDate(item.contract_date);
+		document.getElementById("usis-proj-edit-start").value = isoToInputDate(item.start_date);
+		document.getElementById("usis-proj-edit-substantial").value = isoToInputDate(item.substantial_completion_date);
+		document.getElementById("usis-proj-edit-closeout").value = isoToInputDate(item.closeout_date);
+		document.getElementById("usis-proj-edit-retention").value =
+			item.retention_percentage != null ? String(item.retention_percentage) : "";
+		document.getElementById("usis-proj-edit-invoice-due").value = isoToInputDate(item.invoice_due_date);
+		document.getElementById("usis-proj-edit-invoice-emails").value = item.invoice_recipient_emails || "";
+		document.getElementById("usis-proj-edit-description").value = item.description || "";
+		document.getElementById("usis-proj-edit-notes").value = item.notes || "";
+		document.getElementById("usis-proj-edit-prevailing").checked = !!item.prevailing_wage;
+		document.getElementById("usis-proj-edit-dbe").checked = !!item.dbe_required;
+		loadInvoiceMethods(function (err) {
+			if (err) {
+				setEditErr(err);
+			}
+			fillInvoiceMethodSelect(item.invoice_method || "");
+			toggleInvoiceEmailField();
+			var modalEl = document.getElementById("usis-proj-edit-modal");
+			if (modalEl && window.bootstrap) {
+				window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+			}
+		});
+	}
+
+	function onInvoiceMethodChange() {
+		var sel = document.getElementById("usis-proj-edit-invoice-method");
+		if (!sel || sel.value !== INVOICE_ADD_NEW) {
+			toggleInvoiceEmailField();
+			return;
+		}
+		var label = window.prompt("Name for the new invoice delivery method:");
+		if (!label || !String(label).trim()) {
+			sel.value = lastProjectItem && lastProjectItem.invoice_method ? lastProjectItem.invoice_method : "";
+			toggleInvoiceEmailField();
+			return;
+		}
+		fetch(apiBase() + "/api/v1/invoice-delivery-methods", {
+			method: "POST",
+			credentials: "include",
+			headers: Object.assign(
+				{ Accept: "application/json", "Content-Type": "application/json" },
+				actorHeaders()
+			),
+			body: JSON.stringify({ label: String(label).trim() }),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					setEditErr((res.body && res.body.error) || "Could not save new method.");
+					sel.value = "";
+					toggleInvoiceEmailField();
+					return;
+				}
+				invoiceMethods.push(res.body.item);
+				fillInvoiceMethodSelect(res.body.item.code);
+				toggleInvoiceEmailField();
+				setEditErr("");
+			})
+			.catch(function () {
+				setEditErr("Network error saving new method.");
+				sel.value = "";
+				toggleInvoiceEmailField();
+			});
+	}
+
+	function saveProjectEdit() {
+		if (!lastProjectId) return;
+		setEditErr("");
+		var method = document.getElementById("usis-proj-edit-invoice-method").value;
+		var payload = {
+			name: document.getElementById("usis-proj-edit-name").value.trim(),
+			number: document.getElementById("usis-proj-edit-number").value.trim() || null,
+			status: document.getElementById("usis-proj-edit-status").value,
+			project_type: document.getElementById("usis-proj-edit-type").value,
+			sage_project_id: document.getElementById("usis-proj-edit-sage").value.trim() || null,
+			textura_project_id: document.getElementById("usis-proj-edit-textura").value.trim() || null,
+			address_line1: document.getElementById("usis-proj-edit-addr1").value.trim() || null,
+			city: document.getElementById("usis-proj-edit-city").value.trim() || null,
+			state: document.getElementById("usis-proj-edit-state").value.trim() || null,
+			postal_code: document.getElementById("usis-proj-edit-zip").value.trim() || null,
+			contract_value: document.getElementById("usis-proj-edit-contract-value").value.trim() || null,
+			contract_date: document.getElementById("usis-proj-edit-contract-date").value || null,
+			start_date: document.getElementById("usis-proj-edit-start").value || null,
+			substantial_completion_date: document.getElementById("usis-proj-edit-substantial").value || null,
+			closeout_date: document.getElementById("usis-proj-edit-closeout").value || null,
+			retention_percentage: document.getElementById("usis-proj-edit-retention").value.trim() || null,
+			prevailing_wage: document.getElementById("usis-proj-edit-prevailing").checked,
+			dbe_required: document.getElementById("usis-proj-edit-dbe").checked,
+			description: document.getElementById("usis-proj-edit-description").value.trim() || null,
+			notes: document.getElementById("usis-proj-edit-notes").value.trim() || null,
+			invoice_method: method || null,
+			invoice_due_date: document.getElementById("usis-proj-edit-invoice-due").value || null,
+			invoice_recipient_emails:
+				method === "email"
+					? document.getElementById("usis-proj-edit-invoice-emails").value.trim()
+					: null,
+		};
+		if (!payload.name) {
+			setEditErr("Project name is required.");
+			return;
+		}
+		fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(lastProjectId), {
+			method: "PATCH",
+			credentials: "include",
+			headers: Object.assign(
+				{ Accept: "application/json", "Content-Type": "application/json" },
+				actorHeaders()
+			),
+			body: JSON.stringify(payload),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					setEditErr((res.body && res.body.error) || "Save failed.");
+					return;
+				}
+				var item = res.body.item;
+				lastProjectItem = item;
+				render(item);
+				fillContractAdminFromProject(item);
+				wireProcurementTabProjectScope(item, lastProjectId);
+				var modalEl = document.getElementById("usis-proj-edit-modal");
+				if (modalEl && window.bootstrap) {
+					var inst = window.bootstrap.Modal.getInstance(modalEl);
+					if (inst) inst.hide();
+				}
+				if (window.USISNotify && window.USISNotify.success) {
+					window.USISNotify.success("Project information saved.");
+				}
+			})
+			.catch(function () {
+				setEditErr("Network error saving project.");
+			});
+	}
+
+	function wireProjectEditOnce() {
+		if (wireProjectEditOnce._done) return;
+		wireProjectEditOnce._done = true;
+		var editBtn = document.getElementById("usis-proj-edit-btn");
+		if (editBtn) editBtn.addEventListener("click", openEditModal);
+		var saveBtn = document.getElementById("usis-proj-edit-save");
+		if (saveBtn) saveBtn.addEventListener("click", saveProjectEdit);
+		var methodSel = document.getElementById("usis-proj-edit-invoice-method");
+		if (methodSel) methodSel.addEventListener("change", onInvoiceMethodChange);
+	}
+
 	function render(item) {
+		lastProjectItem = item;
 		var title = document.getElementById("usis-proj-job-title");
 		var sub = document.getElementById("usis-proj-job-subtitle");
 		var st = document.getElementById("usis-proj-job-status");
@@ -872,6 +1109,15 @@
 			tr("Owner", fmtDash(item.owner_company_name)),
 			tr("Architect", fmtDash(item.architect_company_name)),
 			tr("Sage project id", fmtDash(item.sage_project_id)),
+			tr("Textura project id", fmtDash(item.textura_project_id)),
+			tr("Invoice method", fmtDash(item.invoice_method_label || item.invoice_method)),
+			tr("Invoice due date", fmtDate(item.invoice_due_date)),
+			tr(
+				"Invoice emails",
+				item.invoice_method === "email"
+					? fmtDash(item.invoice_recipient_emails)
+					: '<span class="text-muted">—</span>'
+			),
 			tr("Updated", fmtDate(item.updated_at)),
 			tr("Created", fmtDate(item.created_at)),
 		];
@@ -963,7 +1209,9 @@
 				var item = data.item;
 				if (!item) throw new Error("Missing item in response");
 				lastProjectId = pid;
+				lastProjectItem = item;
 				wireContractAdminToolsOnce();
+				wireProjectEditOnce();
 				render(item);
 				fillContractAdminFromProject(item);
 				loadContractAdminCommitmentSummary(pid);
@@ -982,10 +1230,12 @@
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", function () {
 			wireContractAdminToolsOnce();
+			wireProjectEditOnce();
 			init();
 		});
 	} else {
 		wireContractAdminToolsOnce();
+		wireProjectEditOnce();
 		init();
 	}
 })();

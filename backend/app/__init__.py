@@ -153,6 +153,24 @@ def create_app(config_object: str | None = None) -> Flask:
         return jsonify({"error": "authentication required"}), 401
 
     @app.before_request
+    def _enforce_module_permissions() -> None:
+        """Gate ``/api/v1`` routes by role module permissions (after session check)."""
+        from .api._module_guard import enforce_module_access_for_path
+        from .api._perms import allow_dev_anonymous_access, current_user
+
+        path = request.path.rstrip("/")
+        if not path.startswith("/api/v1"):
+            return None
+        if request.method == "OPTIONS":
+            return None
+        if allow_dev_anonymous_access():
+            return None
+        cu = current_user()
+        if cu.user is None:
+            return None
+        return enforce_module_access_for_path(path, request.method, cu)
+
+    @app.before_request
     def _attach_request_id() -> None:
         rid = (request.headers.get("X-Request-Id") or "").strip() or str(uuid.uuid4())
         g.request_id = rid

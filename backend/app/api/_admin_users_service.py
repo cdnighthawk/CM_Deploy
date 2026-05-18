@@ -11,8 +11,16 @@ from sqlalchemy.orm import selectinload
 from werkzeug.security import generate_password_hash
 
 from ..extensions import db
-from ..models import Role, User, UserRole
+from ..models import Role, RoleModulePermission, User, UserRole
+from ..permissions.access import (
+    capabilities_for_user,
+    permissions_for_role,
+    validate_permissions_payload,
+)
+from ..permissions.modules import catalog_public
 from ._perms import CurrentUser, can_manage_directory_users
+
+_ROLE_LOAD = selectinload(Role.module_permissions)
 
 
 class ApiError(Exception):
@@ -67,14 +75,95 @@ def role_public(r: Role) -> dict[str, Any]:
         "code": r.code,
         "name": r.name,
         "description": r.description,
+        "permissions": permissions_for_role(r),
     }
 
 
 def list_roles(cu: CurrentUser) -> list[dict[str, Any]]:
     _require_admin(cu)
-    q = select(Role).order_by(Role.code.asc())
+    q = select(Role).options(_ROLE_LOAD).order_by(Role.code.asc())
     rows = db.session.scalars(q).all()
     return [role_public(r) for r in rows]
+
+
+def get_role(cu: CurrentUser, role_id: uuid.UUID) -> dict[str, Any] | None:
+    _require_admin(cu)
+    r = db.session.scalar(select(Role).where(Role.id == role_id).options(_ROLE_LOAD))
+    if r is None:
+        return None
+    return role_public(r)
+
+
+def _set_role_permissions(role: Role, permissions: dict[str, str]) -> None:
+    role.module_permissions.clear()
+    for module_code, level in permissions.items():
+        role.module_permissions.append(
+            RoleModulePermission(
+                role_id=role.id,
+                module_code=module_code,
+                access_level=level,
+            )
+        )
+
+
+_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{0,48}$")
+
+
+def create_role(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
+    _require_admin(cu)
+    if not isinstance(data, dict):
+        raise ApiError("JSON body required")
+    code = str(data.get("code") or "").strip().lower()
+    name = str(data.get("name") or "").strip()
+    if not code or not _CODE_RE.match(code):
+        raise ApiError("code is required (lowercase letters, digits, underscores)")
+    if not name:
+        raise ApiError("name is required")
+    if len(name) > 120:
+        raise ApiError("name is too long")
+    existing = db.session.scalar(select(Role.id).where(Role.code == code))
+    if existing is not None:
+        raise ApiError("a role with this code already exists")
+    desc = data.get("description")
+    description = None if desc is None else (str(desc).strip()[:500] or None)
+    r = Role(code=code, name=name, description=description)
+    db.session.add(r)
+    db.session.flush()
+    if "permissions" in data:
+        try:
+            perms = validate_permissions_payload(data.get("permissions"))
+        except ValueError as e:
+            raise ApiError(str(e)) from e
+        _set_role_permissions(r, perms)
+    db.session.flush()
+    db.session.refresh(r)
+    return role_public(r)
+
+
+def patch_role(cu: CurrentUser, role_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any] | None:
+    _require_admin(cu)
+    if not isinstance(data, dict):
+        raise ApiError("JSON body required")
+    r = db.session.scalar(select(Role).where(Role.id == role_id).options(_ROLE_LOAD))
+    if r is None:
+        return None
+    if "name" in data:
+        name = str(data.get("name") or "").strip()
+        if not name:
+            raise ApiError("name cannot be empty")
+        r.name = name[:120]
+    if "description" in data:
+        desc = data.get("description")
+        r.description = None if desc is None else (str(desc).strip()[:500] or None)
+    if "permissions" in data:
+        try:
+            perms = validate_permissions_payload(data.get("permissions"))
+        except ValueError as e:
+            raise ApiError(str(e)) from e
+        _set_role_permissions(r, perms)
+    db.session.flush()
+    db.session.refresh(r)
+    return role_public(r)
 
 
 def list_users(
@@ -230,11 +319,29 @@ def get_me(cu: CurrentUser) -> dict[str, Any]:
     u = db.session.scalar(
         select(User)
         .where(User.id == uid)
-        .options(selectinload(User.roles).selectinload(UserRole.role))
+        .options(
+            selectinload(User.roles)
+            .selectinload(UserRole.role)
+            .selectinload(Role.module_permissions)
+        )
     )
     if u is None:
         raise ApiError("user not found", 404)
     return user_public(u)
+
+
+def get_me_capabilities(cu: CurrentUser) -> dict[str, Any]:
+    if cu.user is None:
+        raise ApiError("authentication required", 401)
+    return capabilities_for_user(
+        cu.user,
+        cu.role_codes,
+        bool(cu.user and cu.user.is_superuser),
+    )
+
+
+def permissions_catalog() -> list[dict[str, Any]]:
+    return catalog_public()
 
 
 def patch_me(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:

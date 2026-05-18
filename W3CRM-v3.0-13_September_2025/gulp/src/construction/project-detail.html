@@ -137,7 +137,10 @@
 								<div class="row g-3">
 									<div class="col-xl-7">
 										<div class="card border-0 shadow-sm mb-3">
-											<div class="card-header bg-white py-2 fw-semibold border-bottom">Project details</div>
+											<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex justify-content-between align-items-center">
+												<span>Project details</span>
+												<button type="button" class="btn btn-sm btn-outline-primary py-0" id="usis-proj-edit-btn">Edit</button>
+											</div>
 											<div class="card-body p-0">
 												<table class="table table-sm mb-0">
 													<tbody id="usis-proj-job-tbody"></tbody>
@@ -794,6 +797,138 @@
 
 		@@include("../elements/footer.html")
 
+	</div>
+
+	<!-- Edit project / Job info -->
+	<div class="modal fade" id="usis-proj-edit-modal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Edit project information</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-proj-edit-err" role="alert"></div>
+					<div class="row g-2">
+						<div class="col-md-8">
+							<label class="form-label small mb-0" for="usis-proj-edit-name">Project name <span class="text-danger">*</span></label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-name" maxlength="255">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-number">Number</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-number" maxlength="50">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-status">Status</label>
+							<select class="form-select form-select-sm" id="usis-proj-edit-status">
+								<option value="planning">Planning</option>
+								<option value="active">Active</option>
+								<option value="on_hold">On hold</option>
+								<option value="complete">Complete</option>
+								<option value="archived">Archived</option>
+								<option value="cancelled">Cancelled</option>
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-type">Type</label>
+							<select class="form-select form-select-sm" id="usis-proj-edit-type">
+								<option value="commercial">Commercial</option>
+								<option value="government">Government</option>
+								<option value="residential">Residential</option>
+								<option value="mixed">Mixed</option>
+								<option value="other">Other</option>
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-sage">Sage project id</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-sage" maxlength="100">
+						</div>
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-proj-edit-addr1">Address line 1</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-addr1" maxlength="255">
+						</div>
+						<div class="col-md-5">
+							<label class="form-label small mb-0" for="usis-proj-edit-city">City</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-city" maxlength="120">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-proj-edit-state">State</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-state" maxlength="50">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-zip">ZIP</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-zip" maxlength="20">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-contract-value">Contract value</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-contract-value" inputmode="decimal">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-contract-date">Contract date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-contract-date">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-start">Start date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-start">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-substantial">Substantial completion</label>
+							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-substantial">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-closeout">Closeout</label>
+							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-closeout">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-retention">Retention %</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-retention" inputmode="decimal">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-textura">Textura project id</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-textura" maxlength="64">
+						</div>
+						<div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">Invoicing</h6></div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-proj-edit-invoice-method">Invoice method</label>
+							<select class="form-select form-select-sm" id="usis-proj-edit-invoice-method">
+								<option value="">— Select —</option>
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-proj-edit-invoice-due">Invoice due date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-invoice-due">
+						</div>
+						<div class="col-12 d-none" id="usis-proj-edit-email-wrap">
+							<label class="form-label small mb-0" for="usis-proj-edit-invoice-emails">Invoice recipient emails</label>
+							<textarea class="form-control form-control-sm" id="usis-proj-edit-invoice-emails" rows="2" placeholder="billing@gc.com, ap@vendor.com"></textarea>
+							<p class="text-muted small mb-0">Separate multiple addresses with commas.</p>
+						</div>
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-proj-edit-description">Description</label>
+							<textarea class="form-control form-control-sm" id="usis-proj-edit-description" rows="3"></textarea>
+						</div>
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-proj-edit-notes">Notes</label>
+							<textarea class="form-control form-control-sm" id="usis-proj-edit-notes" rows="2"></textarea>
+						</div>
+						<div class="col-12">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="usis-proj-edit-prevailing">
+								<label class="form-check-label small" for="usis-proj-edit-prevailing">Prevailing wage</label>
+							</div>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="usis-proj-edit-dbe">
+								<label class="form-check-label small" for="usis-proj-edit-dbe">DBE required</label>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-primary" id="usis-proj-edit-save">Save changes</button>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<!-- Task tab — Progress S-Curve (template stub; chart TBD) -->

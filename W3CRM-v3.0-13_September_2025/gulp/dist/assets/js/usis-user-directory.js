@@ -4,7 +4,19 @@
 (function () {
 	"use strict";
 
-	var state = { users: [], roles: [], searchTimer: null };
+	var PAGE_SIZE_KEY = "usisUdPageSize";
+	var PAGE_SIZES = [25, 50, 100, 200];
+	var ACCESS_LEVELS = ["none", "read", "write", "admin"];
+	var ACCESS_LABELS = { none: "None", read: "Read", write: "Write", admin: "Admin" };
+	var state = {
+		users: [],
+		roles: [],
+		moduleCatalog: [],
+		searchTimer: null,
+		page: 1,
+		limit: 200,
+		total: 0,
+	};
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") {
@@ -190,7 +202,8 @@
 		var tb = document.getElementById("usis-ud-roles-body");
 		if (!tb) return;
 		if (!state.roles.length) {
-			tb.innerHTML = '<tr><td colspan="3" class="text-muted small">No roles returned (check admin access).</td></tr>';
+			tb.innerHTML =
+				'<tr><td colspan="4" class="text-muted small">No roles returned (check admin access).</td></tr>';
 			return;
 		}
 		tb.innerHTML = state.roles
@@ -202,10 +215,184 @@
 					esc(r.name) +
 					"</td><td>" +
 					esc(r.description || "—") +
-					"</td></tr>"
+					'</td><td><button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-role-edit" data-id="' +
+					esc(r.id) +
+					'">Edit</button></td></tr>'
 				);
 			})
 			.join("");
+	}
+
+	function roleModalErr(msg) {
+		var el = document.getElementById("usis-ud-modal-role-err");
+		if (!el) return;
+		if (msg) {
+			el.textContent = msg;
+			el.classList.remove("d-none");
+		} else {
+			el.classList.add("d-none");
+		}
+	}
+
+	function roleModal() {
+		var el = document.getElementById("usis-ud-modal-role");
+		if (!el || typeof bootstrap === "undefined") return null;
+		return bootstrap.Modal.getOrCreateInstance(el);
+	}
+
+	function loadModuleCatalog(cb) {
+		if (state.moduleCatalog.length) {
+			if (cb) cb(null);
+			return;
+		}
+		apiFetch("/api/v1/permissions/catalog")
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					if (cb) cb((res.body && res.body.error) || "Could not load module catalog.");
+					return;
+				}
+				state.moduleCatalog = res.body.items || [];
+				if (cb) cb(null);
+			})
+			.catch(function () {
+				if (cb) cb("Network error loading module catalog.");
+			});
+	}
+
+	function renderRolePermGrid(permissions) {
+		var tb = document.getElementById("usis-ud-modal-role-perms-body");
+		if (!tb) return;
+		var perms = permissions || {};
+		var catalog = state.moduleCatalog.length
+			? state.moduleCatalog
+			: Object.keys(perms).map(function (code) {
+					return { code: code, name: code };
+				});
+		if (!catalog.length) {
+			tb.innerHTML = '<tr><td colspan="2" class="text-muted small">No modules defined.</td></tr>';
+			return;
+		}
+		tb.innerHTML = catalog
+			.map(function (m) {
+				var code = m.code;
+				var cur = perms[code] || "none";
+				var opts = ACCESS_LEVELS.map(function (lv) {
+					var sel = lv === cur ? " selected" : "";
+					return (
+						'<option value="' + esc(lv) + '"' + sel + ">" + esc(ACCESS_LABELS[lv] || lv) + "</option>"
+					);
+				}).join("");
+				return (
+					"<tr>" +
+					"<td>" +
+					esc(m.name || code) +
+					(m.description ? '<div class="text-muted small">' + esc(m.description) + "</div>" : "") +
+					"</td>" +
+					'<td><select class="form-select form-select-sm usis-ud-perm-level" data-module="' +
+					esc(code) +
+					'">' +
+					opts +
+					"</select></td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function collectRolePermissions() {
+		var out = {};
+		document.querySelectorAll(".usis-ud-perm-level").forEach(function (sel) {
+			var code = sel.getAttribute("data-module");
+			if (code) out[code] = sel.value || "none";
+		});
+		return out;
+	}
+
+	function openEditRole(id) {
+		var r = null;
+		for (var i = 0; i < state.roles.length; i++) {
+			if (state.roles[i].id === id) {
+				r = state.roles[i];
+				break;
+			}
+		}
+		if (!r) return;
+		roleModalErr("");
+		document.getElementById("usis-ud-modal-role-id").value = r.id;
+		document.getElementById("usis-ud-modal-role-title").textContent = "Permissions: " + (r.name || r.code);
+		var meta = document.getElementById("usis-ud-modal-role-meta");
+		if (meta) meta.textContent = "Role code: " + (r.code || "") + " — controls nav visibility and API access.";
+		loadModuleCatalog(function (err) {
+			if (err) {
+				roleModalErr(err);
+				return;
+			}
+			renderRolePermGrid(r.permissions || {});
+			var m = roleModal();
+			if (m) m.show();
+		});
+	}
+
+	function saveRolePermissions() {
+		roleModalErr("");
+		var id = document.getElementById("usis-ud-modal-role-id").value.trim();
+		if (!id) return;
+		var perms = collectRolePermissions();
+		apiFetch("/api/v1/admin/roles/" + encodeURIComponent(id), {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ permissions: perms }),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					roleModalErr(authErrorMessage(res, res.body));
+					return;
+				}
+				if (res.body && res.body.item) {
+					for (var i = 0; i < state.roles.length; i++) {
+						if (state.roles[i].id === id) {
+							state.roles[i] = res.body.item;
+							break;
+						}
+					}
+					renderRolesTable();
+				}
+				var m = roleModal();
+				if (m) m.hide();
+			})
+			.catch(function () {
+				roleModalErr("Network error.");
+			});
+	}
+
+	function guardPageAccess() {
+		apiFetch("/api/v1/me")
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) return;
+				var caps = (res.body && res.body.capabilities) || {};
+				var mods = caps.modules || {};
+				var level = mods.user_admin || "none";
+				if (level === "none" && !caps.is_superuser) {
+					showPageErr("You do not have access to User admin.");
+					var addBtn = document.getElementById("usis-ud-add");
+					if (addBtn) addBtn.disabled = true;
+				}
+			})
+			.catch(function () {});
 	}
 
 	function loadRoles(cb) {
@@ -233,10 +420,72 @@
 			});
 	}
 
-	function loadUsers() {
+	function readPageSize() {
+		var n = state.limit;
+		try {
+			var stored = sessionStorage.getItem(PAGE_SIZE_KEY);
+			if (stored) {
+				n = parseInt(stored, 10);
+			}
+		} catch (e) {}
+		if (PAGE_SIZES.indexOf(n) < 0) {
+			n = 50;
+		}
+		state.limit = n;
+		var sel = document.getElementById("usis-ud-page-size");
+		if (sel) sel.value = String(n);
+	}
+
+	function persistPageSize() {
+		try {
+			sessionStorage.setItem(PAGE_SIZE_KEY, String(state.limit));
+		} catch (e) {}
+	}
+
+	function totalPages() {
+		if (!state.total) return 1;
+		return Math.max(1, Math.ceil(state.total / state.limit));
+	}
+
+	function updatePaginationControls() {
+		var prev = document.getElementById("usis-ud-prev");
+		var next = document.getElementById("usis-ud-next");
+		var pages = totalPages();
+		if (prev) prev.disabled = state.page <= 1;
+		if (next) next.disabled = state.page >= pages;
+	}
+
+	function updateUsersMeta() {
+		var meta = document.getElementById("usis-ud-users-meta");
+		if (!meta) return;
+		if (!state.total) {
+			meta.textContent = state.users.length ? "No users found." : "";
+			return;
+		}
+		var start = state.total ? (state.page - 1) * state.limit + 1 : 0;
+		var end = Math.min(state.page * state.limit, state.total);
+		var pages = totalPages();
+		meta.textContent =
+			"Showing " +
+			start +
+			"–" +
+			end +
+			" of " +
+			state.total +
+			" user(s) · Page " +
+			state.page +
+			" of " +
+			pages;
+	}
+
+	function loadUsers(resetPage) {
 		clearPageErr();
+		if (resetPage) {
+			state.page = 1;
+		}
 		var q = (document.getElementById("usis-ud-search") || {}).value || "";
-		var qs = "?limit=200";
+		var offset = (state.page - 1) * state.limit;
+		var qs = "?limit=" + encodeURIComponent(state.limit) + "&offset=" + encodeURIComponent(offset);
 		if (q.trim()) qs += "&q=" + encodeURIComponent(q.trim());
 		apiFetch("/api/v1/admin/users" + qs)
 			.then(function (r) {
@@ -249,29 +498,35 @@
 					var msg = authErrorMessage(res, res.body);
 					showPageErr(msg);
 					state.users = [];
+					state.total = 0;
 					renderUsersTable();
+					updatePaginationControls();
+					updateUsersMeta();
 					return;
 				}
 				state.users = res.body.items || [];
-				var meta = document.getElementById("usis-ud-users-meta");
-				if (meta) {
-					if (res.body.total != null) {
-						meta.textContent =
-							"Showing " +
-							state.users.length +
-							" of " +
-							res.body.total +
-							" user(s). Use search to narrow.";
-					} else {
-						meta.textContent = state.users.length ? "Showing " + state.users.length + " user(s)." : "";
+				state.total = res.body.total != null ? res.body.total : state.users.length;
+				if (res.body.limit != null) {
+					state.limit = res.body.limit;
+				}
+				if (state.page > totalPages()) {
+					state.page = totalPages();
+					if (offset > 0 && state.users.length === 0 && state.total > 0) {
+						loadUsers(false);
+						return;
 					}
 				}
+				updatePaginationControls();
+				updateUsersMeta();
 				renderUsersTable();
 			})
 			.catch(function () {
 				showPageErr("Network error loading users.");
 				state.users = [];
+				state.total = 0;
 				renderUsersTable();
+				updatePaginationControls();
+				updateUsersMeta();
 			});
 	}
 
@@ -398,9 +653,40 @@
 			});
 		}
 		var ref = document.getElementById("usis-ud-refresh");
-		if (ref) ref.addEventListener("click", function () {
-			loadUsers();
-		});
+		if (ref) {
+			ref.addEventListener("click", function () {
+				loadUsers(false);
+			});
+		}
+		var prevBtn = document.getElementById("usis-ud-prev");
+		if (prevBtn) {
+			prevBtn.addEventListener("click", function () {
+				if (state.page > 1) {
+					state.page -= 1;
+					loadUsers(false);
+				}
+			});
+		}
+		var nextBtn = document.getElementById("usis-ud-next");
+		if (nextBtn) {
+			nextBtn.addEventListener("click", function () {
+				if (state.page < totalPages()) {
+					state.page += 1;
+					loadUsers(false);
+				}
+			});
+		}
+		var pageSize = document.getElementById("usis-ud-page-size");
+		if (pageSize) {
+			pageSize.addEventListener("change", function () {
+				var n = parseInt(pageSize.value, 10);
+				if (PAGE_SIZES.indexOf(n) < 0) return;
+				state.limit = n;
+				state.page = 1;
+				persistPageSize();
+				loadUsers(false);
+			});
+		}
 		var saveBtn = document.getElementById("usis-ud-modal-save");
 		if (saveBtn) saveBtn.addEventListener("click", saveUserModal);
 		var tbody = document.getElementById("usis-ud-users-body");
@@ -415,7 +701,7 @@
 			search.addEventListener("input", function () {
 				if (state.searchTimer) clearTimeout(state.searchTimer);
 				state.searchTimer = setTimeout(function () {
-					loadUsers();
+					loadUsers(true);
 				}, 350);
 			});
 		}
@@ -427,9 +713,22 @@
 				});
 			}
 		});
+		var rolesBody = document.getElementById("usis-ud-roles-body");
+		if (rolesBody) {
+			rolesBody.addEventListener("click", function (ev) {
+				var b = ev.target.closest(".usis-ud-role-edit");
+				if (b && b.getAttribute("data-id")) {
+					openEditRole(b.getAttribute("data-id"));
+				}
+			});
+		}
+		var roleSaveBtn = document.getElementById("usis-ud-modal-role-save");
+		if (roleSaveBtn) roleSaveBtn.addEventListener("click", saveRolePermissions);
+		readPageSize();
+		guardPageAccess();
 		loadRoles(function (err) {
 			if (err) showPageErr(err);
-			loadUsers();
+			loadUsers(false);
 		});
 	}
 

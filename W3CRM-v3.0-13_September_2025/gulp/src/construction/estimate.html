@@ -90,7 +90,7 @@
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 							<div class="input-group message-search-area width200 w-xs-100">
-								<input type="text" class="form-control border-end-0" id="usis-est-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state)" autocomplete="off">
+								<input type="text" class="form-control border-end-0" id="usis-est-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
 								<div class="input-group-append">
 									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-est-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
 								</div>
@@ -124,13 +124,14 @@
 									<th>Company</th>
 									<th class="text-nowrap">City</th>
 									<th class="text-nowrap">State</th>
+									<th class="text-nowrap">Bid due date</th>
 									<th class="text-center text-nowrap">Estimator</th>
 									<th class="text-end text-nowrap">Action</th>
 								</tr>
 							</thead>
 							<tbody id="usis-estimate-tbody">
 								<tr>
-									<td colspan="8" class="text-muted">Loading estimates from API…</td>
+									<td colspan="9" class="text-muted">Loading estimates from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -237,6 +238,7 @@
 			{ key: "company_name", label: "Company" },
 			{ key: "city", label: "City" },
 			{ key: "state", label: "State" },
+			{ key: "due_at", label: "Bid due date" },
 		];
 		var BLANK = "\u0000__USIS_EMPTY__\u0000";
 
@@ -257,7 +259,7 @@
 		var modalLists = {};
 
 		var emptyMessage =
-			'<tr><td colspan="8" class="text-muted">No matching <code>lead_estimates</code> (undecided / will_submit / submitted, not archived). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>';
+			'<tr><td colspan="9" class="text-muted">No matching <code>lead_estimates</code> (undecided / will_submit / submitted, not archived). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>';
 
 		function esc(s) {
 			return String(s == null ? "" : s)
@@ -274,9 +276,26 @@
 				.replace(/</g, "&lt;");
 		}
 
+		function formatBidDueDate(iso) {
+			if (!iso) return '<span class="text-muted">—</span>';
+			try {
+				var d = new Date(iso);
+				if (isNaN(d.getTime())) return esc(String(iso));
+				return esc(d.toLocaleDateString());
+			} catch (e) {
+				return esc(String(iso));
+			}
+		}
+
 		function cellToken(row, key) {
 			var v = row[key];
 			if (v == null || String(v).trim() === "") return BLANK;
+			if (key === "due_at") {
+				try {
+					var d = new Date(v);
+					if (!isNaN(d.getTime())) return d.toLocaleDateString();
+				} catch (e) {}
+			}
 			return String(v).trim();
 		}
 
@@ -511,6 +530,7 @@
 			var company = esc(row.company_name || "—");
 			var city = esc(row.city || "—");
 			var state = esc(row.state || "—");
+			var bidDue = formatBidDueDate(row.due_at);
 			var jobBtn = jobHref
 				? '<a class="btn btn-square btn-sm btn-outline-primary rounded" href="' +
 					jobHref +
@@ -536,6 +556,7 @@
 				"<td>" + company + "</td>" +
 				'<td class="text-nowrap">' + city + "</td>" +
 				'<td class="text-nowrap">' + state + "</td>" +
+				'<td class="text-nowrap">' + bidDue + "</td>" +
 				'<td class="text-center">—</td>' +
 				'<td class="text-end">' + actions + "</td>" +
 				"</tr>"
@@ -550,6 +571,7 @@
 				row.company_name,
 				row.city,
 				row.state,
+				row.due_at,
 				row.external_id,
 				row.id,
 			]
@@ -566,7 +588,7 @@
 				if (filterCount) filterCount.textContent = "";
 				if (q) {
 					tbody.innerHTML =
-						'<tr><td colspan="8" class="text-muted">No rows match your filter. Clear the search box to see all loaded estimates (or reload if the list is empty).</td></tr>';
+						'<tr><td colspan="9" class="text-muted">No rows match your filter. Clear the search box to see all loaded estimates (or reload if the list is empty).</td></tr>';
 				} else {
 					tbody.innerHTML = emptyMessage;
 				}
@@ -585,7 +607,7 @@
 			}
 			if (!filtered.length) {
 				tbody.innerHTML =
-					'<tr><td colspan="8" class="text-muted">No rows match your column filters and/or search. Adjust <strong>Column filters</strong> or clear the search box.</td></tr>';
+					'<tr><td colspan="9" class="text-muted">No rows match your column filters and/or search. Adjust <strong>Column filters</strong> or clear the search box.</td></tr>';
 			} else {
 				tbody.innerHTML = filtered.map(renderRow).join("");
 			}
@@ -610,7 +632,7 @@
 			for (var ri = 0; ri < COL_CFG.length; ri++) delete colAllowed[COL_CFG[ri].key];
 			updateColFilterBadge();
 			if (filterCount) filterCount.textContent = "";
-			tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Loading…</td></tr>';
 			fetch(
 				API.replace(/\/$/, "") +
 					"/api/v1/lead-estimates?limit=500&submission_state=undecided,will_submit,submitted",
@@ -636,7 +658,7 @@
 					isFetching = false;
 					loadError = err.message;
 					tbody.innerHTML =
-						'<tr><td colspan="8" class="text-danger">Could not load estimates: ' +
+						'<tr><td colspan="9" class="text-danger">Could not load estimates: ' +
 						esc(err.message) +
 						".</td></tr>";
 				});

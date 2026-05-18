@@ -73,6 +73,9 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     dbe_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sage_project_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     textura_project_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
+    invoice_method: Mapped[Optional[str]] = mapped_column(String(80), nullable=True, index=True)
+    invoice_due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    invoice_recipient_emails: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     gc_company = relationship("Company", foreign_keys=[gc_company_id])

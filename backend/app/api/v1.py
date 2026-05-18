@@ -48,6 +48,8 @@ from . import _prime_contract_sov_service as prime_sov_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
 from . import _material_order_service as material_order_svc
+from . import _project_service as project_svc
+from . import _invoice_delivery_service as invoice_delivery_svc
 from . import _submittal_service as submittal_svc
 from ._perms import can_edit_rfi, current_user, users_for_picker
 
@@ -202,11 +204,39 @@ def auth_register():
 @bp.get("/me")
 def get_me():
     """Signed-in user's profile (same payload shape as ``GET /admin/users/<id>``)."""
+    cu = current_user()
     try:
-        item = admin_users_svc.get_me(current_user())
+        item = admin_users_svc.get_me(cu)
+        capabilities = admin_users_svc.get_me_capabilities(cu)
     except admin_users_svc.ApiError as exc:
         return _admin_directory_err(exc)
-    return _jsonify({"item": item, "entity": "session_user"})
+    return _jsonify(
+        {
+            "item": item,
+            "capabilities": capabilities,
+            "entity": "session_user",
+        }
+    )
+
+
+@bp.get("/me/capabilities")
+def get_me_capabilities():
+    cu = current_user()
+    try:
+        capabilities = admin_users_svc.get_me_capabilities(cu)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    return _jsonify({"capabilities": capabilities, "entity": "session_capabilities"})
+
+
+@bp.get("/permissions/catalog")
+def permissions_catalog():
+    return _jsonify(
+        {
+            "items": admin_users_svc.permissions_catalog(),
+            "entity": "permission_modules",
+        }
+    )
 
 
 @bp.patch("/me")
@@ -373,6 +403,11 @@ def _project_detail_public(p: Project) -> dict[str, Any]:
             "prevailing_wage": p.prevailing_wage,
             "dbe_required": p.dbe_required,
             "sage_project_id": p.sage_project_id,
+            "textura_project_id": p.textura_project_id,
+            "invoice_method": (p.invoice_method or "").strip() or None,
+            "invoice_method_label": invoice_delivery_svc.label_for_code(p.invoice_method),
+            "invoice_due_date": _iso(p.invoice_due_date) if p.invoice_due_date else None,
+            "invoice_recipient_emails": p.invoice_recipient_emails,
             "notes": p.notes,
             "gc_company_name": _company_name_by_id(p.gc_company_id),
             "owner_company_name": _company_name_by_id(p.owner_company_id),
@@ -938,6 +973,40 @@ def get_project(project_id: str):
     if p is None or p.deleted_at is not None:
         return _jsonify({"error": "project not found"}), 404
     return _jsonify({"item": _project_detail_public(p), "entity": "project"})
+
+
+@bp.patch("/projects/<project_id>")
+def patch_project(project_id: str):
+    """Update project Job info fields (requires projects write access)."""
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    body = request.get_json(silent=True) or {}
+    try:
+        item = project_svc.patch_project(pid, body)
+    except project_svc.ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    if item is None:
+        return _jsonify({"error": "project not found"}), 404
+    db.session.commit()
+    return _jsonify({"item": item, "entity": "project"})
+
+
+@bp.get("/invoice-delivery-methods")
+def list_invoice_delivery_methods():
+    items = invoice_delivery_svc.list_methods()
+    return _jsonify({"items": items, "entity": "invoice_delivery_methods"})
+
+
+@bp.post("/invoice-delivery-methods")
+def create_invoice_delivery_method():
+    body = request.get_json(silent=True) or {}
+    try:
+        item = invoice_delivery_svc.create_method(body)
+    except invoice_delivery_svc.ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    db.session.commit()
+    return _jsonify({"item": item, "entity": "invoice_delivery_method"}), 201
 
 
 @bp.get("/projects/<project_id>/schedule-items")
@@ -1977,6 +2046,51 @@ def admin_list_roles():
         return _jsonify({"items": items, "entity": "roles"})
     except admin_users_svc.ApiError as exc:
         return _admin_directory_err(exc)
+
+
+@bp.get("/admin/roles/<role_id>")
+def admin_get_role(role_id: str):
+    rid = _parse_uuid_param(role_id)
+    if not rid:
+        return _jsonify({"error": "invalid role id"}), 400
+    try:
+        item = admin_users_svc.get_role(current_user(), rid)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    if item is None:
+        return _jsonify({"error": "role not found"}), 404
+    return _jsonify({"item": item, "entity": "role"})
+
+
+@bp.post("/admin/roles")
+def admin_create_role():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    try:
+        item = admin_users_svc.create_role(current_user(), body)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    db.session.commit()
+    return _jsonify({"item": item, "entity": "role"}), 201
+
+
+@bp.patch("/admin/roles/<role_id>")
+def admin_patch_role(role_id: str):
+    rid = _parse_uuid_param(role_id)
+    if not rid:
+        return _jsonify({"error": "invalid role id"}), 400
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    try:
+        item = admin_users_svc.patch_role(current_user(), rid, body)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    if item is None:
+        return _jsonify({"error": "role not found"}), 404
+    db.session.commit()
+    return _jsonify({"item": item, "entity": "role"})
 
 
 @bp.get("/admin/users")

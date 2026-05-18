@@ -74,6 +74,7 @@ class CurrentUser:
     role_codes: frozenset[str]
     granular: frozenset[str]
     is_dev_admin: bool = False
+    module_access: Optional[dict[str, str]] = None
 
     @property
     def id(self) -> Optional[uuid.UUID]:
@@ -123,6 +124,12 @@ def _role_codes_for(user: User) -> frozenset[str]:
     return frozenset(codes)
 
 
+def _module_access_for(user: User) -> dict[str, str]:
+    from ..permissions.access import effective_permissions_for_user
+
+    return effective_permissions_for_user(user)
+
+
 def _granular_for(user: User) -> frozenset[str]:
     """Granular permission codes are stored in ``users.tags`` JSON for now
     (free-form). When the full RBAC system lands this resolves against
@@ -161,6 +168,7 @@ def current_user() -> CurrentUser:
                 user=bearer_u,
                 role_codes=_role_codes_for(bearer_u),
                 granular=_granular_for(bearer_u),
+                module_access=_module_access_for(bearer_u),
             )
             g.current_user = cu
             return cu
@@ -174,7 +182,10 @@ def current_user() -> CurrentUser:
                 u = db.session.get(User, uid)
                 if u is not None:
                     cu = CurrentUser(
-                        user=u, role_codes=_role_codes_for(u), granular=_granular_for(u)
+                        user=u,
+                        role_codes=_role_codes_for(u),
+                        granular=_granular_for(u),
+                        module_access=_module_access_for(u),
                     )
                     g.current_user = cu
                     return cu
@@ -184,7 +195,12 @@ def current_user() -> CurrentUser:
         if sess_uid is not None:
             u = db.session.get(User, sess_uid)
             if u is not None and getattr(u, "is_active", True):
-                cu = CurrentUser(user=u, role_codes=_role_codes_for(u), granular=_granular_for(u))
+                cu = CurrentUser(
+                    user=u,
+                    role_codes=_role_codes_for(u),
+                    granular=_granular_for(u),
+                    module_access=_module_access_for(u),
+                )
                 g.current_user = cu
                 return cu
             session.pop("user_id", None)
@@ -194,18 +210,24 @@ def current_user() -> CurrentUser:
         u = db.session.get(User, env_uid)
         if u is not None:
             cu = CurrentUser(
-                user=u, role_codes=_role_codes_for(u), granular=_granular_for(u)
+                user=u,
+                role_codes=_role_codes_for(u),
+                granular=_granular_for(u),
+                module_access=_module_access_for(u),
             )
             if has_request_context():
                 g.current_user = cu
             return cu
 
     if _dev_unrestricted():
+        from ..permissions.access import all_admin_permissions
+
         cu = CurrentUser(
             user=None,
             role_codes=frozenset({"admin"}),
             granular=frozenset({"act_as_rfi_manager", "mark_official_responses"}),
             is_dev_admin=True,
+            module_access=all_admin_permissions(),
         )
         if has_request_context():
             g.current_user = cu
@@ -228,7 +250,11 @@ def _is_admin(cu: CurrentUser) -> bool:
 
 def can_manage_directory_users(cu: CurrentUser) -> bool:
     """Whether the caller may use admin user/role directory APIs (list/edit users, assign roles)."""
-    return _is_admin(cu)
+    if _is_admin(cu):
+        return True
+    from ..permissions.access import has_module_access
+
+    return has_module_access(cu, "user_admin", "admin")
 
 
 def _is_standard(cu: CurrentUser) -> bool:

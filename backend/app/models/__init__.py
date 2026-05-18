@@ -3,7 +3,7 @@
 Append new models here as future migrations land.
 """
 from .audit import AuditLog
-from .auth import MobileRefreshToken, Role, User, UserRole
+from .auth import MobileRefreshToken, Role, RoleModulePermission, User, UserRole
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
@@ -24,6 +24,7 @@ from .hr import (
     HrTrainingAssignment,
 )
 from .hr_dispatch import HrEmployeeDispatch
+from .invoice_delivery_method import InvoiceDeliveryMethod
 from .material_order import ProjectMaterialOrder
 from .product_catalog import ManufacturerProductData
 from .hrms_core import (
@@ -108,6 +109,7 @@ __all__ = [
     "Estimate",
     "EstimateLineItem",
     "HrEmployeeDispatch",
+    "InvoiceDeliveryMethod",
     "HrEmployeeDocument",
     "HrEmployeePayScale",
     "HrHireApplication",
@@ -167,6 +169,7 @@ __all__ = [
     "RfiRevision",
     "RfiSavedView",
     "Role",
+    "RoleModulePermission",
     "SpecSection",
     "SubJob",
     "Submittal",

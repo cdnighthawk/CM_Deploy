@@ -24,6 +24,25 @@ class Role(UUIDPKMixin, TimestampMixin, db.Model):
     users: Mapped[List["UserRole"]] = relationship(
         back_populates="role", cascade="all, delete-orphan"
     )
+    module_permissions: Mapped[List["RoleModulePermission"]] = relationship(
+        back_populates="role", cascade="all, delete-orphan"
+    )
+
+
+class RoleModulePermission(db.Model):
+    """Per-role access level for a company module (nav + API gate)."""
+
+    __tablename__ = "role_module_permissions"
+
+    role_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("roles.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    module_code: Mapped[str] = mapped_column(String(50), primary_key=True)
+    access_level: Mapped[str] = mapped_column(String(20), nullable=False, default="none")
+
+    role: Mapped["Role"] = relationship(back_populates="module_permissions")
 
 
 class User(UUIDPKMixin, TimestampMixin, db.Model):

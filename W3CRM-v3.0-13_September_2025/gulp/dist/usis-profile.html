@@ -46,17 +46,6 @@
 	<script src="assets/js/usis-api-base.js"></script>
 	<script src="assets/js/usis-theme-boot.js"></script>
 
-	<script>
-	(function () {
-		try {
-			var u = new URL("account/settings.html", window.location.href);
-			if (u.href.split("#")[0] !== window.location.href.split("#")[0]) {
-				window.location.replace(u.href);
-			}
-		} catch (e) {}
-	})();
-	</script>
-
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 
@@ -401,7 +390,7 @@
 								<p class="text-muted small mb-0">Update your name, contact email, phone, and password. Based on the W3CRM edit-profile layout.</p>
 							</div>
 							<div class="text-nowrap small">
-								<a href="usis-dashboard.html">Dashboard</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a>
+								<a href="usis-dashboard-dark.html">Dashboard</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a>
 							</div>
 						</div>
 					</div>
@@ -458,7 +447,7 @@
 								</div>
 								<div class="card-footer d-flex flex-wrap gap-2 align-items-center">
 									<button type="submit" class="btn btn-primary" id="usis-pf-save">Save changes</button>
-									<a href="usis-dashboard.html" class="btn btn-outline-secondary">Cancel</a>
+									<a href="usis-dashboard-dark.html" class="btn btn-outline-secondary">Cancel</a>
 								</div>
 							</div>
 						</form>
@@ -510,7 +499,7 @@
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
-	<script src="assets/js/deznav-init.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/usis-profile.js"></script>
 

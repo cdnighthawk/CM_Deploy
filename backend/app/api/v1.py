@@ -1184,6 +1184,13 @@ def upload_project_drawing(project_id: str):
     except DrawingUploadError as exc:
         db.session.rollback()
         return _jsonify({"error": exc.message}), exc.status
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception("drawing upload failed for project %s", project_id)
+        detail = str(exc).strip() or exc.__class__.__name__
+        if "pypdf" in detail.lower() or "No module named" in detail:
+            detail = "PDF processing is unavailable on the server (missing pypdf). Contact your administrator."
+        return _jsonify({"error": "drawing upload failed", "detail": detail}), 500
 
     db.session.commit()
     if result.get("split"):

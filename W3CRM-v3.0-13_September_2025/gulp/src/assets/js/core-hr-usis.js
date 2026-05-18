@@ -1,61 +1,25 @@
 /**
- * Core HR (core-hr.html) — load employee rows from HR dashboard summary API;
- * name cells link to usis-hr-employee.html?id=<user UUID>.
+ * Core HR (core-hr.html) — employee directory from admin users API when permitted,
+ * otherwise HR dashboard summary (users with hr_* activity).
  */
 (function () {
 	"use strict";
 
-	var DEV_SERVER_PORTS = {
-		3000: 1,
-		3001: 1,
-		3002: 1,
-		3003: 1,
-		3004: 1,
-		3005: 1,
-		3006: 1,
-		4173: 1,
-		5173: 1,
-		5174: 1,
-		5500: 1,
-		5501: 1,
-		8080: 1,
-		4200: 1,
-		4321: 1,
-		9630: 1,
-		1234: 1,
-	};
-
-	function explicitWindowApiBase() {
-		if (typeof window.USIS_API_BASE !== "string") return null;
-		var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
-		return s || null;
-	}
-
-	function metaApiBase() {
-		if (typeof document === "undefined" || !document.querySelector) return null;
-		var m = document.querySelector('meta[name="usis-api-base"]');
-		if (!m) return null;
-		var c = (m.getAttribute("content") || "").trim().replace(/\/$/, "");
-		return c || null;
-	}
-
-	function isLikelyStaticDevPort(portStr) {
-		if (DEV_SERVER_PORTS[portStr]) return true;
-		var n = parseInt(portStr, 10);
-		return !isNaN(n) && n >= 3000 && n <= 3099;
-	}
-
 	function apiBase() {
-		var fromWin = explicitWindowApiBase();
-		if (fromWin) return fromWin;
-		var fromMeta = metaApiBase();
-		if (fromMeta) return fromMeta;
+		if (typeof window.usisApiBase === "function") {
+			return window.usisApiBase();
+		}
+		if (typeof window.USIS_API_BASE === "string") {
+			return window.USIS_API_BASE.trim().replace(/\/$/, "");
+		}
 		var loc = window.location;
-		if (loc.protocol === "file:") return "http://127.0.0.1:5000";
-		var host = loc.hostname || "";
-		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
-		if (isLikelyStaticDevPort(port)) return proto + "//" + host + ":5000";
+		if (loc.protocol === "file:") {
+			return "http://127.0.0.1:5000";
+		}
+		var h = loc.hostname || "";
+		if (h === "localhost" || h === "127.0.0.1") {
+			return (loc.protocol + "//" + h + ":5000").replace(/\/$/, "");
+		}
 		return "";
 	}
 
@@ -73,13 +37,26 @@
 		return esc(u.slice(0, 8) + "…");
 	}
 
+	function displayName(u) {
+		var n = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
+		return n || u.email || u.name || "—";
+	}
+
+	function mapAdminUser(u) {
+		return {
+			user_id: u.id,
+			name: displayName(u),
+			email: u.email || "",
+		};
+	}
+
 	function renderRows(rows) {
 		var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
 		if (!tbody) return;
 		tbody.innerHTML = "";
 		if (!rows || !rows.length) {
 			tbody.innerHTML =
-				'<tr><td colspan="8" class="text-muted text-center py-4">No employees with HR activity yet. Open <a href="usis-user-directory.html">User admin</a> for all staff, or <a href="usis-hr-dashboard.html">HR dashboard</a> for KPIs.</td></tr>';
+				'<tr><td colspan="8" class="text-muted text-center py-4">No employees yet. Add staff in <a href="usis-user-directory.html">User admin</a>, or seed HR data from the <a href="usis-hr-dashboard.html">HR dashboard</a>.</td></tr>';
 			return;
 		}
 		rows.forEach(function (row) {
@@ -115,40 +92,81 @@
 		});
 	}
 
-	function load() {
+	function showLoadError(err) {
 		var statusEl = document.getElementById("usis-core-hr-api-status");
+		var msg =
+			err && (err.message === "Failed to fetch" || err.name === "TypeError")
+				? "Could not reach the API. Check that the backend is running and try again."
+				: "Could not load employees: " + (err && err.message ? err.message : err);
+		if (statusEl) {
+			statusEl.textContent = msg;
+			statusEl.classList.remove("d-none");
+			statusEl.classList.add("text-danger");
+		}
+		var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
+		if (tbody) {
+			tbody.innerHTML =
+				'<tr><td colspan="8" class="text-danger text-center py-4">' + esc(msg) + "</td></tr>";
+		}
+	}
+
+	function setStatusHint(text, kind) {
+		var statusEl = document.getElementById("usis-core-hr-api-status");
+		if (!statusEl) return;
+		statusEl.classList.remove("text-danger", "text-warning");
+		if (!text) {
+			statusEl.textContent = "";
+			return;
+		}
+		statusEl.textContent = text;
+		if (kind === "warning") statusEl.classList.add("text-warning");
+	}
+
+	function loadHrSummary() {
 		var base = apiBase();
-		fetch(base + "/api/v1/hr/dashboard-summary", { credentials: "omit" })
+		return fetch(base + "/api/v1/hr/dashboard-summary", {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
 			.then(function (r) {
 				if (!r.ok) throw new Error("HTTP " + r.status);
 				return r.json();
 			})
 			.then(function (data) {
-				if (statusEl) {
-					statusEl.classList.remove("d-none", "text-danger", "text-warning");
-					if (data.stub) {
-						statusEl.textContent = "Placeholder data — restart the API for a live directory.";
-						statusEl.classList.add("text-warning");
-					} else if (typeof data.hint === "string" && data.hint.trim()) {
-						statusEl.textContent = data.hint.trim();
-						statusEl.classList.add("text-warning");
-					} else {
-						statusEl.textContent = "";
-					}
+				if (data.stub) {
+					setStatusHint("Placeholder data — restart the API for a live directory.", "warning");
+				} else if (typeof data.hint === "string" && data.hint.trim()) {
+					setStatusHint(data.hint.trim(), "warning");
+				} else {
+					setStatusHint("", "");
 				}
 				renderRows(data.sample_employees || []);
+			});
+	}
+
+	function load() {
+		var base = apiBase();
+		fetch(base + "/api/v1/admin/users?limit=500", {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (r) {
+				if (r.status === 401 || r.status === 403) {
+					return loadHrSummary();
+				}
+				if (!r.ok) throw new Error("HTTP " + r.status);
+				return r.json().then(function (data) {
+					var rows = (data.items || []).map(mapAdminUser);
+					if (!rows.length) {
+						setStatusHint("No users in directory yet. Add staff in User admin.", "warning");
+					} else {
+						setStatusHint("", "");
+					}
+					renderRows(rows);
+				});
 			})
 			.catch(function (err) {
-				if (statusEl) {
-					statusEl.textContent = "Could not load employees: " + (err && err.message ? err.message : err);
-					statusEl.classList.remove("d-none");
-					statusEl.classList.add("text-danger");
-				}
-				var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
-				if (tbody) {
-					tbody.innerHTML =
-						'<tr><td colspan="8" class="text-danger text-center py-4">Could not load employees. Check that the API is running and try again.</td></tr>';
-				}
+				showLoadError(err);
 			});
 	}
 

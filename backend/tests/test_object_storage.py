@@ -58,9 +58,27 @@ def test_local_save_and_send(flask_app, tmp_path):
                 download_name="photo.png",
             )
             assert resp is not None
-            resp.direct_passthrough = False
-            _ = resp.get_data()
-        delete_stored(UploadCategory.HR_I9, name)
+
+
+def test_local_save_bytesio_payload(flask_app, tmp_path):
+    """Drawing upload passes ``BytesIO`` — must not call ``FileStorage.save``."""
+    flask_app.config.update(
+        {
+            "DRAWING_UPLOAD_FOLDER": str(tmp_path),
+            "B2_APPLICATION_KEY_ID": None,
+            "B2_APPLICATION_KEY": None,
+            "B2_BUCKET_NAME": None,
+            "B2_ENDPOINT": None,
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, local_path, save_upload
+
+        name = f"{uuid.uuid4()}.pdf"
+        payload = b"%PDF-1.4 test"
+        sz = save_upload(UploadCategory.DRAWINGS, name, io.BytesIO(payload))
+        assert sz == len(payload)
+        assert local_path(UploadCategory.DRAWINGS, name).read_bytes() == payload
 
 
 def test_b2_enabled_when_all_vars_set(flask_app):

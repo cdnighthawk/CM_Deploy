@@ -598,7 +598,16 @@
 					.then(function (res) {
 						if (!res.ok) {
 							return res.text().then(function (t) {
-								throw new Error(res.status + " " + (t || res.statusText));
+								var msg = res.status + " " + (t || res.statusText);
+								try {
+									var j = JSON.parse(t);
+									if (j && (j.error || j.detail)) {
+										msg = [j.error, j.detail].filter(Boolean).join(": ");
+									}
+								} catch (parseErr) {
+									/* not JSON — keep raw text */
+								}
+								throw new Error(msg);
 							});
 						}
 						return res.json();

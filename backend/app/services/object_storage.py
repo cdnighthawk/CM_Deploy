@@ -97,19 +97,38 @@ def stored_size(category: UploadCategory, object_name: str) -> int | None:
         return None
 
 
-def save_upload(category: UploadCategory, object_name: str, file: FileStorage) -> int:
-    """Persist a multipart upload; return byte size."""
+def _read_binary_payload(file) -> bytes:
+    """Read bytes from Werkzeug ``FileStorage``, ``BytesIO``, or raw ``bytes``."""
+    if isinstance(file, (bytes, bytearray)):
+        return bytes(file)
+    payload = file.read()
+    if not payload and hasattr(file, "stream"):
+        payload = file.stream.read()
+    if hasattr(file, "seek"):
+        try:
+            file.seek(0)
+        except (OSError, ValueError, TypeError):
+            pass
+    return payload or b""
+
+
+def save_upload(category: UploadCategory, object_name: str, file) -> int:
+    """Persist a multipart upload or in-memory PDF bytes; return byte size."""
     if b2_enabled():
-        payload = file.read()
-        if not payload and hasattr(file, "stream"):
-            payload = file.stream.read()
-        content_type = (file.mimetype or "").strip() or None
+        payload = _read_binary_payload(file)
+        content_type = None
+        if hasattr(file, "mimetype"):
+            content_type = (getattr(file, "mimetype", None) or "").strip() or None
         _put_bytes(object_key(category, object_name), payload, content_type=content_type)
         return len(payload)
     path = local_path(category, object_name)
     path.parent.mkdir(parents=True, exist_ok=True)
-    file.save(str(path))
-    return path.stat().st_size
+    if hasattr(file, "save") and callable(getattr(file, "save", None)):
+        file.save(str(path))
+        return path.stat().st_size
+    payload = _read_binary_payload(file)
+    path.write_bytes(payload)
+    return len(payload)
 
 
 def delete_stored(category: UploadCategory, object_name: str) -> None:

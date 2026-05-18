@@ -48,6 +48,17 @@
 	<script src="assets/js/usis-api-base.js"></script>
 	<script src="assets/js/usis-theme-boot.js"></script>
 
+	<script>
+	(function () {
+		try {
+			var u = new URL("../usis-profile.html", window.location.href);
+			if (u.href.split("#")[0] !== window.location.href.split("#")[0]) {
+				window.location.replace(u.href);
+			}
+		} catch (e) {}
+	})();
+	</script>
+
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 

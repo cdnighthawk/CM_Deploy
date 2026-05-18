@@ -5,16 +5,29 @@
 	"use strict";
 
 	function apiBase() {
-		var raw = window.USIS_API_BASE;
-		if (raw != null && String(raw).trim() !== "") {
-			return String(raw).replace(/\/$/, "");
+		if (typeof window.usisApiBase === "function") {
+			return window.usisApiBase();
+		}
+		if (typeof window.USIS_API_BASE === "string") {
+			return window.USIS_API_BASE.trim().replace(/\/$/, "");
 		}
 		var loc = window.location;
 		var h = loc.hostname || "";
+		if (loc.protocol === "file:") {
+			return "http://127.0.0.1:5000";
+		}
 		if (h === "localhost" || h === "127.0.0.1") {
 			return (loc.protocol + "//" + h + ":5000").replace(/\/$/, "");
 		}
-		return "http://127.0.0.1:5000";
+		return "";
+	}
+
+	function fetchErrorMessage(err) {
+		if (!err) return "Could not load profile.";
+		if (err.message === "Failed to fetch" || err.name === "TypeError") {
+			return "Could not reach the API. Check that the backend is running and try again.";
+		}
+		return err.message || String(err);
 	}
 
 	function showAlert(el, msg, kind) {
@@ -80,7 +93,7 @@
 			})
 			.catch(function (e) {
 				if (e && e.message === "unauthorized") return;
-				showAlert(alertEl, (e && e.message) || "Could not load profile.", "danger");
+				showAlert(alertEl, fetchErrorMessage(e), "danger");
 			});
 	}
 
@@ -137,9 +150,10 @@
 				);
 			})
 			.catch(function (e) {
-				showAlert(alertEl, (e && e.message) || "Save failed.", "danger");
+				var msg = fetchErrorMessage(e) || "Save failed.";
+				showAlert(alertEl, msg, "danger");
 				if (window.USISNotify && typeof window.USISNotify.error === "function") {
-					window.USISNotify.error((e && e.message) || "Save failed.");
+					window.USISNotify.error(msg);
 				}
 			})
 			.finally(function () {

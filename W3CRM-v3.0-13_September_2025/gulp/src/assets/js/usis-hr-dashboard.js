@@ -43,16 +43,19 @@
 	}
 
 	function apiBase() {
-		var fromWin = explicitWindowApiBase();
-		if (fromWin) return fromWin;
-		var fromMeta = metaApiBase();
-		if (fromMeta) return fromMeta;
+		if (typeof window.usisApiBase === "function") {
+			return window.usisApiBase();
+		}
+		if (typeof window.USIS_API_BASE === "string") {
+			return window.USIS_API_BASE.trim().replace(/\/$/, "");
+		}
 		var loc = window.location;
 		if (loc.protocol === "file:") return "http://127.0.0.1:5000";
 		var host = loc.hostname || "";
 		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
-		if (isLikelyStaticDevPort(port)) return proto + "//" + host + ":5000";
+		if (host === "localhost" || host === "127.0.0.1") {
+			return (proto + "//" + host + ":5000").replace(/\/$/, "");
+		}
 		return "";
 	}
 
@@ -109,7 +112,10 @@
 	function loadSummary() {
 		var statusEl = document.getElementById("usis-hr-api-status");
 		var base = apiBase();
-		fetch(base + "/api/v1/hr/dashboard-summary", { credentials: "omit" })
+		fetch(base + "/api/v1/hr/dashboard-summary", {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
 			.then(function (r) {
 				if (!r.ok) throw new Error("HTTP " + r.status);
 				return r.json().then(function (data) {

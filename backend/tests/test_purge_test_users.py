@@ -10,13 +10,7 @@ import pytest
 _SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(_SCRIPTS))
 
-_spec = importlib.util.spec_from_file_location(
-    "purge_test_users",
-    _SCRIPTS / "purge_test_users.py",
-)
-purge_mod = importlib.util.module_from_spec(_spec)
-assert _spec.loader is not None
-_spec.loader.exec_module(purge_mod)
+from app.users.test_artifacts import is_test_artifact_email as is_test
 
 _guard_spec = importlib.util.spec_from_file_location(
     "_script_db_guard",
@@ -25,8 +19,6 @@ _guard_spec = importlib.util.spec_from_file_location(
 guard_mod = importlib.util.module_from_spec(_guard_spec)
 assert _guard_spec.loader is not None
 _guard_spec.loader.exec_module(guard_mod)
-
-is_test = purge_mod.is_test_artifact_email
 
 
 @pytest.mark.parametrize(

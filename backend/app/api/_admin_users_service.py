@@ -18,6 +18,7 @@ from ..permissions.access import (
     validate_permissions_payload,
 )
 from ..permissions.modules import catalog_public
+from ..users.test_artifacts import list_hr_demo_users, list_test_artifact_users
 from ._perms import CurrentUser, can_manage_directory_users
 
 _ROLE_LOAD = selectinload(Role.module_permissions)
@@ -32,6 +33,12 @@ class ApiError(Exception):
 def _require_admin(cu: CurrentUser) -> None:
     if not can_manage_directory_users(cu):
         raise ApiError("Admin privileges required to manage users.", 403)
+
+
+def _require_superuser(cu: CurrentUser) -> None:
+    _require_admin(cu)
+    if not cu.user or not cu.user.is_superuser:
+        raise ApiError("Superuser required for this operation.", 403)
 
 
 def _iso(dt: Any) -> str | None:
@@ -435,3 +442,71 @@ def patch_user(cu: CurrentUser, user_id: uuid.UUID, data: dict[str, Any]) -> dic
     db.session.flush()
     db.session.refresh(u)
     return user_public(u)
+
+
+def preview_purge_test_users(
+    cu: CurrentUser,
+    *,
+    include_hr_demos: bool = False,
+    sample: int = 20,
+) -> dict[str, Any]:
+    """Dry-run counts for pytest artifacts (and optional HR demo users)."""
+    _require_superuser(cu)
+    test_rows = list_test_artifact_users()
+    hr_rows = list_hr_demo_users() if include_hr_demos else []
+    combined = test_rows + [u for u in hr_rows if u.id not in {x.id for x in test_rows}]
+    sample_n = max(0, min(sample, 100))
+    return {
+        "dry_run": True,
+        "matched": len(combined),
+        "test_artifact_count": len(test_rows),
+        "hr_demo_count": len(hr_rows),
+        "include_hr_demos": include_hr_demos,
+        "sample": [
+            {"id": str(u.id), "email": u.email, "first_name": u.first_name, "last_name": u.last_name}
+            for u in combined[:sample_n]
+        ],
+        "sample_truncated": len(combined) > sample_n,
+    }
+
+
+def purge_test_users(
+    cu: CurrentUser,
+    *,
+    include_hr_demos: bool = False,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    """Delete pytest/test artifact users; optionally HR seed demos."""
+    _require_superuser(cu)
+    if not confirm:
+        raise ApiError('Set confirm=true in the JSON body to delete matched users.')
+
+    test_rows = list_test_artifact_users()
+    hr_rows = list_hr_demo_users() if include_hr_demos else []
+    to_delete: list[User] = []
+    seen: set[uuid.UUID] = set()
+    for u in test_rows + hr_rows:
+        if u.id in seen:
+            continue
+        seen.add(u.id)
+        to_delete.append(u)
+
+    if not to_delete:
+        return {
+            "dry_run": False,
+            "deleted": 0,
+            "test_artifact_count": 0,
+            "hr_demo_count": 0,
+            "include_hr_demos": include_hr_demos,
+        }
+
+    for u in to_delete:
+        db.session.delete(u)
+    db.session.flush()
+    return {
+        "dry_run": False,
+        "deleted": len(to_delete),
+        "test_artifact_count": len(test_rows),
+        "hr_demo_count": len(hr_rows),
+        "include_hr_demos": include_hr_demos,
+    }

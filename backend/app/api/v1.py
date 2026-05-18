@@ -2145,6 +2145,47 @@ def admin_create_user():
     return _jsonify({"item": item, "entity": "directory_user"}), 201
 
 
+@bp.get("/admin/purge-test-users")
+def admin_preview_purge_test_users():
+    include_hr = (request.args.get("include_hr_demos") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    try:
+        sample = max(0, min(int(request.args.get("sample") or 20), 100))
+    except ValueError:
+        return _jsonify({"error": "invalid sample"}), 400
+    try:
+        result = admin_users_svc.preview_purge_test_users(
+            current_user(),
+            include_hr_demos=include_hr,
+            sample=sample,
+        )
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    return _jsonify(result)
+
+
+@bp.post("/admin/purge-test-users")
+def admin_purge_test_users():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    include_hr = bool(body.get("include_hr_demos"))
+    confirm = bool(body.get("confirm"))
+    try:
+        result = admin_users_svc.purge_test_users(
+            current_user(),
+            include_hr_demos=include_hr,
+            confirm=confirm,
+        )
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    db.session.commit()
+    return _jsonify(result)
+
+
 @bp.patch("/admin/users/<user_id>")
 def admin_patch_user(user_id: str):
     uid = _parse_uuid_param(user_id)

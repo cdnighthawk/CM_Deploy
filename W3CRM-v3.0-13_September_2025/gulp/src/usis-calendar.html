@@ -1,1 +1,131 @@
--NoNewline
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-calendar.html",
+	})
+
+	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		#usis-calendar-main { min-height: 32rem; }
+		.usis-cal-legend .badge { font-weight: 500; }
+	</style>
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "Calendar",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<h6 class="mb-1">USIS Calendar</h6>
+						<p class="text-muted small mb-0">Company-wide and project-specific views of procurement dates, installation windows, RFIs, submittals, RFPs, and project milestones.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<div class="row g-3">
+					<div class="col-xxl-3 col-xl-4">
+						<div class="card h-auto">
+							<div class="card-header border-0 pb-0">
+								<h5 class="card-title mb-1">Filters</h5>
+							</div>
+							<div class="card-body">
+								<div class="mb-3">
+									<label class="form-label small text-muted mb-1" for="usis-cal-preset">Calendar view</label>
+									<select class="form-select form-select-sm" id="usis-cal-preset">
+										<option value="all">All events</option>
+										<option value="procurement">Procurement calendar</option>
+										<option value="project">Project calendar</option>
+									</select>
+								</div>
+								<div class="mb-3">
+									<label class="form-label small text-muted mb-1" for="usis-cal-project">Project</label>
+									<select class="form-select form-select-sm" id="usis-cal-project">
+										<option value="">All accessible projects</option>
+									</select>
+								</div>
+								<div class="mb-3" id="usis-cal-categories-wrap">
+									<span class="form-label small text-muted d-block mb-1">Event types</span>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="procurement_order" id="usis-cal-cat-order" checked>
+										<label class="form-check-label small" for="usis-cal-cat-order">Order by date</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="procurement_delivery" id="usis-cal-cat-delivery" checked>
+										<label class="form-check-label small" for="usis-cal-cat-delivery">Expected delivery</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="schedule" id="usis-cal-cat-schedule" checked>
+										<label class="form-check-label small" for="usis-cal-cat-schedule">Installation windows</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="rfi" id="usis-cal-cat-rfi" checked>
+										<label class="form-check-label small" for="usis-cal-cat-rfi">RFI due</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="submittal" id="usis-cal-cat-submittal" checked>
+										<label class="form-check-label small" for="usis-cal-cat-submittal">Submittal due</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="rfp" id="usis-cal-cat-rfp" checked>
+										<label class="form-check-label small" for="usis-cal-cat-rfp">RFP due</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input usis-cal-cat" type="checkbox" value="project_milestone" id="usis-cal-cat-milestone" checked>
+										<label class="form-check-label small" for="usis-cal-cat-milestone">Project milestones</label>
+									</div>
+								</div>
+								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-cal-apply">Apply filters</button>
+								<div class="alert alert-danger py-2 mt-3 mb-0 d-none small" id="usis-cal-error" role="alert"></div>
+								<div class="alert alert-light border py-2 mt-3 mb-0 d-none small" id="usis-cal-loading" role="status">Loading events…</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-xxl-9 col-xl-8">
+						<div class="card card-body">
+							<div id="usis-calendar-main" class="app-fullcalendar"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-calendar.js"></script>
+
+</body>
+</html>

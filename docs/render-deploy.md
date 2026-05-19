@@ -153,6 +153,7 @@ Also update third-party redirect URIs if used:
 |-------------|----------|---------|
 | Microsoft Entra SSO | `MS_ENTRA_REDIRECT_URI` | `https://www.usiscm.com/auth/microsoft/callback` |
 | Autodesk / BuildingConnected | `AUTODESK_OAUTH_REDIRECT_URI` | `https://www.usiscm.com/api/v1/integrations/buildingconnected/oauth/callback` |
+| Power BI embed (reports page) | `POWERBI_TENANT_ID`, `POWERBI_CLIENT_ID`, `POWERBI_CLIENT_SECRET`, `POWERBI_WORKSPACE_ID`, `POWERBI_REPORT_ID` | Service principal; see [powerbi-embed.md](powerbi-embed.md) |
 
 ### 7.4 Smoke test on custom domain
 

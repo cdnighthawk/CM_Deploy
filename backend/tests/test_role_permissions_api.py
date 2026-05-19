@@ -76,6 +76,27 @@ def test_patch_role_permissions(client, standard_role):
     assert perms["projects"] == "read"
 
 
+def test_me_includes_project_scope_for_cm_role(client):
+    with client.application.app_context():
+        role = db.session.scalar(select(Role).where(Role.code == "project_manager"))
+        if role is None:
+            role = Role(code="project_manager", name="Project Manager")
+            db.session.add(role)
+            db.session.flush()
+        u = User(email="pm_cap_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        db.session.commit()
+        uid = str(u.id)
+
+    r = client.get("/api/v1/me", headers={"X-Usis-User-Id": uid})
+    assert r.status_code == 200
+    caps = r.get_json()["capabilities"]
+    assert caps["project_scope"] == "assigned"
+    assert caps["assigned_project_count"] == 0
+
+
 def test_me_includes_capabilities(client, standard_role):
     with client.application.app_context():
         u = User(email="perm_me_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)

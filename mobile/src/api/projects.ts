@@ -15,6 +15,7 @@ type ProjectsListResponse = {
   items: ProjectSummary[];
   total: number;
   entity: string;
+  project_scope?: 'all' | 'assigned';
 };
 
 type ProjectDetailResponse = {
@@ -28,6 +29,14 @@ export async function fetchProjects(): Promise<ProjectSummary[]> {
 }
 
 export async function fetchProject(projectId: string): Promise<ProjectDetailResponse['item']> {
-  const data = await apiFetch<ProjectDetailResponse>(`/api/v1/projects/${projectId}`);
-  return data.item;
+  try {
+    const data = await apiFetch<ProjectDetailResponse>(`/api/v1/projects/${projectId}`);
+    return data.item;
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 404) {
+      throw new Error('Project not found or you are not assigned to this job.');
+    }
+    throw err;
+  }
 }

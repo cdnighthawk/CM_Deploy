@@ -116,19 +116,24 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(auth_bp)
     app.permanent_session_lifetime = app.config.get("PERMANENT_SESSION_LIFETIME", timedelta(days=14))
 
+    from .ai.blueprint import bp as ai_bp
     from .api import v1_bp
     from .hrms import hrms_bp
     from .public_portal import public_bp
 
     app.register_blueprint(v1_bp)
+    app.register_blueprint(ai_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(hrms_bp)
 
+    def _protected_api_path(path: str) -> bool:
+        return path.startswith("/api/v1") or path.startswith("/api/ai")
+
     @app.before_request
     def _require_session_for_api_v1() -> None:
-        """All ``/api/v1`` routes require a real signed-in user unless dev-open is enabled."""
+        """All ``/api/v1`` and ``/api/ai`` routes require a signed-in user unless dev-open."""
         path = request.path.rstrip("/")
-        if not path.startswith("/api/v1"):
+        if not _protected_api_path(path):
             return None
         # CORS preflight has no session; must not return 401 or the browser blocks the real request.
         if request.method == "OPTIONS":
@@ -154,12 +159,12 @@ def create_app(config_object: str | None = None) -> Flask:
 
     @app.before_request
     def _enforce_module_permissions() -> None:
-        """Gate ``/api/v1`` routes by role module permissions (after session check)."""
+        """Gate ``/api/v1`` and ``/api/ai`` routes by role module permissions (after session check)."""
         from .api._module_guard import enforce_module_access_for_path
         from .api._perms import allow_dev_anonymous_access, current_user
 
         path = request.path.rstrip("/")
-        if not path.startswith("/api/v1"):
+        if not _protected_api_path(path):
             return None
         if request.method == "OPTIONS":
             return None

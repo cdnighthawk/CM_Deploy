@@ -723,11 +723,24 @@ def register_hr_routes(bp: Blueprint) -> None:
     @bp.get("/hr/projects-picker")
     def hr_projects_picker():
         """Lightweight project list for dispatch / assignment forms."""
+        from ..permissions.project_scope import project_access_clause
+
         cu = current_user()
         if not _can_edit_hr_employee_records(cu) and not cu.is_dev_admin:
-            if not cu.has_role("admin", "superuser", "standard"):
+            if not cu.has_role(
+                "admin",
+                "superuser",
+                "standard",
+                "project_manager",
+                "superintendent",
+            ):
                 return _jsonify({"entity": "hr_projects_picker", "error": "forbidden"}), 403
-        rows = db.session.scalars(select(Project).order_by(Project.name.asc()).limit(500)).all()
+        rows = db.session.scalars(
+            select(Project)
+            .where(project_access_clause(cu))
+            .order_by(Project.name.asc())
+            .limit(500)
+        ).all()
         return _jsonify(
             {
                 "entity": "hr_projects_picker",

@@ -257,12 +257,22 @@ def can_manage_directory_users(cu: CurrentUser) -> bool:
     return has_module_access(cu, "user_admin", "admin")
 
 
+_FIELD_WRITE_ROLES = (
+    "standard",
+    "project_manager",
+    "superintendent",
+    "project_engineer",
+)
+
+_FIELD_READ_ROLES = _FIELD_WRITE_ROLES + ("read_only", "readonly", "field_readonly", "office_coordinator")
+
+
 def _is_standard(cu: CurrentUser) -> bool:
-    return cu.has_role("standard") or _is_admin(cu)
+    return cu.has_role(*_FIELD_WRITE_ROLES) or _is_admin(cu)
 
 
 def _is_read_only(cu: CurrentUser) -> bool:
-    return cu.has_role("read_only", "readonly") or _is_standard(cu)
+    return cu.has_role(*_FIELD_READ_ROLES) or _is_standard(cu)
 
 
 def _is_creator(cu: CurrentUser, rfi: "Rfi") -> bool:

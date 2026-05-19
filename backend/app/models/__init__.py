@@ -61,6 +61,7 @@ from .material_pricing import MaterialPrice
 from .pay_application import PayApplication, PayApplicationLine
 from .prime_contract_sov import PrimeContractSovLine
 from .project import Project
+from .project_member import ProjectMember
 from .project_schedule import ProjectScheduleItem
 from .rfi import (
     Rfi,
@@ -149,6 +150,7 @@ __all__ = [
     "PayApplicationLine",
     "PrimeContractSovLine",
     "Project",
+    "ProjectMember",
     "ProjectMaterialOrder",
     "ProjectScheduleItem",
     "ProjectStage",

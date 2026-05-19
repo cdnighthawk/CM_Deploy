@@ -26,6 +26,7 @@ MODULE_CATALOG: list[ModuleDef] = [
     {"code": "user_admin", "name": "User admin", "description": "Users and roles directory"},
     {"code": "procurement", "name": "Procurement", "description": "Commitments and procurement"},
     {"code": "reports", "name": "Reports", "description": "Reports"},
+    {"code": "ai", "name": "AI assistant", "description": "Grok chat and database tools"},
 ]
 
 MODULE_CODES: frozenset[str] = frozenset(m["code"] for m in MODULE_CATALOG)

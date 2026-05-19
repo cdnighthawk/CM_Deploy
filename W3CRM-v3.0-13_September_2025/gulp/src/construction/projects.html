@@ -67,45 +67,11 @@
 				</div>
 			</div>
 
-			<!-- Start - Project Tabs -->
-			<ul class="nav nav-underline gap-3 nav-scroll nav-scroll-auto-xl mb-3 px-4" id="tabMyProfileBottom" role="tablist">
-				<li class="nav-item" role="presentation">
-					<a href="construction/projects.html" class="nav-link py-3 px-1 border-3 active">Projects</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/overview.html" class="nav-link py-3 px-1 border-3">Overview</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/estimate.html" class="nav-link py-3 px-1 border-3">Estimate</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/party.html" class="nav-link py-3 px-1 border-3">Party</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/transaction.html" class="nav-link py-3 px-1 border-3">Transaction</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/leads.html" class="nav-link py-3 px-1 border-3">Leads</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/task.html" class="nav-link py-3 px-1 border-3">Task</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/attendance.html" class="nav-link py-3 px-1 border-3">Attendance</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/material.html" class="nav-link py-3 px-1 border-3">Material</a>
-				</li>
-				<li class="nav-item" role="presentation">
-					<a href="construction/files.html" class="nav-link py-3 px-1 border-3">Files</a>
-				</li>
-			</ul>
-			<!-- End - Project Tabs -->
-
 			<div class="container-fluid">
 
 				<div class="col-xl-12">
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+						<p class="small text-muted mb-0 d-none" id="usis-projects-scope-hint"></p>
 						<div class="input-group message-search-area width200 w-xs-100">
 							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state">
 							<div class="input-group-append">
@@ -268,9 +234,20 @@
 				})
 				.then(function (data) {
 					lastItems = data.items || [];
+					var hint = document.getElementById("usis-projects-scope-hint");
+					if (hint && data.project_scope === "assigned") {
+						hint.textContent =
+							"Showing only projects assigned to you. Contact an administrator if a job is missing.";
+						hint.classList.remove("d-none");
+					} else if (hint) {
+						hint.classList.add("d-none");
+					}
 					if (!lastItems.length) {
-						tbody.innerHTML =
-							'<tr><td colspan="7" class="text-muted">No projects yet. Add projects in your system, then reload.</td></tr>';
+						var msg =
+							data.project_scope === "assigned"
+								? "No projects are assigned to your account. Ask an administrator to assign jobs in User admin."
+								: "No projects yet. Add projects in your system, then reload.";
+						tbody.innerHTML = '<tr><td colspan="7" class="text-muted">' + esc(msg) + "</td></tr>";
 						return;
 					}
 					applyFilter();

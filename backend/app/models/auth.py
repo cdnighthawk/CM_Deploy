@@ -62,6 +62,12 @@ class User(UUIDPKMixin, TimestampMixin, db.Model):
     roles: Mapped[List["UserRole"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    project_memberships: Mapped[List["ProjectMember"]] = relationship(
+        "ProjectMember",
+        back_populates="user",
+        foreign_keys="ProjectMember.user_id",
+        cascade="all, delete-orphan",
+    )
     mobile_refresh_tokens: Mapped[List["MobileRefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

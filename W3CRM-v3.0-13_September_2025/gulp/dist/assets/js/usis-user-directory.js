@@ -391,8 +391,79 @@
 					var addBtn = document.getElementById("usis-ud-add");
 					if (addBtn) addBtn.disabled = true;
 				}
+				var purgeBtn = document.getElementById("usis-ud-purge-test");
+				if (purgeBtn && caps.is_superuser) {
+					purgeBtn.classList.remove("d-none");
+				}
 			})
 			.catch(function () {});
+	}
+
+	function purgeTestUsers() {
+		clearPageErr();
+		apiFetch("/api/v1/admin/purge-test-users?sample=8")
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, status: r.status, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					showPageErr(authErrorMessage(res, res.body));
+					return;
+				}
+				var n = res.body.matched || 0;
+				if (!n) {
+					if (window.USISNotify && window.USISNotify.info) {
+						window.USISNotify.info("No pytest test users matched.");
+					} else {
+						alert("No pytest test users matched.");
+					}
+					return;
+				}
+				var sample = (res.body.sample || [])
+					.map(function (u) {
+						return u.email;
+					})
+					.join("\n");
+				var msg =
+					"Delete " +
+					n +
+					" automated test user(s) (@t.com, @example.com, etc.)?\n\n" +
+					"Keeps charles@gousis.com and @godocon.com / @gousis.com accounts.\n\n" +
+					(sample ? "Examples:\n" + sample + (res.body.sample_truncated ? "\n…" : "") + "\n\n" : "") +
+					"This cannot be undone.";
+				if (!window.confirm(msg)) return;
+				var includeHr = window.confirm(
+					"Also remove HR demo users (hr.demo.employee@usis.local, charles.dossett@usis.local)?\n\nChoose Cancel to skip HR demos."
+				);
+				return apiFetch("/api/v1/admin/purge-test-users", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ confirm: true, include_hr_demos: includeHr }),
+				})
+					.then(function (r2) {
+						return r2.json().then(function (j2) {
+							return { ok: r2.ok, status: r2.status, body: j2 };
+						});
+					})
+					.then(function (res2) {
+						if (!res2.ok) {
+							showPageErr(authErrorMessage(res2, res2.body));
+							return;
+						}
+						var deleted = res2.body.deleted || 0;
+						if (window.USISNotify && window.USISNotify.success) {
+							window.USISNotify.success("Removed " + deleted + " test user(s).");
+						} else {
+							alert("Removed " + deleted + " test user(s).");
+						}
+						loadUsers(true);
+					});
+			})
+			.catch(function () {
+				showPageErr("Network error while purging test users.");
+			});
 	}
 
 	function loadRoles(cb) {
@@ -656,6 +727,12 @@
 		if (ref) {
 			ref.addEventListener("click", function () {
 				loadUsers(false);
+			});
+		}
+		var purgeBtn = document.getElementById("usis-ud-purge-test");
+		if (purgeBtn) {
+			purgeBtn.addEventListener("click", function () {
+				purgeTestUsers();
 			});
 		}
 		var prevBtn = document.getElementById("usis-ud-prev");

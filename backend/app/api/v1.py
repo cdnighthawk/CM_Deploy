@@ -45,11 +45,15 @@ from . import _pay_application_service as pay_app_svc
 from . import _reports_catalog_service as reports_catalog_svc
 from . import _power_bi_service as power_bi_svc
 from . import _prime_contract_sov_service as prime_sov_svc
+from . import _calendar_service as calendar_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
 from . import _material_order_service as material_order_svc
+from . import _project_members_service as project_members_svc
 from . import _project_service as project_svc
 from . import _invoice_delivery_service as invoice_delivery_svc
+from . import _lead_estimate_queries as lead_q
+from . import _serializers as ser
 from . import _submittal_service as submittal_svc
 from ._perms import can_edit_rfi, current_user, users_for_picker
 
@@ -253,12 +257,10 @@ def patch_me():
     return _jsonify({"item": item, "entity": "session_user"})
 
 
-def _iso(dt: datetime | date | None) -> str | None:
-    if dt is None:
-        return None
-    if isinstance(dt, datetime):
-        return dt.isoformat()
-    return dt.isoformat()
+_iso = ser.iso
+_lead_estimate_public = ser.lead_estimate_public
+_primary_lead_detail_id_by_project_ids = ser.primary_lead_detail_id_by_project_ids
+_project_public = ser.project_public
 
 
 def _client_company_name(client: Any) -> str | None:
@@ -293,85 +295,6 @@ def _client_contact_line(client: Any) -> str | None:
         if email_s:
             return email_s
     return None
-
-
-def _location_bits(loc: Any) -> tuple[str | None, str | None]:
-    if not isinstance(loc, Mapping):
-        return None, None
-    c = loc.get("city")
-    s = loc.get("state")
-    return (str(c).strip() if c else None, str(s).strip() if s else None)
-
-
-def _lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
-    city, state = _location_bits(row.location)
-    return {
-        "id": str(row.id),
-        "external_id": row.external_id,
-        "project_id": str(row.project_id) if row.project_id else None,
-        "name": row.name,
-        "number": row.number,
-        "trade_name": row.trade_name,
-        "submission_state": row.submission_state,
-        "source": row.source,
-        "workflow_bucket": row.workflow_bucket,
-        "due_at": _iso(row.due_at),
-        "bc_updated_at": _iso(row.bc_updated_at),
-        "company_name": _client_company_name(row.client),
-        "city": city,
-        "state": state,
-        "crm_stage": row.crm_stage,
-        "win_probability": _num_or_none(row.win_probability),
-        "primary_estimate_id": str(row.primary_estimate_id) if row.primary_estimate_id else None,
-        "primary_rfp_id": str(row.primary_rfp_id) if row.primary_rfp_id else None,
-        "estimate_locked_at": _iso(row.estimate_locked_at),
-        "estimate_approved_at": _iso(row.estimate_approved_at),
-        "estimate_approved_by_user_id": str(row.estimate_approved_by_user_id)
-        if row.estimate_approved_by_user_id
-        else None,
-    }
-
-
-def _primary_lead_detail_id_by_project_ids(project_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
-    """One BC lead id per project (newest ``bc_updated_at``) for deep-links to ``lead-detail``."""
-    if not project_ids:
-        return {}
-    q = (
-        select(LeadEstimate)
-        .where(LeadEstimate.project_id.in_(project_ids))
-        .order_by(
-            LeadEstimate.project_id.asc(),
-            LeadEstimate.bc_updated_at.desc().nullslast(),
-            LeadEstimate.id.asc(),
-        )
-    )
-    rows = list(db.session.scalars(q).all())
-    out: dict[uuid.UUID, str] = {}
-    for le in rows:
-        pid = le.project_id
-        if pid is None or pid in out:
-            continue
-        ext = (le.external_id or "").strip()
-        out[pid] = ext if ext else str(le.id)
-    return out
-
-
-def _project_public(p: Project, *, primary_lead_detail_id: str | None = None) -> dict[str, Any]:
-    city = p.city.strip() if p.city else None
-    state = p.state.strip() if p.state else None
-    d: dict[str, Any] = {
-        "id": str(p.id),
-        "number": p.number,
-        "name": p.name,
-        "city": city,
-        "state": state,
-        "status": p.status,
-        "project_type": p.project_type,
-        "updated_at": _iso(p.updated_at),
-    }
-    if primary_lead_detail_id:
-        d["primary_lead_detail_id"] = primary_lead_detail_id
-    return d
 
 
 def _company_name_by_id(company_id: uuid.UUID | None) -> str | None:
@@ -452,10 +375,9 @@ def _measurement_data_from_payload(val: Any) -> Any:
 
 
 def _project_exists(project_id: uuid.UUID) -> bool:
-    row = db.session.scalar(
-        select(Project.id).where(Project.id == project_id, Project.deleted_at.is_(None))
-    )
-    return row is not None
+    from ..permissions.project_scope import user_can_access_project
+
+    return user_can_access_project(current_user(), project_id)
 
 
 def _drawing_public(d: Drawing) -> dict[str, Any]:
@@ -825,58 +747,9 @@ def _rfi_public(r: Rfi) -> dict[str, Any]:
     return rfi_svc.rfi_public(r)
 
 
-def _submission_state_norm_sql():
-    """Lowercase, trim, strip ``_`` / ``-`` so BC camelCase (e.g. ``willBid``) matches ``will_bid``."""
-    co = func.trim(func.coalesce(LeadEstimate.submission_state, literal("")))
-    return func.replace(func.replace(func.lower(co), "_", ""), "-", "")
-
-
-def _submission_state_norm_param(submission_state: str) -> str:
-    return (submission_state or "").strip().lower().replace("_", "").replace("-", "")
-
-
-def _lead_estimates_ui_filter(submission_state: str) -> Any:
-    """Filter by submission pipeline.
-
-    - ``undecided`` (alone): null/blank/undecided, not archived (Leads).
-    - Otherwise: one or more comma-separated states (e.g. ``will_submit,submitted``); each is
-      matched case-insensitively with ``_`` / ``-`` ignored (BC exports ``WILL_SUBMIT``, etc.).
-      If ``undecided`` appears in a comma-separated list, blank/null submission_state still matches
-      (same as the single-token ``undecided`` case).
-    """
-    st_in = (submission_state or "").strip()
-    if not st_in:
-        raise ValueError("submission_state cannot be empty")
-    not_archived = or_(LeadEstimate.is_archived.is_(False), LeadEstimate.is_archived.is_(None))
-    norm_sql = _submission_state_norm_sql()
-
-    parts = [p.strip() for p in st_in.split(",") if p.strip()]
-    norms = [_submission_state_norm_param(p) for p in parts]
-
-    if len(norms) == 1 and norms[0] == "undecided":
-        empty_or_ws = func.trim(func.coalesce(LeadEstimate.submission_state, literal(""))) == literal("")
-        state_ok = or_(empty_or_ws, norm_sql == literal("undecided"))
-        return and_(state_ok, not_archived)
-
-    # Multi-state OR: treat ``undecided`` like the single-token branch (blank/null counts as undecided).
-    empty_or_ws = func.trim(func.coalesce(LeadEstimate.submission_state, literal(""))) == literal("")
-    clauses: list[Any] = []
-    for n in norms:
-        if not n:
-            continue
-        if n == "undecided":
-            clauses.append(or_(empty_or_ws, norm_sql == literal("undecided")))
-        else:
-            clauses.append(norm_sql == literal(n))
-    if not clauses:
-        raise ValueError("submission_state has no valid tokens")
-    state_ok = or_(*clauses) if len(clauses) > 1 else clauses[0]
-    return and_(state_ok, not_archived)
-
-
 def _lead_estimates_health_count_filter() -> Any:
     """Same row set as the Leads page default (undecided / no decision yet, not archived)."""
-    return _lead_estimates_ui_filter("undecided")
+    return lead_q.lead_estimates_ui_filter("undecided")
 
 
 @bp.get("/lead-estimates")
@@ -898,7 +771,7 @@ def list_lead_estimates():
     due_after_raw = (request.args.get("due_after") or "").strip() or None
 
     try:
-        filt = _lead_estimates_ui_filter(submission_state)
+        filt = lead_q.lead_estimates_ui_filter(submission_state)
     except ValueError as exc:
         return _jsonify({"error": str(exc)}), 400
     if source:
@@ -940,27 +813,30 @@ def list_lead_estimates():
 @bp.get("/projects")
 def list_projects():
     """Active directory jobs (``projects``), excluding soft-deleted rows."""
+    from ..permissions.project_scope import project_access_clause, project_scope_label
+
     try:
         limit = max(1, min(int(request.args.get("limit", 500)), 2000))
         offset = max(0, int(request.args.get("offset", 0)))
     except ValueError:
         return _jsonify({"error": "invalid limit or offset"}), 400
 
-    filt = Project.deleted_at.is_(None)
+    cu = current_user()
+    filt = and_(Project.deleted_at.is_(None), project_access_clause(cu))
     total = db.session.scalar(select(func.count()).select_from(Project).where(filt)) or 0
     q = select(Project).where(filt).order_by(Project.number.asc().nullslast(), Project.name.asc()).offset(offset).limit(limit)
     rows = db.session.scalars(q).all()
     pids = [p.id for p in rows]
     lead_nav = _primary_lead_detail_id_by_project_ids(pids)
-    return _jsonify(
-        {
-            "items": [_project_public(p, primary_lead_detail_id=lead_nav.get(p.id)) for p in rows],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-            "entity": "projects",
-        }
-    )
+    payload: dict[str, Any] = {
+        "items": [_project_public(p, primary_lead_detail_id=lead_nav.get(p.id)) for p in rows],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "entity": "projects",
+    }
+    payload["project_scope"] = project_scope_label(cu)
+    return _jsonify(payload)
 
 
 @bp.get("/projects/<project_id>")
@@ -969,6 +845,8 @@ def get_project(project_id: str):
     pid = _parse_uuid_param(project_id)
     if not pid:
         return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
     p = db.session.get(Project, pid)
     if p is None or p.deleted_at is not None:
         return _jsonify({"error": "project not found"}), 404
@@ -981,6 +859,8 @@ def patch_project(project_id: str):
     pid = _parse_uuid_param(project_id)
     if not pid:
         return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
     body = request.get_json(silent=True) or {}
     try:
         item = project_svc.patch_project(pid, body)
@@ -1007,6 +887,32 @@ def create_invoice_delivery_method():
         return _jsonify({"error": exc.message}), exc.status
     db.session.commit()
     return _jsonify({"item": item, "entity": "invoice_delivery_method"}), 201
+
+
+@bp.get("/calendar-events")
+def list_calendar_events():
+    """Categorized calendar feed (procurement, schedule, RFIs, submittals, milestones)."""
+    from ._perms import current_user
+
+    cu = current_user()
+    pid_raw = request.args.get("project_id")
+    pid = _parse_uuid_param(pid_raw) if pid_raw else None
+    if pid_raw and not pid:
+        return _jsonify({"error": "invalid project_id"}), 400
+    categories = calendar_svc._resolve_categories(
+        request.args.get("categories"),
+        request.args.get("preset"),
+    )
+    range_start = calendar_svc._parse_date_param(request.args.get("start"))
+    range_end = calendar_svc._parse_date_param(request.args.get("end"))
+    payload = calendar_svc.list_calendar_events(
+        cu,
+        project_id=pid,
+        categories=categories,
+        range_start=range_start,
+        range_end=range_end,
+    )
+    return _jsonify(payload)
 
 
 @bp.get("/projects/<project_id>/schedule-items")
@@ -2250,6 +2156,74 @@ def admin_patch_user(user_id: str):
     return _jsonify({"item": item, "entity": "directory_user"})
 
 
+def _project_membership_err(exc: project_members_svc.ApiError):
+    return _jsonify({"error": exc.message}), exc.status
+
+
+@bp.get("/admin/users/<user_id>/project-memberships")
+def admin_get_user_project_memberships(user_id: str):
+    uid = _parse_uuid_param(user_id)
+    if not uid:
+        return _jsonify({"error": "invalid user id"}), 400
+    try:
+        body = project_members_svc.list_user_project_memberships(current_user(), uid)
+    except project_members_svc.ApiError as exc:
+        return _project_membership_err(exc)
+    if body is None:
+        return _jsonify({"error": "user not found"}), 404
+    return _jsonify({**body, "entity": "user_project_memberships"})
+
+
+@bp.put("/admin/users/<user_id>/project-memberships")
+def admin_put_user_project_memberships(user_id: str):
+    uid = _parse_uuid_param(user_id)
+    if not uid:
+        return _jsonify({"error": "invalid user id"}), 400
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    try:
+        result = project_members_svc.set_user_project_memberships(current_user(), uid, body)
+    except project_members_svc.ApiError as exc:
+        return _project_membership_err(exc)
+    if result is None:
+        return _jsonify({"error": "user not found"}), 404
+    db.session.commit()
+    return _jsonify({**result, "entity": "user_project_memberships"})
+
+
+@bp.get("/projects/<project_id>/members")
+def get_project_members(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    try:
+        body = project_members_svc.list_project_members(current_user(), pid)
+    except project_members_svc.ApiError as exc:
+        return _project_membership_err(exc)
+    if body is None:
+        return _jsonify({"error": "project not found"}), 404
+    return _jsonify({**body, "entity": "project_members"})
+
+
+@bp.put("/projects/<project_id>/members")
+def put_project_members(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    try:
+        result = project_members_svc.set_project_members(current_user(), pid, body)
+    except project_members_svc.ApiError as exc:
+        return _project_membership_err(exc)
+    if result is None:
+        return _jsonify({"error": "project not found"}), 404
+    db.session.commit()
+    return _jsonify({**result, "entity": "project_members"})
+
+
 @bp.get("/rfi-companies")
 def list_rfi_companies():
     q = (request.args.get("q") or "").strip().lower()
@@ -3106,11 +3080,18 @@ def global_search():
     q = (request.args.get("q") or "").strip()
     if len(q) < 2:
         return _jsonify({"items": [], "entity": "search", "hint": "pass q= with at least 2 characters"})
+    from ..permissions.project_scope import project_access_clause
+
     like = f"%{q}%"
     items: list[dict[str, Any]] = []
+    cu = current_user()
     for p in db.session.scalars(
         select(Project)
-        .where(Project.deleted_at.is_(None), Project.name.ilike(like))
+        .where(
+            Project.deleted_at.is_(None),
+            Project.name.ilike(like),
+            project_access_clause(cu),
+        )
         .order_by(Project.name.asc())
         .limit(15)
     ).all():
@@ -3569,6 +3550,9 @@ def dashboard_hours_by_project():
         limit = 15
     limit = max(1, min(limit, 30))
 
+    from ..permissions.project_scope import project_access_clause
+
+    cu = current_user()
     stmt = (
         select(
             Project.id,
@@ -3580,6 +3564,7 @@ def dashboard_hours_by_project():
         .where(
             HrmsTimesheetEntry.work_date >= start,
             HrmsTimesheetEntry.work_date <= end,
+            project_access_clause(cu),
         )
         .group_by(Project.id, Project.name)
         .having(func.sum(HrmsTimesheetEntry.hours_worked) > 0)

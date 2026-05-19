@@ -152,15 +152,28 @@ def load_user_with_roles(user_id: uuid.UUID) -> User | None:
 
 
 def capabilities_for_user(user: User | None, role_codes: frozenset[str], is_superuser: bool) -> dict[str, Any]:
+    from .project_scope import assigned_project_count_for_user, project_scope_for_user
+
     perms = effective_permissions_for_user(user) if user else dict(_NO_ROLE)
     if is_superuser:
         perms = all_admin_permissions()
-    return {
+    scope = project_scope_for_user(
+        user.id if user else None,
+        role_codes,
+        is_superuser=is_superuser,
+    )
+    out: dict[str, Any] = {
         "modules": perms,
         "role_codes": sorted(role_codes),
         "is_superuser": is_superuser,
         "catalog": catalog_public(),
+        "project_scope": scope,
     }
+    if scope == "assigned":
+        out["assigned_project_count"] = assigned_project_count_for_user(
+            user.id if user else None
+        )
+    return out
 
 
 def validate_permissions_payload(raw: Any) -> dict[str, str]:

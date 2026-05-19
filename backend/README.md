@@ -198,6 +198,13 @@ Set ``HUBSPOT_CONTACTS_CSV`` or place ``hubspot-crm-exports-*.csv`` under ``DATA
 3. Apply migration ``0012_bc_oauth`` (``flask db upgrade``), then start Flask and open ``/api/v1/integrations/buildingconnected/oauth/start`` in a browser while logged into Autodesk as the BC user whose data you want to sync.
 4. After a successful callback, call ``GET`` or ``POST`` ``/api/v1/integrations/buildingconnected/sync`` with ``BUILDINGCONNECTED_SYNC_ENABLED=1`` (defaults on in ``FLASK_ENV=development``). Projects are upserted into ``lead_estimates`` using the same column mapping as the ``bc_projects`` CSV import.
 
+### Power BI embed (reports page)
+
+1. Create an Entra **app registration** (service principal), enable **Allow service principals to use Power BI APIs** in the Power BI admin portal, and add the app to the target workspace as **Member** or **Admin**.
+2. Set ``POWERBI_TENANT_ID``, ``POWERBI_CLIENT_ID``, ``POWERBI_CLIENT_SECRET``, ``POWERBI_WORKSPACE_ID``, and ``POWERBI_REPORT_ID`` in ``.env`` (see ``docs/powerbi-embed.md``).
+3. List workspaces/reports: ``python scripts/powerbi_discover.py`` (from ``backend/``).
+4. Restart Flask, then open ``reports.html`` with the API base pointing at Flask (``GET /api/v1/powerbi/embed-config`` should return ``configured: true``).
+
 ### Textura Payment Management (pull sync)
 
 1. Apply migration ``0041_textura_external_ids`` (``flask db upgrade``).

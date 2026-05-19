@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.extensions import db
 from app.models import (
     Commitment,
+    Company,
     Project,
     ProjectMaterialOrder,
     ProjectScheduleItem,
@@ -37,7 +38,8 @@ def test_calendar_events_procurement_and_schedule(client, no_dev_admin):
         db.session.flush()
         db.session.add(UserRole(user_id=u.id, role_id=role.id))
         p = Project(name="CalProj-" + uuid.uuid4().hex[:8], start_date=date(2026, 7, 1))
-        db.session.add(p)
+        v = Company(name="CalVendor-" + uuid.uuid4().hex[:6], company_type="vendor")
+        db.session.add_all([p, v])
         db.session.flush()
         pid = str(p.id)
         uid = str(u.id)
@@ -52,6 +54,7 @@ def test_calendar_events_procurement_and_schedule(client, no_dev_admin):
         )
         c = Commitment(
             project_id=p.id,
+            vendor_company_id=v.id,
             commitment_kind="purchase_order",
             title="PO-1",
             reference_number="PO-1",

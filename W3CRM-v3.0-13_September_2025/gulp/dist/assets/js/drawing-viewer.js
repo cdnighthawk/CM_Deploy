@@ -1699,7 +1699,118 @@
 			});
 	}
 
+	function canDeleteDrawings() {
+		return window.__usisDvCanDeleteDrawings === true;
+	}
+
+	function setDeleteButtonsVisible(show) {
+		["usis-dv-delete-revision", "usis-dv-delete-sheet"].forEach(function (id) {
+			var el = document.getElementById(id);
+			if (el) el.classList.toggle("d-none", !show);
+		});
+	}
+
+	function loadDeletePermission() {
+		fetch(apiBase() + "/api/v1/me", { credentials: "include", headers: { Accept: "application/json" } })
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) return;
+				var caps = (res.body && res.body.capabilities) || {};
+				var mods = caps.modules || {};
+				var level = mods.projects || "none";
+				var rank = { none: 0, read: 1, write: 2, admin: 3 };
+				window.__usisDvCanDeleteDrawings =
+					!!caps.is_superuser || (rank[level] || 0) >= rank.write;
+				setDeleteButtonsVisible(canDeleteDrawings());
+			})
+			.catch(function () {});
+	}
+
+	function afterDrawingDeleted(scope, deletedId) {
+		if (scope === "revision" && revisions.length > 1) {
+			var remaining = revisions.filter(function (r) {
+				return r.id !== deletedId;
+			});
+			if (remaining.length) {
+				var nextIx = Math.min(revIndex, remaining.length - 1);
+				activeDrawingId = remaining[nextIx].id;
+				var u = new URL(window.location.href);
+				u.searchParams.set("drawing_id", activeDrawingId);
+				window.history.replaceState({}, "", u.pathname + u.search);
+				loadRevisionsAndPdf();
+				return;
+			}
+		}
+		activeDrawingId = null;
+		revisions = [];
+		revIndex = 0;
+		if (pdfDoc) {
+			try {
+				pdfDoc.destroy();
+			} catch (e) {}
+			pdfDoc = null;
+		}
+		var u2 = new URL(window.location.href);
+		u2.searchParams.delete("drawing_id");
+		window.history.replaceState({}, "", u2.pathname + u2.search);
+		showErr("Drawing deleted. Select another sheet to open.");
+		showPicker();
+	}
+
+	function deleteDrawing(scope) {
+		var did = currentRevisionDrawingId();
+		if (!did) {
+			if (window.USISNotify) window.USISNotify.error("No drawing loaded.");
+			return;
+		}
+		var r = revisions[revIndex];
+		var label =
+			scope === "series"
+				? "Delete this entire sheet and all " +
+				  revisions.length +
+				  " revision(s)? This cannot be undone."
+				: "Delete revision " +
+				  (r && r.revision != null ? String(r.revision) : "?") +
+				  " only? Other revisions for this sheet will remain.";
+		if (!window.confirm(label)) return;
+		fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(did) + "/delete", {
+			method: "POST",
+			credentials: "include",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			body: JSON.stringify({ scope: scope, confirm: true }),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					var msg = (res.body && res.body.error) || "Delete failed (" + res.status + ").";
+					if (window.USISNotify) window.USISNotify.error(msg);
+					else showErr(msg);
+					return;
+				}
+				if (window.USISNotify) {
+					window.USISNotify.success(
+						scope === "series"
+							? "Sheet deleted (" + (res.body.deleted || 0) + " revision(s))."
+							: "Revision deleted."
+					);
+				}
+				afterDrawingDeleted(scope, did);
+			})
+			.catch(function () {
+				if (window.USISNotify) window.USISNotify.error("Network error deleting drawing.");
+			});
+	}
+
 	function wireUi() {
+		loadDeletePermission();
 		var sel = document.getElementById("usis-dv-revision");
 		if (sel) {
 			sel.addEventListener("change", function () {
@@ -1711,6 +1822,18 @@
 		var bOld = document.getElementById("usis-dv-rev-older");
 		if (bNew) bNew.addEventListener("click", goNewer);
 		if (bOld) bOld.addEventListener("click", goOlder);
+		var bDelRev = document.getElementById("usis-dv-delete-revision");
+		var bDelSheet = document.getElementById("usis-dv-delete-sheet");
+		if (bDelRev) {
+			bDelRev.addEventListener("click", function () {
+				deleteDrawing("revision");
+			});
+		}
+		if (bDelSheet) {
+			bDelSheet.addEventListener("click", function () {
+				deleteDrawing("series");
+			});
+		}
 		var zIn = document.getElementById("usis-dv-zoom-in");
 		var zOut = document.getElementById("usis-dv-zoom-out");
 		if (zIn) {
@@ -1959,7 +2082,8 @@
 					return;
 				}
 				items.forEach(function (row) {
-					var id = row.id || row.drawing_id;
+					var cur = row.current_revision || {};
+					var id = cur.id || row.id || row.drawing_id;
 					if (!id) return;
 					var o = document.createElement("option");
 					o.value = String(id);

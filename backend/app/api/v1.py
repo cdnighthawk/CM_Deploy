@@ -1267,6 +1267,52 @@ def upload_project_drawing(project_id: str):
     return _jsonify({"item": result["item"], "entity": "drawing"}), 201
 
 
+@bp.post("/drawings/<drawing_id>/delete")
+def delete_drawing(drawing_id: str):
+    """Delete one revision or the entire sheet series (all revisions).
+
+    JSON body: ``{ "scope": "revision" | "series", "confirm": true }``.
+    Uses POST so callers with projects *write* (not only admin) may remove drawings.
+    """
+    from ..services.drawing_delete import delete_drawing_revision, delete_drawing_series
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    if not body.get("confirm"):
+        return _jsonify({"error": "confirm must be true"}), 400
+    scope = str(body.get("scope") or "revision").strip().lower()
+    if scope not in ("revision", "series"):
+        return _jsonify({"error": "scope must be revision or series"}), 400
+
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+
+    if scope == "series":
+        deleted = delete_drawing_series(row.drawing_series_id, project_id=row.project_id)
+        if deleted == 0:
+            return _jsonify({"error": "drawing not found"}), 404
+        db.session.commit()
+        return _jsonify(
+            {
+                "ok": True,
+                "scope": "series",
+                "deleted": deleted,
+                "series_id": str(row.drawing_series_id),
+            }
+        )
+
+    ok = delete_drawing_revision(did)
+    if not ok:
+        return _jsonify({"error": "drawing not found"}), 404
+    db.session.commit()
+    return _jsonify({"ok": True, "scope": "revision", "deleted": 1, "drawing_id": str(did)})
+
+
 @bp.get("/spec-sections/<spec_section_id>/file")
 def get_spec_section_pdf_file(spec_section_id: str):
     """Stream an uploaded spec-section PDF (same-origin for embedded viewers)."""

@@ -39,6 +39,8 @@ _EXEMPT_PREFIXES = (
     "/api/v1/me",
     "/api/v1/permissions/",
     "/api/v1/__debug/",
+    # Self-service hire wizard (application, I-9, W-4); auth enforced per route, not HR module role.
+    "/api/v1/hr/me",
 )
 
 _EXEMPT_EXACT = frozenset(

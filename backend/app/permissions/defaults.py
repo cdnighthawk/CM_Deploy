@@ -235,6 +235,8 @@ _FIELD_READONLY: dict[str, str] = {
     "ai": "read",
 }
 
+_APPLICANT: dict[str, str] = {code: "none" for code in MODULE_CODES}
+
 # Users with no roles: dashboard read only
 _NO_ROLE: dict[str, str] = {code: "none" for code in MODULE_CODES}
 _NO_ROLE["dashboard"] = "read"
@@ -251,6 +253,7 @@ DEFAULTS_BY_ROLE_CODE: dict[str, dict[str, str]] = {
     "safety_manager": _SAFETY_MANAGER,
     "office_coordinator": _OFFICE_COORDINATOR,
     "field_readonly": _FIELD_READONLY,
+    "applicant": _APPLICANT,
     # Legacy codes (backward compatibility)
     "standard": _STANDARD,
     "read_only": _READ_ONLY,
@@ -271,4 +274,5 @@ CM_ROLE_DEFINITIONS: list[tuple[str, str, str]] = [
     ("safety_manager", "Safety Manager", "Assigned projects; safety admin"),
     ("office_coordinator", "Office Coordinator", "Assigned projects; CRM and documents"),
     ("field_readonly", "Field (read-only)", "Assigned projects; read-only access"),
+    ("applicant", "Job applicant", "Self-service hire wizard only; no staff CM access"),
 ]

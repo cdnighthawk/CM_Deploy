@@ -30,7 +30,9 @@
 
 		p.indexOf("page-lock-screen") !== -1 ||
 
-		p.indexOf("apply.html") !== -1;
+		p.indexOf("apply.html") !== -1 ||
+
+		p.indexOf("usis-hr-hire.html") !== -1;
 
 	if (authPages) return;
 

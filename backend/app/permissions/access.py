@@ -173,6 +173,9 @@ def capabilities_for_user(user: User | None, role_codes: frozenset[str], is_supe
         out["assigned_project_count"] = assigned_project_count_for_user(
             user.id if user else None
         )
+    from .applicant import is_applicant_only_user
+
+    out["applicant_only"] = is_applicant_only_user(user) if user else False
     return out
 
 

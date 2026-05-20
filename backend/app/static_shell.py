@@ -4,11 +4,20 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Blueprint, abort, redirect, send_from_directory
+from flask import Blueprint, abort, redirect, send_from_directory, session
 
 static_shell_bp = Blueprint("static_shell", __name__)
 
 _RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz")
+
+# Public careers / hiring entry points (no ``.html`` suffix required).
+_CAREER_PATH_REDIRECTS: dict[str, str] = {
+    "/careers": "/apply.html",
+    "/apply": "/apply.html",
+    "/jobs": "/apply.html",
+    "/hiring": "/apply.html",
+    "/hire": "/usis-hr-hire.html",
+}
 
 
 def resolve_static_root() -> Path | None:
@@ -31,6 +40,22 @@ def _is_reserved(path: str) -> bool:
     return any(p.startswith(prefix) for prefix in _RESERVED_PREFIXES)
 
 
+def _redirect_applicant_from_internal_html(rel: str):
+    """Block staff shell HTML for applicant-only sessions."""
+    from .permissions.applicant import (
+        applicant_only_from_session,
+        is_applicant_public_shell_path,
+    )
+
+    if not rel.lower().endswith(".html"):
+        return None
+    if is_applicant_public_shell_path(rel):
+        return None
+    if not applicant_only_from_session(session.get("user_id")):
+        return None
+    return redirect("/usis-hr-hire.html", code=302)
+
+
 @static_shell_bp.route("/", defaults={"subpath": ""})
 @static_shell_bp.route("/<path:subpath>")
 def serve_static(subpath: str):
@@ -48,9 +73,9 @@ def serve_static(subpath: str):
         )
 
     if req_path == "/":
-        home = root / "usis-dashboard-dark.html"
-        if home.is_file():
-            return redirect("/usis-dashboard-dark.html", code=302)
+        apply = root / "apply.html"
+        if apply.is_file():
+            return redirect("/apply.html", code=302)
         login = root / "page-login.html"
         if login.is_file():
             return redirect("/page-login.html", code=302)
@@ -58,6 +83,10 @@ def serve_static(subpath: str):
         if index.is_file():
             return send_from_directory(root, "index.html")
         abort(404)
+
+    career_target = _CAREER_PATH_REDIRECTS.get(req_path)
+    if career_target:
+        return redirect(career_target, code=302)
 
     rel = subpath.lstrip("/")
     candidate = (root / rel).resolve()
@@ -67,6 +96,9 @@ def serve_static(subpath: str):
         abort(404)
 
     if candidate.is_file():
+        blocked = _redirect_applicant_from_internal_html(rel)
+        if blocked is not None:
+            return blocked
         return send_from_directory(root, rel)
 
     if candidate.is_dir():
@@ -77,6 +109,9 @@ def serve_static(subpath: str):
     if not rel.endswith(".html"):
         html_candidate = root / f"{rel}.html"
         if html_candidate.is_file():
+            blocked = _redirect_applicant_from_internal_html(f"{rel}.html")
+            if blocked is not None:
+                return blocked
             return send_from_directory(root, f"{rel}.html")
 
     abort(404)

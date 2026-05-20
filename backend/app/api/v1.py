@@ -125,11 +125,15 @@ def auth_status():
             }
         )
     u = cu.user
+    from ..permissions.applicant import is_applicant_only_user
+
     return _jsonify(
         {
             "authenticated": True,
             "microsoft_sso_enabled": ms_on,
             "self_register_enabled": allow_register,
+            "applicant_only": is_applicant_only_user(u),
+            "role_codes": sorted(cu.role_codes),
             "user": {
                 "id": str(u.id),
                 "email": u.email,
@@ -184,6 +188,10 @@ def auth_register():
         is_superuser=False,
     )
     db.session.add(u)
+    db.session.flush()
+    from ..permissions.applicant import assign_applicant_role
+
+    assign_applicant_role(u)
     db.session.commit()
 
     from flask import session

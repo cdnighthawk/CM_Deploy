@@ -28,16 +28,12 @@
 
 	var TASK_ORDER = ["account", "application", "union_card", "union_dispatch", "i9", "w4"];
 
-	function returnUrl() {
-		return window.location.href.split("#")[0];
-	}
-
 	function loginUrl() {
-		return apiBase() + "/auth/login?next=" + encodeURIComponent(returnUrl());
+		return "page-login.html?next=" + encodeURIComponent("usis-hr-hire.html");
 	}
 
 	function registerUrl() {
-		return "page-register.html?next=" + encodeURIComponent(returnUrl());
+		return "page-register.html?next=" + encodeURIComponent("usis-hr-hire.html");
 	}
 
 	function staticGuestTasks() {

@@ -62,8 +62,62 @@ def _safe_shell_redirect(raw: str | None) -> str | None:
     return None
 
 
+def _shell_origin_from_request() -> str | None:
+    """Allowed shell origin from Referer, else first configured CORS origin."""
+    ref = (request.headers.get("Referer") or "").strip()
+    if ref:
+        try:
+            p = urlparse(ref)
+        except ValueError:
+            p = None
+        if p and p.scheme in ("http", "https") and p.netloc:
+            origin = f"{p.scheme}://{p.netloc}".lower().rstrip("/")
+            if origin in _allowed_shell_origins():
+                return f"{p.scheme}://{p.netloc}".rstrip("/")
+    post = _post_login_redirect()
+    try:
+        p = urlparse(post)
+    except ValueError:
+        p = None
+    if p and p.scheme in ("http", "https") and p.netloc:
+        origin = f"{p.scheme}://{p.netloc}".lower().rstrip("/")
+        if origin in _allowed_shell_origins():
+            return f"{p.scheme}://{p.netloc}".rstrip("/")
+    allowed = sorted(_allowed_shell_origins())
+    return allowed[0] if allowed else None
+
+
+def _resolve_shell_redirect(raw: str | None) -> str | None:
+    """Absolute shell URL on an allowed origin, or None."""
+    absolute = _safe_shell_redirect(raw)
+    if absolute:
+        return absolute
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    if not s:
+        return None
+    if s.startswith("//") or "://" in s.split("/", 1)[0]:
+        return None
+    origin = _shell_origin_from_request()
+    if not origin:
+        return None
+    if s.startswith("/"):
+        return origin + s
+    return origin + "/" + s.lstrip("/")
+
+
 def _login_redirect_target(explicit_next: str | None) -> str:
-    return _safe_shell_redirect(explicit_next) or _post_login_redirect()
+    resolved = _resolve_shell_redirect(explicit_next)
+    if resolved:
+        return resolved
+    from .permissions.applicant import applicant_only_from_session
+
+    if applicant_only_from_session(session.get("user_id")):
+        origin = _shell_origin_from_request()
+        if origin:
+            return f"{origin}/usis-hr-hire.html"
+    return _post_login_redirect()
 
 
 def _shell_template_login_base_url() -> str:
@@ -176,7 +230,7 @@ def logout():
     session.pop("user_id", None)
     flash("You have been signed out.", "info")
     nxt = (request.args.get("next") or "").strip() or None
-    shell = _safe_shell_redirect(nxt)
+    shell = _resolve_shell_redirect(nxt)
     if shell:
         return redirect(shell)
     return redirect(url_for("auth.login"))
@@ -199,7 +253,7 @@ def microsoft_sso_start():
     state = secrets.token_urlsafe(32)
     session[MS_ENTRA_STATE_KEY] = state
     nxt = (request.args.get("next") or "").strip() or None
-    session[MS_ENTRA_NEXT_KEY] = _safe_shell_redirect(nxt)
+    session[MS_ENTRA_NEXT_KEY] = _resolve_shell_redirect(nxt)
     scopes = (cfg.get("MS_ENTRA_SCOPES") or "openid profile email offline_access").strip()
     url = mso.build_authorize_url(
         tenant=tenant,

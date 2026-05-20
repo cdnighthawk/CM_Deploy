@@ -8,9 +8,22 @@
 	var PAGE_SIZES = [25, 50, 100, 200];
 	var ACCESS_LEVELS = ["none", "read", "write", "admin"];
 	var ACCESS_LABELS = { none: "None", read: "Read", write: "Write", admin: "Admin" };
+	var CM_ROLE_ORDER = [
+		"admin",
+		"executive",
+		"project_manager",
+		"superintendent",
+		"project_engineer",
+		"estimator",
+		"project_accountant",
+		"safety_manager",
+		"office_coordinator",
+		"field_readonly",
+	];
 	var state = {
 		users: [],
 		roles: [],
+		allProjects: [],
 		moduleCatalog: [],
 		searchTimer: null,
 		page: 1,
@@ -127,7 +140,7 @@
 			root.innerHTML = '<p class="text-muted small mb-0">No roles in database yet.</p>';
 			return;
 		}
-		root.innerHTML = state.roles
+		root.innerHTML = sortRolesForDisplay(state.roles)
 			.map(function (r) {
 				var chk = set[r.id] ? " checked" : "";
 				return (
@@ -157,6 +170,128 @@
 			out.push(cb.value);
 		});
 		return out;
+	}
+
+	function sortRolesForDisplay(roles) {
+		var rank = {};
+		CM_ROLE_ORDER.forEach(function (code, i) {
+			rank[code] = i;
+		});
+		return roles.slice().sort(function (a, b) {
+			var ra = rank[a.code] != null ? rank[a.code] : 999;
+			var rb = rank[b.code] != null ? rank[b.code] : 999;
+			if (ra !== rb) return ra - rb;
+			return (a.code || "").localeCompare(b.code || "");
+		});
+	}
+
+	function renderProjectChecks(selectedIds) {
+		var root = document.getElementById("usis-ud-modal-project-checks");
+		if (!root) return;
+		var set = {};
+		(selectedIds || []).forEach(function (id) {
+			set[id] = 1;
+		});
+		if (!state.allProjects.length) {
+			root.innerHTML =
+				'<p class="text-muted small mb-0">No projects loaded. Save the user after projects exist in the directory.</p>';
+			return;
+		}
+		root.innerHTML = state.allProjects
+			.map(function (p) {
+				var chk = set[p.id] ? " checked" : "";
+				var label = (p.number ? p.number + " — " : "") + (p.name || p.id);
+				return (
+					'<div class="form-check">' +
+					'<input class="form-check-input usis-ud-project-cb" type="checkbox" value="' +
+					esc(p.id) +
+					'" id="usis-ud-pc-' +
+					esc(p.id) +
+					'"' +
+					chk +
+					">" +
+					'<label class="form-check-label small" for="usis-ud-pc-' +
+					esc(p.id) +
+					'">' +
+					esc(label) +
+					"</label></div>"
+				);
+			})
+			.join("");
+	}
+
+	function collectProjectIds() {
+		var out = [];
+		document.querySelectorAll(".usis-ud-project-cb:checked").forEach(function (cb) {
+			out.push(cb.value);
+		});
+		return out;
+	}
+
+	function loadAllProjectsForPicker(cb) {
+		if (state.allProjects.length) {
+			if (cb) cb(null);
+			return;
+		}
+		apiFetch("/api/v1/projects?limit=2000")
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					if (cb) cb((res.body && res.body.error) || "Could not load projects.");
+					return;
+				}
+				state.allProjects = res.body.items || [];
+				if (cb) cb(null);
+			})
+			.catch(function () {
+				if (cb) cb("Network error loading projects.");
+			});
+	}
+
+	function loadUserProjectMemberships(userId, cb) {
+		apiFetch("/api/v1/admin/users/" + encodeURIComponent(userId) + "/project-memberships")
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					if (cb) cb((res.body && res.body.error) || "Could not load project assignments.");
+					return;
+				}
+				if (cb) cb(null, res.body.project_ids || []);
+			})
+			.catch(function () {
+				if (cb) cb("Network error loading project assignments.");
+			});
+	}
+
+	function saveUserProjectMemberships(userId, projectIds, cb) {
+		apiFetch("/api/v1/admin/users/" + encodeURIComponent(userId) + "/project-memberships", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ project_ids: projectIds }),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					if (cb) cb((res.body && res.body.error) || "Could not save project assignments.");
+					return;
+				}
+				if (cb) cb(null);
+			})
+			.catch(function () {
+				if (cb) cb("Network error saving project assignments.");
+			});
 	}
 
 	function renderUsersTable() {
@@ -620,6 +755,10 @@
 		document.getElementById("usis-ud-modal-super").checked = false;
 		document.getElementById("usis-ud-modal-email").removeAttribute("readonly");
 		renderRoleChecks([]);
+		loadAllProjectsForPicker(function (err) {
+			if (err) modalErr(err);
+			renderProjectChecks([]);
+		});
 		var m = userModal();
 		if (m) m.show();
 	}
@@ -647,6 +786,17 @@
 			return r.id;
 		});
 		renderRoleChecks(sel);
+		loadAllProjectsForPicker(function (err) {
+			if (err) {
+				modalErr(err);
+				renderProjectChecks([]);
+				return;
+			}
+			loadUserProjectMemberships(u.id, function (err2, pids) {
+				if (err2) modalErr(err2);
+				renderProjectChecks(pids || []);
+			});
+		});
 		var m = userModal();
 		if (m) m.show();
 	}
@@ -662,6 +812,7 @@
 		var active = document.getElementById("usis-ud-modal-active").checked;
 		var sup = document.getElementById("usis-ud-modal-super").checked;
 		var roleIds = collectRoleIds();
+		var projectIds = collectProjectIds();
 		if (!email) {
 			modalErr("Email is required.");
 			return;
@@ -706,9 +857,25 @@
 					}
 					return;
 				}
-				var m = userModal();
-				if (m) m.hide();
-				loadUsers();
+				var savedId =
+					(res.body && res.body.item && res.body.item.id) ||
+					id ||
+					(document.getElementById("usis-ud-modal-user-id").value || "").trim();
+				if (!savedId) {
+					var m0 = userModal();
+					if (m0) m0.hide();
+					loadUsers();
+					return;
+				}
+				saveUserProjectMemberships(savedId, projectIds, function (err3) {
+					if (err3) {
+						modalErr(err3);
+						return;
+					}
+					var m = userModal();
+					if (m) m.hide();
+					loadUsers();
+				});
 			})
 			.catch(function () {
 				modalErr("Network error.");

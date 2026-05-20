@@ -25,18 +25,22 @@
 		return "";
 	}
 
-	/** Post-login URL: ``?next=`` from Flask redirect wins, else dashboard on this host. */
+	/** Post-login URL: ``?next=`` from Flask redirect wins, else dashboard or hire wizard. */
 	function shellAfterLoginUrl() {
 		var loc = window.location;
 		try {
 			var u = new URL(loc.href);
 			var n = u.searchParams.get("next");
 			if (n && String(n).trim()) {
-				return String(n).trim();
+				var raw = String(n).trim();
+				if (/^https?:\/\//i.test(raw)) return raw;
+				if (raw.charAt(0) === "/") return loc.origin + raw;
+				return loc.origin + "/" + raw.replace(/^\.\//, "");
 			}
 		} catch (e) {
 			/* ignore */
 		}
+		if (window.USIS_DEFAULT_AFTER_LOGIN) return window.USIS_DEFAULT_AFTER_LOGIN;
 		return loc.protocol + "//" + loc.host + "/usis-dashboard-dark.html";
 	}
 
@@ -120,10 +124,10 @@
 			a.setAttribute("href", base + "/auth/login?next=" + nextLogin);
 		});
 		var form = document.getElementById("usis-login-form");
-		if (form) {
-			form.setAttribute("action", base + "/auth/login");
-			var hid = document.getElementById("usis-login-next");
+		function applyLoginNext() {
+			if (!form) return;
 			var v = shellAfterLoginUrl();
+			var hid = document.getElementById("usis-login-next");
 			if (hid) {
 				hid.value = v;
 			} else {
@@ -135,6 +139,36 @@
 				form.insertBefore(hid, form.firstChild);
 			}
 		}
+		if (form) {
+			form.setAttribute("action", base + "/auth/login");
+			applyLoginNext();
+		}
+		fetch(base + "/api/v1/auth/status", {
+			credentials: "include",
+			cache: "no-store",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (r) {
+				return r.json();
+			})
+			.then(function (body) {
+				if (body && body.authenticated && body.applicant_only) {
+					var loc = window.location;
+					var nxt = new URLSearchParams(loc.search).get("next");
+					var target = nxt || "usis-hr-hire.html";
+					if (!/^https?:\/\//i.test(target)) {
+						target = loc.origin + "/" + String(target).replace(/^\//, "");
+					}
+					window.location.replace(target);
+					return;
+				}
+				if (body && body.applicant_only) {
+					window.USIS_DEFAULT_AFTER_LOGIN =
+						window.location.protocol + "//" + window.location.host + "/usis-hr-hire.html";
+					applyLoginNext();
+				}
+			})
+			.catch(function () {});
 		refreshSessionHeaderDisplay();
 	}
 

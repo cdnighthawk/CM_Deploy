@@ -28,7 +28,8 @@
 	<meta name="twitter:card" content="summary_large_image">
 	
 	<!-- FAVICONS ICON -->
-	<link rel="shortcut icon" type="image/png" href="assets/images/favicon.png">
+	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	<link rel="shortcut icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
 	
 	<!-- MOBILE SPECIFIC -->
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -317,6 +318,12 @@
 							<span class="nav-text" data-i18n="Projects">Projects</span>
 						</a>
 					</li>
+					<li data-usis-module="projects">
+						<a href="usis-calendar.html" aria-expanded="false">
+							<i class="icon feather icon-calendar"></i>
+							<span class="nav-text">Calendar</span>
+						</a>
+					</li>
 					<li data-usis-module="safety">
 						<a href="usis-safety.html" aria-expanded="false">
 							<i class="icon feather icon-shield"></i>
@@ -420,6 +427,7 @@
 
 				<div class="col-xl-12">
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+						<p class="small text-muted mb-0 d-none" id="usis-projects-scope-hint"></p>
 						<div class="input-group message-search-area width200 w-xs-100">
 							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state">
 							<div class="input-group-append">
@@ -495,6 +503,7 @@
 
 	<!-- Start - Page Scripts -->
 	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 <script src="assets/js/usis-nav-access.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
@@ -620,9 +629,20 @@
 				})
 				.then(function (data) {
 					lastItems = data.items || [];
+					var hint = document.getElementById("usis-projects-scope-hint");
+					if (hint && data.project_scope === "assigned") {
+						hint.textContent =
+							"Showing only projects assigned to you. Contact an administrator if a job is missing.";
+						hint.classList.remove("d-none");
+					} else if (hint) {
+						hint.classList.add("d-none");
+					}
 					if (!lastItems.length) {
-						tbody.innerHTML =
-							'<tr><td colspan="7" class="text-muted">No projects yet. Add projects in your system, then reload.</td></tr>';
+						var msg =
+							data.project_scope === "assigned"
+								? "No projects are assigned to your account. Ask an administrator to assign jobs in User admin."
+								: "No projects yet. Add projects in your system, then reload.";
+						tbody.innerHTML = '<tr><td colspan="7" class="text-muted">' + esc(msg) + "</td></tr>";
 						return;
 					}
 					applyFilter();

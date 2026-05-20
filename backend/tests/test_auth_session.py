@@ -109,6 +109,29 @@ def test_login_respects_safe_next_redirect(client, no_dev_admin):
     assert ok.headers.get("Location") == target
 
 
+def test_login_respects_relative_next_redirect(client, no_dev_admin):
+    email = "relnext_" + uuid.uuid4().hex[:10] + "@t.com"
+    with client.application.app_context():
+        u = User(
+            email=email,
+            first_name="R",
+            last_name="N",
+            password_hash=generate_password_hash("pw-rel-1"),
+            is_active=True,
+        )
+        db.session.add(u)
+        db.session.commit()
+
+    ok = client.post(
+        "/auth/login",
+        data={"email": email, "password": "pw-rel-1", "next": "usis-hr-hire.html"},
+        headers={"Referer": "http://127.0.0.1:3000/page-login.html?next=usis-hr-hire.html"},
+        follow_redirects=False,
+    )
+    assert ok.status_code == 302
+    assert ok.headers.get("Location") == "http://127.0.0.1:3000/usis-hr-hire.html"
+
+
 def test_login_ignores_untrusted_next(client, no_dev_admin):
     email = "badnext_" + uuid.uuid4().hex[:8] + "@t.com"
     with client.application.app_context():

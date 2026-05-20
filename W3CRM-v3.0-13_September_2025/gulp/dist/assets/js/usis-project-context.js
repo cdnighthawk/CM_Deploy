@@ -23,6 +23,34 @@
     } catch (e) {}
   }
 
+  function apiBase() {
+    if (typeof global.usisApiBase === "function") {
+      return global.usisApiBase();
+    }
+    if (typeof global.USIS_API_BASE === "string" && global.USIS_API_BASE.trim()) {
+      return global.USIS_API_BASE.trim().replace(/\/$/, "");
+    }
+    return "";
+  }
+
+  function verifyProjectAccess(projectId) {
+    var base = apiBase();
+    if (!base || !projectId) return;
+    fetch(base.replace(/\/$/, "") + "/api/v1/projects/" + encodeURIComponent(projectId), {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        if (r.status === 404) {
+          clear();
+          if (/project-detail\.html/i.test(global.location.pathname || "")) {
+            global.location.href = "construction/projects.html";
+          }
+        }
+      })
+      .catch(function () {});
+  }
+
   function init() {
     if (document.querySelector(".usis-mobile-bottomnav")) {
       document.body.classList.add("usis-has-bottomnav");
@@ -30,11 +58,15 @@
     var fromQuery = readQuery();
     if (fromQuery) {
       apply(fromQuery);
+      verifyProjectAccess(fromQuery);
       return;
     }
     try {
       var stored = global.sessionStorage.getItem(KEY);
-      if (stored) apply(stored);
+      if (stored) {
+        apply(stored);
+        verifyProjectAccess(stored);
+      }
     } catch (e) {}
   }
 

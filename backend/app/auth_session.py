@@ -116,7 +116,9 @@ def _login_redirect_target(explicit_next: str | None) -> str:
     if applicant_only_from_session(session.get("user_id")):
         origin = _shell_origin_from_request()
         if origin:
-            return f"{origin}/usis-hr-hire.html"
+            from .permissions.applicant import APPLICANT_APPLICATION_PATH
+
+            return f"{origin}{APPLICANT_APPLICATION_PATH}"
     return _post_login_redirect()
 
 

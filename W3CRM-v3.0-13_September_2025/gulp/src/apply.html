@@ -34,10 +34,10 @@
 							start your application online — it only takes a few minutes to create your account.
 						</p>
 						<div class="d-flex flex-wrap gap-2 mb-3">
-							<a class="btn btn-primary btn-lg" id="usis-apply-cta" href="page-register.html?next=usis-hr-hire.html">Apply now</a>
-							<a class="btn btn-outline-primary btn-lg" id="usis-apply-signin" href="page-login.html?next=usis-hr-hire.html">Sign in</a>
+							<a class="btn btn-primary btn-lg" id="usis-apply-cta" href="page-register.html?next=apply/application.html">Apply now</a>
+							<a class="btn btn-outline-primary btn-lg" id="usis-apply-signin" href="page-login.html?next=apply/application.html">Sign in</a>
 							<a class="btn btn-outline-secondary btn-lg d-none usis-logout-link" id="usis-apply-signout" href="#">Sign out</a>
-							<a class="btn btn-outline-primary btn-lg d-none" id="usis-apply-register-alt" href="page-register.html?next=usis-hr-hire.html">Create a different account</a>
+							<a class="btn btn-outline-primary btn-lg d-none" id="usis-apply-register-alt" href="page-register.html?next=apply/application.html">Create a different account</a>
 						</div>
 						<p class="text-muted small mb-0" id="usis-apply-auth-hint"></p>
 					</div>
@@ -84,7 +84,7 @@
 	<script>
 	(function () {
 		"use strict";
-		var hireNext = "usis-hr-hire.html";
+		var hireNext = "apply/application.html";
 		var registerHref = "page-register.html?next=" + encodeURIComponent(hireNext);
 		var loginHref = "page-login.html?next=" + encodeURIComponent(hireNext);
 		function setHref(id, href) {

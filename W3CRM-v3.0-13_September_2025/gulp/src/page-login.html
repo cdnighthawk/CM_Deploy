@@ -77,10 +77,10 @@
 	<!-- End - Authentication Wrapper -->
 
 	<!-- Start - Page Scripts -->
-	@@include("elements/script.html")
+	@@include("elements/script-public.html")
+	<script src="assets/js/usis-applicant-guard.js"></script>
 	
 	<!-- Script For Custom JS -->
-	<script src="assets/js/deznav-init.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script>
 	(function () {
@@ -124,7 +124,9 @@
 		fetch(apiBase() + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) { return r.json(); })
 			.then(function (body) {
-				if (body && body.microsoft_sso_enabled) {
+				var nxt = new URLSearchParams(window.location.search).get("next") || "";
+				var applicantFlow = /apply\//i.test(nxt) || /apply\.html/i.test(nxt);
+				if (body && body.microsoft_sso_enabled && !applicantFlow) {
 					var w = document.getElementById("usis-ms-login-wrap");
 					if (w) w.classList.remove("d-none");
 					var b = document.getElementById("usis-ms-login-btn");

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "apply/complete.html",
+	})
+
+	<title>Application submitted — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="complete">
+
+	@@include("../elements/header-apply.html")
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 5 of 5</p>
+				<h1 class="mb-2">Thank you</h1>
+				<p class="text-muted mb-0">Your employment application and hiring documents are on file.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div class="card border-0 shadow-sm">
+				<div class="card-body p-4">
+					<p class="mb-3">Our HR team will review your submission and follow up with next steps. You may sign out below or close this window.</p>
+					<p class="text-muted small mb-4">HR may still require original I-9 / W-4 documents outside this app.</p>
+					<div class="d-flex flex-wrap gap-2">
+						<a class="btn btn-outline-secondary" href="../apply.html">Back to careers page</a>
+						<a class="btn btn-outline-primary usis-logout-link" href="#">Sign out</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	@@include("../elements/footer-public.html")
+	@@include("../elements/script-public.html")
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script>
+	(function () {
+		var core = window.USISHireCore;
+		if (!core) return;
+		core.checkSession().then(function () {
+			if (core.state.authenticated && !core.w4Complete(core.state.wizard)) {
+				core.redirectToStep(core.firstAllowedStepId(core.state.wizard));
+			}
+		});
+	})();
+	</script>
+</body>
+</html>

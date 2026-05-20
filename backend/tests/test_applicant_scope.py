@@ -17,6 +17,8 @@ def test_applicant_permissions_all_none():
 
 def test_applicant_public_shell_paths():
     assert is_applicant_public_shell_path("apply.html")
+    assert is_applicant_public_shell_path("apply/application.html")
+    assert is_applicant_public_shell_path("apply/i9.html")
     assert is_applicant_public_shell_path("assets/js/usis-hr-hire.js")
     assert not is_applicant_public_shell_path("usis-dashboard-dark.html")
 

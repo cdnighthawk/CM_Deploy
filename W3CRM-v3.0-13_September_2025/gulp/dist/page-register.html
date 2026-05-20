@@ -77,7 +77,7 @@
 									You are signed in as <strong id="usis-register-signed-email">your account</strong>.
 								</p>
 								<div class="d-grid gap-2">
-									<a class="btn btn-primary btn-lg" id="usis-register-continue-link" href="usis-hr-hire.html">Continue to your application</a>
+									<a class="btn btn-primary btn-lg" id="usis-register-continue-link" href="apply/application.html">Continue to your application</a>
 									<a class="btn btn-outline-secondary btn-lg usis-logout-link" id="usis-register-signout-link" href="#">Sign out and create a different account</a>
 								</div>
 							</div>
@@ -157,7 +157,7 @@
 			return "";
 		}
 		function nextUrl() {
-			return new URLSearchParams(window.location.search).get("next") || "usis-hr-hire.html";
+			return new URLSearchParams(window.location.search).get("next") || "apply/application.html";
 		}
 		function setSignedInView(user) {
 			var signed = document.getElementById("usis-register-signed-in");

@@ -50,9 +50,10 @@
 		if (
 			p.indexOf("page-login") !== -1 ||
 			p.indexOf("page-register") !== -1 ||
-			p.indexOf("apply.html") !== -1
+			p.indexOf("apply.html") !== -1 ||
+			p.indexOf("/apply/") !== -1
 		) {
-			return loc.href.split("#")[0];
+			return loc.protocol + "//" + loc.host + "/apply.html";
 		}
 		return loc.protocol + "//" + loc.host + "/page-login.html";
 	}
@@ -155,7 +156,7 @@
 				if (body && body.authenticated && body.applicant_only) {
 					var loc = window.location;
 					var nxt = new URLSearchParams(loc.search).get("next");
-					var target = nxt || "usis-hr-hire.html";
+					var target = nxt || "apply/application.html";
 					if (!/^https?:\/\//i.test(target)) {
 						target = loc.origin + "/" + String(target).replace(/^\//, "");
 					}
@@ -164,7 +165,7 @@
 				}
 				if (body && body.applicant_only) {
 					window.USIS_DEFAULT_AFTER_LOGIN =
-						window.location.protocol + "//" + window.location.host + "/usis-hr-hire.html";
+						window.location.protocol + "//" + window.location.host + "/apply/application.html";
 					applyLoginNext();
 				}
 			})

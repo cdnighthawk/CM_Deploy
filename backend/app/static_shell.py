@@ -14,9 +14,15 @@ _RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz")
 _CAREER_PATH_REDIRECTS: dict[str, str] = {
     "/careers": "/apply.html",
     "/apply": "/apply.html",
+    "/Apply": "/apply.html",
     "/jobs": "/apply.html",
     "/hiring": "/apply.html",
-    "/hire": "/usis-hr-hire.html",
+    "/hire": "/apply/application.html",
+}
+
+# Case-insensitive aliases (marketing links often use ``Apply.html``).
+_CASE_INSENSITIVE_HTML_REDIRECTS: dict[str, str] = {
+    "/apply.html": "/apply.html",
 }
 
 
@@ -53,7 +59,9 @@ def _redirect_applicant_from_internal_html(rel: str):
         return None
     if not applicant_only_from_session(session.get("user_id")):
         return None
-    return redirect("/usis-hr-hire.html", code=302)
+    from .permissions.applicant import APPLICANT_APPLICATION_PATH
+
+    return redirect(APPLICANT_APPLICATION_PATH, code=302)
 
 
 @static_shell_bp.route("/", defaults={"subpath": ""})
@@ -87,6 +95,10 @@ def serve_static(subpath: str):
     career_target = _CAREER_PATH_REDIRECTS.get(req_path)
     if career_target:
         return redirect(career_target, code=302)
+
+    case_target = _CASE_INSENSITIVE_HTML_REDIRECTS.get(req_path.lower())
+    if case_target and req_path != case_target:
+        return redirect(case_target, code=302)
 
     rel = subpath.lstrip("/")
     candidate = (root / rel).resolve()

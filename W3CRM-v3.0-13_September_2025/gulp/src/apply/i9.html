@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "apply/i9.html",
+	})
+
+	<title>Form I-9 — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-hr-i9-review.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="i9">
+
+	@@include("../elements/header-apply.html")
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 3 of 5</p>
+				<h1 class="mb-2">Form I-9 — Section 1</h1>
+				<p class="text-muted mb-0">Complete employment eligibility and identity information, then sign electronically.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div id="usis-hire-auth-gate" class="card border-warning shadow-sm mb-3 d-none">
+				<div class="card-body">
+					<h6 class="fw-semibold mb-2">Sign in or create an account</h6>
+					<div class="d-flex flex-wrap gap-2">
+						<a class="btn btn-primary btn-sm" id="usis-hire-login-link" href="#">Sign in</a>
+						<a class="btn btn-outline-primary btn-sm" id="usis-hire-register-link" href="#">Create account</a>
+					</div>
+				</div>
+			</div>
+			<div id="usis-hire-err" class="alert alert-danger d-none" role="alert"></div>
+
+			<div id="usis-hire-workspace">
+				<div class="card border-0 shadow-sm mb-3" id="usis-hire-pane-i9" data-hire-task="i9">
+					<div class="card-body">
+						<div class="d-flex flex-wrap gap-2 mb-3">
+							<a class="btn btn-outline-secondary btn-sm" id="usis-hire-link-i9-pdf" href="#" target="_blank" rel="noopener">Open I-9 (PDF)</a>
+							<a class="btn btn-outline-secondary btn-sm" id="usis-hire-link-i9-help" href="#" target="_blank" rel="noopener">USCIS I-9 help</a>
+						</div>
+						<div id="usis-i9-signed-banner" class="alert alert-success py-2 small d-none" role="status"></div>
+						<div class="d-flex flex-wrap gap-2 mb-3" id="usis-i9-actions">
+							<button type="button" class="btn btn-primary btn-sm" id="usis-i9-start-btn" disabled>Start / continue I-9</button>
+							<button type="button" class="btn btn-outline-primary btn-sm d-none" id="usis-i9-review-btn">Review I-9</button>
+						</div>
+						<div id="usis-i9-review-panel" class="usis-i9-review-panel d-none mb-3">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+								<h6 class="mb-0">Review Section 1</h6>
+								<div class="d-flex gap-1">
+									<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-i9-edit-btn">Edit in questionnaire</button>
+									<button type="button" class="btn btn-primary btn-sm" id="usis-i9-save-review-btn">Save changes</button>
+								</div>
+							</div>
+							<div id="usis-i9-review-root"></div>
+							<div class="border-top pt-3 mt-3" id="usis-i9-sign-bar">
+								<button type="button" class="btn btn-success btn-sm" id="usis-i9-open-sign-btn">Sign document</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				@@include("../elements/apply-nav.html")
+			</div>
+		</div>
+	</main>
+
+	@@include("../elements/footer-public.html")
+
+	<div class="modal fade" id="usis-i9-modal" tabindex="-1" aria-labelledby="usis-i9-modal-title" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-sm-down">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-i9-modal-title">Form I-9 — Section 1</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div id="usis-i9-modal-root"></div>
+					<div id="usis-i9-modal-err" class="alert alert-danger py-2 small d-none mt-2" role="alert"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-i9-modal-complete">Complete Section 1</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="usis-i9-sign-modal" tabindex="-1" aria-labelledby="usis-i9-sign-modal-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-i9-sign-modal-title">Sign Form I-9 Section 1</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<ul class="nav nav-tabs mb-3" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="usis-i9-tab-draw" data-bs-toggle="tab" data-bs-target="#usis-i9-pane-draw" type="button" role="tab">Draw</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="usis-i9-tab-type" data-bs-toggle="tab" data-bs-target="#usis-i9-pane-type" type="button" role="tab">Type</button>
+						</li>
+					</ul>
+					<div class="tab-content">
+						<div class="tab-pane fade show active" id="usis-i9-pane-draw" role="tabpanel">
+							<div class="usis-i9-sign-canvas-wrap mb-2">
+								<canvas id="usis-i9-sign-canvas" width="640" height="160"></canvas>
+							</div>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-i9-sign-clear">Clear signature</button>
+						</div>
+						<div class="tab-pane fade" id="usis-i9-pane-type" role="tabpanel">
+							<label class="form-label small" for="usis-i9-sign-typed-input">Type your signature</label>
+							<input class="form-control form-control-sm mb-2" id="usis-i9-sign-typed-input" autocomplete="off">
+							<div class="usis-i9-sign-typed-preview" id="usis-i9-sign-typed-preview"></div>
+						</div>
+					</div>
+					<div class="form-check mt-3">
+						<input class="form-check-input" type="checkbox" id="usis-i9-sign-cert">
+						<label class="form-check-label small" for="usis-i9-sign-cert">I agree that this is my legal signature and that the information in Section 1 is true and correct.</label>
+					</div>
+					<div class="mt-2">
+						<label class="form-label small" for="usis-i9-sign-fullname">Full legal name (must match profile)</label>
+						<input class="form-control form-control-sm" id="usis-i9-sign-fullname" autocomplete="off">
+					</div>
+					<div id="usis-i9-sign-err" class="alert alert-danger py-2 small d-none mt-2" role="alert"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-success btn-sm" id="usis-i9-sign-submit">Sign and submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	@@include("../elements/script-public.html")
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-hr-i9-fields.js"></script>
+	<script src="assets/js/usis-hr-i9-docs.js"></script>
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script src="assets/js/usis-hire-i9.js"></script>
+</body>
+</html>

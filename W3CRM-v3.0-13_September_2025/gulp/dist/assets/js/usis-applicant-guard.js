@@ -10,6 +10,7 @@
 	var path = (location.pathname || "").replace(/\\/g, "/").toLowerCase();
 	var publicPages =
 		path.indexOf("apply.html") !== -1 ||
+		path.indexOf("/apply/") !== -1 ||
 		path.indexOf("page-login") !== -1 ||
 		path.indexOf("page-register") !== -1 ||
 		path.indexOf("page-forgot-password") !== -1 ||
@@ -31,7 +32,7 @@
 	}
 
 	function redirectApplicant() {
-		window.location.replace("/usis-hr-hire.html");
+		window.location.replace("/apply/application.html");
 	}
 
 	fetch(apiBase() + "/api/v1/auth/status", {

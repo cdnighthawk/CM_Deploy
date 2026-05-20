@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	<!-- Title -->
+	<title>USIS</title>
+	
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="USIS">
+	<meta name="robots" content="index, follow">
+	<meta name="format-detection" content="telephone=no">
+	
+	<meta name="keywords" content="admin, admin dashboard, bootstrap, template, analytics, dark mode, modern, responsive admin dashboard, sass, ui kit">
+	<meta name="description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	
+	<meta property="og:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta property="og:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta property="og:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	
+	<!-- TWITTER META -->
+	<meta name="twitter:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta name="twitter:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta name="twitter:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	
+	<!-- FAVICONS ICON -->
+	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	<link rel="shortcut icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	
+	<!-- MOBILE SPECIFIC -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<!-- Canonical URL -->
+	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/apply/complete.html">
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+
+	<title>Application submitted — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="complete">
+
+	<header class="usis-public-header border-bottom bg-white">
+	<div class="container py-3">
+		<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+			<a href="../apply.html" class="d-inline-flex align-items-center gap-2 text-decoration-none usis-public-brand">
+				<img src="assets/images/branding/usis-eagle-logo.png" alt="" width="44" height="44" class="usis-public-logo-mark">
+				<span class="usis-public-brand-title mb-0">US Interior Specialties</span>
+			</a>
+			<nav class="d-flex align-items-center gap-2" aria-label="Careers">
+				<a class="btn btn-outline-secondary btn-sm d-none usis-logout-link" id="usis-public-sign-out" href="#">Sign out</a>
+				<a class="btn btn-outline-primary btn-sm" id="usis-public-sign-in" href="../page-login.html">Sign in</a>
+			</nav>
+		</div>
+		<nav class="usis-apply-steps small" aria-label="Application steps">
+			<ol class="list-unstyled d-flex flex-wrap gap-2 mb-0">
+				<li class="usis-apply-step" data-step="application"><a href="application.html">1. Application</a></li>
+				<li class="usis-apply-step" data-step="union"><a href="union.html">2. Union docs</a></li>
+				<li class="usis-apply-step" data-step="i9"><a href="i9.html">3. Form I-9</a></li>
+				<li class="usis-apply-step" data-step="w4"><a href="w4.html">4. Form W-4</a></li>
+				<li class="usis-apply-step" data-step="complete"><a href="complete.html">5. Done</a></li>
+			</ol>
+		</nav>
+	</div>
+</header>
+
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 5 of 5</p>
+				<h1 class="mb-2">Thank you</h1>
+				<p class="text-muted mb-0">Your employment application and hiring documents are on file.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div class="card border-0 shadow-sm">
+				<div class="card-body p-4">
+					<p class="mb-3">Our HR team will review your submission and follow up with next steps. You may sign out below or close this window.</p>
+					<p class="text-muted small mb-4">HR may still require original I-9 / W-4 documents outside this app.</p>
+					<div class="d-flex flex-wrap gap-2">
+						<a class="btn btn-outline-secondary" href="../apply.html">Back to careers page</a>
+						<a class="btn btn-outline-primary usis-logout-link" href="#">Sign out</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<footer class="usis-public-footer border-top mt-auto">
+	<div class="container py-4">
+		<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">
+			<span>&copy; US Interior Specialties</span>
+		</div>
+	</div>
+</footer>
+
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script>
+	(function () {
+		var core = window.USISHireCore;
+		if (!core) return;
+		core.checkSession().then(function () {
+			if (core.state.authenticated && !core.w4Complete(core.state.wizard)) {
+				core.redirectToStep(core.firstAllowedStepId(core.state.wizard));
+			}
+		});
+	})();
+	</script>
+</body>
+</html>

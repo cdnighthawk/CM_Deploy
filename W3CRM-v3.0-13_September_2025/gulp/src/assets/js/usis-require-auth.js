@@ -1,6 +1,6 @@
 /**
 
- * Redirects to Flask ``/auth/login`` when the API reports no session.
+ * Redirects to Gulp ``page-login.html`` when the API reports no session.
 
  * Set ``window.USIS_SKIP_AUTH_GUARD = true`` on a page to disable (debug only).
 
@@ -31,6 +31,8 @@
 		p.indexOf("page-lock-screen") !== -1 ||
 
 		p.indexOf("apply.html") !== -1 ||
+
+		p.indexOf("/apply/") !== -1 ||
 
 		p.indexOf("usis-hr-hire.html") !== -1;
 
@@ -76,15 +78,13 @@
 
 
 
-	var base = apiBase();
-
 	var here = location.href.split("#")[0];
 
-	var login = base + "/auth/login?next=" + encodeURIComponent(here);
+	var login = "page-login.html?next=" + encodeURIComponent(here);
 
 
 
-	fetch(base + "/api/v1/auth/status", { credentials: "include", cache: "no-store" })
+	fetch(apiBase() + "/api/v1/auth/status", { credentials: "include", cache: "no-store" })
 
 		.then(function (r) {
 
@@ -107,4 +107,3 @@
 		});
 
 })();
-

@@ -38,4 +38,4 @@ def test_login_redirect_target_for_applicant_session(flask_app):
             headers={"Referer": "http://127.0.0.1:3000/page-login.html"},
         ):
             with patch("app.permissions.applicant.applicant_only_from_session", return_value=True):
-                assert _login_redirect_target(None) == "http://127.0.0.1:3000/usis-hr-hire.html"
+                assert _login_redirect_target(None) == "http://127.0.0.1:3000/apply/application.html"

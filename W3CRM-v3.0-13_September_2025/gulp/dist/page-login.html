@@ -119,18 +119,13 @@
 
 	<!-- Start - Page Scripts -->
 	<script src="assets/js/usis-auth-links.js"></script>
-	<script src="assets/js/usis-applicant-guard.js"></script>
-	<script src="assets/js/usis-require-auth.js"></script>
-<script src="assets/js/usis-nav-access.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
-	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
-	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
+
+	<script src="assets/js/usis-applicant-guard.js"></script>
 	
 	<!-- Script For Custom JS -->
-	<script src="assets/js/deznav-init.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script>
 	(function () {
@@ -174,7 +169,9 @@
 		fetch(apiBase() + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) { return r.json(); })
 			.then(function (body) {
-				if (body && body.microsoft_sso_enabled) {
+				var nxt = new URLSearchParams(window.location.search).get("next") || "";
+				var applicantFlow = /apply\//i.test(nxt) || /apply\.html/i.test(nxt);
+				if (body && body.microsoft_sso_enabled && !applicantFlow) {
 					var w = document.getElementById("usis-ms-login-wrap");
 					if (w) w.classList.remove("d-none");
 					var b = document.getElementById("usis-ms-login-btn");

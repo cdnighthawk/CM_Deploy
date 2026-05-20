@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "apply/application.html",
+	})
+
+	<title>Employment application — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="application">
+
+	@@include("../elements/header-apply.html")
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 1 of 5</p>
+				<h1 class="mb-2">Employment application</h1>
+				<p class="text-muted mb-0">Tell us about yourself and the position you are applying for.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div id="usis-hire-auth-gate" class="card border-warning shadow-sm mb-3 d-none">
+				<div class="card-body">
+					<h6 class="fw-semibold mb-2">Sign in or create an account</h6>
+					<p class="text-muted small mb-3">Your application is saved to your USIS account so you can finish on any device.</p>
+					<div class="d-flex flex-wrap gap-2">
+						<a class="btn btn-primary btn-sm" id="usis-hire-login-link" href="#">Sign in</a>
+						<a class="btn btn-outline-primary btn-sm" id="usis-hire-register-link" href="#">Create account</a>
+					</div>
+				</div>
+			</div>
+			<div id="usis-hire-err" class="alert alert-danger d-none" role="alert"></div>
+			<p class="text-muted small mb-2" id="usis-hire-disclaimer"></p>
+
+			<div id="usis-hire-workspace">
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<div class="row g-2">
+							<div class="col-md-4">
+								<label class="form-label small" for="usis-hire-fn">Legal first name</label>
+								<input class="form-control form-control-sm" id="usis-hire-fn" autocomplete="given-name">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small" for="usis-hire-ln">Legal last name</label>
+								<input class="form-control form-control-sm" id="usis-hire-ln" autocomplete="family-name">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small" for="usis-hire-phone">Phone</label>
+								<input class="form-control form-control-sm" id="usis-hire-phone" autocomplete="tel">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small" for="usis-hire-position">Position applying for</label>
+								<input class="form-control form-control-sm" id="usis-hire-position">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small" for="usis-hire-start">Preferred start date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-hire-start">
+							</div>
+							<div class="col-12">
+								<label class="form-label small" for="usis-hire-addr">Address line 1</label>
+								<input class="form-control form-control-sm" id="usis-hire-addr" autocomplete="street-address">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small" for="usis-hire-city">City</label>
+								<input class="form-control form-control-sm" id="usis-hire-city">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small" for="usis-hire-state">State / region</label>
+								<input class="form-control form-control-sm" id="usis-hire-state">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small" for="usis-hire-zip">Postal code</label>
+								<input class="form-control form-control-sm" id="usis-hire-zip">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small" for="usis-hire-ec-name">Emergency contact name</label>
+								<input class="form-control form-control-sm" id="usis-hire-ec-name">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small" for="usis-hire-ec-phone">Emergency contact phone</label>
+								<input class="form-control form-control-sm" id="usis-hire-ec-phone">
+							</div>
+							<div class="col-12">
+								<label class="form-label small" for="usis-hire-prior">Prior employer summary (optional)</label>
+								<textarea class="form-control form-control-sm" id="usis-hire-prior" rows="2"></textarea>
+							</div>
+						</div>
+						<button type="button" class="btn btn-outline-primary btn-sm mt-3" id="usis-hire-submit-app">Save application</button>
+					</div>
+				</div>
+				@@include("../elements/apply-nav.html")
+			</div>
+		</div>
+	</main>
+
+	@@include("../elements/footer-public.html")
+	@@include("../elements/script-public.html")
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script src="assets/js/usis-hire-application.js"></script>
+</body>
+</html>

@@ -24,6 +24,9 @@ APPLICANT_PUBLIC_SHELL_PAGES: frozenset[str] = frozenset(
     }
 )
 
+# Default redirect when an applicant-only session hits staff HTML.
+APPLICANT_APPLICATION_PATH = "/apply/application.html"
+
 _APPLICANT_PERMISSIONS: dict[str, str] = {code: "none" for code in MODULE_CODES}
 
 
@@ -55,7 +58,10 @@ def is_applicant_public_shell_path(rel_path: str) -> bool:
     rel = (rel_path or "").replace("\\", "/").strip().lstrip("/")
     if not rel or rel.startswith("assets/"):
         return True
-    name = rel.split("/")[-1].lower()
+    lower = rel.lower()
+    if lower.startswith("apply/"):
+        return True
+    name = lower.split("/")[-1]
     return name in APPLICANT_PUBLIC_SHELL_PAGES
 
 

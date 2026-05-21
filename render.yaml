@@ -36,6 +36,8 @@ services:
         value: "0"
       - key: USIS_ALLOW_SELF_REGISTER
         value: "1"
+      - key: USIS_APP_PUBLIC_URL
+        value: https://www.usiscm.com
       - key: USIS_API_DEV_ALLOW_ANY
         value: "0"
       - key: USIS_STATIC_ROOT
@@ -48,3 +50,15 @@ services:
         generateValue: true
       - key: TOKEN_ENCRYPTION_KEY
         generateValue: true
+      - key: USIS_AI_ENABLED
+        value: "1"
+      - key: USIS_XAI_MODEL
+        value: grok-4-1-fast
+      - key: USIS_XAI_BASE_URL
+        value: https://api.x.ai/v1
+      - key: USIS_AI_MAX_TOOL_ROUNDS
+        value: "8"
+      - key: USIS_AI_REQUEST_TIMEOUT_SEC
+        value: "120"
+      - key: USIS_XAI_API_KEY
+        sync: false

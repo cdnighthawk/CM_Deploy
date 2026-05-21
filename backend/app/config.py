@@ -53,16 +53,53 @@ def _default_post_login_redirect() -> str:
     return "http://127.0.0.1:3000/usis-dashboard-dark.html"
 
 
+def _www_origin_variants(origin: str) -> tuple[str, ...]:
+    """Add ``www.`` / bare-host pairs so login redirects work on either hostname."""
+    o = (origin or "").strip().rstrip("/")
+    if not o.startswith("http://") and not o.startswith("https://"):
+        return ()
+    try:
+        from urllib.parse import urlparse
+
+        p = urlparse(o)
+    except ValueError:
+        return ()
+    if not p.scheme or not p.netloc:
+        return ()
+    host = p.netloc.lower()
+    out: list[str] = [f"{p.scheme}://{p.netloc}".rstrip("/")]
+    if host.startswith("www."):
+        bare = host[4:]
+        if bare:
+            out.append(f"{p.scheme}://{bare}")
+    elif "." in host and not host.startswith("localhost") and not host.startswith("127.0.0.1"):
+        out.append(f"{p.scheme}://www.{host}")
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for item in out:
+        key = item.lower().rstrip("/")
+        if key not in seen:
+            deduped.append(item.rstrip("/"))
+            seen.add(key)
+    return tuple(deduped)
+
+
 def _default_cors_origins() -> tuple[str, ...]:
     explicit = (os.environ.get("CORS_ORIGINS") or "").strip()
     if explicit:
-        return tuple(o.strip() for o in explicit.split(",") if o.strip())
-    public_base = _public_app_url()
-    if public_base:
-        return (public_base,)
-    render_base = _render_external_url()
-    if render_base:
-        return (render_base,)
+        return tuple(o.strip().rstrip("/") for o in explicit.split(",") if o.strip())
+    out: list[str] = []
+    seen: set[str] = set()
+    for base in (_public_app_url(), _render_external_url()):
+        if not base:
+            continue
+        for variant in _www_origin_variants(base):
+            key = variant.lower()
+            if key not in seen:
+                out.append(variant)
+                seen.add(key)
+    if out:
+        return tuple(out)
     return tuple(
         o.strip()
         for o in (

@@ -162,6 +162,7 @@
 		setHref("usis-apply-register-alt", registerHref);
 		setHref("usis-public-sign-in", loginHref);
 		function apiBase() {
+			if (typeof window.usisApiBase === "function") return window.usisApiBase();
 			if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
 				return window.USIS_API_BASE.trim().replace(/\/$/, "");
 			}
@@ -169,9 +170,7 @@
 			if (h === "localhost" || h === "127.0.0.1") return window.location.protocol + "//" + h + ":5000";
 			return "";
 		}
-		var base = apiBase();
-		if (!base) return;
-		fetch(base + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
+		fetch(apiBase() + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) { return r.json(); })
 			.then(function (body) {
 				if (!body || !body.authenticated) return;

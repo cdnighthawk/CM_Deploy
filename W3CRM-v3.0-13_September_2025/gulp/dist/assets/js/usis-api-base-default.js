@@ -3,11 +3,32 @@
  * Kept external so strict Content-Security-Policy (default-src 'self') can allow script-src without 'unsafe-inline'.
  */
 (function () {
-	var existing = window.USIS_API_BASE;
-	if (existing != null && String(existing).trim() !== "") return;
 	var h = window.location.hostname || "";
 	var port = String(window.location.port || "");
 	var protocol = window.location.protocol || "";
+	var pageOrigin = protocol + "//" + h + (port ? ":" + port : "");
+
+	function forceSameOriginOnProduction() {
+		if (protocol === "https:" || port === "443" || port === "10000" || port === "") {
+			window.USIS_API_BASE = "";
+			return true;
+		}
+		return false;
+	}
+
+	var existing = window.USIS_API_BASE;
+	if (existing != null && String(existing).trim() !== "") {
+		var configured = String(existing).trim().replace(/\/$/, "");
+		try {
+			var cfgOrigin = new URL(configured).origin;
+			if (cfgOrigin && cfgOrigin !== pageOrigin && forceSameOriginOnProduction()) {
+				return;
+			}
+		} catch (e) {
+			/* keep configured value for dev / relative overrides */
+		}
+		return;
+	}
 	var devPorts = {
 		"3000": 1,
 		"3001": 1,

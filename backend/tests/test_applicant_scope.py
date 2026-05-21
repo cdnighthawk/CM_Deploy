@@ -41,7 +41,7 @@ def test_is_applicant_only_user_by_role_codes():
     assert is_applicant_only_user(_User([APPLICANT_ROLE_CODE]))
     assert not is_applicant_only_user(_User(["project_manager"]))
     assert not is_applicant_only_user(_User(["applicant", "project_manager"]))
-    assert is_applicant_only_user(_User([]))
+    assert not is_applicant_only_user(_User([]))
 
 
 def test_public_shell_page_list_covers_hire_flow():

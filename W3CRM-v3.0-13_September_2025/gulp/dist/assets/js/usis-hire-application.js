@@ -8,8 +8,9 @@
 		if (saveBtn) {
 			saveBtn.addEventListener("click", function () {
 				core.submitApplication().catch(function (e) {
-					core.showErr(e.message || String(e));
-					if (window.USISNotify) window.USISNotify.error(e.message || String(e));
+					var msg = core.friendlyFetchError ? core.friendlyFetchError(e) : (e.message || String(e));
+					core.showErr(msg);
+					if (window.USISNotify) window.USISNotify.error(msg);
 				});
 			});
 		}
@@ -22,8 +23,9 @@
 							window.location.href = "union.html";
 						})
 						.catch(function (e) {
-							core.showErr(e.message || String(e));
-							if (window.USISNotify) window.USISNotify.error(e.message || String(e));
+							var msg = core.friendlyFetchError ? core.friendlyFetchError(e) : (e.message || String(e));
+							core.showErr(msg);
+							if (window.USISNotify) window.USISNotify.error(msg);
 						});
 				},
 				nextHref: core.applicationComplete(core.state.wizard) ? "union.html" : null,

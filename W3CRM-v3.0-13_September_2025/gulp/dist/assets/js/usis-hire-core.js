@@ -156,6 +156,14 @@
 		}
 	}
 
+	function friendlyFetchError(err) {
+		var msg = (err && err.message) || String(err || "");
+		if (/NetworkError|Failed to fetch|Load failed|Network request failed/i.test(msg)) {
+			return "Could not reach the server. Check your connection and refresh the page.";
+		}
+		return msg;
+	}
+
 	function showErr(msg) {
 		var el = document.getElementById("usis-hire-err");
 		if (!el) return;
@@ -309,7 +317,11 @@
 				return loadWizard();
 			})
 			.catch(function (e) {
-				showErr(e.message || String(e));
+				if (e && e.message === "unauthorized") {
+					setAuthGate(true);
+					return;
+				}
+				showErr(friendlyFetchError(e));
 			});
 	}
 
@@ -366,6 +378,7 @@
 		loginUrl: loginUrl,
 		registerUrl: registerUrl,
 		showErr: showErr,
+		friendlyFetchError: friendlyFetchError,
 		loadWizard: loadWizard,
 		checkSession: checkSession,
 		submitApplication: submitApplication,

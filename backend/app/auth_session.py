@@ -38,6 +38,20 @@ def _allowed_shell_origins() -> set[str]:
         s = str(o).strip().rstrip("/").lower()
         if s:
             out.add(s)
+    # Flask serves the Gulp shell and API on the same host — always trust the active tab origin.
+    try:
+        ref = (request.headers.get("Referer") or "").strip()
+        if ref:
+            p = urlparse(ref)
+            if p.scheme in ("http", "https") and p.netloc:
+                out.add(f"{p.scheme}://{p.netloc}".lower().rstrip("/"))
+        host_url = (request.host_url or "").strip()
+        if host_url:
+            p = urlparse(host_url)
+            if p.scheme in ("http", "https") and p.netloc:
+                out.add(f"{p.scheme}://{p.netloc}".lower().rstrip("/"))
+    except RuntimeError:
+        pass
     return out
 
 

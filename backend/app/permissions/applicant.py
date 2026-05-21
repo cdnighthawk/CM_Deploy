@@ -50,8 +50,6 @@ def is_applicant_only_user(user: User | None) -> bool:
     if user is None or user.is_superuser:
         return False
     codes = role_codes_for_user(user)
-    if not codes:
-        return True
     return codes == frozenset({APPLICANT_ROLE_CODE})
 
 

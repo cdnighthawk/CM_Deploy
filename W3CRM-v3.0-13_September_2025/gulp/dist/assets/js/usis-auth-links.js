@@ -113,6 +113,11 @@
 			});
 	}
 
+	function isAuthEntryPage() {
+		var p = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
+		return p.indexOf("page-login") !== -1 || p.indexOf("page-register") !== -1;
+	}
+
 	function wire() {
 		var base = apiBase();
 		var nextLogin = encodeURIComponent(shellAfterLoginUrl());
@@ -153,7 +158,7 @@
 				return r.json();
 			})
 			.then(function (body) {
-				if (body && body.authenticated && body.applicant_only) {
+				if (body && body.authenticated && body.applicant_only && isAuthEntryPage()) {
 					var loc = window.location;
 					var nxt = new URLSearchParams(loc.search).get("next");
 					var target = nxt || "apply/application.html";
@@ -161,12 +166,6 @@
 						target = loc.origin + "/" + String(target).replace(/^\//, "");
 					}
 					window.location.replace(target);
-					return;
-				}
-				if (body && body.applicant_only) {
-					window.USIS_DEFAULT_AFTER_LOGIN =
-						window.location.protocol + "//" + window.location.host + "/apply/application.html";
-					applyLoginNext();
 				}
 			})
 			.catch(function () {});

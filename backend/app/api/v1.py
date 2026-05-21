@@ -213,6 +213,60 @@ def auth_register():
     ), 201
 
 
+@bp.post("/auth/password-reset/request")
+def auth_password_reset_request():
+    """Email a single-use reset link (always returns success to avoid email enumeration)."""
+    from ..services import password_reset as pw_reset
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"entity": "auth_password_reset", "error": "JSON body required"}), 400
+
+    email = str(body.get("email") or "").strip()
+    try:
+        result = pw_reset.request_password_reset(email)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("password reset request failed")
+        result = {"ok": True, "sent": False, "dry_run": False}
+
+    return _jsonify(
+        {
+            "entity": "auth_password_reset",
+            "ok": True,
+            "message": "If an account exists with that email, password reset instructions have been sent.",
+            "sent": bool(result.get("sent")),
+            "dry_run": bool(result.get("dry_run")),
+        }
+    )
+
+
+@bp.post("/auth/password-reset/confirm")
+def auth_password_reset_confirm():
+    """Set a new password using a token from the reset email."""
+    from ..services import password_reset as pw_reset
+
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"entity": "auth_password_reset", "error": "JSON body required"}), 400
+
+    token = str(body.get("token") or "").strip()
+    password = str(body.get("password") or "")
+    try:
+        pw_reset.confirm_password_reset(token, password)
+        db.session.commit()
+    except ValueError as exc:
+        db.session.rollback()
+        return _jsonify({"entity": "auth_password_reset", "error": str(exc)}), 400
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("password reset confirm failed")
+        return _jsonify({"entity": "auth_password_reset", "error": "could not reset password"}), 500
+
+    return _jsonify({"entity": "auth_password_reset", "ok": True})
+
+
 @bp.get("/me")
 def get_me():
     """Signed-in user's profile (same payload shape as ``GET /admin/users/<id>``)."""

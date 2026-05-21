@@ -14,6 +14,7 @@
 		path.indexOf("page-login") !== -1 ||
 		path.indexOf("page-register") !== -1 ||
 		path.indexOf("page-forgot-password") !== -1 ||
+		path.indexOf("page-reset-password") !== -1 ||
 		path.indexOf("page-lock-screen") !== -1 ||
 		path.indexOf("usis-hr-hire.html") !== -1;
 	if (publicPages) return;

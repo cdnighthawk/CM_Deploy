@@ -3,7 +3,7 @@
 Append new models here as future migrations land.
 """
 from .audit import AuditLog
-from .auth import MobileRefreshToken, Role, RoleModulePermission, User, UserRole
+from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact

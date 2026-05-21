@@ -28,6 +28,8 @@
 
 		p.indexOf("page-forgot-password") !== -1 ||
 
+		p.indexOf("page-reset-password") !== -1 ||
+
 		p.indexOf("page-lock-screen") !== -1 ||
 
 		p.indexOf("apply.html") !== -1 ||

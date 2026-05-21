@@ -190,25 +190,55 @@ def send_compose_email(
     }
 
 
-def public_login_url() -> str:
-    """Sign-in page URL for outbound mail (same origin as the static shell)."""
+def public_app_origin() -> str:
+    """Public site origin for links in outbound mail (no trailing slash)."""
     from urllib.parse import urlparse
 
     explicit = (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip().rstrip("/")
     if explicit:
-        return f"{explicit}/page-login.html"
+        return explicit
 
     redirect = (current_app.config.get("USIS_POST_LOGIN_REDIRECT") or "").strip()
     if redirect:
         parsed = urlparse(redirect)
         if parsed.scheme and parsed.netloc:
-            return f"{parsed.scheme}://{parsed.netloc}/page-login.html"
+            return f"{parsed.scheme}://{parsed.netloc}"
 
     render_base = (os.environ.get("RENDER_EXTERNAL_URL") or "").strip().rstrip("/")
     if render_base:
-        return f"{render_base}/page-login.html"
+        return render_base
 
-    return "http://127.0.0.1:5000/page-login.html"
+    return "http://127.0.0.1:5000"
+
+
+def public_login_url() -> str:
+    """Sign-in page URL for outbound mail (same origin as the static shell)."""
+    return f"{public_app_origin()}/page-login.html"
+
+
+def public_reset_password_url(token: str) -> str:
+    from urllib.parse import quote
+
+    return f"{public_app_origin()}/page-reset-password.html?token={quote(token, safe='')}"
+
+
+def send_password_reset_email(*, to: str, reset_token: str) -> dict[str, object]:
+    """Send a single-use password reset link."""
+    url = public_reset_password_url(reset_token)
+    body = "\n".join(
+        [
+            "We received a request to reset your USIS account password.",
+            "",
+            f"Reset your password: {url}",
+            "",
+            "This link expires in one hour. If you did not request a reset, you can ignore this email.",
+        ]
+    )
+    return send_plain_notification_email(
+        to=to,
+        subject="Reset your USIS password",
+        body=body,
+    )
 
 
 def send_user_invite_email(

@@ -61,7 +61,7 @@ Render does **not** provision Redis in `render.yaml`; for MVP, leave Celery unse
 | **Playbooks** | Checklist run start / reassignment | Yes (`send_plain_notification_email`) |
 | **Admin user invite** | `POST /api/v1/admin/users` with `"send_invite": true` or `USIS_SEND_USER_INVITE_EMAIL=1` | Yes (new) |
 | **Self-register / hire** | `POST /api/v1/auth/register`, `/apply.html` | **No** — account only, no verification email |
-| **Password reset** | — | **Not implemented** |
+| **Password reset** | `page-forgot-password.html` → `POST /api/v1/auth/password-reset/request` | Yes when SMTP configured |
 | **core-hr “Invite Employee” modal** | W3CRM template UI | **Not wired** — use **User admin** (`usis-user-directory.html`) instead |
 | **Microsoft SSO** | Entra login | **No email** — identity via Microsoft |
 | **HRMS in-app notifications** | DB table `hrms_notifications` | **In-app only** — no SMTP yet |

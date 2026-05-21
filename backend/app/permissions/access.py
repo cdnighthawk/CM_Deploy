@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Role, RoleModulePermission, User
+from ..models import Role, RoleModulePermission, User, UserRole
 from .defaults import DEFAULTS_BY_ROLE_CODE, _NO_ROLE
 from .modules import ALL_LEVELS, MODULE_CODES, MODULE_CATALOG, catalog_public
 
@@ -146,7 +146,7 @@ def load_user_with_roles(user_id: uuid.UUID) -> User | None:
         select(User)
         .where(User.id == user_id)
         .options(
-            selectinload(User.roles).selectinload("role").selectinload(Role.module_permissions),
+            selectinload(User.roles).selectinload(UserRole.role).selectinload(Role.module_permissions),
         )
     )
 

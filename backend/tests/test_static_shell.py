@@ -13,12 +13,12 @@ def static_root() -> Path | None:
     return resolve_static_root()
 
 
-def test_root_redirects_to_dashboard(client, static_root):
+def test_root_redirects_to_login(client, static_root):
     if static_root is None:
         pytest.skip("gulp/dist not present")
     r = client.get("/")
     assert r.status_code == 302
-    assert r.headers.get("Location") == "/usis-dashboard-dark.html"
+    assert r.headers.get("Location") == "/page-login.html"
 
 
 def test_careers_path_redirects_to_apply(client, static_root):

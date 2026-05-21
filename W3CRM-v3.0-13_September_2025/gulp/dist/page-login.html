@@ -60,6 +60,7 @@
 		<div class="row justify-content-center align-items-center min-vh-100 py-4">
 			<div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto">
 				<div class="auth-form">
+					<div id="usis-login-staff">
 					<div class="text-center mb-4">
 						<div class="brand-logo mb-3">
 							<img class="usis-login-logo img-fluid" style="max-height:5rem;width:auto;object-fit:contain;"
@@ -67,8 +68,8 @@
 								alt="US Interior Specialties"
 								onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
 						</div>
-						<h3 class="mb-0">Sign In</h3>
-						<p class="mb-0">Log in to continue your journey!</p>
+						<h3 class="mb-0">USIS Construction Management</h3>
+						<p class="mb-0 text-muted">Sign in to access projects, estimates, and field operations.</p>
 					</div>
 					<form id="usis-login-form" method="post" action="">
 						<div class="mb-3">
@@ -93,7 +94,7 @@
 							<a href="page-forgot-password.html" class="btn-link text-primary">Forgot Password?</a>
 						</div>
 						<div class="text-center mb-4">
-							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Sign In</button>
+							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Sign in to CM</button>
 						</div>
 						<div class="text-center border-bottom border-grey position-relative my-3">
 							<span class="small bg-light position-absolute top-50 start-50 translate-middle px-2 ">Or sign in with</span>
@@ -105,12 +106,33 @@
 						</div>
 						<div id="usis-login-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
 						<p class="text-center small mt-3 mb-0">
-							Need an account? <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html">Create one</a>
-						</p>
-						<p class="text-center small mt-2 mb-0">
-							Applying for a job? <a class="btn-link text-primary" href="apply.html">Start at the careers page</a>
+							Need a staff account? <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html">Create one</a>
 						</p>
 					</form>
+					<div class="card border-primary shadow-sm mt-4 mb-0">
+						<div class="card-body text-center py-4">
+							<p class="text-muted small mb-3 mb-md-2">Looking for a job with USIS?</p>
+							<a class="btn btn-outline-primary btn-lg w-100" id="usis-login-apply-btn" href="apply.html">Apply to USIS</a>
+						</div>
+					</div>
+					</div>
+					<div id="usis-login-applicant" class="d-none">
+						<div class="text-center mb-4">
+							<div class="brand-logo mb-3">
+								<img class="usis-login-logo img-fluid" style="max-height:5rem;width:auto;object-fit:contain;"
+									src="assets/images/branding/usis-eagle-logo.png"
+									alt="US Interior Specialties"
+									onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
+							</div>
+							<h3 class="mb-0">Continue your application</h3>
+							<p class="mb-0 text-muted">You are signed in as <strong id="usis-login-applicant-email">your account</strong>.</p>
+						</div>
+						<div class="d-grid gap-2 mb-3">
+							<a class="btn btn-primary btn-lg" href="apply/application.html">Continue job application</a>
+							<a class="btn btn-outline-secondary btn-lg usis-logout-link" href="#">Sign out</a>
+						</div>
+						<p class="text-center small text-muted mb-0">USIS staff? Sign out and sign in with your company account above.</p>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -123,7 +145,6 @@
 	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
-	<script src="assets/js/usis-applicant-guard.js"></script>
 	
 	<!-- Script For Custom JS -->
 	<script src="assets/js/custom.js"></script>
@@ -161,6 +182,14 @@
 		function showMsError() {
 			showLoginAlert(new URLSearchParams(window.location.search).get("ms_error"), MS_ERR);
 		}
+		function showApplicantView(user) {
+			var staff = document.getElementById("usis-login-staff");
+			var applicant = document.getElementById("usis-login-applicant");
+			if (staff) staff.classList.add("d-none");
+			if (applicant) applicant.classList.remove("d-none");
+			var emailEl = document.getElementById("usis-login-applicant-email");
+			if (emailEl && user && user.email) emailEl.textContent = user.email;
+		}
 		var reg = document.getElementById("usis-login-register-link");
 		if (reg) {
 			var nxt = new URLSearchParams(window.location.search).get("next") || "";
@@ -171,6 +200,14 @@
 			.then(function (body) {
 				var nxt = new URLSearchParams(window.location.search).get("next") || "";
 				var applicantFlow = /apply\//i.test(nxt) || /apply\.html/i.test(nxt);
+				if (body && body.authenticated && body.applicant_only) {
+					showApplicantView(body.user);
+					return;
+				}
+				if (body && body.authenticated && !applicantFlow && !nxt) {
+					window.location.replace("usis-dashboard-dark.html");
+					return;
+				}
 				if (body && body.microsoft_sso_enabled && !applicantFlow) {
 					var w = document.getElementById("usis-ms-login-wrap");
 					if (w) w.classList.remove("d-none");

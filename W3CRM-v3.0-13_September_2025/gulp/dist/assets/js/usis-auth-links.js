@@ -47,12 +47,7 @@
 	function shellAfterLogoutUrl() {
 		var loc = window.location;
 		var p = (loc.pathname || "").replace(/\\/g, "/").toLowerCase();
-		if (
-			p.indexOf("page-login") !== -1 ||
-			p.indexOf("page-register") !== -1 ||
-			p.indexOf("apply.html") !== -1 ||
-			p.indexOf("/apply/") !== -1
-		) {
+		if (p.indexOf("apply.html") !== -1 || p.indexOf("/apply/") !== -1) {
 			return loc.protocol + "//" + loc.host + "/apply.html";
 		}
 		return loc.protocol + "//" + loc.host + "/page-login.html";
@@ -113,11 +108,6 @@
 			});
 	}
 
-	function isAuthEntryPage() {
-		var p = (window.location.pathname || "").replace(/\\/g, "/").toLowerCase();
-		return p.indexOf("page-login") !== -1 || p.indexOf("page-register") !== -1;
-	}
-
 	function wire() {
 		var base = apiBase();
 		var nextLogin = encodeURIComponent(shellAfterLoginUrl());
@@ -154,20 +144,6 @@
 			cache: "no-store",
 			headers: { Accept: "application/json" },
 		})
-			.then(function (r) {
-				return r.json();
-			})
-			.then(function (body) {
-				if (body && body.authenticated && body.applicant_only && isAuthEntryPage()) {
-					var loc = window.location;
-					var nxt = new URLSearchParams(loc.search).get("next");
-					var target = nxt || "apply/application.html";
-					if (!/^https?:\/\//i.test(target)) {
-						target = loc.origin + "/" + String(target).replace(/^\//, "");
-					}
-					window.location.replace(target);
-				}
-			})
 			.catch(function () {});
 		refreshSessionHeaderDisplay();
 	}

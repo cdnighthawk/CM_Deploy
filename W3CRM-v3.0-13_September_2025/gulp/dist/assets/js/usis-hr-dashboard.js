@@ -129,6 +129,12 @@
 				setText("usis-hr-count-onboarding", String(c.onboarding_in_progress != null ? c.onboarding_in_progress : "0"));
 				setText("usis-hr-count-safety-exp", String(c.expiring_safety_certs_30d != null ? c.expiring_safety_certs_30d : "0"));
 				setText("usis-hr-count-approvals", String(c.pending_approvals_hr != null ? c.pending_approvals_hr : "0"));
+				var appsSubmitted = c.applications_submitted != null ? c.applications_submitted : 0;
+				var appsReview = c.applications_under_review != null ? c.applications_under_review : 0;
+				setText("usis-hr-count-apps-submitted", String(appsSubmitted));
+				setText("usis-hr-count-apps-review", String(appsReview) + " under review");
+				var appsKpi = document.getElementById("usis-hr-apps-kpi-wrap");
+				if (appsKpi) appsKpi.classList.toggle("d-none", !(appsSubmitted > 0 || appsReview > 0));
 				if (statusEl) {
 					statusEl.classList.remove("text-danger", "text-warning");
 					if (data.stub) {

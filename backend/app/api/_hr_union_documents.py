@@ -18,6 +18,7 @@ from ..services.hr_union_documents import (
     UNION_DOC_MAX_PER_KIND,
     serialize_union_document,
 )
+from ..services.hire_application_review import applicant_wizard_mutable
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file
 from ._perms import current_user
 from .v1 import _jsonify
@@ -39,6 +40,8 @@ def _hire_row_for_user(uid: uuid.UUID) -> HrHireApplication | None:
 
 
 def _hire_wizard_locked(hire_row: HrHireApplication | None) -> bool:
+    if not applicant_wizard_mutable(hire_row):
+        return True
     return hire_row is not None and hire_row.w4_signed_at is not None
 
 

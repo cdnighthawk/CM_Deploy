@@ -91,6 +91,7 @@
 		</section>
 
 		<div class="container pb-5">
+			<div id="usis-hire-review-banner" class="alert d-none mb-3" role="status"></div>
 			<div class="card border-0 shadow-sm">
 				<div class="card-body p-4">
 					<p class="mb-3">Our HR team will review your submission and follow up with next steps. You may sign out below or close this window.</p>
@@ -122,10 +123,13 @@
 	(function () {
 		var core = window.USISHireCore;
 		if (!core) return;
-		core.checkSession().then(function () {
+		core.checkSession().then(function (w) {
+			if (!w) return;
 			if (core.state.authenticated && !core.w4Complete(core.state.wizard)) {
 				core.redirectToStep(core.firstAllowedStepId(core.state.wizard));
+				return;
 			}
+			core.renderCompleteReviewStatus(w);
 		});
 	})();
 	</script>

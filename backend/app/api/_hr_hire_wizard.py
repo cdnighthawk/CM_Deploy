@@ -38,6 +38,11 @@ from ..services.hr_w4_crypto import decrypt_w4, encrypt_w4
 
 from ..services.hr_i9_validate import validate_section1
 from ..services.hr_w4_validate import validate_w4
+from ..services.hire_application_review import (
+    applicant_wizard_mutable,
+    mark_submitted_for_review,
+    serialize_hire_status,
+)
 
 from ._perms import current_user
 
@@ -554,6 +559,18 @@ def _get_or_create_hire_row(uid: uuid.UUID) -> HrHireApplication:
 
 
 
+def _wizard_mutable_guard(hire_row: HrHireApplication | None):
+    if not applicant_wizard_mutable(hire_row):
+        return _jsonify(
+            {
+                "entity": "hr_hire_wizard",
+                "error": "application closed",
+                "message": "This application is no longer open for editing.",
+            }
+        ), 409
+    return None
+
+
 def _build_hire_tasks(
     *,
     hire_row: HrHireApplication | None,
@@ -830,6 +847,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
                 "application": {"submitted_at": app_submitted, "payload": app_payload},
 
+                "review": serialize_hire_status(hire_row),
+
                 "i9": {
 
                     "prefill": _build_i9_prefill(u, app_payload),
@@ -908,11 +927,17 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         hire_row = _get_or_create_hire_row(uid)
 
+        blocked = _wizard_mutable_guard(hire_row)
+        if blocked is not None:
+            return blocked
+
         now = datetime.now(timezone.utc)
 
         hire_row.application_json = dumped
 
         hire_row.submitted_at = now
+
+        mark_submitted_for_review(hire_row, when=now)
 
         ob = db.session.scalar(
 
@@ -951,6 +976,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         _ensure_hire_wizard_rows(uid)
 
         hire_row = _get_or_create_hire_row(uid)
+
+        blocked = _wizard_mutable_guard(hire_row)
+        if blocked is not None:
+            return blocked
 
         if hire_row.i9_signed_at is not None:
 
@@ -1017,6 +1046,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         _ensure_hire_wizard_rows(uid)
 
         hire_row = _get_or_create_hire_row(uid)
+
+        blocked = _wizard_mutable_guard(hire_row)
+        if blocked is not None:
+            return blocked
 
         if hire_row.i9_signed_at is not None:
 
@@ -1276,6 +1309,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         hire_row = _get_or_create_hire_row(uid)
 
+        blocked = _wizard_mutable_guard(hire_row)
+        if blocked is not None:
+            return blocked
+
         if hire_row.w4_signed_at is not None:
 
             return _jsonify({"entity": "hr_w4", "error": "W-4 is signed and locked"}), 409
@@ -1341,6 +1378,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         _ensure_hire_wizard_rows(uid)
 
         hire_row = _get_or_create_hire_row(uid)
+
+        blocked = _wizard_mutable_guard(hire_row)
+        if blocked is not None:
+            return blocked
 
         if hire_row.w4_signed_at is not None:
 
@@ -1431,6 +1472,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         hire_row.w4_signature_png = sig if sig.startswith("data:") else f"data:image/png;base64,{sig}"
 
         hire_row.w4_signed_at = now
+
+        mark_submitted_for_review(hire_row, when=now)
 
         ip = _client_ip_for_audit()
 

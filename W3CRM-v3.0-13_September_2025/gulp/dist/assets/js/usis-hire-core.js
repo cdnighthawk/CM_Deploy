@@ -228,6 +228,50 @@
 		};
 	}
 
+	function wizardReview(w) {
+		return (w && w.review) || {};
+	}
+
+	function isWizardLocked(w) {
+		var review = wizardReview(w);
+		return !!review.wizard_locked;
+	}
+
+	function renderReviewBanner(w) {
+		var banner = document.getElementById("usis-hire-review-banner");
+		if (!banner) return;
+		var review = wizardReview(w);
+		var status = review.hire_status;
+		if (status === "rejected") {
+			banner.className = "alert alert-warning mb-3";
+			banner.textContent =
+				"Your application was not approved." +
+				(review.review_notes ? " " + review.review_notes : "") +
+				" You can sign out below; this account is read-only.";
+			banner.classList.remove("d-none");
+			return;
+		}
+		if (status === "hired") {
+			banner.className = "alert alert-success mb-3";
+			banner.textContent = "Congratulations — you have been hired. HR will follow up with onboarding next steps.";
+			banner.classList.remove("d-none");
+			return;
+		}
+		banner.classList.add("d-none");
+	}
+
+	function renderCompleteReviewStatus(w) {
+		renderReviewBanner(w);
+		var card = document.querySelector(".card .card-body");
+		if (!card) return;
+		var review = wizardReview(w);
+		if (review.hire_status === "rejected") {
+			card.querySelectorAll("a.btn-outline-secondary").forEach(function (a) {
+				a.classList.add("d-none");
+			});
+		}
+	}
+
 	function applyWizardToForm(w) {
 		var u = w.user || {};
 		var fn = document.getElementById("usis-hire-fn");
@@ -265,6 +309,13 @@
 		if (window.USISHireUnion && window.USISHireUnion.afterWizardLoad) window.USISHireUnion.afterWizardLoad(w);
 		if (window.USISHireI9 && window.USISHireI9.afterWizardLoad) window.USISHireI9.afterWizardLoad(w);
 		if (window.USISHireW4 && window.USISHireW4.afterWizardLoad) window.USISHireW4.afterWizardLoad(w);
+		renderReviewBanner(w);
+		if (isWizardLocked(w)) {
+			document.querySelectorAll("button[type='submit'], .usis-hire-save, #usis-apply-save-next").forEach(function (el) {
+				el.disabled = true;
+				el.classList.add("disabled");
+			});
+		}
 	}
 
 	function loadWizard() {
@@ -390,5 +441,8 @@
 		firstAllowedStepId: firstAllowedStepId,
 		redirectToStep: redirectToStep,
 		stepFromBody: stepFromBody,
+		wizardReview: wizardReview,
+		isWizardLocked: isWizardLocked,
+		renderCompleteReviewStatus: renderCompleteReviewStatus,
 	};
 })();

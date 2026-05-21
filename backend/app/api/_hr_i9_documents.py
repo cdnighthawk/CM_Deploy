@@ -18,6 +18,7 @@ from ..services.hr_i9_documents import (
     I9_DOC_SLOTS,
     serialize_i9_document,
 )
+from ..services.hire_application_review import applicant_wizard_mutable
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file
 from ._perms import current_user
 from .v1 import _jsonify
@@ -46,6 +47,8 @@ def _hire_row_for_user(uid: uuid.UUID) -> HrHireApplication | None:
 
 
 def _i9_locked(hire_row: HrHireApplication | None) -> bool:
+    if not applicant_wizard_mutable(hire_row):
+        return True
     return hire_row is not None and hire_row.i9_signed_at is not None
 
 

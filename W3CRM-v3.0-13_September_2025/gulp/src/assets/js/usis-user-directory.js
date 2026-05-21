@@ -129,6 +129,12 @@
 			.join(", ");
 	}
 
+	function isApplicantOnly(u) {
+		var r = u.roles || [];
+		if (!r.length) return false;
+		return r.length === 1 && r[0].code === "applicant";
+	}
+
 	function renderRoleChecks(selectedIds) {
 		var root = document.getElementById("usis-ud-modal-role-checks");
 		if (!root) return;
@@ -303,6 +309,16 @@
 		} else {
 			tb.innerHTML = state.users
 				.map(function (u) {
+					var applicantActions = "";
+					if (isApplicantOnly(u)) {
+						applicantActions =
+							'<a class="btn btn-sm btn-outline-secondary py-0 me-1" href="usis-hr-application-detail.html?id=' +
+							encodeURIComponent(u.id) +
+							'">View application</a>' +
+							'<button type="button" class="btn btn-sm btn-outline-danger py-0 usis-ud-delete-applicant" data-id="' +
+							esc(u.id) +
+							'">Delete applicant</button>';
+					}
 					return (
 						"<tr>" +
 						"<td>" +
@@ -325,7 +341,9 @@
 						"</td>" +
 						'<td><button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-edit" data-id="' +
 						esc(u.id) +
-						'">Edit</button></td>' +
+						'">Edit</button> ' +
+						applicantActions +
+						"</td>" +
 						"</tr>"
 					);
 				})
@@ -938,6 +956,31 @@
 			var b = ev.target.closest(".usis-ud-edit");
 			if (b && b.getAttribute("data-id")) {
 				openEditUser(b.getAttribute("data-id"));
+				return;
+			}
+			var del = ev.target.closest(".usis-ud-delete-applicant");
+			if (del && del.getAttribute("data-id")) {
+				var uid = del.getAttribute("data-id");
+				var reason = window.prompt("Reason for deleting this applicant account (required):");
+				if (!reason || !String(reason).trim()) return;
+				if (!window.confirm("Permanently delete this applicant and all hire data?")) return;
+				apiFetch("/api/v1/hr/applications/" + encodeURIComponent(uid), {
+					method: "DELETE",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ confirm: true, reason: String(reason).trim() }),
+				})
+					.then(function (r) {
+						return r.json().then(function (j) {
+							return { ok: r.ok, body: j };
+						});
+					})
+					.then(function (res) {
+						if (!res.ok) throw new Error((res.body && (res.body.error || res.body.message)) || "Delete failed");
+						loadUsers(false);
+					})
+					.catch(function (e) {
+						showPageErr(e.message || String(e));
+					});
 			}
 		});
 		var search = document.getElementById("usis-ud-search");

@@ -14,6 +14,7 @@ from ..models import (
     Document,
     HrEmployeeDocument,
     HrEmployeePayScale,
+    HrHireApplication,
     HrOnboardingItem,
     HrPolicyAcknowledgment,
     HrTrainingAssignment,
@@ -22,6 +23,7 @@ from ..models import (
     User,
     WageRate,
 )
+from ..services.hire_application_review import HIRE_STATUS_SUBMITTED, HIRE_STATUS_UNDER_REVIEW
 from . import _hr_dispatch_service as hr_dispatch_svc
 from ._perms import CurrentUser, current_user
 from .v1 import _iso, _jsonify
@@ -183,6 +185,22 @@ def register_hr_routes(bp: Blueprint) -> None:
         )
         expiring_safety_certs_30d = 0
         pending_approvals_hr = 0
+        applications_submitted = int(
+            db.session.scalar(
+                select(func.count())
+                .select_from(HrHireApplication)
+                .where(HrHireApplication.hire_status == HIRE_STATUS_SUBMITTED)
+            )
+            or 0
+        )
+        applications_under_review = int(
+            db.session.scalar(
+                select(func.count())
+                .select_from(HrHireApplication)
+                .where(HrHireApplication.hire_status == HIRE_STATUS_UNDER_REVIEW)
+            )
+            or 0
+        )
 
         sample: list[dict[str, Any]] = []
         u_rows = db.session.scalars(
@@ -257,6 +275,8 @@ def register_hr_routes(bp: Blueprint) -> None:
                     "onboarding_in_progress": onboarding_in_progress,
                     "expiring_safety_certs_30d": expiring_safety_certs_30d,
                     "pending_approvals_hr": pending_approvals_hr,
+                    "applications_submitted": applications_submitted,
+                    "applications_under_review": applications_under_review,
                 },
                 "sample_employees": sample,
                 "hint": hint,

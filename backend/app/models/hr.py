@@ -83,8 +83,16 @@ class HrHireApplication(UUIDPKMixin, TimestampMixin, db.Model):
     w4_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     w4_signature_png: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     w4_signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    hire_status: Mapped[str] = mapped_column(String(32), nullable=False, default="in_progress", index=True)
+    review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    submitted_for_review_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
+    reviewed_by: Mapped[Optional["User"]] = relationship(foreign_keys=[reviewed_by_user_id])
     i9_document_files: Mapped[list["HrHireI9DocumentFile"]] = relationship(
         back_populates="hire_application",
         cascade="all, delete-orphan",

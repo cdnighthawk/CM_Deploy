@@ -19,6 +19,8 @@ def test_hr_dashboard_summary(client):
     assert "onboarding_in_progress" in c
     assert "expiring_safety_certs_30d" in c
     assert "pending_approvals_hr" in c
+    assert "applications_submitted" in c
+    assert "applications_under_review" in c
     assert isinstance(c["pending_acknowledgments"], int)
     assert isinstance(c["onboarding_in_progress"], int)
     assert "sample_employees" in data

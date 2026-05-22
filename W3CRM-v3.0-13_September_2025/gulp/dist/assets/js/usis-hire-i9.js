@@ -1,6 +1,8 @@
 (function () {
 	"use strict";
 
+	var i9ReviewOpened = false;
+
 	function core() {
 		return window.USISHireCore;
 	}
@@ -43,14 +45,23 @@
 		var reviewBtn = document.getElementById("usis-i9-review-btn");
 		var reviewPanel = document.getElementById("usis-i9-review-panel");
 		var signedBanner = document.getElementById("usis-i9-signed-banner");
+		var readyBanner = document.getElementById("usis-i9-ready-banner");
 		var signBar = document.getElementById("usis-i9-sign-bar");
 
 		if (startBtn) {
 			startBtn.disabled = locked || !appDone || signed;
 			startBtn.textContent = completed && !signed ? "Edit I-9 questionnaire" : "Start / continue I-9";
 		}
-		if (reviewBtn) reviewBtn.classList.toggle("d-none", !completed || signed);
-		if (reviewPanel) reviewPanel.classList.toggle("d-none", !completed && !signed);
+		if (reviewBtn) {
+			reviewBtn.classList.toggle("d-none", !completed || signed);
+			reviewBtn.textContent = i9ReviewOpened && !signed ? "Review I-9 again" : "Review I-9";
+		}
+		if (reviewPanel) {
+			reviewPanel.classList.toggle("d-none", signed ? false : !i9ReviewOpened);
+		}
+		if (readyBanner) {
+			readyBanner.classList.toggle("d-none", !completed || signed || i9ReviewOpened);
+		}
 		if (signedBanner) {
 			if (signed) {
 				signedBanner.textContent =
@@ -60,8 +71,8 @@
 				signedBanner.classList.add("d-none");
 			}
 		}
-		if (signBar) signBar.classList.toggle("d-none", signed || !completed);
-		if (completed && !signed && reviewPanel && !reviewPanel.classList.contains("d-none")) {
+		if (signBar) signBar.classList.toggle("d-none", signed || !completed || !i9ReviewOpened);
+		if ((i9ReviewOpened && !signed) || signed) {
 			renderReviewPanel();
 		}
 		if (c.renderStepPrereqBanner) c.renderStepPrereqBanner(w, "i9");
@@ -71,9 +82,21 @@
 		var root = document.getElementById("usis-i9-review-root");
 		if (!root || !window.USISHrI9) return;
 		var c = core();
-		var locked = (c.state.wizard && c.state.wizard.i9 && c.state.wizard.i9.locked) || false;
-		window.USISHrI9.renderForm(root, currentSection1(), { reviewMode: true, locked: locked });
+		var w = c.state.wizard || {};
+		var i9 = w.i9 || {};
+		var signed = i9.status === "signed" || ((w.steps || {}).i9 && w.steps.i9.signed_at);
+		var wizardLocked = (c.isWizardLocked && c.isWizardLocked(w)) || !!i9.locked;
+		window.USISHrI9.renderForm(root, currentSection1(), { reviewMode: true, locked: !signed || wizardLocked });
 		wireI9DocPhotos(root);
+	}
+
+	function openI9Review() {
+		i9ReviewOpened = true;
+		var panel = document.getElementById("usis-i9-review-panel");
+		if (panel) panel.classList.remove("d-none");
+		renderReviewPanel();
+		updateI9Ui();
+		if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: "smooth", block: "start" });
 	}
 
 	function openI9Modal() {
@@ -267,26 +290,9 @@
 		var startI9 = document.getElementById("usis-i9-start-btn");
 		if (startI9) startI9.addEventListener("click", openI9Modal);
 		var reviewBtn = document.getElementById("usis-i9-review-btn");
-		if (reviewBtn) {
-			reviewBtn.addEventListener("click", function () {
-				var panel = document.getElementById("usis-i9-review-panel");
-				if (panel) panel.classList.remove("d-none");
-				renderReviewPanel();
-			});
-		}
+		if (reviewBtn) reviewBtn.addEventListener("click", openI9Review);
 		var editBtn = document.getElementById("usis-i9-edit-btn");
 		if (editBtn) editBtn.addEventListener("click", openI9Modal);
-		var saveReview = document.getElementById("usis-i9-save-review-btn");
-		if (saveReview) {
-			saveReview.addEventListener("click", function () {
-				saveSection1(true, true)
-					.then(function () {
-						if (window.USISNotify) window.USISNotify.success("I-9 saved.");
-						return c.loadWizard();
-					})
-					.catch(function () {});
-			});
-		}
 		var completeBtn = document.getElementById("usis-i9-modal-complete");
 		if (completeBtn) {
 			completeBtn.addEventListener("click", function () {
@@ -297,11 +303,10 @@
 							var inst = window.bootstrap.Modal.getInstance(modal);
 							if (inst) inst.hide();
 						}
-						if (window.USISNotify) window.USISNotify.success("Section 1 complete — review and sign.");
+						i9ReviewOpened = false;
+						if (window.USISNotify) window.USISNotify.success("Section 1 saved — review your answers, then sign.");
 						return c.loadWizard().then(function () {
-							var panel = document.getElementById("usis-i9-review-panel");
-							if (panel) panel.classList.remove("d-none");
-							renderReviewPanel();
+							updateI9Ui();
 						});
 					})
 					.catch(function () {});

@@ -1,6 +1,8 @@
 (function () {
 	"use strict";
 
+	var w4ReviewOpened = false;
+
 	function core() {
 		return window.USISHireCore;
 	}
@@ -44,14 +46,23 @@
 		var reviewBtn = document.getElementById("usis-w4-review-btn");
 		var reviewPanel = document.getElementById("usis-w4-review-panel");
 		var signedBanner = document.getElementById("usis-w4-signed-banner");
+		var readyBanner = document.getElementById("usis-w4-ready-banner");
 		var signBar = document.getElementById("usis-w4-sign-bar");
 
 		if (startBtn) {
 			startBtn.disabled = locked || !i9Signed || signed;
 			startBtn.textContent = completed && !signed ? "Edit W-4 questionnaire" : "Start / continue W-4";
 		}
-		if (reviewBtn) reviewBtn.classList.toggle("d-none", !completed || signed);
-		if (reviewPanel) reviewPanel.classList.toggle("d-none", !completed && !signed);
+		if (reviewBtn) {
+			reviewBtn.classList.toggle("d-none", !completed || signed);
+			reviewBtn.textContent = w4ReviewOpened && !signed ? "Review W-4 again" : "Review W-4";
+		}
+		if (reviewPanel) {
+			reviewPanel.classList.toggle("d-none", signed ? false : !w4ReviewOpened);
+		}
+		if (readyBanner) {
+			readyBanner.classList.toggle("d-none", !completed || signed || w4ReviewOpened);
+		}
 		if (signedBanner) {
 			if (signed) {
 				signedBanner.textContent =
@@ -61,8 +72,8 @@
 				signedBanner.classList.add("d-none");
 			}
 		}
-		if (signBar) signBar.classList.toggle("d-none", signed || !completed);
-		if (completed && !signed && reviewPanel && !reviewPanel.classList.contains("d-none")) {
+		if (signBar) signBar.classList.toggle("d-none", signed || !completed || !w4ReviewOpened);
+		if ((w4ReviewOpened && !signed) || signed) {
 			renderW4ReviewPanel();
 		}
 		if (c.renderStepPrereqBanner) c.renderStepPrereqBanner(w, "w4");
@@ -72,9 +83,21 @@
 		var root = document.getElementById("usis-w4-review-root");
 		if (!root || !window.USISHrW4) return;
 		var c = core();
-		var locked = (c.state.wizard && c.state.wizard.w4 && c.state.wizard.w4.locked) || false;
-		window.USISHrW4.renderForm(root, currentW4(), { reviewMode: true, locked: locked });
+		var w = c.state.wizard || {};
+		var w4 = w.w4 || {};
+		var signed = w4.status === "signed" || ((w.steps || {}).w4 && w.steps.w4.signed_at);
+		var wizardLocked = (c.isWizardLocked && c.isWizardLocked(w)) || !!w4.locked;
+		window.USISHrW4.renderForm(root, currentW4(), { reviewMode: true, locked: !signed || wizardLocked });
 		wireW4DocPhotos(root);
+	}
+
+	function openW4Review() {
+		w4ReviewOpened = true;
+		var panel = document.getElementById("usis-w4-review-panel");
+		if (panel) panel.classList.remove("d-none");
+		renderW4ReviewPanel();
+		updateW4Ui();
+		if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: "smooth", block: "start" });
 	}
 
 	function openW4Modal() {
@@ -268,26 +291,9 @@
 		var startW4 = document.getElementById("usis-w4-start-btn");
 		if (startW4) startW4.addEventListener("click", openW4Modal);
 		var reviewW4 = document.getElementById("usis-w4-review-btn");
-		if (reviewW4) {
-			reviewW4.addEventListener("click", function () {
-				var panel = document.getElementById("usis-w4-review-panel");
-				if (panel) panel.classList.remove("d-none");
-				renderW4ReviewPanel();
-			});
-		}
+		if (reviewW4) reviewW4.addEventListener("click", openW4Review);
 		var editW4 = document.getElementById("usis-w4-edit-btn");
 		if (editW4) editW4.addEventListener("click", openW4Modal);
-		var saveW4Review = document.getElementById("usis-w4-save-review-btn");
-		if (saveW4Review) {
-			saveW4Review.addEventListener("click", function () {
-				saveW4(true, true)
-					.then(function () {
-						if (window.USISNotify) window.USISNotify.success("W-4 saved.");
-						return c.loadWizard();
-					})
-					.catch(function () {});
-			});
-		}
 		var completeW4 = document.getElementById("usis-w4-modal-complete");
 		if (completeW4) {
 			completeW4.addEventListener("click", function () {
@@ -298,11 +304,10 @@
 							var inst = window.bootstrap.Modal.getInstance(modal);
 							if (inst) inst.hide();
 						}
-						if (window.USISNotify) window.USISNotify.success("W-4 complete — review and sign.");
+						w4ReviewOpened = false;
+						if (window.USISNotify) window.USISNotify.success("W-4 saved — review your answers, then sign.");
 						return c.loadWizard().then(function () {
-							var panel = document.getElementById("usis-w4-review-panel");
-							if (panel) panel.classList.remove("d-none");
-							renderW4ReviewPanel();
+							updateW4Ui();
 						});
 					})
 					.catch(function () {});

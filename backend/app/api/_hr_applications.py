@@ -34,6 +34,7 @@ from ..services.hire_application_review import (
 )
 from ..services.hr_i9_crypto import decrypt_section1
 from ..services.hr_w4_crypto import decrypt_w4
+from ..services.hr_hire_signed_forms import signed_form_staff_url
 from ..services.object_storage import UploadCategory, send_stored_file
 from . import _admin_users_service as admin_users_svc
 from ._hr_dashboard import _can_edit_hr_employee_records
@@ -320,14 +321,32 @@ def register_hr_application_routes(bp: Blueprint) -> None:
                     "draft": i9_draft,
                     "documents": _with_staff_doc_urls(user_id, list_i9_documents_for_hire(hire_row), "i9"),
                     "signature_present": bool(hire_row.i9_signature_png),
+                    "signature_url": signed_form_staff_url(user_id, "i9") + "/signature"
+                    if hire_row.i9_signature_png
+                    else None,
                     "signed_at": _iso(hire_row.i9_signed_at),
+                    "signed_document_url": signed_form_staff_url(user_id, "i9")
+                    if hire_row.i9_signed_document_id
+                    else None,
+                    "employee_document_id": str(hire_row.i9_signed_document_id)
+                    if hire_row.i9_signed_document_id
+                    else None,
                 },
                 "w4": {
                     **w4_st,
                     "draft": w4_draft,
                     "documents": _with_staff_doc_urls(user_id, list_w4_documents_for_hire(hire_row), "w4"),
                     "signature_present": bool(hire_row.w4_signature_png),
+                    "signature_url": signed_form_staff_url(user_id, "w4") + "/signature"
+                    if hire_row.w4_signature_png
+                    else None,
                     "signed_at": _iso(hire_row.w4_signed_at),
+                    "signed_document_url": signed_form_staff_url(user_id, "w4")
+                    if hire_row.w4_signed_document_id
+                    else None,
+                    "employee_document_id": str(hire_row.w4_signed_document_id)
+                    if hire_row.w4_signed_document_id
+                    else None,
                 },
                 "union_documents": {
                     "union_card": _with_staff_doc_urls(user_id, union_by_kind["union_card"], "union_card"),

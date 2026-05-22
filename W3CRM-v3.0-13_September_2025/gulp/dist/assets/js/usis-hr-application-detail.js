@@ -243,6 +243,38 @@
 			.join("");
 	}
 
+	function renderSignedFormBlock(containerId, block, label) {
+		var el = document.getElementById(containerId);
+		if (!el) return;
+		if (!block || (!block.signed_document_url && !block.signature_url)) {
+			el.innerHTML = "";
+			el.classList.add("d-none");
+			return;
+		}
+		var html =
+			'<div class="card border-success border-opacity-25 bg-light"><div class="card-body py-2">' +
+			'<p class="small fw-semibold mb-2">' +
+			esc(label) +
+			" — signed";
+		if (block.signed_at) html += " · " + esc(block.signed_at);
+		html += '</p><div class="d-flex flex-wrap gap-3 align-items-center">';
+		if (block.signed_document_url) {
+			html +=
+				'<a class="btn btn-sm btn-outline-primary" href="' +
+				esc(apiBase() + block.signed_document_url) +
+				'" target="_blank" rel="noopener">View signed document</a>';
+		}
+		if (block.signature_url) {
+			html +=
+				'<img src="' +
+				esc(apiBase() + block.signature_url) +
+				'" alt="Employee signature" style="max-height:56px;border:1px solid #ccc;background:#fff;padding:4px;border-radius:4px">';
+		}
+		html += "</div></div></div>";
+		el.innerHTML = html;
+		el.classList.remove("d-none");
+	}
+
 	function renderDetail(d) {
 		state.detail = d;
 		var u = d.user || {};
@@ -262,6 +294,8 @@
 				: "No review notes yet.";
 		}
 		renderApplication((d.application && d.application.payload) || {});
+		renderSignedFormBlock("usis-hr-appd-i9-signed", d.i9, "Form I-9 Section 1");
+		renderSignedFormBlock("usis-hr-appd-w4-signed", d.w4, "Form W-4");
 		if (window.USISHrI9 && d.i9 && d.i9.draft) {
 			window.USISHrI9.renderForm(document.getElementById("usis-hr-appd-i9-form"), d.i9.draft, { locked: true });
 		}

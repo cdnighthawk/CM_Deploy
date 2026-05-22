@@ -3788,6 +3788,9 @@ _hr_hire_wizard.register_hr_hire_wizard_routes(bp)
 from . import _hr_applications  # noqa: E402
 
 _hr_applications.register_hr_application_routes(bp)
+from . import _hr_signed_forms  # noqa: E402
+
+_hr_signed_forms.register_hr_signed_form_routes(bp)
 from . import _playbooks as _playbooks_mod  # noqa: E402
 
 _playbooks_mod.register_playbook_routes(bp)

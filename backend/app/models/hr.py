@@ -79,10 +79,16 @@ class HrHireApplication(UUIDPKMixin, TimestampMixin, db.Model):
     i9_section1_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     i9_signature_png: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     i9_signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    i9_signed_document_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
     w4_json_encrypted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     w4_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     w4_signature_png: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     w4_signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    w4_signed_document_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
     hire_status: Mapped[str] = mapped_column(String(32), nullable=False, default="in_progress", index=True)
     review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     reviewed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(

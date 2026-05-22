@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Form I-9 Section 1 — {{ employee_name }}</title>
+	<style>
+		body { font-family: Georgia, "Times New Roman", serif; color: #111; margin: 24px; line-height: 1.45; }
+		h1 { font-size: 1.35rem; margin: 0 0 0.25rem; }
+		h2 { font-size: 1rem; margin: 1.25rem 0 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+		.meta { color: #555; font-size: 0.9rem; margin-bottom: 1rem; }
+		table { width: 100%; border-collapse: collapse; margin: 0.5rem 0 1rem; font-size: 0.95rem; }
+		th, td { border: 1px solid #bbb; padding: 0.45rem 0.55rem; vertical-align: top; text-align: left; }
+		th { width: 34%; background: #f5f5f5; font-weight: 600; }
+		.signature-block { margin-top: 1.5rem; border: 1px solid #bbb; padding: 1rem; }
+		.signature-block img { max-width: 320px; max-height: 120px; display: block; margin: 0.5rem 0; }
+		.note { font-size: 0.85rem; color: #555; margin-top: 1rem; }
+		@media print { body { margin: 12mm; } }
+	</style>
+</head>
+<body>
+	<h1>Employment Eligibility Verification — Form I-9 Section 1</h1>
+	<p class="meta">Employee: {{ employee_name }}{% if employee_email %} · {{ employee_email }}{% endif %}<br>
+	Signed electronically: {{ signed_at }}</p>
+
+	<h2>Section 1 — Employee information and attestation</h2>
+	<table>
+		<tr><th>Last name</th><td>{{ section1.last_name or "—" }}</td></tr>
+		<tr><th>First name</th><td>{{ section1.first_name or "—" }}</td></tr>
+		<tr><th>Middle initial</th><td>{{ section1.middle_initial or "—" }}</td></tr>
+		<tr><th>Other last names used</th><td>{{ section1.other_last_names or "—" }}</td></tr>
+		<tr><th>Address</th><td>{{ section1.address or "—" }}{% if section1.apt %}, Apt {{ section1.apt }}{% endif %}</td></tr>
+		<tr><th>City / State / ZIP</th><td>{{ section1.city or "—" }}, {{ section1.state or "—" }} {{ section1.zip or "—" }}</td></tr>
+		<tr><th>Date of birth</th><td>{{ section1.date_of_birth or "—" }}</td></tr>
+		<tr><th>Social Security number</th><td>{{ section1.ssn or "—" }}</td></tr>
+		<tr><th>Email address</th><td>{{ section1.email or "—" }}</td></tr>
+		<tr><th>Telephone number</th><td>{{ section1.telephone or "—" }}</td></tr>
+		<tr><th>Citizenship / immigration status</th><td>{{ citizenship_label or "—" }}</td></tr>
+		{% if section1.uscis_a_number %}<tr><th>USCIS A-Number</th><td>{{ section1.uscis_a_number }}</td></tr>{% endif %}
+		{% if section1.admission_i94 %}<tr><th>Form I-94 admission number</th><td>{{ section1.admission_i94 }}</td></tr>{% endif %}
+		{% if section1.foreign_passport %}<tr><th>Foreign passport number</th><td>{{ section1.foreign_passport }}</td></tr>{% endif %}
+		{% if section1.work_authorization_expiration %}<tr><th>Work authorization expiration</th><td>{{ section1.work_authorization_expiration }}</td></tr>{% endif %}
+		<tr><th>Identity documents presented</th><td>{{ document_choice_label or "—" }}</td></tr>
+	</table>
+
+	{% if identity_docs %}
+	<h2>Document details</h2>
+	<table>
+		{% for label, value in identity_docs %}
+		<tr><th>{{ label }}</th><td>{{ value or "—" }}</td></tr>
+		{% endfor %}
+	</table>
+	{% endif %}
+
+	<div class="signature-block">
+		<h2 style="border:0; margin-top:0;">Employee signature</h2>
+		<p>I attest, under penalty of perjury, that the information above is true and correct.</p>
+		<p><strong>Typed name:</strong> {{ typed_full_name }}</p>
+		<p><strong>Signature:</strong></p>
+		<img src="{{ signature_png }}" alt="Employee signature">
+		<p><strong>Date signed:</strong> {{ signed_at }}</p>
+	</div>
+
+	<p class="note">This record was captured in the USIS hire wizard. Employers must still complete Form I-9 Section 2 and retain official I-9 records per USCIS requirements.</p>
+</body>
+</html>

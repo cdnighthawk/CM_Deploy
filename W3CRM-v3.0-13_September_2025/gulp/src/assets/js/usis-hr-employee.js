@@ -429,7 +429,19 @@
 					"usis-hr-emp-hrdocs-body",
 					(data.hr_employee_documents || []).map(function (it) {
 						var docCell = "—";
-						if (it.document_id) {
+						var signedUrl = null;
+						var shf = data.signed_hire_forms || {};
+						if ((it.title || "").indexOf("I-9") !== -1 && shf.i9 && shf.i9.signed_document_url) {
+							signedUrl = shf.i9.signed_document_url;
+						} else if ((it.title || "").indexOf("W-4") !== -1 && shf.w4 && shf.w4.signed_document_url) {
+							signedUrl = shf.w4.signed_document_url;
+						}
+						if (signedUrl) {
+							docCell =
+								'<a href="' +
+								esc(apiBase() + signedUrl) +
+								'" class="small" target="_blank" rel="noopener">View signed</a>';
+						} else if (it.document_id) {
 							docCell =
 								'<a href="' +
 								esc(docHubHref(it.document_id)) +

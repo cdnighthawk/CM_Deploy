@@ -36,6 +36,7 @@ from ._hr_w4_documents import list_w4_documents_for_hire, register_hr_w4_documen
 from ..services.hr_i9_crypto import decrypt_section1, encrypt_section1
 from ..services.hr_w4_crypto import decrypt_w4, encrypt_w4
 
+from ..services.hr_hire_signed_forms import persist_signed_i9, persist_signed_w4, signed_form_staff_url
 from ..services.hr_i9_validate import validate_section1
 from ..services.hr_w4_validate import validate_w4
 from ..services.hire_application_review import (
@@ -1117,7 +1118,7 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         try:
 
-            decrypt_section1(hire_row.i9_section1_json_encrypted)
+            section1 = decrypt_section1(hire_row.i9_section1_json_encrypted)
 
         except ValueError:
 
@@ -1142,6 +1143,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         hire_row.i9_signature_png = sig if sig.startswith("data:") else f"data:image/png;base64,{sig}"
 
         hire_row.i9_signed_at = now
+        section1["signature_date"] = now.date().isoformat()
+        hire_row.i9_section1_json_encrypted = encrypt_section1(section1)
 
         ip = _client_ip_for_audit()
 
@@ -1171,6 +1174,16 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         )
 
+        persist_signed_i9(
+            hire_row=hire_row,
+            user=u,
+            section1=section1,
+            signature_png=hire_row.i9_signature_png,
+            signed_at=now,
+            typed_full_name=typed,
+            api_path=signed_form_staff_url(uid, "i9"),
+        )
+
         db.session.commit()
 
         return _jsonify(
@@ -1184,6 +1197,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
                 "signed_at": _iso(hire_row.i9_signed_at),
 
                 "policy_version": HIRE_POLICY_I9_VERSION,
+
+                "signed_document_url": signed_form_staff_url(uid, "i9"),
 
             }
 
@@ -1509,6 +1524,16 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         )
 
+        persist_signed_w4(
+            hire_row=hire_row,
+            user=u,
+            w4=draft,
+            signature_png=hire_row.w4_signature_png,
+            signed_at=now,
+            typed_full_name=typed,
+            api_path=signed_form_staff_url(uid, "w4"),
+        )
+
         db.session.commit()
 
         return _jsonify(
@@ -1522,6 +1547,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
                 "signed_at": _iso(hire_row.w4_signed_at),
 
                 "policy_version": HIRE_POLICY_W4_VERSION,
+
+                "signed_document_url": signed_form_staff_url(uid, "w4"),
 
             }
 

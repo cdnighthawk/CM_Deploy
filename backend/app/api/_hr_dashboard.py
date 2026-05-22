@@ -26,7 +26,7 @@ from ..models import (
     WageRate,
 )
 from ..permissions.applicant import is_applicant_only_user
-from ..services.hire_application_review import HIRE_STATUS_SUBMITTED, HIRE_STATUS_UNDER_REVIEW
+from ..services.hr_hire_signed_forms import signed_form_staff_url
 from ..users.test_artifacts import hr_demo_user_id_subquery, is_hr_demo_user
 from . import _hr_dispatch_service as hr_dispatch_svc
 from ._perms import CurrentUser, current_user
@@ -475,6 +475,38 @@ def register_hr_routes(bp: Blueprint) -> None:
         for row in hr_doc_rows:
             add_doc(row.document_id, row.title, "hr_employee_document")
 
+        hire_row = db.session.scalar(select(HrHireApplication).where(HrHireApplication.user_id == user_id))
+        signed_hire_forms: dict[str, Any | None] = {"i9": None, "w4": None}
+        if hire_row is not None:
+            if hire_row.i9_signed_document_id or hire_row.i9_signed_at:
+                add_doc(hire_row.i9_signed_document_id, "Form I-9 Section 1 (signed)", "hire_form")
+                signed_hire_forms["i9"] = {
+                    "signed_at": _iso(hire_row.i9_signed_at),
+                    "signed_document_url": signed_form_staff_url(user_id, "i9")
+                    if hire_row.i9_signed_document_id
+                    else None,
+                    "signature_url": signed_form_staff_url(user_id, "i9") + "/signature"
+                    if hire_row.i9_signature_png
+                    else None,
+                    "document_id": str(hire_row.i9_signed_document_id)
+                    if hire_row.i9_signed_document_id
+                    else None,
+                }
+            if hire_row.w4_signed_document_id or hire_row.w4_signed_at:
+                add_doc(hire_row.w4_signed_document_id, "Form W-4 (signed)", "hire_form")
+                signed_hire_forms["w4"] = {
+                    "signed_at": _iso(hire_row.w4_signed_at),
+                    "signed_document_url": signed_form_staff_url(user_id, "w4")
+                    if hire_row.w4_signed_document_id
+                    else None,
+                    "signature_url": signed_form_staff_url(user_id, "w4") + "/signature"
+                    if hire_row.w4_signature_png
+                    else None,
+                    "document_id": str(hire_row.w4_signed_document_id)
+                    if hire_row.w4_signed_document_id
+                    else None,
+                }
+
         return _jsonify(
             {
                 "entity": "hr_employee_summary",
@@ -494,6 +526,7 @@ def register_hr_routes(bp: Blueprint) -> None:
                 "regulatory_certifications": regulatory_certifications,
                 "pay_scales": pay_scales,
                 "hr_employee_documents": hr_employee_documents,
+                "signed_hire_forms": signed_hire_forms,
                 "employee_dispatches": employee_dispatches,
                 "capabilities": {
                     "can_edit_hr_employee_records": _can_edit_hr_employee_records(cu),

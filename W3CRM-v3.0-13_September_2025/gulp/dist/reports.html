@@ -58,6 +58,14 @@
 	<!-- Start - Style CSS -->
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		.usis-powerbi-embed-host iframe {
+			border: 0;
+			display: block;
+			width: 100% !important;
+			height: 100% !important;
+		}
+	</style>
 	<!-- End - Style CSS -->
 
 </head>
@@ -430,7 +438,7 @@
 					</div>
 					<div class="card-body py-3">
 						<div id="usis-powerbi-status" class="small text-muted mb-2" role="status"></div>
-						<div id="usis-powerbi-embed" class="d-none w-100 border rounded bg-light" style="min-height: 520px;"></div>
+						<div id="usis-powerbi-embed" class="d-none w-100 border rounded overflow-hidden usis-powerbi-embed-host" style="height: calc(100vh - 280px); min-height: 520px;"></div>
 					</div>
 				</div>
 			</div>

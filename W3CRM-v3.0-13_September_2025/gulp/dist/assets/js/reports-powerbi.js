@@ -126,9 +126,21 @@
 			/* first load may have nothing to reset */
 		}
 		var tokenType = 1;
+		var layoutType = 0;
+		var displayOption = 0;
+		var backgroundType = 0;
 		try {
 			if (pbi.models && pbi.models.TokenType && pbi.models.TokenType.Embed != null) {
 				tokenType = pbi.models.TokenType.Embed;
+			}
+			if (pbi.models && pbi.models.LayoutType && pbi.models.LayoutType.Custom != null) {
+				layoutType = pbi.models.LayoutType.Custom;
+			}
+			if (pbi.models && pbi.models.DisplayOption && pbi.models.DisplayOption.FitToWidth != null) {
+				displayOption = pbi.models.DisplayOption.FitToWidth;
+			}
+			if (pbi.models && pbi.models.BackgroundType && pbi.models.BackgroundType.Transparent != null) {
+				backgroundType = pbi.models.BackgroundType.Transparent;
 			}
 		} catch (e2) {
 			tokenType = 1;
@@ -139,8 +151,31 @@
 			accessToken: data.embedToken,
 			embedUrl: data.embedUrl,
 			id: data.reportId,
+			settings: {
+				layoutType: layoutType,
+				customLayout: {
+					displayOption: displayOption,
+				},
+				background: backgroundType,
+				panes: {
+					filters: { expanded: false, visible: false },
+					pageNavigation: { visible: true },
+				},
+			},
 		};
-		pbi.embed(embedEl, cfg);
+		var report = pbi.embed(embedEl, cfg);
+		if (report && typeof report.on === "function") {
+			report.on("loaded", function () {
+				var iframe = embedEl.querySelector("iframe");
+				if (iframe) {
+					iframe.style.width = "100%";
+					iframe.style.height = "100%";
+				}
+				if (typeof report.setPageView === "function") {
+					report.setPageView("fitToWidth");
+				}
+			});
+		}
 		return null;
 	}
 

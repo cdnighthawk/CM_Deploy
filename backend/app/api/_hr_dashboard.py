@@ -8,6 +8,7 @@ from typing import Any
 
 from flask import Blueprint, request
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import selectinload
 
 from ..extensions import db
 from ..models import (
@@ -21,9 +22,12 @@ from ..models import (
     Project,
     SafetyTrainingRecord,
     User,
+    UserRole,
     WageRate,
 )
+from ..permissions.applicant import is_applicant_only_user
 from ..services.hire_application_review import HIRE_STATUS_SUBMITTED, HIRE_STATUS_UNDER_REVIEW
+from ..users.test_artifacts import hr_demo_user_id_subquery, is_hr_demo_user
 from . import _hr_dispatch_service as hr_dispatch_svc
 from ._perms import CurrentUser, current_user
 from .v1 import _iso, _jsonify
@@ -169,9 +173,15 @@ def _serialize_hr_employee_document(row: HrEmployeeDocument) -> dict[str, Any]:
 def register_hr_routes(bp: Blueprint) -> None:
     @bp.get("/hr/dashboard-summary")
     def hr_dashboard_summary():
+        demo_ids = hr_demo_user_id_subquery()
         pending_acknowledgments = int(
             db.session.scalar(
-                select(func.count()).select_from(HrPolicyAcknowledgment).where(HrPolicyAcknowledgment.signed_at.is_(None))
+                select(func.count())
+                .select_from(HrPolicyAcknowledgment)
+                .where(
+                    HrPolicyAcknowledgment.signed_at.is_(None),
+                    HrPolicyAcknowledgment.user_id.notin_(demo_ids),
+                )
             )
             or 0
         )
@@ -179,7 +189,10 @@ def register_hr_routes(bp: Blueprint) -> None:
             db.session.scalar(
                 select(func.count(func.distinct(HrOnboardingItem.user_id)))
                 .select_from(HrOnboardingItem)
-                .where(HrOnboardingItem.completed_at.is_(None))
+                .where(
+                    HrOnboardingItem.completed_at.is_(None),
+                    HrOnboardingItem.user_id.notin_(demo_ids),
+                )
             )
             or 0
         )
@@ -205,18 +218,22 @@ def register_hr_routes(bp: Blueprint) -> None:
         sample: list[dict[str, Any]] = []
         u_rows = db.session.scalars(
             select(User)
+            .options(selectinload(User.roles).selectinload(UserRole.role))
             .where(
                 or_(
                     User.id.in_(select(HrOnboardingItem.user_id)),
                     User.id.in_(select(HrPolicyAcknowledgment.user_id)),
                     User.id.in_(select(HrTrainingAssignment.user_id)),
-                )
+                ),
+                User.id.notin_(demo_ids),
             )
             .distinct()
             .order_by(User.last_name.asc().nullslast(), User.first_name.asc().nullslast())
-            .limit(15)
+            .limit(50)
         ).all()
         for u in u_rows:
+            if is_applicant_only_user(u) or is_hr_demo_user(u):
+                continue
             uid = u.id
             open_onb = int(
                 db.session.scalar(
@@ -253,6 +270,8 @@ def register_hr_routes(bp: Blueprint) -> None:
                     "open_hr_training": open_train,
                 }
             )
+            if len(sample) >= 15:
+                break
 
         hint: str | None = None
         if (
@@ -260,10 +279,7 @@ def register_hr_routes(bp: Blueprint) -> None:
             and pending_acknowledgments == 0
             and onboarding_in_progress == 0
         ):
-            hint = (
-                "No HR activity in the database yet. From the backend folder run: "
-                "flask db upgrade  then  python seed_hr_employees.py"
-            )
+            hint = "No HR activity in the database yet. Add staff in User admin or complete onboarding for employees."
 
         return _jsonify(
             {
@@ -302,6 +318,22 @@ def register_hr_routes(bp: Blueprint) -> None:
                     "message": "Insufficient permission to view this employee.",
                 }
             ), 403
+
+        if is_applicant_only_user(u):
+            return _jsonify(
+                {
+                    "entity": "hr_employee_summary",
+                    "is_applicant_only": True,
+                    "application_review_url": f"/usis-hr-application-detail.html?id={user_id}",
+                    "user": {
+                        "id": str(u.id),
+                        "email": u.email,
+                        "name": " ".join(p for p in (u.first_name, u.last_name) if p).strip()
+                        or (u.email or ""),
+                    },
+                    "message": "Job applicant — open the hire application review page.",
+                }
+            )
 
         name = " ".join(p for p in (u.first_name, u.last_name) if p).strip() or (u.email or "")
 

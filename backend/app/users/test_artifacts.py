@@ -113,6 +113,16 @@ def is_hr_demo_user(user: User) -> bool:
     return user.id in HR_DEMO_IDS
 
 
+def hr_demo_user_id_subquery():
+    """SQLAlchemy subquery of Plan 19 migration demo user ids (exclude from live dashboards)."""
+    return select(User.id).where(
+        or_(
+            User.email.in_(tuple(sorted(HR_DEMO_EMAILS))),
+            User.id.in_(tuple(sorted(HR_DEMO_IDS))),
+        )
+    )
+
+
 def list_hr_demo_users() -> list[User]:
     q = select(User).where(
         or_(

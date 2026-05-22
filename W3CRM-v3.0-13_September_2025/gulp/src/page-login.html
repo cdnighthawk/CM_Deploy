@@ -87,7 +87,7 @@
 							<p class="mb-0 text-muted">You are signed in as <strong id="usis-login-applicant-email">your account</strong>.</p>
 						</div>
 						<div class="d-grid gap-2 mb-3">
-							<a class="btn btn-primary btn-lg" href="apply/application.html">Continue job application</a>
+							<a class="btn btn-primary btn-lg" id="usis-login-applicant-continue" href="apply/application.html">Continue job application</a>
 							<a class="btn btn-outline-secondary btn-lg usis-logout-link" href="#">Sign out</a>
 						</div>
 						<p class="text-center small text-muted mb-0">USIS staff? Sign out and sign in with your company account above.</p>
@@ -102,6 +102,7 @@
 	@@include("elements/script-public.html")
 	
 	<!-- Script For Custom JS -->
+	<script src="assets/js/usis-hire-core.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script>
 	(function () {
@@ -144,6 +145,17 @@
 			if (applicant) applicant.classList.remove("d-none");
 			var emailEl = document.getElementById("usis-login-applicant-email");
 			if (emailEl && user && user.email) emailEl.textContent = user.email;
+			fetch(apiBase() + "/api/v1/hr/me/hire-wizard", { credentials: "include", headers: { Accept: "application/json" } })
+				.then(function (r) {
+					if (!r.ok) return null;
+					return r.json();
+				})
+				.then(function (w) {
+					if (!w || !window.USISHireCore || !window.USISHireCore.resumeStepUrl) return;
+					var cont = document.getElementById("usis-login-applicant-continue");
+					if (cont) cont.setAttribute("href", window.USISHireCore.resumeStepUrl(w));
+				})
+				.catch(function () {});
 		}
 		var reg = document.getElementById("usis-login-register-link");
 		if (reg) {

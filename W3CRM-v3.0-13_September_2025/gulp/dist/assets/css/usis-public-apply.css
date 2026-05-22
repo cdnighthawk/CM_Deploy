@@ -58,3 +58,18 @@
 		padding: 3.5rem 0 4rem;
 	}
 }
+
+.usis-apply-steps .usis-apply-step-locked a {
+	color: var(--bs-secondary-color, #6c757d) !important;
+	opacity: 0.65;
+	cursor: not-allowed;
+	text-decoration: none;
+}
+
+.usis-apply-steps .usis-apply-step-locked a:hover {
+	text-decoration: none;
+}
+
+.usis-apply-steps .usis-apply-step-active a {
+	font-weight: 600;
+}

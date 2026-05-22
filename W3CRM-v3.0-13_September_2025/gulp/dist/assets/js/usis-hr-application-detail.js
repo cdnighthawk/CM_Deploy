@@ -67,18 +67,38 @@
 		});
 	}
 
-	function deleteApplicant(reason) {
-		return fetch(apiBase() + "/api/v1/hr/applications/" + encodeURIComponent(state.userId), {
-			method: "DELETE",
-			credentials: "include",
-			headers: { "Content-Type": "application/json", Accept: "application/json" },
-			body: JSON.stringify({ confirm: true, reason: reason }),
-		}).then(function (r) {
-			return r.json().then(function (data) {
-				if (!r.ok) throw new Error(data.error || data.message || "Delete failed");
-				return data;
+	function runDeleteApplicant(displayName) {
+		var del = window.USISHrApplicantDelete;
+		if (!del) {
+			showErr("Delete helper not loaded.");
+			return;
+		}
+		var reason = del.confirmDeleteApplicant(displayName);
+		if (!reason) return;
+		del.deleteApplicantAccount(state.userId, reason)
+			.then(function () {
+				if (window.USISNotify) window.USISNotify.success("Applicant account deleted.");
+				window.location.href = "usis-hr-applications.html";
+			})
+			.catch(function (e) {
+				showErr(e.message || String(e));
 			});
-		});
+	}
+
+	function updateDeleteButtons(d) {
+		var caps = (d && d.capabilities) || {};
+		var name = (d && d.user && (d.user.name || d.user.email)) || "";
+		var show = !!caps.can_delete_applicant;
+		var header = document.getElementById("usis-hr-appd-delete-header");
+		if (header) {
+			header.classList.toggle("d-none", !show);
+			if (show && !header._wired) {
+				header._wired = true;
+				header.addEventListener("click", function () {
+					runDeleteApplicant(name);
+				});
+			}
+		}
 	}
 
 	function renderDocThumbs(container, docs) {
@@ -154,8 +174,13 @@
 		if (caps.can_delete_applicant) {
 			html +=
 				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-delete">Delete applicant account</button>';
+		} else if (status === "hired") {
+			html +=
+				'<p class="text-muted small mb-0">This applicant was hired and is now a staff account. To remove the user, use <a href="usis-user-directory.html">User admin</a>.</p>';
 		}
-		if (!html) html = '<p class="text-muted small mb-0">No actions available for this status.</p>';
+		if (!html) {
+			html = '<p class="text-muted small mb-0">No review actions for this status.</p>';
+		}
 		root.innerHTML = html;
 
 		var under = document.getElementById("usis-hr-appd-under-review");
@@ -188,16 +213,8 @@
 		var del = document.getElementById("usis-hr-appd-delete");
 		if (del) {
 			del.addEventListener("click", function () {
-				var reason = window.prompt("Reason for deleting this applicant account (required):");
-				if (!reason || !String(reason).trim()) return;
-				if (!window.confirm("Permanently delete this applicant and all hire data?")) return;
-				deleteApplicant(String(reason).trim())
-					.then(function () {
-						window.location.href = "usis-hr-applications.html";
-					})
-					.catch(function (e) {
-						showErr(e.message || String(e));
-					});
+				var nameEl = document.getElementById("usis-hr-appd-name");
+				runDeleteApplicant(nameEl ? nameEl.textContent : "");
 			});
 		}
 	}
@@ -267,6 +284,7 @@
 		renderDocThumbs(document.getElementById("usis-hr-appd-w4-docs"), d.w4 && d.w4.documents);
 		renderHireRoles(d.staff_roles || []);
 		renderActions(d);
+		updateDeleteButtons(d);
 		document.getElementById("usis-hr-appd-content").classList.remove("d-none");
 		setStatus("");
 	}

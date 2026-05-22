@@ -214,13 +214,17 @@
 			return;
 		}
 		var base = apiBase();
-		fetch(base + "/api/v1/hr/employees/" + encodeURIComponent(uid), { credentials: "omit" })
+		fetch(base + "/api/v1/hr/employees/" + encodeURIComponent(uid), { credentials: "include" })
 			.then(function (r) {
 				return r.json().then(function (data) {
 					return { r: r, data: data };
 				});
 			})
 			.then(function (bundle) {
+				if (bundle.data && bundle.data.is_applicant_only && bundle.data.application_review_url) {
+					window.location.replace(bundle.data.application_review_url);
+					return;
+				}
 				if (bundle.r.status === 403) {
 					if (statusEl) {
 						statusEl.textContent =
@@ -456,7 +460,7 @@
 
 	function createDispatchRevision(userId) {
 		var base = apiBase();
-		fetch(base + "/api/v1/hr/projects-picker", { credentials: "omit" })
+		fetch(base + "/api/v1/hr/projects-picker", { credentials: "include" })
 			.then(function (r) {
 				return r.json().then(function (d) {
 					return { r: r, d: d };
@@ -492,7 +496,7 @@
 				};
 				return fetch(base + "/api/v1/hr/employees/" + encodeURIComponent(userId) + "/dispatches", {
 					method: "POST",
-					credentials: "omit",
+					credentials: "include",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify(body),
 				});

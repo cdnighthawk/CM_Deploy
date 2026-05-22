@@ -14,7 +14,11 @@
 				});
 			});
 		}
-		core.checkSession().then(function () {
+		core.checkSession().then(function (w) {
+			if (w && core.applicationSaved(w)) {
+				var ok = document.getElementById("usis-hire-app-saved-ok");
+				if (ok) ok.classList.remove("d-none");
+			}
 			core.wireApplyNav({
 				backHref: "../apply.html",
 				onSaveNext: function () {
@@ -28,7 +32,7 @@
 							if (window.USISNotify) window.USISNotify.error(msg);
 						});
 				},
-				nextHref: core.applicationComplete(core.state.wizard) ? "union.html" : null,
+				nextHref: w && core.applicationSaved(w) ? "union.html" : null,
 			});
 		});
 	}

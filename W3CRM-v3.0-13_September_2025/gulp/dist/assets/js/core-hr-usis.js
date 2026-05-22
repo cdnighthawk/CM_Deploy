@@ -42,18 +42,59 @@
 		return n || u.email || u.name || "—";
 	}
 
+	var HR_DEMO_EMAILS = {
+		"hr.demo.employee@usis.local": true,
+		"charles.dossett@usis.local": true,
+	};
+
+	function isHrDemoUser(u) {
+		return !!HR_DEMO_EMAILS[(u.email || "").trim().toLowerCase()];
+	}
+
+	function profileHref(row) {
+		var uid = row.user_id || row.id || "";
+		if (row.is_applicant_only || isApplicantOnly(row)) {
+			return "usis-hr-application-detail.html?id=" + encodeURIComponent(uid);
+		}
+		return "usis-hr-employee.html?id=" + encodeURIComponent(uid);
+	}
+
+	function isApplicantOnly(u) {
+		var r = u.roles || [];
+		if (!r.length) return false;
+		return r.length === 1 && r[0].code === "applicant";
+	}
+
+	function profileSubtitle(row) {
+		if (row.is_applicant_only || isApplicantOnly(row)) {
+			return "Job applicant";
+		}
+		return "Employee record";
+	}
+
 	function mapAdminUser(u) {
 		return {
 			user_id: u.id,
+			id: u.id,
 			name: displayName(u),
 			email: u.email || "",
+			roles: u.roles || [],
 		};
+	}
+
+	function staffDirectoryRows(items) {
+		return (items || []).filter(function (u) {
+			return !isApplicantOnly(u) && !isHrDemoUser(u);
+		});
 	}
 
 	function renderRows(rows) {
 		var tbody = document.querySelector("#usis-core-hr-employees-tbl tbody");
 		if (!tbody) return;
 		tbody.innerHTML = "";
+		rows = (rows || []).filter(function (row) {
+			return !HR_DEMO_EMAILS[(row.email || "").trim().toLowerCase()];
+		});
 		if (!rows || !rows.length) {
 			tbody.innerHTML =
 				'<tr><td colspan="8" class="text-muted text-center py-4">No employees yet. Add staff in <a href="usis-user-directory.html">User admin</a>, or seed HR data from the <a href="usis-hr-dashboard.html">HR dashboard</a>.</td></tr>';
@@ -62,7 +103,7 @@
 		rows.forEach(function (row) {
 			var uid = row.user_id || "";
 			var name = row.name || row.email || "—";
-			var href = "usis-hr-employee.html?id=" + encodeURIComponent(uid);
+			var href = profileHref(row);
 			var tr = document.createElement("tr");
 			tr.innerHTML =
 				'<td><div class="form-check custom-checkbox">' +
@@ -79,7 +120,9 @@
 				'" class="text-decoration-none text-body">' +
 				esc(name) +
 				"</a></h6>" +
-				'<small class="text-muted">Employee record</small>' +
+				'<small class="text-muted">' +
+				esc(profileSubtitle(row)) +
+				"</small>" +
 				"</div></div></td>" +
 				"<td>" +
 				(row.email ? '<a href="mailto:' + esc(row.email) + '" class="text-primary">' + esc(row.email) + "</a>" : "—") +
@@ -156,7 +199,7 @@
 				}
 				if (!r.ok) throw new Error("HTTP " + r.status);
 				return r.json().then(function (data) {
-					var rows = (data.items || []).map(mapAdminUser);
+					var rows = staffDirectoryRows(data.items || []).map(mapAdminUser);
 					if (!rows.length) {
 						setStatusHint("No users in directory yet. Add staff in User admin.", "warning");
 					} else {

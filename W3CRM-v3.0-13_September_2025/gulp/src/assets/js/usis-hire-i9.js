@@ -34,9 +34,10 @@
 		var w = c.state.wizard || {};
 		var st = w.steps || {};
 		var i9 = w.i9 || {};
-		var appDone = (st.application && st.application.completed) || !!(w.application && w.application.submitted_at);
+		var appDone = c.applicationSaved ? c.applicationSaved(w) : !!(st.application && st.application.completed) || !!(w.application && w.application.submitted_at);
 		var signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
 		var completed = i9.status === "completed" || i9.status === "signed" || i9.completed_at;
+		var locked = c.isWizardLocked && c.isWizardLocked(w);
 
 		var startBtn = document.getElementById("usis-i9-start-btn");
 		var reviewBtn = document.getElementById("usis-i9-review-btn");
@@ -45,7 +46,7 @@
 		var signBar = document.getElementById("usis-i9-sign-bar");
 
 		if (startBtn) {
-			startBtn.disabled = !appDone || signed;
+			startBtn.disabled = locked || !appDone || signed;
 			startBtn.textContent = completed && !signed ? "Edit I-9 questionnaire" : "Start / continue I-9";
 		}
 		if (reviewBtn) reviewBtn.classList.toggle("d-none", !completed || signed);
@@ -63,6 +64,7 @@
 		if (completed && !signed && reviewPanel && !reviewPanel.classList.contains("d-none")) {
 			renderReviewPanel();
 		}
+		if (c.renderStepPrereqBanner) c.renderStepPrereqBanner(w, "i9");
 	}
 
 	function renderReviewPanel() {

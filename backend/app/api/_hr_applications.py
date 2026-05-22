@@ -93,7 +93,7 @@ def _with_staff_doc_urls(user_id: uuid.UUID, docs: list[dict], kind: str) -> lis
     return out
 
 
-def _serialize_list_item(hire_row: HrHireApplication) -> dict[str, Any]:
+def _serialize_list_item(hire_row: HrHireApplication, cu: CurrentUser) -> dict[str, Any]:
     u = hire_row.user
     review = serialize_hire_status(hire_row)
     return {
@@ -104,6 +104,7 @@ def _serialize_list_item(hire_row: HrHireApplication) -> dict[str, Any]:
         "submitted_for_review_at": review.get("submitted_for_review_at"),
         "hire_status": review.get("hire_status"),
         "progress_percent": review.get("progress_percent"),
+        "can_delete": _can_delete_applicant(cu) and is_applicant_only_user(u),
     }
 
 
@@ -196,7 +197,9 @@ def register_hr_application_routes(bp: Blueprint) -> None:
         stmt = (
             select(HrHireApplication)
             .join(User, HrHireApplication.user_id == User.id)
-            .options(selectinload(HrHireApplication.user))
+            .options(
+                selectinload(HrHireApplication.user).selectinload(User.roles).selectinload(UserRole.role)
+            )
         )
         count_stmt = select(func.count()).select_from(HrHireApplication).join(
             User, HrHireApplication.user_id == User.id
@@ -229,10 +232,13 @@ def register_hr_application_routes(bp: Blueprint) -> None:
         return _jsonify(
             {
                 "entity": "hr_applications_list",
-                "items": [_serialize_list_item(r) for r in rows],
+                "items": [_serialize_list_item(r, cu) for r in rows],
                 "total": total,
                 "limit": limit,
                 "offset": offset,
+                "capabilities": {
+                    "can_delete_applicants": _can_delete_applicant(cu),
+                },
             }
         )
 

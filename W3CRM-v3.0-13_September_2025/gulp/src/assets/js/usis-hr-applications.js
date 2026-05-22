@@ -49,6 +49,24 @@
 		el.classList.toggle("text-danger", !!isErr);
 	}
 
+	function deleteApplicantRow(userId, displayName, onDone) {
+		var del = window.USISHrApplicantDelete;
+		if (!del) {
+			setStatus("Delete helper not loaded.", true);
+			return;
+		}
+		var reason = del.confirmDeleteApplicant(displayName);
+		if (!reason) return;
+		del.deleteApplicantAccount(userId, reason)
+			.then(function () {
+				if (window.USISNotify) window.USISNotify.success("Applicant account deleted.");
+				if (onDone) onDone();
+			})
+			.catch(function (err) {
+				setStatus("Delete failed: " + (err.message || err), true);
+			});
+	}
+
 	function loadList() {
 		var q = (document.getElementById("usis-hr-apps-search") || {}).value || "";
 		var status = (document.getElementById("usis-hr-apps-status-filter") || {}).value || "";
@@ -76,11 +94,20 @@
 				} else {
 					tb.innerHTML = items
 						.map(function (row) {
+							var deleteBtn = row.can_delete
+								? '<button type="button" class="btn btn-sm btn-outline-danger py-0 ms-1 usis-hr-apps-delete" data-id="' +
+								  esc(row.user_id) +
+								  '" data-name="' +
+								  esc(row.name || row.email || "") +
+								  '">Delete</button>'
+								: "";
 							return (
 								"<tr>" +
-								"<td>" +
+								"<td><a class=\"text-decoration-none\" href=\"usis-hr-application-detail.html?id=" +
+								encodeURIComponent(row.user_id) +
+								'">' +
 								esc(row.name) +
-								"</td><td>" +
+								"</a></td><td>" +
 								esc(row.email) +
 								"</td><td>" +
 								esc(row.position || "—") +
@@ -90,9 +117,11 @@
 								statusBadge(row.hire_status) +
 								'</td><td class="text-end">' +
 								esc(row.progress_percent != null ? row.progress_percent + "%" : "—") +
-								'</td><td class="text-end"><a class="btn btn-sm btn-outline-primary py-0" href="usis-hr-application-detail.html?id=' +
+								'</td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary py-0" href="usis-hr-application-detail.html?id=' +
 								encodeURIComponent(row.user_id) +
-								'">Review</a></td></tr>'
+								'">Review</a>' +
+								deleteBtn +
+								"</td></tr>"
 							);
 						})
 						.join("");
@@ -116,6 +145,16 @@
 			search.addEventListener("input", function () {
 				if (searchTimer) clearTimeout(searchTimer);
 				searchTimer = setTimeout(loadList, 350);
+			});
+		}
+		var tb = document.getElementById("usis-hr-apps-body");
+		if (tb) {
+			tb.addEventListener("click", function (ev) {
+				var btn = ev.target.closest(".usis-hr-apps-delete");
+				if (!btn) return;
+				var uid = btn.getAttribute("data-id");
+				if (!uid) return;
+				deleteApplicantRow(uid, btn.getAttribute("data-name") || "", loadList);
 			});
 		}
 		loadList();

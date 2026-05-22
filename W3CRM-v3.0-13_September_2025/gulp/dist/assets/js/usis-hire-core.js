@@ -110,7 +110,7 @@
 	}
 
 	function firstAllowedStepId(wizard) {
-		if (!applicationComplete(wizard)) return "application";
+		if (!applicationSaved(wizard)) return "application";
 		if (!unionComplete(wizard)) return "union";
 		if (!i9Complete(wizard)) return "i9";
 		if (!w4Complete(wizard)) return "w4";
@@ -119,7 +119,7 @@
 
 	function canAccessStep(stepId, wizard) {
 		if (!stepId || stepId === "application") return true;
-		if (!applicationComplete(wizard)) return false;
+		if (!applicationSaved(wizard)) return false;
 		if (stepId === "union") return true;
 		if (stepId === "i9") return true;
 		if (stepId === "w4") return i9Complete(wizard);
@@ -127,14 +127,151 @@
 		return false;
 	}
 
-	function redirectToStep(stepId) {
+	var REDIRECT_MSG_KEY = "usis_hire_redirect_msg";
+
+	function applicationSaved(wizard) {
+		var w = wizard || {};
+		var st = w.steps || {};
+		if (st.application && st.application.completed) return true;
+		if (w.application && w.application.submitted_at) return true;
+		return applicationComplete(wizard);
+	}
+
+	function resumeStepUrl(wizard) {
+		var stepId = firstAllowedStepId(wizard);
+		return "apply/" + stepFile(stepId);
+	}
+
+	function stepPrereqMessage(stepId, wizard) {
+		if (isWizardLocked(wizard)) {
+			var review = wizardReview(wizard);
+			if (review.hire_status === "rejected") {
+				return (
+					"Your application is closed and cannot be edited." +
+					(review.review_notes ? " " + review.review_notes : "")
+				);
+			}
+			if (review.hire_status === "hired") {
+				return "You have been hired. HR will follow up with onboarding next steps.";
+			}
+			return "This application is no longer open for editing.";
+		}
+		if (stepId === "i9" && !applicationSaved(wizard)) {
+			return "Complete step 1 first — save your employment application before starting Form I-9.";
+		}
+		if (stepId === "w4" && !i9Complete(wizard)) {
+			return "Sign Form I-9 (step 3) before starting Form W-4.";
+		}
+		if (stepId === "complete" && !w4Complete(wizard)) {
+			return "Sign Form W-4 (step 4) before finishing your application.";
+		}
+		return null;
+	}
+
+	function prereqLinkForStep(stepId) {
+		if (stepId === "i9" || stepId === "union" || stepId === "w4") {
+			if (!applicationSaved(state.wizard)) return "application.html";
+		}
+		if (stepId === "w4") return "i9.html";
+		if (stepId === "complete") return "w4.html";
+		return "application.html";
+	}
+
+	function renderStepPrereqBanner(wizard, stepId, bannerId) {
+		var el = document.getElementById(bannerId || "usis-hire-step-prereq");
+		if (!el) return;
+		var msg = stepPrereqMessage(stepId, wizard);
+		if (!msg) {
+			el.classList.add("d-none");
+			el.innerHTML = "";
+			return;
+		}
+		var link = prereqLinkForStep(stepId);
+		var linkLabel =
+			link === "application.html"
+				? "Go to employment application"
+				: link === "i9.html"
+					? "Go to Form I-9"
+					: link === "w4.html"
+						? "Go to Form W-4"
+						: "Go to previous step";
+		el.className = isWizardLocked(wizard) ? "alert alert-warning py-2 small mb-3" : "alert alert-info py-2 small mb-3";
+		el.innerHTML =
+			msg +
+			(isWizardLocked(wizard)
+				? ""
+				: ' <a href="' + link + '" class="alert-link fw-semibold">' + linkLabel + "</a>.");
+		el.classList.remove("d-none");
+	}
+
+	function setRedirectMessage(msg) {
+		try {
+			if (msg) sessionStorage.setItem(REDIRECT_MSG_KEY, msg);
+		} catch (e) {}
+	}
+
+	function showRedirectMessage() {
+		var el = document.getElementById("usis-hire-redirect-info");
+		if (!el) return;
+		var msg = null;
+		try {
+			msg = sessionStorage.getItem(REDIRECT_MSG_KEY);
+			if (msg) sessionStorage.removeItem(REDIRECT_MSG_KEY);
+		} catch (e) {}
+		if (!msg) {
+			el.classList.add("d-none");
+			el.textContent = "";
+			return;
+		}
+		el.textContent = msg;
+		el.classList.remove("d-none");
+	}
+
+	function updateStepNavLocks(wizard) {
+		document.querySelectorAll(".usis-apply-step").forEach(function (li) {
+			var stepId = li.getAttribute("data-step");
+			if (!stepId) return;
+			var allowed = canAccessStep(stepId, wizard);
+			li.classList.toggle("usis-apply-step-locked", !allowed);
+			var a = li.querySelector("a");
+			if (a) {
+				a.setAttribute("aria-disabled", allowed ? "false" : "true");
+				if (!allowed) {
+					a.setAttribute("tabindex", "-1");
+				} else {
+					a.removeAttribute("tabindex");
+				}
+			}
+		});
+	}
+
+	function wireStepNavLocks() {
+		document.querySelectorAll(".usis-apply-step a").forEach(function (a) {
+			if (a.getAttribute("data-usis-nav-wired") === "1") return;
+			a.setAttribute("data-usis-nav-wired", "1");
+			a.addEventListener("click", function (ev) {
+				var li = a.closest(".usis-apply-step");
+				if (!li) return;
+				var stepId = li.getAttribute("data-step");
+				if (!stepId || canAccessStep(stepId, state.wizard)) return;
+				ev.preventDefault();
+				var msg = stepPrereqMessage(stepId, state.wizard);
+				if (msg) showErr(msg);
+				if (window.USISNotify && msg) window.USISNotify.warning(msg);
+			});
+		});
+	}
+
+	function redirectToStep(stepId, reasonMsg) {
+		if (reasonMsg) setRedirectMessage(reasonMsg);
 		window.location.replace(stepFile(stepId));
 	}
 
 	function enforceStepAccess(stepId, wizard) {
 		if (!stepId || stepId === "complete") return;
 		if (canAccessStep(stepId, wizard)) return;
-		redirectToStep(firstAllowedStepId(wizard));
+		var msg = stepPrereqMessage(stepId, wizard) || "Complete the previous steps before continuing.";
+		redirectToStep(firstAllowedStepId(wizard), msg);
 	}
 
 	function highlightStepNav(stepId) {
@@ -142,7 +279,9 @@
 			var active = li.getAttribute("data-step") === stepId;
 			li.classList.toggle("fw-semibold", active);
 			li.classList.toggle("text-primary", active);
+			li.classList.toggle("usis-apply-step-active", active);
 		});
+		if (state.wizard) updateStepNavLocks(state.wizard);
 	}
 
 	function renderProgress(progress) {
@@ -310,6 +449,8 @@
 		if (window.USISHireI9 && window.USISHireI9.afterWizardLoad) window.USISHireI9.afterWizardLoad(w);
 		if (window.USISHireW4 && window.USISHireW4.afterWizardLoad) window.USISHireW4.afterWizardLoad(w);
 		renderReviewBanner(w);
+		updateStepNavLocks(w);
+		if (state.currentStep) renderStepPrereqBanner(w, state.currentStep);
 		if (isWizardLocked(w)) {
 			document.querySelectorAll("button[type='submit'], .usis-hire-save, #usis-apply-save-next").forEach(function (el) {
 				el.disabled = true;
@@ -345,6 +486,8 @@
 
 	function checkSession() {
 		state.currentStep = stepFromBody();
+		wireStepNavLocks();
+		showRedirectMessage();
 		if (state.currentStep) highlightStepNav(state.currentStep);
 		var signIn = document.getElementById("usis-public-sign-in");
 		if (signIn) signIn.setAttribute("href", loginUrl());
@@ -417,7 +560,12 @@
 			})
 			.then(function () {
 				if (window.USISNotify) window.USISNotify.success("Application saved.");
-				return loadWizard();
+				return loadWizard().then(function (w) {
+					var ok = document.getElementById("usis-hire-app-saved-ok");
+					if (ok) ok.classList.remove("d-none");
+					if (w) updateStepNavLocks(w);
+					return w;
+				});
 			});
 	}
 
@@ -435,12 +583,19 @@
 		submitApplication: submitApplication,
 		wireApplyNav: wireApplyNav,
 		applicationComplete: applicationComplete,
+		applicationSaved: applicationSaved,
 		unionComplete: unionComplete,
 		i9Complete: i9Complete,
 		w4Complete: w4Complete,
 		firstAllowedStepId: firstAllowedStepId,
+		canAccessStep: canAccessStep,
 		redirectToStep: redirectToStep,
 		stepFromBody: stepFromBody,
+		stepFile: stepFile,
+		resumeStepUrl: resumeStepUrl,
+		renderStepPrereqBanner: renderStepPrereqBanner,
+		updateStepNavLocks: updateStepNavLocks,
+		stepPrereqMessage: stepPrereqMessage,
 		wizardReview: wizardReview,
 		isWizardLocked: isWizardLocked,
 		renderCompleteReviewStatus: renderCompleteReviewStatus,

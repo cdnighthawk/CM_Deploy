@@ -38,6 +38,7 @@
 		var i9Signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
 		var signed = w4.status === "signed" || (st.w4 && st.w4.signed_at);
 		var completed = w4.status === "completed" || w4.status === "signed" || w4.completed_at;
+		var locked = c.isWizardLocked && c.isWizardLocked(w);
 
 		var startBtn = document.getElementById("usis-w4-start-btn");
 		var reviewBtn = document.getElementById("usis-w4-review-btn");
@@ -46,7 +47,7 @@
 		var signBar = document.getElementById("usis-w4-sign-bar");
 
 		if (startBtn) {
-			startBtn.disabled = !i9Signed || signed;
+			startBtn.disabled = locked || !i9Signed || signed;
 			startBtn.textContent = completed && !signed ? "Edit W-4 questionnaire" : "Start / continue W-4";
 		}
 		if (reviewBtn) reviewBtn.classList.toggle("d-none", !completed || signed);
@@ -64,6 +65,7 @@
 		if (completed && !signed && reviewPanel && !reviewPanel.classList.contains("d-none")) {
 			renderW4ReviewPanel();
 		}
+		if (c.renderStepPrereqBanner) c.renderStepPrereqBanner(w, "w4");
 	}
 
 	function renderW4ReviewPanel() {

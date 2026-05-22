@@ -5,6 +5,8 @@ import uuid
 from unittest.mock import patch
 
 from app.api._perms import CurrentUser
+from app.extensions import db
+from app.models import User
 
 
 def test_hr_dashboard_summary(client):
@@ -28,13 +30,58 @@ def test_hr_dashboard_summary(client):
     assert "hint" in data
 
 
-def test_hr_employee_summary_demo_user(client):
-    r = client.get("/api/v1/hr/employees/a1700000-0000-4000-8000-000000000001")
+def test_hr_dashboard_sample_excludes_applicant_only(client, flask_app):
+    from app.models import HrOnboardingItem
+    from app.permissions.applicant import assign_applicant_role
+
+    with flask_app.app_context():
+        email = f"applicant.dash.{uuid.uuid4().hex[:8]}@usis.local"
+        u = User(email=email, first_name="Dash", last_name="Applicant", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        assign_applicant_role(u)
+        db.session.add(
+            HrOnboardingItem(
+                user_id=u.id,
+                title="Should not appear on HR dashboard",
+                sort_order=1,
+            )
+        )
+        db.session.commit()
+        uid = str(u.id)
+
+    try:
+        r = client.get("/api/v1/hr/dashboard-summary")
+        assert r.status_code == 200
+        sample = r.get_json().get("sample_employees") or []
+        assert uid not in {row.get("user_id") for row in sample}
+    finally:
+        with flask_app.app_context():
+            u2 = db.session.get(User, uuid.UUID(uid))
+            if u2 is not None:
+                db.session.delete(u2)
+                db.session.commit()
+
+
+def test_hr_dashboard_sample_excludes_hr_demo_users(client):
+    r = client.get("/api/v1/hr/dashboard-summary")
+    assert r.status_code == 200
+    sample = r.get_json().get("sample_employees") or []
+    demo_ids = {
+        "a1700000-0000-4000-8000-000000000001",
+        "b1700000-0000-4000-8000-000000000001",
+    }
+    assert demo_ids.isdisjoint({row.get("user_id") for row in sample})
+
+
+def test_hr_employee_summary_demo_user(client, hr_sample_employee):
+    uid = hr_sample_employee["user_id"]
+    r = client.get(f"/api/v1/hr/employees/{uid}")
     assert r.status_code == 200
     data = r.get_json()
     assert data.get("entity") == "hr_employee_summary"
     u = data.get("user", {})
-    assert u.get("email") == "hr.demo.employee@usis.local"
+    assert u.get("email") == hr_sample_employee["email"]
     assert "phone" in u
     assert "last_login_at" in u
     assert isinstance(data.get("onboarding_items"), list)
@@ -58,17 +105,17 @@ def test_hr_employee_summary_not_found(client):
     assert data.get("error") == "user not found"
 
 
-def test_hr_employee_forbidden_without_privilege(client):
+def test_hr_employee_forbidden_without_privilege(client, hr_sample_employee):
     cu = CurrentUser(user=None, role_codes=frozenset(["read_only"]), granular=frozenset(), is_dev_admin=False)
     with patch("app.api._hr_dashboard.current_user", return_value=cu):
-        r = client.get("/api/v1/hr/employees/a1700000-0000-4000-8000-000000000001")
+        r = client.get(f"/api/v1/hr/employees/{hr_sample_employee['user_id']}")
     assert r.status_code == 403
     data = r.get_json()
     assert data.get("error") == "forbidden"
 
 
-def test_hr_employee_self_service_without_hr_role(client, flask_app):
-    uid = uuid.UUID("a1700000-0000-4000-8000-000000000001")
+def test_hr_employee_self_service_without_hr_role(client, flask_app, hr_sample_employee):
+    uid = uuid.UUID(hr_sample_employee["user_id"])
     with flask_app.app_context():
         from app.extensions import db
         from app.models import User
@@ -81,23 +128,23 @@ def test_hr_employee_self_service_without_hr_role(client, flask_app):
     assert r.status_code == 200
 
 
-def test_hr_post_pay_scale_forbidden_for_read_only(client):
+def test_hr_post_pay_scale_forbidden_for_read_only(client, hr_sample_employee):
     cu = CurrentUser(user=None, role_codes=frozenset(["read_only"]), granular=frozenset(), is_dev_admin=False)
-    jamie = "a1700000-0000-4000-8000-000000000001"
+    emp = hr_sample_employee["user_id"]
     with patch("app.api._hr_dashboard.current_user", return_value=cu):
         r = client.post(
-            f"/api/v1/hr/employees/{jamie}/pay-scales",
+            f"/api/v1/hr/employees/{emp}/pay-scales",
             json={"label": "Test scale", "pay_basis": "hourly", "hourly_rate": "1"},
         )
     assert r.status_code == 403
 
 
-def test_hr_post_pay_scale_ok_for_hr_admin(client):
+def test_hr_post_pay_scale_ok_for_hr_admin(client, hr_sample_employee):
     cu = CurrentUser(user=None, role_codes=frozenset(["hr_admin"]), granular=frozenset(), is_dev_admin=False)
-    jamie = "a1700000-0000-4000-8000-000000000001"
+    emp = hr_sample_employee["user_id"]
     with patch("app.api._hr_dashboard.current_user", return_value=cu):
         r = client.post(
-            f"/api/v1/hr/employees/{jamie}/pay-scales",
+            f"/api/v1/hr/employees/{emp}/pay-scales",
             json={
                 "label": "API test pay row",
                 "pay_basis": "hourly",
@@ -113,7 +160,7 @@ def test_hr_post_pay_scale_ok_for_hr_admin(client):
     scale_id = item.get("id")
     assert scale_id
     with patch("app.api._hr_dashboard.current_user", return_value=cu):
-        r2 = client.delete(f"/api/v1/hr/employees/{jamie}/pay-scales/{scale_id}")
+        r2 = client.delete(f"/api/v1/hr/employees/{emp}/pay-scales/{scale_id}")
     assert r2.status_code == 200
     del_data = r2.get_json()
     assert del_data.get("deleted") is True
@@ -162,12 +209,12 @@ _TINY_PNG_BYTES = (
 )
 
 
-def test_hr_i9_document_upload_and_owner_only(client):
+def test_hr_i9_document_upload_and_owner_only(client, hr_wizard_user):
     """Upload I-9 doc photo; only hire wizard owner may download."""
     import io
 
-    demo = "a1700000-0000-4000-8000-000000000001"
-    other = "b1700000-0000-4000-8000-000000000001"
+    demo = hr_wizard_user["user_id"]
+    other = "00000000-0000-4000-8000-000000009901"
     hdr = {"X-Usis-User-Id": demo}
     data = {
         "file": (io.BytesIO(_TINY_PNG_BYTES), "passport-front.png"),
@@ -201,12 +248,12 @@ def test_hr_i9_document_upload_and_owner_only(client):
     assert r4.get_json().get("deleted") is True
 
 
-def test_hr_union_document_upload_and_owner_only(client):
+def test_hr_union_document_upload_and_owner_only(client, hr_wizard_user):
     """Upload union doc photo; only hire wizard owner may download."""
     import io
 
-    demo = "a1700000-0000-4000-8000-000000000001"
-    other = "b1700000-0000-4000-8000-000000000001"
+    demo = hr_wizard_user["user_id"]
+    other = "00000000-0000-4000-8000-000000009902"
     hdr = {"X-Usis-User-Id": demo}
     data = {
         "file": (io.BytesIO(_TINY_PNG_BYTES), "union-card-front.png"),
@@ -249,8 +296,8 @@ def test_hr_hire_wizard_unauthenticated(client, no_dev_admin):
     assert r.get_json().get("error") == "authentication required"
 
 
-def test_hr_hire_wizard_tasks_shape(client):
-    demo = "a1700000-0000-4000-8000-000000000001"
+def test_hr_hire_wizard_tasks_shape(client, hr_wizard_user):
+    demo = hr_wizard_user["user_id"]
     hdr = {"X-Usis-User-Id": demo}
     w = client.get("/api/v1/hr/me/hire-wizard", headers=hdr).get_json()
     assert w.get("entity") == "hr_hire_wizard"
@@ -263,8 +310,8 @@ def test_hr_hire_wizard_tasks_shape(client):
     assert "percent" in prog
 
 
-def test_hr_hire_wizard_get_and_submit(client):
-    demo = "a1700000-0000-4000-8000-000000000001"
+def test_hr_hire_wizard_get_and_submit(client, hr_wizard_user):
+    demo = hr_wizard_user["user_id"]
     hdr = {"X-Usis-User-Id": demo}
     r = client.get("/api/v1/hr/me/hire-wizard", headers=hdr)
     assert r.status_code == 200

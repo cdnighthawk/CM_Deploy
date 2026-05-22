@@ -85,11 +85,15 @@
 		var tbody = document.getElementById("usis-hr-sample-employees-body");
 		if (!tbody) return;
 		tbody.innerHTML = "";
-		if (!rows || !rows.length) {
-			tbody.innerHTML = '<tr><td colspan="5" class="text-muted small">No rows yet.</td></tr>';
+		var staff = (rows || []).filter(function (row) {
+			return !row.is_applicant_only;
+		});
+		if (!staff.length) {
+			tbody.innerHTML =
+				'<tr><td colspan="5" class="text-muted small">No employees with HR activity yet. Review job applicants in <a href="usis-hr-applications.html">Applications</a>.</td></tr>';
 			return;
 		}
-		rows.forEach(function (row) {
+		staff.forEach(function (row) {
 			var tr = document.createElement("tr");
 			tr.innerHTML =
 				'<td><a href="usis-hr-employee.html?id=' +

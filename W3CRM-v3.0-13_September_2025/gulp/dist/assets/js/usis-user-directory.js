@@ -322,7 +322,13 @@
 					return (
 						"<tr>" +
 						"<td>" +
-						esc(displayName(u)) +
+						(isApplicantOnly(u)
+							? '<a class="text-decoration-none" href="usis-hr-application-detail.html?id=' +
+							  encodeURIComponent(u.id) +
+							  '">' +
+							  esc(displayName(u)) +
+							  "</a>"
+							: esc(displayName(u))) +
 						"</td>" +
 						"<td>" +
 						esc(u.email) +

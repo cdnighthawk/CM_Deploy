@@ -80,6 +80,11 @@ def serve_static(subpath: str):
             "(W3CRM-v3.0-13_September_2025/gulp/dist).",
         )
 
+    if req_path == "/index.html":
+        home = root / "usis-dashboard-dark.html"
+        if home.is_file():
+            return redirect("/usis-dashboard-dark.html", code=302)
+
     if req_path == "/":
         login = root / "page-login.html"
         if login.is_file():

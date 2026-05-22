@@ -69,6 +69,9 @@ def test_hr_applications_list_ok(client, applicant_user):
     assert data.get("entity") == "hr_applications_list"
     ids = [row["user_id"] for row in data.get("items") or []]
     assert applicant_user["user_id"] in ids
+    assert data.get("capabilities", {}).get("can_delete_applicants") is True
+    applicant_row = next(row for row in data["items"] if row["user_id"] == applicant_user["user_id"])
+    assert applicant_row.get("can_delete") is True
 
 
 def test_hr_application_detail_ok(client, applicant_user):
@@ -160,11 +163,8 @@ def test_hr_application_delete_applicant_only(client, flask_app):
     assert r.get_json().get("deleted") is True
 
 
-def test_hr_application_delete_rejects_staff_user(client, flask_app):
-    with flask_app.app_context():
-        staff = db.session.scalar(select(User).where(User.email == "hr.demo.employee@usis.local"))
-        assert staff is not None
-        staff_id = str(staff.id)
+def test_hr_application_delete_rejects_staff_user(client, staff_user_for_hr_tests):
+    staff_id = staff_user_for_hr_tests["user_id"]
     with patch("app.api._hr_applications.current_user", return_value=_hr_admin_cu()):
         r = client.delete(
             f"/api/v1/hr/applications/{staff_id}",

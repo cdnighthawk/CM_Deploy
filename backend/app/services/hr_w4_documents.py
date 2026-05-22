@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from ..models import HrHireW4DocumentFile
+from .hr_hire_upload import HR_HIRE_DOC_EXT
 from .object_storage import UploadCategory, local_path, local_root
 
 W4_DOC_SLOTS = frozenset({"supporting"})
-W4_DOC_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"})
+W4_DOC_EXT = HR_HIRE_DOC_EXT
 W4_DOC_MAX_PER_SLOT = 3
 W4_DOC_MAX_BYTES = 10_485_760  # 10 MB
 

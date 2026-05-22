@@ -37,7 +37,11 @@ def test_calendar_events_procurement_and_schedule(client, no_dev_admin):
         db.session.add(u)
         db.session.flush()
         db.session.add(UserRole(user_id=u.id, role_id=role.id))
-        p = Project(name="CalProj-" + uuid.uuid4().hex[:8], start_date=date(2026, 7, 1))
+        p = Project(
+            name="CalProj-" + uuid.uuid4().hex[:8],
+            start_date=date(2026, 7, 1),
+            status="active",
+        )
         v = Company(name="CalVendor-" + uuid.uuid4().hex[:6], company_type="vendor")
         db.session.add_all([p, v])
         db.session.flush()
@@ -117,3 +121,18 @@ def test_calendar_events_procurement_and_schedule(client, no_dev_admin):
     range_items = r_range.get_json()["items"]
     assert any(x["category"] == "schedule" for x in range_items)
     assert not any(x["category"] == "procurement_delivery" for x in range_items)
+
+    r_active_before = client.get("/api/v1/calendar-events?project_status=active", headers=hdr)
+    assert r_active_before.status_code == 200
+    assert any(x["project_id"] == pid for x in r_active_before.get_json()["items"])
+
+    with client.application.app_context():
+        proj = db.session.get(Project, uuid.UUID(pid))
+        assert proj is not None
+        proj.status = "complete"
+        db.session.commit()
+
+    r_active = client.get("/api/v1/calendar-events?project_status=active", headers=hdr)
+    assert r_active.status_code == 200
+    active_items = r_active.get_json()["items"]
+    assert not any(x["project_id"] == pid for x in active_items)

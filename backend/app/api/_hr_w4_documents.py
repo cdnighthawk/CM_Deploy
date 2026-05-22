@@ -18,7 +18,9 @@ from ..services.hr_w4_documents import (
     W4_DOC_SLOTS,
     serialize_w4_document,
 )
+from ..services.hr_hire_upload import resolve_hire_doc_upload
 from ..services.hire_application_review import applicant_wizard_mutable
+from ..services.hire_path import applicant_may_complete_i9_w4
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file
 from ._perms import current_user
 from .v1 import _jsonify
@@ -41,6 +43,8 @@ def _hire_row_for_user(uid: uuid.UUID) -> HrHireApplication | None:
 
 def _w4_locked(hire_row: HrHireApplication | None) -> bool:
     if not applicant_wizard_mutable(hire_row):
+        return True
+    if not applicant_may_complete_i9_w4(hire_row):
         return True
     return hire_row is not None and hire_row.w4_signed_at is not None
 
@@ -117,14 +121,16 @@ def register_hr_w4_document_routes(bp: Blueprint) -> None:
             return _jsonify({"entity": "hr_w4_document", "error": "missing file field (multipart form-data)"}), 400
 
         raw_name = secure_filename(f.filename) or "photo.jpg"
-        ext = Path(raw_name).suffix.lower() or ".jpg"
-        if ext not in W4_DOC_EXT:
+        resolved = resolve_hire_doc_upload(f.filename, f.mimetype)
+        if resolved is None:
+            ext = Path(raw_name).suffix.lower() or "(unknown)"
             return _jsonify(
                 {
                     "entity": "hr_w4_document",
-                    "error": f"unsupported file type ({ext}); allowed: {', '.join(sorted(W4_DOC_EXT))}",
+                    "error": f"unsupported file type {ext}; allowed: {', '.join(sorted(W4_DOC_EXT))}",
                 }
             ), 400
+        raw_name, ext = resolved
 
         cl = request.content_length
         if cl is not None and cl > W4_DOC_MAX_BYTES:

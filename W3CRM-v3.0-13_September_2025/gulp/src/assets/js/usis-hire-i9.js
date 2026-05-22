@@ -44,6 +44,16 @@
 		);
 	}
 
+	function i9HasSavedDraft(w) {
+		var i9 = (w && w.i9) || {};
+		var draft = i9.draft;
+		return !!(draft && typeof draft === "object" && Object.keys(draft).length);
+	}
+
+	function i9CanReview(w) {
+		return i9SectionCompleted(w) || i9HasSavedDraft(w);
+	}
+
 	function updateI9Ui() {
 		var c = core();
 		var w = c.state.wizard || {};
@@ -66,7 +76,7 @@
 			startBtn.textContent = completed && !signed ? "Edit I-9 questionnaire" : "Start / continue I-9";
 		}
 		if (reviewBtn) {
-			reviewBtn.classList.toggle("d-none", !completed || signed);
+			reviewBtn.classList.toggle("d-none", !i9CanReview(w) || signed);
 			reviewBtn.textContent = i9ReviewOpened && !signed ? "Review I-9 again" : "Review I-9";
 		}
 		if (reviewPanel) {
@@ -91,33 +101,70 @@
 		if (c.renderStepPrereqBanner) c.renderStepPrereqBanner(w, "i9");
 	}
 
-	function renderReviewPanel() {
-		var root = document.getElementById("usis-i9-review-root");
-		if (!root || !window.USISHrI9) return;
+	function renderReviewPanelClient(root) {
+		if (!window.USISHrI9) throw new Error("I-9 form module did not load");
 		var c = core();
 		var w = c.state.wizard || {};
 		var i9 = w.i9 || {};
 		var st = w.steps || {};
 		var signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
-		try {
-			var render = window.USISHrI9.renderFilledReview || window.USISHrI9.renderForm;
-			render.call(window.USISHrI9, root, currentSection1(), {
-				reviewMode: true,
-				locked: true,
-				signature_png: signed ? i9.signature_png : null,
-				signed_at: st.i9 && st.i9.signed_at ? st.i9.signed_at : i9.signed_at,
+		var render = window.USISHrI9.renderFilledReview || window.USISHrI9.renderForm;
+		render.call(window.USISHrI9, root, currentSection1(), {
+			reviewMode: true,
+			locked: true,
+			signature_png: signed ? i9.signature_png : null,
+			signed_at: st.i9 && st.i9.signed_at ? st.i9.signed_at : i9.signed_at,
+		});
+		wireI9DocPhotos(root);
+	}
+
+	function renderReviewPanel() {
+		var root = document.getElementById("usis-i9-review-root");
+		if (!root) return;
+		var c = core();
+		root.innerHTML = '<div class="text-muted small py-3">Loading your Form I-9 preview…</div>';
+		fetch(c.apiBase() + "/api/v1/hr/me/i9-section1/preview", {
+			credentials: "include",
+			headers: { Accept: "text/html" },
+		})
+			.then(function (r) {
+				if (!r.ok) {
+					return r
+						.json()
+						.catch(function () {
+							return {};
+						})
+						.then(function (j) {
+							throw new Error((j && j.error) || "Could not load I-9 preview");
+						});
+				}
+				return r.text();
+			})
+			.then(function (html) {
+				root.innerHTML = "";
+				var frame = document.createElement("iframe");
+				frame.className = "usis-i9-review-frame";
+				frame.title = "Form I-9 Section 1 preview";
+				frame.srcdoc = html;
+				root.appendChild(frame);
+			})
+			.catch(function (err) {
+				try {
+					root.innerHTML = "";
+					renderReviewPanelClient(root);
+				} catch (fallbackErr) {
+					root.innerHTML =
+						'<div class="alert alert-danger py-2 small mb-0">' +
+						((err && err.message) || "Could not load I-9 preview") +
+						"</div>";
+					c.showErr((err && err.message) || String(err));
+				}
 			});
-			wireI9DocPhotos(root);
-		} catch (err) {
-			root.innerHTML =
-				'<div class="alert alert-danger py-2 small mb-0">Could not render your I-9 preview. Please hard-refresh and try again.</div>';
-			c.showErr((err && err.message) || String(err));
-		}
 	}
 
 	function openI9Review() {
 		var c = core();
-		if (!i9SectionCompleted(c.state.wizard || {})) {
+		if (!i9CanReview(c.state.wizard || {})) {
 			c.showErr("Save Section 1 first, then review your Form I-9.");
 			return;
 		}
@@ -316,12 +363,31 @@
 			});
 	}
 
+	var i9EventsWired = false;
+
 	function wireEvents() {
+		if (i9EventsWired) return;
+		i9EventsWired = true;
 		var c = core();
+		document.addEventListener("click", function (e) {
+			var target = e.target && e.target.closest ? e.target.closest("#usis-i9-review-btn, #usis-i9-save-review-btn") : null;
+			if (!target) return;
+			e.preventDefault();
+			if (target.id === "usis-i9-save-review-btn") {
+				saveSection1(true, true)
+					.then(function () {
+						if (window.USISNotify) window.USISNotify.success("Section 1 saved — review your Form I-9, then sign.");
+						return c.loadWizard().then(function () {
+							openI9Review();
+						});
+					})
+					.catch(function () {});
+				return;
+			}
+			openI9Review();
+		});
 		var startI9 = document.getElementById("usis-i9-start-btn");
 		if (startI9) startI9.addEventListener("click", openI9Modal);
-		var reviewBtn = document.getElementById("usis-i9-review-btn");
-		if (reviewBtn) reviewBtn.addEventListener("click", openI9Review);
 		var editBtn = document.getElementById("usis-i9-edit-btn");
 		if (editBtn) editBtn.addEventListener("click", openI9Modal);
 		var completeBtn = document.getElementById("usis-i9-modal-complete");
@@ -381,7 +447,7 @@
 	};
 
 	var coreRef = core();
-	if (coreRef) wireEvents();
+	wireEvents();
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 	else init();
 })();

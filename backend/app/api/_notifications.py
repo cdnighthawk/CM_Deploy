@@ -222,6 +222,34 @@ def public_reset_password_url(token: str) -> str:
     return f"{public_app_origin()}/page-reset-password.html?token={quote(token, safe='')}"
 
 
+def send_job_offer_email(*, to: str, applicant_name: str) -> dict[str, object]:
+    """Email applicant with link to view and accept their job offer."""
+    if not to:
+        return {"ok": False, "error": "missing recipient email"}
+
+    offer_url = f"{public_app_origin()}/apply/offer.html"
+    display = applicant_name.strip() or "there"
+    body = "\n".join(
+        [
+            f"Hello {display},",
+            "",
+            "We are pleased to extend a job offer to you. Please sign in to the USIS applicant portal "
+            "to review the offer letter and accept if you wish to proceed.",
+            "",
+            f"View your offer: {offer_url}",
+            "",
+            "After you accept, you will complete I-9 and W-4 forms in the portal.",
+            "",
+            "If you did not apply for employment with us, you can ignore this message.",
+        ]
+    )
+    return send_plain_notification_email(
+        to=to,
+        subject="Your job offer from DOCOM, INC.",
+        body=body,
+    )
+
+
 def send_password_reset_email(*, to: str, reset_token: str) -> dict[str, object]:
     """Send a single-use password reset link."""
     url = public_reset_password_url(reset_token)

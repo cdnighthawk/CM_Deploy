@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "apply/path.html",
+	})
+
+	<title>Getting started — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="path">
+
+	@@include("../elements/header-apply.html")
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<h1 class="mb-2">Before you apply</h1>
+				<p class="text-muted mb-0">One quick question so we can show you the right steps.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div id="usis-hire-auth-gate" class="card border-warning shadow-sm mb-3 d-none">
+				<div class="card-body">
+					<h6 class="fw-semibold mb-2">Sign in or create an account</h6>
+					<p class="text-muted small mb-3">Your progress is saved to your USIS account.</p>
+					<div class="d-flex flex-wrap gap-2">
+						<a class="btn btn-primary btn-sm" id="usis-hire-login-link" href="#">Sign in</a>
+						<a class="btn btn-outline-primary btn-sm" id="usis-hire-register-link" href="#">Create account</a>
+					</div>
+				</div>
+			</div>
+			<div id="usis-hire-err" class="alert alert-danger d-none" role="alert"></div>
+
+			<div id="usis-hire-path-workspace" class="card border-0 shadow-sm">
+				<div class="card-body p-4">
+					<p class="fw-semibold mb-3">Are you a dispatched union member applying for work with DOCOM, INC?</p>
+					<div class="d-flex flex-wrap gap-2">
+						<button type="button" class="btn btn-primary" id="usis-hire-path-yes">Yes — union dispatch</button>
+						<button type="button" class="btn btn-outline-primary" id="usis-hire-path-no">No — standard application</button>
+					</div>
+					<p class="text-muted small mt-3 mb-0">
+						Union dispatch members complete the full application, I-9, W-4, and optional union documents.
+						Standard applicants submit an employment application first; HR may send a job offer before I-9 and W-4.
+					</p>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	@@include("../elements/footer-public.html")
+	@@include("../elements/script-public.html")
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script src="assets/js/usis-hire-path.js"></script>
+</body>
+</html>

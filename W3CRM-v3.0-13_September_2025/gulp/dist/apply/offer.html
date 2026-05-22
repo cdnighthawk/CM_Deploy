@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	<!-- Title -->
+	<title>USIS</title>
+	
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="USIS">
+	<meta name="robots" content="index, follow">
+	<meta name="format-detection" content="telephone=no">
+	
+	<meta name="keywords" content="admin, admin dashboard, bootstrap, template, analytics, dark mode, modern, responsive admin dashboard, sass, ui kit">
+	<meta name="description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	
+	<meta property="og:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta property="og:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta property="og:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	
+	<!-- TWITTER META -->
+	<meta name="twitter:title" content="W3CRM - Bootstrap Admin Dashboard Template">
+	<meta name="twitter:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta name="twitter:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	<meta name="twitter:card" content="summary_large_image">
+	
+	<!-- FAVICONS ICON -->
+	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	<link rel="shortcut icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	
+	<!-- MOBILE SPECIFIC -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<!-- Canonical URL -->
+	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/apply/offer.html">
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+
+	<title>Job offer — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="offer">
+
+	<header class="usis-public-header border-bottom bg-white">
+	<div class="container py-3">
+		<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+			<a href="../apply.html" class="d-inline-flex align-items-center gap-2 text-decoration-none usis-public-brand">
+				<img src="assets/images/branding/usis-eagle-logo.png" alt="" width="44" height="44" class="usis-public-logo-mark">
+				<span class="usis-public-brand-title mb-0">US Interior Specialties</span>
+			</a>
+			<nav class="d-flex align-items-center gap-2" aria-label="Careers">
+				<a class="btn btn-outline-secondary btn-sm d-none usis-logout-link" id="usis-public-sign-out" href="#">Sign out</a>
+				<a class="btn btn-outline-primary btn-sm" id="usis-public-sign-in" href="../page-login.html">Sign in</a>
+			</nav>
+		</div>
+		<nav class="usis-apply-steps small" aria-label="Application steps">
+			<ol class="list-unstyled d-flex flex-wrap gap-2 mb-0">
+				<li class="usis-apply-step" data-step="application"><a href="apply/application.html">1. Application</a></li>
+				<li class="usis-apply-step d-none" data-step="offer"><a href="apply/offer.html">2. Job offer</a></li>
+				<li class="usis-apply-step" data-step="i9"><a href="apply/i9.html">2. Form I-9</a></li>
+				<li class="usis-apply-step" data-step="w4"><a href="apply/w4.html">3. Form W-4</a></li>
+				<li class="usis-apply-step" data-step="union"><a href="apply/union.html">4. Union docs <span class="text-muted">(optional)</span></a></li>
+				<li class="usis-apply-step" data-step="complete"><a href="apply/complete.html">Done</a></li>
+			</ol>
+		</nav>
+	</div>
+</header>
+
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Job offer</p>
+				<h1 class="mb-2">Review your offer</h1>
+				<p class="text-muted mb-0">Read the letter below. Accepting unlocks Form I-9 and W-4 in the portal.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div id="usis-hire-auth-gate" class="card border-warning shadow-sm mb-3 d-none">
+				<div class="card-body">
+					<h6 class="fw-semibold mb-2">Sign in to view your offer</h6>
+					<a class="btn btn-primary btn-sm" id="usis-hire-login-link" href="#">Sign in</a>
+				</div>
+			</div>
+			<div id="usis-hire-err" class="alert alert-danger d-none" role="alert"></div>
+			<div id="usis-hire-redirect-info" class="alert alert-info d-none mb-3" role="status"></div>
+			<div id="usis-hire-step-prereq" class="alert alert-info py-2 small mb-3 d-none" role="status"></div>
+			<div id="usis-hire-offer-accepted" class="alert alert-success d-none mb-3" role="status">
+				You accepted this offer. Continue to Form I-9 using the steps above or the button below.
+			</div>
+
+			<div id="usis-hire-offer-workspace" class="d-none">
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body p-0">
+						<iframe id="usis-hire-offer-frame" title="Job offer letter" class="w-100 border-0" style="min-height:640px;"></iframe>
+					</div>
+				</div>
+				<div class="d-flex flex-wrap gap-2" id="usis-hire-offer-actions">
+					<button type="button" class="btn btn-success" id="usis-hire-offer-accept">Accept job offer</button>
+					<a class="btn btn-outline-secondary" id="usis-hire-offer-i9" href="apply/i9.html">Continue to Form I-9</a>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<footer class="usis-public-footer border-top mt-auto">
+	<div class="container py-4">
+		<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 small text-muted">
+			<span>&copy; US Interior Specialties</span>
+		</div>
+	</div>
+</footer>
+
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script src="assets/js/usis-hire-offer.js"></script>
+</body>
+</html>

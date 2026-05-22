@@ -16,7 +16,7 @@ from typing import Any
 
 
 
-from flask import Blueprint, request
+from flask import Blueprint, Response, request
 
 from sqlalchemy import select
 
@@ -36,7 +36,13 @@ from ._hr_w4_documents import list_w4_documents_for_hire, register_hr_w4_documen
 from ..services.hr_i9_crypto import decrypt_section1, encrypt_section1
 from ..services.hr_w4_crypto import decrypt_w4, encrypt_w4
 
-from ..services.hr_hire_signed_forms import persist_signed_i9, persist_signed_w4, signed_form_staff_url
+from ..services.hr_hire_signed_forms import (
+    persist_signed_i9,
+    persist_signed_w4,
+    render_i9_preview_html,
+    render_w4_preview_html,
+    signed_form_staff_url,
+)
 from ..services.hr_i9_validate import validate_section1
 from ..services.hr_w4_validate import validate_w4
 from ..services.hire_application_review import (
@@ -44,7 +50,16 @@ from ..services.hire_application_review import (
     applicant_wizard_mutable,
     mark_submitted_for_review,
     serialize_hire_status,
+    serialize_offer_block,
 )
+from ..services.hire_path import (
+    HIRE_PATH_STANDARD,
+    HIRE_PATH_UNION_DISPATCH,
+    applicant_may_complete_i9_w4,
+    applicant_may_upload_union,
+    is_standard_path,
+)
+from ..services.hr_job_offer import try_auto_hire_after_onboarding
 
 from ._perms import current_user
 
@@ -573,6 +588,33 @@ def _wizard_mutable_guard(hire_row: HrHireApplication | None):
     return None
 
 
+def _require_hire_path(hire_row: HrHireApplication | None):
+    if hire_row is None or not hire_row.hire_path:
+        return _jsonify(
+            {
+                "entity": "hr_hire_wizard",
+                "error": "hire path required",
+                "message": "Answer the onboarding question before continuing.",
+            }
+        ), 403
+    return None
+
+
+def _require_i9_w4_eligible(hire_row: HrHireApplication | None):
+    missing = _require_hire_path(hire_row)
+    if missing is not None:
+        return missing
+    if not applicant_may_complete_i9_w4(hire_row):
+        return _jsonify(
+            {
+                "entity": "hr_hire_wizard",
+                "error": "I-9 and W-4 not available yet",
+                "message": "Complete earlier steps or accept your job offer before Form I-9 and W-4.",
+            }
+        ), 403
+    return None
+
+
 def _build_hire_tasks(
     *,
     hire_row: HrHireApplication | None,
@@ -590,6 +632,16 @@ def _build_hire_tasks(
     i9_signed = i9_status == "signed"
     w4_signed = w4_status == "signed"
     hire_locked = hire_row is not None and hire_row.hire_status in TERMINAL_HIRE_STATUSES
+    hire_path = hire_row.hire_path if hire_row else None
+    standard = hire_path == HIRE_PATH_STANDARD
+    union_path = hire_path == HIRE_PATH_UNION_DISPATCH
+    i9_eligible = applicant_may_complete_i9_w4(hire_row)
+    offer_pending = bool(
+        hire_row
+        and standard
+        and hire_row.hire_status == "offer_extended"
+    )
+    offer_accepted = bool(hire_row and hire_row.offer_accepted_at)
 
     def _app_task_status() -> str:
         if app_done:
@@ -639,38 +691,51 @@ def _build_hire_tasks(
             "title": "Form I-9 — Section 1",
             "description": "USCIS employment eligibility and identity (Section 1 + e-sign).",
             "status": _i9_task_status(),
-            "locked": not app_done,
-            "prerequisite": "application",
+            "locked": not app_done or not i9_eligible,
+            "prerequisite": "application" if union_path else "offer",
+            "hidden": standard and not offer_accepted and not i9_signed,
         },
         {
             "key": "w4",
             "title": "Form W-4 — withholding",
             "description": "Federal income tax withholding elections and e-sign.",
             "status": _w4_task_status(),
-            "locked": not i9_signed,
+            "locked": not i9_signed or not i9_eligible,
             "prerequisite": "i9",
+            "hidden": standard and not offer_accepted and not w4_signed,
         },
         {
             "key": "union_card",
             "title": "Union card",
             "description": "Optional photo of your union membership card.",
             "status": _union_task_status("union_card"),
-            "locked": not w4_signed or hire_locked,
+            "locked": not w4_signed or hire_locked or not union_path,
             "prerequisite": "w4",
             "optional": True,
+            "hidden": not union_path,
         },
         {
             "key": "union_dispatch",
             "title": "Union dispatch",
             "description": "Optional photo of your union dispatch slip or paperwork.",
             "status": _union_task_status("union_dispatch"),
-            "locked": not w4_signed or hire_locked,
+            "locked": not w4_signed or hire_locked or not union_path,
             "prerequisite": "w4",
             "optional": True,
+            "hidden": not union_path,
+        },
+        {
+            "key": "offer",
+            "title": "Job offer",
+            "description": "Review and accept your job offer from DOCOM, INC.",
+            "status": "complete" if offer_accepted else ("in_progress" if offer_pending else "not_started"),
+            "locked": not app_done or not standard,
+            "prerequisite": "application",
+            "hidden": not standard,
         },
     ]
 
-    required_tasks = [t for t in tasks if not t.get("optional")]
+    required_tasks = [t for t in tasks if not t.get("optional") and not t.get("hidden")]
     completed = sum(1 for t in required_tasks if t["status"] == "complete")
     total = len(required_tasks)
     percent = int(round(100 * completed / total)) if total else 0
@@ -796,6 +861,7 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         union_locked = (
             hire_row is None
+            or hire_row.hire_path != HIRE_PATH_UNION_DISPATCH
             or hire_row.w4_signed_at is None
             or hire_row.hire_status in TERMINAL_HIRE_STATUSES
         )
@@ -853,6 +919,12 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
                 },
 
                 "application": {"submitted_at": app_submitted, "payload": app_payload},
+
+                "hire_path": hire_row.hire_path if hire_row else None,
+
+                "path_selection_required": hire_row is None or not hire_row.hire_path,
+
+                "offer": serialize_offer_block(hire_row),
 
                 "review": serialize_hire_status(hire_row),
 
@@ -938,6 +1010,15 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         if blocked is not None:
             return blocked
 
+        from ..services.hire_application_review import applicant_may_edit_application
+
+        if not applicant_may_edit_application(hire_row):
+            return _jsonify({"entity": "hr_hire_application", "error": "application is locked"}), 409
+
+        path_block = _require_hire_path(hire_row)
+        if path_block is not None:
+            return path_block
+
         now = datetime.now(timezone.utc)
 
         hire_row.application_json = dumped
@@ -987,6 +1068,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         blocked = _wizard_mutable_guard(hire_row)
         if blocked is not None:
             return blocked
+
+        eligible = _require_i9_w4_eligible(hire_row)
+        if eligible is not None:
+            return eligible
 
         if hire_row.i9_signed_at is not None:
 
@@ -1038,6 +1123,36 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
 
 
+    @bp.get("/hr/me/i9-section1/preview")
+
+    def hr_me_i9_section1_preview():
+
+        cu = current_user()
+
+        if cu.user is None:
+
+            return _jsonify({"entity": "hr_i9_preview", "error": "authentication required"}), 401
+
+        uid = cu.user.id
+
+        hire_row = _get_or_create_hire_row(uid)
+
+        section1 = _decrypt_draft_for_owner(hire_row)
+
+        if not section1:
+
+            return _jsonify({"entity": "hr_i9_preview", "error": "no saved Section 1 to preview"}), 404
+
+        eligible = _require_i9_w4_eligible(hire_row)
+        if eligible is not None:
+            return eligible
+
+        html = render_i9_preview_html(user=cu.user, section1=section1, hire_row=hire_row)
+
+        return Response(html, mimetype="text/html")
+
+
+
     @bp.post("/hr/me/i9-section1/sign")
 
     def hr_me_i9_section1_sign():
@@ -1057,6 +1172,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         blocked = _wizard_mutable_guard(hire_row)
         if blocked is not None:
             return blocked
+
+        eligible = _require_i9_w4_eligible(hire_row)
+        if eligible is not None:
+            return eligible
 
         if hire_row.i9_signed_at is not None:
 
@@ -1334,6 +1453,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         if blocked is not None:
             return blocked
 
+        eligible = _require_i9_w4_eligible(hire_row)
+        if eligible is not None:
+            return eligible
+
         if hire_row.w4_signed_at is not None:
 
             return _jsonify({"entity": "hr_w4", "error": "W-4 is signed and locked"}), 409
@@ -1384,6 +1507,36 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
 
 
+    @bp.get("/hr/me/w4/preview")
+
+    def hr_me_w4_preview():
+
+        cu = current_user()
+
+        if cu.user is None:
+
+            return _jsonify({"entity": "hr_w4_preview", "error": "authentication required"}), 401
+
+        uid = cu.user.id
+
+        hire_row = _get_or_create_hire_row(uid)
+
+        w4 = _decrypt_w4_draft_for_owner(hire_row)
+
+        if not w4:
+
+            return _jsonify({"entity": "hr_w4_preview", "error": "no saved W-4 to preview"}), 404
+
+        eligible = _require_i9_w4_eligible(hire_row)
+        if eligible is not None:
+            return eligible
+
+        html = render_w4_preview_html(user=cu.user, w4=w4, hire_row=hire_row)
+
+        return Response(html, mimetype="text/html")
+
+
+
     @bp.post("/hr/me/w4/sign")
 
     def hr_me_w4_sign():
@@ -1403,6 +1556,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         blocked = _wizard_mutable_guard(hire_row)
         if blocked is not None:
             return blocked
+
+        eligible = _require_i9_w4_eligible(hire_row)
+        if eligible is not None:
+            return eligible
 
         if hire_row.w4_signed_at is not None:
 
@@ -1534,6 +1691,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
             api_path=signed_form_staff_url(uid, "w4"),
         )
 
+        auto_hired = try_auto_hire_after_onboarding(hire_row=hire_row, user=u)
+
         db.session.commit()
 
         return _jsonify(
@@ -1549,6 +1708,10 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
                 "policy_version": HIRE_POLICY_W4_VERSION,
 
                 "signed_document_url": signed_form_staff_url(uid, "w4"),
+
+                "auto_hired": auto_hired,
+
+                "hire_status": hire_row.hire_status,
 
             }
 

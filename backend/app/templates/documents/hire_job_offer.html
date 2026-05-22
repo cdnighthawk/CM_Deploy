@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Job Offer — {{ employee_name }}</title>
+	<style>
+		body { font-family: Georgia, "Times New Roman", serif; color: #111; margin: 24px; line-height: 1.5; max-width: 720px; }
+		h1 { font-size: 1.35rem; margin: 0 0 1rem; }
+		.meta { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
+		p { margin: 0 0 1rem; }
+		.offer-table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.95rem; }
+		.offer-table th, .offer-table td { border: 1px solid #bbb; padding: 0.5rem 0.65rem; text-align: left; vertical-align: top; }
+		.offer-table th { width: 32%; background: #f5f5f5; }
+		.signature-line { margin-top: 2.5rem; border-top: 1px solid #333; width: 280px; padding-top: 0.35rem; font-size: 0.85rem; }
+		@media print { body { margin: 12mm; } }
+	</style>
+</head>
+<body>
+	<h1>Job Offer — {{ company_name }}</h1>
+	<p class="meta">Date: {{ offer_date }}<br>
+	To: {{ employee_name }}{% if employee_email %} &lt;{{ employee_email }}&gt;{% endif %}</p>
+
+	<p>Dear {{ employee_name }},</p>
+
+	<p>
+		We are pleased to offer you employment with {{ company_name }} in the position of
+		<strong>{{ position }}</strong>, contingent upon satisfactory completion of onboarding
+		documentation including Form I-9 and Form W-4.
+	</p>
+
+	<table class="offer-table">
+		<tr><th>Position</th><td>{{ position }}</td></tr>
+		<tr><th>Pay / rate</th><td>{{ pay_description }}</td></tr>
+		<tr><th>Anticipated start date</th><td>{{ start_date }}</td></tr>
+	</table>
+
+	<p>
+		Please sign in to your applicant portal to review and accept this offer. After acceptance,
+		you will complete Form I-9 Section 1 and Form W-4 electronically.
+	</p>
+
+	<p>This offer may be withdrawn if not accepted within a reasonable time or if required onboarding steps are not completed.</p>
+
+	<p>Sincerely,<br>{{ company_name }} Human Resources</p>
+
+	{% if accepted_at %}
+	<p class="signature-line">Accepted electronically: {{ accepted_at }}</p>
+	{% endif %}
+</body>
+</html>

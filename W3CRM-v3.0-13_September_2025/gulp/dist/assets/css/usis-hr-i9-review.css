@@ -8,6 +8,13 @@
 	padding: 1rem;
 	background: var(--bs-body-bg, #fff);
 }
+.usis-i9-review-frame {
+	width: 100%;
+	min-height: 640px;
+	border: 1px solid var(--bs-border-color, #dee2e6);
+	border-radius: 0.25rem;
+	background: #fff;
+}
 .usis-i9-sign-canvas-wrap {
 	border: 1px dashed var(--bs-border-color, #adb5bd);
 	border-radius: 0.25rem;

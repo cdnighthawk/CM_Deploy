@@ -48,9 +48,31 @@
 		var s = status || "in_progress";
 		if (s === "submitted") return "bg-primary";
 		if (s === "under_review") return "bg-info text-dark";
+		if (s === "offer_extended") return "bg-warning text-dark";
+		if (s === "offer_accepted") return "bg-info";
 		if (s === "hired") return "bg-success";
 		if (s === "rejected") return "bg-danger";
 		return "bg-secondary";
+	}
+
+	function pathBadgeLabel(path) {
+		if (path === "standard") return "Standard (job offer)";
+		if (path === "union_dispatch") return "Union dispatch";
+		return null;
+	}
+
+	function sendOffer(body) {
+		return fetch(apiBase() + "/api/v1/hr/applications/" + encodeURIComponent(state.userId) + "/offer", {
+			method: "POST",
+			credentials: "include",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			body: JSON.stringify(body),
+		}).then(function (r) {
+			return r.json().then(function (data) {
+				if (!r.ok) throw new Error(data.error || "Request failed");
+				return data;
+			});
+		});
 	}
 
 	function patchStatus(body) {
@@ -155,6 +177,30 @@
 			.join("");
 	}
 
+	function renderOfferRoles(roles) {
+		var root = document.getElementById("usis-hr-appd-offer-roles");
+		if (!root) return;
+		root.innerHTML = (roles || [])
+			.map(function (r) {
+				return (
+					'<div class="form-check">' +
+					'<input class="form-check-input usis-hr-appd-offer-role-cb" type="checkbox" value="' +
+					esc(r.id) +
+					'" id="usis-hr-appd-offer-role-' +
+					esc(r.id) +
+					'">' +
+					'<label class="form-check-label small" for="usis-hr-appd-offer-role-' +
+					esc(r.id) +
+					'"><code>' +
+					esc(r.code) +
+					"</code> — " +
+					esc(r.name) +
+					"</label></div>"
+				);
+			})
+			.join("");
+	}
+
 	function renderActions(d) {
 		var root = document.getElementById("usis-hr-appd-actions");
 		if (!root) return;
@@ -162,13 +208,25 @@
 		var caps = d.capabilities || {};
 		var status = review.hire_status || "in_progress";
 		var html = "";
-		if (status === "submitted" || status === "under_review") {
+		if (caps.can_send_offer && (status === "submitted" || status === "under_review")) {
+			if (status === "submitted") {
+				html +=
+					'<button type="button" class="btn btn-outline-info btn-sm" id="usis-hr-appd-under-review">Mark under review</button>';
+			}
+			html +=
+				'<button type="button" class="btn btn-primary btn-sm" id="usis-hr-appd-offer-open">Send job offer</button>' +
+				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-reject-open">Reject</button>';
+		} else if ((status === "submitted" || status === "under_review") && caps.can_manual_hire) {
 			if (status === "submitted") {
 				html +=
 					'<button type="button" class="btn btn-outline-info btn-sm" id="usis-hr-appd-under-review">Mark under review</button>';
 			}
 			html +=
 				'<button type="button" class="btn btn-success btn-sm" id="usis-hr-appd-hire-open">Approve / hire</button>' +
+				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-reject-open">Reject</button>';
+		} else if (status === "offer_extended" || status === "offer_accepted") {
+			html +=
+				'<p class="text-muted small mb-2">Standard path — applicant is hired automatically after they accept the offer and sign I-9 and W-4.</p>' +
 				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-reject-open">Reject</button>';
 		}
 		if (caps.can_delete_applicant) {
@@ -203,6 +261,13 @@
 				if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
 			});
 		}
+		var offerOpen = document.getElementById("usis-hr-appd-offer-open");
+		if (offerOpen && typeof bootstrap !== "undefined") {
+			offerOpen.addEventListener("click", function () {
+				var modalEl = document.getElementById("usis-hr-appd-offer-modal");
+				if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+			});
+		}
 		var rejectOpen = document.getElementById("usis-hr-appd-reject-open");
 		if (rejectOpen && typeof bootstrap !== "undefined") {
 			rejectOpen.addEventListener("click", function () {
@@ -216,6 +281,17 @@
 				var nameEl = document.getElementById("usis-hr-appd-name");
 				runDeleteApplicant(nameEl ? nameEl.textContent : "");
 			});
+		}
+	}
+
+	function fmtDate(iso) {
+		if (!iso) return "—";
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return String(iso);
+			return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+		} catch (e) {
+			return String(iso);
 		}
 	}
 
@@ -287,6 +363,33 @@
 			badge.textContent = (review.hire_status || "in_progress").replace(/_/g, " ");
 			badge.className = "badge " + statusBadgeClass(review.hire_status);
 		}
+		var pathBadge = document.getElementById("usis-hr-appd-path-badge");
+		var pathLabel = pathBadgeLabel(d.hire_path);
+		if (pathBadge) {
+			if (pathLabel) {
+				pathBadge.textContent = pathLabel;
+				pathBadge.classList.remove("d-none");
+			} else {
+				pathBadge.classList.add("d-none");
+			}
+		}
+		var offerSummary = document.getElementById("usis-hr-appd-offer-summary");
+		var offer = d.offer || {};
+		if (offerSummary) {
+			if (offer.sent_at || offer.position) {
+				var parts = [];
+				if (offer.position) parts.push("Offer: " + offer.position);
+				if (offer.pay_description) parts.push(offer.pay_description);
+				if (offer.start_date) parts.push("Start " + offer.start_date);
+				if (offer.sent_at) parts.push("Sent " + fmtDate(offer.sent_at));
+				if (offer.accepted_at) parts.push("Accepted " + fmtDate(offer.accepted_at));
+				offerSummary.textContent = parts.join(" · ");
+				offerSummary.classList.remove("d-none");
+			} else {
+				offerSummary.classList.add("d-none");
+				offerSummary.textContent = "";
+			}
+		}
 		var notes = document.getElementById("usis-hr-appd-review-notes");
 		if (notes) {
 			notes.textContent = review.review_notes
@@ -317,6 +420,7 @@
 		renderDocThumbs(document.getElementById("usis-hr-appd-i9-docs"), d.i9 && d.i9.documents);
 		renderDocThumbs(document.getElementById("usis-hr-appd-w4-docs"), d.w4 && d.w4.documents);
 		renderHireRoles(d.staff_roles || []);
+		renderOfferRoles(d.staff_roles || []);
 		renderActions(d);
 		updateDeleteButtons(d);
 		document.getElementById("usis-hr-appd-content").classList.remove("d-none");
@@ -350,6 +454,41 @@
 	}
 
 	function wireModals() {
+		var offerBtn = document.getElementById("usis-hr-appd-offer-confirm");
+		if (offerBtn) {
+			offerBtn.addEventListener("click", function () {
+				var roleIds = [];
+				document.querySelectorAll(".usis-hr-appd-offer-role-cb:checked").forEach(function (cb) {
+					roleIds.push(cb.value);
+				});
+				if (!roleIds.length) {
+					showErr("Select at least one staff role for auto-hire.");
+					return;
+				}
+				var positionEl = document.getElementById("usis-hr-appd-offer-position");
+				var payEl = document.getElementById("usis-hr-appd-offer-pay");
+				var startEl = document.getElementById("usis-hr-appd-offer-start");
+				var notesEl = document.getElementById("usis-hr-appd-offer-notes");
+				sendOffer({
+					position: positionEl ? positionEl.value : "",
+					pay_description: payEl ? payEl.value : "",
+					start_date: startEl ? startEl.value : "",
+					role_ids: roleIds,
+					review_notes: notesEl ? notesEl.value : "",
+				})
+					.then(function () {
+						if (typeof bootstrap !== "undefined") {
+							var modalEl = document.getElementById("usis-hr-appd-offer-modal");
+							if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+						}
+						if (window.USISNotify) window.USISNotify.success("Job offer sent.");
+						loadDetail();
+					})
+					.catch(function (e) {
+						showErr(e.message || String(e));
+					});
+			});
+		}
 		var hireBtn = document.getElementById("usis-hr-appd-hire-confirm");
 		if (hireBtn) {
 			hireBtn.addEventListener("click", function () {

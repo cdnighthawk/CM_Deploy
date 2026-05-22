@@ -6,11 +6,14 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ..models import HrHireApplication
+from ..services.hire_path import HIRE_PATH_STANDARD, is_standard_path
 from ..services.object_storage import UploadCategory, delete_stored
 
 HIRE_STATUS_IN_PROGRESS = "in_progress"
 HIRE_STATUS_SUBMITTED = "submitted"
 HIRE_STATUS_UNDER_REVIEW = "under_review"
+HIRE_STATUS_OFFER_EXTENDED = "offer_extended"
+HIRE_STATUS_OFFER_ACCEPTED = "offer_accepted"
 HIRE_STATUS_HIRED = "hired"
 HIRE_STATUS_REJECTED = "rejected"
 
@@ -19,6 +22,8 @@ HIRE_STATUSES = frozenset(
         HIRE_STATUS_IN_PROGRESS,
         HIRE_STATUS_SUBMITTED,
         HIRE_STATUS_UNDER_REVIEW,
+        HIRE_STATUS_OFFER_EXTENDED,
+        HIRE_STATUS_OFFER_ACCEPTED,
         HIRE_STATUS_HIRED,
         HIRE_STATUS_REJECTED,
     }
@@ -27,6 +32,10 @@ HIRE_STATUSES = frozenset(
 TERMINAL_HIRE_STATUSES = frozenset({HIRE_STATUS_HIRED, HIRE_STATUS_REJECTED})
 
 HR_REVIEWABLE_STATUSES = frozenset({HIRE_STATUS_SUBMITTED, HIRE_STATUS_UNDER_REVIEW})
+
+HR_OFFER_REVIEWABLE_STATUSES = frozenset(
+    {HIRE_STATUS_SUBMITTED, HIRE_STATUS_UNDER_REVIEW, HIRE_STATUS_OFFER_EXTENDED}
+)
 
 
 class HireReviewError(Exception):
@@ -42,7 +51,21 @@ def utc_now() -> datetime:
 def applicant_wizard_mutable(hire_row: HrHireApplication | None) -> bool:
     if hire_row is None:
         return True
-    return hire_row.hire_status not in TERMINAL_HIRE_STATUSES
+    if hire_row.hire_status in TERMINAL_HIRE_STATUSES:
+        return False
+    if hire_row.hire_status == HIRE_STATUS_OFFER_EXTENDED:
+        return False
+    return True
+
+
+def applicant_may_edit_application(hire_row: HrHireApplication | None) -> bool:
+    if not applicant_wizard_mutable(hire_row):
+        return False
+    if hire_row is None:
+        return True
+    if hire_row.hire_status in (HIRE_STATUS_OFFER_ACCEPTED, HIRE_STATUS_OFFER_EXTENDED):
+        return False
+    return True
 
 
 def mark_submitted_for_review(hire_row: HrHireApplication, *, when: datetime | None = None) -> None:
@@ -80,6 +103,23 @@ def application_position(hire_row: HrHireApplication | None) -> str | None:
 def wizard_progress_percent(hire_row: HrHireApplication | None) -> int:
     if hire_row is None:
         return 0
+    if is_standard_path(hire_row):
+        steps = 0
+        done = 0
+        if hire_row.submitted_at is not None:
+            done += 1
+        steps += 1
+        if hire_row.offer_accepted_at is not None:
+            done += 1
+        steps += 1
+        if hire_row.i9_signed_at is not None:
+            done += 1
+        steps += 1
+        if hire_row.w4_signed_at is not None:
+            done += 1
+        steps += 1
+        return int(round(100 * done / steps)) if steps else 0
+
     steps = 0
     done = 0
     if hire_row.submitted_at is not None:
@@ -109,6 +149,9 @@ def serialize_hire_status(hire_row: HrHireApplication | None) -> dict[str, Any]:
             "progress_percent": 0,
             "wizard_locked": False,
         }
+    locked = hire_row.hire_status in TERMINAL_HIRE_STATUSES
+    if hire_row.hire_status == HIRE_STATUS_OFFER_EXTENDED:
+        locked = True
     return {
         "hire_status": hire_row.hire_status or HIRE_STATUS_IN_PROGRESS,
         "review_notes": hire_row.review_notes,
@@ -118,7 +161,32 @@ def serialize_hire_status(hire_row: HrHireApplication | None) -> dict[str, Any]:
             hire_row.submitted_for_review_at.isoformat() if hire_row.submitted_for_review_at else None
         ),
         "progress_percent": wizard_progress_percent(hire_row),
-        "wizard_locked": hire_row.hire_status in TERMINAL_HIRE_STATUSES,
+        "wizard_locked": locked,
+    }
+
+
+def serialize_offer_block(hire_row: HrHireApplication | None) -> dict[str, Any]:
+    if hire_row is None:
+        return {
+            "position": None,
+            "pay_description": None,
+            "start_date": None,
+            "sent_at": None,
+            "accepted_at": None,
+            "document_id": None,
+            "preview_available": False,
+        }
+    return {
+        "position": hire_row.offer_position,
+        "pay_description": hire_row.offer_pay_description,
+        "start_date": hire_row.offer_start_date.isoformat() if hire_row.offer_start_date else None,
+        "sent_at": hire_row.offer_sent_at.isoformat() if hire_row.offer_sent_at else None,
+        "accepted_at": hire_row.offer_accepted_at.isoformat() if hire_row.offer_accepted_at else None,
+        "document_id": str(hire_row.offer_document_id) if hire_row.offer_document_id else None,
+        "preview_available": bool(
+            hire_row.offer_document_id
+            and hire_row.hire_status in (HIRE_STATUS_OFFER_EXTENDED, HIRE_STATUS_OFFER_ACCEPTED, HIRE_STATUS_HIRED)
+        ),
     }
 
 
@@ -127,9 +195,22 @@ def allowed_hr_status_transition(current: str, new: str) -> bool:
         return False
     if new == HIRE_STATUS_UNDER_REVIEW:
         return current in HR_REVIEWABLE_STATUSES
-    if new in TERMINAL_HIRE_STATUSES:
+    if new == HIRE_STATUS_OFFER_EXTENDED:
         return current in HR_REVIEWABLE_STATUSES
+    if new == HIRE_STATUS_OFFER_ACCEPTED:
+        return current == HIRE_STATUS_OFFER_EXTENDED
+    if new in TERMINAL_HIRE_STATUSES:
+        if new == HIRE_STATUS_REJECTED:
+            return current in HR_OFFER_REVIEWABLE_STATUSES or current == HIRE_STATUS_OFFER_ACCEPTED
+        return current in HR_REVIEWABLE_STATUSES or current == HIRE_STATUS_OFFER_ACCEPTED
     return False
+
+
+def can_hr_manual_hire(hire_row: HrHireApplication) -> bool:
+    """Union dispatch applicants are hired manually by HR after full packet review."""
+    if hire_row.hire_path == HIRE_PATH_STANDARD:
+        return False
+    return (hire_row.hire_status or HIRE_STATUS_IN_PROGRESS) in HR_REVIEWABLE_STATUSES
 
 
 def purge_hire_application_files(hire_row: HrHireApplication) -> None:

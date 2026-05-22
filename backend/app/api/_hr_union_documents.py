@@ -18,7 +18,9 @@ from ..services.hr_union_documents import (
     UNION_DOC_MAX_PER_KIND,
     serialize_union_document,
 )
+from ..services.hr_hire_upload import resolve_hire_doc_upload
 from ..services.hire_application_review import applicant_wizard_mutable
+from ..services.hire_path import applicant_may_upload_union
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file
 from ._perms import current_user
 from .v1 import _jsonify
@@ -107,6 +109,14 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
         if _hire_wizard_locked(hire_row):
             return _jsonify({"entity": "hr_union_document", "error": "Hire wizard is complete and locked"}), 409
 
+        if not applicant_may_upload_union(hire_row):
+            return _jsonify(
+                {
+                    "entity": "hr_union_document",
+                    "error": "Union document uploads are only available for union dispatch applicants",
+                }
+            ), 403
+
         if _union_upload_requires_w4(hire_row):
             return _jsonify(
                 {
@@ -145,14 +155,16 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
             return _jsonify({"entity": "hr_union_document", "error": "missing file field (multipart form-data)"}), 400
 
         raw_name = secure_filename(f.filename) or "photo.jpg"
-        ext = Path(raw_name).suffix.lower() or ".jpg"
-        if ext not in UNION_DOC_EXT:
+        resolved = resolve_hire_doc_upload(f.filename, f.mimetype)
+        if resolved is None:
+            ext = Path(raw_name).suffix.lower() or "(unknown)"
             return _jsonify(
                 {
                     "entity": "hr_union_document",
-                    "error": f"unsupported file type ({ext}); allowed: {', '.join(sorted(UNION_DOC_EXT))}",
+                    "error": f"unsupported file type {ext}; allowed: {', '.join(sorted(UNION_DOC_EXT))}",
                 }
             ), 400
+        raw_name, ext = resolved
 
         cl = request.content_length
         if cl is not None and cl > UNION_DOC_MAX_BYTES:

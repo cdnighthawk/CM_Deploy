@@ -272,7 +272,7 @@
 		return { ok: errors.length === 0, errors: errors };
 	}
 
-	function inp(name, val, type, extraCls, ro) {
+	function inp(name, val, type, extraCls, ro, placeholder) {
 		type = type || "text";
 		var cls = "form-control form-control-sm" + (extraCls || "") + (ro ? " bg-light" : "");
 		return (
@@ -285,6 +285,7 @@
 			'" value="' +
 			esc(val != null ? val : "") +
 			'"' +
+			(placeholder ? ' placeholder="' + esc(placeholder) + '"' : "") +
 			(ro ? " readonly" : "") +
 			">"
 		);
@@ -433,7 +434,7 @@
 			roField("city", "City or town") +
 			roField("state", "State") +
 			roField("zip", "ZIP code") +
-			fieldRow("Date of birth", inp("date_of_birth", data.date_of_birth, "date", "", locked)) +
+			fieldRow("Date of birth", inp("date_of_birth", fmtDateInput(data.date_of_birth), "text", "", locked, "mm/dd/yyyy")) +
 			fieldRow("U.S. Social Security number", inp("ssn", data.ssn, "password", "", locked)) +
 			roField("email", "Email address") +
 			roField("telephone", "Telephone number") +
@@ -445,7 +446,7 @@
 			'<div class="i9-conditional i9-alien-extra mt-2" style="display:none">' +
 			fieldRow("Form I-94 admission number", inp("admission_i94", data.admission_i94, "text", "", locked)) +
 			fieldRow("Foreign passport number and country", inp("foreign_passport", data.foreign_passport, "text", "", locked)) +
-			fieldRow("Work authorization expiration", inp("work_authorization_expiration", data.work_authorization_expiration, "date", "", locked)) +
+			fieldRow("Work authorization expiration", inp("work_authorization_expiration", fmtDateInput(data.work_authorization_expiration), "text", "", locked, "mm/dd/yyyy")) +
 			"</div>" +
 			'<hr class="my-3"><h6 class="fw-semibold">Identity and employment authorization documents</h6>' +
 			'<p class="text-muted small mb-2">Select the document(s) you will present for Section 2 verification, then enter issuing authority and document number.</p>' +
@@ -498,7 +499,32 @@
 				out[name] = String(val).trim();
 			}
 		});
-		return normalizeSection1Docs(out);
+		return normalizeSection1Docs(normalizeSection1Dates(out));
+	}
+
+	function normalizeSection1Dates(data) {
+		data.date_of_birth = parseUsDateInput(data.date_of_birth);
+		data.work_authorization_expiration = parseUsDateInput(data.work_authorization_expiration);
+		return data;
+	}
+
+	function parseUsDateInput(val) {
+		var s = String(val || "").trim();
+		if (!s) return "";
+		if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+		var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+		if (m) {
+			return m[3] + "-" + String(m[1]).padStart(2, "0") + "-" + String(m[2]).padStart(2, "0");
+		}
+		return s;
+	}
+
+	function fmtDateInput(val) {
+		var s = String(val || "").trim();
+		if (!s) return "";
+		var parts = s.split("-");
+		if (parts.length === 3 && parts[0].length === 4) return parts[1] + "/" + parts[2] + "/" + parts[0];
+		return s;
 	}
 
 	function fmtSsn(val) {

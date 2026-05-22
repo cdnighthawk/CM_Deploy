@@ -37,6 +37,8 @@
 		var cls = "bg-secondary";
 		if (s === "submitted") cls = "bg-primary";
 		if (s === "under_review") cls = "bg-info text-dark";
+		if (s === "offer_extended") cls = "bg-warning text-dark";
+		if (s === "offer_accepted") cls = "bg-info";
 		if (s === "hired") cls = "bg-success";
 		if (s === "rejected") cls = "bg-danger";
 		return '<span class="badge ' + cls + '">' + esc(s.replace(/_/g, " ")) + "</span>";

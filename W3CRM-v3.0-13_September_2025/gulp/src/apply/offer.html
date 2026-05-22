@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "apply/offer.html",
+	})
+
+	<title>Job offer — USIS Careers</title>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+</head>
+<body class="usis-public-page" data-usis-hire-step="offer">
+
+	@@include("../elements/header-apply.html")
+
+	<main class="flex-grow-1">
+		<section class="usis-public-hero pb-4">
+			<div class="container">
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Job offer</p>
+				<h1 class="mb-2">Review your offer</h1>
+				<p class="text-muted mb-0">Read the letter below. Accepting unlocks Form I-9 and W-4 in the portal.</p>
+			</div>
+		</section>
+
+		<div class="container pb-5">
+			<div id="usis-hire-auth-gate" class="card border-warning shadow-sm mb-3 d-none">
+				<div class="card-body">
+					<h6 class="fw-semibold mb-2">Sign in to view your offer</h6>
+					<a class="btn btn-primary btn-sm" id="usis-hire-login-link" href="#">Sign in</a>
+				</div>
+			</div>
+			<div id="usis-hire-err" class="alert alert-danger d-none" role="alert"></div>
+			<div id="usis-hire-redirect-info" class="alert alert-info d-none mb-3" role="status"></div>
+			<div id="usis-hire-step-prereq" class="alert alert-info py-2 small mb-3 d-none" role="status"></div>
+			<div id="usis-hire-offer-accepted" class="alert alert-success d-none mb-3" role="status">
+				You accepted this offer. Continue to Form I-9 using the steps above or the button below.
+			</div>
+
+			<div id="usis-hire-offer-workspace" class="d-none">
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body p-0">
+						<iframe id="usis-hire-offer-frame" title="Job offer letter" class="w-100 border-0" style="min-height:640px;"></iframe>
+					</div>
+				</div>
+				<div class="d-flex flex-wrap gap-2" id="usis-hire-offer-actions">
+					<button type="button" class="btn btn-success" id="usis-hire-offer-accept">Accept job offer</button>
+					<a class="btn btn-outline-secondary" id="usis-hire-offer-i9" href="apply/i9.html">Continue to Form I-9</a>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	@@include("../elements/footer-public.html")
+	@@include("../elements/script-public.html")
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-hire-core.js"></script>
+	<script src="assets/js/usis-hire-offer.js"></script>
+</body>
+</html>

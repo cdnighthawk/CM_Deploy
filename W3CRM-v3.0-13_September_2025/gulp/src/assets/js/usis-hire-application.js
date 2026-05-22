@@ -19,12 +19,18 @@
 				var ok = document.getElementById("usis-hire-app-saved-ok");
 				if (ok) ok.classList.remove("d-none");
 			}
+			var nextStep = w ? core.nextStepAfterApplication(w) : "i9";
+			var savedMsg = document.getElementById("usis-hire-app-saved-ok");
+			if (savedMsg && w && core.isStandardPath(w)) {
+				savedMsg.textContent =
+					"Application saved — HR will review your submission. Watch your email for a job offer, or return here to check status.";
+			}
 			core.wireApplyNav({
 				backHref: "../apply.html",
 				onSaveNext: function () {
 					core.submitApplication()
-						.then(function () {
-							window.location.href = core.applyStepHref("i9");
+						.then(function (nw) {
+							window.location.href = core.applyStepHref(nw ? core.nextStepAfterApplication(nw) : nextStep);
 						})
 						.catch(function (e) {
 							var msg = core.friendlyFetchError ? core.friendlyFetchError(e) : (e.message || String(e));
@@ -32,7 +38,7 @@
 							if (window.USISNotify) window.USISNotify.error(msg);
 						});
 				},
-				nextHref: w && core.applicationSaved(w) ? core.applyStepHref("i9") : null,
+				nextHref: w && core.applicationSaved(w) ? core.applyStepHref(nextStep) : null,
 			});
 		});
 	}

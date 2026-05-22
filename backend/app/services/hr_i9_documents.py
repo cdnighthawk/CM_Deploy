@@ -6,11 +6,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from ..models import HrHireI9DocumentFile
-from .object_storage import UploadCategory, local_path, local_root
+from ..services.hr_hire_upload import HR_HIRE_DOC_EXT, resolve_hire_doc_upload
+from ..services.object_storage import UploadCategory, local_path, local_root
 
 I9_DOC_SLOTS = frozenset({"list_a", "list_b", "list_c"})
-I9_DOC_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"})
+I9_DOC_EXT = HR_HIRE_DOC_EXT
 I9_DOC_MAX_PER_SLOT = 3
 I9_DOC_MAX_BYTES = 10_485_760  # 10 MB
 

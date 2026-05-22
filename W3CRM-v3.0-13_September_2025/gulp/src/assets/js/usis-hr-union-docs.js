@@ -5,6 +5,7 @@
 	"use strict";
 
 	var MAX_PER_KIND = 3;
+	var FILE_ACCEPT = "image/*,.pdf,application/pdf";
 	var docsByKind = { union_card: [], union_dispatch: [] };
 	var locked = false;
 	var apiBaseFn = function () {
@@ -46,6 +47,44 @@
 		if (global.USISNotify) global.USISNotify.success(msg);
 	}
 
+	function parseApiJson(r) {
+		return r.text().then(function (text) {
+			var j;
+			try {
+				j = text ? JSON.parse(text) : {};
+			} catch (e) {
+				throw new Error(r.ok ? "Invalid server response" : text || r.statusText || "Request failed");
+			}
+			return j;
+		});
+	}
+
+	function isPdfItem(it) {
+		var mime = String((it && it.mime_type) || "").toLowerCase();
+		var name = String((it && it.original_filename) || "").toLowerCase();
+		return mime.indexOf("pdf") >= 0 || name.slice(-4) === ".pdf";
+	}
+
+	function thumbHtml(it, label) {
+		if (isPdfItem(it)) {
+			return (
+				'<a href="' +
+				esc(fileUrl(it)) +
+				'" target="_blank" rel="noopener" class="d-flex align-items-center justify-content-center text-decoration-none text-dark bg-light" style="width:96px;height:96px">' +
+				'<span class="small text-center px-1">PDF<br>' +
+				esc(label) +
+				"</span></a>"
+			);
+		}
+		return (
+			'<img src="' +
+			esc(fileUrl(it)) +
+			'" alt="' +
+			esc(label) +
+			'" class="d-block" width="96" height="96" style="object-fit:cover">'
+		);
+	}
+
 	function upload(kind, file) {
 		var fd = new FormData();
 		fd.append("file", file);
@@ -55,7 +94,7 @@
 			credentials: "include",
 			body: fd,
 		}).then(function (r) {
-			return r.json().then(function (j) {
+			return parseApiJson(r).then(function (j) {
 				if (!r.ok) throw new Error(j.error || "Upload failed");
 				return j;
 			});
@@ -68,7 +107,7 @@
 			credentials: "include",
 			headers: { Accept: "application/json" },
 		}).then(function (r) {
-			return r.json().then(function (j) {
+			return parseApiJson(r).then(function (j) {
 				if (!r.ok) throw new Error(j.error || "Delete failed");
 				return j;
 			});
@@ -84,7 +123,7 @@
 			'<p class="small fw-semibold mb-1">' +
 			(isCard ? "Union card photos" : "Union dispatch photos") +
 			"</p>" +
-			'<p class="text-muted small mb-2">Take a photo or upload an image' +
+			'<p class="text-muted small mb-2">Take a photo or upload an image or PDF' +
 			(isCard ? " (optional)" : "") +
 			". Up to " +
 			MAX_PER_KIND +
@@ -102,11 +141,7 @@
 						: "Photo " + (idx + 1);
 				html +=
 					'<div class="usis-union-doc-thumb position-relative border rounded overflow-hidden">' +
-					'<img src="' +
-					esc(fileUrl(it)) +
-					'" alt="' +
-					esc(label) +
-					'" class="d-block" width="96" height="96" style="object-fit:cover">' +
+					thumbHtml(it, label) +
 					'<span class="badge text-bg-secondary position-absolute top-0 start-0 m-1" style="font-size:0.65rem">' +
 					esc(label) +
 					"</span>";
@@ -124,8 +159,10 @@
 			html +=
 				'<div class="d-flex flex-wrap gap-2 align-items-center">' +
 				'<label class="btn btn-outline-primary btn-sm mb-0 usis-union-doc-add">' +
-				"Add photo" +
-				'<input type="file" class="d-none" accept="image/*" capture="environment" data-kind="' +
+				"Add photo or PDF" +
+				'<input type="file" class="d-none" accept="' +
+				FILE_ACCEPT +
+				'" capture="environment" data-kind="' +
 				esc(kind) +
 				'">' +
 				"</label>" +

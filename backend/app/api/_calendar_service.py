@@ -41,6 +41,10 @@ CATEGORY_LABELS: dict[str, str] = {
     "project_milestone": "Project milestone",
 }
 
+ALLOWED_PROJECT_STATUSES = frozenset(
+    {"planning", "active", "on_hold", "complete", "archived", "cancelled"}
+)
+
 _PROJECT_MILESTONE_FIELDS: tuple[tuple[str, str], ...] = (
     ("contract_date", "Contract date"),
     ("start_date", "Project start"),
@@ -87,7 +91,21 @@ def _project_filter_ids(cu: CurrentUser, project_id: uuid.UUID | None) -> list[u
     return list(allowed)
 
 
-def _project_scope_filter(cu: CurrentUser, project_id: uuid.UUID | None, model_project_col):
+def _parse_project_statuses(raw: str | None) -> frozenset[str] | None:
+    if not raw or not str(raw).strip():
+        return None
+    parts = {p.strip().lower() for p in str(raw).split(",") if p.strip()}
+    chosen = parts & ALLOWED_PROJECT_STATUSES
+    return frozenset(chosen) if chosen else None
+
+
+def _project_scope_filter(
+    cu: CurrentUser,
+    project_id: uuid.UUID | None,
+    model_project_col,
+    *,
+    project_statuses: frozenset[str] | None = None,
+):
     """SQLAlchemy filter limiting rows to accessible, non-deleted projects."""
     ids = _project_filter_ids(cu, project_id)
     if ids is not None and not ids:
@@ -95,6 +113,8 @@ def _project_scope_filter(cu: CurrentUser, project_id: uuid.UUID | None, model_p
     clauses = [Project.deleted_at.is_(None)]
     if ids is not None:
         clauses.append(model_project_col.in_(ids))
+    elif project_statuses:
+        clauses.append(Project.status.in_(sorted(project_statuses)))
     return and_(*clauses)
 
 
@@ -161,6 +181,7 @@ def list_calendar_events(
     categories: frozenset[str] | None = None,
     range_start: date | None = None,
     range_end: date | None = None,
+    project_statuses: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     cats = categories or CALENDAR_CATEGORIES
     project_ids = _project_filter_ids(cu, project_id)
@@ -174,7 +195,14 @@ def list_calendar_events(
         q = (
             select(ProjectScheduleItem, Project)
             .join(Project, Project.id == ProjectScheduleItem.project_id)
-            .where(_project_scope_filter(cu, project_id, ProjectScheduleItem.project_id))
+            .where(
+                _project_scope_filter(
+                    cu,
+                    project_id,
+                    ProjectScheduleItem.project_id,
+                    project_statuses=project_statuses,
+                )
+            )
             .order_by(ProjectScheduleItem.start_date, ProjectScheduleItem.id)
         )
         for row, proj in db.session.execute(q):
@@ -205,7 +233,12 @@ def list_calendar_events(
             select(ProjectMaterialOrder, Project)
             .join(Project, Project.id == ProjectMaterialOrder.project_id)
             .where(
-                _project_scope_filter(cu, project_id, ProjectMaterialOrder.project_id),
+                _project_scope_filter(
+                    cu,
+                    project_id,
+                    ProjectMaterialOrder.project_id,
+                    project_statuses=project_statuses,
+                ),
                 ProjectMaterialOrder.status != "cancelled",
             )
             .order_by(ProjectMaterialOrder.expected_delivery_date, ProjectMaterialOrder.id)
@@ -258,7 +291,12 @@ def list_calendar_events(
             select(Rfi, Project)
             .join(Project, Project.id == Rfi.project_id)
             .where(
-                _project_scope_filter(cu, project_id, Rfi.project_id),
+                _project_scope_filter(
+                    cu,
+                    project_id,
+                    Rfi.project_id,
+                    project_statuses=project_statuses,
+                ),
                 Rfi.is_deleted.is_(False),
                 Rfi.due_at.is_not(None),
             )
@@ -293,7 +331,12 @@ def list_calendar_events(
             select(Submittal, Project)
             .join(Project, Project.id == Submittal.project_id)
             .where(
-                _project_scope_filter(cu, project_id, Submittal.project_id),
+                _project_scope_filter(
+                    cu,
+                    project_id,
+                    Submittal.project_id,
+                    project_statuses=project_statuses,
+                ),
                 Submittal.due_at.is_not(None),
             )
             .order_by(Submittal.due_at, Submittal.id)
@@ -328,7 +371,12 @@ def list_calendar_events(
             .join(Project, Project.id == Rfp.project_id)
             .where(
                 Rfp.due_at.is_not(None),
-                _project_scope_filter(cu, project_id, Rfp.project_id),
+                _project_scope_filter(
+                    cu,
+                    project_id,
+                    Rfp.project_id,
+                    project_statuses=project_statuses,
+                ),
             )
             .order_by(Rfp.due_at, Rfp.id)
         )
@@ -357,7 +405,14 @@ def list_calendar_events(
 
     # --- Project milestones ---
     if "project_milestone" in cats:
-        q = select(Project).where(_project_scope_filter(cu, project_id, Project.id))
+        q = select(Project).where(
+            _project_scope_filter(
+                cu,
+                project_id,
+                Project.id,
+                project_statuses=project_statuses,
+            )
+        )
         for proj in db.session.scalars(q).all():
             for field, label in _PROJECT_MILESTONE_FIELDS:
                 val: date | None = getattr(proj, field, None)
@@ -387,4 +442,5 @@ def list_calendar_events(
         "categories": sorted(cats),
         "entity": "calendar_events",
         "project_id": str(project_id) if project_id else None,
+        "project_statuses": sorted(project_statuses) if project_statuses else None,
     }

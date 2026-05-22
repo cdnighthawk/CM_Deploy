@@ -27,11 +27,15 @@ from ..services.hire_application_review import (
     HireReviewError,
     allowed_hr_status_transition,
     application_position,
+    can_hr_manual_hire,
     parse_application_payload,
     purge_hire_application_files,
     serialize_hire_status,
+    serialize_offer_block,
     utc_now,
 )
+from ..services.hr_job_offer import extend_job_offer
+from ._notifications import send_job_offer_email
 from ..services.hr_i9_crypto import decrypt_section1
 from ..services.hr_w4_crypto import decrypt_w4
 from ..services.hr_hire_signed_forms import signed_form_staff_url
@@ -102,6 +106,7 @@ def _serialize_list_item(hire_row: HrHireApplication, cu: CurrentUser) -> dict[s
         "name": _user_display(u) if u else "",
         "email": u.email if u else None,
         "position": application_position(hire_row),
+        "hire_path": hire_row.hire_path,
         "submitted_for_review_at": review.get("submitted_for_review_at"),
         "hire_status": review.get("hire_status"),
         "progress_percent": review.get("progress_percent"),
@@ -161,6 +166,11 @@ def _apply_status_patch(
         raise HireReviewError("review_notes is required when rejecting an application", 400)
 
     if new_status == HIRE_STATUS_HIRED:
+        if not can_hr_manual_hire(hire_row):
+            raise HireReviewError(
+                "standard path applicants are hired automatically after they accept the offer and sign I-9 and W-4",
+                400,
+            )
         ids = role_ids or []
         roles = _validate_staff_role_ids(ids)
         u = hire_row.user
@@ -314,6 +324,8 @@ def register_hr_application_routes(bp: Blueprint) -> None:
                     "submitted_at": _iso(hire_row.submitted_at),
                     "payload": app_payload,
                 },
+                "hire_path": hire_row.hire_path,
+                "offer": serialize_offer_block(hire_row),
                 "review": serialize_hire_status(hire_row),
                 "checklist": checklist,
                 "i9": {
@@ -356,6 +368,9 @@ def register_hr_application_routes(bp: Blueprint) -> None:
                 "capabilities": {
                     "can_review": _require_hr_reviewer(cu),
                     "can_delete_applicant": _can_delete_applicant(cu) and is_applicant_only_user(u),
+                    "can_send_offer": hire_row.hire_path == "standard"
+                    and (hire_row.hire_status or "") in ("submitted", "under_review"),
+                    "can_manual_hire": can_hr_manual_hire(hire_row),
                 },
             }
         )
@@ -398,6 +413,86 @@ def register_hr_application_routes(bp: Blueprint) -> None:
         if resp is None:
             return _jsonify({"entity": "hr_application_document", "error": "file not found on server"}), 404
         return resp
+
+    @bp.post("/hr/applications/<uuid:user_id>/offer")
+    def hr_application_send_offer(user_id: uuid.UUID):
+        cu = current_user()
+        if not _require_hr_reviewer(cu):
+            return _forbidden("hr_application_offer")
+
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return _jsonify({"entity": "hr_application_offer", "error": "JSON body required"}), 400
+
+        position = str(data.get("position") or "").strip()
+        pay_description = str(data.get("pay_description") or data.get("pay") or "").strip()
+        start_raw = str(data.get("start_date") or "").strip()
+        if not position or not pay_description or not start_raw:
+            return _jsonify(
+                {
+                    "entity": "hr_application_offer",
+                    "error": "position, pay_description, and start_date are required",
+                }
+            ), 400
+
+        try:
+            from datetime import date as date_cls
+
+            start_date = date_cls.fromisoformat(start_raw)
+        except ValueError:
+            return _jsonify({"entity": "hr_application_offer", "error": "start_date must be YYYY-MM-DD"}), 400
+
+        hire_row = _load_hire_detail(user_id)
+        if hire_row is None:
+            return _jsonify({"entity": "hr_application_offer", "error": "not found"}), 404
+
+        u = hire_row.user
+        if u is None:
+            return _jsonify({"entity": "hr_application_offer", "error": "user not found"}), 404
+
+        try:
+            role_ids = admin_users_svc._parse_role_ids(data.get("role_ids"))
+        except admin_users_svc.ApiError as exc:
+            return _jsonify({"entity": "hr_application_offer", "error": exc.message}), exc.status
+
+        assert cu.user is not None
+        try:
+            extend_job_offer(
+                hire_row=hire_row,
+                user=u,
+                hr_user_id=cu.user.id,
+                position=position,
+                pay_description=pay_description,
+                start_date=start_date,
+                role_ids=role_ids,
+                review_notes=data.get("review_notes"),
+            )
+        except HireReviewError as exc:
+            return _jsonify({"entity": "hr_application_offer", "error": exc.message}), exc.status
+
+        send_job_offer_email(to=u.email or "", applicant_name=_user_display(u))
+
+        db.session.add(
+            AuditLog(
+                user_id=cu.user.id,
+                entity_type="hr_hire_application",
+                entity_id=hire_row.id,
+                action="offer_extended",
+                ip_address=_client_ip_for_audit(),
+                message=f"Job offer sent to user {user_id}",
+            )
+        )
+        db.session.commit()
+        db.session.refresh(hire_row)
+
+        return _jsonify(
+            {
+                "entity": "hr_application_offer",
+                "ok": True,
+                "review": serialize_hire_status(hire_row),
+                "offer": serialize_offer_block(hire_row),
+            }
+        )
 
     @bp.patch("/hr/applications/<uuid:user_id>/status")
     def hr_application_status_patch(user_id: uuid.UUID):

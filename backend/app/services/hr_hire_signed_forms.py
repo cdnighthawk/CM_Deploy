@@ -160,6 +160,59 @@ def render_signed_w4_html(
     )
 
 
+def render_i9_preview_html(
+    *,
+    user: User,
+    section1: dict[str, Any],
+    hire_row: HrHireApplication | None,
+) -> str:
+    signed = bool(hire_row and hire_row.i9_signed_at)
+    status = section1.get("citizenship_status")
+    doc_choice = section1.get("document_choice")
+    identity_docs: list[tuple[str, str]] = []
+    if doc_choice == "list_a":
+        identity_docs.extend(_doc_block_lines(section1.get("list_a")))
+    elif doc_choice == "list_b_c":
+        identity_docs.append(("List B", ""))
+        identity_docs.extend(_doc_block_lines(section1.get("list_b")))
+        identity_docs.append(("List C", ""))
+        identity_docs.extend(_doc_block_lines(section1.get("list_c")))
+
+    return render_template(
+        "documents/hire_i9_preview.html",
+        employee_name=_employee_name(user, section1),
+        employee_email=user.email,
+        signed=signed,
+        signed_at=_fmt_dt(hire_row.i9_signed_at) if signed and hire_row else "",
+        typed_full_name=_employee_name(user, section1),
+        signature_png=hire_row.i9_signature_png if signed and hire_row else "",
+        section1=section1,
+        citizenship_label=_CITIZENSHIP_LABELS.get(str(status or ""), str(status or "")),
+        document_choice_label="List A document" if doc_choice == "list_a" else "List B and List C documents",
+        identity_docs=identity_docs,
+    )
+
+
+def render_w4_preview_html(
+    *,
+    user: User,
+    w4: dict[str, Any],
+    hire_row: HrHireApplication | None,
+) -> str:
+    signed = bool(hire_row and hire_row.w4_signed_at)
+    return render_template(
+        "documents/hire_w4_preview.html",
+        employee_name=_employee_name(user, w4),
+        employee_email=user.email,
+        signed=signed,
+        signed_at=_fmt_dt(hire_row.w4_signed_at) if signed and hire_row else "",
+        typed_full_name=_employee_name(user, w4),
+        signature_png=hire_row.w4_signature_png if signed and hire_row else "",
+        w4=w4,
+        filing_status_label=_FILING_STATUS_LABELS.get(str(w4.get("filing_status") or ""), str(w4.get("filing_status") or "")),
+    )
+
+
 def _upsert_employee_document(*, user_id: uuid.UUID, title: str, document_id: uuid.UUID) -> None:
     row = db.session.scalar(
         select(HrEmployeeDocument).where(

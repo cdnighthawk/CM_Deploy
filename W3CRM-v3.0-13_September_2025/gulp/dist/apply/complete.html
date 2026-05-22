@@ -71,10 +71,11 @@
 		<nav class="usis-apply-steps small" aria-label="Application steps">
 			<ol class="list-unstyled d-flex flex-wrap gap-2 mb-0">
 				<li class="usis-apply-step" data-step="application"><a href="apply/application.html">1. Application</a></li>
+				<li class="usis-apply-step d-none" data-step="offer"><a href="apply/offer.html">2. Job offer</a></li>
 				<li class="usis-apply-step" data-step="i9"><a href="apply/i9.html">2. Form I-9</a></li>
 				<li class="usis-apply-step" data-step="w4"><a href="apply/w4.html">3. Form W-4</a></li>
 				<li class="usis-apply-step" data-step="union"><a href="apply/union.html">4. Union docs <span class="text-muted">(optional)</span></a></li>
-				<li class="usis-apply-step" data-step="complete"><a href="apply/complete.html">5. Done</a></li>
+				<li class="usis-apply-step" data-step="complete"><a href="apply/complete.html">Done</a></li>
 			</ol>
 		</nav>
 	</div>
@@ -94,7 +95,7 @@
 			<div id="usis-hire-review-banner" class="alert d-none mb-3" role="status"></div>
 			<div class="card border-0 shadow-sm">
 				<div class="card-body p-4">
-					<p class="mb-3">Our HR team will review your submission and follow up with next steps. You may sign out below or close this window.</p>
+					<p class="mb-3" id="usis-hire-complete-body">Our HR team will review your submission and follow up with next steps. You may sign out below or close this window.</p>
 					<p class="text-muted small mb-4">HR may still require original I-9 / W-4 documents outside this app.</p>
 					<div class="d-flex flex-wrap gap-2">
 						<a class="btn btn-outline-secondary" href="../apply.html">Back to careers page</a>
@@ -125,8 +126,8 @@
 		if (!core) return;
 		core.checkSession().then(function (w) {
 			if (!w) return;
-			if (core.state.authenticated && !core.w4Complete(core.state.wizard)) {
-				core.redirectToStep(core.firstAllowedStepId(core.state.wizard));
+			if (!core.canAccessStep("complete", w)) {
+				core.redirectToStep(core.firstAllowedStepId(w));
 				return;
 			}
 			core.renderCompleteReviewStatus(w);

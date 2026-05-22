@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from ..models import HrHireUnionDocumentFile
+from .hr_hire_upload import HR_HIRE_DOC_EXT
 from .object_storage import UploadCategory, local_path, local_root
 
 UNION_DOC_KINDS = frozenset({"union_card", "union_dispatch"})
-UNION_DOC_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic"})
+UNION_DOC_EXT = HR_HIRE_DOC_EXT
 UNION_DOC_MAX_PER_KIND = 3
 UNION_DOC_MAX_BYTES = 10_485_760  # 10 MB
 

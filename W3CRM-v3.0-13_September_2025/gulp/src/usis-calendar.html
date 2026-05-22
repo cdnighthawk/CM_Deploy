@@ -10,8 +10,35 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<style>
-		#usis-calendar-main { min-height: 32rem; }
-		.usis-cal-legend .badge { font-weight: 500; }
+		.usis-cal-page { padding-bottom: 0; }
+		.usis-cal-shell {
+			display: flex;
+			flex-direction: column;
+			min-height: calc(100vh - 5.5rem);
+		}
+		.usis-cal-panel {
+			flex: 1 1 auto;
+			min-height: 0;
+		}
+		.usis-cal-panel .card-body {
+			height: calc(100vh - 8.5rem);
+			min-height: 28rem;
+			padding: 0.75rem;
+		}
+		#usis-calendar-main {
+			height: 100%;
+		}
+		.usis-cal-filter-menu {
+			width: min(22rem, 92vw);
+			max-height: min(70vh, 32rem);
+			overflow-y: auto;
+		}
+		#usis-cal-filter-summary {
+			max-width: 14rem;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 	</style>
 
 </head>
@@ -29,31 +56,22 @@
 
 		@@include("elements/deznav-construction.html")
 
-		<main class="content-body">
+		<main class="content-body usis-cal-page">
 
-			<div class="page-title">
+			<div class="page-title py-2 mb-0">
 				@@include("elements/breadcrumb.html", {
 					"fileName": "Calendar",
 				})
 			</div>
 
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
-					<div class="card-body py-2">
-						<h6 class="mb-1">USIS Calendar</h6>
-						<p class="text-muted small mb-0">Company-wide and project-specific views of procurement dates, installation windows, RFIs, submittals, RFPs, and project milestones.</p>
-					</div>
-				</div>
-			</div>
-
-			<div class="container-fluid">
-				<div class="row g-3">
-					<div class="col-xxl-3 col-xl-4">
-						<div class="card h-auto">
-							<div class="card-header border-0 pb-0">
-								<h5 class="card-title mb-1">Filters</h5>
-							</div>
-							<div class="card-body">
+			<div class="container-fluid px-2 px-sm-3">
+				<div class="usis-cal-shell">
+					<div class="usis-cal-toolbar d-flex flex-wrap align-items-center gap-2 mb-2">
+						<div class="dropdown">
+							<button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="usis-cal-filter-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+								<i class="fa fa-filter me-1"></i> Filters
+							</button>
+							<div class="dropdown-menu usis-cal-filter-menu p-3 shadow" aria-labelledby="usis-cal-filter-toggle">
 								<div class="mb-3">
 									<label class="form-label small text-muted mb-1" for="usis-cal-preset">Calendar view</label>
 									<select class="form-select form-select-sm" id="usis-cal-preset">
@@ -63,9 +81,20 @@
 									</select>
 								</div>
 								<div class="mb-3">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" value="1" id="usis-cal-active-only" checked>
+										<label class="form-check-label small" for="usis-cal-active-only">Active projects only</label>
+									</div>
+									<p class="text-muted small mb-0 mt-1">When no project is selected, events are limited to jobs with status Active.</p>
+								</div>
+								<div class="mb-3">
+									<label class="form-label small text-muted mb-1" for="usis-cal-project-search">Search projects</label>
+									<input type="search" class="form-control form-control-sm" id="usis-cal-project-search" placeholder="Name or number…" autocomplete="off">
+								</div>
+								<div class="mb-3">
 									<label class="form-label small text-muted mb-1" for="usis-cal-project">Project</label>
 									<select class="form-select form-select-sm" id="usis-cal-project">
-										<option value="">All accessible projects</option>
+										<option value="">All matching projects</option>
 									</select>
 								</div>
 								<div class="mb-3" id="usis-cal-categories-wrap">
@@ -99,15 +128,22 @@
 										<label class="form-check-label small" for="usis-cal-cat-milestone">Project milestones</label>
 									</div>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-cal-apply">Apply filters</button>
-								<div class="alert alert-danger py-2 mt-3 mb-0 d-none small" id="usis-cal-error" role="alert"></div>
-								<div class="alert alert-light border py-2 mt-3 mb-0 d-none small" id="usis-cal-loading" role="status">Loading events…</div>
+								<div class="d-flex gap-2">
+									<button type="button" class="btn btn-primary btn-sm flex-fill" id="usis-cal-apply">Apply</button>
+									<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-cal-reset">Reset</button>
+								</div>
 							</div>
 						</div>
+						<span class="badge bg-light text-dark border small" id="usis-cal-filter-summary">All events · Active projects</span>
+						<span class="text-muted small d-none" id="usis-cal-loading" role="status">Loading…</span>
+						<span class="text-danger small d-none" id="usis-cal-error" role="alert"></span>
 					</div>
-					<div class="col-xxl-9 col-xl-8">
-						<div class="card card-body">
-							<div id="usis-calendar-main" class="app-fullcalendar"></div>
+
+					<div class="usis-cal-panel">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body">
+								<div id="usis-calendar-main" class="app-fullcalendar"></div>
+							</div>
 						</div>
 					</div>
 				</div>

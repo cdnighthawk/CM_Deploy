@@ -248,6 +248,24 @@ def test_hr_i9_document_upload_and_owner_only(client, hr_wizard_user):
     assert r4.get_json().get("deleted") is True
 
 
+def test_hr_i9_document_upload_accepts_pdf(client, hr_wizard_user):
+    import io
+
+    hdr = {"X-Usis-User-Id": hr_wizard_user["user_id"]}
+    data = {
+        "file": (io.BytesIO(b"%PDF-1.4 test"), "passport-scan.pdf"),
+        "slot": "list_a",
+    }
+    r = client.post(
+        "/api/v1/hr/me/i9-section1/documents",
+        data=data,
+        content_type="multipart/form-data",
+        headers=hdr,
+    )
+    assert r.status_code == 201
+    assert r.get_json().get("ok") is True
+
+
 def test_hr_union_document_upload_and_owner_only(client, hr_wizard_user):
     """Upload union doc photo; only hire wizard owner may download."""
     import io

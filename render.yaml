@@ -62,3 +62,15 @@ services:
         value: "120"
       - key: USIS_XAI_API_KEY
         sync: false
+      # Backblaze B2 — set in Render Dashboard (see docs/backblaze-b2.md).
+      # Use B2_PREFIX=prod/usis-cm on Render; dev machines use dev/usis-cm in backend/.env.
+      - key: B2_APPLICATION_KEY_ID
+        sync: false
+      - key: B2_APPLICATION_KEY
+        sync: false
+      - key: B2_BUCKET_NAME
+        value: USIS-construction-docs
+      - key: B2_ENDPOINT
+        sync: false
+      - key: B2_PREFIX
+        value: prod/usis-cm

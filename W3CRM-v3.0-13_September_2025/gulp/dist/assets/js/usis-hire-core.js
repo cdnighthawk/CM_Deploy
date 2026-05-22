@@ -4,15 +4,25 @@
 (function () {
 	"use strict";
 
-	var ENTRY_PATH = "apply/application.html";
+	var ENTRY_PATH = "apply/path.html";
 
-	var STEPS = [
+	var UNION_STEPS = [
 		{ id: "application", file: "application.html", label: "Application" },
 		{ id: "i9", file: "i9.html", label: "Form I-9" },
 		{ id: "w4", file: "w4.html", label: "Form W-4" },
 		{ id: "union", file: "union.html", label: "Union docs", optional: true },
 		{ id: "complete", file: "complete.html", label: "Done" },
 	];
+
+	var STANDARD_STEPS = [
+		{ id: "application", file: "application.html", label: "Application" },
+		{ id: "complete", file: "complete.html", label: "Submitted" },
+		{ id: "offer", file: "offer.html", label: "Job offer" },
+		{ id: "i9", file: "i9.html", label: "Form I-9" },
+		{ id: "w4", file: "w4.html", label: "Form W-4" },
+	];
+
+	var STEPS = UNION_STEPS;
 
 	var state = {
 		wizard: null,
@@ -59,28 +69,79 @@
 		return "../page-register.html?next=" + encodeURIComponent(nextParamPath());
 	}
 
+	function hirePath(wizard) {
+		return wizard && wizard.hire_path;
+	}
+
+	function isStandardPath(wizard) {
+		return hirePath(wizard) === "standard";
+	}
+
+	function isUnionPath(wizard) {
+		return hirePath(wizard) === "union_dispatch";
+	}
+
+	function stepsForWizard(wizard) {
+		if (isStandardPath(wizard)) return STANDARD_STEPS;
+		return UNION_STEPS;
+	}
+
+	function offerBlock(wizard) {
+		return (wizard && wizard.offer) || {};
+	}
+
+	function offerAccepted(wizard) {
+		return !!offerBlock(wizard).accepted_at;
+	}
+
+	function offerPending(wizard) {
+		return wizardReview(wizard).hire_status === "offer_extended";
+	}
+
+	function offerAvailable(wizard) {
+		return offerPending(wizard) || offerAccepted(wizard);
+	}
+
+	function standardOnboardingComplete(wizard) {
+		return isStandardPath(wizard) && offerAccepted(wizard) && w4Complete(wizard);
+	}
+
+	function nextStepAfterApplication(wizard) {
+		return isStandardPath(wizard) ? "complete" : "i9";
+	}
+
 	function stepFromBody() {
 		var b = document.body;
 		if (b && b.getAttribute("data-usis-hire-step")) return b.getAttribute("data-usis-hire-step");
 		var p = rootRelativePath().toLowerCase();
+		if (p.indexOf("apply/path.html") !== -1) return "path";
+		if (p.indexOf("apply/offer.html") !== -1) return "offer";
+		var steps = stepsForWizard(state.wizard);
 		var i;
-		for (i = 0; i < STEPS.length; i++) {
-			if (p.indexOf("apply/" + STEPS[i].file) !== -1) return STEPS[i].id;
+		for (i = 0; i < steps.length; i++) {
+			if (p.indexOf("apply/" + steps[i].file) !== -1) return steps[i].id;
+		}
+		for (i = 0; i < UNION_STEPS.length; i++) {
+			if (p.indexOf("apply/" + UNION_STEPS[i].file) !== -1) return UNION_STEPS[i].id;
 		}
 		return null;
 	}
 
-	function stepFile(stepId) {
-		for (var i = 0; i < STEPS.length; i++) {
-			if (STEPS[i].id === stepId) return STEPS[i].file;
+	function stepFile(stepId, wizard) {
+		var steps = stepsForWizard(wizard);
+		for (var i = 0; i < steps.length; i++) {
+			if (steps[i].id === stepId) return steps[i].file;
+		}
+		for (i = 0; i < UNION_STEPS.length; i++) {
+			if (UNION_STEPS[i].id === stepId) return UNION_STEPS[i].file;
 		}
 		return "application.html";
 	}
 
 	/** Step links must include ``apply/`` — pages use ``<base href="../">`` for shared assets. */
-	function applyStepHref(stepIdOrFile) {
+	function applyStepHref(stepIdOrFile, wizard) {
 		var file = stepIdOrFile;
-		if (!file || file.indexOf(".html") === -1) file = stepFile(stepIdOrFile);
+		if (!file || file.indexOf(".html") === -1) file = stepFile(stepIdOrFile, wizard || state.wizard);
 		return "apply/" + file;
 	}
 
@@ -117,19 +178,39 @@
 	}
 
 	function firstAllowedStepId(wizard) {
+		if (!wizard || wizard.path_selection_required) return "path";
 		if (!applicationSaved(wizard)) return "application";
+		if (isStandardPath(wizard)) {
+			if (!offerAccepted(wizard)) {
+				if (offerPending(wizard)) return "offer";
+				return "complete";
+			}
+			if (!i9Complete(wizard)) return "i9";
+			if (!w4Complete(wizard)) return "w4";
+			return "complete";
+		}
 		if (!i9Complete(wizard)) return "i9";
 		if (!w4Complete(wizard)) return "w4";
 		return "complete";
 	}
 
 	function canAccessStep(stepId, wizard) {
-		if (!stepId || stepId === "application") return true;
+		if (!stepId || stepId === "path") return true;
+		if (!wizard || wizard.path_selection_required) return stepId === "path";
+		if (stepId === "application") return true;
 		if (!applicationSaved(wizard)) return false;
+		if (isStandardPath(wizard)) {
+			if (stepId === "complete") return true;
+			if (stepId === "offer") return offerAvailable(wizard);
+			if (stepId === "i9" || stepId === "w4") return offerAccepted(wizard) && (stepId === "i9" || i9Complete(wizard));
+			if (stepId === "union") return false;
+			return false;
+		}
 		if (stepId === "i9") return true;
 		if (stepId === "w4") return i9Complete(wizard);
 		if (stepId === "union") return w4Complete(wizard);
 		if (stepId === "complete") return w4Complete(wizard);
+		if (stepId === "offer") return false;
 		return false;
 	}
 
@@ -159,10 +240,22 @@
 			if (review.hire_status === "hired") {
 				return "You have been hired. HR will follow up with onboarding next steps.";
 			}
+			if (review.hire_status === "offer_extended") {
+				return "Your application is with HR. Watch your email for a job offer link, or open the Job offer step when it appears.";
+			}
 			return "This application is no longer open for editing.";
+		}
+		if (wizard && wizard.path_selection_required && stepId !== "path") {
+			return "Answer the onboarding question before continuing.";
 		}
 		if (stepId === "i9" && !applicationSaved(wizard)) {
 			return "Complete step 1 first — save your employment application before starting Form I-9.";
+		}
+		if (isStandardPath(wizard) && (stepId === "i9" || stepId === "w4") && !offerAccepted(wizard)) {
+			return "Accept your job offer before completing Form I-9 and W-4.";
+		}
+		if (stepId === "offer" && !offerAvailable(wizard)) {
+			return "HR has not sent a job offer yet. You will receive email when an offer is ready.";
 		}
 		if (stepId === "w4" && !i9Complete(wizard)) {
 			return "Sign Form I-9 (step 2) before starting Form W-4.";
@@ -170,14 +263,19 @@
 		if (stepId === "union" && !w4Complete(wizard)) {
 			return "Sign Form W-4 (step 3) before uploading union documents.";
 		}
-		if (stepId === "complete" && !w4Complete(wizard)) {
+		if (stepId === "complete" && isUnionPath(wizard) && !w4Complete(wizard)) {
 			return "Sign Form W-4 (step 3) before finishing your application.";
 		}
 		return null;
 	}
 
 	function prereqLinkForStep(stepId) {
+		if (!state.wizard || state.wizard.path_selection_required) return applyStepHref("path");
 		if (!applicationSaved(state.wizard)) return applyStepHref("application");
+		if (stepId === "offer") return applyStepHref("complete");
+		if (stepId === "i9" && isStandardPath(state.wizard) && !offerAccepted(state.wizard)) {
+			return offerAvailable(state.wizard) ? applyStepHref("offer") : applyStepHref("complete");
+		}
 		if (stepId === "i9") return applyStepHref("application");
 		if (stepId === "w4") return applyStepHref("i9");
 		if (stepId === "union" || stepId === "complete") return applyStepHref("w4");
@@ -234,7 +332,26 @@
 		el.classList.remove("d-none");
 	}
 
+	function updateStepNavVisibility(wizard) {
+		var nav = document.querySelector(".usis-apply-steps");
+		if (nav) {
+			nav.classList.toggle("d-none", state.currentStep === "path");
+		}
+		document.querySelectorAll(".usis-apply-step").forEach(function (li) {
+			var stepId = li.getAttribute("data-step");
+			if (!stepId) return;
+			if (stepId === "offer") {
+				li.classList.toggle("d-none", !isStandardPath(wizard));
+			}
+			if (stepId === "union") {
+				li.classList.toggle("d-none", isStandardPath(wizard));
+			}
+		});
+	}
+
 	function updateStepNavLocks(wizard) {
+		STEPS = stepsForWizard(wizard);
+		updateStepNavVisibility(wizard);
 		document.querySelectorAll(".usis-apply-step").forEach(function (li) {
 			var stepId = li.getAttribute("data-step");
 			if (!stepId) return;
@@ -275,6 +392,11 @@
 	}
 
 	function enforceStepAccess(stepId, wizard) {
+		if (stepId === "path") return;
+		if (wizard && wizard.path_selection_required && stepId !== "path") {
+			redirectToStep("path", "Answer the onboarding question before continuing.");
+			return;
+		}
 		if (!stepId || stepId === "complete") return;
 		if (canAccessStep(stepId, wizard)) return;
 		var msg = stepPrereqMessage(stepId, wizard) || "Complete the previous steps before continuing.";
@@ -406,7 +528,40 @@
 		banner.classList.add("d-none");
 	}
 
+	function renderCompletePageContent(w) {
+		var heroStep = document.querySelector(".usis-public-hero .text-primary.text-uppercase");
+		var heroTitle = document.querySelector(".usis-public-hero h1");
+		var heroLead = document.querySelector(".usis-public-hero .text-muted");
+		var bodyP = document.querySelector("#usis-hire-complete-body");
+		if (!bodyP) return;
+
+		if (isStandardPath(w) && !standardOnboardingComplete(w)) {
+			if (heroStep) heroStep.textContent = "Application submitted";
+			if (heroTitle) heroTitle.textContent = "Thank you";
+			if (heroLead) heroLead.textContent = "HR will review your application and may send a job offer by email.";
+			if (offerPending(w)) {
+				bodyP.textContent =
+					"Your employment application is on file. A job offer is ready — open the Job offer step above to review and accept it.";
+			} else {
+				bodyP.textContent =
+					"Your employment application is on file. Our HR team will review it and email you if we extend an offer. After you accept, you will complete Form I-9 and W-4 in this portal.";
+			}
+			return;
+		}
+
+		if (heroStep) heroStep.textContent = isStandardPath(w) ? "Onboarding complete" : "Step 5 of 5";
+		if (heroTitle) heroTitle.textContent = "Thank you";
+		if (heroLead) {
+			heroLead.textContent = isStandardPath(w)
+				? "Your application, offer acceptance, and hiring documents are on file."
+				: "Your employment application and hiring documents are on file.";
+		}
+		bodyP.textContent =
+			"Our HR team will review your submission and follow up with next steps. You may sign out below or close this window.";
+	}
+
 	function renderCompleteReviewStatus(w) {
+		renderCompletePageContent(w);
 		renderReviewBanner(w);
 		var card = document.querySelector(".card .card-body");
 		if (!card) return;
@@ -482,10 +637,18 @@
 			})
 			.then(function (w) {
 				state.wizard = w;
+				STEPS = stepsForWizard(w);
 				var disc = document.getElementById("usis-hire-disclaimer");
 				if (disc) disc.textContent = w.disclaimer || "";
 				applyWizardToForm(w);
 				showErr("");
+				if (w.path_selection_required && state.currentStep !== "path") {
+					var p = rootRelativePath().toLowerCase();
+					if (p.indexOf("apply/path.html") === -1) {
+						window.location.replace(applyStepHref("path"));
+						return w;
+					}
+				}
 				if (state.currentStep) enforceStepAccess(state.currentStep, w);
 				return w;
 			});
@@ -579,6 +742,8 @@
 	window.USISHireCore = {
 		state: state,
 		STEPS: STEPS,
+		UNION_STEPS: UNION_STEPS,
+		STANDARD_STEPS: STANDARD_STEPS,
 		ENTRY_PATH: ENTRY_PATH,
 		apiBase: apiBase,
 		loginUrl: loginUrl,
@@ -594,6 +759,15 @@
 		unionComplete: unionComplete,
 		i9Complete: i9Complete,
 		w4Complete: w4Complete,
+		hirePath: hirePath,
+		isStandardPath: isStandardPath,
+		isUnionPath: isUnionPath,
+		stepsForWizard: stepsForWizard,
+		offerAccepted: offerAccepted,
+		offerPending: offerPending,
+		offerAvailable: offerAvailable,
+		nextStepAfterApplication: nextStepAfterApplication,
+		standardOnboardingComplete: standardOnboardingComplete,
 		firstAllowedStepId: firstAllowedStepId,
 		canAccessStep: canAccessStep,
 		redirectToStep: redirectToStep,
@@ -607,5 +781,6 @@
 		wizardReview: wizardReview,
 		isWizardLocked: isWizardLocked,
 		renderCompleteReviewStatus: renderCompleteReviewStatus,
+		renderCompletePageContent: renderCompletePageContent,
 	};
 })();

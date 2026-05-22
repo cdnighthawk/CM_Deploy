@@ -44,6 +44,16 @@
 		);
 	}
 
+	function w4HasSavedDraft(w) {
+		var w4 = (w && w.w4) || {};
+		var draft = w4.draft;
+		return !!(draft && typeof draft === "object" && Object.keys(draft).length);
+	}
+
+	function w4CanReview(w) {
+		return w4SectionCompleted(w) || w4HasSavedDraft(w);
+	}
+
 	function updateW4Ui() {
 		var c = core();
 		var w = c.state.wizard || {};
@@ -67,7 +77,7 @@
 			startBtn.textContent = completed && !signed ? "Edit W-4 questionnaire" : "Start / continue W-4";
 		}
 		if (reviewBtn) {
-			reviewBtn.classList.toggle("d-none", !completed || signed);
+			reviewBtn.classList.toggle("d-none", !w4CanReview(w) || signed);
 			reviewBtn.textContent = w4ReviewOpened && !signed ? "Review W-4 again" : "Review W-4";
 		}
 		if (reviewPanel) {
@@ -92,33 +102,70 @@
 		if (c.renderStepPrereqBanner) c.renderStepPrereqBanner(w, "w4");
 	}
 
-	function renderW4ReviewPanel() {
-		var root = document.getElementById("usis-w4-review-root");
-		if (!root || !window.USISHrW4) return;
+	function renderW4ReviewPanelClient(root) {
+		if (!window.USISHrW4) throw new Error("W-4 form module did not load");
 		var c = core();
 		var w = c.state.wizard || {};
 		var w4 = w.w4 || {};
 		var st = w.steps || {};
 		var signed = w4.status === "signed" || (st.w4 && st.w4.signed_at);
-		try {
-			var render = window.USISHrW4.renderFilledReview || window.USISHrW4.renderForm;
-			render.call(window.USISHrW4, root, currentW4(), {
-				reviewMode: true,
-				locked: true,
-				signature_png: signed ? w4.signature_png : null,
-				signed_at: st.w4 && st.w4.signed_at ? st.w4.signed_at : w4.signed_at,
+		var render = window.USISHrW4.renderFilledReview || window.USISHrW4.renderForm;
+		render.call(window.USISHrW4, root, currentW4(), {
+			reviewMode: true,
+			locked: true,
+			signature_png: signed ? w4.signature_png : null,
+			signed_at: st.w4 && st.w4.signed_at ? st.w4.signed_at : w4.signed_at,
+		});
+		wireW4DocPhotos(root);
+	}
+
+	function renderW4ReviewPanel() {
+		var root = document.getElementById("usis-w4-review-root");
+		if (!root) return;
+		var c = core();
+		root.innerHTML = '<div class="text-muted small py-3">Loading your Form W-4 preview…</div>';
+		fetch(c.apiBase() + "/api/v1/hr/me/w4/preview", {
+			credentials: "include",
+			headers: { Accept: "text/html" },
+		})
+			.then(function (r) {
+				if (!r.ok) {
+					return r
+						.json()
+						.catch(function () {
+							return {};
+						})
+						.then(function (j) {
+							throw new Error((j && j.error) || "Could not load W-4 preview");
+						});
+				}
+				return r.text();
+			})
+			.then(function (html) {
+				root.innerHTML = "";
+				var frame = document.createElement("iframe");
+				frame.className = "usis-i9-review-frame";
+				frame.title = "Form W-4 preview";
+				frame.srcdoc = html;
+				root.appendChild(frame);
+			})
+			.catch(function (err) {
+				try {
+					root.innerHTML = "";
+					renderW4ReviewPanelClient(root);
+				} catch (fallbackErr) {
+					root.innerHTML =
+						'<div class="alert alert-danger py-2 small mb-0">' +
+						((err && err.message) || "Could not load W-4 preview") +
+						"</div>";
+					c.showErr((err && err.message) || String(err));
+				}
 			});
-			wireW4DocPhotos(root);
-		} catch (err) {
-			root.innerHTML =
-				'<div class="alert alert-danger py-2 small mb-0">Could not render your W-4 preview. Please hard-refresh and try again.</div>';
-			c.showErr((err && err.message) || String(err));
-		}
 	}
 
 	function openW4Review() {
 		var c = core();
-		if (!w4SectionCompleted(c.state.wizard || {})) {
+		if (!w4CanReview(c.state.wizard || {})) {
 			c.showErr("Save Form W-4 first, then review your entries.");
 			return;
 		}
@@ -317,12 +364,31 @@
 			});
 	}
 
+	var w4EventsWired = false;
+
 	function wireEvents() {
+		if (w4EventsWired) return;
+		w4EventsWired = true;
 		var c = core();
+		document.addEventListener("click", function (e) {
+			var target = e.target && e.target.closest ? e.target.closest("#usis-w4-review-btn, #usis-w4-save-review-btn") : null;
+			if (!target) return;
+			e.preventDefault();
+			if (target.id === "usis-w4-save-review-btn") {
+				saveW4(true, true)
+					.then(function () {
+						if (window.USISNotify) window.USISNotify.success("W-4 saved — review your Form W-4, then sign.");
+						return c.loadWizard().then(function () {
+							openW4Review();
+						});
+					})
+					.catch(function () {});
+				return;
+			}
+			openW4Review();
+		});
 		var startW4 = document.getElementById("usis-w4-start-btn");
 		if (startW4) startW4.addEventListener("click", openW4Modal);
-		var reviewW4 = document.getElementById("usis-w4-review-btn");
-		if (reviewW4) reviewW4.addEventListener("click", openW4Review);
 		var editW4 = document.getElementById("usis-w4-edit-btn");
 		if (editW4) editW4.addEventListener("click", openW4Modal);
 		var completeW4 = document.getElementById("usis-w4-modal-complete");
@@ -382,7 +448,7 @@
 	};
 
 	var coreRef = core();
-	if (coreRef) wireEvents();
+	wireEvents();
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 	else init();
 })();

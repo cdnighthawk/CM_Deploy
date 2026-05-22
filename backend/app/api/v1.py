@@ -967,12 +967,14 @@ def list_calendar_events():
     )
     range_start = calendar_svc._parse_date_param(request.args.get("start"))
     range_end = calendar_svc._parse_date_param(request.args.get("end"))
+    project_statuses = calendar_svc._parse_project_statuses(request.args.get("project_status"))
     payload = calendar_svc.list_calendar_events(
         cu,
         project_id=pid,
         categories=categories,
         range_start=range_start,
         range_end=range_end,
+        project_statuses=project_statuses,
     )
     return _jsonify(payload)
 
@@ -3785,6 +3787,9 @@ _hr_dashboard.register_hr_routes(bp)
 from . import _hr_hire_wizard  # noqa: E402
 
 _hr_hire_wizard.register_hr_hire_wizard_routes(bp)
+from . import _hr_job_offer  # noqa: E402
+
+_hr_job_offer.register_hr_job_offer_routes(bp)
 from . import _hr_applications  # noqa: E402
 
 _hr_applications.register_hr_application_routes(bp)

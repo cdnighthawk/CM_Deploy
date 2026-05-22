@@ -1,5 +1,5 @@
 /**
- * USIS categorized calendar — procurement, project schedule, RFIs, submittals, RFPs, milestones.
+ * USIS categorized calendar — full-width with toolbar filter dropdown.
  */
 (function () {
 	"use strict";
@@ -7,6 +7,13 @@
 	var state = {
 		calendar: null,
 		projects: [],
+		projectSearch: "",
+	};
+
+	var PRESET_LABELS = {
+		all: "All events",
+		procurement: "Procurement",
+		project: "Project",
 	};
 
 	var PRESET_CATEGORIES = {
@@ -61,21 +68,35 @@
 		return new URLSearchParams(window.location.search).get(name);
 	}
 
+	function el(id) {
+		return document.getElementById(id);
+	}
+
+	function activeOnlyChecked() {
+		var box = el("usis-cal-active-only");
+		return !box || box.checked;
+	}
+
+	function selectedProjectId() {
+		return (el("usis-cal-project") || {}).value || qs("project_id") || "";
+	}
+
 	function setLoading(on) {
-		var el = document.getElementById("usis-cal-loading");
-		if (el) {
-			el.classList.toggle("d-none", !on);
+		var node = el("usis-cal-loading");
+		if (node) {
+			node.classList.toggle("d-none", !on);
 		}
 	}
 
 	function setError(msg) {
-		var el = document.getElementById("usis-cal-error");
-		if (!el) return;
+		var node = el("usis-cal-error");
+		if (!node) return;
 		if (msg) {
-			el.textContent = msg;
-			el.classList.remove("d-none");
+			node.textContent = msg;
+			node.classList.remove("d-none");
 		} else {
-			el.classList.add("d-none");
+			node.textContent = "";
+			node.classList.add("d-none");
 		}
 	}
 
@@ -93,7 +114,7 @@
 	}
 
 	function selectedCategories() {
-		var preset = (document.getElementById("usis-cal-preset") || {}).value || "all";
+		var preset = (el("usis-cal-preset") || {}).value || "all";
 		if (preset !== "all" && PRESET_CATEGORIES[preset]) {
 			return PRESET_CATEGORIES[preset].slice();
 		}
@@ -106,7 +127,7 @@
 	}
 
 	function applyPresetToCheckboxes() {
-		var preset = (document.getElementById("usis-cal-preset") || {}).value || "all";
+		var preset = (el("usis-cal-preset") || {}).value || "all";
 		var cats = PRESET_CATEGORIES[preset];
 		var boxes = document.querySelectorAll(".usis-cal-cat");
 		for (var i = 0; i < boxes.length; i++) {
@@ -119,16 +140,93 @@
 				b.disabled = false;
 			}
 		}
-		var wrap = document.getElementById("usis-cal-categories-wrap");
+		var wrap = el("usis-cal-categories-wrap");
 		if (wrap) {
 			wrap.classList.toggle("opacity-50", preset !== "all");
 		}
 	}
 
+	function projectMatchesFilters(p) {
+		if (activeOnlyChecked() && p.status !== "active") {
+			return false;
+		}
+		var q = state.projectSearch.trim().toLowerCase();
+		if (!q) return true;
+		var hay = ((p.number || "") + " " + (p.name || "")).toLowerCase();
+		return hay.indexOf(q) >= 0;
+	}
+
+	function projectLabel(p) {
+		var label = p.name || p.id;
+		if (p.number) {
+			label = p.number + " — " + label;
+		}
+		if (p.status && p.status !== "active") {
+			label += " (" + p.status + ")";
+		}
+		return label;
+	}
+
+	function renderProjectOptions() {
+		var sel = el("usis-cal-project");
+		if (!sel) return;
+		var prev = sel.value;
+		var html = '<option value="">All matching projects</option>';
+		var visible = [];
+		for (var i = 0; i < state.projects.length; i++) {
+			var p = state.projects[i];
+			if (!projectMatchesFilters(p)) continue;
+			visible.push(p);
+			html +=
+				'<option value="' +
+				String(p.id).replace(/"/g, "&quot;") +
+				'">' +
+				projectLabel(p) +
+				"</option>";
+		}
+		sel.innerHTML = html;
+		if (prev) {
+			var stillVisible = false;
+			for (var k = 0; k < visible.length; k++) {
+				if (String(visible[k].id) === prev) {
+					stillVisible = true;
+					break;
+				}
+			}
+			if (stillVisible) sel.value = prev;
+		}
+	}
+
+	function updateFilterSummary() {
+		var node = el("usis-cal-filter-summary");
+		if (!node) return;
+		var preset = (el("usis-cal-preset") || {}).value || "all";
+		var parts = [PRESET_LABELS[preset] || "All events"];
+		var pid = selectedProjectId();
+		if (pid) {
+			var match = null;
+			for (var j = 0; j < state.projects.length; j++) {
+				if (String(state.projects[j].id) === pid) {
+					match = state.projects[j];
+					break;
+				}
+			}
+			parts.push(match ? projectLabel(match) : "One project");
+		} else if (activeOnlyChecked()) {
+			parts.push("Active projects");
+		} else {
+			parts.push("All projects");
+		}
+		if (state.projectSearch.trim()) {
+			parts.push('Search: "' + state.projectSearch.trim() + '"');
+		}
+		node.textContent = parts.join(" · ");
+	}
+
 	function buildFcEvent(item) {
 		var colors = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.schedule;
 		var title = item.title;
-		if (!qs("project_id") && item.project_name) {
+		if (!selectedProjectId() && item.project_name) {
 			title = "[" + item.project_name + "] " + title;
 		}
 		var ev = {
@@ -163,9 +261,11 @@
 			return;
 		}
 		var params = ["categories=" + encodeURIComponent(cats.join(","))];
-		var pid = (document.getElementById("usis-cal-project") || {}).value || qs("project_id") || "";
+		var pid = selectedProjectId();
 		if (pid) {
 			params.push("project_id=" + encodeURIComponent(pid));
+		} else if (activeOnlyChecked()) {
+			params.push("project_status=active");
 		}
 		if (fetchInfo && fetchInfo.start) {
 			params.push("start=" + encodeURIComponent(fetchInfo.startStr.slice(0, 10)));
@@ -182,6 +282,7 @@
 			})
 			.then(function (res) {
 				setLoading(false);
+				updateFilterSummary();
 				if (!res.ok) {
 					var msg = (res.body && res.body.error) || "Failed to load calendar (" + res.status + ").";
 					setError(msg);
@@ -198,23 +299,38 @@
 			});
 	}
 
+	function calendarHeight() {
+		var panel = document.querySelector(".usis-cal-panel .card-body");
+		if (panel) {
+			return Math.max(panel.clientHeight, 480);
+		}
+		return Math.max(window.innerHeight - 160, 480);
+	}
+
+	function resizeCalendar() {
+		if (!state.calendar) return;
+		state.calendar.setOption("height", calendarHeight());
+		state.calendar.updateSize();
+	}
+
 	function ensureCalendar() {
-		var el = document.getElementById("usis-calendar-main");
-		if (!el || typeof FullCalendar === "undefined") {
+		var node = el("usis-calendar-main");
+		if (!node || typeof FullCalendar === "undefined") {
 			return;
 		}
 		if (state.calendar) {
+			resizeCalendar();
 			state.calendar.refetchEvents();
 			return;
 		}
-		state.calendar = new FullCalendar.Calendar(el, {
+		state.calendar = new FullCalendar.Calendar(node, {
 			headerToolbar: {
 				left: "prev,next today",
 				center: "title",
 				right: "dayGridMonth,timeGridWeek,listMonth",
 			},
 			initialView: "dayGridMonth",
-			height: "auto",
+			height: calendarHeight(),
 			navLinks: true,
 			editable: false,
 			selectable: false,
@@ -236,11 +352,32 @@
 			},
 		});
 		state.calendar.render();
+		updateFilterSummary();
+	}
+
+	function refetchCalendar() {
+		updateFilterSummary();
+		if (state.calendar) {
+			state.calendar.refetchEvents();
+		}
+	}
+
+	function resetFilters() {
+		var preset = el("usis-cal-preset");
+		if (preset) preset.value = "all";
+		var active = el("usis-cal-active-only");
+		if (active) active.checked = true;
+		var search = el("usis-cal-project-search");
+		if (search) search.value = "";
+		state.projectSearch = "";
+		var project = el("usis-cal-project");
+		if (project) project.value = "";
+		applyPresetToCheckboxes();
+		renderProjectOptions();
+		refetchCalendar();
 	}
 
 	function loadProjects() {
-		var sel = document.getElementById("usis-cal-project");
-		if (!sel) return;
 		var url = apiBase() + "/api/v1/projects";
 		fetch(url, { headers: Object.assign({ Accept: "application/json" }, actorHeaders()) })
 			.then(function (r) {
@@ -248,30 +385,20 @@
 			})
 			.then(function (data) {
 				state.projects = Array.isArray(data.items) ? data.items : [];
-				var html = '<option value="">All accessible projects</option>';
-				for (var i = 0; i < state.projects.length; i++) {
-					var p = state.projects[i];
-					var label = p.name || p.id;
-					if (p.number) {
-						label = p.number + " — " + label;
-					}
-					html +=
-						'<option value="' +
-						String(p.id).replace(/"/g, "&quot;") +
-						'">' +
-						label +
-						"</option>";
-				}
-				sel.innerHTML = html;
+				renderProjectOptions();
 				var fromUrl = qs("project_id");
-				if (fromUrl) {
-					sel.value = fromUrl;
+				if (fromUrl && el("usis-cal-project")) {
+					el("usis-cal-project").value = fromUrl;
 				}
 				var preset = qs("preset");
-				if (preset && document.getElementById("usis-cal-preset")) {
-					document.getElementById("usis-cal-preset").value = preset;
+				if (preset && el("usis-cal-preset")) {
+					el("usis-cal-preset").value = preset;
 					applyPresetToCheckboxes();
 				}
+				if (qs("active_only") === "0" && el("usis-cal-active-only")) {
+					el("usis-cal-active-only").checked = false;
+				}
+				updateFilterSummary();
 				ensureCalendar();
 			})
 			.catch(function () {
@@ -280,20 +407,49 @@
 	}
 
 	function bindUi() {
-		var preset = document.getElementById("usis-cal-preset");
+		var preset = el("usis-cal-preset");
 		if (preset) {
 			preset.addEventListener("change", function () {
 				applyPresetToCheckboxes();
+				updateFilterSummary();
 			});
 		}
-		var apply = document.getElementById("usis-cal-apply");
+		var active = el("usis-cal-active-only");
+		if (active) {
+			active.addEventListener("change", function () {
+				renderProjectOptions();
+				updateFilterSummary();
+			});
+		}
+		var search = el("usis-cal-project-search");
+		if (search) {
+			search.addEventListener("input", function () {
+				state.projectSearch = search.value || "";
+				renderProjectOptions();
+				updateFilterSummary();
+			});
+		}
+		var project = el("usis-cal-project");
+		if (project) {
+			project.addEventListener("change", updateFilterSummary);
+		}
+		var apply = el("usis-cal-apply");
 		if (apply) {
 			apply.addEventListener("click", function () {
-				if (state.calendar) {
-					state.calendar.refetchEvents();
+				refetchCalendar();
+				var toggle = el("usis-cal-filter-toggle");
+				if (toggle && typeof bootstrap !== "undefined") {
+					bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
 				}
 			});
 		}
+		var reset = el("usis-cal-reset");
+		if (reset) {
+			reset.addEventListener("click", resetFilters);
+		}
+		window.addEventListener("resize", function () {
+			resizeCalendar();
+		});
 	}
 
 	document.addEventListener("DOMContentLoaded", function () {

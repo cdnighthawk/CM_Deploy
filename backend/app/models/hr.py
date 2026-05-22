@@ -96,9 +96,20 @@ class HrHireApplication(UUIDPKMixin, TimestampMixin, db.Model):
     )
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     submitted_for_review_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    hire_path: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    offer_position: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    offer_pay_description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    offer_start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    offer_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    offer_accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    offer_document_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL"), nullable=True
+    )
+    offer_pending_role_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
     reviewed_by: Mapped[Optional["User"]] = relationship(foreign_keys=[reviewed_by_user_id])
+    offer_document: Mapped[Optional["Document"]] = relationship(foreign_keys=[offer_document_id])
     i9_document_files: Mapped[list["HrHireI9DocumentFile"]] = relationship(
         back_populates="hire_application",
         cascade="all, delete-orphan",

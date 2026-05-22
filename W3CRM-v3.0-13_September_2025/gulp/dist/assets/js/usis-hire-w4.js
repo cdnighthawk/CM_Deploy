@@ -85,9 +85,15 @@
 		var c = core();
 		var w = c.state.wizard || {};
 		var w4 = w.w4 || {};
-		var signed = w4.status === "signed" || ((w.steps || {}).w4 && w.steps.w4.signed_at);
-		var wizardLocked = (c.isWizardLocked && c.isWizardLocked(w)) || !!w4.locked;
-		window.USISHrW4.renderForm(root, currentW4(), { reviewMode: true, locked: !signed || wizardLocked });
+		var st = w.steps || {};
+		var signed = w4.status === "signed" || (st.w4 && st.w4.signed_at);
+		var render = window.USISHrW4.renderFilledReview || window.USISHrW4.renderForm;
+		render.call(window.USISHrW4, root, currentW4(), {
+			reviewMode: true,
+			locked: true,
+			signature_png: signed ? w4.signature_png : null,
+			signed_at: st.w4 && st.w4.signed_at ? st.w4.signed_at : w4.signed_at,
+		});
 		wireW4DocPhotos(root);
 	}
 

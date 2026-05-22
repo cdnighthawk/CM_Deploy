@@ -329,8 +329,17 @@
 	function renderReviewPanel() {
 		var root = document.getElementById("usis-i9-review-root");
 		if (!root || !window.USISHrI9) return;
-		var locked = (state.wizard && state.wizard.i9 && state.wizard.i9.locked) || false;
-		window.USISHrI9.renderForm(root, currentSection1(), { reviewMode: true, locked: locked });
+		var w = state.wizard || {};
+		var i9 = w.i9 || {};
+		var st = w.steps || {};
+		var signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
+		var render = window.USISHrI9.renderFilledReview || window.USISHrI9.renderForm;
+		render.call(window.USISHrI9, root, currentSection1(), {
+			reviewMode: true,
+			locked: true,
+			signature_png: signed ? i9.signature_png : null,
+			signed_at: st.i9 && st.i9.signed_at ? st.i9.signed_at : i9.signed_at,
+		});
 		wireI9DocPhotos(root);
 	}
 
@@ -452,8 +461,17 @@
 	function renderW4ReviewPanel() {
 		var root = document.getElementById("usis-w4-review-root");
 		if (!root || !window.USISHrW4) return;
-		var locked = (state.wizard && state.wizard.w4 && state.wizard.w4.locked) || false;
-		window.USISHrW4.renderForm(root, currentW4(), { reviewMode: true, locked: locked });
+		var w = state.wizard || {};
+		var w4 = w.w4 || {};
+		var st = w.steps || {};
+		var signed = w4.status === "signed" || (st.w4 && st.w4.signed_at);
+		var render = window.USISHrW4.renderFilledReview || window.USISHrW4.renderForm;
+		render.call(window.USISHrW4, root, currentW4(), {
+			reviewMode: true,
+			locked: true,
+			signature_png: signed ? w4.signature_png : null,
+			signed_at: st.w4 && st.w4.signed_at ? st.w4.signed_at : w4.signed_at,
+		});
 		wireW4DocPhotos(root);
 	}
 

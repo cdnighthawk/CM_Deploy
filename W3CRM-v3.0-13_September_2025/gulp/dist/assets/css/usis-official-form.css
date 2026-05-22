@@ -1,0 +1,137 @@
+/* Filled I-9 / W-4 review facsimile (official-form layout) */
+.usis-official-form {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 0.82rem;
+	line-height: 1.35;
+	color: #111;
+	background: #fff;
+	border: 2px solid #111;
+	padding: 1rem 1.1rem;
+}
+.usis-official-header {
+	border-bottom: 2px solid #111;
+	padding-bottom: 0.65rem;
+	margin-bottom: 0.85rem;
+}
+.usis-official-agency {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: #333;
+}
+.usis-official-title {
+	font-size: 1.15rem;
+	font-weight: 700;
+	margin-top: 0.15rem;
+}
+.usis-official-form-id {
+	font-size: 0.75rem;
+	color: #444;
+	margin-top: 0.15rem;
+}
+.usis-official-section {
+	border: 1px solid #bbb;
+	padding: 0.75rem;
+	margin-bottom: 0.75rem;
+	background: #fafafa;
+}
+.usis-official-section-title {
+	font-weight: 700;
+	font-size: 0.85rem;
+	margin-bottom: 0.5rem;
+}
+.usis-official-instructions {
+	font-size: 0.78rem;
+	color: #444;
+	margin-bottom: 0.65rem;
+}
+.usis-official-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.55rem;
+	margin-bottom: 0.55rem;
+}
+.usis-official-field {
+	flex: 1 1 12rem;
+	min-width: 9rem;
+	border: 1px solid #888;
+	background: #fff;
+	padding: 0.35rem 0.45rem;
+}
+.usis-official-field-wide {
+	flex: 1 1 100%;
+}
+.usis-official-label {
+	font-size: 0.68rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #333;
+	margin-bottom: 0.15rem;
+}
+.usis-official-value {
+	font-size: 0.92rem;
+	min-height: 1.2rem;
+	word-break: break-word;
+}
+.usis-official-check {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.45rem;
+	margin-bottom: 0.4rem;
+}
+.usis-official-checkbox {
+	width: 0.85rem;
+	height: 0.85rem;
+	border: 1px solid #111;
+	flex-shrink: 0;
+	margin-top: 0.1rem;
+	background: #fff;
+	position: relative;
+}
+.usis-official-checkbox.is-checked::after {
+	content: "✓";
+	position: absolute;
+	left: 0.08rem;
+	top: -0.12rem;
+	font-size: 0.85rem;
+	font-weight: 700;
+	line-height: 1;
+}
+.usis-official-check-label {
+	font-size: 0.8rem;
+}
+.usis-official-doc-block {
+	border: 1px dashed #888;
+	padding: 0.55rem;
+	margin-top: 0.55rem;
+	background: #fff;
+}
+.usis-official-doc-title {
+	font-weight: 700;
+	font-size: 0.78rem;
+	margin-bottom: 0.45rem;
+}
+.usis-official-signature {
+	border: 1px solid #888;
+	padding: 0.65rem;
+	margin-bottom: 0.65rem;
+	background: #fff;
+}
+.usis-official-signature-pending .usis-official-value {
+	color: #666;
+	font-style: italic;
+}
+.usis-official-signature-img {
+	max-width: 18rem;
+	max-height: 5rem;
+	display: block;
+	margin-top: 0.35rem;
+}
+.usis-official-note {
+	font-size: 0.75rem;
+	color: #555;
+	margin: 0.5rem 0 0;
+}
+.usis-w4-filled-review .usis-official-subsection {
+	margin-top: 0.65rem;
+}

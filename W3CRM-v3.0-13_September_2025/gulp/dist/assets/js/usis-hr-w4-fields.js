@@ -208,11 +208,136 @@
 		return out;
 	}
 
+	function fmtSsn(val) {
+		var digits = String(val || "").replace(/\D/g, "");
+		if (digits.length === 9) {
+			return digits.slice(0, 3) + "-" + digits.slice(3, 5) + "-" + digits.slice(5);
+		}
+		return String(val || "").trim() || "—";
+	}
+
+	function fmtMoney(val) {
+		var s = String(val || "").trim();
+		if (!s) return "0";
+		return s;
+	}
+
+	function filingLabel(value) {
+		for (var i = 0; i < FILING_STATUS.length; i++) {
+			if (FILING_STATUS[i].value === value) return FILING_STATUS[i].label;
+		}
+		return value || "—";
+	}
+
+	function filledField(label, value, wide) {
+		return (
+			'<div class="usis-official-field' +
+			(wide ? " usis-official-field-wide" : "") +
+			'"><div class="usis-official-label">' +
+			esc(label) +
+			'</div><div class="usis-official-value">' +
+			esc(value || "—") +
+			"</div></div>"
+		);
+	}
+
+	function filledCheck(checked, label) {
+		return (
+			'<div class="usis-official-check">' +
+			'<span class="usis-official-checkbox' +
+			(checked ? " is-checked" : "") +
+			'" aria-hidden="true"></span>' +
+			'<span class="usis-official-check-label">' +
+			esc(label) +
+			"</span></div>"
+		);
+	}
+
+	function renderFilledReview(root, data, opts) {
+		if (!root) return;
+		opts = opts || {};
+		data = data || emptyW4();
+		var statusChecks = FILING_STATUS.map(function (c) {
+			return filledCheck(data.filing_status === c.value, c.label);
+		}).join("");
+		var signatureBlock = opts.signature_png
+			? '<div class="usis-official-signature"><div class="usis-official-label">Employee signature</div><img src="' +
+				esc(opts.signature_png) +
+				'" alt="Employee signature" class="usis-official-signature-img"><div class="usis-official-value mt-2">Date signed: ' +
+				esc(opts.signed_at || "—") +
+				"</div></div>"
+			: '<div class="usis-official-signature usis-official-signature-pending"><div class="usis-official-label">Employee signature</div><div class="usis-official-value">Pending — sign after review</div></div>';
+
+		root.innerHTML =
+			'<div class="usis-official-form usis-w4-filled-review">' +
+			'<div class="usis-official-header">' +
+			'<div class="usis-official-agency">Department of the Treasury · Internal Revenue Service</div>' +
+			'<div class="usis-official-title">Employee&apos;s Withholding Certificate</div>' +
+			'<div class="usis-official-form-id">Form W-4 · OMB No. 1545-0074</div>' +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Step 1: Enter Personal Information</div>' +
+			'<div class="usis-official-row">' +
+			filledField("First name and middle initial", [data.first_name, data.middle_initial].filter(Boolean).join(" ")) +
+			filledField("Last name", data.last_name) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("Address", data.address, true) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("City or town", data.city) +
+			filledField("State", data.state) +
+			filledField("ZIP code", data.zip) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("Social security number", fmtSsn(data.ssn), true) +
+			"</div>" +
+			'<div class="usis-official-subsection">' +
+			'<div class="usis-official-label mb-2">Step 1(c): Filing status (check one)</div>' +
+			statusChecks +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Step 2: Multiple Jobs or Spouse Works</div>' +
+			filledCheck(!!data.multiple_jobs, "Two jobs total, or second job wages $10,500 or less") +
+			filledCheck(!!data.higher_withholding, "Married filing jointly, only one spouse works — higher withholding") +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Step 3: Claim Dependents and Other Credits</div>' +
+			'<div class="usis-official-row">' +
+			filledField("Dependents amount ($)", fmtMoney(data.dependents_amount), true) +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Step 4 (optional): Other Adjustments</div>' +
+			'<div class="usis-official-row">' +
+			filledField("4(a) Other income (not from jobs) ($)", fmtMoney(data.other_income)) +
+			filledField("4(b) Deductions ($)", fmtMoney(data.deductions)) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("4(c) Extra withholding per pay period ($)", fmtMoney(data.extra_withholding), true) +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Exemption from withholding</div>' +
+			filledCheck(!!data.exempt_claim, "I claim exemption from withholding for 2026 (must meet IRS conditions)") +
+			"</div>" +
+			signatureBlock +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Supporting document (optional)</div>' +
+			'<p class="usis-official-instructions mb-2">Photo of a signed paper W-4 or backup copy, if provided.</p>' +
+			'<div class="usis-w4-doc-photos border rounded p-2" data-w4-doc-slot="supporting"></div>' +
+			"</div>" +
+			'<p class="usis-official-note">This is a filled preview of your Form W-4 based on your questionnaire answers. Your employer retains the official IRS W-4 for payroll records.</p>' +
+			"</div>";
+	}
+
 	global.USISHrW4 = {
 		emptyW4: emptyW4,
 		mergePrefill: mergePrefill,
 		validate: validate,
 		renderForm: renderForm,
+		renderFilledReview: renderFilledReview,
 		collectFromForm: collectFromForm,
 	};
 })(typeof window !== "undefined" ? window : this);

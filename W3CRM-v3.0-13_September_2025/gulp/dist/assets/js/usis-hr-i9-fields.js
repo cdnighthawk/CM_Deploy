@@ -501,11 +501,166 @@
 		return normalizeSection1Docs(out);
 	}
 
+	function fmtSsn(val) {
+		var digits = String(val || "").replace(/\D/g, "");
+		if (digits.length === 9) {
+			return digits.slice(0, 3) + "-" + digits.slice(3, 5) + "-" + digits.slice(5);
+		}
+		return String(val || "").trim() || "—";
+	}
+
+	function fmtDate(val) {
+		var s = String(val || "").trim();
+		if (!s) return "—";
+		var parts = s.split("-");
+		if (parts.length === 3) return parts[1] + "/" + parts[2] + "/" + parts[0];
+		return s;
+	}
+
+	function filledField(label, value, wide) {
+		return (
+			'<div class="usis-official-field' +
+			(wide ? " usis-official-field-wide" : "") +
+			'"><div class="usis-official-label">' +
+			esc(label) +
+			'</div><div class="usis-official-value">' +
+			esc(value || "—") +
+			"</div></div>"
+		);
+	}
+
+	function filledCheck(checked, label) {
+		return (
+			'<div class="usis-official-check">' +
+			'<span class="usis-official-checkbox' +
+			(checked ? " is-checked" : "") +
+			'" aria-hidden="true"></span>' +
+			'<span class="usis-official-check-label">' +
+			esc(label) +
+			"</span></div>"
+		);
+	}
+
+	function filledDocSection(title, doc, prefix) {
+		doc = doc || emptyDoc();
+		var catalog = catalogFor(prefix);
+		var docType = resolveDocumentType(doc, catalog);
+		var docLabel = labelForType(catalog, docType) || String(doc.title || "").trim() || "—";
+		return (
+			'<div class="usis-official-doc-block">' +
+			'<div class="usis-official-doc-title">' +
+			esc(title) +
+			"</div>" +
+			filledField("Document title", docLabel, true) +
+			filledField("Issuing authority", doc.issuing_authority) +
+			filledField("Document number", doc.number) +
+			filledField("Expiration date (if any)", doc.expiration) +
+			'<div class="usis-i9-doc-photos mt-2 pt-2 border-top" data-i9-doc-slot="' +
+			esc(prefix) +
+			'"></div>' +
+			"</div>"
+		);
+	}
+
+	function renderFilledReview(root, data, opts) {
+		if (!root) return;
+		opts = opts || {};
+		data = normalizeSection1Docs(data || emptySection1());
+		var citizenshipChecks = CITIZENSHIP.map(function (c) {
+			return filledCheck(data.citizenship_status === c.value, c.label);
+		}).join("");
+		var alienExtra =
+			data.citizenship_status === "lawful_permanent_resident"
+				? '<div class="usis-official-row">' + filledField("USCIS A-Number", data.uscis_a_number, true) + "</div>"
+				: "";
+		var alienAuth =
+			data.citizenship_status === "alien_authorized"
+				? '<div class="usis-official-row">' +
+					filledField("Form I-94 admission number", data.admission_i94) +
+					filledField("Foreign passport number and country of issuance", data.foreign_passport) +
+					"</div>" +
+					'<div class="usis-official-row">' +
+					filledField("Work authorization expiration date", fmtDate(data.work_authorization_expiration), true) +
+					"</div>"
+				: "";
+		var docSection =
+			data.document_choice === "list_a"
+				? filledDocSection("List A — Documents that establish both identity and employment authorization", data.list_a, "list_a")
+				: data.document_choice === "list_b_c"
+					? filledDocSection("List B — Documents that establish identity", data.list_b, "list_b") +
+						filledDocSection("List C — Documents that establish employment authorization", data.list_c, "list_c")
+					: '<p class="usis-official-note mb-0">No identity documents selected.</p>';
+		var signatureBlock = opts.signature_png
+			? '<div class="usis-official-signature"><div class="usis-official-label">Employee signature</div><img src="' +
+				esc(opts.signature_png) +
+				'" alt="Employee signature" class="usis-official-signature-img"><div class="usis-official-value mt-2">Date signed: ' +
+				esc(opts.signed_at || "—") +
+				"</div></div>"
+			: '<div class="usis-official-signature usis-official-signature-pending"><div class="usis-official-label">Employee signature</div><div class="usis-official-value">Pending — sign after review</div></div>';
+
+		root.innerHTML =
+			'<div class="usis-official-form usis-i9-filled-review">' +
+			'<div class="usis-official-header">' +
+			'<div class="usis-official-agency">Department of Homeland Security · U.S. Citizenship and Immigration Services</div>' +
+			'<div class="usis-official-title">Employment Eligibility Verification</div>' +
+			'<div class="usis-official-form-id">USCIS Form I-9 · OMB No. 1615-0047 · Section 1</div>' +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Section 1. Employee Information and Attestation</div>' +
+			'<p class="usis-official-instructions">Employees must complete and sign Section 1 of Form I-9 no later than the first day of employment, but not before accepting a job offer.</p>' +
+			'<div class="usis-official-row">' +
+			filledField("Last Name (Family Name)", data.last_name) +
+			filledField("First Name (Given Name)", data.first_name) +
+			filledField("Middle Initial (if any)", data.middle_initial) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("Other Last Names Used (if any)", data.other_last_names, true) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("Address (Street Number and Name)", data.address) +
+			filledField("Apt. Number (if any)", data.apt) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("City or Town", data.city) +
+			filledField("State", data.state) +
+			filledField("ZIP Code", data.zip) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("Date of Birth (mm/dd/yyyy)", fmtDate(data.date_of_birth)) +
+			filledField("U.S. Social Security Number", fmtSsn(data.ssn)) +
+			"</div>" +
+			'<div class="usis-official-row">' +
+			filledField("Employee's Email Address", data.email) +
+			filledField("Employee's Telephone Number", data.telephone) +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">I attest, under penalty of perjury, that I am (check one):</div>' +
+			citizenshipChecks +
+			alienExtra +
+			alienAuth +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Preparer and/or Translator Certification</div>' +
+			filledCheck(false, "A preparer and/or translator assisted the employee in completing Section 1.") +
+			"</div>" +
+			'<div class="usis-official-section">' +
+			'<div class="usis-official-section-title">Identity and Employment Authorization Documents</div>' +
+			filledCheck(data.document_choice === "list_a", "One List A document (establishes identity and employment authorization)") +
+			filledCheck(data.document_choice === "list_b_c", "List B identity document and List C employment authorization document") +
+			docSection +
+			"</div>" +
+			signatureBlock +
+			'<p class="usis-official-note">This is a filled preview of your Form I-9 Section 1 based on your questionnaire answers. Your employer must still complete Section 2 and retain official I-9 records per USCIS requirements.</p>' +
+			"</div>";
+	}
+
 	global.USISHrI9 = {
 		emptySection1: emptySection1,
 		mergePrefill: mergePrefill,
 		validate: validate,
 		renderForm: renderForm,
+		renderFilledReview: renderFilledReview,
 		collectFromForm: collectFromForm,
 		wireConditionals: wireConditionals,
 	};

@@ -31,6 +31,19 @@
 		});
 	}
 
+	function i9SectionCompleted(w) {
+		var i9 = (w && w.i9) || {};
+		var stI9 = (w && w.steps && w.steps.i9) || {};
+		return (
+			i9.status === "completed" ||
+			i9.status === "signed" ||
+			!!i9.completed_at ||
+			stI9.status === "completed" ||
+			stI9.status === "signed" ||
+			!!stI9.completed_at
+		);
+	}
+
 	function updateI9Ui() {
 		var c = core();
 		var w = c.state.wizard || {};
@@ -38,7 +51,7 @@
 		var i9 = w.i9 || {};
 		var appDone = c.applicationSaved ? c.applicationSaved(w) : !!(st.application && st.application.completed) || !!(w.application && w.application.submitted_at);
 		var signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
-		var completed = i9.status === "completed" || i9.status === "signed" || i9.completed_at;
+		var completed = i9SectionCompleted(w);
 		var locked = c.isWizardLocked && c.isWizardLocked(w);
 
 		var startBtn = document.getElementById("usis-i9-start-btn");
@@ -86,17 +99,28 @@
 		var i9 = w.i9 || {};
 		var st = w.steps || {};
 		var signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
-		var render = window.USISHrI9.renderFilledReview || window.USISHrI9.renderForm;
-		render.call(window.USISHrI9, root, currentSection1(), {
-			reviewMode: true,
-			locked: true,
-			signature_png: signed ? i9.signature_png : null,
-			signed_at: st.i9 && st.i9.signed_at ? st.i9.signed_at : i9.signed_at,
-		});
-		wireI9DocPhotos(root);
+		try {
+			var render = window.USISHrI9.renderFilledReview || window.USISHrI9.renderForm;
+			render.call(window.USISHrI9, root, currentSection1(), {
+				reviewMode: true,
+				locked: true,
+				signature_png: signed ? i9.signature_png : null,
+				signed_at: st.i9 && st.i9.signed_at ? st.i9.signed_at : i9.signed_at,
+			});
+			wireI9DocPhotos(root);
+		} catch (err) {
+			root.innerHTML =
+				'<div class="alert alert-danger py-2 small mb-0">Could not render your I-9 preview. Please hard-refresh and try again.</div>';
+			c.showErr((err && err.message) || String(err));
+		}
 	}
 
 	function openI9Review() {
+		var c = core();
+		if (!i9SectionCompleted(c.state.wizard || {})) {
+			c.showErr("Save Section 1 first, then review your Form I-9.");
+			return;
+		}
 		i9ReviewOpened = true;
 		var panel = document.getElementById("usis-i9-review-panel");
 		if (panel) panel.classList.remove("d-none");
@@ -167,6 +191,7 @@
 		signCanvas = document.getElementById("usis-i9-sign-canvas");
 		if (!signCanvas) return;
 		signCtx = signCanvas.getContext("2d");
+		if (!signCtx) return;
 		signCtx.strokeStyle = "#111";
 		signCtx.lineWidth = 2;
 		signCtx.lineCap = "round";
@@ -309,10 +334,9 @@
 							var inst = window.bootstrap.Modal.getInstance(modal);
 							if (inst) inst.hide();
 						}
-						i9ReviewOpened = false;
-						if (window.USISNotify) window.USISNotify.success("Section 1 saved — review your answers, then sign.");
+						if (window.USISNotify) window.USISNotify.success("Section 1 saved — review your Form I-9, then sign.");
 						return c.loadWizard().then(function () {
-							updateI9Ui();
+							openI9Review();
 						});
 					})
 					.catch(function () {});
@@ -343,7 +367,6 @@
 	function init() {
 		var c = core();
 		if (!c) return;
-		wireEvents();
 		c.checkSession().then(function () {
 			c.wireApplyNav({
 				backHref: c.applyStepHref("application"),
@@ -357,6 +380,8 @@
 		init: init,
 	};
 
+	var coreRef = core();
+	if (coreRef) wireEvents();
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 	else init();
 })();

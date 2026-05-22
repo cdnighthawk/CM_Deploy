@@ -31,6 +31,19 @@
 		});
 	}
 
+	function w4SectionCompleted(w) {
+		var w4 = (w && w.w4) || {};
+		var stW4 = (w && w.steps && w.steps.w4) || {};
+		return (
+			w4.status === "completed" ||
+			w4.status === "signed" ||
+			!!w4.completed_at ||
+			stW4.status === "completed" ||
+			stW4.status === "signed" ||
+			!!stW4.completed_at
+		);
+	}
+
 	function updateW4Ui() {
 		var c = core();
 		var w = c.state.wizard || {};
@@ -39,7 +52,7 @@
 		var i9 = w.i9 || {};
 		var i9Signed = i9.status === "signed" || (st.i9 && st.i9.signed_at);
 		var signed = w4.status === "signed" || (st.w4 && st.w4.signed_at);
-		var completed = w4.status === "completed" || w4.status === "signed" || w4.completed_at;
+		var completed = w4SectionCompleted(w);
 		var locked = c.isWizardLocked && c.isWizardLocked(w);
 
 		var startBtn = document.getElementById("usis-w4-start-btn");
@@ -87,17 +100,28 @@
 		var w4 = w.w4 || {};
 		var st = w.steps || {};
 		var signed = w4.status === "signed" || (st.w4 && st.w4.signed_at);
-		var render = window.USISHrW4.renderFilledReview || window.USISHrW4.renderForm;
-		render.call(window.USISHrW4, root, currentW4(), {
-			reviewMode: true,
-			locked: true,
-			signature_png: signed ? w4.signature_png : null,
-			signed_at: st.w4 && st.w4.signed_at ? st.w4.signed_at : w4.signed_at,
-		});
-		wireW4DocPhotos(root);
+		try {
+			var render = window.USISHrW4.renderFilledReview || window.USISHrW4.renderForm;
+			render.call(window.USISHrW4, root, currentW4(), {
+				reviewMode: true,
+				locked: true,
+				signature_png: signed ? w4.signature_png : null,
+				signed_at: st.w4 && st.w4.signed_at ? st.w4.signed_at : w4.signed_at,
+			});
+			wireW4DocPhotos(root);
+		} catch (err) {
+			root.innerHTML =
+				'<div class="alert alert-danger py-2 small mb-0">Could not render your W-4 preview. Please hard-refresh and try again.</div>';
+			c.showErr((err && err.message) || String(err));
+		}
 	}
 
 	function openW4Review() {
+		var c = core();
+		if (!w4SectionCompleted(c.state.wizard || {})) {
+			c.showErr("Save Form W-4 first, then review your entries.");
+			return;
+		}
 		w4ReviewOpened = true;
 		var panel = document.getElementById("usis-w4-review-panel");
 		if (panel) panel.classList.remove("d-none");
@@ -168,6 +192,7 @@
 		w4SignCanvas = document.getElementById("usis-w4-sign-canvas");
 		if (!w4SignCanvas) return;
 		w4SignCtx = w4SignCanvas.getContext("2d");
+		if (!w4SignCtx) return;
 		w4SignCtx.strokeStyle = "#111";
 		w4SignCtx.lineWidth = 2;
 		w4SignCtx.lineCap = "round";
@@ -310,10 +335,9 @@
 							var inst = window.bootstrap.Modal.getInstance(modal);
 							if (inst) inst.hide();
 						}
-						w4ReviewOpened = false;
-						if (window.USISNotify) window.USISNotify.success("W-4 saved — review your answers, then sign.");
+						if (window.USISNotify) window.USISNotify.success("W-4 saved — review your Form W-4, then sign.");
 						return c.loadWizard().then(function () {
-							updateW4Ui();
+							openW4Review();
 						});
 					})
 					.catch(function () {});
@@ -344,7 +368,6 @@
 	function init() {
 		var c = core();
 		if (!c) return;
-		wireEvents();
 		c.checkSession().then(function () {
 			c.wireApplyNav({
 				backHref: c.applyStepHref("i9"),
@@ -358,6 +381,8 @@
 		init: init,
 	};
 
+	var coreRef = core();
+	if (coreRef) wireEvents();
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 	else init();
 })();

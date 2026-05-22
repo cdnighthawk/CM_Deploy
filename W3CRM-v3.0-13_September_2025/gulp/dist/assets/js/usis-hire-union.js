@@ -31,8 +31,8 @@
 		if (!core) return;
 		core.checkSession().then(function () {
 			core.wireApplyNav({
-				backHref: "application.html",
-				nextHref: core.unionComplete(core.state.wizard) ? "i9.html" : null,
+				backHref: core.applyStepHref("application"),
+				nextHref: core.unionComplete(core.state.wizard) ? core.applyStepHref("i9") : null,
 			});
 			var next = document.getElementById("usis-apply-next");
 			if (next) {

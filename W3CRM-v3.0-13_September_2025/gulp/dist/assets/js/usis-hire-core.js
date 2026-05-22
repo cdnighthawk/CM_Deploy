@@ -77,6 +77,13 @@
 		return "application.html";
 	}
 
+	/** Step links must include ``apply/`` — pages use ``<base href="../">`` for shared assets. */
+	function applyStepHref(stepIdOrFile) {
+		var file = stepIdOrFile;
+		if (!file || file.indexOf(".html") === -1) file = stepFile(stepIdOrFile);
+		return "apply/" + file;
+	}
+
 	function taskMap(wizard) {
 		var map = {};
 		((wizard && wizard.tasks) || []).forEach(function (t) {
@@ -138,8 +145,7 @@
 	}
 
 	function resumeStepUrl(wizard) {
-		var stepId = firstAllowedStepId(wizard);
-		return "apply/" + stepFile(stepId);
+		return applyStepHref(firstAllowedStepId(wizard));
 	}
 
 	function stepPrereqMessage(stepId, wizard) {
@@ -170,11 +176,11 @@
 
 	function prereqLinkForStep(stepId) {
 		if (stepId === "i9" || stepId === "union" || stepId === "w4") {
-			if (!applicationSaved(state.wizard)) return "application.html";
+			if (!applicationSaved(state.wizard)) return applyStepHref("application");
 		}
-		if (stepId === "w4") return "i9.html";
-		if (stepId === "complete") return "w4.html";
-		return "application.html";
+		if (stepId === "w4") return applyStepHref("i9");
+		if (stepId === "complete") return applyStepHref("w4");
+		return applyStepHref("application");
 	}
 
 	function renderStepPrereqBanner(wizard, stepId, bannerId) {
@@ -188,11 +194,11 @@
 		}
 		var link = prereqLinkForStep(stepId);
 		var linkLabel =
-			link === "application.html"
+			link.indexOf("application.html") !== -1
 				? "Go to employment application"
-				: link === "i9.html"
+				: link.indexOf("i9.html") !== -1
 					? "Go to Form I-9"
-					: link === "w4.html"
+					: link.indexOf("w4.html") !== -1
 						? "Go to Form W-4"
 						: "Go to previous step";
 		el.className = isWizardLocked(wizard) ? "alert alert-warning py-2 small mb-3" : "alert alert-info py-2 small mb-3";
@@ -264,7 +270,7 @@
 
 	function redirectToStep(stepId, reasonMsg) {
 		if (reasonMsg) setRedirectMessage(reasonMsg);
-		window.location.replace(stepFile(stepId));
+		window.location.replace(applyStepHref(stepId));
 	}
 
 	function enforceStepAccess(stepId, wizard) {
@@ -592,6 +598,7 @@
 		redirectToStep: redirectToStep,
 		stepFromBody: stepFromBody,
 		stepFile: stepFile,
+		applyStepHref: applyStepHref,
 		resumeStepUrl: resumeStepUrl,
 		renderStepPrereqBanner: renderStepPrereqBanner,
 		updateStepNavLocks: updateStepNavLocks,

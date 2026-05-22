@@ -250,7 +250,7 @@
 				}
 				if (window.USISNotify) window.USISNotify.success("I-9 signed.");
 				return c.loadWizard().then(function () {
-					if (c.i9Complete(c.state.wizard)) window.location.href = "w4.html";
+					if (c.i9Complete(c.state.wizard)) window.location.href = c.applyStepHref("w4");
 				});
 			})
 			.catch(function (e) {
@@ -335,8 +335,8 @@
 		wireEvents();
 		c.checkSession().then(function () {
 			c.wireApplyNav({
-				backHref: "union.html",
-				nextHref: c.i9Complete(c.state.wizard) ? "w4.html" : null,
+				backHref: c.applyStepHref("union"),
+				nextHref: c.i9Complete(c.state.wizard) ? c.applyStepHref("w4") : null,
 			});
 		});
 	}

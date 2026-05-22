@@ -39,6 +39,7 @@ from ..services.hr_w4_crypto import decrypt_w4, encrypt_w4
 from ..services.hr_i9_validate import validate_section1
 from ..services.hr_w4_validate import validate_w4
 from ..services.hire_application_review import (
+    TERMINAL_HIRE_STATUSES,
     applicant_wizard_mutable,
     mark_submitted_for_review,
     serialize_hire_status,
@@ -581,15 +582,13 @@ def _build_hire_tasks(
     """Checklist for the hire wizard UI (status + lock rules).
 
     Dependency order (enforced in UI; W-4 sign also requires I-9 signed on the server):
-      account → application → union card / dispatch → Form I-9 → Form W-4.
-    Some employers allow W-4 in parallel with I-9 after application; USIS serializes W-4
-    after I-9 Section 1 is signed to match ``POST /hr/me/w4/sign``.
+      account → application → Form I-9 → Form W-4 → union docs (optional).
     """
 
     app_done = bool((steps.get("application") or {}).get("completed"))
     i9_signed = i9_status == "signed"
     w4_signed = w4_status == "signed"
-    hire_locked = hire_row is not None and hire_row.w4_signed_at is not None
+    hire_locked = hire_row is not None and hire_row.hire_status in TERMINAL_HIRE_STATUSES
 
     def _app_task_status() -> str:
         if app_done:
@@ -635,22 +634,6 @@ def _build_hire_tasks(
             "prerequisite": "account",
         },
         {
-            "key": "union_card",
-            "title": "Union card",
-            "description": "Photo of your union membership card (front required; back optional).",
-            "status": _union_task_status("union_card"),
-            "locked": not app_done or hire_locked,
-            "prerequisite": "application",
-        },
-        {
-            "key": "union_dispatch",
-            "title": "Union dispatch",
-            "description": "Photo of your current union dispatch slip or paperwork.",
-            "status": _union_task_status("union_dispatch"),
-            "locked": not app_done or hire_locked,
-            "prerequisite": "application",
-        },
-        {
             "key": "i9",
             "title": "Form I-9 — Section 1",
             "description": "USCIS employment eligibility and identity (Section 1 + e-sign).",
@@ -666,10 +649,29 @@ def _build_hire_tasks(
             "locked": not i9_signed,
             "prerequisite": "i9",
         },
+        {
+            "key": "union_card",
+            "title": "Union card",
+            "description": "Optional photo of your union membership card.",
+            "status": _union_task_status("union_card"),
+            "locked": not w4_signed or hire_locked,
+            "prerequisite": "w4",
+            "optional": True,
+        },
+        {
+            "key": "union_dispatch",
+            "title": "Union dispatch",
+            "description": "Optional photo of your union dispatch slip or paperwork.",
+            "status": _union_task_status("union_dispatch"),
+            "locked": not w4_signed or hire_locked,
+            "prerequisite": "w4",
+            "optional": True,
+        },
     ]
 
-    completed = sum(1 for t in tasks if t["status"] == "complete")
-    total = len(tasks)
+    required_tasks = [t for t in tasks if not t.get("optional")]
+    completed = sum(1 for t in required_tasks if t["status"] == "complete")
+    total = len(required_tasks)
     percent = int(round(100 * completed / total)) if total else 0
 
     return {"tasks": tasks, "progress": {"completed": completed, "total": total, "percent": percent}}
@@ -791,7 +793,11 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         union_docs = list_union_documents_for_hire(hire_row)
 
-        union_locked = hire_row is not None and hire_row.w4_signed_at is not None
+        union_locked = (
+            hire_row is None
+            or hire_row.w4_signed_at is None
+            or hire_row.hire_status in TERMINAL_HIRE_STATUSES
+        )
 
         checklist = _build_hire_tasks(
 

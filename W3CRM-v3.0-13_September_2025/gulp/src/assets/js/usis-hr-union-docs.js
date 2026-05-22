@@ -85,7 +85,7 @@
 			(isCard ? "Union card photos" : "Union dispatch photos") +
 			"</p>" +
 			'<p class="text-muted small mb-2">Take a photo or upload an image' +
-			(isCard ? " (front required; back optional)" : "") +
+			(isCard ? " (optional)" : "") +
 			". Up to " +
 			MAX_PER_KIND +
 			" images.</p>";

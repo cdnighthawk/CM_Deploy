@@ -251,7 +251,7 @@
 				}
 				if (window.USISNotify) window.USISNotify.success("W-4 signed.");
 				return c.loadWizard().then(function () {
-					window.location.href = c.applyStepHref("complete");
+					window.location.href = c.applyStepHref("union");
 				});
 			})
 			.catch(function (e) {
@@ -337,7 +337,7 @@
 		c.checkSession().then(function () {
 			c.wireApplyNav({
 				backHref: c.applyStepHref("i9"),
-				nextHref: c.w4Complete(c.state.wizard) ? c.applyStepHref("complete") : null,
+				nextHref: c.w4Complete(c.state.wizard) ? c.applyStepHref("union") : null,
 			});
 		});
 	}

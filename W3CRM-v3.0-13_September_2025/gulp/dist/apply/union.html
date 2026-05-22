@@ -71,9 +71,9 @@
 		<nav class="usis-apply-steps small" aria-label="Application steps">
 			<ol class="list-unstyled d-flex flex-wrap gap-2 mb-0">
 				<li class="usis-apply-step" data-step="application"><a href="apply/application.html">1. Application</a></li>
-				<li class="usis-apply-step" data-step="union"><a href="apply/union.html">2. Union docs</a></li>
-				<li class="usis-apply-step" data-step="i9"><a href="apply/i9.html">3. Form I-9</a></li>
-				<li class="usis-apply-step" data-step="w4"><a href="apply/w4.html">4. Form W-4</a></li>
+				<li class="usis-apply-step" data-step="i9"><a href="apply/i9.html">2. Form I-9</a></li>
+				<li class="usis-apply-step" data-step="w4"><a href="apply/w4.html">3. Form W-4</a></li>
+				<li class="usis-apply-step" data-step="union"><a href="apply/union.html">4. Union docs <span class="text-muted">(optional)</span></a></li>
 				<li class="usis-apply-step" data-step="complete"><a href="apply/complete.html">5. Done</a></li>
 			</ol>
 		</nav>
@@ -84,9 +84,9 @@
 	<main class="flex-grow-1">
 		<section class="usis-public-hero pb-4">
 			<div class="container">
-				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 2 of 5</p>
+				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 4 of 5 · Optional</p>
 				<h1 class="mb-2">Union documents</h1>
-				<p class="text-muted mb-0">Upload photos of your union membership card and dispatch paperwork.</p>
+				<p class="text-muted mb-0">If you have union membership paperwork, upload it here. You can skip this step and finish your application.</p>
 			</div>
 		</section>
 
@@ -106,16 +106,16 @@
 
 			<div id="usis-hire-workspace">
 				<div class="card border-0 shadow-sm mb-3" id="usis-hire-pane-union-card" data-hire-task="union_card">
-					<div class="card-header bg-white py-2 fw-semibold">Union card</div>
+					<div class="card-header bg-white py-2 fw-semibold">Union card <span class="badge text-bg-light fw-normal ms-1">Optional</span></div>
 					<div class="card-body">
-						<p class="text-muted small mb-2">Take a clear photo of your union membership card. Front is required; back is optional.</p>
+						<p class="text-muted small mb-2">If applicable, take a clear photo of your union membership card (front and back).</p>
 						<div id="usis-union-card-docs-root" data-union-doc-kind="union_card"></div>
 					</div>
 				</div>
 				<div class="card border-0 shadow-sm mb-3" id="usis-hire-pane-union-dispatch" data-hire-task="union_dispatch">
-					<div class="card-header bg-white py-2 fw-semibold">Union dispatch</div>
+					<div class="card-header bg-white py-2 fw-semibold">Union dispatch <span class="badge text-bg-light fw-normal ms-1">Optional</span></div>
 					<div class="card-body">
-						<p class="text-muted small mb-2">Take a photo of your current union dispatch slip or paperwork.</p>
+						<p class="text-muted small mb-2">If applicable, take a photo of your current union dispatch slip or paperwork.</p>
 						<div id="usis-union-dispatch-docs-root" data-union-doc-kind="union_dispatch"></div>
 					</div>
 				</div>

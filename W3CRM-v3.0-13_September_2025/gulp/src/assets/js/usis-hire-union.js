@@ -31,18 +31,11 @@
 		if (!core) return;
 		core.checkSession().then(function () {
 			core.wireApplyNav({
-				backHref: core.applyStepHref("application"),
-				nextHref: core.unionComplete(core.state.wizard) ? core.applyStepHref("i9") : null,
+				backHref: core.applyStepHref("w4"),
+				nextHref: core.applyStepHref("complete"),
 			});
 			var next = document.getElementById("usis-apply-next");
-			if (next) {
-				next.addEventListener("click", function (e) {
-					if (!core.unionComplete(core.state.wizard)) {
-						e.preventDefault();
-						core.showErr("Upload union card and dispatch photos before continuing.");
-					}
-				});
-			}
+			if (next) next.textContent = "Skip and continue";
 		});
 	}
 

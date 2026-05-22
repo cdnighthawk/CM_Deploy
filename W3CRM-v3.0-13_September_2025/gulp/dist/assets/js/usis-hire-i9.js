@@ -335,7 +335,7 @@
 		wireEvents();
 		c.checkSession().then(function () {
 			c.wireApplyNav({
-				backHref: c.applyStepHref("union"),
+				backHref: c.applyStepHref("application"),
 				nextHref: c.i9Complete(c.state.wizard) ? c.applyStepHref("w4") : null,
 			});
 		});

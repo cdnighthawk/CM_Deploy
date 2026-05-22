@@ -8,9 +8,9 @@
 
 	var STEPS = [
 		{ id: "application", file: "application.html", label: "Application" },
-		{ id: "union", file: "union.html", label: "Union docs" },
 		{ id: "i9", file: "i9.html", label: "Form I-9" },
 		{ id: "w4", file: "w4.html", label: "Form W-4" },
+		{ id: "union", file: "union.html", label: "Union docs", optional: true },
 		{ id: "complete", file: "complete.html", label: "Done" },
 	];
 
@@ -118,7 +118,6 @@
 
 	function firstAllowedStepId(wizard) {
 		if (!applicationSaved(wizard)) return "application";
-		if (!unionComplete(wizard)) return "union";
 		if (!i9Complete(wizard)) return "i9";
 		if (!w4Complete(wizard)) return "w4";
 		return "complete";
@@ -127,9 +126,9 @@
 	function canAccessStep(stepId, wizard) {
 		if (!stepId || stepId === "application") return true;
 		if (!applicationSaved(wizard)) return false;
-		if (stepId === "union") return true;
 		if (stepId === "i9") return true;
 		if (stepId === "w4") return i9Complete(wizard);
+		if (stepId === "union") return w4Complete(wizard);
 		if (stepId === "complete") return w4Complete(wizard);
 		return false;
 	}
@@ -166,20 +165,22 @@
 			return "Complete step 1 first — save your employment application before starting Form I-9.";
 		}
 		if (stepId === "w4" && !i9Complete(wizard)) {
-			return "Sign Form I-9 (step 3) before starting Form W-4.";
+			return "Sign Form I-9 (step 2) before starting Form W-4.";
+		}
+		if (stepId === "union" && !w4Complete(wizard)) {
+			return "Sign Form W-4 (step 3) before uploading union documents.";
 		}
 		if (stepId === "complete" && !w4Complete(wizard)) {
-			return "Sign Form W-4 (step 4) before finishing your application.";
+			return "Sign Form W-4 (step 3) before finishing your application.";
 		}
 		return null;
 	}
 
 	function prereqLinkForStep(stepId) {
-		if (stepId === "i9" || stepId === "union" || stepId === "w4") {
-			if (!applicationSaved(state.wizard)) return applyStepHref("application");
-		}
+		if (!applicationSaved(state.wizard)) return applyStepHref("application");
+		if (stepId === "i9") return applyStepHref("application");
 		if (stepId === "w4") return applyStepHref("i9");
-		if (stepId === "complete") return applyStepHref("w4");
+		if (stepId === "union" || stepId === "complete") return applyStepHref("w4");
 		return applyStepHref("application");
 	}
 

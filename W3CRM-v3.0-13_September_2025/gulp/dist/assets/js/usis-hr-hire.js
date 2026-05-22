@@ -26,7 +26,7 @@
 		w4SignDrawing: false,
 	};
 
-	var TASK_ORDER = ["account", "application", "union_card", "union_dispatch", "i9", "w4"];
+	var TASK_ORDER = ["account", "application", "i9", "w4", "union_card", "union_dispatch"];
 
 	function loginUrl() {
 		return "page-login.html?next=" + encodeURIComponent("usis-hr-hire.html");

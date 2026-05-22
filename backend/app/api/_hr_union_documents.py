@@ -40,9 +40,11 @@ def _hire_row_for_user(uid: uuid.UUID) -> HrHireApplication | None:
 
 
 def _hire_wizard_locked(hire_row: HrHireApplication | None) -> bool:
-    if not applicant_wizard_mutable(hire_row):
-        return True
-    return hire_row is not None and hire_row.w4_signed_at is not None
+    return not applicant_wizard_mutable(hire_row)
+
+
+def _union_upload_requires_w4(hire_row: HrHireApplication | None) -> bool:
+    return hire_row is None or hire_row.w4_signed_at is None
 
 
 def list_union_documents_for_hire(hire_row: HrHireApplication | None) -> list[dict]:
@@ -104,6 +106,14 @@ def register_hr_union_document_routes(bp: Blueprint) -> None:
 
         if _hire_wizard_locked(hire_row):
             return _jsonify({"entity": "hr_union_document", "error": "Hire wizard is complete and locked"}), 409
+
+        if _union_upload_requires_w4(hire_row):
+            return _jsonify(
+                {
+                    "entity": "hr_union_document",
+                    "error": "Complete and sign Form W-4 before uploading union documents",
+                }
+            ), 409
 
         kind = (request.form.get("kind") or request.form.get("document_kind") or "").strip().lower()
         if kind not in UNION_DOC_KINDS:

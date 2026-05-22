@@ -303,10 +303,10 @@ def test_hr_hire_wizard_tasks_shape(client, hr_wizard_user):
     assert w.get("entity") == "hr_hire_wizard"
     tasks = w.get("tasks") or []
     keys = [t["key"] for t in tasks]
-    assert keys == ["account", "application", "union_card", "union_dispatch", "i9", "w4"]
+    assert keys == ["account", "application", "i9", "w4", "union_card", "union_dispatch"]
     assert tasks[0]["status"] == "complete"
     prog = w.get("progress") or {}
-    assert prog.get("total") == 6
+    assert prog.get("total") == 4
     assert "percent" in prog
 
 

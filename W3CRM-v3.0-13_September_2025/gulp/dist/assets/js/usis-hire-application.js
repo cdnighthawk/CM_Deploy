@@ -24,7 +24,7 @@
 				onSaveNext: function () {
 					core.submitApplication()
 						.then(function () {
-							window.location.href = core.applyStepHref("union");
+							window.location.href = core.applyStepHref("i9");
 						})
 						.catch(function (e) {
 							var msg = core.friendlyFetchError ? core.friendlyFetchError(e) : (e.message || String(e));
@@ -32,7 +32,7 @@
 							if (window.USISNotify) window.USISNotify.error(msg);
 						});
 				},
-				nextHref: w && core.applicationSaved(w) ? core.applyStepHref("union") : null,
+				nextHref: w && core.applicationSaved(w) ? core.applyStepHref("i9") : null,
 			});
 		});
 	}

@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import false, select
+from sqlalchemy import false, select, true
 
 from ..extensions import db
 from ..models import Project, ProjectMember

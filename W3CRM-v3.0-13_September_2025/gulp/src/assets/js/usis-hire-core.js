@@ -639,10 +639,6 @@
 		req("Emergency contact name", fieldValue("usis-hire-ec-name"));
 		req("Emergency contact phone", fieldValue("usis-hire-ec-phone"));
 		req("Emergency contact relationship", fieldValue("usis-hire-ec-relationship"));
-		req("Date of birth", fieldValue("usis-hire-dob"));
-		if (!validSsn(fieldValue("usis-hire-ssn"))) missing.push("Social Security number (XXX-XX-XXXX)");
-		req("Citizenship / immigration status", fieldValue("usis-hire-citizenship"));
-		req("Filing status", fieldValue("usis-hire-filing-status"));
 		req("Felony question", radioValue("usis-hire-felony"));
 		if (radioValue("usis-hire-felony") === "yes") {
 			req("Felony explanation", fieldValue("usis-hire-felony-explanation"));

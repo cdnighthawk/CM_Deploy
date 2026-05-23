@@ -957,7 +957,7 @@ def _build_hire_tasks(
         {
             "key": "application",
             "title": "Employment application",
-            "description": "Profile, contact, position details, and tax/immigration information.",
+            "description": "Profile, contact, position details, and employment history.",
             "status": _app_task_status(),
             "locked": False,
             "prerequisite": "account",

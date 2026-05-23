@@ -317,13 +317,6 @@
 		setDefaultSignatureDate();
 		var country = document.getElementById("usis-hire-country");
 		if (country && !country.value) country.value = "United States";
-		var ssn = document.getElementById("usis-hire-ssn");
-		if (ssn) {
-			ssn.addEventListener("blur", function () {
-				var c = window.USISHireCore;
-				if (c && c.normalizeSsnInput) ssn.value = c.normalizeSsnInput(ssn.value);
-			});
-		}
 
 		var core = window.USISHireCore;
 		if (!core) return;

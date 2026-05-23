@@ -340,51 +340,9 @@
 							</div>
 						</section>
 
-						<section class="usis-apply-form-section">
-							<h2 class="h5 fw-semibold mb-3">Tax &amp; Immigration Information</h2>
-							<p class="text-muted small">Used to prefill Form I-9 and Form W-4 when you review and sign.</p>
-							<div class="row g-3">
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-dob">Date of birth <span class="text-danger">*</span></label>
-									<input type="date" class="form-control" id="usis-hire-dob" autocomplete="bday" required>
-								</div>
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-ssn">Social Security number <span class="text-danger">*</span></label>
-									<input class="form-control" id="usis-hire-ssn" inputmode="numeric" autocomplete="off" placeholder="XXX-XX-XXXX" required>
-								</div>
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-citizenship">Citizenship / immigration status (I-9) <span class="text-danger">*</span></label>
-									<select class="form-select" id="usis-hire-citizenship" required>
-										<option value="">Select one…</option>
-										<option value="citizen">U.S. Citizen</option>
-										<option value="noncitizen_national">Noncitizen national of the United States</option>
-										<option value="lawful_permanent_resident">Lawful permanent resident</option>
-										<option value="alien_authorized">Alien authorized to work</option>
-									</select>
-								</div>
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-filing-status">Filing status (W-4) <span class="text-danger">*</span></label>
-									<select class="form-select" id="usis-hire-filing-status" required>
-										<option value="">Select one…</option>
-										<option value="single">Single or Married filing separately</option>
-										<option value="married_joint">Married filing jointly</option>
-										<option value="head_of_household">Head of household</option>
-									</select>
-								</div>
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-dependents">Dependents amount (optional)</label>
-									<input class="form-control" id="usis-hire-dependents" placeholder="W-4 Step 3 dollar amount">
-								</div>
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-other-income">Other income (optional)</label>
-									<input class="form-control" id="usis-hire-other-income" placeholder="Expected other income">
-								</div>
-								<div class="col-md-4">
-									<label class="form-label" for="usis-hire-deductions">Deductions (optional)</label>
-									<input class="form-control" id="usis-hire-deductions" placeholder="Expected deductions">
-								</div>
-							</div>
-						</section>
+						<div class="alert alert-info py-2 small mb-0" id="usis-hire-tax-later-note" role="note">
+							Social Security number, date of birth, citizenship status, and tax withholding are collected on Form I-9 and Form W-4 — not on this employment application.
+						</div>
 
 						<section class="usis-apply-form-section mb-0">
 							<h2 class="h5 fw-semibold mb-3">Certification &amp; Signature</h2>
@@ -464,11 +422,11 @@
 							<dl class="row mb-0" id="usis-hire-review-summary-dl"></dl>
 						</div>
 						<div class="tab-pane fade" id="usis-hire-review-pane-i9" role="tabpanel">
-							<p class="text-muted small mb-2">Prefilled from your application. Complete identity document fields, then save.</p>
+							<p class="text-muted small mb-2">Complete Form I-9 Section 1, including date of birth, SSN, and citizenship status.</p>
 							<div id="usis-hire-review-i9-root"></div>
 						</div>
 						<div class="tab-pane fade" id="usis-hire-review-pane-w4" role="tabpanel">
-							<p class="text-muted small mb-2">Prefilled from your application. Adjust withholding if needed, then save.</p>
+							<p class="text-muted small mb-2">Complete Form W-4, including filing status and withholding elections.</p>
 							<div id="usis-hire-review-w4-root"></div>
 						</div>
 						<div class="tab-pane fade" id="usis-hire-review-pane-sign" role="tabpanel">

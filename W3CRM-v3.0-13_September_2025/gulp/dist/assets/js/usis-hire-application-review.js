@@ -37,11 +37,27 @@
 		return c.i9Complete(w) && c.w4Complete(w);
 	}
 
+	function canOpenReviewModal(w) {
+		var c = core();
+		if (c.isWizardLocked && c.isWizardLocked(w)) return false;
+		if (c.isUnionPath && c.isUnionPath(w)) return c.applicationSaved(w);
+		if (c.isStandardPath && c.isStandardPath(w)) return c.offerAccepted(w) || formsSigned(w);
+		return false;
+	}
+
 	function updateSignedBanner(w) {
 		var ok = document.getElementById("usis-hire-forms-signed-ok");
 		var reviewBtn = document.getElementById("usis-hire-review-sign-btn");
+		var taxNote = document.getElementById("usis-hire-tax-later-note");
 		if (ok) ok.classList.toggle("d-none", !formsSigned(w));
+		if (taxNote) {
+			taxNote.textContent =
+				w && core().isStandardPath(w)
+					? "Social Security number, date of birth, citizenship status, and tax withholding are collected on Form I-9 and Form W-4 after you accept a job offer."
+					: "Social Security number, date of birth, citizenship status, and tax withholding are collected on Form I-9 and Form W-4 in the next steps — not on this employment application.";
+		}
 		if (reviewBtn) {
+			reviewBtn.classList.toggle("d-none", !canOpenReviewModal(w));
 			reviewBtn.disabled = !!(w && (w.review || {}).wizard_locked);
 			if (formsSigned(w)) reviewBtn.textContent = "Review signed forms";
 			else reviewBtn.textContent = "Review and Sign";

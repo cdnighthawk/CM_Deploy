@@ -25,7 +25,7 @@
 			})
 			.then(function (w) {
 				if (!w) return;
-				window.location.replace(core.applyStepHref(core.firstAllowedStepId(w)));
+				core.redirectToStep(core.firstAllowedStepId(w));
 			})
 			.catch(function (e) {
 				var msg = core.friendlyFetchError ? core.friendlyFetchError(e) : (e.message || String(e));
@@ -40,7 +40,7 @@
 		core.checkSession().then(function (w) {
 			if (!w) return;
 			if (!w.path_selection_required) {
-				window.location.replace(core.applyStepHref(core.firstAllowedStepId(w)));
+				core.redirectToStep(core.firstAllowedStepId(w));
 			}
 		});
 		var yes = document.getElementById("usis-hire-path-yes");

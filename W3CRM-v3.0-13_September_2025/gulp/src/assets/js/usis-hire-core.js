@@ -218,6 +218,7 @@
 	}
 
 	var REDIRECT_MSG_KEY = "usis_hire_redirect_msg";
+	var REDIRECT_LOOP_KEY = "usis_hire_redirect_loop";
 
 	function applicationSaved(wizard) {
 		var w = wizard || {};
@@ -228,7 +229,7 @@
 	}
 
 	function resumeStepUrl(wizard) {
-		return applyStepHref(firstAllowedStepId(wizard));
+		return resolveApplyStepUrl(firstAllowedStepId(wizard), wizard);
 	}
 
 	function stepPrereqMessage(stepId, wizard) {
@@ -389,16 +390,50 @@
 		});
 	}
 
-	function applyStepPath(stepId) {
-		var href = applyStepHref(stepId);
-		var current = rootRelativePath().toLowerCase();
-		var target = href.toLowerCase();
-		return current === target || current.endsWith("/" + target) ? null : href;
+	function normalizeApplyPathname(pathOrUrl) {
+		var p = String(pathOrUrl || "").replace(/\\/g, "/").toLowerCase();
+		if (p.indexOf("http") === 0) {
+			try {
+				p = new URL(p).pathname;
+			} catch (e) {}
+		}
+		if (p.charAt(0) === "/") p = p.slice(1);
+		return p.replace(/\/+$/, "");
+	}
+
+	/** Absolute path for ``location.assign/replace`` (``<base>`` does not apply). */
+	function resolveApplyStepUrl(stepIdOrHref, wizard) {
+		var href = stepIdOrHref;
+		if (!href || href.indexOf(".html") === -1) href = applyStepHref(stepIdOrHref, wizard);
+		if (href.indexOf("http") === 0) return href;
+		if (href.charAt(0) === "/") return href;
+		return "/" + href.replace(/^\.\//, "");
+	}
+
+	function applyStepPath(stepId, wizard) {
+		var href = resolveApplyStepUrl(stepId, wizard);
+		var current = normalizeApplyPathname(window.location.pathname);
+		var target = normalizeApplyPathname(href);
+		return current === target ? null : href;
 	}
 
 	function redirectToStep(stepId, reasonMsg) {
 		var href = applyStepPath(stepId);
 		if (!href) return;
+		var now = Date.now();
+		try {
+			var raw = sessionStorage.getItem(REDIRECT_LOOP_KEY);
+			var loop = raw ? JSON.parse(raw) : { href: "", count: 0, ts: 0 };
+			if (loop.href === href && now - loop.ts < 5000) loop.count += 1;
+			else loop = { href: href, count: 1, ts: now };
+			if (loop.count > 2) {
+				showErr(
+					"We could not open the correct application step automatically. Use the step links above or refresh once."
+				);
+				return;
+			}
+			sessionStorage.setItem(REDIRECT_LOOP_KEY, JSON.stringify(loop));
+		} catch (e) {}
 		if (reasonMsg) setRedirectMessage(reasonMsg);
 		window.location.replace(href);
 	}
@@ -854,11 +889,8 @@
 				applyWizardToForm(w);
 				showErr("");
 				if (w.path_selection_required && state.currentStep !== "path") {
-					var pathHref = applyStepPath("path");
-					if (pathHref) {
-						window.location.replace(pathHref);
-						return w;
-					}
+					redirectToStep("path", "Answer the onboarding question before continuing.");
+					return w;
 				}
 				if (state.currentStep) enforceStepAccess(state.currentStep, w);
 				return w;
@@ -992,6 +1024,8 @@
 		stepFromBody: stepFromBody,
 		stepFile: stepFile,
 		applyStepHref: applyStepHref,
+		resolveApplyStepUrl: resolveApplyStepUrl,
+		applyStepPath: applyStepPath,
 		resumeStepUrl: resumeStepUrl,
 		renderStepPrereqBanner: renderStepPrereqBanner,
 		updateStepNavLocks: updateStepNavLocks,

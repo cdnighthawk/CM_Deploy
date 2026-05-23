@@ -354,7 +354,10 @@
 					core
 						.submitApplication()
 						.then(function (nw) {
-							window.location.href = core.applyStepHref(nw ? core.nextStepAfterApplication(nw) : nextStep);
+							window.location.href = core.resolveApplyStepUrl(
+								nw ? core.nextStepAfterApplication(nw) : nextStep,
+								nw
+							);
 						})
 						.catch(function (e) {
 							var msg = core.friendlyFetchError ? core.friendlyFetchError(e) : e.message || String(e);

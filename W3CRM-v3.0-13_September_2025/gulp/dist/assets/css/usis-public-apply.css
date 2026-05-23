@@ -101,11 +101,30 @@
 }
 
 .usis-hire-employment-row {
-	background: #f8fafc;
-	border: 1px solid rgba(0, 0, 0, 0.08);
+	background: var(--bs-tertiary-bg, #f8fafc);
+	border: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.08));
 	border-radius: 0.5rem;
 	padding: 1rem;
 	margin-bottom: 1rem;
+	color: var(--bs-body-color, #212529);
+}
+
+.usis-hire-employment-row .form-label,
+.usis-hire-employment-row legend.form-label,
+.usis-hire-employment-row .form-check-label,
+.usis-hire-employment-row .h6 {
+	color: var(--bs-body-color, #212529);
+}
+
+.usis-hire-employment-row .form-control {
+	background-color: var(--bs-body-bg, #fff);
+	color: var(--bs-body-color, #212529);
+	border-color: var(--bs-border-color, #ced4da);
+}
+
+.usis-hire-employment-row .form-control.bg-light {
+	background-color: var(--bs-secondary-bg, #e9ecef) !important;
+	color: var(--bs-body-color, #212529);
 }
 
 .usis-hire-employment-row:last-child {

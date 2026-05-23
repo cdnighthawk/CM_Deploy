@@ -156,15 +156,44 @@
 		var fields = [
 			["Position", payload.position_applying_for],
 			["Preferred start", payload.preferred_start_date],
+			["Desired compensation", payload.desired_compensation],
+			["Work authorized (US)", payload.work_authorized_us],
+			["Requires sponsorship", payload.requires_sponsorship],
+			["How heard about position", payload.how_heard_about_position],
+			["Date of birth", payload.date_of_birth],
+			["SSN (last 4)", payload.ssn ? "•••-••-" + String(payload.ssn).slice(-4) : null],
+			["Citizenship status", payload.citizenship_status],
+			["Filing status", payload.filing_status],
+			["Dependents amount", payload.dependents_amount],
+			["Other income", payload.other_income],
+			["Deductions", payload.deductions],
 			["Address", payload.address_line1],
+			["Address line 2", payload.address_line2],
 			["City", payload.city],
 			["State", payload.state],
 			["Postal code", payload.postal_code],
+			["Country", payload.country],
+			["Education level", payload.education_level],
+			["School / University", payload.education_school],
+			["Degree / Certification", payload.education_degree],
+			["Graduation year", payload.education_graduation_year],
+			["Skills / experience", payload.skills_experience],
+			["Certifications / licenses", payload.certifications_licenses],
 			["Emergency contact", payload.emergency_contact_name],
 			["Emergency phone", payload.emergency_contact_phone],
-			["Prior employment", payload.prior_employer_summary],
+			["Emergency relationship", payload.emergency_contact_relationship],
+			["Driver's license #", payload.drivers_license_number],
+			["Driver's license state", payload.drivers_license_state],
+			["Felony conviction", payload.felony_conviction],
+			["Felony explanation", payload.felony_explanation],
+			["Signature name", payload.signature_full_name],
+			["Signature date", payload.signature_date],
+			["Certified", payload.signature_certified ? "Yes" : "No"],
 		];
-		dl.innerHTML = fields
+		if (payload.prior_employer_summary && !payload.employment_history) {
+			fields.splice(11, 0, ["Prior employment (legacy)", payload.prior_employer_summary]);
+		}
+		var html = fields
 			.map(function (pair) {
 				return (
 					'<dt class="col-sm-4 text-muted">' +
@@ -175,6 +204,35 @@
 				);
 			})
 			.join("");
+		var history = payload.employment_history;
+		if (Array.isArray(history) && history.length) {
+			html +=
+				'<dt class="col-sm-4 text-muted">Employment history</dt><dd class="col-sm-8 mb-2">' +
+				history
+					.map(function (job, idx) {
+						var lines = [
+							"Company: " + (job.company_name || "—"),
+							"Title: " + (job.job_title || "—"),
+							"Dates: " + (job.start_date || "—") + " – " + (job.end_date || "—"),
+							"May contact: " + (job.may_contact || "—"),
+						];
+						if (job.reason_for_leaving) lines.push("Reason for leaving: " + job.reason_for_leaving);
+						return (
+							'<div class="border rounded p-2 mb-2' +
+							(idx === history.length - 1 ? " mb-0" : "") +
+							'"><div class="fw-semibold small mb-1">Employer ' +
+							(idx + 1) +
+							"</div>" +
+							lines.map(function (line) {
+								return '<div class="small">' + esc(line) + "</div>";
+							}).join("") +
+							"</div>"
+						);
+					})
+					.join("") +
+				"</dd>";
+		}
+		dl.innerHTML = html;
 	}
 
 	function renderOfferRoles(roles) {

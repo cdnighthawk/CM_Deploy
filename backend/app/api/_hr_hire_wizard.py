@@ -33,6 +33,15 @@ from ._hr_union_documents import (
 )
 from ._hr_w4_documents import list_w4_documents_for_hire, register_hr_w4_document_routes
 
+from ..services.hire_application_mappings import (
+    map_application_to_i9_prefill,
+    map_application_to_w4_prefill,
+    normalize_citizenship_status,
+    normalize_date_of_birth,
+    normalize_filing_status,
+    normalize_ssn,
+    sync_i9_w4_drafts_from_application,
+)
 from ..services.hr_i9_crypto import decrypt_section1, encrypt_section1
 from ..services.hr_w4_crypto import decrypt_w4, encrypt_w4
 
@@ -77,29 +86,163 @@ _HIRE_APPLICATION_ALLOWED_KEYS = frozenset(
 
     {
 
+        "address_line1",
+
+        "address_line2",
+
+        "certifications_licenses",
+
+        "citizenship_status",
+
+        "city",
+
+        "country",
+
+        "date_of_birth",
+
+        "deductions",
+
+        "dependents_amount",
+
+        "desired_compensation",
+
+        "drivers_license_number",
+
+        "drivers_license_state",
+
+        "education_degree",
+
+        "education_graduation_year",
+
+        "education_level",
+
+        "education_school",
+
         "emergency_contact_name",
 
         "emergency_contact_phone",
 
-        "preferred_start_date",
+        "emergency_contact_relationship",
 
-        "address_line1",
+        "employment_history",
 
-        "city",
+        "felony_conviction",
 
-        "state",
+        "felony_explanation",
 
-        "postal_code",
+        "filing_status",
+
+        "how_heard_about_position",
+
+        "middle_initial",
+
+        "other_income",
 
         "position_applying_for",
 
+        "postal_code",
+
+        "preferred_start_date",
+
         "prior_employer_summary",
+
+        "requires_sponsorship",
+
+        "signature_certified",
+
+        "signature_date",
+
+        "signature_full_name",
+
+        "skills_experience",
+
+        "ssn",
+
+        "state",
+
+        "work_authorized_us",
+
+        "extra_withholding",
+
+    }
+
+)
+
+_HIRE_APPLICATION_MONEY_KEYS = frozenset(
+
+    {
+
+        "deductions",
+
+        "dependents_amount",
+
+        "extra_withholding",
+
+        "other_income",
+
+    }
+
+)
+
+_HIRE_APPLICATION_CITIZENSHIP_KEYS = frozenset({"citizenship_status"})
+
+_HIRE_APPLICATION_FILING_KEYS = frozenset({"filing_status"})
+
+_HIRE_APPLICATION_TEXTAREA_KEYS = frozenset(
+
+    {
+
+        "certifications_licenses",
+
+        "felony_explanation",
+
+        "prior_employer_summary",
+
+        "skills_experience",
+
+    }
+
+)
+
+_HIRE_APPLICATION_YESNO_KEYS = frozenset(
+
+    {
+
+        "felony_conviction",
+
+        "requires_sponsorship",
+
+        "work_authorized_us",
+
+    }
+
+)
+
+_HIRE_APPLICATION_EMPLOYMENT_KEYS = frozenset(
+
+    {
+
+        "company_name",
+
+        "end_date",
+
+        "job_title",
+
+        "may_contact",
+
+        "reason_for_leaving",
+
+        "start_date",
 
     }
 
 )
 
 _HIRE_APPLICATION_MAX_JSON = 48_000
+
+_HIRE_APPLICATION_STRING_MAX = 2000
+
+_HIRE_APPLICATION_TEXTAREA_MAX = 8000
 
 _I9_SIGNATURE_MAX_LEN = 600_000
 _W4_SIGNATURE_MAX_LEN = 600_000
@@ -188,6 +331,106 @@ def _typed_name_matches_user(typed: str, u: User) -> bool:
 
 
 
+def _sanitize_hire_application_yes_no(raw: Any) -> str | None:
+
+    if raw is None:
+
+        return None
+
+    s = str(raw).strip().lower()
+
+    if s in ("yes", "no"):
+
+        return s
+
+    return None
+
+
+
+
+
+def _sanitize_hire_application_string(raw: Any, *, max_len: int = _HIRE_APPLICATION_STRING_MAX) -> str | None:
+
+    if raw is None:
+
+        return None
+
+    s = str(raw).strip()
+
+    if len(s) > max_len:
+
+        return None
+
+    return s
+
+
+
+
+
+def _sanitize_hire_application_employment_history(raw: Any) -> list[dict[str, Any]] | None:
+
+    if raw is None:
+
+        return []
+
+    if not isinstance(raw, list) or len(raw) > 4:
+
+        return None
+
+    out: list[dict[str, Any]] = []
+
+    for item in raw:
+
+        if not isinstance(item, dict):
+
+            return None
+
+        row: dict[str, Any] = {}
+
+        for ek in _HIRE_APPLICATION_EMPLOYMENT_KEYS:
+
+            if ek not in item:
+
+                continue
+
+            ev = item[ek]
+
+            if ev is None:
+
+                row[ek] = None
+
+                continue
+
+            if ek == "may_contact":
+
+                yn = _sanitize_hire_application_yes_no(ev)
+
+                if yn is None and str(ev).strip():
+
+                    return None
+
+                row[ek] = yn
+
+            else:
+
+                s = _sanitize_hire_application_string(ev)
+
+                if s is None and str(ev).strip():
+
+                    return None
+
+                row[ek] = s
+
+        if any(str(row.get(f) or "").strip() for f in ("company_name", "job_title", "start_date", "end_date")):
+
+            out.append(row)
+
+    return out
+
+
+
+
+
 def _sanitize_hire_application_payload(raw: Any) -> dict[str, Any] | None:
 
     if not isinstance(raw, dict):
@@ -202,15 +445,141 @@ def _sanitize_hire_application_payload(raw: Any) -> dict[str, Any] | None:
 
             continue
 
+        if k == "employment_history":
+
+            eh = _sanitize_hire_application_employment_history(v)
+
+            if eh is None:
+
+                return None
+
+            out[k] = eh
+
+            continue
+
+        if k == "signature_certified":
+
+            out[k] = bool(v)
+
+            continue
+
+        if k in _HIRE_APPLICATION_YESNO_KEYS:
+
+            if v is None or str(v).strip() == "":
+
+                out[k] = None
+
+                continue
+
+            yn = _sanitize_hire_application_yes_no(v)
+
+            if yn is None:
+
+                return None
+
+            out[k] = yn
+
+            continue
+
+        if k == "ssn":
+
+            if v is None or str(v).strip() == "":
+
+                out[k] = None
+
+                continue
+
+            normalized = normalize_ssn(v)
+
+            if normalized is None:
+
+                return None
+
+            out[k] = normalized
+
+            continue
+
+        if k == "date_of_birth":
+
+            if v is None or str(v).strip() == "":
+
+                out[k] = None
+
+                continue
+
+            out[k] = normalize_date_of_birth(v)
+
+            continue
+
+        if k in _HIRE_APPLICATION_CITIZENSHIP_KEYS:
+
+            if v is None or str(v).strip() == "":
+
+                out[k] = None
+
+                continue
+
+            status = normalize_citizenship_status(v)
+
+            if not status:
+
+                return None
+
+            out[k] = status
+
+            continue
+
+        if k in _HIRE_APPLICATION_FILING_KEYS:
+
+            if v is None or str(v).strip() == "":
+
+                out[k] = None
+
+                continue
+
+            status = normalize_filing_status(v)
+
+            if not status:
+
+                return None
+
+            out[k] = status
+
+            continue
+
+        if k in _HIRE_APPLICATION_MONEY_KEYS:
+
+            if v is None or str(v).strip() == "":
+
+                out[k] = None
+
+                continue
+
+            s = _sanitize_hire_application_string(v, max_len=32)
+
+            if s is None:
+
+                return None
+
+            out[k] = s.replace(",", "").replace("$", "")
+
+            continue
+
         if v is None:
 
             out[k] = None
 
             continue
 
-        s = str(v).strip()
+        max_len = (
 
-        if len(s) > 2000:
+            _HIRE_APPLICATION_TEXTAREA_MAX if k in _HIRE_APPLICATION_TEXTAREA_KEYS else _HIRE_APPLICATION_STRING_MAX
+
+        )
+
+        s = _sanitize_hire_application_string(v, max_len=max_len)
+
+        if s is None:
 
             return None
 
@@ -244,73 +613,7 @@ def _parse_application_json(hire_row: HrHireApplication | None) -> dict[str, Any
 
 def _build_i9_prefill(u: User, app: dict[str, Any] | None) -> dict[str, Any]:
 
-    app = app or {}
-
-    return {
-
-        "last_name": (u.last_name or "").strip(),
-
-        "first_name": (u.first_name or "").strip(),
-
-        "middle_initial": "",
-
-        "other_last_names": "",
-
-        "address": (app.get("address_line1") or "").strip(),
-
-        "apt": "",
-
-        "city": (app.get("city") or "").strip(),
-
-        "state": (app.get("state") or "").strip(),
-
-        "zip": (app.get("postal_code") or "").strip(),
-
-        "date_of_birth": "",
-
-        "ssn": "",
-
-        "email": (u.email or "").strip(),
-
-        "telephone": (u.phone or "").strip(),
-
-        "citizenship_status": "",
-
-        "document_choice": "",
-
-        "uscis_a_number": "",
-
-        "admission_i94": "",
-
-        "foreign_passport": "",
-
-        "work_authorization_expiration": "",
-
-        "list_a": {
-            "document_type": "",
-            "title": "",
-            "issuing_authority": "",
-            "number": "",
-            "expiration": "",
-        },
-
-        "list_b": {
-            "document_type": "",
-            "title": "",
-            "issuing_authority": "",
-            "number": "",
-            "expiration": "",
-        },
-
-        "list_c": {
-            "document_type": "",
-            "title": "",
-            "issuing_authority": "",
-            "number": "",
-            "expiration": "",
-        },
-
-    }
+    return map_application_to_i9_prefill(u, app)
 
 
 
@@ -390,43 +693,7 @@ def _decrypt_draft_for_owner(hire_row: HrHireApplication | None) -> dict[str, An
 
 def _build_w4_prefill(u: User, app: dict[str, Any] | None) -> dict[str, Any]:
 
-    app = app or {}
-
-    return {
-
-        "first_name": (u.first_name or "").strip(),
-
-        "middle_initial": "",
-
-        "last_name": (u.last_name or "").strip(),
-
-        "address": (app.get("address_line1") or "").strip(),
-
-        "city": (app.get("city") or "").strip(),
-
-        "state": (app.get("state") or "").strip(),
-
-        "zip": (app.get("postal_code") or "").strip(),
-
-        "ssn": "",
-
-        "filing_status": "",
-
-        "multiple_jobs": False,
-
-        "higher_withholding": False,
-
-        "dependents_amount": "",
-
-        "other_income": "",
-
-        "deductions": "",
-
-        "extra_withholding": "",
-
-        "exempt_claim": False,
-
-    }
+    return map_application_to_w4_prefill(u, app)
 
 
 
@@ -615,6 +882,15 @@ def _require_i9_w4_eligible(hire_row: HrHireApplication | None):
     return None
 
 
+def _require_i9_w4_draft_save(hire_row: HrHireApplication | None):
+    missing = _require_hire_path(hire_row)
+    if missing is not None:
+        return missing
+    if hire_row is not None and hire_row.submitted_at is not None:
+        return None
+    return _require_i9_w4_eligible(hire_row)
+
+
 def _build_hire_tasks(
     *,
     hire_row: HrHireApplication | None,
@@ -681,7 +957,7 @@ def _build_hire_tasks(
         {
             "key": "application",
             "title": "Employment application",
-            "description": "Profile, contact, and position details (no SSN on this step).",
+            "description": "Profile, contact, position details, and tax/immigration information.",
             "status": _app_task_status(),
             "locked": False,
             "prerequisite": "account",
@@ -1043,6 +1319,8 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
             ob.completed_at = now
 
+        sync_i9_w4_drafts_from_application(hire_row, cu.user)
+
         db.session.commit()
 
         return _jsonify({"entity": "hr_hire_application", "ok": True, "submitted_at": _iso(now)})
@@ -1069,7 +1347,7 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         if blocked is not None:
             return blocked
 
-        eligible = _require_i9_w4_eligible(hire_row)
+        eligible = _require_i9_w4_draft_save(hire_row)
         if eligible is not None:
             return eligible
 
@@ -1143,7 +1421,7 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
             return _jsonify({"entity": "hr_i9_preview", "error": "no saved Section 1 to preview"}), 404
 
-        eligible = _require_i9_w4_eligible(hire_row)
+        eligible = _require_i9_w4_draft_save(hire_row)
         if eligible is not None:
             return eligible
 
@@ -1453,7 +1731,7 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         if blocked is not None:
             return blocked
 
-        eligible = _require_i9_w4_eligible(hire_row)
+        eligible = _require_i9_w4_draft_save(hire_row)
         if eligible is not None:
             return eligible
 
@@ -1527,7 +1805,7 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
             return _jsonify({"entity": "hr_w4_preview", "error": "no saved W-4 to preview"}), 404
 
-        eligible = _require_i9_w4_eligible(hire_row)
+        eligible = _require_i9_w4_draft_save(hire_row)
         if eligible is not None:
             return eligible
 

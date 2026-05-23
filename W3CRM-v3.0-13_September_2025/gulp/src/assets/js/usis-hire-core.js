@@ -482,18 +482,138 @@
 		}
 	}
 
+	function fieldValue(id) {
+		var el = document.getElementById(id);
+		return el ? String(el.value || "").trim() : "";
+	}
+
+	function radioValue(name) {
+		var el = document.querySelector('input[name="' + name + '"]:checked');
+		return el ? String(el.value || "").trim() : "";
+	}
+
+	function checkboxChecked(id) {
+		var el = document.getElementById(id);
+		return !!(el && el.checked);
+	}
+
+	function howHeardValue() {
+		var sel = fieldValue("usis-hire-heard");
+		if (sel === "Other") {
+			return fieldValue("usis-hire-heard-other") || "Other";
+		}
+		return sel;
+	}
+
+	function normalizeSsnInput(raw) {
+		var digits = String(raw || "").replace(/\D/g, "");
+		if (digits.length !== 9) return String(raw || "").trim();
+		return digits.slice(0, 3) + "-" + digits.slice(3, 5) + "-" + digits.slice(5, 9);
+	}
+
+	function validSsn(raw) {
+		return /^\d{3}-?\d{2}-?\d{4}$/.test(String(raw || "").replace(/\s/g, ""));
+	}
+
 	function gatherApplicationPayload() {
-		return {
-			position_applying_for: (document.getElementById("usis-hire-position") || {}).value || "",
-			preferred_start_date: (document.getElementById("usis-hire-start") || {}).value || "",
-			address_line1: (document.getElementById("usis-hire-addr") || {}).value || "",
-			city: (document.getElementById("usis-hire-city") || {}).value || "",
-			state: (document.getElementById("usis-hire-state") || {}).value || "",
-			postal_code: (document.getElementById("usis-hire-zip") || {}).value || "",
-			emergency_contact_name: (document.getElementById("usis-hire-ec-name") || {}).value || "",
-			emergency_contact_phone: (document.getElementById("usis-hire-ec-phone") || {}).value || "",
-			prior_employer_summary: (document.getElementById("usis-hire-prior") || {}).value || "",
+		var payload = {
+			position_applying_for: fieldValue("usis-hire-position"),
+			preferred_start_date: fieldValue("usis-hire-start"),
+			desired_compensation: fieldValue("usis-hire-compensation"),
+			work_authorized_us: radioValue("usis-hire-work-auth"),
+			requires_sponsorship: radioValue("usis-hire-sponsorship"),
+			how_heard_about_position: howHeardValue(),
+			middle_initial: fieldValue("usis-hire-mi"),
+			date_of_birth: fieldValue("usis-hire-dob"),
+			ssn: normalizeSsnInput(fieldValue("usis-hire-ssn")),
+			citizenship_status: fieldValue("usis-hire-citizenship"),
+			filing_status: fieldValue("usis-hire-filing-status"),
+			dependents_amount: fieldValue("usis-hire-dependents"),
+			other_income: fieldValue("usis-hire-other-income"),
+			deductions: fieldValue("usis-hire-deductions"),
+			address_line1: fieldValue("usis-hire-addr"),
+			address_line2: fieldValue("usis-hire-addr2"),
+			city: fieldValue("usis-hire-city"),
+			state: fieldValue("usis-hire-state"),
+			postal_code: fieldValue("usis-hire-zip"),
+			country: fieldValue("usis-hire-country") || "United States",
+			education_level: fieldValue("usis-hire-edu-level"),
+			education_school: fieldValue("usis-hire-edu-school"),
+			education_degree: fieldValue("usis-hire-edu-degree"),
+			education_graduation_year: fieldValue("usis-hire-edu-year"),
+			skills_experience: fieldValue("usis-hire-skills"),
+			certifications_licenses: fieldValue("usis-hire-certs"),
+			emergency_contact_name: fieldValue("usis-hire-ec-name"),
+			emergency_contact_phone: fieldValue("usis-hire-ec-phone"),
+			emergency_contact_relationship: fieldValue("usis-hire-ec-relationship"),
+			drivers_license_number: fieldValue("usis-hire-dl-number"),
+			drivers_license_state: fieldValue("usis-hire-dl-state"),
+			felony_conviction: radioValue("usis-hire-felony"),
+			felony_explanation: fieldValue("usis-hire-felony-explanation"),
+			signature_certified: checkboxChecked("usis-hire-sig-certify"),
+			signature_full_name: fieldValue("usis-hire-sig-name"),
+			signature_date: fieldValue("usis-hire-sig-date"),
 		};
+		if (window.USISHireApplication && window.USISHireApplication.gatherEmploymentHistory) {
+			payload.employment_history = window.USISHireApplication.gatherEmploymentHistory();
+		} else {
+			payload.employment_history = [];
+		}
+		return payload;
+	}
+
+	function validateApplicationForm() {
+		var missing = [];
+		function req(label, ok) {
+			if (!ok) missing.push(label);
+		}
+		req("Legal first name", fieldValue("usis-hire-fn"));
+		req("Legal last name", fieldValue("usis-hire-ln"));
+		req("Phone", fieldValue("usis-hire-phone"));
+		req("Position applying for", fieldValue("usis-hire-position"));
+		req("Preferred start date", fieldValue("usis-hire-start"));
+		req("Work authorization", radioValue("usis-hire-work-auth"));
+		req("Sponsorship question", radioValue("usis-hire-sponsorship"));
+		if (fieldValue("usis-hire-heard") === "Other") {
+			req("How you heard about this position", fieldValue("usis-hire-heard-other"));
+		} else {
+			req("How you heard about this position", fieldValue("usis-hire-heard"));
+		}
+		req("Address line 1", fieldValue("usis-hire-addr"));
+		req("City", fieldValue("usis-hire-city"));
+		req("State / region", fieldValue("usis-hire-state"));
+		req("Postal code", fieldValue("usis-hire-zip"));
+		req("Country", fieldValue("usis-hire-country"));
+		req("Education level", fieldValue("usis-hire-edu-level"));
+		req("School / University", fieldValue("usis-hire-edu-school"));
+		req("Degree / Certification", fieldValue("usis-hire-edu-degree"));
+		req("Graduation year", fieldValue("usis-hire-edu-year"));
+		req("Relevant skills / experience", fieldValue("usis-hire-skills"));
+		req("Emergency contact name", fieldValue("usis-hire-ec-name"));
+		req("Emergency contact phone", fieldValue("usis-hire-ec-phone"));
+		req("Emergency contact relationship", fieldValue("usis-hire-ec-relationship"));
+		req("Date of birth", fieldValue("usis-hire-dob"));
+		if (!validSsn(fieldValue("usis-hire-ssn"))) missing.push("Social Security number (XXX-XX-XXXX)");
+		req("Citizenship / immigration status", fieldValue("usis-hire-citizenship"));
+		req("Filing status", fieldValue("usis-hire-filing-status"));
+		req("Felony question", radioValue("usis-hire-felony"));
+		if (radioValue("usis-hire-felony") === "yes") {
+			req("Felony explanation", fieldValue("usis-hire-felony-explanation"));
+		}
+		req("Certification checkbox", checkboxChecked("usis-hire-sig-certify"));
+		req("Signature full name", fieldValue("usis-hire-sig-name"));
+		req("Signature date", fieldValue("usis-hire-sig-date"));
+
+		var empResult = { ok: true };
+		if (window.USISHireApplication && window.USISHireApplication.validateEmploymentHistory) {
+			empResult = window.USISHireApplication.validateEmploymentHistory();
+			if (!empResult.ok && empResult.message) missing.push(empResult.message);
+		}
+
+		if (missing.length) {
+			return "Please complete all required fields: " + missing.join(", ") + ".";
+		}
+		return "";
 	}
 
 	function wizardReview(w) {
@@ -573,6 +693,12 @@
 		}
 	}
 
+	function setRadioValue(name, value) {
+		if (!value) return;
+		var el = document.querySelector('input[name="' + name + '"][value="' + value + '"]');
+		if (el) el.checked = true;
+	}
+
 	function applyWizardToForm(w) {
 		var u = w.user || {};
 		var fn = document.getElementById("usis-hire-fn");
@@ -589,13 +715,60 @@
 			}
 			v("usis-hire-position", "position_applying_for");
 			v("usis-hire-start", "preferred_start_date");
+			v("usis-hire-compensation", "desired_compensation");
+			v("usis-hire-mi", "middle_initial");
+			v("usis-hire-dob", "date_of_birth");
+			v("usis-hire-ssn", "ssn");
+			v("usis-hire-citizenship", "citizenship_status");
+			v("usis-hire-filing-status", "filing_status");
+			v("usis-hire-dependents", "dependents_amount");
+			v("usis-hire-other-income", "other_income");
+			v("usis-hire-deductions", "deductions");
 			v("usis-hire-addr", "address_line1");
+			v("usis-hire-addr2", "address_line2");
 			v("usis-hire-city", "city");
 			v("usis-hire-state", "state");
 			v("usis-hire-zip", "postal_code");
+			v("usis-hire-country", "country");
+			v("usis-hire-edu-level", "education_level");
+			v("usis-hire-edu-school", "education_school");
+			v("usis-hire-edu-degree", "education_degree");
+			v("usis-hire-edu-year", "education_graduation_year");
+			v("usis-hire-skills", "skills_experience");
+			v("usis-hire-certs", "certifications_licenses");
 			v("usis-hire-ec-name", "emergency_contact_name");
 			v("usis-hire-ec-phone", "emergency_contact_phone");
-			v("usis-hire-prior", "prior_employer_summary");
+			v("usis-hire-ec-relationship", "emergency_contact_relationship");
+			v("usis-hire-dl-number", "drivers_license_number");
+			v("usis-hire-dl-state", "drivers_license_state");
+			v("usis-hire-felony-explanation", "felony_explanation");
+			v("usis-hire-sig-name", "signature_full_name");
+			v("usis-hire-sig-date", "signature_date");
+			setRadioValue("usis-hire-work-auth", app.work_authorized_us);
+			setRadioValue("usis-hire-sponsorship", app.requires_sponsorship);
+			setRadioValue("usis-hire-felony", app.felony_conviction);
+			var sigCert = document.getElementById("usis-hire-sig-certify");
+			if (sigCert) sigCert.checked = !!app.signature_certified;
+			var heard = String(app.how_heard_about_position || "");
+			var heardSel = document.getElementById("usis-hire-heard");
+			var heardOther = document.getElementById("usis-hire-heard-other");
+			var heardWrap = document.getElementById("usis-hire-heard-other-wrap");
+			if (heardSel && heard) {
+				var options = ["Company website", "Indeed", "LinkedIn", "Employee referral", "Job fair"];
+				if (options.indexOf(heard) >= 0) {
+					heardSel.value = heard;
+				} else {
+					heardSel.value = "Other";
+					if (heardOther) heardOther.value = heard;
+					if (heardWrap) heardWrap.classList.remove("d-none");
+				}
+			}
+			if (window.USISHireApplication && window.USISHireApplication.applyEmploymentHistory) {
+				window.USISHireApplication.applyEmploymentHistory(app.employment_history || app.prior_employer_summary);
+			}
+			if (window.USISHireApplication && window.USISHireApplication.syncConditionalFields) {
+				window.USISHireApplication.syncConditionalFields();
+			}
 		}
 		var links = w.official_links || {};
 		var a1 = document.getElementById("usis-hire-link-i9-pdf");
@@ -607,6 +780,9 @@
 		state.section1 = window.USISHrI9 ? window.USISHrI9.mergePrefill(w.i9 && w.i9.prefill, w.i9 && w.i9.draft) : null;
 		state.w4Data = window.USISHrW4 ? window.USISHrW4.mergePrefill(w.w4 && w.w4.prefill, w.w4 && w.w4.draft) : null;
 		renderProgress(w.progress);
+		if (window.USISHireApplicationReview && window.USISHireApplicationReview.afterWizardLoad) {
+			window.USISHireApplicationReview.afterWizardLoad(w);
+		}
 		if (window.USISHireUnion && window.USISHireUnion.afterWizardLoad) window.USISHireUnion.afterWizardLoad(w);
 		if (window.USISHireI9 && window.USISHireI9.afterWizardLoad) window.USISHireI9.afterWizardLoad(w);
 		if (window.USISHireW4 && window.USISHireW4.afterWizardLoad) window.USISHireW4.afterWizardLoad(w);
@@ -711,6 +887,12 @@
 
 	function submitApplication() {
 		showErr("");
+		var validationMsg = validateApplicationForm();
+		if (validationMsg) {
+			showErr(validationMsg);
+			if (window.USISNotify) window.USISNotify.error(validationMsg);
+			return Promise.reject(new Error(validationMsg));
+		}
 		return patchMe()
 			.then(function () {
 				return fetch(apiBase() + "/api/v1/hr/me/hire-application", {
@@ -782,5 +964,9 @@
 		isWizardLocked: isWizardLocked,
 		renderCompleteReviewStatus: renderCompleteReviewStatus,
 		renderCompletePageContent: renderCompletePageContent,
+		validateApplicationForm: validateApplicationForm,
+		gatherApplicationPayload: gatherApplicationPayload,
+		normalizeSsnInput: normalizeSsnInput,
+		validSsn: validSsn,
 	};
 })();

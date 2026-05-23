@@ -442,3 +442,60 @@ def test_hr_hire_wizard_get_and_submit(client, hr_wizard_user):
     r14 = client.get("/api/v1/hr/me/hire-wizard", headers=hdr)
     assert r14.get_json()["w4"]["status"] == "signed"
     assert r14.get_json()["steps"]["w4"]["signed_at"]
+
+
+def test_hire_application_expanded_fields(client, hr_wizard_user):
+    from app.api._hr_hire_wizard import _sanitize_hire_application_payload
+
+    demo = hr_wizard_user["user_id"]
+    hdr = {"X-Usis-User-Id": demo}
+    application = {
+        "position_applying_for": "Foreman",
+        "preferred_start_date": "06/01/2026",
+        "desired_compensation": "$45/hr",
+        "work_authorized_us": "yes",
+        "requires_sponsorship": "no",
+        "how_heard_about_position": "Employee referral",
+        "address_line1": "100 Main St",
+        "address_line2": "Suite 2",
+        "city": "Denver",
+        "state": "CO",
+        "postal_code": "80202",
+        "country": "United States",
+        "education_level": "High School",
+        "education_school": "Denver West HS",
+        "education_degree": "Diploma",
+        "education_graduation_year": "2010",
+        "employment_history": [
+            {
+                "company_name": "Acme Builders",
+                "job_title": "Carpenter",
+                "start_date": "01/2018",
+                "end_date": "Present",
+                "may_contact": "yes",
+            }
+        ],
+        "skills_experience": "Framing, finish carpentry",
+        "certifications_licenses": "OSHA 10",
+        "emergency_contact_name": "Jane Doe",
+        "emergency_contact_phone": "555-0100",
+        "emergency_contact_relationship": "Spouse",
+        "felony_conviction": "no",
+        "signature_certified": True,
+        "signature_full_name": "Jamie Rivera",
+        "signature_date": "2026-05-19",
+    }
+    sanitized = _sanitize_hire_application_payload(application)
+    assert sanitized is not None
+    assert sanitized["employment_history"][0]["company_name"] == "Acme Builders"
+    assert sanitized["signature_certified"] is True
+    r = client.post(
+        "/api/v1/hr/me/hire-application",
+        headers=hdr,
+        json={"application": application},
+    )
+    assert r.status_code == 200
+    w = client.get("/api/v1/hr/me/hire-wizard", headers=hdr).get_json()
+    payload = w["application"]["payload"]
+    assert payload["employment_history"][0]["company_name"] == "Acme Builders"
+    assert w["i9"]["prefill"]["apt"] == "Suite 2"

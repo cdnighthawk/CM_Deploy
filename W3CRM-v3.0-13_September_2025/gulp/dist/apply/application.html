@@ -87,7 +87,7 @@
 			<div class="container">
 				<p class="text-primary fw-semibold text-uppercase small mb-2">Step 1 of 5</p>
 				<h1 class="mb-2">Employment application</h1>
-				<p class="text-muted mb-0">Tell us about yourself and the position you are applying for.</p>
+				<p class="text-muted mb-0">Complete all sections below. Fields marked with <span class="text-danger">*</span> are required.</p>
 			</div>
 		</section>
 
@@ -110,61 +110,313 @@
 			</div>
 
 			<div id="usis-hire-workspace">
-				<div class="card border-0 shadow-sm mb-3">
-					<div class="card-body">
-						<div class="row g-2">
-							<div class="col-md-4">
-								<label class="form-label small" for="usis-hire-fn">Legal first name</label>
-								<input class="form-control form-control-sm" id="usis-hire-fn" autocomplete="given-name">
+				<form id="usis-hire-application-form" class="card border-0 shadow-sm mb-3" novalidate>
+					<div class="card-body usis-apply-form">
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Personal Information</h2>
+							<div class="row g-3">
+								<div class="col-md-3">
+									<label class="form-label" for="usis-hire-fn">Legal first name <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-fn" autocomplete="given-name" required>
+								</div>
+								<div class="col-md-2">
+									<label class="form-label" for="usis-hire-mi">Middle initial</label>
+									<input class="form-control" id="usis-hire-mi" maxlength="1" autocomplete="additional-name">
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-hire-ln">Legal last name <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-ln" autocomplete="family-name" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-phone">Phone <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-phone" type="tel" autocomplete="tel" required>
+								</div>
 							</div>
-							<div class="col-md-4">
-								<label class="form-label small" for="usis-hire-ln">Legal last name</label>
-								<input class="form-control form-control-sm" id="usis-hire-ln" autocomplete="family-name">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Position &amp; Availability</h2>
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-position">Position applying for <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-position" placeholder="e.g. Carpenter, Estimator" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-start">Preferred start date <span class="text-danger">*</span></label>
+									<input type="text" class="form-control" id="usis-hire-start" placeholder="mm/dd/yyyy" autocomplete="off" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-compensation">Desired hourly rate / salary</label>
+									<input class="form-control" id="usis-hire-compensation" placeholder="Optional">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-heard">How did you hear about this position? <span class="text-danger">*</span></label>
+									<select class="form-select" id="usis-hire-heard" required>
+										<option value="">Select one…</option>
+										<option value="Company website">Company website</option>
+										<option value="Indeed">Indeed</option>
+										<option value="LinkedIn">LinkedIn</option>
+										<option value="Employee referral">Employee referral</option>
+										<option value="Job fair">Job fair</option>
+										<option value="Other">Other</option>
+									</select>
+								</div>
+								<div class="col-12 d-none" id="usis-hire-heard-other-wrap">
+									<label class="form-label" for="usis-hire-heard-other">Please specify</label>
+									<input class="form-control" id="usis-hire-heard-other" placeholder="How you heard about us">
+								</div>
+								<div class="col-md-6">
+									<fieldset>
+										<legend class="form-label mb-2">Are you legally authorized to work in the United States? <span class="text-danger">*</span></legend>
+										<div class="d-flex flex-wrap gap-3">
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="usis-hire-work-auth" id="usis-hire-work-auth-yes" value="yes" required>
+												<label class="form-check-label" for="usis-hire-work-auth-yes">Yes</label>
+											</div>
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="usis-hire-work-auth" id="usis-hire-work-auth-no" value="no">
+												<label class="form-check-label" for="usis-hire-work-auth-no">No</label>
+											</div>
+										</div>
+									</fieldset>
+								</div>
+								<div class="col-md-6">
+									<fieldset>
+										<legend class="form-label mb-2">Will you now or in the future require sponsorship for employment? <span class="text-danger">*</span></legend>
+										<div class="d-flex flex-wrap gap-3">
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="usis-hire-sponsorship" id="usis-hire-sponsorship-yes" value="yes" required>
+												<label class="form-check-label" for="usis-hire-sponsorship-yes">Yes</label>
+											</div>
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="usis-hire-sponsorship" id="usis-hire-sponsorship-no" value="no">
+												<label class="form-check-label" for="usis-hire-sponsorship-no">No</label>
+											</div>
+										</div>
+									</fieldset>
+								</div>
 							</div>
-							<div class="col-md-4">
-								<label class="form-label small" for="usis-hire-phone">Phone</label>
-								<input class="form-control form-control-sm" id="usis-hire-phone" autocomplete="tel">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Address</h2>
+							<div class="row g-3">
+								<div class="col-12">
+									<label class="form-label" for="usis-hire-addr">Address line 1 <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-addr" autocomplete="address-line1" required>
+								</div>
+								<div class="col-12">
+									<label class="form-label" for="usis-hire-addr2">Address line 2</label>
+									<input class="form-control" id="usis-hire-addr2" autocomplete="address-line2" placeholder="Apt, suite, unit (optional)">
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-city">City <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-city" autocomplete="address-level2" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-state">State / region <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-state" autocomplete="address-level1" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-zip">Postal code <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-zip" autocomplete="postal-code" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-country">Country <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-country" value="United States" autocomplete="country-name" required>
+								</div>
 							</div>
-							<div class="col-md-6">
-								<label class="form-label small" for="usis-hire-position">Position applying for</label>
-								<input class="form-control form-control-sm" id="usis-hire-position">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Education</h2>
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-edu-level">Highest level of education completed <span class="text-danger">*</span></label>
+									<select class="form-select" id="usis-hire-edu-level" required>
+										<option value="">Select one…</option>
+										<option value="High School">High School</option>
+										<option value="Associate's">Associate's</option>
+										<option value="Bachelor's">Bachelor's</option>
+										<option value="Master's">Master's</option>
+										<option value="PhD">PhD</option>
+										<option value="Other">Other</option>
+									</select>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-edu-school">School / University name <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-edu-school" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-edu-degree">Degree / Certification <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-edu-degree" placeholder="e.g. B.S. Construction Management" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-edu-year">Graduation year <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-edu-year" inputmode="numeric" placeholder="YYYY" required>
+								</div>
 							</div>
-							<div class="col-md-6">
-								<label class="form-label small" for="usis-hire-start">Preferred start date</label>
-								<input type="text" class="form-control form-control-sm" id="usis-hire-start" placeholder="mm/dd/yyyy" autocomplete="off">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<h2 class="h5 fw-semibold mb-0">Employment History</h2>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-hire-employment-add">Add employer</button>
 							</div>
-							<div class="col-12">
-								<label class="form-label small" for="usis-hire-addr">Address line 1</label>
-								<input class="form-control form-control-sm" id="usis-hire-addr" autocomplete="street-address">
+							<p class="text-muted small mb-3">List your most recent employers (up to 4). Include at least one complete entry.</p>
+							<div id="usis-hire-employment-list"></div>
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Skills &amp; Qualifications</h2>
+							<div class="row g-3">
+								<div class="col-12">
+									<label class="form-label" for="usis-hire-skills">Relevant skills / experience <span class="text-danger">*</span></label>
+									<textarea class="form-control" id="usis-hire-skills" rows="4" placeholder="Describe trade skills, tools, software, and relevant project experience." required></textarea>
+								</div>
+								<div class="col-12">
+									<label class="form-label" for="usis-hire-certs">Certifications / Licenses</label>
+									<textarea class="form-control" id="usis-hire-certs" rows="3" placeholder="Optional — OSHA, trade licenses, certifications, etc."></textarea>
+								</div>
 							</div>
-							<div class="col-md-4">
-								<label class="form-label small" for="usis-hire-city">City</label>
-								<input class="form-control form-control-sm" id="usis-hire-city">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Emergency Contact</h2>
+							<div class="row g-3">
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-ec-name">Emergency contact name <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-ec-name" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-ec-phone">Emergency contact phone <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-ec-phone" type="tel" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-ec-relationship">Relationship <span class="text-danger">*</span></label>
+									<select class="form-select" id="usis-hire-ec-relationship" required>
+										<option value="">Select one…</option>
+										<option value="Spouse">Spouse</option>
+										<option value="Parent">Parent</option>
+										<option value="Sibling">Sibling</option>
+										<option value="Friend">Friend</option>
+										<option value="Other">Other</option>
+									</select>
+								</div>
 							</div>
-							<div class="col-md-4">
-								<label class="form-label small" for="usis-hire-state">State / region</label>
-								<input class="form-control form-control-sm" id="usis-hire-state">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Additional Information</h2>
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-dl-number">Driver's license number</label>
+									<input class="form-control" id="usis-hire-dl-number" placeholder="Optional">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-dl-state">Driver's license state</label>
+									<input class="form-control" id="usis-hire-dl-state" placeholder="Optional">
+								</div>
+								<div class="col-12">
+									<fieldset>
+										<legend class="form-label mb-2">Have you ever been convicted of a felony? <span class="text-danger">*</span></legend>
+										<div class="d-flex flex-wrap gap-3">
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="usis-hire-felony" id="usis-hire-felony-yes" value="yes" required>
+												<label class="form-check-label" for="usis-hire-felony-yes">Yes</label>
+											</div>
+											<div class="form-check">
+												<input class="form-check-input" type="radio" name="usis-hire-felony" id="usis-hire-felony-no" value="no">
+												<label class="form-check-label" for="usis-hire-felony-no">No</label>
+											</div>
+										</div>
+									</fieldset>
+								</div>
+								<div class="col-12 d-none" id="usis-hire-felony-explanation-wrap">
+									<label class="form-label" for="usis-hire-felony-explanation">Please explain <span class="text-danger">*</span></label>
+									<textarea class="form-control" id="usis-hire-felony-explanation" rows="3"></textarea>
+								</div>
 							</div>
-							<div class="col-md-4">
-								<label class="form-label small" for="usis-hire-zip">Postal code</label>
-								<input class="form-control form-control-sm" id="usis-hire-zip">
+						</section>
+
+						<section class="usis-apply-form-section">
+							<h2 class="h5 fw-semibold mb-3">Tax &amp; Immigration Information</h2>
+							<p class="text-muted small">Used to prefill Form I-9 and Form W-4 when you review and sign.</p>
+							<div class="row g-3">
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-dob">Date of birth <span class="text-danger">*</span></label>
+									<input type="date" class="form-control" id="usis-hire-dob" autocomplete="bday" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-ssn">Social Security number <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-ssn" inputmode="numeric" autocomplete="off" placeholder="XXX-XX-XXXX" required>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-citizenship">Citizenship / immigration status (I-9) <span class="text-danger">*</span></label>
+									<select class="form-select" id="usis-hire-citizenship" required>
+										<option value="">Select one…</option>
+										<option value="citizen">U.S. Citizen</option>
+										<option value="noncitizen_national">Noncitizen national of the United States</option>
+										<option value="lawful_permanent_resident">Lawful permanent resident</option>
+										<option value="alien_authorized">Alien authorized to work</option>
+									</select>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-filing-status">Filing status (W-4) <span class="text-danger">*</span></label>
+									<select class="form-select" id="usis-hire-filing-status" required>
+										<option value="">Select one…</option>
+										<option value="single">Single or Married filing separately</option>
+										<option value="married_joint">Married filing jointly</option>
+										<option value="head_of_household">Head of household</option>
+									</select>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-dependents">Dependents amount (optional)</label>
+									<input class="form-control" id="usis-hire-dependents" placeholder="W-4 Step 3 dollar amount">
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-other-income">Other income (optional)</label>
+									<input class="form-control" id="usis-hire-other-income" placeholder="Expected other income">
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-hire-deductions">Deductions (optional)</label>
+									<input class="form-control" id="usis-hire-deductions" placeholder="Expected deductions">
+								</div>
 							</div>
-							<div class="col-md-6">
-								<label class="form-label small" for="usis-hire-ec-name">Emergency contact name</label>
-								<input class="form-control form-control-sm" id="usis-hire-ec-name">
+						</section>
+
+						<section class="usis-apply-form-section mb-0">
+							<h2 class="h5 fw-semibold mb-3">Certification &amp; Signature</h2>
+							<div class="row g-3">
+								<div class="col-12">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" id="usis-hire-sig-certify" required>
+										<label class="form-check-label" for="usis-hire-sig-certify">
+											I certify that the information I have provided is true and complete to the best of my knowledge. <span class="text-danger">*</span>
+										</label>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-sig-name">Full name (electronic signature) <span class="text-danger">*</span></label>
+									<input class="form-control" id="usis-hire-sig-name" placeholder="Type your full legal name" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-hire-sig-date">Date <span class="text-danger">*</span></label>
+									<input type="date" class="form-control" id="usis-hire-sig-date" required>
+								</div>
 							</div>
-							<div class="col-md-6">
-								<label class="form-label small" for="usis-hire-ec-phone">Emergency contact phone</label>
-								<input class="form-control form-control-sm" id="usis-hire-ec-phone">
-							</div>
-							<div class="col-12">
-								<label class="form-label small" for="usis-hire-prior">Prior employer summary (optional)</label>
-								<textarea class="form-control form-control-sm" id="usis-hire-prior" rows="2"></textarea>
-							</div>
+						</section>
+
+						<div class="pt-4 mt-2 border-top d-flex flex-wrap gap-2 align-items-center">
+							<button type="button" class="btn btn-outline-primary" id="usis-hire-submit-app">Save application</button>
+							<button type="button" class="btn btn-primary" id="usis-hire-review-sign-btn">Review and Sign</button>
 						</div>
-						<button type="button" class="btn btn-outline-primary btn-sm mt-3" id="usis-hire-submit-app">Save application</button>
+						<div id="usis-hire-forms-signed-ok" class="alert alert-success py-2 small mt-3 d-none" role="status">
+							Application completed and signed — Form I-9 and Form W-4 are on file.
+						</div>
 					</div>
-				</div>
+				</form>
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 pt-3 border-top">
 	<a class="btn btn-outline-secondary" id="usis-apply-back" href="../apply.html">Back</a>
 	<button type="button" class="btn btn-primary d-none" id="usis-apply-save-next">Save and continue</button>
@@ -183,13 +435,126 @@
 	</div>
 </footer>
 
+
+	<div class="modal fade" id="usis-hire-review-sign-modal" tabindex="-1" aria-labelledby="usis-hire-review-sign-title" aria-hidden="true">
+		<div class="modal-dialog modal-fullscreen">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-hire-review-sign-title">Review and Sign — Application, I-9, and W-4</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<ul class="nav nav-tabs usis-hire-review-tabs mb-3" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button class="nav-link active" id="usis-hire-review-tab-summary" data-bs-toggle="tab" data-bs-target="#usis-hire-review-pane-summary" type="button" role="tab">Application summary</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="usis-hire-review-tab-i9" data-bs-toggle="tab" data-bs-target="#usis-hire-review-pane-i9" type="button" role="tab">Form I-9</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="usis-hire-review-tab-w4" data-bs-toggle="tab" data-bs-target="#usis-hire-review-pane-w4" type="button" role="tab">Form W-4</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="usis-hire-review-tab-sign" data-bs-toggle="tab" data-bs-target="#usis-hire-review-pane-sign" type="button" role="tab">Sign</button>
+						</li>
+					</ul>
+					<div class="tab-content">
+						<div class="tab-pane fade show active" id="usis-hire-review-pane-summary" role="tabpanel">
+							<p class="text-muted small">Review your employment application before completing Form I-9 and Form W-4.</p>
+							<dl class="row mb-0" id="usis-hire-review-summary-dl"></dl>
+						</div>
+						<div class="tab-pane fade" id="usis-hire-review-pane-i9" role="tabpanel">
+							<p class="text-muted small mb-2">Prefilled from your application. Complete identity document fields, then save.</p>
+							<div id="usis-hire-review-i9-root"></div>
+						</div>
+						<div class="tab-pane fade" id="usis-hire-review-pane-w4" role="tabpanel">
+							<p class="text-muted small mb-2">Prefilled from your application. Adjust withholding if needed, then save.</p>
+							<div id="usis-hire-review-w4-root"></div>
+						</div>
+						<div class="tab-pane fade" id="usis-hire-review-pane-sign" role="tabpanel">
+							<div id="usis-hire-review-sign-status" class="mb-3"></div>
+							<p class="text-muted small">Save Form I-9 and Form W-4 first, then sign each form electronically.</p>
+							<div class="d-flex flex-wrap gap-2 mb-3">
+								<button type="button" class="btn btn-success btn-sm" id="usis-hire-review-sign-i9-btn">Sign Form I-9</button>
+								<button type="button" class="btn btn-success btn-sm" id="usis-hire-review-sign-w4-btn">Sign Form W-4</button>
+							</div>
+							<div id="usis-hire-review-sign-err" class="alert alert-danger py-2 small d-none" role="alert"></div>
+						</div>
+					</div>
+					<div id="usis-hire-review-err" class="alert alert-danger py-2 small d-none mt-3" role="alert"></div>
+				</div>
+				<div class="modal-footer flex-wrap">
+					<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-outline-primary btn-sm" id="usis-hire-review-save-forms">Save I-9 &amp; W-4</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="usis-hire-review-i9-sign-modal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Sign Form I-9 Section 1</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<ul class="nav nav-tabs mb-3" role="tablist">
+						<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#usis-hire-review-i9-draw" type="button">Draw</button></li>
+						<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#usis-hire-review-i9-type" type="button">Type</button></li>
+					</ul>
+					<div class="tab-content">
+						<div class="tab-pane fade show active" id="usis-hire-review-i9-draw"><div class="usis-i9-sign-canvas-wrap mb-2"><canvas id="usis-hire-review-i9-canvas" width="640" height="160"></canvas></div><button type="button" class="btn btn-outline-secondary btn-sm" id="usis-hire-review-i9-clear">Clear</button></div>
+						<div class="tab-pane fade" id="usis-hire-review-i9-type"><input class="form-control form-control-sm mb-2" id="usis-hire-review-i9-typed"><div class="usis-i9-sign-typed-preview" id="usis-hire-review-i9-typed-preview"></div></div>
+					</div>
+					<div class="form-check mt-3"><input class="form-check-input" type="checkbox" id="usis-hire-review-i9-cert"><label class="form-check-label small" for="usis-hire-review-i9-cert">I certify Section 1 is true and correct.</label></div>
+					<input class="form-control form-control-sm mt-2" id="usis-hire-review-i9-fullname" placeholder="Full legal name">
+				</div>
+				<div class="modal-footer"><button type="button" class="btn btn-success btn-sm" id="usis-hire-review-i9-sign-submit">Sign I-9</button></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="usis-hire-review-w4-sign-modal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Sign Form W-4</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<ul class="nav nav-tabs mb-3" role="tablist">
+						<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#usis-hire-review-w4-draw" type="button">Draw</button></li>
+						<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#usis-hire-review-w4-type" type="button">Type</button></li>
+					</ul>
+					<div class="tab-content">
+						<div class="tab-pane fade show active" id="usis-hire-review-w4-draw"><div class="usis-i9-sign-canvas-wrap mb-2"><canvas id="usis-hire-review-w4-canvas" width="640" height="160"></canvas></div><button type="button" class="btn btn-outline-secondary btn-sm" id="usis-hire-review-w4-clear">Clear</button></div>
+						<div class="tab-pane fade" id="usis-hire-review-w4-type"><input class="form-control form-control-sm mb-2" id="usis-hire-review-w4-typed"><div class="usis-i9-sign-typed-preview" id="usis-hire-review-w4-typed-preview"></div></div>
+					</div>
+					<div class="form-check mt-3"><input class="form-check-input" type="checkbox" id="usis-hire-review-w4-cert"><label class="form-check-label small" for="usis-hire-review-w4-cert">Under penalties of perjury, I certify this W-4 is correct.</label></div>
+					<input class="form-control form-control-sm mt-2" id="usis-hire-review-w4-fullname" placeholder="Full legal name">
+				</div>
+				<div class="modal-footer"><button type="button" class="btn btn-success btn-sm" id="usis-hire-review-w4-sign-submit">Sign W-4</button></div>
+			</div>
+		</div>
+	</div>
+
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
+	<link href="assets/css/usis-official-form.css" rel="stylesheet">
+	<link href="assets/css/usis-hr-i9-review.css" rel="stylesheet">
+	<link href="assets/css/usis-hr-w4-review.css" rel="stylesheet">
 	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-hr-i9-fields.js"></script>
+	<script src="assets/js/usis-hr-i9-docs.js"></script>
+	<script src="assets/js/usis-hr-w4-fields.js"></script>
+	<script src="assets/js/usis-hr-w4-docs.js"></script>
+	<script src="assets/js/usis-hire-form-mappings.js"></script>
 	<script src="assets/js/usis-hire-core.js"></script>
 	<script src="assets/js/usis-hire-application.js"></script>
+	<script src="assets/js/usis-hire-application-review.js"></script>
 </body>
 </html>

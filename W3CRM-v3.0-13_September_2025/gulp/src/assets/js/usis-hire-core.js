@@ -33,6 +33,8 @@
 		signDrawing: false,
 		w4SignDrawing: false,
 		currentStep: null,
+		applicationFormHydrated: false,
+		applicationFormDirty: false,
 	};
 
 	function apiBase() {
@@ -128,6 +130,7 @@
 	}
 
 	function stepFile(stepId, wizard) {
+		if (stepId === "path") return "path.html";
 		var steps = stepsForWizard(wizard);
 		for (var i = 0; i < steps.length; i++) {
 			if (steps[i].id === stepId) return steps[i].file;
@@ -386,9 +389,18 @@
 		});
 	}
 
+	function applyStepPath(stepId) {
+		var href = applyStepHref(stepId);
+		var current = rootRelativePath().toLowerCase();
+		var target = href.toLowerCase();
+		return current === target || current.endsWith("/" + target) ? null : href;
+	}
+
 	function redirectToStep(stepId, reasonMsg) {
+		var href = applyStepPath(stepId);
+		if (!href) return;
 		if (reasonMsg) setRedirectMessage(reasonMsg);
-		window.location.replace(applyStepHref(stepId));
+		window.location.replace(href);
 	}
 
 	function enforceStepAccess(stepId, wizard) {
@@ -699,16 +711,38 @@
 		if (el) el.checked = true;
 	}
 
-	function applyWizardToForm(w) {
+	function markApplicationFormDirty() {
+		if (state.currentStep === "application") state.applicationFormDirty = true;
+	}
+
+	function wireApplicationFormDirtyTracking() {
+		var form = document.getElementById("usis-hire-application-form");
+		if (!form || form.getAttribute("data-usis-dirty-wired") === "1") return;
+		form.setAttribute("data-usis-dirty-wired", "1");
+		form.addEventListener("input", markApplicationFormDirty);
+		form.addEventListener("change", markApplicationFormDirty);
+	}
+
+	function applyWizardToForm(w, opts) {
+		opts = opts || {};
+		var onApplication = state.currentStep === "application";
+		var skipFormFields =
+			onApplication &&
+			!opts.forceForm &&
+			state.applicationFormHydrated &&
+			state.applicationFormDirty;
+		if (onApplication && !state.applicationFormHydrated) wireApplicationFormDirtyTracking();
 		var u = w.user || {};
-		var fn = document.getElementById("usis-hire-fn");
-		var ln = document.getElementById("usis-hire-ln");
-		var ph = document.getElementById("usis-hire-phone");
-		if (fn) fn.value = u.first_name || "";
-		if (ln) ln.value = u.last_name || "";
-		if (ph) ph.value = u.phone || "";
+		if (!skipFormFields) {
+			var fn = document.getElementById("usis-hire-fn");
+			var ln = document.getElementById("usis-hire-ln");
+			var ph = document.getElementById("usis-hire-phone");
+			if (fn) fn.value = u.first_name || "";
+			if (ln) ln.value = u.last_name || "";
+			if (ph) ph.value = u.phone || "";
+		}
 		var app = w.application && w.application.payload;
-		if (app && typeof app === "object") {
+		if (!skipFormFields && app && typeof app === "object") {
 			function v(id, key) {
 				var el = document.getElementById(id);
 				if (el && app[key] != null) el.value = String(app[key]);
@@ -770,6 +804,7 @@
 				window.USISHireApplication.syncConditionalFields();
 			}
 		}
+		if (onApplication && !skipFormFields) state.applicationFormHydrated = true;
 		var links = w.official_links || {};
 		var a1 = document.getElementById("usis-hire-link-i9-pdf");
 		var a2 = document.getElementById("usis-hire-link-i9-help");
@@ -819,9 +854,9 @@
 				applyWizardToForm(w);
 				showErr("");
 				if (w.path_selection_required && state.currentStep !== "path") {
-					var p = rootRelativePath().toLowerCase();
-					if (p.indexOf("apply/path.html") === -1) {
-						window.location.replace(applyStepHref("path"));
+					var pathHref = applyStepPath("path");
+					if (pathHref) {
+						window.location.replace(pathHref);
 						return w;
 					}
 				}
@@ -912,6 +947,7 @@
 			})
 			.then(function () {
 				if (window.USISNotify) window.USISNotify.success("Application saved.");
+				state.applicationFormDirty = false;
 				return loadWizard().then(function (w) {
 					var ok = document.getElementById("usis-hire-app-saved-ok");
 					if (ok) ok.classList.remove("d-none");

@@ -427,42 +427,7 @@
 		return payload;
 	}
 	function apiBase() {
-		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
-			var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
-			try {
-				if (s && new URL(s).origin === window.location.origin) {
-					/* fall through */
-				} else if (s) {
-					return s;
-				}
-			} catch (e) {
-				if (s) return s;
-			}
-		}
-		var loc = window.location;
-		if (loc.protocol === "file:") {
-			return "http://127.0.0.1:5000";
-		}
-		var host = loc.hostname || "";
-		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
-		var devPorts = { 3000: 1, 3001: 1, 3002: 1, 4173: 1, 5173: 1, 5174: 1, 5500: 1, 5501: 1, 8080: 1, 4200: 1, 4321: 1, 9630: 1, 1234: 1 };
-		if (devPorts[port]) {
-			return proto + "//" + host + ":5000";
-		}
-		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
-		if (loopback) {
-			if (port === "5000") return "";
-			return proto + "//" + host + ":5000";
-		}
-		var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-		if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
-			return proto + "//" + host + ":5000";
-		}
-		if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
-			return proto + "//" + host + ":5000";
-		}
-		return "";
+		return window.USIS_API.apiBase();
 	}
 	function projectIdFromQuery() {
 		var id = new URLSearchParams(window.location.search).get("id");
@@ -519,64 +484,16 @@
 		else el.classList.add("d-none");
 	}
 	function actorHeaders() {
-		var id = null;
-		try {
-			id = window.localStorage.getItem("usisActorUserId");
-		} catch (e) {}
-		if (id && id.trim()) {
-			return { "X-Usis-User-Id": id.trim() };
-		}
-		return {};
+		return window.USIS_API.actorHeaders();
 	}
 	function fetchJson(path) {
-		var base = apiBase();
-		return fetch(base + path, {
-			credentials: "include",
-			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
-		}).then(function (res) {
-			if (!res.ok) {
-				return res.text().then(function (t) {
-					throw new Error(res.status + " " + (t || res.statusText));
-				});
-			}
-			return res.json();
-		});
+		return window.USIS_API.fetchJson(path);
 	}
 	function fetchJsonBody(method, path, bodyObj) {
-		var base = apiBase();
-		var opts = {
-			method: method,
-			credentials: "include",
-			headers: Object.assign(
-				{ "Content-Type": "application/json", Accept: "application/json" },
-				actorHeaders()
-			),
-		};
-		if (bodyObj !== undefined && bodyObj !== null) {
-			opts.body = JSON.stringify(bodyObj);
-		}
-		return fetch(base + path, opts).then(function (res) {
-			if (!res.ok) {
-				return res.text().then(function (t) {
-					throw new Error(res.status + " " + (t || res.statusText));
-				});
-			}
-			if (res.status === 204) return null;
-			return res.json();
-		});
+		return window.USIS_API.fetchJson(path, { method: method, body: bodyObj });
 	}
 	function fetchEmpty(method, path) {
-		var base = apiBase();
-		return fetch(base + path, {
-			method: method,
-			credentials: "include",
-			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
-		}).then(function (res) {
-			if (!res.ok) {
-				return res.text().then(function (t) {
-					throw new Error(res.status + " " + (t || res.statusText));
-				});
-			}
+		return window.USIS_API.fetchJson(path, { method: method }).then(function () {
 			return null;
 		});
 	}

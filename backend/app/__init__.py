@@ -10,6 +10,8 @@ import uuid
 from datetime import timedelta
 from pathlib import Path
 
+from urllib.parse import urlparse
+
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
@@ -71,6 +73,20 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
         return out
 
 
+def _session_cookie_domain_from_public_url() -> str | None:
+    """Return ``.example.com`` for custom domains so apex and www share the session cookie."""
+    public_url = (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip()
+    if not public_url:
+        return None
+    host = (urlparse(public_url).hostname or "").strip().lower()
+    if not host or host.endswith(".onrender.com") or host in ("localhost", "127.0.0.1"):
+        return None
+    parts = host.split(".")
+    if len(parts) < 2:
+        return None
+    return "." + ".".join(parts[-2:])
+
+
 def _apply_production_middleware(app: Flask) -> None:
     """Trust Render reverse proxy and secure session cookies in production."""
     if os.environ.get("FLASK_ENV", "").strip().lower() != "production":
@@ -80,6 +96,10 @@ def _apply_production_middleware(app: Flask) -> None:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    cookie_domain = _session_cookie_domain_from_public_url()
+    if cookie_domain:
+        app.config["SESSION_COOKIE_DOMAIN"] = cookie_domain
+        app.logger.info("SESSION_COOKIE_DOMAIN=%s", cookie_domain)
 
 
 def _should_autoload_bc_csv() -> bool:

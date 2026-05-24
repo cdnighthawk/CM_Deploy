@@ -11,34 +11,6 @@
 	var invoiceMethods = [];
 	var INVOICE_ADD_NEW = "__add_new__";
 
-	var DEV_SERVER_PORTS = {
-		3000: 1,
-		3001: 1,
-		3002: 1,
-		4173: 1,
-		5173: 1,
-		5174: 1,
-		5500: 1,
-		5501: 1,
-		8080: 1,
-		4200: 1,
-		4321: 1,
-		9630: 1,
-		1234: 1,
-	};
-
-	function explicitWindowApiBase() {
-		if (typeof window.USIS_API_BASE !== "string") return null;
-		var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
-		if (!s) return null;
-		try {
-			if (new URL(s).origin === window.location.origin) return null;
-		} catch (e) {
-			/* keep s */
-		}
-		return s;
-	}
-
 	function metaApiBase() {
 		if (typeof document === "undefined" || !document.querySelector) return null;
 		var m = document.querySelector('meta[name="usis-api-base"]');
@@ -48,29 +20,9 @@
 	}
 
 	function apiBase() {
-		var fromWin = explicitWindowApiBase();
-		if (fromWin) return fromWin;
 		var fromMeta = metaApiBase();
 		if (fromMeta) return fromMeta;
-		var loc = window.location;
-		if (loc.protocol === "file:") return "http://127.0.0.1:5000";
-		var host = loc.hostname || "";
-		var proto = loc.protocol || "http:";
-		var port = String(loc.port || "");
-		if (DEV_SERVER_PORTS[port]) return proto + "//" + host + ":5000";
-		var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
-		if (loopback) {
-			if (port === "5000") return "";
-			return proto + "//" + host + ":5000";
-		}
-		var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-		if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
-			return proto + "//" + host + ":5000";
-		}
-		if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
-			return proto + "//" + host + ":5000";
-		}
-		return "";
+		return window.USIS_API.apiBase();
 	}
 
 	function projectIdFromQuery() {
@@ -219,14 +171,7 @@
 	}
 
 	function actorHeaders() {
-		var id = null;
-		try {
-			id = window.localStorage.getItem("usisActorUserId");
-		} catch (e) {}
-		if (id && id.trim()) {
-			return { "X-Usis-User-Id": id.trim() };
-		}
-		return {};
+		return window.USIS_API.actorHeaders();
 	}
 
 	function parseMoneyInput(raw) {

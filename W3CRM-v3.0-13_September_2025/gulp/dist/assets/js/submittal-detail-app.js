@@ -7,16 +7,8 @@ import * as pdfjsLib from "../vendor/pdfjs/pdf.min.mjs";
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("../vendor/pdfjs/pdf.worker.min.mjs", import.meta.url).href;
 
 function apiBase() {
-	if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
-		return window.USIS_API_BASE.trim().replace(/\/$/, "");
-	}
-	var loc = window.location;
-	if (loc.protocol === "file:") return "http://127.0.0.1:5000";
-	var host = loc.hostname || "";
-	var proto = loc.protocol || "http:";
-	var port = String(loc.port || "");
-	if (port === "3000" || port === "5173" || port === "5500") return proto + "//" + host + ":5000";
-	if ((host === "localhost" || host === "127.0.0.1") && port !== "5000") return proto + "//" + host + ":5000";
+	if (window.USIS_API) return window.USIS_API.apiBase();
+	if (typeof window.usisApiBase === "function") return window.usisApiBase();
 	return "";
 }
 
@@ -25,8 +17,30 @@ function qs() {
 }
 
 async function fetchJson(path, opts) {
+	var o = opts || {};
+	if (window.USIS_API) {
+		var body = o.body;
+		if (typeof body === "string") {
+			try {
+				body = JSON.parse(body);
+			} catch (e) {
+				/* keep string body */
+			}
+		}
+		return window.USIS_API.fetchJson(path, {
+			method: o.method,
+			headers: o.headers,
+			body: body,
+		});
+	}
 	var url = apiBase() + path;
-	var res = await fetch(url, Object.assign({ credentials: "omit" }, opts || {}));
+	var res = await fetch(
+		url,
+		Object.assign({}, o, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, o.headers || {}),
+		})
+	);
 	if (!res.ok) {
 		var t = await res.text();
 		throw new Error(res.status + " " + (t || res.statusText));

@@ -1,22 +1,6 @@
 (function () {
 	"use strict";
 
-	function apiBase() {
-		if (window.location.protocol === "file:") return "http://127.0.0.1:5000";
-		return "";
-	}
-
-	function actorHeaders() {
-		var id = null;
-		try {
-			id = window.localStorage.getItem("usisActorUserId");
-		} catch (e) {}
-		if (id && id.trim()) {
-			return { "X-Usis-User-Id": id.trim() };
-		}
-		return {};
-	}
-
 	function qs(name) {
 		var m = new RegExp("[?&]" + name + "=([^&]*)").exec(window.location.search);
 		return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
@@ -38,10 +22,7 @@
 	var state = { run: null, users: [] };
 
 	function loadUsers(cb) {
-		fetch(apiBase() + "/api/v1/rfi-users", { credentials: "omit" })
-			.then(function (r) {
-				return r.json();
-			})
+		window.USIS_API.fetchJson("/api/v1/rfi-users")
 			.then(function (data) {
 				state.users = data.items || data || [];
 				if (cb) cb();
@@ -63,16 +44,7 @@
 
 	function loadRun() {
 		if (!runId) return;
-		fetch(apiBase() + "/api/v1/playbooks/runs/" + encodeURIComponent(runId), {
-			credentials: "omit",
-			headers: actorHeaders(),
-		})
-			.then(function (r) {
-				if (!r.ok) return r.json().then(function (j) {
-					throw new Error(j.error || "HTTP " + r.status);
-				});
-				return r.json();
-			})
+		window.USIS_API.fetchJson("/api/v1/playbooks/runs/" + encodeURIComponent(runId))
 			.then(function (data) {
 				state.run = data.item;
 				document.getElementById("usis-pbr-empty").classList.add("d-none");
@@ -95,37 +67,19 @@
 	}
 
 	function patchStep(stepId, body) {
-		return fetch(
-			apiBase() +
-				"/api/v1/playbooks/runs/" +
+		return window.USIS_API.fetchJson(
+			"/api/v1/playbooks/runs/" +
 				encodeURIComponent(runId) +
 				"/steps/" +
 				encodeURIComponent(stepId),
-			{
-				method: "PATCH",
-				credentials: "omit",
-				headers: Object.assign({ "Content-Type": "application/json" }, actorHeaders()),
-				body: JSON.stringify(body),
-			}
-		).then(function (r) {
-			if (!r.ok) return r.json().then(function (j) {
-				throw new Error(j.error || "HTTP " + r.status);
-			});
-			return r.json();
-		});
+			{ method: "PATCH", body: body }
+		);
 	}
 
 	function patchRun(body) {
-		return fetch(apiBase() + "/api/v1/playbooks/runs/" + encodeURIComponent(runId), {
+		return window.USIS_API.fetchJson("/api/v1/playbooks/runs/" + encodeURIComponent(runId), {
 			method: "PATCH",
-			credentials: "omit",
-			headers: Object.assign({ "Content-Type": "application/json" }, actorHeaders()),
-			body: JSON.stringify(body),
-		}).then(function (r) {
-			if (!r.ok) return r.json().then(function (j) {
-				throw new Error(j.error || "HTTP " + r.status);
-			});
-			return r.json();
+			body: body,
 		});
 	}
 

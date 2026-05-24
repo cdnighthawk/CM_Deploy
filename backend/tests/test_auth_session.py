@@ -77,6 +77,8 @@ def test_session_login_and_auth_status(client, no_dev_admin):
         follow_redirects=False,
     )
     assert ok.status_code == 302
+    set_cookie = ok.headers.get("Set-Cookie") or ""
+    assert "session=" in set_cookie.lower()
 
     st = client.get("/api/v1/auth/status")
     assert st.status_code == 200
@@ -224,3 +226,46 @@ def test_auth_register_creates_session_and_hire_wizard(client, no_dev_admin, mon
     assert body.get("tasks")
     assert body["tasks"][0]["key"] == "account"
     assert body["tasks"][0]["status"] == "complete"
+
+
+def test_session_cookie_domain_from_public_url(monkeypatch):
+    from app import _session_cookie_domain_from_public_url
+
+    monkeypatch.setenv("USIS_APP_PUBLIC_URL", "https://www.usiscm.com")
+    assert _session_cookie_domain_from_public_url() == ".usiscm.com"
+
+    monkeypatch.setenv("USIS_APP_PUBLIC_URL", "https://usiscm.com")
+    assert _session_cookie_domain_from_public_url() == ".usiscm.com"
+
+    monkeypatch.setenv("USIS_APP_PUBLIC_URL", "https://usis-cm.onrender.com")
+    assert _session_cookie_domain_from_public_url() is None
+
+    monkeypatch.delenv("USIS_APP_PUBLIC_URL", raising=False)
+    assert _session_cookie_domain_from_public_url() is None
+
+
+def test_apply_production_middleware_session_cookie_config(monkeypatch):
+    monkeypatch.setenv("FLASK_ENV", "production")
+    monkeypatch.setenv("USIS_APP_PUBLIC_URL", "https://www.usiscm.com")
+    from flask import Flask
+
+    from app import _apply_production_middleware
+
+    app = Flask(__name__)
+    _apply_production_middleware(app)
+    assert app.config["SESSION_COOKIE_SECURE"] is True
+    assert app.config["SESSION_COOKIE_SAMESITE"] == "Lax"
+    assert app.config.get("SESSION_COOKIE_DOMAIN") == ".usiscm.com"
+
+
+def test_apply_production_middleware_skips_render_cookie_domain(monkeypatch):
+    monkeypatch.setenv("FLASK_ENV", "production")
+    monkeypatch.setenv("USIS_APP_PUBLIC_URL", "https://usis-cm.onrender.com")
+    from flask import Flask
+
+    from app import _apply_production_middleware
+
+    app = Flask(__name__)
+    _apply_production_middleware(app)
+    assert app.config["SESSION_COOKIE_SECURE"] is True
+    assert app.config.get("SESSION_COOKIE_DOMAIN") is None

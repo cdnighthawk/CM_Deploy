@@ -1,11 +1,6 @@
 (function () {
 	"use strict";
 
-	function apiBase() {
-		if (window.location.protocol === "file:") return "http://127.0.0.1:5000";
-		return "";
-	}
-
 	function pid() {
 		return new URLSearchParams(window.location.search).get("project_id");
 	}
@@ -25,10 +20,7 @@
 			return;
 		}
 		ul.innerHTML = '<li class="list-group-item">Loading…</li>';
-		fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(p) + "/documents", { credentials: "omit" })
-			.then(function (r) {
-				return r.json();
-			})
+		window.USIS_API.fetchJson("/api/v1/projects/" + encodeURIComponent(p) + "/documents")
 			.then(function (data) {
 				var items = data.items || [];
 				if (!items.length) {
@@ -61,18 +53,10 @@
 				if (!p) return;
 				var title = window.prompt("Title", "Uploaded doc");
 				if (!title) return;
-				fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(p) + "/documents", {
+				window.USIS_API.fetchJson("/api/v1/projects/" + encodeURIComponent(p) + "/documents", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					credentials: "omit",
-					body: JSON.stringify({ title: title, document_type: "other", file_url: "" }),
+					body: { title: title, document_type: "other", file_url: "" },
 				})
-					.then(function (r) {
-						return r.json().then(function (j) {
-							if (!r.ok) throw new Error(j.error || r.status);
-							return j;
-						});
-					})
 					.then(function () {
 						load();
 					})

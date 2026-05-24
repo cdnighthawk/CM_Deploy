@@ -85,83 +85,11 @@
 	}
 
 	function apiBase() {
-		var loc = window.location;
-		var devPorts = {
-			3000: 1,
-			3001: 1,
-			3002: 1,
-			4173: 1,
-			5173: 1,
-			5174: 1,
-			5500: 1,
-			5501: 1,
-			8080: 1,
-			4200: 1,
-			4321: 1,
-			9630: 1,
-			1234: 1,
-		};
-
-		function isLoopbackHost(h) {
-			return h === "localhost" || h === "127.0.0.1" || h === "[::1]" || h === "::1";
-		}
-
-		function flaskDevBase() {
-			if (loc.protocol === "file:") {
-				return "http://127.0.0.1:5000";
-			}
-			var host = loc.hostname || "";
-			var proto = loc.protocol || "http:";
-			var port = String(loc.port || "");
-			if (devPorts[port]) {
-				return proto + "//" + host + ":5000";
-			}
-			var loopback = host === "localhost" || host === "127.0.0.1" || host === "::1";
-			if (loopback) {
-				if (port === "5000") {
-					return "";
-				}
-				return proto + "//" + host + ":5000";
-			}
-			var ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
-			if (ipv4 && port && port !== "5000" && port !== "80" && port !== "443") {
-				return proto + "//" + host + ":5000";
-			}
-			if ((host === "host.docker.internal" || host.endsWith(".local")) && port && port !== "5000") {
-				return proto + "//" + host + ":5000";
-			}
-			return "";
-		}
-
-		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
-			var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
-			try {
-				var u = new URL(s);
-				if (u.origin === loc.origin) {
-					return flaskDevBase();
-				}
-				/* e.g. meta says http://localhost:3000 but page is http://127.0.0.1:3000 — still the static dev server, not Flask */
-				if (isLoopbackHost(u.hostname) && devPorts[String(u.port || "")]) {
-					var p = loc.protocol || "http:";
-					return p + "//" + (loc.hostname || u.hostname) + ":5000";
-				}
-				return s;
-			} catch (e) {
-				if (s) return s;
-			}
-		}
-		return flaskDevBase();
+		return window.USIS_API.apiBase();
 	}
 
 	function actorHeaders() {
-		var id = null;
-		try {
-			id = window.localStorage.getItem("usisActorUserId");
-		} catch (e) {}
-		if (id && id.trim()) {
-			return { "X-Usis-User-Id": id.trim() };
-		}
-		return {};
+		return window.USIS_API.actorHeaders();
 	}
 
 	function resolveAssetUrl(u) {

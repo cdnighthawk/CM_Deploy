@@ -171,6 +171,7 @@ def test_commitment_list_and_detail_include_rfp_title(client, no_dev_admin):
             "commitment_kind": "purchase_order",
             "vendor_company_id": vid,
             "title": "Linked PO",
+            "reference_number": "PO-RFP-1",
             "rfp_id": rfid,
         },
         headers=hdr,
@@ -192,3 +193,77 @@ def test_commitment_list_and_detail_include_rfp_title(client, no_dev_admin):
     it = r_detail.get_json()["item"]
     assert it.get("rfp_title") == "Electrical bid package"
     assert it.get("rfp_status") == "Draft"
+
+
+def test_sage_po_create_with_line_items_and_lookups(client, no_dev_admin):
+    with client.application.app_context():
+        role = db.session.scalar(select(Role).where(Role.code == "standard"))
+        if role is None:
+            role = Role(code="standard", name="Standard")
+            db.session.add(role)
+            db.session.flush()
+        u = User(email="proc_sage_" + uuid.uuid4().hex[:8] + "@t.com", first_name="Sam", last_name="Buyer")
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        p = Project(name="SagePO-" + uuid.uuid4().hex[:8], address_line1="100 Main St", city="LA", state="CA")
+        v = Company(name="Vendor " + uuid.uuid4().hex[:6], company_type="vendor", address_line1="9 Vendor Way")
+        db.session.add_all([p, v])
+        db.session.flush()
+        pid = str(p.id)
+        vid = str(v.id)
+        uid = str(u.id)
+        cc = CostCode(project_id=p.id, code="03-30-00", description="Concrete")
+        db.session.add(cc)
+        db.session.flush()
+        ccid = str(cc.id)
+        db.session.commit()
+
+    hdr = {"X-Usis-User-Id": uid}
+
+    r_types = client.get("/api/v1/procurement/po-types", headers=hdr)
+    assert r_types.status_code == 200
+    assert len(r_types.get_json()["items"]) >= 1
+
+    r_dir = client.get(f"/api/v1/projects/{pid}/directory/companies?q=vendor", headers=hdr)
+    assert r_dir.status_code == 200
+
+    r_prof = client.get(f"/api/v1/companies/{vid}/procurement-profile", headers=hdr)
+    assert r_prof.status_code == 200
+    assert r_prof.get_json()["item"]["address"]
+
+    r_create = client.post(
+        f"/api/v1/projects/{pid}/commitments",
+        json={
+            "commitment_kind": "purchase_order",
+            "vendor_company_id": vid,
+            "reference_number": "PO-SAGE-99",
+            "title": "Concrete package",
+            "po_type": "material",
+            "ship_to_address": "100 Main St, LA CA",
+            "default_tax_code": "TAXABLE",
+            "default_resource": "material",
+            "line_items": [
+                {
+                    "item_number": "1",
+                    "description": "Ready mix",
+                    "quantity": "10",
+                    "unit": "CY",
+                    "unit_cost": "150",
+                    "cost_code_id": ccid,
+                    "tax_code": "TAXABLE",
+                    "resource": "material",
+                }
+            ],
+        },
+        headers=hdr,
+    )
+    assert r_create.status_code == 201, r_create.get_data(as_text=True)
+    body = r_create.get_json()
+    assert body["item"]["reference_number"] == "PO-SAGE-99"
+    assert body["item"]["po_type"] == "material"
+    assert body["item"]["ship_to_address"] == "100 Main St, LA CA"
+    assert len(body["line_items"]) == 1
+    assert body["line_items"][0]["tax_code"] == "TAXABLE"
+    assert body["line_items"][0]["resource"] == "material"
+    assert float(body["item"]["total_amount"]) == 1500.0

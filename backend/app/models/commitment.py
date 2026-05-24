@@ -21,7 +21,8 @@ from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin
 
 if TYPE_CHECKING:
-    from .company import Company
+    from .auth import User
+    from .company import Company, Contact
     from .project import Project
     from .rfi_lookups import CostCode
     from .rfp import Rfp
@@ -41,6 +42,16 @@ commitment_status_enum = ENUM(
     "not_approved",
     "approved",
     name="commitment_status",
+    create_type=False,
+)
+
+commitment_resource_enum = ENUM(
+    "material",
+    "labor",
+    "equipment",
+    "subcontractor",
+    "other",
+    name="commitment_resource",
     create_type=False,
 )
 
@@ -76,9 +87,38 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     textura_contract_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    issue_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    po_type: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    reminder_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    vendor_contact_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True
+    )
+    vendor_address_snapshot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    issued_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    authorized_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    issued_by_address_snapshot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ship_to_address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    default_delivery_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    default_cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfi_cost_codes.id", ondelete="SET NULL"), nullable=True
+    )
+    default_tax_code: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    default_resource: Mapped[Optional[str]] = mapped_column(commitment_resource_enum, nullable=True)
 
     project: Mapped["Project"] = relationship("Project", back_populates="commitments")
     vendor: Mapped["Company"] = relationship("Company", foreign_keys=[vendor_company_id])
+    vendor_contact: Mapped[Optional["Contact"]] = relationship("Contact", foreign_keys=[vendor_contact_id])
+    issued_by_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[issued_by_user_id])
+    authorized_by_user: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[authorized_by_user_id]
+    )
+    default_cost_code: Mapped[Optional["CostCode"]] = relationship(
+        "CostCode", foreign_keys=[default_cost_code_id]
+    )
     rfp: Mapped[Optional["Rfp"]] = relationship("Rfp", foreign_keys=[rfp_id])
     line_items: Mapped[List["CommitmentLineItem"]] = relationship(
         back_populates="commitment", cascade="all, delete-orphan", order_by="CommitmentLineItem.sort_order"
@@ -104,6 +144,9 @@ class CommitmentLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     unit_cost: Mapped[Decimal] = mapped_column(Numeric(15, 4), nullable=False, default=Decimal("0"))
     line_total: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=Decimal("0"))
     tax_code: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    item_number: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    resource: Mapped[Optional[str]] = mapped_column(commitment_resource_enum, nullable=True)
+    delivery_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     takeoff_line_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("takeoff_line_items.id", ondelete="SET NULL"), nullable=True
     )

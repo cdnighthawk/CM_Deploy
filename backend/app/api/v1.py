@@ -49,6 +49,7 @@ from . import _calendar_service as calendar_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
 from . import _material_order_service as material_order_svc
+from . import _procurement_lookup_service as proc_lookup_svc
 from . import _project_members_service as project_members_svc
 from . import _project_service as project_svc
 from . import _invoice_delivery_service as invoice_delivery_svc
@@ -2414,6 +2415,96 @@ def put_submittal_document_annotations(document_id: str):
 
 def _commitment_err(exc: rfi_svc.ApiError):
     return _jsonify({"error": exc.message}), exc.status
+
+
+def _proc_lookup_err(exc: rfi_svc.ApiError):
+    return _jsonify({"error": exc.message}), exc.status
+
+
+@bp.get("/procurement/po-types")
+def list_procurement_po_types():
+    try:
+        return _jsonify(proc_lookup_svc.list_po_types(current_user()))
+    except rfi_svc.ApiError as exc:
+        return _proc_lookup_err(exc)
+
+
+@bp.get("/companies/<company_id>/procurement-profile")
+def get_company_procurement_profile(company_id: str):
+    cid = _parse_uuid_param(company_id)
+    if not cid:
+        return _jsonify({"error": "invalid company id"}), 400
+    try:
+        return _jsonify(proc_lookup_svc.get_company_procurement_profile(cid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _proc_lookup_err(exc)
+
+
+@bp.get("/projects/<project_id>/directory/companies")
+def list_project_directory_companies(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    q = (request.args.get("q") or "").strip()
+    try:
+        limit = int(request.args.get("limit") or 20)
+    except ValueError:
+        return _jsonify({"error": "invalid limit"}), 400
+    try:
+        return _jsonify(proc_lookup_svc.list_directory_companies(pid, current_user(), q=q, limit=limit))
+    except rfi_svc.ApiError as exc:
+        return _proc_lookup_err(exc)
+
+
+@bp.post("/projects/<project_id>/directory/companies")
+def add_project_directory_company(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    data = request.get_json(silent=True) or {}
+    cid = _parse_uuid_param(str(data.get("company_id") or ""))
+    if not cid:
+        return _jsonify({"error": "company_id required"}), 400
+    try:
+        return _jsonify(proc_lookup_svc.add_directory_company(pid, cid, current_user())), 201
+    except rfi_svc.ApiError as exc:
+        return _proc_lookup_err(exc)
+
+
+@bp.get("/projects/<project_id>/rfi-lookups/tax_codes")
+def list_project_tax_codes(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        return _jsonify(proc_lookup_svc.list_tax_codes(pid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _proc_lookup_err(exc)
+
+
+@bp.get("/projects/<project_id>/procurement/defaults")
+def get_project_procurement_defaults(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    project = db.session.get(Project, pid)
+    if project is None or project.deleted_at is not None:
+        return _jsonify({"error": "project not found"}), 404
+    return _jsonify(
+        {
+            "item": {
+                "ship_to_address": proc_lookup_svc.format_project_address(project),
+                "issue_date": date.today().isoformat(),
+            },
+            "entity": "procurement_defaults",
+        }
+    )
 
 
 @bp.get("/projects/<project_id>/commitments")

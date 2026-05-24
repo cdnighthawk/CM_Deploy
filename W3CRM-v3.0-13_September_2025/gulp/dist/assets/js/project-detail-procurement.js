@@ -9,6 +9,423 @@
 	var projectId = null;
 	var costCodesCache = [];
 	var activeProcTool = "po";
+	var taxCodesCache = [];
+	var poTypesCache = [];
+	var vendorSearchTimer = null;
+	var createLineCounter = 0;
+
+	function todayIso() {
+		var d = new Date();
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
+	function isoDateOnly(val) {
+		if (!val) return "";
+		return String(val).slice(0, 10);
+	}
+	function fillSelectOptions(sel, items, valueKey, labelFn, selectedVal) {
+		if (!sel) return;
+		var keep = sel.getAttribute("data-usis-keep-first") === "1";
+		var first = keep && sel.options.length ? sel.options[0].outerHTML : '<option value="">—</option>';
+		sel.innerHTML = first;
+		(items || []).forEach(function (it) {
+			var o = document.createElement("option");
+			o.value = it[valueKey];
+			o.textContent = labelFn(it);
+			if (selectedVal && String(selectedVal) === String(it[valueKey])) o.selected = true;
+			sel.appendChild(o);
+		});
+	}
+	function fillCostCodeSelects(selectedId) {
+		var ids = [
+			"usis-c-line-cc",
+			"usis-c-create-def-cc",
+		];
+		ids.forEach(function (id) {
+			var sel = document.getElementById(id);
+			if (!sel) return;
+			fillSelectOptions(
+				sel,
+				costCodesCache,
+				"id",
+				function (cc) {
+					return cc.code + (cc.description ? " — " + cc.description : "");
+				},
+				id === "usis-c-create-def-cc" ? selectedId : null
+			);
+		});
+	}
+	function fillTaxCodeSelects() {
+		["usis-c-line-tax", "usis-c-create-def-tax"].forEach(function (id) {
+			var sel = document.getElementById(id);
+			if (!sel) return;
+			fillSelectOptions(
+				sel,
+				taxCodesCache,
+				"code",
+				function (t) {
+					return t.label || t.code;
+				},
+				null
+			);
+		});
+	}
+	function loadPoTypes() {
+		return fetchJson("/api/v1/procurement/po-types").then(function (data) {
+			poTypesCache = data.items || [];
+			["usis-c-create-po-type", "usis-c-edit-po-type"].forEach(function (id) {
+				var sel = document.getElementById(id);
+				if (!sel) return;
+				fillSelectOptions(sel, poTypesCache, "code", function (t) { return t.label; }, null);
+			});
+		});
+	}
+	function loadTaxCodes() {
+		if (!projectId) return Promise.resolve();
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/tax_codes").then(function (data) {
+			taxCodesCache = data.items || [];
+			fillTaxCodeSelects();
+		});
+	}
+	function loadProcurementDefaults() {
+		if (!projectId) return Promise.resolve();
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/procurement/defaults").then(function (data) {
+			var item = (data && data.item) || {};
+			var ship = document.getElementById("usis-c-create-ship-to");
+			if (ship && item.ship_to_address) ship.value = item.ship_to_address;
+			var iss = document.getElementById("usis-c-create-issue-date");
+			if (iss && item.issue_date) iss.value = item.issue_date;
+		});
+	}
+	function hideComboboxMenu(menu) {
+		if (menu) menu.classList.add("d-none");
+	}
+	function wireEntityCombobox(inputId, menuId, hiddenId, searchFn, onPick) {
+		var input = document.getElementById(inputId);
+		var menu = document.getElementById(menuId);
+		var hidden = document.getElementById(hiddenId);
+		if (!input || !menu) return;
+		function renderItems(items) {
+			menu.innerHTML = "";
+			if (!items.length) {
+				menu.innerHTML = '<div class="list-group-item small text-muted">No matches</div>';
+				menu.classList.remove("d-none");
+				return;
+			}
+			items.forEach(function (it) {
+				var btn = document.createElement("button");
+				btn.type = "button";
+				btn.className = "list-group-item list-group-item-action py-1 small";
+				btn.textContent = it.label;
+				btn.addEventListener("click", function () {
+					if (hidden) hidden.value = it.id;
+					input.value = it.label;
+					hideComboboxMenu(menu);
+					if (onPick) onPick(it);
+				});
+				menu.appendChild(btn);
+			});
+			menu.classList.remove("d-none");
+		}
+		input.addEventListener("input", function () {
+			if (hidden) hidden.value = "";
+			clearTimeout(vendorSearchTimer);
+			var q = input.value.trim();
+			if (q.length < 1) {
+				hideComboboxMenu(menu);
+				return;
+			}
+			vendorSearchTimer = setTimeout(function () {
+				searchFn(q).then(renderItems).catch(function () {
+					hideComboboxMenu(menu);
+				});
+			}, 250);
+		});
+		input.addEventListener("blur", function () {
+			setTimeout(function () {
+				hideComboboxMenu(menu);
+			}, 200);
+		});
+	}
+	function searchDirectoryCompanies(q) {
+		return fetchJson(
+			"/api/v1/projects/" + encodeURIComponent(projectId) + "/directory/companies?q=" + encodeURIComponent(q) + "&limit=20"
+		).then(function (data) {
+			return (data.items || []).map(function (c) {
+				return {
+					id: c.id,
+					label: c.name + " (" + c.company_type + ")",
+					in_directory: c.in_directory,
+				};
+			});
+		});
+	}
+	function searchUsers(q) {
+		return fetchJson("/api/v1/rfi-users?q=" + encodeURIComponent(q) + "&limit=20").then(function (data) {
+			return (data.items || []).map(function (u) {
+				return { id: u.id, label: u.name + (u.email ? " <" + u.email + ">" : "") };
+			});
+		});
+	}
+	function loadVendorProfile(companyId, prefix) {
+		if (!companyId) return Promise.resolve();
+		return fetchJson("/api/v1/companies/" + encodeURIComponent(companyId) + "/procurement-profile").then(function (data) {
+			var item = data.item || {};
+			var addr = document.getElementById(prefix + "-vendor-address");
+			if (addr && item.address) addr.value = item.address;
+			var csel = document.getElementById(prefix + "-vendor-contact");
+			if (csel) {
+				csel.innerHTML = '<option value="">—</option>';
+				(item.contacts || []).forEach(function (c) {
+					var o = document.createElement("option");
+					o.value = c.id;
+					o.textContent = c.label;
+					csel.appendChild(o);
+				});
+			}
+			return item;
+		});
+	}
+	function wireVendorComboboxes() {
+		wireEntityCombobox("usis-c-create-vendor-q", "usis-c-create-vendor-menu", "usis-c-create-vendor-id", searchDirectoryCompanies, function (it) {
+			var hint = document.getElementById("usis-c-create-vendor-dir-hint");
+			var addBtn = document.getElementById("usis-c-create-vendor-add-dir");
+			if (hint && addBtn) {
+				if (it.in_directory) {
+					hint.classList.add("d-none");
+					addBtn.classList.add("d-none");
+				} else {
+					hint.textContent = "Vendor is not in the project directory.";
+					hint.classList.remove("d-none");
+					addBtn.classList.remove("d-none");
+					addBtn.onclick = function () {
+						fetchJsonBody("POST", "/api/v1/projects/" + encodeURIComponent(projectId) + "/directory/companies", {
+							company_id: it.id,
+						})
+							.then(function () {
+								toastOk("Added to project directory.");
+								hint.classList.add("d-none");
+								addBtn.classList.add("d-none");
+							})
+							.catch(function (e) {
+								toastErr(e.message || String(e));
+							});
+					};
+				}
+			}
+			loadVendorProfile(it.id, "usis-c-create");
+		});
+		wireEntityCombobox("usis-c-edit-vendor-q", "usis-c-edit-vendor-menu", "usis-c-edit-vendor-id", searchDirectoryCompanies, function (it) {
+			loadVendorProfile(it.id, "usis-c-edit");
+		});
+		wireEntityCombobox("usis-c-create-issued-by-q", "usis-c-create-issued-by-menu", "usis-c-create-issued-by-id", searchUsers, null);
+		wireEntityCombobox("usis-c-create-authorized-by-q", "usis-c-create-authorized-by-menu", "usis-c-create-authorized-by-id", searchUsers, null);
+		wireEntityCombobox("usis-c-edit-issued-by-q", "usis-c-edit-issued-by-menu", "usis-c-edit-issued-by-id", searchUsers, null);
+		wireEntityCombobox("usis-c-edit-authorized-by-q", "usis-c-edit-authorized-by-menu", "usis-c-edit-authorized-by-id", searchUsers, null);
+	}
+	function costCodeOptionsHtml(selected) {
+		var html = '<option value="">—</option>';
+		costCodesCache.forEach(function (cc) {
+			html +=
+				'<option value="' +
+				esc(cc.id) +
+				'"' +
+				(selected && String(selected) === String(cc.id) ? " selected" : "") +
+				">" +
+				esc(cc.code + (cc.description ? " — " + cc.description : "")) +
+				"</option>";
+		});
+		return html;
+	}
+	function taxOptionsHtml(selected) {
+		var html = '<option value="">—</option>';
+		taxCodesCache.forEach(function (t) {
+			html +=
+				'<option value="' +
+				esc(t.code) +
+				'"' +
+				(selected && String(selected) === String(t.code) ? " selected" : "") +
+				">" +
+				esc(t.label || t.code) +
+				"</option>";
+		});
+		return html;
+	}
+	function resourceOptionsHtml(selected) {
+		var opts = [
+			["", "—"],
+			["material", "Material"],
+			["labor", "Labor"],
+			["equipment", "Equipment"],
+			["subcontractor", "Subcontractor"],
+			["other", "Other"],
+		];
+		return opts
+			.map(function (p) {
+				return (
+					'<option value="' +
+					esc(p[0]) +
+					'"' +
+					(selected && String(selected) === String(p[0]) ? " selected" : "") +
+					">" +
+					esc(p[1]) +
+					"</option>"
+				);
+			})
+			.join("");
+	}
+	function addCreateLineRow(prefill) {
+		var tb = document.getElementById("usis-c-create-lines-tbody");
+		if (!tb) return;
+		createLineCounter += 1;
+		var p = prefill || {};
+		var tr = document.createElement("tr");
+		tr.innerHTML =
+			'<td><input class="form-control form-control-sm usis-c-create-line-itemno" value="' +
+			esc(p.item_number || String(createLineCounter)) +
+			'"></td>' +
+			'<td><input class="form-control form-control-sm usis-c-create-line-desc" value="' +
+			esc(p.description || "") +
+			'"></td>' +
+			'<td><input class="form-control form-control-sm usis-c-create-line-qty" value="' +
+			esc(p.quantity != null ? p.quantity : "") +
+			'"></td>' +
+			'<td><input class="form-control form-control-sm usis-c-create-line-unit" value="' +
+			esc(p.unit || "EA") +
+			'"></td>' +
+			'<td><input class="form-control form-control-sm usis-c-create-line-cost" value="' +
+			esc(p.unit_cost != null ? p.unit_cost : "") +
+			'"></td>' +
+			'<td><select class="form-select form-select-sm usis-c-create-line-cc">' +
+			costCodeOptionsHtml(p.cost_code_id) +
+			"</select></td>" +
+			'<td><select class="form-select form-select-sm usis-c-create-line-tax">' +
+			taxOptionsHtml(p.tax_code) +
+			"</select></td>" +
+			'<td><select class="form-select form-select-sm usis-c-create-line-resource">' +
+			resourceOptionsHtml(p.resource) +
+			"</select></td>" +
+			'<td><input type="date" class="form-control form-control-sm usis-c-create-line-delivery" value="' +
+			esc(isoDateOnly(p.delivery_date)) +
+			'"></td>' +
+			'<td class="text-end"><button type="button" class="btn btn-link btn-sm text-danger p-0 usis-c-create-line-rm">×</button></td>';
+		tb.appendChild(tr);
+		tr.querySelector(".usis-c-create-line-rm").addEventListener("click", function () {
+			tr.remove();
+		});
+	}
+	function collectCreateLineItems() {
+		var rows = document.querySelectorAll("#usis-c-create-lines-tbody tr");
+		var out = [];
+		rows.forEach(function (tr, idx) {
+			var desc = tr.querySelector(".usis-c-create-line-desc");
+			var qty = tr.querySelector(".usis-c-create-line-qty");
+			if (!desc || !String(desc.value || "").trim()) return;
+			var body = {
+				item_number: (tr.querySelector(".usis-c-create-line-itemno") || {}).value || String(idx + 1),
+				description: String(desc.value).trim(),
+				quantity: qty && qty.value.trim() ? qty.value.trim() : "0",
+				unit: (tr.querySelector(".usis-c-create-line-unit") || {}).value || "EA",
+				unit_cost: (tr.querySelector(".usis-c-create-line-cost") || {}).value || "0",
+				sort_order: idx,
+			};
+			var cc = tr.querySelector(".usis-c-create-line-cc");
+			if (cc && cc.value) body.cost_code_id = cc.value;
+			var tax = tr.querySelector(".usis-c-create-line-tax");
+			if (tax && tax.value) body.tax_code = tax.value;
+			var res = tr.querySelector(".usis-c-create-line-resource");
+			if (res && res.value) body.resource = res.value;
+			var del = tr.querySelector(".usis-c-create-line-delivery");
+			if (del && del.value) body.delivery_date = del.value;
+			out.push(body);
+		});
+		return out;
+	}
+	function resetCreateForm() {
+		createLineCounter = 0;
+		[
+			"usis-c-create-vendor-id",
+			"usis-c-create-issued-by-id",
+			"usis-c-create-authorized-by-id",
+		].forEach(function (id) {
+			var el = document.getElementById(id);
+			if (el) el.value = "";
+		});
+		[
+			"usis-c-create-vendor-q",
+			"usis-c-create-title",
+			"usis-c-create-ref",
+			"usis-c-create-notes",
+			"usis-c-create-vendor-address",
+			"usis-c-create-issued-address",
+			"usis-c-create-ship-to",
+			"usis-c-create-issued-by-q",
+			"usis-c-create-authorized-by-q",
+			"usis-c-create-reminder-date",
+			"usis-c-create-status-date",
+			"usis-c-create-def-delivery",
+		].forEach(function (id) {
+			var el = document.getElementById(id);
+			if (el) el.value = "";
+		});
+		var iss = document.getElementById("usis-c-create-issue-date");
+		if (iss) iss.value = todayIso();
+		var st = document.getElementById("usis-c-create-status");
+		if (st) st.value = "draft";
+		var cur = document.getElementById("usis-c-create-currency");
+		if (cur) cur.value = "USD";
+		var tb = document.getElementById("usis-c-create-lines-tbody");
+		if (tb) tb.innerHTML = "";
+		var hint = document.getElementById("usis-c-create-vendor-dir-hint");
+		var addBtn = document.getElementById("usis-c-create-vendor-add-dir");
+		if (hint) hint.classList.add("d-none");
+		if (addBtn) addBtn.classList.add("d-none");
+	}
+	function buildCreatePayload(kind) {
+		var status = document.getElementById("usis-c-create-status").value;
+		var payload = {
+			commitment_kind: kind,
+			vendor_company_id: document.getElementById("usis-c-create-vendor-id").value,
+			reference_number: document.getElementById("usis-c-create-ref").value.trim() || null,
+			title: document.getElementById("usis-c-create-title").value.trim(),
+			status: status,
+			currency: document.getElementById("usis-c-create-currency").value.trim() || "USD",
+			notes: document.getElementById("usis-c-create-notes").value.trim() || null,
+		};
+		var sd = document.getElementById("usis-c-create-status-date").value;
+		if (sd) payload.status_effective_date = sd;
+		else if (status !== "draft") payload.status_effective_date = todayIso();
+		var idate = document.getElementById("usis-c-create-issue-date").value;
+		if (idate) payload.issue_date = idate;
+		var pt = document.getElementById("usis-c-create-po-type").value;
+		if (pt) payload.po_type = pt;
+		var rd = document.getElementById("usis-c-create-reminder-date").value;
+		if (rd) payload.reminder_date = rd;
+		var vc = document.getElementById("usis-c-create-vendor-contact").value;
+		if (vc) payload.vendor_contact_id = vc;
+		var va = document.getElementById("usis-c-create-vendor-address").value.trim();
+		if (va) payload.vendor_address_snapshot = va;
+		var ib = document.getElementById("usis-c-create-issued-by-id").value;
+		if (ib) payload.issued_by_user_id = ib;
+		var ab = document.getElementById("usis-c-create-authorized-by-id").value;
+		if (ab) payload.authorized_by_user_id = ab;
+		var ia = document.getElementById("usis-c-create-issued-address").value.trim();
+		if (ia) payload.issued_by_address_snapshot = ia;
+		var ship = document.getElementById("usis-c-create-ship-to").value.trim();
+		if (ship) payload.ship_to_address = ship;
+		var dd = document.getElementById("usis-c-create-def-delivery").value;
+		if (dd) payload.default_delivery_date = dd;
+		var dcc = document.getElementById("usis-c-create-def-cc").value;
+		if (dcc) payload.default_cost_code_id = dcc;
+		var dt = document.getElementById("usis-c-create-def-tax").value;
+		if (dt) payload.default_tax_code = dt;
+		var dr = document.getElementById("usis-c-create-def-resource").value;
+		if (dr) payload.default_resource = dr;
+		if (kind === "purchase_order") {
+			var lines = collectCreateLineItems();
+			if (lines.length) payload.line_items = lines;
+		}
+		return payload;
+	}
 	function apiBase() {
 		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
 			var s = window.USIS_API_BASE.trim().replace(/\/$/, "");
@@ -459,59 +876,67 @@
 				toastErr(e.message || String(e));
 			});
 	}
-	function loadVendorsForCreate() {
-		var sel = document.getElementById("usis-c-create-vendor");
-		if (!sel) return Promise.resolve();
-		return fetchJson("/api/v1/rfi-companies?limit=300").then(function (data) {
-			sel.innerHTML = "";
-			var items = (data.items || []).filter(function (c) {
-				var t = (c.company_type || "").toLowerCase();
-				return t === "vendor" || t === "subcontractor" || t === "gc" || t === "other";
-			});
-			items.forEach(function (c) {
-				var o = document.createElement("option");
-				o.value = c.id;
-				o.textContent = c.name + " (" + c.company_type + ")";
-				sel.appendChild(o);
-			});
-			if (!sel.options.length) {
-				var o2 = document.createElement("option");
-				o2.value = "";
-				o2.textContent = "— add companies first —";
-				sel.appendChild(o2);
-			}
-		});
-	}
 	function loadCostCodes() {
 		if (!projectId) return Promise.resolve();
 		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/cost_codes").then(function (data) {
 			costCodesCache = data.items || [];
-			var sel = document.getElementById("usis-c-line-cc");
-			if (!sel) return;
-			sel.innerHTML = '<option value="">—</option>';
-			costCodesCache.forEach(function (cc) {
-				var o = document.createElement("option");
-				o.value = cc.id;
-				o.textContent = cc.code + (cc.description ? " — " + cc.description : "");
-				sel.appendChild(o);
-			});
+			fillCostCodeSelects();
 		});
 	}
 	function configureCreateModalForKind(kind) {
 		var k = kind === "subcontract" ? "subcontract" : "purchase_order";
 		var kindSel = document.getElementById("usis-c-create-kind");
 		if (kindSel) kindSel.value = k;
-		var wrap = document.getElementById("usis-c-create-kind-wrap");
-		if (wrap) wrap.classList.add("d-none");
 		var titleEl = document.getElementById("usis-c-create-modal-title");
 		if (titleEl) titleEl.textContent = k === "subcontract" ? "New subcontract" : "New purchase order";
 		var refLab = document.getElementById("usis-c-create-ref-label");
 		var refInp = document.getElementById("usis-c-create-ref");
-		if (refLab) {
-			refLab.textContent = k === "subcontract" ? "Contract # (optional)" : "PO # (optional)";
-		}
+		if (refLab) refLab.textContent = k === "subcontract" ? "Contract #" : "PO #";
 		if (refInp) {
 			refInp.placeholder = k === "subcontract" ? "SUB-201" : "PO-1001";
+			refInp.required = k !== "subcontract";
+		}
+		document.querySelectorAll(".usis-c-po-only").forEach(function (el) {
+			if (k === "subcontract") el.classList.add("d-none");
+			else el.classList.remove("d-none");
+		});
+	}
+	function populateEditHeader(item) {
+		document.getElementById("usis-c-edit-id").value = item.id;
+		document.getElementById("usis-c-edit-modal-label").textContent =
+			kindLabel(item.commitment_kind) + " — " + (item.reference_number || item.title || item.id);
+		document.getElementById("usis-c-edit-vendor-id").value = item.vendor_company_id || "";
+		document.getElementById("usis-c-edit-vendor-q").value = item.vendor_name || "";
+		document.getElementById("usis-c-edit-status").value = item.status || "draft";
+		document.getElementById("usis-c-edit-status-date").value = isoDateOnly(item.status_effective_date);
+		document.getElementById("usis-c-edit-wf").value = item.workflow_rule_active ? "1" : "0";
+		document.getElementById("usis-c-edit-titlefield").value = item.title || "";
+		document.getElementById("usis-c-edit-ref").value = item.reference_number || "";
+		document.getElementById("usis-c-edit-notes").value = item.notes || "";
+		document.getElementById("usis-c-edit-total").value = item.total_amount != null ? item.total_amount : "";
+		document.getElementById("usis-c-edit-currency").value = item.currency || "USD";
+		document.getElementById("usis-c-edit-issue-date").value = isoDateOnly(item.issue_date);
+		document.getElementById("usis-c-edit-reminder-date").value = isoDateOnly(item.reminder_date);
+		document.getElementById("usis-c-edit-po-type").value = item.po_type || "";
+		document.getElementById("usis-c-edit-vendor-address").value = item.vendor_address_snapshot || "";
+		document.getElementById("usis-c-edit-issued-address").value = item.issued_by_address_snapshot || "";
+		document.getElementById("usis-c-edit-ship-to").value = item.ship_to_address || "";
+		document.getElementById("usis-c-edit-issued-by-id").value = item.issued_by_user_id || "";
+		document.getElementById("usis-c-edit-authorized-by-id").value = item.authorized_by_user_id || "";
+		document.getElementById("usis-c-edit-issued-by-q").value = item.issued_by_name || "";
+		document.getElementById("usis-c-edit-authorized-by-q").value = item.authorized_by_name || "";
+		document.querySelectorAll(".usis-c-edit-po-only").forEach(function (el) {
+			if (item.commitment_kind === "subcontract") el.classList.add("d-none");
+			else el.classList.remove("d-none");
+		});
+		var rw = document.getElementById("usis-c-edit-ret-wrap");
+		var ret = document.getElementById("usis-c-edit-ret");
+		if (item.commitment_kind === "subcontract") {
+			rw.classList.remove("d-none");
+			ret.value = item.retention_percentage != null ? item.retention_percentage : "";
+		} else {
+			rw.classList.add("d-none");
+			ret.value = "";
 		}
 	}
 	function openEditModal(cid) {
@@ -521,11 +946,7 @@
 		)
 			.then(function (data) {
 				var item = data.item;
-				document.getElementById("usis-c-edit-id").value = item.id;
-				document.getElementById("usis-c-edit-modal-label").textContent =
-					kindLabel(item.commitment_kind) + " — " + (item.reference_number || item.title || item.id);
-				document.getElementById("usis-c-edit-vendorline").textContent =
-					"Vendor: " + (item.vendor_name || item.vendor_company_id);
+				populateEditHeader(item);
 				var rfpWrap = document.getElementById("usis-c-edit-rfp-link-wrap");
 				var rfpA = document.getElementById("usis-c-edit-rfp-link");
 				if (item.rfp_id && rfpWrap && rfpA) {
@@ -535,24 +956,18 @@
 				} else if (rfpWrap) {
 					rfpWrap.classList.add("d-none");
 				}
-				document.getElementById("usis-c-edit-status").value = item.status || "draft";
-				document.getElementById("usis-c-edit-wf").value = item.workflow_rule_active ? "1" : "0";
-				document.getElementById("usis-c-edit-titlefield").value = item.title || "";
-				document.getElementById("usis-c-edit-ref").value = item.reference_number || "";
-				document.getElementById("usis-c-edit-notes").value = item.notes || "";
-				document.getElementById("usis-c-edit-total").value = item.total_amount != null ? item.total_amount : "";
-				var rw = document.getElementById("usis-c-edit-ret-wrap");
-				var ret = document.getElementById("usis-c-edit-ret");
-				if (item.commitment_kind === "subcontract") {
-					rw.classList.remove("d-none");
-					ret.value = item.retention_percentage != null ? item.retention_percentage : "";
-				} else {
-					rw.classList.add("d-none");
-					ret.value = "";
-				}
 				renderLinesTable(data.line_items || []);
 				renderBillsTable(data.bill_allocations || []);
-				return loadCostCodes();
+				return Promise.all([
+					loadCostCodes(),
+					loadTaxCodes(),
+					loadPoTypes(),
+					loadVendorProfile(item.vendor_company_id, "usis-c-edit"),
+				]).then(function () {
+					var csel = document.getElementById("usis-c-edit-vendor-contact");
+					if (csel && item.vendor_contact_id) csel.value = item.vendor_contact_id;
+					document.getElementById("usis-c-edit-po-type").value = item.po_type || "";
+				});
 			})
 			.then(function () {
 				var modal = document.getElementById("usis-modal-commitment-edit");
@@ -572,6 +987,8 @@
 			var tr = document.createElement("tr");
 			tr.innerHTML =
 				"<td>" +
+				esc(li.item_number || "—") +
+				"</td><td>" +
 				esc(li.description) +
 				"</td><td>" +
 				esc(li.quantity) +
@@ -579,6 +996,12 @@
 				esc(li.unit) +
 				"</td><td>" +
 				esc(li.unit_cost) +
+				"</td><td>" +
+				esc(li.tax_code || "—") +
+				"</td><td>" +
+				esc(li.resource || "—") +
+				"</td><td>" +
+				esc(isoDateOnly(li.delivery_date) || "—") +
 				"</td><td>" +
 				esc(li.line_total) +
 				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm text-danger p-0 usis-c-line-del" data-id="' +
@@ -739,34 +1162,45 @@
 					kind = activeProcTool === "sub" ? "subcontract" : "purchase_order";
 				}
 				configureCreateModalForKind(kind);
-				loadVendorsForCreate().catch(function () {
-					toastErr("Could not load vendor list.");
-				});
+				resetCreateForm();
+				Promise.all([loadCostCodes(), loadTaxCodes(), loadPoTypes(), loadProcurementDefaults()]).catch(
+					function () {
+						toastErr("Could not load procurement lookups.");
+					}
+				);
+			});
+		}
+		var createLineAdd = document.getElementById("usis-c-create-line-add");
+		if (createLineAdd) {
+			createLineAdd.addEventListener("click", function () {
+				addCreateLineRow({});
 			});
 		}
 		var createBtn = document.getElementById("usis-c-create-submit");
 		if (createBtn) {
 			createBtn.addEventListener("click", function () {
 				if (!projectId) return;
-				var vid = document.getElementById("usis-c-create-vendor").value;
+				var kind = document.getElementById("usis-c-create-kind").value;
+				var vid = document.getElementById("usis-c-create-vendor-id").value;
 				if (!vid) {
 					toastErr("Select a vendor.");
 					return;
 				}
-				var payload = {
-					commitment_kind: document.getElementById("usis-c-create-kind").value,
-					vendor_company_id: vid,
-					title: document.getElementById("usis-c-create-title").value.trim() || "Commitment",
-					reference_number: document.getElementById("usis-c-create-ref").value.trim() || null,
-				};
+				if (!document.getElementById("usis-c-create-title").value.trim()) {
+					toastErr("PO subject is required.");
+					return;
+				}
+				if (kind === "purchase_order" && !document.getElementById("usis-c-create-ref").value.trim()) {
+					toastErr("PO # is required.");
+					return;
+				}
+				var payload = buildCreatePayload(kind);
 				fetchJsonBody("POST", "/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments", payload)
 					.then(function () {
 						toastOk("Commitment created.");
 						if (createModal && window.bootstrap) {
 							window.bootstrap.Modal.getOrCreateInstance(createModal).hide();
 						}
-						document.getElementById("usis-c-create-title").value = "";
-						document.getElementById("usis-c-create-ref").value = "";
 						return loadCommitmentsList();
 					})
 					.catch(function (e) {
@@ -785,7 +1219,26 @@
 					title: document.getElementById("usis-c-edit-titlefield").value.trim(),
 					reference_number: document.getElementById("usis-c-edit-ref").value.trim() || null,
 					notes: document.getElementById("usis-c-edit-notes").value.trim() || null,
+					currency: document.getElementById("usis-c-edit-currency").value.trim() || "USD",
+					vendor_company_id: document.getElementById("usis-c-edit-vendor-id").value || undefined,
+					vendor_address_snapshot: document.getElementById("usis-c-edit-vendor-address").value.trim() || null,
+					ship_to_address: document.getElementById("usis-c-edit-ship-to").value.trim() || null,
+					issued_by_address_snapshot: document.getElementById("usis-c-edit-issued-address").value.trim() || null,
 				};
+				var sd = document.getElementById("usis-c-edit-status-date").value;
+				if (sd) payload.status_effective_date = sd;
+				var idate = document.getElementById("usis-c-edit-issue-date").value;
+				if (idate) payload.issue_date = idate;
+				var rd = document.getElementById("usis-c-edit-reminder-date").value;
+				if (rd) payload.reminder_date = rd;
+				var pt = document.getElementById("usis-c-edit-po-type").value;
+				payload.po_type = pt || null;
+				var vc = document.getElementById("usis-c-edit-vendor-contact").value;
+				payload.vendor_contact_id = vc || null;
+				var ib = document.getElementById("usis-c-edit-issued-by-id").value;
+				payload.issued_by_user_id = ib || null;
+				var ab = document.getElementById("usis-c-edit-authorized-by-id").value;
+				payload.authorized_by_user_id = ab || null;
 				var tot = document.getElementById("usis-c-edit-total").value.trim();
 				if (tot) payload.total_amount = tot;
 				var rw = document.getElementById("usis-c-edit-ret-wrap");
@@ -818,8 +1271,16 @@
 					unit: document.getElementById("usis-c-line-unit").value.trim() || "EA",
 					unit_cost: document.getElementById("usis-c-line-cost").value.trim() || "0",
 				};
+				var ino = document.getElementById("usis-c-line-itemno").value.trim();
+				if (ino) body.item_number = ino;
 				var cc = document.getElementById("usis-c-line-cc").value;
 				if (cc) body.cost_code_id = cc;
+				var tax = document.getElementById("usis-c-line-tax").value;
+				if (tax) body.tax_code = tax;
+				var res = document.getElementById("usis-c-line-resource").value;
+				if (res) body.resource = res;
+				var del = document.getElementById("usis-c-line-delivery").value;
+				if (del) body.delivery_date = del;
 				fetchJsonBody(
 					"POST",
 					"/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments/" + encodeURIComponent(cid) + "/line-items",
@@ -892,6 +1353,7 @@
 			});
 		}
 	}
+	wireVendorComboboxes();
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", wire);
 	} else {

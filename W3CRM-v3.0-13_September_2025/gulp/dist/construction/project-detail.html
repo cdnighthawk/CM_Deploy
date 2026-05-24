@@ -1539,31 +1539,155 @@
 	</div>
 
 	<div class="modal fade" id="usis-modal-commitment-create" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="usis-c-create-modal-title">New commitment</h5>
+					<h5 class="modal-title" id="usis-c-create-modal-title">New purchase order</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="mb-2 d-none" id="usis-c-create-kind-wrap">
-						<label class="form-label small mb-0" for="usis-c-create-kind">Kind</label>
-						<select class="form-select form-select-sm" id="usis-c-create-kind">
-							<option value="purchase_order">Purchase order</option>
-							<option value="subcontract">Subcontract</option>
-						</select>
+					<input type="hidden" id="usis-c-create-kind" value="purchase_order">
+					<input type="hidden" id="usis-c-create-vendor-id" value="">
+					<input type="hidden" id="usis-c-create-issued-by-id" value="">
+					<input type="hidden" id="usis-c-create-authorized-by-id" value="">
+
+					<h6 class="text-muted small text-uppercase mb-2">General PO information</h6>
+					<div class="row g-2 mb-3">
+						<div class="col-md-3 usis-c-po-only">
+							<label class="form-label small mb-0" for="usis-c-create-issue-date">Issue date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-create-issue-date">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-create-ref" id="usis-c-create-ref-label">PO #</label>
+							<input class="form-control form-control-sm" id="usis-c-create-ref" maxlength="80" placeholder="PO-1001" required>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-c-create-title">PO subject</label>
+							<input class="form-control form-control-sm" id="usis-c-create-title" maxlength="500" placeholder="e.g. Drywall package" required>
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-create-status">Status</label>
+							<select class="form-select form-select-sm" id="usis-c-create-status">
+								<option value="draft">draft</option>
+								<option value="pending_submission">pending_submission</option>
+								<option value="pending">pending</option>
+								<option value="not_approved">not_approved</option>
+								<option value="approved">approved</option>
+							</select>
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-create-status-date">Status date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-create-status-date">
+						</div>
+						<div class="col-md-3 usis-c-po-only">
+							<label class="form-label small mb-0" for="usis-c-create-po-type">PO type</label>
+							<select class="form-select form-select-sm" id="usis-c-create-po-type"><option value="">—</option></select>
+						</div>
+						<div class="col-md-3 usis-c-po-only">
+							<label class="form-label small mb-0" for="usis-c-create-reminder-date">Reminder date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-create-reminder-date">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-create-currency">Currency</label>
+							<input class="form-control form-control-sm" id="usis-c-create-currency" maxlength="8" value="USD">
+						</div>
+						<div class="col-md-10">
+							<label class="form-label small mb-0" for="usis-c-create-notes">Notes</label>
+							<input class="form-control form-control-sm" id="usis-c-create-notes" placeholder="Optional header notes">
+						</div>
 					</div>
-					<div class="mb-2">
-						<label class="form-label small mb-0" for="usis-c-create-vendor">Vendor</label>
-						<select class="form-select form-select-sm" id="usis-c-create-vendor"></select>
+
+					<h6 class="text-muted small text-uppercase mb-2">Vendor information</h6>
+					<div class="row g-2 mb-3">
+						<div class="col-md-6 position-relative">
+							<label class="form-label small mb-0" for="usis-c-create-vendor-q">Company</label>
+							<input type="search" class="form-control form-control-sm" id="usis-c-create-vendor-q" autocomplete="off" placeholder="Type vendor name…">
+							<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-c-create-vendor-menu" style="z-index:1060;max-height:12rem;overflow:auto;"></div>
+							<p class="text-muted small mb-0 mt-1 d-none" id="usis-c-create-vendor-dir-hint"></p>
+							<button type="button" class="btn btn-link btn-sm p-0 d-none" id="usis-c-create-vendor-add-dir">Add to project directory</button>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-c-create-vendor-contact">Contact</label>
+							<select class="form-select form-select-sm" id="usis-c-create-vendor-contact"><option value="">—</option></select>
+						</div>
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-c-create-vendor-address">Vendor address</label>
+							<textarea class="form-control form-control-sm" id="usis-c-create-vendor-address" rows="2"></textarea>
+						</div>
 					</div>
-					<div class="mb-2">
-						<label class="form-label small mb-0" for="usis-c-create-title">Title</label>
-						<input class="form-control form-control-sm" id="usis-c-create-title" maxlength="500" placeholder="e.g. Drywall package">
-					</div>
-					<div class="mb-0">
-						<label class="form-label small mb-0" for="usis-c-create-ref" id="usis-c-create-ref-label">Reference # (optional)</label>
-						<input class="form-control form-control-sm" id="usis-c-create-ref" maxlength="80" placeholder="PO-1001">
+
+					<div class="usis-c-po-only">
+						<h6 class="text-muted small text-uppercase mb-2">Issued &amp; authorized by</h6>
+						<div class="row g-2 mb-3">
+							<div class="col-md-6 position-relative">
+								<label class="form-label small mb-0" for="usis-c-create-issued-by-q">Issued by</label>
+								<input type="search" class="form-control form-control-sm usis-user-combobox-q" id="usis-c-create-issued-by-q" autocomplete="off" placeholder="Search users…">
+								<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-c-create-issued-by-menu" style="z-index:1060;max-height:10rem;overflow:auto;"></div>
+							</div>
+							<div class="col-md-6 position-relative">
+								<label class="form-label small mb-0" for="usis-c-create-authorized-by-q">Authorized by</label>
+								<input type="search" class="form-control form-control-sm usis-user-combobox-q" id="usis-c-create-authorized-by-q" autocomplete="off" placeholder="Search users…">
+								<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-c-create-authorized-by-menu" style="z-index:1060;max-height:10rem;overflow:auto;"></div>
+							</div>
+							<div class="col-12">
+								<label class="form-label small mb-0" for="usis-c-create-issued-address">Company address</label>
+								<textarea class="form-control form-control-sm" id="usis-c-create-issued-address" rows="2"></textarea>
+							</div>
+						</div>
+
+						<h6 class="text-muted small text-uppercase mb-2">Ship to address</h6>
+						<div class="mb-3">
+							<textarea class="form-control form-control-sm" id="usis-c-create-ship-to" rows="2" placeholder="Job site / ship-to"></textarea>
+						</div>
+
+						<h6 class="text-muted small text-uppercase mb-2">Default line item values</h6>
+						<div class="row g-2 mb-3">
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-create-def-delivery">Delivery date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-create-def-delivery">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-create-def-cc">Cost code</label>
+								<select class="form-select form-select-sm" id="usis-c-create-def-cc"><option value="">—</option></select>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-create-def-tax">Tax code</label>
+								<select class="form-select form-select-sm" id="usis-c-create-def-tax"><option value="">—</option></select>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-create-def-resource">Resource</label>
+								<select class="form-select form-select-sm" id="usis-c-create-def-resource">
+									<option value="">—</option>
+									<option value="material">Material</option>
+									<option value="labor">Labor</option>
+									<option value="equipment">Equipment</option>
+									<option value="subcontractor">Subcontractor</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+						</div>
+
+						<h6 class="text-muted small text-uppercase mb-2">PO items</h6>
+						<div class="table-responsive mb-2">
+							<table class="table table-sm table-bordered align-middle mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>Item #</th>
+										<th>Description</th>
+										<th>Qty</th>
+										<th>Unit</th>
+										<th>Unit price</th>
+										<th>Cost code</th>
+										<th>Tax</th>
+										<th>Resource</th>
+										<th>Delivery</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-c-create-lines-tbody"></tbody>
+							</table>
+						</div>
+						<button type="button" class="btn btn-outline-primary btn-sm mb-0" id="usis-c-create-line-add">+ Add line</button>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -1582,9 +1706,25 @@
 				</div>
 				<div class="modal-body">
 					<input type="hidden" id="usis-c-edit-id" value="">
-					<p class="text-muted small mb-2" id="usis-c-edit-vendorline"></p>
+					<input type="hidden" id="usis-c-edit-vendor-id" value="">
+					<input type="hidden" id="usis-c-edit-issued-by-id" value="">
+					<input type="hidden" id="usis-c-edit-authorized-by-id" value="">
 					<p class="small mb-2 d-none" id="usis-c-edit-rfp-link-wrap"><span class="text-muted">Linked RFP:</span> <a href="#" id="usis-c-edit-rfp-link" target="_blank" rel="noopener"></a></p>
+
+					<h6 class="text-muted small text-uppercase mb-2">General</h6>
 					<div class="row g-2 mb-3">
+						<div class="col-md-3 usis-c-edit-po-only">
+							<label class="form-label small mb-0" for="usis-c-edit-issue-date">Issue date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-edit-issue-date">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-edit-ref">Reference #</label>
+							<input class="form-control form-control-sm" id="usis-c-edit-ref" maxlength="80">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-c-edit-titlefield">Title / subject</label>
+							<input class="form-control form-control-sm" id="usis-c-edit-titlefield" maxlength="500">
+						</div>
 						<div class="col-md-3">
 							<label class="form-label small mb-0" for="usis-c-edit-status">Status</label>
 							<select class="form-select form-select-sm" id="usis-c-edit-status">
@@ -1596,30 +1736,79 @@
 							</select>
 						</div>
 						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-edit-status-date">Status date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-edit-status-date">
+						</div>
+						<div class="col-md-3 usis-c-edit-po-only">
+							<label class="form-label small mb-0" for="usis-c-edit-po-type">PO type</label>
+							<select class="form-select form-select-sm" id="usis-c-edit-po-type"><option value="">—</option></select>
+						</div>
+						<div class="col-md-3 usis-c-edit-po-only">
+							<label class="form-label small mb-0" for="usis-c-edit-reminder-date">Reminder date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-edit-reminder-date">
+						</div>
+						<div class="col-md-3">
 							<label class="form-label small mb-0" for="usis-c-edit-wf">Workflow lock</label>
 							<select class="form-select form-select-sm" id="usis-c-edit-wf">
 								<option value="0">Off (editable)</option>
 								<option value="1">On (locked)</option>
 							</select>
-							<p class="text-muted small mb-0 mt-1">Turn off to abandon lock and edit lines.</p>
 						</div>
 						<div class="col-md-3 d-none" id="usis-c-edit-ret-wrap">
 							<label class="form-label small mb-0" for="usis-c-edit-ret">Retention %</label>
 							<input type="number" step="0.01" class="form-control form-control-sm" id="usis-c-edit-ret" placeholder="e.g. 10">
 						</div>
 						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-c-edit-currency">Currency</label>
+							<input class="form-control form-control-sm" id="usis-c-edit-currency" maxlength="8">
+						</div>
+						<div class="col-md-3">
 							<label class="form-label small mb-0" for="usis-c-edit-total">Total amount</label>
 							<input class="form-control form-control-sm" id="usis-c-edit-total" placeholder="optional rollup">
 						</div>
 					</div>
-					<div class="mb-2">
-						<label class="form-label small mb-0" for="usis-c-edit-titlefield">Title</label>
-						<input class="form-control form-control-sm" id="usis-c-edit-titlefield" maxlength="500">
+
+					<h6 class="text-muted small text-uppercase mb-2">Vendor</h6>
+					<div class="row g-2 mb-3">
+						<div class="col-md-6 position-relative">
+							<label class="form-label small mb-0" for="usis-c-edit-vendor-q">Company</label>
+							<input type="search" class="form-control form-control-sm" id="usis-c-edit-vendor-q" autocomplete="off" placeholder="Type vendor name…">
+							<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-c-edit-vendor-menu" style="z-index:1060;max-height:12rem;overflow:auto;"></div>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-c-edit-vendor-contact">Contact</label>
+							<select class="form-select form-select-sm" id="usis-c-edit-vendor-contact"><option value="">—</option></select>
+						</div>
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-c-edit-vendor-address">Vendor address</label>
+							<textarea class="form-control form-control-sm" id="usis-c-edit-vendor-address" rows="2"></textarea>
+						</div>
 					</div>
-					<div class="mb-2">
-						<label class="form-label small mb-0" for="usis-c-edit-ref">Reference #</label>
-						<input class="form-control form-control-sm" id="usis-c-edit-ref" maxlength="80">
+
+					<div class="usis-c-edit-po-only">
+						<h6 class="text-muted small text-uppercase mb-2">Issued &amp; authorized</h6>
+						<div class="row g-2 mb-3">
+							<div class="col-md-6 position-relative">
+								<label class="form-label small mb-0" for="usis-c-edit-issued-by-q">Issued by</label>
+								<input type="search" class="form-control form-control-sm" id="usis-c-edit-issued-by-q" autocomplete="off">
+								<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-c-edit-issued-by-menu" style="z-index:1060;max-height:10rem;overflow:auto;"></div>
+							</div>
+							<div class="col-md-6 position-relative">
+								<label class="form-label small mb-0" for="usis-c-edit-authorized-by-q">Authorized by</label>
+								<input type="search" class="form-control form-control-sm" id="usis-c-edit-authorized-by-q" autocomplete="off">
+								<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-c-edit-authorized-by-menu" style="z-index:1060;max-height:10rem;overflow:auto;"></div>
+							</div>
+							<div class="col-12">
+								<label class="form-label small mb-0" for="usis-c-edit-issued-address">Company address</label>
+								<textarea class="form-control form-control-sm" id="usis-c-edit-issued-address" rows="2"></textarea>
+							</div>
+							<div class="col-12">
+								<label class="form-label small mb-0" for="usis-c-edit-ship-to">Ship to</label>
+								<textarea class="form-control form-control-sm" id="usis-c-edit-ship-to" rows="2"></textarea>
+							</div>
+						</div>
 					</div>
+
 					<div class="mb-3">
 						<label class="form-label small mb-0" for="usis-c-edit-notes">Notes</label>
 						<textarea class="form-control form-control-sm" id="usis-c-edit-notes" rows="2"></textarea>
@@ -1628,15 +1817,19 @@
 						<h6 class="mb-0">Line items</h6>
 					</div>
 					<div class="row g-2 align-items-end mb-2">
-						<div class="col-md-4">
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-itemno">Item #</label>
+							<input class="form-control form-control-sm" id="usis-c-line-itemno" placeholder="1">
+						</div>
+						<div class="col-md-3">
 							<label class="form-label small mb-0" for="usis-c-line-desc">Description</label>
 							<input class="form-control form-control-sm" id="usis-c-line-desc" placeholder="Scope line">
 						</div>
-						<div class="col-md-2">
+						<div class="col-md-1">
 							<label class="form-label small mb-0" for="usis-c-line-qty">Qty</label>
 							<input class="form-control form-control-sm" id="usis-c-line-qty" placeholder="1">
 						</div>
-						<div class="col-md-2">
+						<div class="col-md-1">
 							<label class="form-label small mb-0" for="usis-c-line-unit">Unit</label>
 							<input class="form-control form-control-sm" id="usis-c-line-unit" value="EA">
 						</div>
@@ -1648,11 +1841,30 @@
 							<label class="form-label small mb-0" for="usis-c-line-cc">Cost code</label>
 							<select class="form-select form-select-sm" id="usis-c-line-cc"><option value="">—</option></select>
 						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-tax">Tax code</label>
+							<select class="form-select form-select-sm" id="usis-c-line-tax"><option value="">—</option></select>
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-resource">Resource</label>
+							<select class="form-select form-select-sm" id="usis-c-line-resource">
+								<option value="">—</option>
+								<option value="material">Material</option>
+								<option value="labor">Labor</option>
+								<option value="equipment">Equipment</option>
+								<option value="subcontractor">Subcontractor</option>
+								<option value="other">Other</option>
+							</select>
+						</div>
+						<div class="col-md-2">
+							<label class="form-label small mb-0" for="usis-c-line-delivery">Delivery</label>
+							<input type="date" class="form-control form-control-sm" id="usis-c-line-delivery">
+						</div>
 					</div>
 					<button type="button" class="btn btn-outline-primary btn-sm mb-3" id="usis-c-line-add">Add line</button>
 					<div class="table-responsive mb-4">
 						<table class="table table-sm table-bordered align-middle">
-							<thead class="table-light"><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Unit cost</th><th>Line total</th><th></th></tr></thead>
+							<thead class="table-light"><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th>Unit cost</th><th>Tax</th><th>Resource</th><th>Delivery</th><th>Line total</th><th></th></tr></thead>
 							<tbody id="usis-c-edit-lines-tbody"></tbody>
 						</table>
 					</div>

@@ -30,6 +30,41 @@ def test_hr_dashboard_summary(client):
     assert "hint" in data
 
 
+def test_hr_dashboard_pending_acks_exclude_applicants(client, flask_app):
+    from app.models import HrPolicyAcknowledgment
+    from app.permissions.applicant import assign_applicant_role
+    from app.services.hr_policy import DEFAULT_EMPLOYEE_HANDBOOK_VERSION
+
+    with flask_app.app_context():
+        before = client.get("/api/v1/hr/dashboard-summary").get_json()
+        baseline = int((before.get("counts") or {}).get("pending_acknowledgments") or 0)
+
+        email = f"applicant.policy.{uuid.uuid4().hex[:8]}@usis.local"
+        u = User(email=email, first_name="Policy", last_name="Applicant", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        assign_applicant_role(u)
+        db.session.add(
+            HrPolicyAcknowledgment(
+                user_id=u.id,
+                policy_version=DEFAULT_EMPLOYEE_HANDBOOK_VERSION,
+            )
+        )
+        db.session.commit()
+        uid = u.id
+
+    try:
+        after = client.get("/api/v1/hr/dashboard-summary").get_json()
+        pending = int((after.get("counts") or {}).get("pending_acknowledgments") or 0)
+        assert pending == baseline
+    finally:
+        with flask_app.app_context():
+            u2 = db.session.get(User, uid)
+            if u2 is not None:
+                db.session.delete(u2)
+                db.session.commit()
+
+
 def test_hr_dashboard_sample_excludes_applicant_only(client, flask_app):
     from app.models import HrOnboardingItem
     from app.permissions.applicant import assign_applicant_role
@@ -336,8 +371,7 @@ def test_hr_hire_wizard_get_and_submit(client, hr_wizard_user):
     w = r.get_json()
     assert w.get("entity") == "hr_hire_wizard"
     assert w.get("steps", {}).get("application", {}).get("onboarding_item_id")
-    i9_id = w["steps"]["i9"]["policy_acknowledgment_id"]
-    assert i9_id
+    assert w["steps"]["i9"]["policy_acknowledgment_id"] is None
     assert w.get("i9", {}).get("prefill", {}).get("last_name")
     r2 = client.post(
         "/api/v1/hr/me/hire-application",
@@ -347,13 +381,6 @@ def test_hr_hire_wizard_get_and_submit(client, hr_wizard_user):
     assert r2.status_code == 200
     r3 = client.get("/api/v1/hr/me/hire-wizard", headers=hdr)
     assert r3.get_json()["steps"]["application"]["completed"] is True
-    r4 = client.post(
-        f"/api/v1/hr/me/policy-acknowledgments/{i9_id}/sign",
-        headers=hdr,
-        json={"certify": True, "typed_full_name": "Jamie Rivera"},
-    )
-    assert r4.status_code == 400
-    assert "i9-section1/sign" in (r4.get_json().get("error") or "")
 
     r5 = client.post(
         "/api/v1/hr/me/i9-section1",
@@ -390,15 +417,7 @@ def test_hr_hire_wizard_get_and_submit(client, hr_wizard_user):
     r9 = client.get("/api/v1/hr/me/hire-wizard", headers=hdr)
     assert r9.get_json()["i9"]["status"] == "signed"
     assert r9.get_json()["steps"]["i9"]["signed_at"]
-
-    w4_id = r9.get_json()["steps"]["w4"]["policy_acknowledgment_id"]
-    r10 = client.post(
-        f"/api/v1/hr/me/policy-acknowledgments/{w4_id}/sign",
-        headers=hdr,
-        json={"certify": True, "typed_full_name": "Jamie Rivera"},
-    )
-    assert r10.status_code == 400
-    assert "w4/sign" in (r10.get_json().get("error") or "")
+    assert r9.get_json()["steps"]["w4"]["policy_acknowledgment_id"] is None
 
     sample_w4 = {
         "first_name": "Jamie",

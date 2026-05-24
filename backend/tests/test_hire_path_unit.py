@@ -5,10 +5,13 @@ from datetime import datetime, timezone
 
 from app.models import HrHireApplication
 from app.services.hire_application_review import (
+    HIRE_STATUS_OFFER_ACCEPTED,
     HIRE_STATUS_OFFER_EXTENDED,
     HIRE_STATUS_SUBMITTED,
     allowed_hr_status_transition,
+    can_hr_hire_after_offer_accepted,
     can_hr_manual_hire,
+    show_hire_after_offer_panel,
 )
 from app.services.hire_path import (
     applicant_may_complete_i9_w4,
@@ -81,3 +84,21 @@ def test_can_hr_send_offer_union_false():
 
     row = _row(hire_path="union_dispatch", hire_status=HIRE_STATUS_SUBMITTED)
     assert can_hr_send_offer(row) is False
+
+
+def test_show_hire_after_offer_panel_standard_accepted():
+    row = _row(hire_path="standard", hire_status=HIRE_STATUS_OFFER_ACCEPTED)
+    assert show_hire_after_offer_panel(row) is True
+
+
+def test_can_hr_hire_after_offer_requires_forms():
+    now = datetime.now(timezone.utc)
+    row = _row(
+        hire_path="standard",
+        hire_status=HIRE_STATUS_OFFER_ACCEPTED,
+        offer_accepted_at=now,
+    )
+    assert can_hr_hire_after_offer_accepted(row) is False
+    row.i9_signed_at = now
+    row.w4_signed_at = now
+    assert can_hr_hire_after_offer_accepted(row) is True

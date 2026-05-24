@@ -54,6 +54,7 @@ from ..services.hr_hire_signed_forms import (
 )
 from ..services.hr_i9_validate import validate_section1
 from ..services.hr_w4_validate import validate_w4
+from ..permissions.applicant import is_applicant_only_user
 from ..services.hire_application_review import (
     TERMINAL_HIRE_STATUSES,
     applicant_wizard_mutable,
@@ -802,24 +803,6 @@ def _ensure_hire_wizard_rows(user_id: uuid.UUID) -> None:
 
         )
 
-    for pv in (HIRE_POLICY_I9_VERSION, HIRE_POLICY_W4_VERSION):
-
-        exists_pol = db.session.scalar(
-
-            select(HrPolicyAcknowledgment.id).where(
-
-                HrPolicyAcknowledgment.user_id == user_id,
-
-                HrPolicyAcknowledgment.policy_version == pv,
-
-            )
-
-        )
-
-        if exists_pol is None:
-
-            db.session.add(HrPolicyAcknowledgment(user_id=user_id, policy_version=pv, signed_at=None))
-
     db.session.commit()
 
 
@@ -1060,30 +1043,6 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         )
 
-        pol_i9 = db.session.scalar(
-
-            select(HrPolicyAcknowledgment).where(
-
-                HrPolicyAcknowledgment.user_id == uid,
-
-                HrPolicyAcknowledgment.policy_version == HIRE_POLICY_I9_VERSION,
-
-            )
-
-        )
-
-        pol_w4 = db.session.scalar(
-
-            select(HrPolicyAcknowledgment).where(
-
-                HrPolicyAcknowledgment.user_id == uid,
-
-                HrPolicyAcknowledgment.policy_version == HIRE_POLICY_W4_VERSION,
-
-            )
-
-        )
-
         i9_draft = _decrypt_draft_for_owner(hire_row)
 
         w4_draft = _decrypt_w4_draft_for_owner(hire_row)
@@ -1106,9 +1065,9 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
             "i9": {
 
-                "policy_acknowledgment_id": str(pol_i9.id) if pol_i9 else None,
+                "policy_acknowledgment_id": None,
 
-                "signed_at": _iso(pol_i9.signed_at) if pol_i9 else None,
+                "signed_at": _iso(hire_row.i9_signed_at) if hire_row and hire_row.i9_signed_at else None,
 
                 "policy_title": _hire_policy_label(HIRE_POLICY_I9_VERSION),
 
@@ -1118,9 +1077,9 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
             "w4": {
 
-                "policy_acknowledgment_id": str(pol_w4.id) if pol_w4 else None,
+                "policy_acknowledgment_id": None,
 
-                "signed_at": _iso(pol_w4.signed_at) if pol_w4 else None,
+                "signed_at": _iso(hire_row.w4_signed_at) if hire_row and hire_row.w4_signed_at else None,
 
                 "policy_title": _hire_policy_label(HIRE_POLICY_W4_VERSION),
 
@@ -1524,18 +1483,6 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
 
 
-        pol_i9 = db.session.scalar(
-
-            select(HrPolicyAcknowledgment).where(
-
-                HrPolicyAcknowledgment.user_id == uid,
-
-                HrPolicyAcknowledgment.policy_version == HIRE_POLICY_I9_VERSION,
-
-            )
-
-        )
-
         now = datetime.now(timezone.utc)
 
         hire_row.i9_signature_png = sig if sig.startswith("data:") else f"data:image/png;base64,{sig}"
@@ -1545,12 +1492,6 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         hire_row.i9_section1_json_encrypted = encrypt_section1(section1)
 
         ip = _client_ip_for_audit()
-
-        if pol_i9 is not None and pol_i9.signed_at is None:
-
-            pol_i9.signed_at = now
-
-            pol_i9.ip_address = ip
 
         db.session.add(
 
@@ -1632,6 +1573,22 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         assert u is not None
 
+        if is_applicant_only_user(u):
+
+            return _jsonify(
+
+                {
+
+                    "entity": "hr_policy_sign",
+
+                    "error": "forbidden",
+
+                    "message": "Policy acknowledgments apply to active employees after hire.",
+
+                }
+
+            ), 403
+
         if not _typed_name_matches_user(typed, u):
 
             return _jsonify(
@@ -1679,8 +1636,6 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
                 }
 
             ), 400
-
-        return _jsonify({"entity": "hr_policy_sign", "error": "policy cannot be signed from this wizard"}), 400
 
         if row.approval_request_id is not None:
 
@@ -1912,18 +1867,6 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
 
         hire_row.w4_json_encrypted = encrypt_w4(draft)
 
-        pol_w4 = db.session.scalar(
-
-            select(HrPolicyAcknowledgment).where(
-
-                HrPolicyAcknowledgment.user_id == uid,
-
-                HrPolicyAcknowledgment.policy_version == HIRE_POLICY_W4_VERSION,
-
-            )
-
-        )
-
         now = datetime.now(timezone.utc)
 
         hire_row.w4_signature_png = sig if sig.startswith("data:") else f"data:image/png;base64,{sig}"
@@ -1933,12 +1876,6 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         mark_submitted_for_review(hire_row, when=now)
 
         ip = _client_ip_for_audit()
-
-        if pol_w4 is not None and pol_w4.signed_at is None:
-
-            pol_w4.signed_at = now
-
-            pol_w4.ip_address = ip
 
         db.session.add(
 

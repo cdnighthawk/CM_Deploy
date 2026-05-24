@@ -20,6 +20,7 @@ from ..services.hire_application_review import (
     HIRE_STATUS_OFFER_ACCEPTED,
     HIRE_STATUS_OFFER_EXTENDED,
     HireReviewError,
+    can_hr_hire_after_offer_accepted,
     utc_now,
 )
 from ..services.hire_path import HIRE_PATH_STANDARD, is_standard_path
@@ -256,22 +257,31 @@ def accept_job_offer(*, hire_row: HrHireApplication, user: User) -> None:
 
 def try_auto_hire_after_onboarding(*, hire_row: HrHireApplication, user: User) -> bool:
     """Promote standard-path applicants to hired after offer accept + I-9 + W-4."""
-    if not is_standard_path(hire_row):
-        return False
-    if hire_row.hire_status != HIRE_STATUS_OFFER_ACCEPTED:
-        return False
-    if hire_row.i9_signed_at is None or hire_row.w4_signed_at is None:
-        return False
-    if hire_row.hire_status == HIRE_STATUS_HIRED:
+    if not can_hr_hire_after_offer_accepted(hire_row):
         return False
 
     role_ids = parse_pending_role_ids(hire_row.offer_pending_role_ids)
-    apply_staff_roles(user, role_ids)
+    complete_standard_path_hire(hire_row=hire_row, user=user, role_ids=role_ids)
+    return True
 
+
+def complete_standard_path_hire(
+    *,
+    hire_row: HrHireApplication,
+    user: User,
+    role_ids: list[uuid.UUID],
+    reviewed_by_user_id: uuid.UUID | None = None,
+    review_notes: str | None = None,
+) -> None:
+    """Finalize hire for standard-path applicants (auto or HR-triggered)."""
+    apply_staff_roles(user, role_ids)
     now = utc_now()
     hire_row.hire_status = HIRE_STATUS_HIRED
     hire_row.reviewed_at = now
+    if reviewed_by_user_id is not None:
+        hire_row.reviewed_by_user_id = reviewed_by_user_id
+    if review_notes:
+        hire_row.review_notes = review_notes.strip()
     provision_hired_employee_hr_records(user.id)
     if hire_row.offer_document_id is not None:
         _upsert_employee_offer_document(user_id=user.id, document_id=hire_row.offer_document_id)
-    return True

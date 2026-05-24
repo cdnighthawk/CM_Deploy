@@ -15,7 +15,9 @@ _STAFF_ONBOARDING: tuple[tuple[str, int], ...] = (
     ("Acknowledge employee handbook", 20),
     ("Complete payroll profile", 30),
 )
-_DEFAULT_POLICY_VERSION = "handbook-2025-01"
+from .hr_policy import DEFAULT_EMPLOYEE_HANDBOOK_VERSION
+
+_DEFAULT_POLICY_VERSION = DEFAULT_EMPLOYEE_HANDBOOK_VERSION
 _DEFAULT_TRAINING_COURSE = "harassment-prevention-101"
 
 

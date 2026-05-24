@@ -25,13 +25,14 @@ from ..models import (
     UserRole,
     WageRate,
 )
-from ..permissions.applicant import is_applicant_only_user
+from ..permissions.applicant import applicant_only_user_id_subquery, is_applicant_only_user
 from ..services.hire_application_review import (
     HIRE_STATUS_HIRED,
     HIRE_STATUS_SUBMITTED,
     HIRE_STATUS_UNDER_REVIEW,
 )
 from ..services.hr_hire_signed_forms import signed_form_staff_url
+from ..services.hr_policy import HIRE_WIZARD_POLICY_VERSIONS
 from ..users.test_artifacts import hr_demo_user_id_subquery, is_hr_demo_user
 from . import _hr_dispatch_service as hr_dispatch_svc
 from ._perms import CurrentUser, current_user
@@ -190,6 +191,7 @@ def register_hr_routes(bp: Blueprint) -> None:
     @bp.get("/hr/dashboard-summary")
     def hr_dashboard_summary():
         demo_ids = hr_demo_user_id_subquery()
+        applicant_ids = applicant_only_user_id_subquery()
         pending_acknowledgments = int(
             db.session.scalar(
                 select(func.count())
@@ -197,6 +199,8 @@ def register_hr_routes(bp: Blueprint) -> None:
                 .where(
                     HrPolicyAcknowledgment.signed_at.is_(None),
                     HrPolicyAcknowledgment.user_id.notin_(demo_ids),
+                    HrPolicyAcknowledgment.user_id.notin_(applicant_ids),
+                    HrPolicyAcknowledgment.policy_version.notin_(HIRE_WIZARD_POLICY_VERSIONS),
                 )
             )
             or 0
@@ -268,7 +272,11 @@ def register_hr_routes(bp: Blueprint) -> None:
                 db.session.scalar(
                     select(func.count())
                     .select_from(HrPolicyAcknowledgment)
-                    .where(HrPolicyAcknowledgment.user_id == uid, HrPolicyAcknowledgment.signed_at.is_(None))
+                    .where(
+                        HrPolicyAcknowledgment.user_id == uid,
+                        HrPolicyAcknowledgment.signed_at.is_(None),
+                        HrPolicyAcknowledgment.policy_version.notin_(HIRE_WIZARD_POLICY_VERSIONS),
+                    )
                 )
                 or 0
             )
@@ -382,6 +390,8 @@ def register_hr_routes(bp: Blueprint) -> None:
         policy_acknowledgments: list[dict[str, Any]] = []
         pending_hr_approvals: list[dict[str, Any]] = []
         for row in pol_rows:
+            if row.policy_version in HIRE_WIZARD_POLICY_VERSIONS:
+                continue
             pt = _policy_title(row.policy_version)
             signed = row.signed_at is not None
             pending_signature = not signed and row.approval_request_id is None

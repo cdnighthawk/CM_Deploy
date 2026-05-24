@@ -270,6 +270,71 @@
 			.join("");
 	}
 
+	function prefillHireRolesFromOffer(offer) {
+		var pending = (offer && offer.pending_role_ids) || [];
+		document.querySelectorAll(".usis-hr-appd-role-cb").forEach(function (cb) {
+			cb.checked = pending.indexOf(cb.value) >= 0;
+		});
+	}
+
+	function renderHireBox(d) {
+		var box = document.getElementById("usis-hr-appd-hire-box");
+		if (!box) return;
+		var caps = (d && d.capabilities) || {};
+		var readiness = (d && d.hire_readiness) || {};
+		var show = !!caps.show_hire_after_offer_panel;
+		box.classList.toggle("d-none", !show);
+		if (!show) return;
+
+		var checklist = document.getElementById("usis-hr-appd-hire-checklist");
+		var hireBtn = document.getElementById("usis-hr-appd-hire-after-offer-open");
+		var hint = document.getElementById("usis-hr-appd-hire-box-hint");
+		var items = [
+			{ ok: !!readiness.offer_accepted, label: "Job offer accepted" },
+			{ ok: !!readiness.i9_signed, label: "Form I-9 signed" },
+			{ ok: !!readiness.w4_signed, label: "Form W-4 signed" },
+		];
+		if (checklist) {
+			checklist.innerHTML = items
+				.map(function (it) {
+					return (
+						'<li class="mb-1">' +
+						(it.ok ? '<span class="text-success">✓</span>' : '<span class="text-muted">○</span>') +
+						" " +
+						esc(it.label) +
+						"</li>"
+					);
+				})
+				.join("");
+		}
+		var canHire = !!caps.can_hire_after_offer;
+		if (hireBtn) {
+			hireBtn.disabled = !canHire;
+			if (!hireBtn._wired) {
+				hireBtn._wired = true;
+				hireBtn.addEventListener("click", function () {
+					prefillHireRolesFromOffer((state.detail && state.detail.offer) || {});
+					var modalEl = document.getElementById("usis-hr-appd-hire-modal");
+					if (modalEl && typeof bootstrap !== "undefined") {
+						bootstrap.Modal.getOrCreateInstance(modalEl).show();
+					}
+				});
+			}
+		}
+		if (hint) {
+			if (canHire) {
+				hint.textContent = "All onboarding steps are complete. Confirm hire to assign staff roles from the job offer.";
+				hint.classList.remove("d-none");
+			} else if (readiness.offer_accepted) {
+				hint.textContent = "Waiting for the applicant to sign Form I-9 and Form W-4 in the hire portal.";
+				hint.classList.remove("d-none");
+			} else {
+				hint.classList.add("d-none");
+				hint.textContent = "";
+			}
+		}
+	}
+
 	function prefillOfferModal(d) {
 		var payload = (d.application && d.application.payload) || {};
 		var positionEl = document.getElementById("usis-hr-appd-offer-position");
@@ -316,9 +381,13 @@
 			html +=
 				'<button type="button" class="btn btn-success btn-sm" id="usis-hr-appd-hire-open">Approve / hire</button>' +
 				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-reject-open">Reject</button>';
-		} else if (status === "offer_extended" || status === "offer_accepted") {
+		} else if (status === "offer_extended") {
 			html +=
-				'<p class="text-muted small mb-2">Standard path — applicant is hired automatically after they accept the offer and sign I-9 and W-4.</p>' +
+				'<p class="text-muted small mb-2">Waiting for the applicant to accept the job offer. I-9 and W-4 unlock after acceptance.</p>' +
+				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-reject-open">Reject</button>';
+		} else if (status === "offer_accepted") {
+			html +=
+				'<p class="text-muted small mb-2">Offer accepted — use the <strong>Hire employee</strong> panel when I-9 and W-4 are complete.</p>' +
 				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-reject-open">Reject</button>';
 		}
 		if (caps.can_delete_applicant) {
@@ -517,6 +586,7 @@
 		renderDocThumbs(document.getElementById("usis-hr-appd-w4-docs"), d.w4 && d.w4.documents);
 		renderHireRoles(d.staff_roles || []);
 		renderOfferRoles(d.staff_roles || []);
+		renderHireBox(d);
 		renderActions(d);
 		updateDeleteButtons(d);
 		document.getElementById("usis-hr-appd-content").classList.remove("d-none");
@@ -622,7 +692,7 @@
 							var modalEl = document.getElementById("usis-hr-appd-hire-modal");
 							if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 						}
-						if (window.USISNotify) window.USISNotify.success("Applicant hired.");
+						if (window.USISNotify) window.USISNotify.success("Employee hired.");
 						window.location.href = employeeProfileUrl(state.userId);
 					})
 					.catch(function (e) {

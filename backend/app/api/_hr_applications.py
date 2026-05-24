@@ -29,7 +29,9 @@ from ..services.hire_application_review import (
     allowed_hr_status_transition,
     application_position,
     can_hr_manual_hire,
+    can_hr_hire_after_offer_accepted,
     can_hr_send_offer,
+    show_hire_after_offer_panel,
     parse_application_payload,
     purge_hire_application_files,
     serialize_hire_status,
@@ -37,7 +39,12 @@ from ..services.hire_application_review import (
     utc_now,
 )
 from ..services.hr_hired_employee import provision_hired_employee_hr_records
-from ..services.hr_job_offer import extend_job_offer, render_job_offer_html
+from ..services.hr_job_offer import (
+    complete_standard_path_hire,
+    extend_job_offer,
+    parse_pending_role_ids,
+    render_job_offer_html,
+)
 from ._notifications import (
     send_application_approval_letter_email,
     send_application_rejection_letter_email,
@@ -178,18 +185,34 @@ def _apply_status_patch(
         raise HireReviewError("review_notes is required when rejecting an application", 400)
 
     if new_status == HIRE_STATUS_HIRED:
-        if not can_hr_manual_hire(hire_row):
-            raise HireReviewError(
-                "standard path applicants are hired automatically after they accept the offer and sign I-9 and W-4",
-                400,
-            )
-        ids = role_ids or []
-        roles = _validate_staff_role_ids(ids)
         u = hire_row.user
         if u is None:
             raise HireReviewError("user not found for hire application", 404)
-        admin_users_svc._set_roles(u, [r.id for r in roles])
-        provision_hired_employee_hr_records(u.id)
+        if can_hr_manual_hire(hire_row):
+            ids = role_ids or []
+            roles = _validate_staff_role_ids(ids)
+            admin_users_svc._set_roles(u, [r.id for r in roles])
+            provision_hired_employee_hr_records(u.id)
+        elif can_hr_hire_after_offer_accepted(hire_row):
+            ids = role_ids or parse_pending_role_ids(hire_row.offer_pending_role_ids)
+            if not ids:
+                raise HireReviewError(
+                    "role_ids must include at least one staff role when hiring (or resend the job offer with roles)",
+                    400,
+                )
+            complete_standard_path_hire(
+                hire_row=hire_row,
+                user=u,
+                role_ids=ids,
+                reviewed_by_user_id=cu.user.id if cu.user else None,
+                review_notes=notes,
+            )
+        else:
+            raise HireReviewError(
+                "hire requires a signed job offer acceptance and completed Form I-9 and W-4, "
+                "or use union dispatch manual hire before an offer",
+                400,
+            )
 
     hire_row.hire_status = new_status
     if new_status in (HIRE_STATUS_HIRED, HIRE_STATUS_REJECTED):
@@ -408,9 +431,16 @@ def register_hr_application_routes(bp: Blueprint) -> None:
                     "can_delete_applicant": _can_delete_applicant(cu) and is_applicant_only_user(u),
                     "can_send_offer": can_hr_send_offer(hire_row),
                     "can_manual_hire": can_hr_manual_hire(hire_row),
+                    "show_hire_after_offer_panel": show_hire_after_offer_panel(hire_row),
+                    "can_hire_after_offer": can_hr_hire_after_offer_accepted(hire_row),
                     "employee_profile_url": f"/usis-hr-employee.html?id={user_id}"
                     if (hire_row.hire_status or "") == HIRE_STATUS_HIRED and u and not is_applicant_only_user(u)
                     else None,
+                },
+                "hire_readiness": {
+                    "offer_accepted": hire_row.offer_accepted_at is not None,
+                    "i9_signed": hire_row.i9_signed_at is not None,
+                    "w4_signed": hire_row.w4_signed_at is not None,
                 },
             }
         )

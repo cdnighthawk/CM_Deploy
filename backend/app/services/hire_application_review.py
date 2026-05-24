@@ -174,6 +174,7 @@ def serialize_offer_block(hire_row: HrHireApplication | None) -> dict[str, Any]:
             "sent_at": None,
             "accepted_at": None,
             "document_id": None,
+            "pending_role_ids": [],
             "preview_available": False,
         }
     return {
@@ -183,11 +184,24 @@ def serialize_offer_block(hire_row: HrHireApplication | None) -> dict[str, Any]:
         "sent_at": hire_row.offer_sent_at.isoformat() if hire_row.offer_sent_at else None,
         "accepted_at": hire_row.offer_accepted_at.isoformat() if hire_row.offer_accepted_at else None,
         "document_id": str(hire_row.offer_document_id) if hire_row.offer_document_id else None,
+        "pending_role_ids": parse_offer_pending_role_ids(hire_row.offer_pending_role_ids),
         "preview_available": bool(
             hire_row.offer_document_id
             and hire_row.hire_status in (HIRE_STATUS_OFFER_EXTENDED, HIRE_STATUS_OFFER_ACCEPTED, HIRE_STATUS_HIRED)
         ),
     }
+
+
+def parse_offer_pending_role_ids(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(data, list):
+        return []
+    return [str(item) for item in data if item]
 
 
 def allowed_hr_status_transition(current: str, new: str) -> bool:
@@ -218,6 +232,24 @@ def can_hr_manual_hire(hire_row: HrHireApplication) -> bool:
     if hire_row.hire_path != HIRE_PATH_UNION_DISPATCH:
         return False
     return (hire_row.hire_status or HIRE_STATUS_IN_PROGRESS) in HR_REVIEWABLE_STATUSES
+
+
+def can_hr_hire_after_offer_accepted(hire_row: HrHireApplication) -> bool:
+    """Standard-path applicants HR may hire after offer accept + signed I-9 and W-4."""
+    if not is_standard_path(hire_row):
+        return False
+    if (hire_row.hire_status or "") != HIRE_STATUS_OFFER_ACCEPTED:
+        return False
+    if hire_row.offer_accepted_at is None:
+        return False
+    return hire_row.i9_signed_at is not None and hire_row.w4_signed_at is not None
+
+
+def show_hire_after_offer_panel(hire_row: HrHireApplication) -> bool:
+    """Show HR hire panel once the applicant has accepted a standard-path job offer."""
+    if not is_standard_path(hire_row):
+        return False
+    return (hire_row.hire_status or "") == HIRE_STATUS_OFFER_ACCEPTED
 
 
 def purge_hire_application_files(hire_row: HrHireApplication) -> None:

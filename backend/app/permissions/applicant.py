@@ -53,6 +53,25 @@ def is_applicant_only_user(user: User | None) -> bool:
     return codes == frozenset({APPLICANT_ROLE_CODE})
 
 
+def applicant_only_user_id_subquery():
+    """Users whose only assigned role is ``applicant`` (excluded from staff HR policy queues)."""
+    has_applicant = (
+        select(UserRole.user_id)
+        .join(Role, UserRole.role_id == Role.id)
+        .where(Role.code == APPLICANT_ROLE_CODE)
+    )
+    has_staff_role = (
+        select(UserRole.user_id)
+        .join(Role, UserRole.role_id == Role.id)
+        .where(Role.code != APPLICANT_ROLE_CODE)
+    )
+    return select(User.id).where(
+        User.is_superuser.is_(False),
+        User.id.in_(has_applicant),
+        User.id.notin_(has_staff_role),
+    )
+
+
 def is_applicant_public_shell_path(rel_path: str) -> bool:
     rel = (rel_path or "").replace("\\", "/").strip().lstrip("/")
     if not rel or rel.startswith("assets/"):

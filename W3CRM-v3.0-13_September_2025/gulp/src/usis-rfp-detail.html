@@ -56,7 +56,7 @@
 			pre.textContent = "Missing ?id= rfp uuid";
 			return;
 		}
-		fetch(apiBase() + "/api/v1/rfps/" + encodeURIComponent(id), { credentials: "omit" })
+		fetch(apiBase() + "/api/v1/rfps/" + encodeURIComponent(id), { credentials: "include" })
 			.then(function (r) {
 				return r.json();
 			})
@@ -68,7 +68,7 @@
 			});
 		document.getElementById("usis-rfp-email-preview").addEventListener("click", function (ev) {
 			ev.preventDefault();
-			fetch(apiBase() + "/api/v1/rfps/" + encodeURIComponent(id) + "/email-preview", { credentials: "omit" })
+			fetch(apiBase() + "/api/v1/rfps/" + encodeURIComponent(id) + "/email-preview", { credentials: "include" })
 				.then(function (r) {
 					return r.json();
 				})

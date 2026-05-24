@@ -35,7 +35,7 @@
 			return;
 		}
 		tb.innerHTML = '<tr><td colspan="4">Loading…</td></tr>';
-		fetch(apiBase() + "/api/v1/rfps?" + q, { credentials: "omit" })
+		fetch(apiBase() + "/api/v1/rfps?" + q, { credentials: "include" })
 			.then(function (r) {
 				return r.json();
 			})
@@ -88,7 +88,7 @@
 			fetch(apiBase() + "/api/v1/rfps", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				credentials: "omit",
+				credentials: "include",
 				body: JSON.stringify(body),
 			})
 				.then(function (r) {

@@ -101,9 +101,22 @@
 		if (on) el.classList.remove("d-none");
 		else el.classList.add("d-none");
 	}
+	function actorHeaders() {
+		var id = null;
+		try {
+			id = window.localStorage.getItem("usisActorUserId");
+		} catch (e) {}
+		if (id && id.trim()) {
+			return { "X-Usis-User-Id": id.trim() };
+		}
+		return {};
+	}
 	function fetchJson(path) {
 		var base = apiBase();
-		return fetch(base + path, { credentials: "omit" }).then(function (res) {
+		return fetch(base + path, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		}).then(function (res) {
 			if (!res.ok) {
 				return res.text().then(function (t) {
 					throw new Error(res.status + " " + (t || res.statusText));
@@ -116,8 +129,11 @@
 		var base = apiBase();
 		var opts = {
 			method: method,
-			credentials: "omit",
-			headers: { "Content-Type": "application/json" },
+			credentials: "include",
+			headers: Object.assign(
+				{ "Content-Type": "application/json", Accept: "application/json" },
+				actorHeaders()
+			),
 		};
 		if (bodyObj !== undefined && bodyObj !== null) {
 			opts.body = JSON.stringify(bodyObj);
@@ -134,7 +150,11 @@
 	}
 	function fetchEmpty(method, path) {
 		var base = apiBase();
-		return fetch(base + path, { method: method, credentials: "omit" }).then(function (res) {
+		return fetch(base + path, {
+			method: method,
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		}).then(function (res) {
 			if (!res.ok) {
 				return res.text().then(function (t) {
 					throw new Error(res.status + " " + (t || res.statusText));

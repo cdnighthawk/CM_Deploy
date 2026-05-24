@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-hrms-expense-detail.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Expense report" })
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h4 class="mb-1" id="usis-hrms-expd-title">—</h4>
+						<p class="text-muted small mb-0"><span id="usis-hrms-expd-status-badge"></span> · Total <strong id="usis-hrms-expd-total">—</strong></p>
+					</div>
+					<a href="usis-hrms-expenses.html" class="btn btn-sm btn-outline-secondary">Back to list</a>
+				</div>
+				<div class="alert alert-danger d-none" id="usis-hrms-expd-err"></div>
+				<div class="alert alert-warning d-none" id="usis-hrms-expd-reject"></div>
+				<p class="small text-muted" id="usis-hrms-expd-hint"></p>
+
+				<div class="card border-0 shadow-sm mb-3 d-none" id="usis-hrms-expd-add-card">
+					<div class="card-body">
+						<h6 class="card-title">Add expense line</h6>
+						<div class="row g-2">
+							<div class="col-md-3">
+								<label class="form-label small">Date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-hrms-expd-spent">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small">Amount</label>
+								<input type="number" step="0.01" min="0" class="form-control form-control-sm" id="usis-hrms-expd-amount" placeholder="0.00">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small">Category</label>
+								<select class="form-select form-select-sm" id="usis-hrms-expd-category"></select>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small">Project</label>
+								<select class="form-select form-select-sm" id="usis-hrms-expd-project" required></select>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small">Merchant</label>
+								<input class="form-control form-control-sm" id="usis-hrms-expd-merchant" placeholder="Store / vendor">
+							</div>
+							<div class="col-md-8">
+								<label class="form-label small">Description</label>
+								<input class="form-control form-control-sm" id="usis-hrms-expd-desc" placeholder="What was purchased">
+							</div>
+							<div class="col-12">
+								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-hrms-expd-add-line">Add line</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-sm mb-0">
+								<thead>
+									<tr>
+										<th>Date</th>
+										<th>Project</th>
+										<th>Category</th>
+										<th>Merchant</th>
+										<th class="text-end">Amount</th>
+										<th>Receipt</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-hrms-expd-lines"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex flex-wrap gap-2" id="usis-hrms-expd-actions"></div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/usis-hrms-expense-common.js"></script>
+	<script src="assets/js/usis-hrms-expense-detail.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+</body>
+</html>

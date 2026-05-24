@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-hrms-expenses.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "My expense reports" })
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h5 class="mb-1">Expense reports</h5>
+						<p class="text-muted small mb-0">Submit out-of-pocket expenses with receipts and project allocation for reimbursement.</p>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<a href="usis-hrms-home.html" class="btn btn-sm btn-outline-secondary">HR suite</a>
+						<button type="button" class="btn btn-sm btn-primary" id="usis-hrms-exp-new">New report</button>
+					</div>
+				</div>
+				<p class="small text-muted mb-2" id="usis-hrms-exp-status">Loading…</p>
+				<div class="card border-0 shadow-sm">
+					<div class="table-responsive">
+						<table class="table table-sm table-striped mb-0">
+							<thead>
+								<tr>
+									<th>Title</th>
+									<th>Status</th>
+									<th class="text-end">Total</th>
+									<th>Submitted</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody id="usis-hrms-exp-body">
+								<tr><td colspan="5" class="text-muted small py-3">Loading…</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/usis-hrms-expense-common.js"></script>
+	<script src="assets/js/usis-hrms-expenses.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+</body>
+</html>

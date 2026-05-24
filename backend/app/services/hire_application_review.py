@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ..models import HrHireApplication
-from ..services.hire_path import HIRE_PATH_STANDARD, is_standard_path
+from ..services.hire_path import HIRE_PATH_STANDARD, HIRE_PATH_UNION_DISPATCH, is_standard_path
 from ..services.object_storage import UploadCategory, delete_stored
 
 HIRE_STATUS_IN_PROGRESS = "in_progress"
@@ -206,9 +206,16 @@ def allowed_hr_status_transition(current: str, new: str) -> bool:
     return False
 
 
+def can_hr_send_offer(hire_row: HrHireApplication) -> bool:
+    """Standard (or unset) path applicants receive a job offer before I-9/W-4."""
+    if hire_row.hire_path == HIRE_PATH_UNION_DISPATCH:
+        return False
+    return (hire_row.hire_status or HIRE_STATUS_IN_PROGRESS) in HR_REVIEWABLE_STATUSES
+
+
 def can_hr_manual_hire(hire_row: HrHireApplication) -> bool:
     """Union dispatch applicants are hired manually by HR after full packet review."""
-    if hire_row.hire_path == HIRE_PATH_STANDARD:
+    if hire_row.hire_path != HIRE_PATH_UNION_DISPATCH:
         return False
     return (hire_row.hire_status or HIRE_STATUS_IN_PROGRESS) in HR_REVIEWABLE_STATUSES
 

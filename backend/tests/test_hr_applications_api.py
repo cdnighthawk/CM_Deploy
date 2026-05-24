@@ -18,6 +18,10 @@ def _hr_admin_cu() -> CurrentUser:
     return CurrentUser(user=None, role_codes=frozenset(["hr_admin"]), granular=frozenset(), is_dev_admin=False)
 
 
+def _hr_manager_cu() -> CurrentUser:
+    return CurrentUser(user=None, role_codes=frozenset(["hr_manager"]), granular=frozenset(), is_dev_admin=False)
+
+
 def _read_only_cu() -> CurrentUser:
     return CurrentUser(user=None, role_codes=frozenset(["read_only"]), granular=frozenset(), is_dev_admin=False)
 
@@ -72,6 +76,56 @@ def test_hr_applications_list_ok(client, applicant_user):
     assert data.get("capabilities", {}).get("can_delete_applicants") is True
     applicant_row = next(row for row in data["items"] if row["user_id"] == applicant_user["user_id"])
     assert applicant_row.get("can_delete") is True
+
+
+def test_hr_applications_list_ok_for_hr_manager(client, applicant_user):
+    with patch("app.api._hr_applications.current_user", return_value=_hr_manager_cu()):
+        r = client.get("/api/v1/hr/applications?hire_status=submitted")
+    assert r.status_code == 200
+    ids = [row["user_id"] for row in r.get_json().get("items") or []]
+    assert applicant_user["user_id"] in ids
+
+
+def test_hr_application_detail_can_send_offer_without_hire_path(client, applicant_user):
+    uid = applicant_user["user_id"]
+    with patch("app.api._hr_applications.current_user", return_value=_hr_admin_cu()):
+        r = client.get(f"/api/v1/hr/applications/{uid}")
+    assert r.status_code == 200
+    assert r.get_json()["capabilities"]["can_send_offer"] is True
+
+
+def test_hr_applications_list_excludes_hired_by_default(client, flask_app):
+    with flask_app.app_context():
+        email = f"hired.archived.{uuid.uuid4().hex[:8]}@usis.local"
+        u = User(email=email, first_name="Hired", last_name="Person", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        assign_applicant_role(u)
+        hire = HrHireApplication(
+            user_id=u.id,
+            application_json=json.dumps({"position_applying_for": "Laborer"}),
+            hire_status="hired",
+        )
+        db.session.add(hire)
+        db.session.commit()
+        uid = str(u.id)
+        try:
+            with patch("app.api._hr_applications.current_user", return_value=_hr_admin_cu()):
+                active = client.get("/api/v1/hr/applications")
+                hired_only = client.get("/api/v1/hr/applications?hire_status=hired")
+            assert active.status_code == 200
+            active_ids = [row["user_id"] for row in active.get_json().get("items") or []]
+            assert uid not in active_ids
+            assert hired_only.status_code == 200
+            hired_ids = [row["user_id"] for row in hired_only.get_json().get("items") or []]
+            assert uid in hired_ids
+            hired_row = next(row for row in hired_only.get_json()["items"] if row["user_id"] == uid)
+            assert hired_row.get("employee_profile_url")
+        finally:
+            u2 = db.session.get(User, uuid.UUID(uid))
+            if u2 is not None:
+                db.session.delete(u2)
+                db.session.commit()
 
 
 def test_hr_application_detail_ok(client, applicant_user):

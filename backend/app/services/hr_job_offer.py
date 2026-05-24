@@ -23,6 +23,7 @@ from ..services.hire_application_review import (
     utc_now,
 )
 from ..services.hire_path import HIRE_PATH_STANDARD, is_standard_path
+from ..services.hr_hired_employee import provision_hired_employee_hr_records
 from ..services.object_storage import UploadCategory, save_upload, send_stored_file
 from ..api import _admin_users_service as admin_users_svc
 
@@ -204,8 +205,10 @@ def extend_job_offer(
     role_ids: list[uuid.UUID],
     review_notes: str | None = None,
 ) -> Document:
-    if hire_row.hire_path != HIRE_PATH_STANDARD:
+    if hire_row.hire_path == "union_dispatch":
         raise HireReviewError("job offers apply only to standard hire path applicants", 400)
+    if not hire_row.hire_path:
+        hire_row.hire_path = HIRE_PATH_STANDARD
     if (hire_row.hire_status or "") not in ("submitted", "under_review"):
         raise HireReviewError("application must be submitted or under review before sending an offer", 409)
 
@@ -268,6 +271,7 @@ def try_auto_hire_after_onboarding(*, hire_row: HrHireApplication, user: User) -
     now = utc_now()
     hire_row.hire_status = HIRE_STATUS_HIRED
     hire_row.reviewed_at = now
+    provision_hired_employee_hr_records(user.id)
     if hire_row.offer_document_id is not None:
         _upsert_employee_offer_document(user_id=user.id, document_id=hire_row.offer_document_id)
     return True

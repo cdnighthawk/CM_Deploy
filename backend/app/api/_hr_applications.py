@@ -24,16 +24,19 @@ from ..services.hire_application_review import (
     HIRE_STATUS_HIRED,
     HIRE_STATUS_REJECTED,
     HIRE_STATUS_UNDER_REVIEW,
+    TERMINAL_HIRE_STATUSES,
     HireReviewError,
     allowed_hr_status_transition,
     application_position,
     can_hr_manual_hire,
+    can_hr_send_offer,
     parse_application_payload,
     purge_hire_application_files,
     serialize_hire_status,
     serialize_offer_block,
     utc_now,
 )
+from ..services.hr_hired_employee import provision_hired_employee_hr_records
 from ..services.hr_job_offer import extend_job_offer
 from ._notifications import send_job_offer_email
 from ..services.hr_i9_crypto import decrypt_section1
@@ -41,7 +44,7 @@ from ..services.hr_w4_crypto import decrypt_w4
 from ..services.hr_hire_signed_forms import signed_form_staff_url
 from ..services.object_storage import UploadCategory, send_stored_file
 from . import _admin_users_service as admin_users_svc
-from ._hr_dashboard import _can_edit_hr_employee_records
+from ._hr_dashboard import _can_review_hire_applications
 from ._hr_hire_wizard import (
     _build_hire_tasks,
     _i9_status_block,
@@ -57,7 +60,7 @@ _DOC_KINDS = frozenset({"union_card", "union_dispatch", "i9", "w4"})
 
 
 def _require_hr_reviewer(cu: CurrentUser) -> bool:
-    return _can_edit_hr_employee_records(cu)
+    return _can_review_hire_applications(cu)
 
 
 def _can_delete_applicant(cu: CurrentUser) -> bool:
@@ -101,17 +104,22 @@ def _with_staff_doc_urls(user_id: uuid.UUID, docs: list[dict], kind: str) -> lis
 def _serialize_list_item(hire_row: HrHireApplication, cu: CurrentUser) -> dict[str, Any]:
     u = hire_row.user
     review = serialize_hire_status(hire_row)
-    return {
-        "user_id": str(hire_row.user_id),
+    status = review.get("hire_status") or "in_progress"
+    uid = str(hire_row.user_id)
+    item: dict[str, Any] = {
+        "user_id": uid,
         "name": _user_display(u) if u else "",
         "email": u.email if u else None,
         "position": application_position(hire_row),
         "hire_path": hire_row.hire_path,
         "submitted_for_review_at": review.get("submitted_for_review_at"),
-        "hire_status": review.get("hire_status"),
+        "hire_status": status,
         "progress_percent": review.get("progress_percent"),
         "can_delete": _can_delete_applicant(cu) and is_applicant_only_user(u),
     }
+    if status == HIRE_STATUS_HIRED:
+        item["employee_profile_url"] = f"/usis-hr-employee.html?id={uid}"
+    return item
 
 
 def _load_hire_detail(user_id: uuid.UUID) -> HrHireApplication | None:
@@ -177,6 +185,7 @@ def _apply_status_patch(
         if u is None:
             raise HireReviewError("user not found for hire application", 404)
         admin_users_svc._set_roles(u, [r.id for r in roles])
+        provision_hired_employee_hr_records(u.id)
 
     hire_row.hire_status = new_status
     if new_status in (HIRE_STATUS_HIRED, HIRE_STATUS_REJECTED):
@@ -194,7 +203,9 @@ def register_hr_application_routes(bp: Blueprint) -> None:
         if not _require_hr_reviewer(cu):
             return _forbidden("hr_applications_list")
 
-        status_filter = (request.args.get("hire_status") or "").strip().lower() or None
+        status_raw = (request.args.get("hire_status") or "").strip().lower()
+        show_all_statuses = status_raw == "all"
+        status_filter = status_raw if status_raw and status_raw != "all" else None
         q = (request.args.get("q") or request.args.get("search") or "").strip().lower()
         try:
             limit = max(1, min(int(request.args.get("limit", 50)), 200))
@@ -216,9 +227,13 @@ def register_hr_application_routes(bp: Blueprint) -> None:
             User, HrHireApplication.user_id == User.id
         )
 
-        if status_filter:
-            stmt = stmt.where(HrHireApplication.hire_status == status_filter)
-            count_stmt = count_stmt.where(HrHireApplication.hire_status == status_filter)
+        if not show_all_statuses:
+            if status_filter:
+                stmt = stmt.where(HrHireApplication.hire_status == status_filter)
+                count_stmt = count_stmt.where(HrHireApplication.hire_status == status_filter)
+            else:
+                stmt = stmt.where(HrHireApplication.hire_status.notin_(TERMINAL_HIRE_STATUSES))
+                count_stmt = count_stmt.where(HrHireApplication.hire_status.notin_(TERMINAL_HIRE_STATUSES))
 
         if q:
             filt = or_(
@@ -265,6 +280,25 @@ def register_hr_application_routes(bp: Blueprint) -> None:
 
         u = hire_row.user
         app_payload = parse_application_payload(hire_row)
+        hire_status = hire_row.hire_status or "in_progress"
+        if hire_status == HIRE_STATUS_HIRED and u is not None and not is_applicant_only_user(u):
+            uid_str = str(user_id)
+            return _jsonify(
+                {
+                    "entity": "hr_application_detail",
+                    "redirect": "hr_employee_profile",
+                    "employee_profile_url": f"/usis-hr-employee.html?id={uid_str}",
+                    "user": {
+                        "id": uid_str,
+                        "email": u.email,
+                        "first_name": u.first_name,
+                        "last_name": u.last_name,
+                    },
+                    "review": serialize_hire_status(hire_row),
+                    "message": "This person has been hired. Open their HR employee profile.",
+                }
+            )
+
         i9_st = _i9_status_block(hire_row)
         w4_st = _w4_status_block(hire_row)
         steps_block = {
@@ -368,9 +402,11 @@ def register_hr_application_routes(bp: Blueprint) -> None:
                 "capabilities": {
                     "can_review": _require_hr_reviewer(cu),
                     "can_delete_applicant": _can_delete_applicant(cu) and is_applicant_only_user(u),
-                    "can_send_offer": hire_row.hire_path == "standard"
-                    and (hire_row.hire_status or "") in ("submitted", "under_review"),
+                    "can_send_offer": can_hr_send_offer(hire_row),
                     "can_manual_hire": can_hr_manual_hire(hire_row),
+                    "employee_profile_url": f"/usis-hr-employee.html?id={user_id}"
+                    if (hire_row.hire_status or "") == HIRE_STATUS_HIRED and u and not is_applicant_only_user(u)
+                    else None,
                 },
             }
         )

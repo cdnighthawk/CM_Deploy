@@ -87,7 +87,7 @@
 				});
 			})
 			.then(function (res) {
-				if (!res.ok) throw new Error((res.data && res.data.error) || "HTTP error");
+				if (!res.ok) throw new Error((res.data && (res.data.message || res.data.error)) || "HTTP error");
 				var items = res.data.items || [];
 				var tb = document.getElementById("usis-hr-apps-body");
 				if (!tb) return;
@@ -96,6 +96,11 @@
 				} else {
 					tb.innerHTML = items
 						.map(function (row) {
+							var profileHref =
+								row.hire_status === "hired" && row.employee_profile_url
+									? row.employee_profile_url
+									: "usis-hr-application-detail.html?id=" + encodeURIComponent(row.user_id);
+							var profileLabel = row.hire_status === "hired" ? "HR profile" : "Review";
 							var deleteBtn = row.can_delete
 								? '<button type="button" class="btn btn-sm btn-outline-danger py-0 ms-1 usis-hr-apps-delete" data-id="' +
 								  esc(row.user_id) +
@@ -105,8 +110,8 @@
 								: "";
 							return (
 								"<tr>" +
-								"<td><a class=\"text-decoration-none\" href=\"usis-hr-application-detail.html?id=" +
-								encodeURIComponent(row.user_id) +
+								"<td><a class=\"text-decoration-none\" href=\"" +
+								esc(profileHref) +
 								'">' +
 								esc(row.name) +
 								"</a></td><td>" +
@@ -119,9 +124,11 @@
 								statusBadge(row.hire_status) +
 								'</td><td class="text-end">' +
 								esc(row.progress_percent != null ? row.progress_percent + "%" : "—") +
-								'</td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary py-0" href="usis-hr-application-detail.html?id=' +
-								encodeURIComponent(row.user_id) +
-								'">Review</a>' +
+								'</td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary py-0" href="' +
+								esc(profileHref) +
+								'">' +
+								profileLabel +
+								"</a>" +
 								deleteBtn +
 								"</td></tr>"
 							);

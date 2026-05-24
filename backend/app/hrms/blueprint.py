@@ -8,9 +8,12 @@ from ..extensions import db
 from ..models.hrms_core import HrmsEmployeeProfile
 from ._audit import write_hrms_audit
 from ._dashboard_service import build_dashboard_payload
+from ._expense_service import register_expense_routes
 from ._perms import can_access_hrms, is_hr_admin, is_hr_manager
 
 hrms_bp = Blueprint("hrms", __name__, url_prefix="/api/v1/hrms")
+
+register_expense_routes(hrms_bp)
 
 
 def _json_error(msg: str, code: int = 400):

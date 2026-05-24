@@ -26,6 +26,11 @@ from ..models import (
     WageRate,
 )
 from ..permissions.applicant import is_applicant_only_user
+from ..services.hire_application_review import (
+    HIRE_STATUS_HIRED,
+    HIRE_STATUS_SUBMITTED,
+    HIRE_STATUS_UNDER_REVIEW,
+)
 from ..services.hr_hire_signed_forms import signed_form_staff_url
 from ..users.test_artifacts import hr_demo_user_id_subquery, is_hr_demo_user
 from . import _hr_dispatch_service as hr_dispatch_svc
@@ -81,6 +86,17 @@ _ALLOWED_PAY_BASIS = frozenset({"hourly", "salary", "prevailing_reference", "oth
 def _can_edit_hr_employee_records(cu: CurrentUser) -> bool:
     """Mutations to pay scales and HR employee document links (not self-service by default)."""
     return cu.is_dev_admin or cu.has_role("admin", "hr_admin", "executive")
+
+
+def _can_review_hire_applications(cu: CurrentUser) -> bool:
+    """Review hire queue, send offers, and update application status."""
+    if cu.is_dev_admin:
+        return True
+    if cu.has_role("admin", "hr_admin", "executive", "hr_manager"):
+        return True
+    from ..permissions.access import has_module_access
+
+    return has_module_access(cu, "hr", "write")
 
 
 def _decimal_json(d: Decimal | None) -> str | None:
@@ -224,6 +240,11 @@ def register_hr_routes(bp: Blueprint) -> None:
                     User.id.in_(select(HrOnboardingItem.user_id)),
                     User.id.in_(select(HrPolicyAcknowledgment.user_id)),
                     User.id.in_(select(HrTrainingAssignment.user_id)),
+                    User.id.in_(
+                        select(HrHireApplication.user_id).where(
+                            HrHireApplication.hire_status == HIRE_STATUS_HIRED
+                        )
+                    ),
                 ),
                 User.id.notin_(demo_ids),
             )

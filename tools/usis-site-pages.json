@@ -45,6 +45,34 @@
       "category": "usis"
     },
     {
+      "path": "usis-hrms-expenses.html",
+      "order": 5.11,
+      "title": "USIS HRMS Expenses",
+      "summary": "Employee expense reports with receipt upload, project allocation, and reimbursement tracking.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hrms-expense-detail.html",
+      "order": 5.12,
+      "title": "USIS HRMS Expense detail",
+      "summary": "Edit expense report lines, upload receipts, and submit for approval.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hrms-expense-approvals.html",
+      "order": 5.13,
+      "title": "USIS HRMS Expense approvals",
+      "summary": "Manager queue to approve or reject submitted employee expense reports.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-hrms-expense-reimbursements.html",
+      "order": 5.14,
+      "title": "USIS HRMS Reimbursements",
+      "summary": "Finance queue to export approved expenses and mark as reimbursed.",
+      "category": "usis"
+    },
+    {
       "path": "usis-hr-dashboard.html",
       "order": 6,
       "title": "USIS HR Dashboard",

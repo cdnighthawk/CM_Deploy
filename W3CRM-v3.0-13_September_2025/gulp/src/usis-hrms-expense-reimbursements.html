@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-hrms-expense-reimbursements.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Expense reimbursements" })
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h5 class="mb-1">Reimbursement queue</h5>
+						<p class="text-muted small mb-0">Export approved expenses for payroll/accounting, then mark as reimbursed after payment.</p>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<a href="usis-hrms-home.html" class="btn btn-sm btn-outline-secondary">HR suite</a>
+						<a class="btn btn-sm btn-outline-primary" id="usis-hrms-expr-export" href="#">Export CSV</a>
+					</div>
+				</div>
+				<p class="small text-muted mb-2" id="usis-hrms-expr-status">Loading…</p>
+				<div class="card border-0 shadow-sm">
+					<div class="table-responsive">
+						<table class="table table-sm table-striped mb-0">
+							<thead>
+								<tr>
+									<th>Employee</th>
+									<th>Title</th>
+									<th class="text-end">Total</th>
+									<th>Approved</th>
+									<th>Exported</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody id="usis-hrms-expr-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/usis-hrms-expense-common.js"></script>
+	<script src="assets/js/usis-hrms-expense-reimbursements.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+</body>
+</html>

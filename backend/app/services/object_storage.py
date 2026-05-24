@@ -27,6 +27,7 @@ class UploadCategory(StrEnum):
     HR_W4 = "hr_w4"
     HR_UNION = "hr_union"
     HR_HIRE_OFFER = "hr_hire_offer"
+    HR_EXPENSE_RECEIPT = "hr_expense_receipt"
 
 
 _CATEGORY_CONFIG_KEY: dict[UploadCategory, str] = {
@@ -37,6 +38,7 @@ _CATEGORY_CONFIG_KEY: dict[UploadCategory, str] = {
     UploadCategory.HR_W4: "HR_W4_DOCUMENT_UPLOAD_FOLDER",
     UploadCategory.HR_UNION: "HR_UNION_DOCUMENT_UPLOAD_FOLDER",
     UploadCategory.HR_HIRE_OFFER: "HR_HIRE_OFFER_UPLOAD_FOLDER",
+    UploadCategory.HR_EXPENSE_RECEIPT: "HR_EXPENSE_RECEIPT_UPLOAD_FOLDER",
 }
 
 _CATEGORY_INSTANCE_SUBDIR: dict[UploadCategory, str] = {
@@ -47,6 +49,7 @@ _CATEGORY_INSTANCE_SUBDIR: dict[UploadCategory, str] = {
     UploadCategory.HR_W4: "hr_w4_document_uploads",
     UploadCategory.HR_UNION: "hr_union_document_uploads",
     UploadCategory.HR_HIRE_OFFER: "hr_hire_offer_uploads",
+    UploadCategory.HR_EXPENSE_RECEIPT: "hr_expense_receipt_uploads",
 }
 
 

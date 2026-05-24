@@ -62,3 +62,22 @@ def test_can_hr_manual_hire_standard_false():
 def test_can_hr_manual_hire_union_true():
     row = _row(hire_path="union_dispatch", hire_status=HIRE_STATUS_SUBMITTED)
     assert can_hr_manual_hire(row) is True
+
+
+def test_can_hr_manual_hire_unset_path_false():
+    row = _row(hire_path=None, hire_status=HIRE_STATUS_SUBMITTED)
+    assert can_hr_manual_hire(row) is False
+
+
+def test_can_hr_send_offer_unset_path_true():
+    from app.services.hire_application_review import can_hr_send_offer
+
+    row = _row(hire_path=None, hire_status=HIRE_STATUS_SUBMITTED)
+    assert can_hr_send_offer(row) is True
+
+
+def test_can_hr_send_offer_union_false():
+    from app.services.hire_application_review import can_hr_send_offer
+
+    row = _row(hire_path="union_dispatch", hire_status=HIRE_STATUS_SUBMITTED)
+    assert can_hr_send_offer(row) is False

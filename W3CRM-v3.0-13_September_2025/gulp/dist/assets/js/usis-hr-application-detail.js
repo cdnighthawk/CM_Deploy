@@ -58,6 +58,7 @@
 	function pathBadgeLabel(path) {
 		if (path === "standard") return "Standard (job offer)";
 		if (path === "union_dispatch") return "Union dispatch";
+		if (!path) return "Standard (job offer)";
 		return null;
 	}
 
@@ -67,12 +68,13 @@
 			credentials: "include",
 			headers: { "Content-Type": "application/json", Accept: "application/json" },
 			body: JSON.stringify(body),
-		}).then(function (r) {
-			return r.json().then(function (data) {
-				if (!r.ok) throw new Error(data.error || "Request failed");
-				return data;
+		})
+			.then(function (r) {
+				return r.json().then(function (data) {
+					if (!r.ok) throw new Error(data.message || data.error || "Request failed");
+					return data;
+				});
 			});
-		});
 	}
 
 	function patchStatus(body) {
@@ -83,7 +85,7 @@
 			body: JSON.stringify(body),
 		}).then(function (r) {
 			return r.json().then(function (data) {
-				if (!r.ok) throw new Error(data.error || "Request failed");
+				if (!r.ok) throw new Error(data.message || data.error || "Request failed");
 				return data;
 			});
 		});
@@ -149,11 +151,15 @@
 			"</div>";
 	}
 
-	function renderApplication(payload) {
+	function renderApplication(payload, user) {
 		var dl = document.getElementById("usis-hr-appd-application-dl");
 		if (!dl) return;
 		payload = payload || {};
+		user = user || {};
 		var fields = [
+			["First name", user.first_name],
+			["Last name", user.last_name],
+			["Phone", user.phone],
 			["Position", payload.position_applying_for],
 			["Preferred start", payload.preferred_start_date],
 			["Desired compensation", payload.desired_compensation],
@@ -193,7 +199,12 @@
 		if (payload.prior_employer_summary && !payload.employment_history) {
 			fields.splice(11, 0, ["Prior employment (legacy)", payload.prior_employer_summary]);
 		}
-		var html = fields
+		var html = "";
+		if (!Object.keys(payload).length) {
+			html +=
+				'<div class="alert alert-warning py-2 small mb-3">This applicant has not submitted their employment application form yet. Name, email, and phone above come from their account profile.</div>';
+		}
+		html += fields
 			.map(function (pair) {
 				return (
 					'<dt class="col-sm-4 text-muted">' +
@@ -259,6 +270,29 @@
 			.join("");
 	}
 
+	function prefillOfferModal(d) {
+		var payload = (d.application && d.application.payload) || {};
+		var positionEl = document.getElementById("usis-hr-appd-offer-position");
+		var payEl = document.getElementById("usis-hr-appd-offer-pay");
+		var startEl = document.getElementById("usis-hr-appd-offer-start");
+		if (positionEl && !positionEl.value) {
+			positionEl.value = payload.position_applying_for || payload.position || "";
+		}
+		if (payEl && !payEl.value) {
+			payEl.value = payload.desired_compensation || "";
+		}
+		if (startEl && !startEl.value) {
+			var raw = payload.preferred_start_date || "";
+			if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+				startEl.value = raw;
+			} else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
+				var parts = raw.split("/");
+				startEl.value =
+					parts[2] + "-" + String(parts[0]).padStart(2, "0") + "-" + String(parts[1]).padStart(2, "0");
+			}
+		}
+	}
+
 	function renderActions(d) {
 		var root = document.getElementById("usis-hr-appd-actions");
 		if (!root) return;
@@ -292,7 +326,10 @@
 				'<button type="button" class="btn btn-outline-danger btn-sm" id="usis-hr-appd-delete">Delete applicant account</button>';
 		} else if (status === "hired") {
 			html +=
-				'<p class="text-muted small mb-0">This applicant was hired and is now a staff account. To remove the user, use <a href="usis-user-directory.html">User admin</a>.</p>';
+				'<p class="text-muted small mb-2">This person has been hired and moved to HR.</p>' +
+				'<a class="btn btn-primary btn-sm" href="' +
+				esc(employeeProfileUrl(state.userId)) +
+				'">Open HR employee profile</a>';
 		}
 		if (!html) {
 			html = '<p class="text-muted small mb-0">No review actions for this status.</p>';
@@ -322,6 +359,7 @@
 		var offerOpen = document.getElementById("usis-hr-appd-offer-open");
 		if (offerOpen && typeof bootstrap !== "undefined") {
 			offerOpen.addEventListener("click", function () {
+				prefillOfferModal(d);
 				var modalEl = document.getElementById("usis-hr-appd-offer-modal");
 				if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
 			});
@@ -454,7 +492,7 @@
 				? "HR notes: " + review.review_notes
 				: "No review notes yet.";
 		}
-		renderApplication((d.application && d.application.payload) || {});
+		renderApplication((d.application && d.application.payload) || {}, u);
 		renderSignedFormBlock("usis-hr-appd-i9-signed", d.i9, "Form I-9 Section 1");
 		renderSignedFormBlock("usis-hr-appd-w4-signed", d.w4, "Form W-4");
 		if (window.USISHrI9 && d.i9 && d.i9.draft) {
@@ -485,6 +523,20 @@
 		setStatus("");
 	}
 
+	function employeeProfileUrl(userId) {
+		return "usis-hr-employee.html?id=" + encodeURIComponent(userId);
+	}
+
+	function maybeRedirectToEmployeeProfile(data) {
+		if (!data || data.redirect !== "hr_employee_profile") return false;
+		var url = data.employee_profile_url || employeeProfileUrl(state.userId);
+		if (url.indexOf("http") !== 0 && url.charAt(0) === "/") {
+			url = url.slice(1);
+		}
+		window.location.replace(url);
+		return true;
+	}
+
 	function loadDetail() {
 		state.userId = userIdFromQuery();
 		if (!state.userId) {
@@ -503,7 +555,8 @@
 				});
 			})
 			.then(function (res) {
-				if (!res.ok) throw new Error((res.data && res.data.error) || "Load failed");
+				if (!res.ok) throw new Error((res.data && (res.data.message || res.data.error)) || "Load failed");
+				if (maybeRedirectToEmployeeProfile(res.data)) return;
 				renderDetail(res.data);
 			})
 			.catch(function (err) {
@@ -570,7 +623,7 @@
 							if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 						}
 						if (window.USISNotify) window.USISNotify.success("Applicant hired.");
-						loadDetail();
+						window.location.href = employeeProfileUrl(state.userId);
 					})
 					.catch(function (e) {
 						showErr(e.message || String(e));

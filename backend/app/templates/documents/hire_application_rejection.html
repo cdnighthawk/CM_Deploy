@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Application Update — {{ employee_name }}</title>
+	<style>
+		body { font-family: Georgia, "Times New Roman", serif; color: #111; margin: 24px; line-height: 1.5; max-width: 720px; }
+		h1 { font-size: 1.35rem; margin: 0 0 1rem; }
+		.meta { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
+		p { margin: 0 0 1rem; }
+		.message { margin: 1rem 0 1.5rem; white-space: pre-wrap; }
+		@media print { body { margin: 12mm; } }
+	</style>
+</head>
+<body>
+	<h1>Application Update — {{ company_name }}</h1>
+	<p class="meta">Date: {{ letter_date }}<br>
+	To: {{ employee_name }}{% if employee_email %} &lt;{{ employee_email }}&gt;{% endif %}</p>
+
+	<p>Dear {{ employee_name }},</p>
+
+	<p>
+		Thank you for your interest in employment with {{ company_name }} and for applying for
+		<strong>{{ position }}</strong>.
+	</p>
+
+	<p>
+		After careful review, we have decided not to move forward with your application at this time.
+	</p>
+
+	{% if message %}
+	<p class="message">{{ message }}</p>
+	{% endif %}
+
+	<p>
+		We appreciate the time you invested in your application and wish you success in your job search.
+	</p>
+
+	<p>Sincerely,<br>{{ company_name }} Human Resources</p>
+</body>
+</html>

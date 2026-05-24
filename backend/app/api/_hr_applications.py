@@ -37,8 +37,12 @@ from ..services.hire_application_review import (
     utc_now,
 )
 from ..services.hr_hired_employee import provision_hired_employee_hr_records
-from ..services.hr_job_offer import extend_job_offer
-from ._notifications import send_job_offer_email
+from ..services.hr_job_offer import extend_job_offer, render_job_offer_html
+from ._notifications import (
+    send_application_approval_letter_email,
+    send_application_rejection_letter_email,
+    send_job_offer_email,
+)
 from ..services.hr_i9_crypto import decrypt_section1
 from ..services.hr_w4_crypto import decrypt_w4
 from ..services.hr_hire_signed_forms import signed_form_staff_url
@@ -506,7 +510,12 @@ def register_hr_application_routes(bp: Blueprint) -> None:
         except HireReviewError as exc:
             return _jsonify({"entity": "hr_application_offer", "error": exc.message}), exc.status
 
-        send_job_offer_email(to=u.email or "", applicant_name=_user_display(u))
+        offer_html = render_job_offer_html(user=u, hire_row=hire_row, accepted=False)
+        send_job_offer_email(
+            to=u.email or "",
+            applicant_name=_user_display(u),
+            html_body=offer_html,
+        )
 
         db.session.add(
             AuditLog(
@@ -578,6 +587,13 @@ def register_hr_application_routes(bp: Blueprint) -> None:
         )
         db.session.commit()
         db.session.refresh(hire_row)
+
+        u = hire_row.user
+        if u is not None:
+            if new_status == HIRE_STATUS_REJECTED:
+                send_application_rejection_letter_email(user=u, hire_row=hire_row)
+            elif new_status == HIRE_STATUS_HIRED:
+                send_application_approval_letter_email(user=u, hire_row=hire_row)
 
         return _jsonify(
             {

@@ -69,6 +69,7 @@ from ..services.hire_path import (
     is_standard_path,
 )
 from ..services.hr_job_offer import try_auto_hire_after_onboarding
+from ._notifications import send_application_approval_letter_email
 
 from ._perms import current_user
 
@@ -1972,6 +1973,9 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         auto_hired = try_auto_hire_after_onboarding(hire_row=hire_row, user=u)
 
         db.session.commit()
+
+        if auto_hired:
+            send_application_approval_letter_email(user=u, hire_row=hire_row)
 
         return _jsonify(
 

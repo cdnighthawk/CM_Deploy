@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Welcome — {{ employee_name }}</title>
+	<style>
+		body { font-family: Georgia, "Times New Roman", serif; color: #111; margin: 24px; line-height: 1.5; max-width: 720px; }
+		h1 { font-size: 1.35rem; margin: 0 0 1rem; }
+		.meta { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
+		p { margin: 0 0 1rem; }
+		.details { margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; background: #f8f8f8; border: 1px solid #ddd; }
+		a { color: #0b5ed7; }
+		@media print { body { margin: 12mm; } }
+	</style>
+</head>
+<body>
+	<h1>Welcome to {{ company_name }}</h1>
+	<p class="meta">Date: {{ letter_date }}<br>
+	To: {{ employee_name }}{% if employee_email %} &lt;{{ employee_email }}&gt;{% endif %}</p>
+
+	<p>Dear {{ employee_name }},</p>
+
+	<p>
+		We are pleased to inform you that your application has been approved and you are now part of the
+		{{ company_name }} team{% if position %} as <strong>{{ position }}</strong>{% endif %}.
+	</p>
+
+	{% if start_date %}
+	<div class="details">
+		<strong>Anticipated start date:</strong> {{ start_date }}
+	</div>
+	{% endif %}
+
+	<p>
+		Please sign in to the USIS portal using the link below. If you previously applied as an applicant,
+		your account has been updated with staff access.
+	</p>
+
+	<p><a href="{{ login_url }}">{{ login_url }}</a></p>
+
+	<p>
+		Your HR team will follow up with any remaining onboarding steps. If you have questions, contact Human Resources.
+	</p>
+
+	<p>Sincerely,<br>{{ company_name }} Human Resources</p>
+</body>
+</html>

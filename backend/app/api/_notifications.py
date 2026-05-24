@@ -112,7 +112,13 @@ def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> dict[str, obj
         return {"sent": False, "dry_run": False, "queued": False, "error": str(exc)}
 
 
-def _send_via_smtplib(*, subject: str, body: str, to: str) -> None:  # pragma: no cover - I/O
+def _send_via_smtplib(
+    *,
+    subject: str,
+    body: str,
+    to: str,
+    html_body: str | None = None,
+) -> None:  # pragma: no cover - I/O
     import smtplib
     from email.message import EmailMessage
 
@@ -128,6 +134,8 @@ def _send_via_smtplib(*, subject: str, body: str, to: str) -> None:  # pragma: n
     msg["From"] = sender
     msg["To"] = to
     msg.set_content(body)
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
 
     with smtplib.SMTP(host, port, timeout=30) as s:
         if use_tls:
@@ -143,12 +151,25 @@ def send_plain_notification_email(*, to: str, subject: str, body: str) -> dict[s
     Celery is not used here: ``rfi.send_email`` expects an ``rfi_notification_log`` row.
     Returns ``{sent, dry_run, error}`` for API feedback.
     """
+    return send_html_notification_email(to=to, subject=subject, body=body, html_body=None)
+
+
+def send_html_notification_email(
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    html_body: str | None,
+) -> dict[str, object]:
+    """Best-effort synchronous SMTP with optional HTML alternative body."""
+    if not to:
+        return {"sent": False, "dry_run": False, "error": "missing recipient email"}
     if not _smtp_configured():
         current_app.logger.info("Plain email (SMTP unset, dry-run): to=%s subj=%r", to, subject)
         return {"sent": False, "dry_run": True, "error": None}
 
     try:
-        _send_via_smtplib(subject=subject, body=body, to=to)
+        _send_via_smtplib(subject=subject, body=body, to=to, html_body=html_body)
         return {"sent": True, "dry_run": False, "error": None}
     except Exception as exc:  # pragma: no cover - I/O
         current_app.logger.warning("Failed to send plain email to %s: %s", to, exc)
@@ -222,7 +243,12 @@ def public_reset_password_url(token: str) -> str:
     return f"{public_app_origin()}/page-reset-password.html?token={quote(token, safe='')}"
 
 
-def send_job_offer_email(*, to: str, applicant_name: str) -> dict[str, object]:
+def send_job_offer_email(
+    *,
+    to: str,
+    applicant_name: str,
+    html_body: str | None = None,
+) -> dict[str, object]:
     """Email applicant with link to view and accept their job offer."""
     if not to:
         return {"ok": False, "error": "missing recipient email"}
@@ -243,10 +269,52 @@ def send_job_offer_email(*, to: str, applicant_name: str) -> dict[str, object]:
             "If you did not apply for employment with us, you can ignore this message.",
         ]
     )
-    return send_plain_notification_email(
+    return send_html_notification_email(
         to=to,
         subject="Your job offer from DOCOM, INC.",
         body=body,
+        html_body=html_body,
+    )
+
+
+def send_application_rejection_letter_email(*, user, hire_row) -> dict[str, object]:
+    """Email applicant a formal rejection letter after HR denies their application."""
+    from ..services.hr_application_letters import (
+        rejection_letter_plain_text,
+        rejection_letter_subject,
+        render_rejection_letter_html,
+    )
+
+    to = (getattr(user, "email", None) or "").strip()
+    if not to or hire_row is None:
+        return {"sent": False, "dry_run": False, "error": "missing recipient email"}
+
+    return send_html_notification_email(
+        to=to,
+        subject=rejection_letter_subject(),
+        body=rejection_letter_plain_text(user=user, hire_row=hire_row),
+        html_body=render_rejection_letter_html(user=user, hire_row=hire_row),
+    )
+
+
+def send_application_approval_letter_email(*, user, hire_row) -> dict[str, object]:
+    """Email applicant a formal approval / welcome letter after they are hired."""
+    from ..services.hr_application_letters import (
+        approval_letter_plain_text,
+        approval_letter_subject,
+        render_approval_letter_html,
+    )
+
+    to = (getattr(user, "email", None) or "").strip()
+    if not to or hire_row is None:
+        return {"sent": False, "dry_run": False, "error": "missing recipient email"}
+
+    login_url = public_login_url()
+    return send_html_notification_email(
+        to=to,
+        subject=approval_letter_subject(),
+        body=approval_letter_plain_text(user=user, hire_row=hire_row, login_url=login_url),
+        html_body=render_approval_letter_html(user=user, hire_row=hire_row, login_url=login_url),
     )
 
 

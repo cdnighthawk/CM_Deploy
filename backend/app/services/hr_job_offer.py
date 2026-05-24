@@ -23,9 +23,9 @@ from ..services.hire_application_review import (
     can_hr_hire_after_offer_accepted,
     utc_now,
 )
-from ..services.hire_path import HIRE_PATH_STANDARD, is_standard_path
+from ..services.hire_path import HIRE_PATH_STANDARD
 from ..services.hr_hired_employee import provision_hired_employee_hr_records
-from ..services.object_storage import UploadCategory, save_upload, send_stored_file
+from ..services.object_storage import UploadCategory, read_stored_bytes, save_upload
 from ..api import _admin_users_service as admin_users_svc
 
 
@@ -146,15 +146,13 @@ def load_offer_html(hire_row: HrHireApplication) -> str | None:
     doc = db.session.get(Document, hire_row.offer_document_id)
     if doc is None:
         return None
-    resp = send_stored_file(
+    payload = read_stored_bytes(
         UploadCategory.HR_HIRE_OFFER,
         offer_storage_name(doc.id),
-        mimetype=doc.mime_type or "text/html",
-        download_name=doc.original_filename or "job-offer.html",
     )
-    if resp is None:
+    if payload is None:
         return None
-    return resp.get_data(as_text=True)
+    return payload.decode("utf-8", errors="replace")
 
 
 def parse_pending_role_ids(raw: str | None) -> list[uuid.UUID]:
@@ -235,24 +233,29 @@ def extend_job_offer(
 
 
 def accept_job_offer(*, hire_row: HrHireApplication, user: User) -> None:
-    if hire_row.hire_path != HIRE_PATH_STANDARD:
+    if hire_row.hire_path == "union_dispatch":
+        raise HireReviewError("no job offer to accept for this application path", 400)
+    if not hire_row.hire_path:
+        hire_row.hire_path = HIRE_PATH_STANDARD
+    elif hire_row.hire_path != HIRE_PATH_STANDARD:
         raise HireReviewError("no job offer to accept for this application path", 400)
     if hire_row.hire_status != HIRE_STATUS_OFFER_EXTENDED:
         raise HireReviewError("no pending job offer to accept", 409)
-    if hire_row.offer_document_id is None:
-        raise HireReviewError("offer letter is not available", 500)
 
     now = utc_now()
     hire_row.offer_accepted_at = now
     hire_row.hire_status = HIRE_STATUS_OFFER_ACCEPTED
 
     html = render_job_offer_html(user=user, hire_row=hire_row, accepted=True)
-    persist_job_offer_document(
-        hire_row=hire_row,
-        user=user,
-        html=html,
-        uploaded_by_user_id=user.id,
-    )
+    try:
+        persist_job_offer_document(
+            hire_row=hire_row,
+            user=user,
+            html=html,
+            uploaded_by_user_id=user.id,
+        )
+    except Exception as exc:
+        raise HireReviewError(f"could not save accepted offer letter: {exc}", 500) from exc
 
 
 def try_auto_hire_after_onboarding(*, hire_row: HrHireApplication, user: User) -> bool:

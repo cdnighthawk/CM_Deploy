@@ -94,7 +94,11 @@
 				signedBanner.classList.add("d-none");
 			}
 		}
-		if (signBar) signBar.classList.toggle("d-none", signed || !completed || !i9ReviewOpened);
+		if (signBar) {
+			var standardNeedsOffer = c.isStandardPath(w) && !c.offerAccepted(w);
+			var canSign = !signed && completed && i9ReviewOpened && !standardNeedsOffer;
+			signBar.classList.toggle("d-none", !canSign);
+		}
 		if ((i9ReviewOpened && !signed) || signed) {
 			renderReviewPanel();
 		}
@@ -114,6 +118,8 @@
 			locked: true,
 			signature_png: signed ? i9.signature_png : null,
 			signed_at: st.i9 && st.i9.signed_at ? st.i9.signed_at : i9.signed_at,
+			pending_signature_label:
+				"Not signed yet — use the Sign button below when your review is complete.",
 		});
 		wireI9DocPhotos(root);
 	}
@@ -122,44 +128,12 @@
 		var root = document.getElementById("usis-i9-review-root");
 		if (!root) return;
 		var c = core();
-		root.innerHTML = '<div class="text-muted small py-3">Loading your Form I-9 preview…</div>';
-		fetch(c.apiBase() + "/api/v1/hr/me/i9-section1/preview", {
-			credentials: "include",
-			headers: { Accept: "text/html" },
-		})
-			.then(function (r) {
-				if (!r.ok) {
-					return r
-						.json()
-						.catch(function () {
-							return {};
-						})
-						.then(function (j) {
-							throw new Error((j && j.error) || "Could not load I-9 preview");
-						});
-				}
-				return r.text();
-			})
-			.then(function (html) {
-				root.innerHTML = "";
-				var frame = document.createElement("iframe");
-				frame.className = "usis-i9-review-frame";
-				frame.title = "Form I-9 Section 1 preview";
-				frame.srcdoc = html;
-				root.appendChild(frame);
-			})
-			.catch(function (err) {
-				try {
-					root.innerHTML = "";
-					renderReviewPanelClient(root);
-				} catch (fallbackErr) {
-					root.innerHTML =
-						'<div class="alert alert-danger py-2 small mb-0">' +
-						((err && err.message) || "Could not load I-9 preview") +
-						"</div>";
-					c.showErr((err && err.message) || String(err));
-				}
-			});
+		root.innerHTML = "";
+		var frame = document.createElement("iframe");
+		frame.className = "usis-i9-review-frame";
+		frame.title = "USCIS Form I-9 Section 1 preview";
+		frame.src = c.apiBase() + "/api/v1/hr/me/i9-section1/preview";
+		root.appendChild(frame);
 	}
 
 	function openI9Review() {

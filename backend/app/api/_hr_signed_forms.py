@@ -72,9 +72,9 @@ def register_hr_signed_form_routes(bp: Blueprint) -> None:
         category = UploadCategory.HR_I9 if kind_norm == "i9" else UploadCategory.HR_W4
         resp = send_stored_file(
             category,
-            signed_form_storage_name(doc.id),
-            mimetype=doc.mime_type or "text/html",
-            download_name=doc.original_filename or f"{kind_norm}-signed.html",
+            signed_form_storage_name(doc.id, mime_type=doc.mime_type),
+            mimetype=doc.mime_type or "application/octet-stream",
+            download_name=doc.original_filename or f"{kind_norm}-signed.pdf",
         )
         if resp is None:
             return _jsonify({"entity": "hr_signed_form", "error": "file not found"}), 404

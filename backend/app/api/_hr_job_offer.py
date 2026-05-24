@@ -71,14 +71,26 @@ def register_hr_job_offer_routes(bp: Blueprint) -> None:
 
         u = cu.user
         assert u is not None
-        html = load_offer_html(hire_row)
+        html = None
+        try:
+            html = load_offer_html(hire_row)
+        except Exception:
+            html = None
         if html is None:
-            html = render_job_offer_html(
-                user=u,
-                hire_row=hire_row,
-                accepted=hire_row.offer_accepted_at is not None,
-            )
-        return Response(html, mimetype="text/html")
+            try:
+                html = render_job_offer_html(
+                    user=u,
+                    hire_row=hire_row,
+                    accepted=hire_row.offer_accepted_at is not None,
+                )
+            except Exception as exc:
+                return _jsonify(
+                    {
+                        "entity": "hr_job_offer_preview",
+                        "error": f"could not render job offer: {exc}",
+                    }
+                ), 500
+        return Response(html, mimetype="text/html; charset=utf-8")
 
     @bp.post("/hr/me/job-offer/accept")
     def hr_me_job_offer_accept():

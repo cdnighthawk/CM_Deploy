@@ -49,11 +49,19 @@ def _hire_row_for_user(uid: uuid.UUID) -> HrHireApplication | None:
 
 
 def _i9_locked(hire_row: HrHireApplication | None) -> bool:
+    return _i9_upload_block(hire_row) is not None
+
+
+def _i9_upload_block(hire_row: HrHireApplication | None) -> tuple[str, int] | None:
+    if hire_row is None:
+        return "hire application not found", 404
+    if hire_row.i9_signed_at is not None:
+        return "I-9 is signed and locked", 409
     if not applicant_wizard_mutable(hire_row):
-        return True
+        return "I-9 cannot be edited in the current hire status", 409
     if not applicant_may_complete_i9_w4(hire_row):
-        return True
-    return hire_row is not None and hire_row.i9_signed_at is not None
+        return "Accept your job offer before uploading I-9 document photos", 403
+    return None
 
 
 def list_i9_documents_for_hire(hire_row: HrHireApplication | None) -> list[dict]:
@@ -95,8 +103,10 @@ def register_hr_i9_document_routes(bp: Blueprint) -> None:
             db.session.add(hire_row)
             db.session.flush()
 
-        if _i9_locked(hire_row):
-            return _jsonify({"entity": "hr_i9_document", "error": "I-9 is signed and locked"}), 409
+        blocked = _i9_upload_block(hire_row)
+        if blocked is not None:
+            msg, status = blocked
+            return _jsonify({"entity": "hr_i9_document", "error": msg}), status
 
         slot = (request.form.get("slot") or "").strip().lower()
         if slot not in I9_DOC_SLOTS:

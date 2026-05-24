@@ -8,7 +8,6 @@ S3-compatible API (``boto3``).
 
 from __future__ import annotations
 
-import io
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -153,6 +152,16 @@ def delete_stored(category: UploadCategory, object_name: str) -> None:
         pass
 
 
+def read_stored_bytes(category: UploadCategory, object_name: str) -> bytes | None:
+    """Load a stored object into memory, or ``None`` when missing."""
+    if b2_enabled():
+        return _get_bytes(object_key(category, object_name))
+    path = local_path(category, object_name)
+    if not path.is_file():
+        return None
+    return path.read_bytes()
+
+
 def send_stored_file(
     category: UploadCategory,
     object_name: str,
@@ -162,14 +171,18 @@ def send_stored_file(
 ) -> Response | None:
     """Stream a stored object, or ``None`` when missing."""
     if b2_enabled():
-        data = _get_bytes(object_key(category, object_name))
+        data = read_stored_bytes(category, object_name)
         if data is None:
             return None
-        return send_file(
-            io.BytesIO(data),
+        # Explicit body + Content-Length avoids proxy/browser mismatches with BytesIO send_file.
+        safe_name = download_name.replace('"', "")
+        return Response(
+            data,
             mimetype=mimetype,
-            as_attachment=False,
-            download_name=download_name,
+            headers={
+                "Content-Length": str(len(data)),
+                "Content-Disposition": f'inline; filename="{safe_name}"',
+            },
         )
     path = local_path(category, object_name)
     if not path.is_file():

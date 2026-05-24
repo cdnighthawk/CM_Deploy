@@ -72,6 +72,28 @@ def test_can_hr_manual_hire_unset_path_false():
     assert can_hr_manual_hire(row) is False
 
 
+def test_accept_job_offer_sets_standard_path_when_unset(flask_app):
+    from unittest.mock import MagicMock, patch
+
+    with flask_app.app_context():
+        from app.models import HrHireApplication, User
+        from app.services.hire_application_review import HIRE_STATUS_OFFER_EXTENDED
+        from app.services.hr_job_offer import accept_job_offer
+
+        user = User(email="a@test.local", first_name="A", last_name="B", is_active=True)
+        row = HrHireApplication(
+            user_id=user.id,
+            hire_path=None,
+            hire_status=HIRE_STATUS_OFFER_EXTENDED,
+            offer_position="Tech",
+            offer_pay_description="$20/hr",
+        )
+        with patch("app.services.hr_job_offer.persist_job_offer_document", return_value=MagicMock()):
+            accept_job_offer(hire_row=row, user=user)
+        assert row.hire_path == "standard"
+        assert row.offer_accepted_at is not None
+
+
 def test_can_hr_send_offer_unset_path_true():
     from app.services.hire_application_review import can_hr_send_offer
 

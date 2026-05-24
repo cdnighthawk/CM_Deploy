@@ -622,7 +622,9 @@
 				'" alt="Employee signature" class="usis-official-signature-img"><div class="usis-official-value mt-2">Date signed: ' +
 				esc(opts.signed_at || "—") +
 				"</div></div>"
-			: '<div class="usis-official-signature usis-official-signature-pending"><div class="usis-official-label">Employee signature</div><div class="usis-official-value">Pending — sign after review</div></div>';
+			: '<div class="usis-official-signature usis-official-signature-pending"><div class="usis-official-label">Employee signature</div><div class="usis-official-value">' +
+				esc(opts.pending_signature_label || "Pending — sign after review") +
+				"</div></div>";
 
 		root.innerHTML =
 			'<div class="usis-official-form usis-i9-filled-review">' +

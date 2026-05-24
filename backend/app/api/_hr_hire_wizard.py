@@ -48,7 +48,7 @@ from ..services.hr_w4_crypto import decrypt_w4, encrypt_w4
 from ..services.hr_hire_signed_forms import (
     persist_signed_i9,
     persist_signed_w4,
-    render_i9_preview_html,
+    render_i9_preview_pdf,
     render_w4_preview_html,
     signed_form_staff_url,
 )
@@ -870,6 +870,8 @@ def _require_i9_w4_draft_save(hire_row: HrHireApplication | None):
     missing = _require_hire_path(hire_row)
     if missing is not None:
         return missing
+    if hire_row is not None and hire_row.hire_path == HIRE_PATH_STANDARD:
+        return _require_i9_w4_eligible(hire_row)
     if hire_row is not None and hire_row.submitted_at is not None:
         return None
     return _require_i9_w4_eligible(hire_row)
@@ -1385,9 +1387,13 @@ def register_hr_hire_wizard_routes(bp: Blueprint) -> None:
         if eligible is not None:
             return eligible
 
-        html = render_i9_preview_html(user=cu.user, section1=section1, hire_row=hire_row)
+        pdf_bytes = render_i9_preview_pdf(user=cu.user, section1=section1, hire_row=hire_row)
 
-        return Response(html, mimetype="text/html")
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": 'inline; filename="form-i-9-section1.pdf"'},
+        )
 
 
 

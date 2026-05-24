@@ -114,6 +114,35 @@ def test_b2_prefix_in_object_key(flask_app):
 
 
 @patch("app.services.object_storage._s3_client")
+def test_b2_send_stored_file_sets_content_length(mock_client_factory, flask_app):
+    mock_s3 = MagicMock()
+    payload = b"\x89PNG\x0d\x0a"
+    mock_s3.get_object.return_value = {"Body": io.BytesIO(payload)}
+    mock_client_factory.return_value = mock_s3
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, send_stored_file
+
+        with flask_app.test_request_context():
+            resp = send_stored_file(
+                UploadCategory.HR_I9,
+                "photo.png",
+                mimetype="image/png",
+                download_name="photo.png",
+            )
+        assert resp is not None
+        assert resp.get_data() == payload
+        assert resp.headers.get("Content-Length") == str(len(payload))
+
+
+@patch("app.services.object_storage._s3_client")
 def test_b2_save_upload_calls_put_object(mock_client_factory, flask_app):
     mock_s3 = MagicMock()
     mock_client_factory.return_value = mock_s3

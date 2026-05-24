@@ -85,7 +85,21 @@
 				return res.json();
 			})
 			.then(function (body) {
-				if (!body || !body.authenticated || !body.user) return;
+				if (!body || !body.authenticated || !body.user) {
+					document.querySelectorAll("#usis-public-sign-in").forEach(function (el) {
+						el.classList.remove("d-none");
+					});
+					document.querySelectorAll("#usis-apply-header-user").forEach(function (el) {
+						el.classList.add("d-none");
+					});
+					return;
+				}
+				document.querySelectorAll("#usis-public-sign-in").forEach(function (el) {
+					el.classList.add("d-none");
+				});
+				document.querySelectorAll("#usis-apply-header-user").forEach(function (el) {
+					el.classList.remove("d-none");
+				});
 				var u = body.user;
 				var email = u.email || "";
 				var name = [u.first_name, u.last_name]

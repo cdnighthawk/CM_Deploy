@@ -893,6 +893,46 @@
 			});
 	}
 
+	function headerInitials(user) {
+		if (!user) return "—";
+		var a = (user.first_name || "").trim().charAt(0);
+		var b = (user.last_name || "").trim().charAt(0);
+		if (a && b) return (a + b).toUpperCase();
+		if (a) return a.toUpperCase();
+		var em = (user.email || "").trim();
+		if (em.length) return em.charAt(0).toUpperCase();
+		return "—";
+	}
+
+	function updateApplyHeaderAuth(body) {
+		var signIn = document.getElementById("usis-public-sign-in");
+		var signOut = document.getElementById("usis-public-sign-out");
+		var chip = document.getElementById("usis-apply-header-user");
+		if (!body || !body.authenticated || !body.user) {
+			if (signIn) signIn.classList.remove("d-none");
+			if (signOut) signOut.classList.add("d-none");
+			if (chip) chip.classList.add("d-none");
+			return;
+		}
+		if (signIn) signIn.classList.add("d-none");
+		if (signOut) signOut.classList.remove("d-none");
+		if (chip) chip.classList.remove("d-none");
+		var u = body.user;
+		var name = [u.first_name, u.last_name]
+			.filter(function (x) {
+				return x && String(x).trim();
+			})
+			.join(" ")
+			.trim();
+		if (!name) name = u.email || "—";
+		document.querySelectorAll(".usis-header-session-name").forEach(function (el) {
+			el.textContent = name;
+		});
+		document.querySelectorAll(".usis-header-avatar-initials").forEach(function (el) {
+			el.textContent = headerInitials(u);
+		});
+	}
+
 	function checkSession() {
 		state.currentStep = stepFromBody();
 		wireStepNavLocks();
@@ -910,6 +950,7 @@
 			.then(function (body) {
 				state.authenticated = !!(body && body.authenticated);
 				state.selfRegisterEnabled = body && body.self_register_enabled !== false;
+				updateApplyHeaderAuth(body);
 				if (!state.authenticated) {
 					if (state.currentStep && state.currentStep !== "complete") {
 						setAuthGate(true);

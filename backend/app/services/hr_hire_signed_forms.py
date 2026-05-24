@@ -12,6 +12,7 @@ from sqlalchemy import select
 from ..extensions import db
 from ..models import Document, HrEmployeeDocument, HrHireApplication, User
 from ..services.hr_i9_validate import _DOC_CATALOG_BY_LIST
+from ..services.hr_i9_pdf import render_i9_pdf_bytes
 from ..services.object_storage import UploadCategory, save_upload
 
 _CITIZENSHIP_LABELS = {
@@ -160,36 +161,19 @@ def render_signed_w4_html(
     )
 
 
-def render_i9_preview_html(
+def render_i9_preview_pdf(
     *,
     user: User,
     section1: dict[str, Any],
     hire_row: HrHireApplication | None,
-) -> str:
+) -> bytes:
     signed = bool(hire_row and hire_row.i9_signed_at)
-    status = section1.get("citizenship_status")
-    doc_choice = section1.get("document_choice")
-    identity_docs: list[tuple[str, str]] = []
-    if doc_choice == "list_a":
-        identity_docs.extend(_doc_block_lines(section1.get("list_a")))
-    elif doc_choice == "list_b_c":
-        identity_docs.append(("List B", ""))
-        identity_docs.extend(_doc_block_lines(section1.get("list_b")))
-        identity_docs.append(("List C", ""))
-        identity_docs.extend(_doc_block_lines(section1.get("list_c")))
-
-    return render_template(
-        "documents/hire_i9_preview.html",
-        employee_name=_employee_name(user, section1),
-        employee_email=user.email,
-        signed=signed,
-        signed_at=_fmt_dt(hire_row.i9_signed_at) if signed and hire_row else "",
-        typed_full_name=_employee_name(user, section1),
-        signature_png=hire_row.i9_signature_png if signed and hire_row else "",
+    return render_i9_pdf_bytes(
         section1=section1,
-        citizenship_label=_CITIZENSHIP_LABELS.get(str(status or ""), str(status or "")),
-        document_choice_label="List A document" if doc_choice == "list_a" else "List B and List C documents",
-        identity_docs=identity_docs,
+        user=user,
+        signature_png=hire_row.i9_signature_png if signed and hire_row else None,
+        signed_at=hire_row.i9_signed_at if signed and hire_row else None,
+        typed_full_name=_employee_name(user, section1) if signed else None,
     )
 
 
@@ -279,22 +263,33 @@ def persist_signed_i9(
     typed_full_name: str,
     api_path: str,
 ) -> Document:
-    html = render_signed_i9_html(
-        user=user,
+    pdf_bytes = render_i9_pdf_bytes(
         section1=section1,
+        user=user,
         signature_png=signature_png,
         signed_at=signed_at,
         typed_full_name=typed_full_name,
     )
-    doc = _persist_signed_html(
-        hire_row=hire_row,
-        user=user,
-        form_kind="i9",
-        html=html,
-        existing_document_id=hire_row.i9_signed_document_id,
-        employee_doc_title=_I9_EMPLOYEE_DOC_TITLE,
-        api_path=api_path,
-    )
+    doc = db.session.get(Document, hire_row.i9_signed_document_id) if hire_row.i9_signed_document_id else None
+    if doc is None:
+        doc = Document(
+            document_type="other",
+            title=_I9_EMPLOYEE_DOC_TITLE,
+            uploaded_by_user_id=user.id,
+            mime_type="application/pdf",
+            original_filename="form-i9-section1-signed.pdf",
+        )
+        db.session.add(doc)
+        db.session.flush()
+
+    obj_name = signed_form_storage_name(doc.id, mime_type="application/pdf")
+    size = save_upload(UploadCategory.HR_I9, obj_name, io.BytesIO(pdf_bytes))
+    doc.title = _I9_EMPLOYEE_DOC_TITLE
+    doc.file_url = api_path
+    doc.mime_type = "application/pdf"
+    doc.original_filename = "form-i9-section1-signed.pdf"
+    doc.file_size_bytes = size
+    _upsert_employee_document(user_id=user.id, title=_I9_EMPLOYEE_DOC_TITLE, document_id=doc.id)
     hire_row.i9_signed_document_id = doc.id
     return doc
 
@@ -333,5 +328,7 @@ def signed_form_staff_url(user_id: uuid.UUID, kind: str) -> str:
     return f"/api/v1/hr/applications/{user_id}/signed-forms/{kind}"
 
 
-def signed_form_storage_name(document_id: uuid.UUID) -> str:
+def signed_form_storage_name(document_id: uuid.UUID, *, mime_type: str | None = None) -> str:
+    if (mime_type or "").strip().lower() == "application/pdf":
+        return f"{document_id}.pdf"
     return f"{document_id}.html"

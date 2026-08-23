@@ -1,10 +1,15 @@
 """BuildingConnected REST client (projects + Bid Board opportunities)."""
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from typing import Any
 
 import httpx
+
+log = logging.getLogger(__name__)
+
+MAX_PAGES = 50
 
 
 def next_cursor_state(payload: dict[str, Any]) -> str | None:
@@ -28,7 +33,7 @@ class BuildingConnectedClient:
                 "Authorization": f"Bearer {access_token}",
                 "Accept": "application/json",
             },
-            timeout=60.0,
+            timeout=30.0,
         )
 
     def close(self) -> None:
@@ -42,7 +47,12 @@ class BuildingConnectedClient:
 
     def _get_json(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         resp = self._http.get(path, params=params)
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError:
+            body = (resp.text or "")[:500]
+            log.warning("BuildingConnected %s HTTP %s: %s", path, resp.status_code, body)
+            raise
         data = resp.json()
         if not isinstance(data, dict):
             raise ValueError(f"{path} response is not a JSON object")
@@ -76,25 +86,44 @@ class BuildingConnectedClient:
             params["filter[updatedAt]"] = updated_at_range
         return self._get_json("/opportunities", params)
 
-    def iter_projects(self, *, limit: int = 100, include_closed: bool = True) -> Iterator[dict[str, Any]]:
+    def _iter_paged(
+        self,
+        *,
+        label: str,
+        fetch_page,
+        limit: int,
+    ) -> Iterator[dict[str, Any]]:
         cursor: str | None = None
+        seen_cursors: set[str] = set()
         pages = 0
         while True:
             pages += 1
-            if pages > 500:
-                raise RuntimeError("BuildingConnected projects sync exceeded page safety limit (500)")
-            payload = self.get_projects_page(
-                limit=limit, include_closed=include_closed, cursor_state=cursor
-            )
-            results = payload.get("results")
-            if not isinstance(results, list):
+            if pages > MAX_PAGES:
+                log.warning("BuildingConnected %s hit page cap (%s); stopping", label, MAX_PAGES)
                 break
+            payload = fetch_page(limit=limit, cursor_state=cursor)
+            results = payload.get("results")
+            if not isinstance(results, list) or not results:
+                break
+            log.info("BuildingConnected %s page=%s n=%s", label, pages, len(results))
             for item in results:
                 if isinstance(item, dict):
                     yield item
-            cursor = next_cursor_state(payload)
-            if not cursor:
+            if len(results) < limit:
                 break
+            nxt = next_cursor_state(payload)
+            if not nxt or nxt in seen_cursors:
+                break
+            seen_cursors.add(nxt)
+            cursor = nxt
+
+    def iter_projects(self, *, limit: int = 100, include_closed: bool = True) -> Iterator[dict[str, Any]]:
+        def fetch_page(*, limit: int, cursor_state: str | None):
+            return self.get_projects_page(
+                limit=limit, include_closed=include_closed, cursor_state=cursor_state
+            )
+
+        yield from self._iter_paged(label="projects", fetch_page=fetch_page, limit=limit)
 
     def iter_opportunities(
         self,
@@ -102,23 +131,11 @@ class BuildingConnectedClient:
         limit: int = 100,
         updated_at_range: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        cursor: str | None = None
-        pages = 0
-        while True:
-            pages += 1
-            if pages > 500:
-                raise RuntimeError("BuildingConnected opportunities sync exceeded page safety limit (500)")
-            payload = self.get_opportunities_page(
+        def fetch_page(*, limit: int, cursor_state: str | None):
+            return self.get_opportunities_page(
                 limit=limit,
-                cursor_state=cursor,
+                cursor_state=cursor_state,
                 updated_at_range=updated_at_range,
             )
-            results = payload.get("results")
-            if not isinstance(results, list):
-                break
-            for item in results:
-                if isinstance(item, dict):
-                    yield item
-            cursor = next_cursor_state(payload)
-            if not cursor:
-                break
+
+        yield from self._iter_paged(label="opportunities", fetch_page=fetch_page, limit=limit)

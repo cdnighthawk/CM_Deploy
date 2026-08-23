@@ -10,7 +10,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.api import _integration_bc
 from app.extensions import db
-from app.integrations.buildingconnected_client import next_cursor_state
+from app.integrations.buildingconnected_client import BuildingConnectedClient, next_cursor_state
 from app.models.buildingconnected_oauth import BuildingConnectedOAuthToken
 from app.models.lead_estimate import LeadEstimate
 
@@ -116,9 +116,6 @@ class _FakeBCClient:
         return None
 
     def iter_opportunities(self, **kwargs):
-        yield from ()
-
-    def iter_projects(self, **kwargs):
         eid = "bc-api-test-" + uuid.uuid4().hex[:12]
         yield {
             "id": eid,
@@ -126,6 +123,9 @@ class _FakeBCClient:
             "number": "BC-FAKE-1",
             "submissionState": "undecided",
         }
+
+    def iter_projects(self, **kwargs):
+        yield from ()
 
 
 def test_bc_sync_upserts_lead_estimates(monkeypatch, client, flask_app):
@@ -172,3 +172,37 @@ def test_bc_sync_upserts_lead_estimates(monkeypatch, client, flask_app):
             ).all():
                 db.session.delete(le)
             db.session.commit()
+
+
+def test_iter_opportunities_stops_on_repeated_cursor(monkeypatch):
+    cli = BuildingConnectedClient("token", "https://example.test")
+    calls = {"n": 0}
+
+    def fake_page(**kwargs):
+        calls["n"] += 1
+        return {
+            "results": [{"id": f"opp-{calls['n']}"}] * 100,
+            "pagination": {"cursorState": "same-cursor"},
+        }
+
+    monkeypatch.setattr(cli, "get_opportunities_page", fake_page)
+    items = list(cli.iter_opportunities())
+    assert calls["n"] == 2
+    assert len(items) == 200
+
+
+def test_iter_opportunities_stops_on_short_page(monkeypatch):
+    cli = BuildingConnectedClient("token", "https://example.test")
+    calls = {"n": 0}
+
+    def fake_page(**kwargs):
+        calls["n"] += 1
+        return {
+            "results": [{"id": "only-one"}],
+            "pagination": {"cursorState": "would-loop"},
+        }
+
+    monkeypatch.setattr(cli, "get_opportunities_page", fake_page)
+    items = list(cli.iter_opportunities())
+    assert calls["n"] == 1
+    assert [row["id"] for row in items] == ["only-one"]

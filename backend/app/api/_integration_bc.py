@@ -4,7 +4,9 @@ from __future__ import annotations
 import base64
 import hashlib
 import logging
+import os
 import secrets
+import threading
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -24,6 +26,9 @@ from ..models.buildingconnected_oauth import BuildingConnectedOAuthToken
 log = logging.getLogger(__name__)
 
 BC_OAUTH_STATE_KEY = "bc_oauth_state"
+_SYNC_LOCK = threading.Lock()
+_SYNC_RUNNING = False
+_PAGE_UPSERT = 100
 
 
 def _fernet() -> Fernet:
@@ -109,28 +114,65 @@ def _ensure_access_token() -> str:
     return row.access_token
 
 
+def _sync_inline() -> bool:
+    if current_app.config.get("TESTING"):
+        return True
+    return (os.environ.get("FLASK_ENV") or "").strip().lower() != "production"
+
+
 def _pull_and_upsert(access_token: str) -> tuple[int, int, int]:
     base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
-    include_closed = bool(current_app.config.get("BUILDINGCONNECTED_INCLUDE_CLOSED"))
     updated_at_range = str(
         current_app.config.get("BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT") or ""
     ).strip() or None
     seen: set[str] = set()
-    norms: list[dict[str, str | None]] = []
+    batch: list[dict[str, str | None]] = []
+    loaded = skipped = errors = 0
+
+    def flush() -> None:
+        nonlocal loaded, skipped, errors, batch
+        if not batch:
+            return
+        l, s, e = upsert_lead_estimate_norm_rows(db.session, batch)
+        loaded += l
+        skipped += s
+        errors += e
+        batch = []
+        db.session.expunge_all()
+
     with BuildingConnectedClient(access_token, base) as cli:
         for item in cli.iter_opportunities(updated_at_range=updated_at_range):
             norm = bc_api_project_to_norm(item)
             oid = norm.get("id")
             if isinstance(oid, str) and oid:
+                if oid in seen:
+                    continue
                 seen.add(oid)
-            norms.append(norm)
-        for proj in cli.iter_projects(include_closed=include_closed):
-            norm = bc_api_project_to_norm(proj)
-            pid = norm.get("id")
-            if isinstance(pid, str) and pid in seen:
-                continue
-            norms.append(norm)
-    return upsert_lead_estimate_norm_rows(db.session, norms)
+            batch.append(norm)
+            if len(batch) >= _PAGE_UPSERT:
+                flush()
+        flush()
+    return loaded, skipped, errors
+
+
+def _run_sync_job(app, access_token: str) -> None:
+    global _SYNC_RUNNING
+    with app.app_context():
+        try:
+            loaded, skipped, errors = _pull_and_upsert(access_token)
+            db.session.commit()
+            log.info(
+                "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s",
+                loaded,
+                skipped,
+                errors,
+            )
+        except Exception:
+            db.session.rollback()
+            log.exception("BuildingConnected background sync failed")
+        finally:
+            with _SYNC_LOCK:
+                _SYNC_RUNNING = False
 
 
 def register_buildingconnected_routes(bp: Blueprint) -> None:
@@ -199,6 +241,40 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         except Exception as exc:
             log.warning("BuildingConnected sync auth failed: %s", exc)
             return jsonify({"error": str(exc), "entity": "buildingconnected_sync"}), 401
+        if not _sync_inline():
+            global _SYNC_RUNNING
+            with _SYNC_LOCK:
+                if _SYNC_RUNNING:
+                    return (
+                        jsonify(
+                            {
+                                "ok": True,
+                                "status": "already_running",
+                                "entity": "buildingconnected_sync",
+                                "message": "A BuildingConnected sync is already running. Refresh Leads in a minute.",
+                            }
+                        ),
+                        202,
+                    )
+                _SYNC_RUNNING = True
+            app = current_app._get_current_object()
+            threading.Thread(
+                target=_run_sync_job,
+                args=(app, access),
+                daemon=True,
+                name="bc-sync",
+            ).start()
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "status": "started",
+                        "entity": "buildingconnected_sync",
+                        "message": "Sync is running in the background. Refresh Leads in about a minute for ~386 Bid Board opportunities.",
+                    }
+                ),
+                202,
+            )
         try:
             loaded, skipped, errors = _pull_and_upsert(access)
             db.session.commit()

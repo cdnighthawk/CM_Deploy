@@ -206,3 +206,20 @@ def test_iter_opportunities_stops_on_short_page(monkeypatch):
     items = list(cli.iter_opportunities())
     assert calls["n"] == 1
     assert [row["id"] for row in items] == ["only-one"]
+
+
+def test_iter_opportunities_respects_max_pages(monkeypatch):
+    cli = BuildingConnectedClient("token", "https://example.test")
+    calls = {"n": 0}
+
+    def fake_page(**kwargs):
+        calls["n"] += 1
+        return {
+            "results": [{"id": f"p{calls['n']}"}] * 100,
+            "pagination": {"cursorState": f"c{calls['n']}"},
+        }
+
+    monkeypatch.setattr(cli, "get_opportunities_page", fake_page)
+    items = list(cli.iter_opportunities(max_pages=3))
+    assert calls["n"] == 3
+    assert len(items) == 300

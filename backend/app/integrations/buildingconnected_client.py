@@ -92,14 +92,16 @@ class BuildingConnectedClient:
         label: str,
         fetch_page,
         limit: int,
+        max_pages: int = MAX_PAGES,
     ) -> Iterator[dict[str, Any]]:
         cursor: str | None = None
         seen_cursors: set[str] = set()
         pages = 0
+        cap = max(1, int(max_pages))
         while True:
             pages += 1
-            if pages > MAX_PAGES:
-                log.warning("BuildingConnected %s hit page cap (%s); stopping", label, MAX_PAGES)
+            if pages > cap:
+                log.warning("BuildingConnected %s hit page cap (%s); stopping", label, cap)
                 break
             payload = fetch_page(limit=limit, cursor_state=cursor)
             results = payload.get("results")
@@ -130,6 +132,7 @@ class BuildingConnectedClient:
         *,
         limit: int = 100,
         updated_at_range: str | None = None,
+        max_pages: int = MAX_PAGES,
     ) -> Iterator[dict[str, Any]]:
         def fetch_page(*, limit: int, cursor_state: str | None):
             return self.get_opportunities_page(
@@ -138,4 +141,6 @@ class BuildingConnectedClient:
                 updated_at_range=updated_at_range,
             )
 
-        yield from self._iter_paged(label="opportunities", fetch_page=fetch_page, limit=limit)
+        yield from self._iter_paged(
+            label="opportunities", fetch_page=fetch_page, limit=limit, max_pages=max_pages
+        )

@@ -173,7 +173,11 @@ def bc_api_value_to_csv_str(_key: str, val: Any) -> str | None:
     if isinstance(val, (int, float, Decimal)):
         return str(val)
     if isinstance(val, dict | list):
-        return json.dumps(val, default=str)
+        dumped = json.dumps(val, default=str)
+        # Keep 40k-row backfills from filling 256MB Postgres with bid-package HTML.
+        if len(dumped) > 16_000:
+            return None
+        return dumped
     if isinstance(val, datetime):
         s = val.isoformat()
         if val.tzinfo is None:
@@ -181,7 +185,8 @@ def bc_api_value_to_csv_str(_key: str, val: Any) -> str | None:
         return s.replace("+00:00", "Z")
     if isinstance(val, date):
         return val.isoformat()
-    return str(val)
+    text = str(val)
+    return text[:8_000] if len(text) > 8_000 else text
 
 
 def bc_api_project_to_norm(project: Mapping[str, Any]) -> dict[str, str | None]:

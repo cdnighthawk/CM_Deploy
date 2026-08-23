@@ -120,11 +120,27 @@ def _sync_inline() -> bool:
     return (os.environ.get("FLASK_ENV") or "").strip().lower() != "production"
 
 
-def _pull_and_upsert(access_token: str) -> tuple[int, int, int]:
-    base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
-    updated_at_range = str(
+def _opportunities_updated_at_range(*, full: bool) -> str:
+    configured = str(
         current_app.config.get("BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT") or ""
-    ).strip() or None
+    ).strip()
+    if configured:
+        return configured
+    if full:
+        return "2010-01-01T00:00:00.000Z.."
+    start = datetime.now(timezone.utc) - timedelta(days=14)
+    return start.strftime("%Y-%m-%dT%H:%M:%S.000Z..")
+
+
+def _pull_and_upsert(
+    access_token: str,
+    *,
+    full: bool = False,
+    max_pages: int | None = None,
+) -> tuple[int, int, int]:
+    base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
+    updated_at_range = _opportunities_updated_at_range(full=full)
+    page_cap = int(max_pages) if max_pages is not None else (500 if full else 50)
     seen: set[str] = set()
     batch: list[dict[str, str | None]] = []
     loaded = skipped = errors = 0
@@ -140,8 +156,17 @@ def _pull_and_upsert(access_token: str) -> tuple[int, int, int]:
         batch = []
         db.session.expunge_all()
 
+    log.info(
+        "BuildingConnected pull full=%s pages=%s updatedAt=%s",
+        full,
+        page_cap,
+        updated_at_range,
+    )
     with BuildingConnectedClient(access_token, base) as cli:
-        for item in cli.iter_opportunities(updated_at_range=updated_at_range):
+        for item in cli.iter_opportunities(
+            updated_at_range=updated_at_range,
+            max_pages=page_cap,
+        ):
             norm = bc_api_project_to_norm(item)
             oid = norm.get("id")
             if isinstance(oid, str) and oid:

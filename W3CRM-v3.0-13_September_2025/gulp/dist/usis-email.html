@@ -379,76 +379,82 @@
 		<!-- End - Sidebar Navigation -->
 
 		<main class="content-body">
-			<div class="container-fluid px-2 px-lg-3 py-2">
-				<div class="usis-ol">
-					<div class="usis-ol-ribbon" role="toolbar" aria-label="Mail actions">
-						<button type="button" class="btn usis-ol-new" id="usis-mail-compose-btn">
-							<i class="fa fa-plus me-1"></i> New mail
+			<div class="usis-ol" role="application" aria-label="Mail">
+				<div class="usis-ol-cmd" role="toolbar" aria-label="Mail actions">
+					<button type="button" class="usis-ol-primary" id="usis-mail-compose-btn">
+						<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M10 3a.75.75 0 0 1 .75.75V9.25h5.5a.75.75 0 0 1 0 1.5h-5.5v5.5a.75.75 0 0 1-1.5 0v-5.5h-5.5a.75.75 0 0 1 0-1.5h5.5V3.75A.75.75 0 0 1 10 3Z"/></svg>
+						New mail
+					</button>
+					<span class="usis-ol-sep"></span>
+					<button type="button" class="usis-ol-cmdbtn" id="usis-mail-delete-btn" disabled>
+						<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M8.5 4h3a1.5 1.5 0 0 0-3 0ZM7 4a2.5 2.5 0 0 1 5 0h4.25a.75.75 0 0 1 0 1.5h-.84l-.9 9.07A2.75 2.75 0 0 1 11.77 17H8.23a2.75 2.75 0 0 1-2.74-2.43L4.59 5.5H3.75a.75.75 0 0 1 0-1.5H7Zm1.5 3.25a.75.75 0 0 0-1.5 0v6.5a.75.75 0 0 0 1.5 0v-6.5Zm3.5-.75a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5a.75.75 0 0 1 .75-.75Z"/></svg>
+						Delete
+					</button>
+					<button type="button" class="usis-ol-cmdbtn" id="usis-mail-reply-btn" disabled>
+						<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.78 3.22a.75.75 0 0 1 0 1.06L4.81 7.25H11.5A6.75 6.75 0 0 1 18.25 14v.25a.75.75 0 0 1-1.5 0V14A5.25 5.25 0 0 0 11.5 8.75H4.81l2.97 2.97a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"/></svg>
+						Reply
+					</button>
+					<span class="usis-ol-cmd-mail" id="usis-mail-sending-as"></span>
+				</div>
+				<div class="usis-ol-main">
+					<nav class="usis-ol-nav" aria-label="Folders">
+						<div class="usis-ol-account" id="usis-mail-account">Outlook</div>
+						<button type="button" class="usis-ol-folder is-active" data-folder="inbox">
+							<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M2.5 5.75A2.25 2.25 0 0 1 4.75 3.5h10.5A2.25 2.25 0 0 1 17.5 5.75v8.5A2.25 2.25 0 0 1 15.25 16.5H4.75A2.25 2.25 0 0 1 2.5 14.25v-8.5Zm1.5 0v.66l6 3.6 6-3.6v-.66a.75.75 0 0 0-.75-.75H4.75a.75.75 0 0 0-.75.75Zm13 2.34-5.72 3.43a1.75 1.75 0 0 1-1.56 0L4 8.09v6.16c0 .41.34.75.75.75h10.5c.41 0 .75-.34.75-.75V8.09Z"/></svg>
+							Inbox
 						</button>
-						<button type="button" class="btn-ol" id="usis-mail-delete-btn" disabled>
-							<i class="fa fa-trash me-1"></i> Delete
+						<button type="button" class="usis-ol-folder" data-folder="drafts">
+							<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M14.06 3.44a1.5 1.5 0 0 1 2.12 2.12l-8.5 8.5-3.18.79a.75.75 0 0 1-.91-.91l.79-3.18 8.5-8.5Z"/></svg>
+							Drafts
 						</button>
-						<button type="button" class="btn-ol" id="usis-mail-reply-btn" disabled>
-							<i class="fa fa-reply me-1"></i> Reply
+						<button type="button" class="usis-ol-folder" data-folder="sent">
+							<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M2.72 2.05a.75.75 0 0 0-1.01.96l2.4 6.24H9.25a.75.75 0 0 1 0 1.5H4.11l-2.4 6.24a.75.75 0 0 0 1.01.96l15.5-7.25a.75.75 0 0 0 0-1.4L2.72 2.05Z"/></svg>
+							Sent Items
 						</button>
-						<span class="ms-auto small text-muted" id="usis-mail-sending-as"></span>
-					</div>
-					<div class="usis-ol-shell">
-						<nav class="usis-ol-folders" aria-label="Folders">
-							<div class="usis-ol-account" id="usis-mail-account">Outlook</div>
-							<button type="button" class="usis-ol-folder active" data-folder="inbox" id="usis-mail-folder-inbox">
-								<i class="fa fa-inbox"></i> Inbox
-							</button>
-							<button type="button" class="usis-ol-folder" data-folder="drafts" id="usis-mail-folder-drafts">
-								<i class="fa fa-file"></i> Drafts
-							</button>
-							<button type="button" class="usis-ol-folder" data-folder="sent" id="usis-mail-folder-sent">
-								<i class="fa fa-paper-plane"></i> Sent Items
-							</button>
-							<button type="button" class="usis-ol-folder" data-folder="deleted" id="usis-mail-folder-deleted">
-								<i class="fa fa-trash"></i> Deleted Items
-							</button>
-						</nav>
-						<div class="usis-ol-list">
-							<div class="usis-ol-list-head">
-								<div class="usis-ol-tabs">
-									<button type="button" class="usis-ol-tab active" id="usis-mail-folder-title">Inbox</button>
-								</div>
-							</div>
-							<div id="usis-mail-status" class="usis-ol-status">Loading…</div>
-							<div class="usis-ol-rows" id="usis-mail-list"></div>
+						<button type="button" class="usis-ol-folder" data-folder="deleted">
+							<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M8.5 4h3a1.5 1.5 0 0 0-3 0ZM7 4a2.5 2.5 0 0 1 5 0h4.25a.75.75 0 0 1 0 1.5h-.84l-.9 9.07A2.75 2.75 0 0 1 11.77 17H8.23a2.75 2.75 0 0 1-2.74-2.43L4.59 5.5H3.75a.75.75 0 0 1 0-1.5H7Z"/></svg>
+							Deleted Items
+						</button>
+					</nav>
+					<section class="usis-ol-mid" aria-label="Message list">
+						<div class="usis-ol-search">
+							<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M8.5 3.5a5 5 0 1 0 3.1 8.9l3.75 3.75a.75.75 0 1 0 1.06-1.06l-3.75-3.75A5 5 0 0 0 8.5 3.5ZM5 8.5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0Z"/></svg>
+							<input type="search" id="usis-mail-search" placeholder="Search" autocomplete="off">
 						</div>
-						<div class="usis-ol-read" id="usis-mail-read-card">
-							<div class="usis-ol-empty" id="usis-mail-empty">
-								<svg width="88" height="72" viewBox="0 0 88 72" aria-hidden="true">
-									<rect x="8" y="16" width="72" height="48" rx="4" fill="#eef6fc" stroke="#c7e0f4"/>
-									<path d="M8 22 L44 46 L80 22" fill="none" stroke="#0f6cbd" stroke-width="2"/>
-									<rect x="28" y="8" width="32" height="22" rx="2" fill="#d2b8f5"/>
-								</svg>
-								<h5>Select an item to read</h5>
-								<p class="mb-0 small">Nothing is selected</p>
-							</div>
-							<div class="usis-ol-read-wrap d-none" id="usis-mail-read-wrap">
-								<div class="usis-ol-read-head" id="usis-mail-read-head"></div>
-								<div class="usis-ol-body" id="usis-mail-read"></div>
-							</div>
+						<div class="usis-ol-tabs">
+							<span class="usis-ol-tab is-on" id="usis-mail-folder-title">Inbox</span>
 						</div>
-						<div class="usis-ol-read d-none" id="usis-mail-compose-card">
-							<div class="usis-ol-read-head d-flex justify-content-between align-items-center">
-								<h4 class="mb-0">New message</h4>
-								<button type="button" class="btn-ol" id="usis-mail-compose-cancel">Cancel</button>
+						<div id="usis-mail-status" class="usis-ol-status">Loading…</div>
+						<div class="usis-ol-rows" id="usis-mail-list"></div>
+					</section>
+					<section class="usis-ol-pane" id="usis-mail-read-card" aria-label="Reading pane">
+						<div class="usis-ol-empty" id="usis-mail-empty">
+							<div class="usis-ol-empty-art" aria-hidden="true">
+								<span class="usis-ol-empty-flap"></span>
 							</div>
-							<div class="usis-ol-compose">
-								<form id="usis-mail-compose-form">
-									<input type="text" class="form-control mb-1" id="usis-mail-to" required placeholder="To" autocomplete="off">
-									<input type="text" class="form-control mb-1" id="usis-mail-cc" placeholder="Cc" autocomplete="off">
-									<input type="text" class="form-control mb-1" id="usis-mail-subject" placeholder="Add a subject" autocomplete="off">
-									<textarea class="form-control" id="usis-mail-body" rows="12" placeholder=""></textarea>
-									<button type="submit" class="btn usis-ol-new mt-3" id="usis-mail-send">Send</button>
-								</form>
-							</div>
+							<h2>Select an item to read</h2>
+							<p>Nothing is selected</p>
 						</div>
-					</div>
+						<div class="usis-ol-article d-none" id="usis-mail-read-wrap">
+							<div class="usis-ol-article-head" id="usis-mail-read-head"></div>
+							<div class="usis-ol-article-body" id="usis-mail-read"></div>
+						</div>
+					</section>
+					<section class="usis-ol-pane d-none" id="usis-mail-compose-card" aria-label="Compose">
+						<div class="usis-ol-article-head usis-ol-compose-top">
+							<h2>New message</h2>
+							<button type="button" class="usis-ol-cmdbtn" id="usis-mail-compose-cancel">Discard</button>
+						</div>
+						<form class="usis-ol-compose" id="usis-mail-compose-form">
+							<label class="usis-ol-field"><span>To</span><input type="text" id="usis-mail-to" required autocomplete="off"></label>
+							<label class="usis-ol-field"><span>Cc</span><input type="text" id="usis-mail-cc" autocomplete="off"></label>
+							<label class="usis-ol-field"><span>Subject</span><input type="text" id="usis-mail-subject" autocomplete="off"></label>
+							<textarea id="usis-mail-body" placeholder="Type your message"></textarea>
+							<div class="usis-ol-compose-actions">
+								<button type="submit" class="usis-ol-primary" id="usis-mail-send">Send</button>
+							</div>
+						</form>
+					</section>
 				</div>
 			</div>
 		</main>

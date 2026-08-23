@@ -1,5 +1,5 @@
 /**
- * Outlook-style mailbox UI for usis-email.html (Graph via /api/v1/mail/*).
+ * Fluent Outlook mailbox UI for usis-email.html (Graph via /api/v1/mail/*).
  */
 (function () {
 	"use strict";
@@ -7,6 +7,7 @@
 	var folder = "inbox";
 	var selectedId = null;
 	var selectedMeta = null;
+	var listCache = [];
 	var FOLDER_TITLES = {
 		inbox: "Inbox",
 		sent: "Sent Items",
@@ -68,10 +69,19 @@
 		if (show) setToolbar(false);
 	}
 
-	function formatWhen(iso) {
+	function formatWhen(iso, longForm) {
 		if (!iso) return "";
 		var dt = new Date(iso);
 		if (isNaN(dt.getTime())) return String(iso);
+		if (longForm) {
+			return dt.toLocaleString(undefined, {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+				hour: "numeric",
+				minute: "2-digit",
+			});
+		}
 		var now = new Date();
 		var sameDay =
 			dt.getFullYear() === now.getFullYear() &&
@@ -95,10 +105,21 @@
 
 	function avatarColor(name) {
 		var n = 0;
-		String(name || "").split("").forEach(function (ch) {
-			n += ch.charCodeAt(0);
-		});
+		String(name || "")
+			.split("")
+			.forEach(function (ch) {
+				n += ch.charCodeAt(0);
+			});
 		return AVATAR_COLORS[n % AVATAR_COLORS.length];
+	}
+
+	function displayName(m) {
+		var from = (m.from && (m.from.name || m.from.address)) || "";
+		if (folder === "sent") {
+			var to0 = (m.to && m.to[0]) || {};
+			from = to0.name || to0.address || from;
+		}
+		return from;
 	}
 
 	function loadMe() {
@@ -120,13 +141,79 @@
 		selectedId = null;
 		selectedMeta = null;
 		document.querySelectorAll("[data-folder]").forEach(function (btn) {
-			btn.classList.toggle("active", btn.getAttribute("data-folder") === folder);
+			btn.classList.toggle("is-active", btn.getAttribute("data-folder") === folder);
 		});
 		var title = document.getElementById("usis-mail-folder-title");
 		if (title) title.textContent = FOLDER_TITLES[folder] || "Inbox";
+		var search = document.getElementById("usis-mail-search");
+		if (search) search.value = "";
 		showCompose(false);
 		showEmpty();
 		loadList();
+	}
+
+	function matchesSearch(m, q) {
+		if (!q) return true;
+		var blob = [
+			displayName(m),
+			m.subject,
+			m.preview,
+			m.from && m.from.address,
+		]
+			.join(" ")
+			.toLowerCase();
+		return blob.indexOf(q) !== -1;
+	}
+
+	function renderList() {
+		var list = document.getElementById("usis-mail-list");
+		if (!list) return;
+		var q = ((document.getElementById("usis-mail-search") || {}).value || "").trim().toLowerCase();
+		var items = listCache.filter(function (m) {
+			return matchesSearch(m, q);
+		});
+		if (!items.length) {
+			list.innerHTML = "";
+			setStatus(listCache.length ? "No matches." : "No messages in this folder.");
+			return;
+		}
+		setStatus("");
+		list.innerHTML = items
+			.map(function (m) {
+				var from = displayName(m);
+				var cls = "usis-ol-row";
+				if (!m.is_read && folder === "inbox") cls += " is-unread";
+				if (m.id === selectedId) cls += " is-on";
+				return (
+					'<button type="button" class="' +
+					cls +
+					'" data-id="' +
+					esc(m.id) +
+					'" data-from="' +
+					esc((m.from && m.from.address) || "") +
+					'" data-subject="' +
+					esc(m.subject || "") +
+					'"><span class="usis-ol-avatar" style="background:' +
+					avatarColor(from) +
+					'">' +
+					esc(initials(from)) +
+					'</span><span><div class="usis-ol-from">' +
+					esc(from) +
+					'</div><div class="usis-ol-subject">' +
+					esc(m.subject) +
+					'</div><div class="usis-ol-preview">' +
+					esc(m.preview) +
+					'</div></span><span class="usis-ol-when">' +
+					esc(formatWhen(m.received)) +
+					"</span></button>"
+				);
+			})
+			.join("");
+		list.querySelectorAll("[data-id]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				openMessage(btn.getAttribute("data-id"), btn);
+			});
+		});
 	}
 
 	function loadList() {
@@ -137,56 +224,11 @@
 		api()
 			.fetchJson("/api/v1/mail/messages", { params: { folder: folder, top: 50 } })
 			.then(function (data) {
-				var items = (data && data.items) || [];
-				if (!items.length) {
-					setStatus("No messages in this folder.");
-					return;
-				}
-				setStatus("");
-				list.innerHTML = items
-					.map(function (m) {
-						var from = (m.from && (m.from.name || m.from.address)) || "";
-						if (folder === "sent") {
-							var to0 = (m.to && m.to[0]) || {};
-							from = to0.name || to0.address || from;
-						}
-						var cls = "usis-ol-row";
-						if (!m.is_read && folder === "inbox") cls += " unread";
-						if (m.id === selectedId) cls += " active";
-						var ini = initials(from);
-						var color = avatarColor(from);
-						return (
-							'<button type="button" class="' +
-							cls +
-							'" data-id="' +
-							esc(m.id) +
-							'" data-from="' +
-							esc((m.from && m.from.address) || "") +
-							'" data-subject="' +
-							esc(m.subject || "") +
-							'"><span class="usis-ol-avatar" style="background:' +
-							color +
-							'">' +
-							esc(ini) +
-							'</span><span><div class="usis-ol-from">' +
-							esc(from) +
-							'</div><div class="usis-ol-subject">' +
-							esc(m.subject) +
-							'</div><div class="usis-ol-preview">' +
-							esc(m.preview) +
-							'</div></span><span class="usis-ol-when">' +
-							esc(formatWhen(m.received)) +
-							"</span></button>"
-						);
-					})
-					.join("");
-				list.querySelectorAll("[data-id]").forEach(function (btn) {
-					btn.addEventListener("click", function () {
-						openMessage(btn.getAttribute("data-id"), btn);
-					});
-				});
+				listCache = (data && data.items) || [];
+				renderList();
 			})
 			.catch(function (err) {
+				listCache = [];
 				setStatus(err.message || "Could not load mail.", true);
 			});
 	}
@@ -194,8 +236,8 @@
 	function markRowActive(id) {
 		document.querySelectorAll("#usis-mail-list [data-id]").forEach(function (btn) {
 			var on = btn.getAttribute("data-id") === id;
-			btn.classList.toggle("active", on);
-			if (on) btn.classList.remove("unread");
+			btn.classList.toggle("is-on", on);
+			if (on) btn.classList.remove("is-unread");
 		});
 	}
 
@@ -213,7 +255,7 @@
 		var pane = document.getElementById("usis-mail-read");
 		var head = document.getElementById("usis-mail-read-head");
 		if (!pane || !api()) return;
-		if (head) head.innerHTML = "<p class='mb-0 text-muted'>Loading message…</p>";
+		if (head) head.innerHTML = "<p class='mb-0' style='color:#616161'>Loading message…</p>";
 		pane.innerHTML = "";
 		api()
 			.fetchJson("/api/v1/mail/messages/" + encodeURIComponent(id))
@@ -225,19 +267,24 @@
 					.map(function (a) {
 						return a.address || a.name;
 					})
-					.join(", ");
+					.join("; ");
 				if (head) {
 					head.innerHTML =
-						"<h4>" +
-						esc(m.subject) +
-						"</h4><div class='usis-ol-meta'>From " +
+						"<h2>" +
+						esc(m.subject || "(no subject)") +
+						'</h2><div class="usis-ol-person"><span class="usis-ol-avatar" style="background:' +
+						avatarColor(fromName) +
+						'">' +
+						esc(initials(fromName)) +
+						'</span><div><div class="usis-ol-person-name">' +
 						esc(fromName) +
-						(fromAddr && fromAddr !== fromName ? " &lt;" + esc(fromAddr) + "&gt;" : "") +
-						"<br>To " +
+						'</div><div class="usis-ol-person-addr">' +
+						esc(fromAddr) +
+						'</div><div class="usis-ol-person-to">To: ' +
 						esc(to) +
-						" · " +
-						esc(formatWhen(m.received)) +
-						"</div>";
+						'</div></div><div class="usis-ol-person-when">' +
+						esc(formatWhen(m.received, true)) +
+						"</div></div>";
 				}
 				var attachments = (m.attachments || [])
 					.map(function (a) {
@@ -248,7 +295,7 @@
 							"/attachments/" +
 							encodeURIComponent(a.id);
 						return (
-							'<a class="btn btn-sm btn-outline-secondary me-1 mb-2" href="' +
+							'<a class="usis-ol-file" href="' +
 							esc(href) +
 							'" target="_blank" rel="noopener">' +
 							esc(a.name) +
@@ -256,7 +303,7 @@
 						);
 					})
 					.join("");
-				pane.innerHTML = attachments ? "<div>" + attachments + "</div>" : "";
+				pane.innerHTML = attachments ? '<div class="usis-ol-files">' + attachments + "</div>" : "";
 				if ((m.body_type || "").toLowerCase() === "html") {
 					var frame = document.createElement("iframe");
 					frame.setAttribute("sandbox", "");
@@ -269,6 +316,7 @@
 					pre.className = "mb-0";
 					pre.style.whiteSpace = "pre-wrap";
 					pre.style.fontFamily = "inherit";
+					pre.style.padding = "12px 20px";
 					pre.textContent = m.body_content || "";
 					pane.appendChild(pre);
 				}
@@ -315,6 +363,8 @@
 			var s = selectedMeta.subject || "";
 			subj.value = /^re:/i.test(s) ? s : "Re: " + s;
 		}
+		var body = document.getElementById("usis-mail-body");
+		if (body) body.focus();
 	}
 
 	function sendCompose(ev) {
@@ -366,14 +416,23 @@
 			});
 		});
 		var composeBtn = document.getElementById("usis-mail-compose-btn");
-		if (composeBtn) composeBtn.addEventListener("click", function () { showCompose(true); });
+		if (composeBtn)
+			composeBtn.addEventListener("click", function () {
+				showCompose(true);
+			});
 		var cancel = document.getElementById("usis-mail-compose-cancel");
-		if (cancel) cancel.addEventListener("click", function () { showCompose(false); showEmpty(); });
+		if (cancel)
+			cancel.addEventListener("click", function () {
+				showCompose(false);
+				showEmpty();
+			});
 		var delBtn = document.getElementById("usis-mail-delete-btn");
 		if (delBtn) delBtn.addEventListener("click", deleteSelected);
 		var replyBtn = document.getElementById("usis-mail-reply-btn");
 		if (replyBtn) replyBtn.addEventListener("click", replySelected);
 		var form = document.getElementById("usis-mail-compose-form");
 		if (form) form.addEventListener("submit", sendCompose);
+		var search = document.getElementById("usis-mail-search");
+		if (search) search.addEventListener("input", renderList);
 	});
 })();

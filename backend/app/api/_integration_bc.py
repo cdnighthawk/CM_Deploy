@@ -180,12 +180,43 @@ def _pull_and_upsert(
     return loaded, skipped, errors
 
 
-def _run_sync_job(app, access_token: str) -> None:
+def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
     global _SYNC_RUNNING
     with app.app_context():
         try:
-            loaded, skipped, errors = _pull_and_upsert(access_token)
+            loaded, skipped, errors = _pull_and_upsert(access_token, full=full)
             db.session.commit()
+            log.info(
+                "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s full=%s",
+                loaded,
+                skipped,
+                errors,
+                full,
+            )
+        except httpx.HTTPStatusError as exc:
+            db.session.rollback()
+            if exc.response is not None and exc.response.status_code == 401:
+                log.warning("BuildingConnected background sync 401; refreshing token and retrying")
+                try:
+                    _refresh_tokens_unlocked()
+                    db.session.commit()
+                    token = _ensure_access_token()
+                    loaded, skipped, errors = _pull_and_upsert(token, full=full)
+                    db.session.commit()
+                    log.info(
+                        "BuildingConnected sync complete after refresh: loaded=%s skipped=%s errors=%s",
+                        loaded,
+                        skipped,
+                        errors,
+                    )
+                except Exception:
+                    db.session.rollback()
+                    log.exception("BuildingConnected background sync failed after 401 retry")
+            else:
+                log.exception("BuildingConnected background sync HTTP error")
+        except Exception:
+            db.session.rollback()
+            log.exception("BuildingConnected background sync failed")
             log.info(
                 "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s",
                 loaded,
@@ -266,6 +297,7 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         except Exception as exc:
             log.warning("BuildingConnected sync auth failed: %s", exc)
             return jsonify({"error": str(exc), "entity": "buildingconnected_sync"}), 401
+        want_full = (request.args.get("full") or "").strip().lower() in ("1", "true", "yes")
         if not _sync_inline():
             global _SYNC_RUNNING
             with _SYNC_LOCK:
@@ -286,6 +318,7 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
             threading.Thread(
                 target=_run_sync_job,
                 args=(app, access),
+                kwargs={"full": want_full},
                 daemon=True,
                 name="bc-sync",
             ).start()
@@ -294,14 +327,19 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                     {
                         "ok": True,
                         "status": "started",
+                        "full": want_full,
                         "entity": "buildingconnected_sync",
-                        "message": "Sync is running in the background. Refresh Leads in about a minute for ~386 Bid Board opportunities.",
+                        "message": (
+                            "Full Bid Board history sync is running in the background. Check Leads in 15–30 minutes."
+                            if want_full
+                            else "Recent Bid Board sync is running in the background. Refresh Leads in about a minute."
+                        ),
                     }
                 ),
                 202,
             )
         try:
-            loaded, skipped, errors = _pull_and_upsert(access)
+            loaded, skipped, errors = _pull_and_upsert(access, full=want_full)
             db.session.commit()
         except httpx.HTTPStatusError as exc:
             db.session.rollback()

@@ -1,0 +1,335 @@
+/* Outlook-style mailbox chrome for usis-email.html */
+.usis-outlook-page .page-titles,
+.usis-outlook-page .footer {
+	display: none !important;
+}
+
+.usis-outlook-page .content-body {
+	padding-bottom: 0;
+}
+
+.usis-ol {
+	--ol-blue: #0f6cbd;
+	--ol-blue-hover: #115ea3;
+	--ol-selected: #cfe4fa;
+	--ol-folder-active: #e6f2fb;
+	--ol-border: #e1dfdd;
+	--ol-bg: #f5f5f5;
+	--ol-pane: #ffffff;
+	--ol-muted: #605e5c;
+	--ol-text: #242424;
+	--ol-unread: #0f6cbd;
+	height: calc(100vh - 90px);
+	min-height: 520px;
+	display: flex;
+	flex-direction: column;
+	background: var(--ol-bg);
+	border: 1px solid var(--ol-border);
+	border-radius: 4px;
+	overflow: hidden;
+	font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+	color: var(--ol-text);
+}
+
+.usis-ol-ribbon {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+	padding: 8px 10px;
+	background: var(--ol-pane);
+	border-bottom: 1px solid var(--ol-border);
+}
+
+.usis-ol-new {
+	background: var(--ol-blue) !important;
+	border-color: var(--ol-blue) !important;
+	color: #fff !important;
+	font-weight: 600;
+	padding: 6px 14px;
+}
+
+.usis-ol-new:hover {
+	background: var(--ol-blue-hover) !important;
+}
+
+.usis-ol-ribbon .btn-ol {
+	border: 0;
+	background: transparent;
+	color: var(--ol-text);
+	padding: 6px 10px;
+	font-size: 13px;
+	border-radius: 4px;
+}
+
+.usis-ol-ribbon .btn-ol:hover:not(:disabled) {
+	background: #f0f0f0;
+}
+
+.usis-ol-ribbon .btn-ol:disabled {
+	opacity: 0.38;
+	cursor: default;
+}
+
+.usis-ol-shell {
+	display: grid;
+	grid-template-columns: 220px minmax(280px, 360px) 1fr;
+	flex: 1;
+	min-height: 0;
+}
+
+.usis-ol-folders {
+	background: var(--ol-bg);
+	border-right: 1px solid var(--ol-border);
+	padding: 10px 8px;
+	overflow-y: auto;
+}
+
+.usis-ol-account {
+	font-size: 12px;
+	color: var(--ol-muted);
+	padding: 4px 10px 10px;
+	word-break: break-all;
+}
+
+.usis-ol-folder {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	padding: 7px 10px;
+	border-radius: 4px;
+	font-size: 13px;
+	color: var(--ol-text);
+}
+
+.usis-ol-folder i {
+	width: 16px;
+	color: #616161;
+}
+
+.usis-ol-folder.active {
+	background: var(--ol-folder-active);
+	box-shadow: inset 3px 0 0 var(--ol-blue);
+	font-weight: 600;
+}
+
+.usis-ol-folder:hover:not(.active) {
+	background: #ebebeb;
+}
+
+.usis-ol-list {
+	background: var(--ol-pane);
+	border-right: 1px solid var(--ol-border);
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.usis-ol-list-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px 0;
+	border-bottom: 1px solid var(--ol-border);
+}
+
+.usis-ol-tabs {
+	display: flex;
+	gap: 16px;
+}
+
+.usis-ol-tab {
+	border: 0;
+	background: none;
+	padding: 8px 0 10px;
+	font-size: 14px;
+	color: var(--ol-muted);
+}
+
+.usis-ol-tab.active {
+	color: var(--ol-blue);
+	font-weight: 600;
+	box-shadow: inset 0 -2px 0 var(--ol-blue);
+}
+
+.usis-ol-status {
+	padding: 10px 12px;
+	font-size: 12px;
+	color: var(--ol-muted);
+}
+
+.usis-ol-rows {
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+}
+
+.usis-ol-row {
+	display: grid;
+	grid-template-columns: 36px 1fr auto;
+	gap: 8px;
+	width: 100%;
+	border: 0;
+	border-bottom: 1px solid #f3f2f1;
+	background: #fff;
+	text-align: left;
+	padding: 10px 12px 10px 10px;
+	position: relative;
+}
+
+.usis-ol-row:hover {
+	background: #fafafa;
+}
+
+.usis-ol-row.active {
+	background: var(--ol-selected);
+}
+
+.usis-ol-row.unread {
+	box-shadow: inset 3px 0 0 var(--ol-unread);
+}
+
+.usis-ol-row.unread .usis-ol-from {
+	font-weight: 700;
+}
+
+.usis-ol-avatar {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 11px;
+	font-weight: 700;
+	color: #fff;
+	margin-top: 2px;
+}
+
+.usis-ol-from {
+	font-size: 13px;
+	line-height: 1.2;
+}
+
+.usis-ol-subject {
+	font-size: 13px;
+	color: var(--ol-blue);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.usis-ol-preview {
+	font-size: 12px;
+	color: var(--ol-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.usis-ol-when {
+	font-size: 11px;
+	color: var(--ol-muted);
+	white-space: nowrap;
+	padding-top: 2px;
+}
+
+.usis-ol-read {
+	background: var(--ol-pane);
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.usis-ol-empty {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: var(--ol-muted);
+	text-align: center;
+	padding: 24px;
+}
+
+.usis-ol-empty h5 {
+	color: var(--ol-text);
+	margin: 12px 0 4px;
+	font-weight: 600;
+}
+
+.usis-ol-read-head {
+	padding: 16px 20px 12px;
+	border-bottom: 1px solid var(--ol-border);
+}
+
+.usis-ol-read-head h4 {
+	font-size: 20px;
+	font-weight: 600;
+	margin: 0 0 8px;
+}
+
+.usis-ol-meta {
+	font-size: 13px;
+	color: var(--ol-muted);
+}
+
+.usis-ol-body {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	padding: 16px 20px;
+}
+
+.usis-ol-body iframe {
+	width: 100%;
+	min-height: 360px;
+	border: 0;
+}
+
+.usis-ol-read-wrap {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.usis-ol-read-wrap.d-none {
+	display: none !important;
+}
+
+.usis-ol-compose {
+	padding: 12px 20px 20px;
+	overflow: auto;
+	flex: 1;
+}
+
+.usis-ol-compose .form-control {
+	border: 0;
+	border-bottom: 1px solid var(--ol-border);
+	border-radius: 0;
+	padding-left: 0;
+	box-shadow: none;
+}
+
+.usis-ol-compose textarea.form-control {
+	border: 1px solid var(--ol-border);
+	border-radius: 4px;
+	padding: 10px;
+	margin-top: 12px;
+}
+
+@media (max-width: 991.98px) {
+	.usis-ol-shell {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto minmax(220px, 40%) 1fr;
+	}
+	.usis-ol {
+		height: auto;
+		min-height: calc(100vh - 90px);
+	}
+}

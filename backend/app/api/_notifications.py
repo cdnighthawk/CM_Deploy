@@ -41,7 +41,12 @@ _MAIL_DETAIL_SELECT = (
     "id,subject,from,toRecipients,ccRecipients,receivedDateTime,"
     "sentDateTime,isRead,body,bodyPreview,hasAttachments"
 )
-_MAIL_FOLDERS = {"inbox": "inbox", "sent": "sentitems"}
+_MAIL_FOLDERS = {
+    "inbox": "inbox",
+    "sent": "sentitems",
+    "drafts": "drafts",
+    "deleted": "deleteditems",
+}
 _GRAPH_ROOT = _GRAPH_BASE
 _MAIL_LIST_FIELDS = _MAIL_LIST_SELECT
 _MAIL_DETAIL_FIELDS = _MAIL_DETAIL_SELECT
@@ -329,7 +334,7 @@ def list_mailbox_messages(*, mailbox: str, folder: str, top: int = 50) -> dict[s
     key = (folder or "inbox").strip().lower()
     folder_id = _MAIL_FOLDERS.get(key)
     if folder_id is None:
-        raise GraphMailError(400, "folder must be inbox or sent")
+        raise GraphMailError(400, "folder must be inbox, sent, drafts, or deleted")
     n = max(1, min(int(top or 50), 100))
     url = _user_mail_url(mailbox, "mailFolders", folder_id, "messages")
     params = {

@@ -1709,9 +1709,14 @@ def compose_email():
     subject = (data.get("subject") or "").strip() or "(no subject)"
     body = (data.get("message") or data.get("body") or "").strip()
     cc = (data.get("cc") or "").strip() or None
+    from_addr = (cu.user.email or "").strip() if cu.user is not None else ""
+    if not from_addr:
+        return _jsonify({"error": "your account has no email address to send from"}), 400
     from ._notifications import send_compose_email
 
-    result = send_compose_email(to=to, subject=subject[:500], body=body, cc=cc)
+    result = send_compose_email(
+        to=to, subject=subject[:500], body=body, cc=cc, from_addr=from_addr
+    )
     if not result.get("ok"):
         return _jsonify(result), 400
     return _jsonify(result)

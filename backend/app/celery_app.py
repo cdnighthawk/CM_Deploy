@@ -36,21 +36,28 @@ if Celery is not None and BROKER:
     celery.conf.task_routes = {"rfi.*": {"queue": "rfi"}}
 
     @celery.task(name="rfi.send_email")
-    def send_rfi_email_task(*, log_id: str, subject: str, body: str, to: str) -> None:  # pragma: no cover
+    def send_rfi_email_task(
+        *,
+        log_id: str,
+        subject: str,
+        body: str,
+        to: str,
+        from_addr: str | None = None,
+    ) -> None:  # pragma: no cover
         """Send an RFI email out-of-band.
 
         On success/failure stamps the corresponding ``rfi_notification_log``
         row via ``app.api._notifications._mark_log_delivered``.
         """
         from . import create_app
-        from .api._notifications import _mark_log_delivered, _send_via_smtplib, _smtp_configured
+        from .api._notifications import _deliver_email, _mail_configured, _mark_log_delivered
         from .extensions import db
 
         app = create_app()
         with app.app_context():
             try:
-                if _smtp_configured():
-                    _send_via_smtplib(subject=subject, body=body, to=to)
+                if _mail_configured(from_addr=from_addr):
+                    _deliver_email(subject=subject, body=body, to=to, from_addr=from_addr)
                 _mark_log_delivered(log_id)
             except Exception as exc:
                 _mark_log_delivered(log_id, error=str(exc))

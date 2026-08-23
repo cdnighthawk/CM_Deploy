@@ -1433,6 +1433,7 @@ def forward_by_email(rfi_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser
     dry_run = False
     queued = False
     errors: list[str] = []
+    from_addr = (cu.user.email or "").strip() if cu.user is not None else None
     for em in emails:
         log = RfiNotificationLog(
             rfi_id=rfi.id,
@@ -1443,7 +1444,7 @@ def forward_by_email(rfi_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser
         )
         db.session.add(log)
         db.session.flush()
-        result = enqueue_email(log, subject=subject, body=body, to=em)
+        result = enqueue_email(log, subject=subject, body=body, to=em, from_addr=from_addr)
         if result.get("dry_run"):
             dry_run = True
         if result.get("queued"):

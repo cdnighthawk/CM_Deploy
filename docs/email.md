@@ -1,39 +1,41 @@
-# Email (transactional SMTP)
+# Email
 
-USIS sends outbound mail over **SMTP** using Python’s stdlib (`smtplib`) in `backend/app/api/_notifications.py`. `Flask-Mail` is listed in `requirements.txt` for future use but is **not** wired today.
+USIS sends mail through **Microsoft Graph** using the same Entra app as Microsoft sign-in (`backend/app/api/_notifications.py`). SMTP remains a fallback if `MAIL_TRANSPORT=smtp`.
 
-Without SMTP env vars, the app still runs: emails are **logged as dry-run** and RFI notification rows are marked delivered without sending.
+There are two From addresses:
 
-## Recommended provider on Render
+1. **Staff mail** — compose and RFI forward send as the **signed-in user's** `gousis.com` mailbox (appears in their Outlook Sent Items).
+2. **System mail** — password reset, user invites, playbooks, and HR letters send as **`MAIL_FROM`** (use `noreply@gousis.com`).
 
-Use a transactional SMTP relay (not Render’s platform mail):
+Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry-run**.
 
-| Provider | Why |
-|----------|-----|
-| **[SendGrid](https://sendgrid.com)** (recommended) | Mature SMTP API, free tier, domain authentication, works with existing `MAIL_*` vars |
-| **[Resend](https://resend.com)** | Simple SMTP (`smtp.resend.com`) |
-| **[Mailgun](https://www.mailgun.com)** | SMTP relay + good deliverability |
+## Microsoft 365 setup
 
-Steps (SendGrid example):
+1. In Entra, on the **USIS CRM** app: **API permissions** → **Microsoft Graph** → **Application** → `Mail.Send` → **Grant admin consent**.
+2. Create a **shared mailbox** `noreply@gousis.com` in Microsoft 365 admin (no extra license).
+3. On Render set `MAIL_TRANSPORT=graph` and `MAIL_FROM=noreply@gousis.com`. Existing `MS_ENTRA_*` vars are reused.
+4. Deploy so Gunicorn picks up the Graph send path.
 
-1. Create a SendGrid account → **Settings → API Keys** (for API) or use **SMTP**.
-2. **Settings → Sender Authentication** → verify your domain (or single sender for testing).
-3. In SendGrid: **Settings → SMTP** → note host `smtp.sendgrid.net`, port **587**, username **`apikey`**, password = your API key.
-4. On Render → **usis-cm → Environment**, set the variables below.
-5. **Manual Deploy** (or push) so Gunicorn picks up new env.
+`Mail.Send` (application) lets the app send as any mailbox in the tenant. Restrict later with an Exchange **application access policy** if you want only `noreply` plus staff mailboxes.
 
 ## Environment variables
 
-Set these on Render (and in local `backend/.env` for testing):
+| Variable | Required | Example | Notes |
+|----------|----------|---------|--------|
+| `MAIL_TRANSPORT` | No | `graph` | `graph` (default when Entra is set), or `smtp` |
+| `MAIL_FROM` | Yes for system mail | `noreply@gousis.com` | Shared mailbox for password reset / invites |
+| `MAIL_ALLOWED_FROM_DOMAINS` | No | `gousis.com` | Staff send-as is limited to these domains |
+| `MS_ENTRA_TENANT_ID` / `CLIENT_ID` / `CLIENT_SECRET` | Yes for Graph | *(already on Render)* | Same app as Microsoft login |
 
-| Variable | Required | Example (SendGrid) | Notes |
-|----------|----------|-------------------|--------|
-| `MAIL_SERVER` | Yes | `smtp.sendgrid.net` | SMTP hostname |
-| `MAIL_PORT` | No | `587` | Default `587` |
-| `MAIL_USE_TLS` | No | `true` | Set `false` only if provider uses plain SMTP on 25/465 |
-| `MAIL_USERNAME` | Yes | `apikey` | SendGrid SMTP user is literally `apikey` |
-| `MAIL_PASSWORD` | Yes | *(API key)* | Treat as secret; never commit |
-| `MAIL_FROM` | Yes | `noreply@yourdomain.com` | Must be a verified sender in your provider |
+SMTP fallback (only if `MAIL_TRANSPORT=smtp`):
+
+| Variable | Example |
+|----------|---------|
+| `MAIL_SERVER` | `smtp.sendgrid.net` |
+| `MAIL_PORT` | `587` |
+| `MAIL_USERNAME` | `apikey` |
+| `MAIL_PASSWORD` | *(API key)* |
+
 
 Optional (links inside invite / notification bodies):
 

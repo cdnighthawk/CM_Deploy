@@ -18,6 +18,8 @@ Plug Procore's email triggers into the service layer by calling
 from __future__ import annotations
 
 import os
+import time
+import urllib.parse
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
@@ -27,17 +29,81 @@ if TYPE_CHECKING:
     from ..models import Rfi, RfiNotificationLog
     from ._perms import CurrentUser
 
+_graph_token_cache: dict[str, object] = {"token": None, "expires_at": 0.0}
+
 
 def _utcnow() -> datetime:
     return datetime.now(tz=timezone.utc)
 
 
-def _smtp_configured() -> bool:
+def _mail_from() -> str:
+    return (os.environ.get("MAIL_FROM") or "").strip()
+
+
+def _graph_configured() -> bool:
+    """True when the Entra app can call Graph sendMail (any mailbox)."""
+    transport = (os.environ.get("MAIL_TRANSPORT") or "auto").strip().lower()
+    if transport == "smtp":
+        return False
     return bool(
-        os.environ.get("MAIL_SERVER")
-        and os.environ.get("MAIL_USERNAME")
-        and os.environ.get("MAIL_FROM")
+        (os.environ.get("MS_ENTRA_TENANT_ID") or "").strip()
+        and (os.environ.get("MS_ENTRA_CLIENT_ID") or "").strip()
+        and (os.environ.get("MS_ENTRA_CLIENT_SECRET") or "").strip()
     )
+
+
+def _allowed_from_domains() -> set[str]:
+    raw = (os.environ.get("MAIL_ALLOWED_FROM_DOMAINS") or "").strip()
+    if raw:
+        return {d.strip().lower() for d in raw.split(",") if d.strip()}
+    out: set[str] = {"gousis.com"}
+    try:
+        for d in current_app.config.get("MS_ENTRA_ALLOWED_EMAIL_DOMAINS") or ():
+            if d:
+                out.add(str(d).strip().lower())
+    except RuntimeError:
+        pass
+    system = _mail_from()
+    if "@" in system:
+        out.add(system.rsplit("@", 1)[-1].lower())
+    return out
+
+
+def _resolve_from(from_addr: str | None) -> str:
+    """Mailbox Graph/SMTP send as. Staff mail uses the signed-in user; system mail uses MAIL_FROM."""
+    candidate = (from_addr or "").strip() or _mail_from()
+    if not candidate or "@" not in candidate:
+        return _mail_from()
+    domain = candidate.rsplit("@", 1)[-1].lower()
+    if domain not in _allowed_from_domains():
+        current_app.logger.warning("Refusing send-as %s; using MAIL_FROM", candidate)
+        return _mail_from()
+    return candidate
+
+
+def _smtp_env_configured() -> bool:
+    return bool(
+        (os.environ.get("MAIL_SERVER") or "").strip()
+        and (os.environ.get("MAIL_USERNAME") or "").strip()
+        and _mail_from()
+    )
+
+
+def _mail_configured(*, from_addr: str | None = None) -> bool:
+    sender = _resolve_from(from_addr) if (from_addr or _mail_from()) else ""
+    if not sender:
+        return False
+    return _graph_configured() or _smtp_env_configured()
+
+
+def _smtp_configured() -> bool:
+    """True if any outbound transport is ready (Graph or SMTP)."""
+    return _mail_configured()
+
+
+def reset_graph_token_cache() -> None:
+    _graph_token_cache["token"] = None
+    _graph_token_cache["expires_at"] = 0.0
 
 
 def _celery_app():  # pragma: no cover — optional dependency
@@ -72,36 +138,65 @@ def enqueue_rfi_email(
         body_lines.append(f"— sent by {actor.user.email}")
     body = "\n".join(body_lines)
 
-    _dispatch(log_id=str(log.id), subject=log.subject or "RFI Update", body=body, to=log.recipient_email)
+    actor_email = None
+    if actor is not None and getattr(actor, "user", None) is not None:
+        actor_email = (actor.user.email or "").strip() or None
+    _dispatch(
+        log_id=str(log.id),
+        subject=log.subject or "RFI Update",
+        body=body,
+        to=log.recipient_email,
+        from_addr=actor_email,
+    )
 
 
-def enqueue_email(log: "RfiNotificationLog", *, subject: str, body: str, to: str) -> dict[str, object]:
-    return _dispatch(log_id=str(log.id), subject=subject, body=body, to=to)
+def enqueue_email(
+    log: "RfiNotificationLog",
+    *,
+    subject: str,
+    body: str,
+    to: str,
+    from_addr: str | None = None,
+) -> dict[str, object]:
+    return _dispatch(log_id=str(log.id), subject=subject, body=body, to=to, from_addr=from_addr)
 
 
-def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> dict[str, object]:
+def _dispatch(
+    *,
+    log_id: str,
+    subject: str,
+    body: str,
+    to: str,
+    from_addr: str | None = None,
+) -> dict[str, object]:
     """Send or queue one message. Caller must ``flush()`` the log row so ``log_id`` is valid."""
     celery = _celery_app()
     if celery is not None:
         try:
             celery.send_task(
                 "rfi.send_email",
-                kwargs={"log_id": log_id, "subject": subject, "body": body, "to": to},
+                kwargs={
+                    "log_id": log_id,
+                    "subject": subject,
+                    "body": body,
+                    "to": to,
+                    "from_addr": from_addr,
+                },
             )
             return {"sent": False, "dry_run": False, "queued": True, "error": None}
         except Exception:  # pragma: no cover
             current_app.logger.exception("Celery dispatch failed; falling back to sync")
 
-    if not _smtp_configured():
+    if not _mail_configured(from_addr=from_addr):
         current_app.logger.info(
-            "RFI email (SMTP unset, dry-run): to=%s subj=%r", to, subject
+            "RFI email (mail unset, dry-run): to=%s subj=%r", to, subject
         )
         if log_id and log_id != "None":
             _mark_log_delivered(log_id)
         return {"sent": False, "dry_run": True, "queued": False, "error": None}
 
     try:
-        _send_via_smtplib(subject=subject, body=body, to=to)
+        _deliver_email(subject=subject, body=body, to=to, from_addr=from_addr)
         if log_id and log_id != "None":
             _mark_log_delivered(log_id)
         return {"sent": True, "dry_run": False, "queued": False, "error": None}
@@ -112,12 +207,92 @@ def _dispatch(*, log_id: str, subject: str, body: str, to: str) -> dict[str, obj
         return {"sent": False, "dry_run": False, "queued": False, "error": str(exc)}
 
 
+def _graph_access_token() -> str:
+    now = time.time()
+    cached = _graph_token_cache.get("token")
+    expires_at = float(_graph_token_cache.get("expires_at") or 0)
+    if cached and now < expires_at - 60:
+        return str(cached)
+
+    import httpx
+
+    tenant = (os.environ.get("MS_ENTRA_TENANT_ID") or "").strip()
+    url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+    data = {
+        "client_id": (os.environ.get("MS_ENTRA_CLIENT_ID") or "").strip(),
+        "client_secret": (os.environ.get("MS_ENTRA_CLIENT_SECRET") or "").strip(),
+        "scope": "https://graph.microsoft.com/.default",
+        "grant_type": "client_credentials",
+    }
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(url, data=data)
+        response.raise_for_status()
+        payload = response.json()
+    token = str(payload["access_token"])
+    _graph_token_cache["token"] = token
+    _graph_token_cache["expires_at"] = now + int(payload.get("expires_in") or 3600)
+    return token
+
+
+def _send_via_graph(
+    *,
+    subject: str,
+    body: str,
+    to: str,
+    html_body: str | None = None,
+    from_addr: str | None = None,
+) -> None:
+    import httpx
+
+    sender = _resolve_from(from_addr)
+    if not sender:
+        raise RuntimeError("MAIL_FROM is not set and no from_addr was provided")
+    token = _graph_access_token()
+    content_type = "HTML" if html_body else "Text"
+    content = html_body if html_body else body
+    payload = {
+        "message": {
+            "subject": subject,
+            "body": {"contentType": content_type, "content": content or ""},
+            "toRecipients": [{"emailAddress": {"address": to}}],
+        },
+        "saveToSentItems": True,
+    }
+    encoded = urllib.parse.quote(sender)
+    url = f"https://graph.microsoft.com/v1.0/users/{encoded}/sendMail"
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        if response.status_code >= 400:
+            raise RuntimeError(f"Graph sendMail {response.status_code}: {response.text[:500]}")
+
+
+def _deliver_email(
+    *,
+    subject: str,
+    body: str,
+    to: str,
+    html_body: str | None = None,
+    from_addr: str | None = None,
+) -> None:
+    if _graph_configured():
+        _send_via_graph(
+            subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr
+        )
+        return
+    _send_via_smtplib(subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr)
+
+
 def _send_via_smtplib(
     *,
     subject: str,
     body: str,
     to: str,
     html_body: str | None = None,
+    from_addr: str | None = None,
 ) -> None:  # pragma: no cover - I/O
     import smtplib
     from email.message import EmailMessage
@@ -127,7 +302,7 @@ def _send_via_smtplib(
     use_tls = (os.environ.get("MAIL_USE_TLS", "true").strip().lower() not in ("0", "false", "no", "off"))
     user = os.environ.get("MAIL_USERNAME") or ""
     pw = os.environ.get("MAIL_PASSWORD") or ""
-    sender = os.environ.get("MAIL_FROM") or user
+    sender = _resolve_from(from_addr) or user
 
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -145,13 +320,21 @@ def _send_via_smtplib(
         s.send_message(msg)
 
 
-def send_plain_notification_email(*, to: str, subject: str, body: str) -> dict[str, object]:
-    """Best-effort synchronous SMTP for non-RFI events (playbooks, compose page, etc.).
+def send_plain_notification_email(
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    from_addr: str | None = None,
+) -> dict[str, object]:
+    """Best-effort synchronous send for system or user-authored mail.
 
-    Celery is not used here: ``rfi.send_email`` expects an ``rfi_notification_log`` row.
-    Returns ``{sent, dry_run, error}`` for API feedback.
+    Omit ``from_addr`` to send as ``MAIL_FROM`` (noreply). Pass the signed-in
+    user's email for compose / RFI forwarding.
     """
-    return send_html_notification_email(to=to, subject=subject, body=body, html_body=None)
+    return send_html_notification_email(
+        to=to, subject=subject, body=body, html_body=None, from_addr=from_addr
+    )
 
 
 def send_html_notification_email(
@@ -160,16 +343,19 @@ def send_html_notification_email(
     subject: str,
     body: str,
     html_body: str | None,
+    from_addr: str | None = None,
 ) -> dict[str, object]:
-    """Best-effort synchronous SMTP with optional HTML alternative body."""
+    """Best-effort synchronous send with optional HTML alternative body."""
     if not to:
         return {"sent": False, "dry_run": False, "error": "missing recipient email"}
-    if not _smtp_configured():
-        current_app.logger.info("Plain email (SMTP unset, dry-run): to=%s subj=%r", to, subject)
+    if not _mail_configured(from_addr=from_addr):
+        current_app.logger.info("Plain email (mail unset, dry-run): to=%s subj=%r", to, subject)
         return {"sent": False, "dry_run": True, "error": None}
 
     try:
-        _send_via_smtplib(subject=subject, body=body, to=to, html_body=html_body)
+        _deliver_email(
+            subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr
+        )
         return {"sent": True, "dry_run": False, "error": None}
     except Exception as exc:  # pragma: no cover - I/O
         current_app.logger.warning("Failed to send plain email to %s: %s", to, exc)
@@ -182,6 +368,7 @@ def send_compose_email(
     subject: str,
     body: str,
     cc: str | None = None,
+    from_addr: str | None = None,
 ) -> dict[str, object]:
     """Send mail from the W3CRM compose page (``POST /api/v1/messages/email``)."""
     recipients = [s.strip() for s in to.split(",") if s.strip()]
@@ -195,7 +382,9 @@ def send_compose_email(
     queued = False
     errors: list[str] = []
     for em in recipients:
-        result = send_plain_notification_email(to=em, subject=subject, body=body)
+        result = send_plain_notification_email(
+            to=em, subject=subject, body=body, from_addr=from_addr
+        )
         if result.get("dry_run"):
             dry_run = True
         if result.get("sent"):

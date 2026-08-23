@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-email.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		.usis-mail-layout { min-height: calc(100vh - 220px); }
+		.usis-mail-list-item { cursor: pointer; }
+		.usis-mail-list-item.active { background: var(--bs-primary-bg-subtle, #eef4ff); }
+		.usis-mail-unread { font-weight: 600; }
+		.usis-mail-body-html img { max-width: 100%; height: auto; }
+	</style>
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Email" })
+			</div>
+			<div class="container-fluid">
+				<div class="row g-3 usis-mail-layout">
+					<div class="col-lg-2">
+						<div class="card h-100">
+							<div class="card-body">
+								<p class="small text-muted mb-2" id="usis-mail-sending-as">Sending as your Outlook mailbox</p>
+								<button type="button" class="btn btn-primary w-100 mb-3" id="usis-mail-compose-btn">
+									<i class="fa fa-pen me-1"></i> Compose
+								</button>
+								<div class="list-group list-group-flush">
+									<button type="button" class="list-group-item list-group-item-action active" id="usis-mail-folder-inbox" data-folder="inbox">Inbox</button>
+									<button type="button" class="list-group-item list-group-item-action" id="usis-mail-folder-sent" data-folder="sent">Sent</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-4">
+						<div class="card h-100">
+							<div class="card-header py-2">
+								<strong id="usis-mail-folder-title">Inbox</strong>
+							</div>
+							<div class="card-body p-0">
+								<div id="usis-mail-status" class="p-3 text-muted small">Loading…</div>
+								<div class="list-group list-group-flush" id="usis-mail-list"></div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6">
+						<div class="card h-100" id="usis-mail-read-card">
+							<div class="card-body" id="usis-mail-read">
+								<p class="text-muted mb-0">Select a message, or compose a new one.</p>
+							</div>
+						</div>
+						<div class="card h-100 d-none" id="usis-mail-compose-card">
+							<div class="card-header py-2 d-flex justify-content-between align-items-center">
+								<strong>New message</strong>
+								<button type="button" class="btn btn-sm btn-light" id="usis-mail-compose-cancel">Cancel</button>
+							</div>
+							<div class="card-body">
+								<form id="usis-mail-compose-form">
+									<div class="mb-2">
+										<label class="form-label small" for="usis-mail-to">To</label>
+										<input type="text" class="form-control" id="usis-mail-to" required placeholder="name@example.com" autocomplete="off">
+									</div>
+									<div class="mb-2">
+										<label class="form-label small" for="usis-mail-cc">Cc <span class="text-muted">(optional)</span></label>
+										<input type="text" class="form-control" id="usis-mail-cc" placeholder="optional" autocomplete="off">
+									</div>
+									<div class="mb-2">
+										<label class="form-label small" for="usis-mail-subject">Subject</label>
+										<input type="text" class="form-control" id="usis-mail-subject" placeholder="Subject" autocomplete="off">
+									</div>
+									<div class="mb-3">
+										<label class="form-label small" for="usis-mail-body">Message</label>
+										<textarea class="form-control" id="usis-mail-body" rows="10" placeholder="Write your message"></textarea>
+									</div>
+									<button type="submit" class="btn btn-primary" id="usis-mail-send">
+										<i class="fa fa-paper-plane me-1"></i> Send
+									</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-email.js"></script>
+</body>
+</html>

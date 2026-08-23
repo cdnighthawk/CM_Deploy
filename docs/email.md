@@ -11,12 +11,17 @@ Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry
 
 ## Microsoft 365 setup
 
-1. In Entra, on the **USIS CRM** app: **API permissions** → **Microsoft Graph** → **Application** → `Mail.Send` → **Grant admin consent**.
-2. Create a **shared mailbox** `noreply@gousis.com` in Microsoft 365 admin (no extra license).
-3. On Render set `MAIL_TRANSPORT=graph` and `MAIL_FROM=noreply@gousis.com`. Existing `MS_ENTRA_*` vars are reused.
-4. Deploy so Gunicorn picks up the Graph send path.
+1. In Entra, on the **USIS CRM** app (`738dce41-ed61-4475-82ae-5800963231c0`): **API permissions** → **Microsoft Graph** → **Application permissions**:
+   - `Mail.Send` (compose + system mail)
+   - `Mail.ReadWrite` (Inbox, Sent, read, delete on the website)
+2. Click **Grant admin consent** for the tenant.
+3. Create a **shared mailbox** `noreply@gousis.com` in Microsoft 365 admin (no extra license).
+4. Restrict the app with an Exchange **application access policy** so it can only access `@gousis.com` mailboxes plus `noreply@gousis.com`. See [exchange-application-access-policy.ps1](exchange-application-access-policy.ps1).
+5. On Render set `MAIL_TRANSPORT=graph` and `MAIL_FROM=noreply@gousis.com`. Existing `MS_ENTRA_*` vars are reused.
 
-`Mail.Send` (application) lets the app send as any mailbox in the tenant. Restrict later with an Exchange **application access policy** if you want only `noreply` plus staff mailboxes.
+The website always uses the **signed-in user’s** mailbox address — never a mailbox chosen by the client. The access policy is the tenant-side limit.
+
+Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, read, delete, and compose. That page calls `GET/PATCH/DELETE /api/v1/mail/messages` and `POST /api/v1/messages/email`.
 
 ## Environment variables
 

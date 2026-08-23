@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, select
@@ -40,6 +41,7 @@ def request_password_reset(email: str) -> dict[str, object]:
 
     raw_token = secrets.token_urlsafe(32)
     row = PasswordResetToken(
+        id=uuid.uuid4(),
         user_id=u.id,
         token_hash=_hash_token(raw_token),
         expires_at=_utcnow() + RESET_TOKEN_TTL,

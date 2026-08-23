@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 	<!-- Title -->
 	<title>USIS</title>
 	
@@ -33,7 +32,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/usis-hrms-home.html">
+	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/usis-email.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -47,13 +46,17 @@
 	<script src="assets/js/usis-api-base.js"></script>
 	<script src="assets/js/usis-api-fetch.js"></script>
 	<script src="assets/js/usis-theme-boot.js"></script>
-
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
-
+	<style>
+		.usis-mail-layout { min-height: calc(100vh - 220px); }
+		.usis-mail-list-item { cursor: pointer; }
+		.usis-mail-list-item.active { background: var(--bs-primary-bg-subtle, #eef4ff); }
+		.usis-mail-unread { font-weight: 600; }
+		.usis-mail-body-html img { max-width: 100%; height: auto; }
+	</style>
 </head>
 <body>
-
 	<!-- Start - Preloader -->
 	<div id="preloader">
 		<div class="lds-ripple">
@@ -62,9 +65,7 @@
 		</div>
 	</div>
 	<!-- End - Preloader -->
-
 	<div id="main-wrapper">
-
 		<!-- Start - Nav Header -->
 		<div class="nav-header">
 			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
@@ -81,7 +82,6 @@
 			</div>
 		</div>
 		<!-- End - Nav Header -->
-
 		<!-- Start - Sidebar Chat Box  -->
 		<div class="chatbox">
 			<div class="chatbox-close"></div>
@@ -123,7 +123,6 @@
 			</div>
 		</div>
 		<!-- End - Sidebar Chat Box  -->
-
 
 		<!-- Start - Header -->
 		<div class="header">
@@ -273,7 +272,6 @@
 			</div>
 		</div>
 		<!-- End - Header -->
-
 		<!-- Start - Sidebar Navigation -->
 		<div class="deznav">
 			<div class="deznav-scroll">
@@ -386,13 +384,11 @@
 		</div>
 		<!-- End - Sidebar Navigation -->
 
-
 		<main class="content-body">
-
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1>HR suite</h1></li>
+						<li><h1>Email</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -402,89 +398,76 @@
 								Home
 							</a>
 						</li>
-						<li class="breadcrumb-item active" aria-current="page">HR suite</li>
+						<li class="breadcrumb-item active" aria-current="page">Email</li>
 					</ol>
 				</nav>
 			</div>
-
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-							<div class="me-2">
-								<h6 class="mb-1">USIS HR suite</h6>
-							</div>
-							<div class="text-nowrap small">
-								<a href="usis-hr-dashboard.html">HR KPIs</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-user-directory.html">User admin</a>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<div class="container-fluid">
-				<div class="alert alert-danger d-none py-2" id="usis-hrms-dash-err" role="alert"></div>
-				<div class="row mb-3" id="usis-hrms-kpi-row">
-					<div class="col-xl-3 col-md-6 mb-3">
-						<div class="card h-100 border-primary border-opacity-25">
+				<div class="row g-3 usis-mail-layout">
+					<div class="col-lg-2">
+						<div class="card h-100">
 							<div class="card-body">
-								<h6 class="text-muted mb-1">Employee profiles</h6>
-								<h2 class="mb-0" data-usis-hrms-k="employee_profiles">—</h2>
+								<p class="small text-muted mb-2" id="usis-mail-sending-as">Sending as your Outlook mailbox</p>
+								<button type="button" class="btn btn-primary w-100 mb-3" id="usis-mail-compose-btn">
+									<i class="fa fa-pen me-1"></i> Compose
+								</button>
+								<div class="list-group list-group-flush">
+									<button type="button" class="list-group-item list-group-item-action active" id="usis-mail-folder-inbox" data-folder="inbox">Inbox</button>
+									<button type="button" class="list-group-item list-group-item-action" id="usis-mail-folder-sent" data-folder="sent">Sent</button>
+								</div>
 							</div>
 						</div>
 					</div>
-					<div class="col-xl-3 col-md-6 mb-3">
-						<div class="card h-100 border-warning border-opacity-50">
+					<div class="col-lg-4">
+						<div class="card h-100">
+							<div class="card-header py-2">
+								<strong id="usis-mail-folder-title">Inbox</strong>
+							</div>
+							<div class="card-body p-0">
+								<div id="usis-mail-status" class="p-3 text-muted small">Loading…</div>
+								<div class="list-group list-group-flush" id="usis-mail-list"></div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6">
+						<div class="card h-100" id="usis-mail-read-card">
+							<div class="card-body" id="usis-mail-read">
+								<p class="text-muted mb-0">Select a message, or compose a new one.</p>
+							</div>
+						</div>
+						<div class="card h-100 d-none" id="usis-mail-compose-card">
+							<div class="card-header py-2 d-flex justify-content-between align-items-center">
+								<strong>New message</strong>
+								<button type="button" class="btn btn-sm btn-light" id="usis-mail-compose-cancel">Cancel</button>
+							</div>
 							<div class="card-body">
-								<h6 class="text-muted mb-1">Leave pending approval</h6>
-								<h2 class="mb-0" data-usis-hrms-k="leave_requests_pending">—</h2>
+								<form id="usis-mail-compose-form">
+									<div class="mb-2">
+										<label class="form-label small" for="usis-mail-to">To</label>
+										<input type="text" class="form-control" id="usis-mail-to" required placeholder="name@example.com" autocomplete="off">
+									</div>
+									<div class="mb-2">
+										<label class="form-label small" for="usis-mail-cc">Cc <span class="text-muted">(optional)</span></label>
+										<input type="text" class="form-control" id="usis-mail-cc" placeholder="optional" autocomplete="off">
+									</div>
+									<div class="mb-2">
+										<label class="form-label small" for="usis-mail-subject">Subject</label>
+										<input type="text" class="form-control" id="usis-mail-subject" placeholder="Subject" autocomplete="off">
+									</div>
+									<div class="mb-3">
+										<label class="form-label small" for="usis-mail-body">Message</label>
+										<textarea class="form-control" id="usis-mail-body" rows="10" placeholder="Write your message"></textarea>
+									</div>
+									<button type="submit" class="btn btn-primary" id="usis-mail-send">
+										<i class="fa fa-paper-plane me-1"></i> Send
+									</button>
+								</form>
 							</div>
 						</div>
-					</div>
-					<div class="col-xl-3 col-md-6 mb-3">
-						<div class="card h-100 border-secondary border-opacity-25">
-							<div class="card-body">
-								<h6 class="text-muted mb-1">Draft timesheets</h6>
-								<h2 class="mb-0" data-usis-hrms-k="timesheet_periods_draft">—</h2>
-							</div>
-						</div>
-					</div>
-					<div class="col-xl-3 col-md-6 mb-3">
-						<div class="card h-100 border-success border-opacity-25">
-							<div class="card-body">
-								<h6 class="text-muted mb-1">Open expense reports</h6>
-								<h2 class="mb-0" data-usis-hrms-k="expense_reports_open">—</h2>
-								<a href="usis-hrms-expenses.html" class="small">My expenses</a>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="row mb-3">
-					<div class="col-12">
-						<div class="card border-0 shadow-sm">
-							<div class="card-body py-3">
-								<h6 class="mb-2">HR suite shortcuts</h6>
-								<a href="usis-hrms-expenses.html" class="btn btn-outline-primary btn-sm me-2 mb-2">Expense reports</a>
-								<a href="usis-hrms-expense-approvals.html" class="btn btn-outline-primary btn-sm me-2 mb-2">Expense approvals</a>
-								<a href="usis-hrms-expense-reimbursements.html" class="btn btn-outline-primary btn-sm me-2 mb-2">Reimbursements</a>
-								<a href="usis-hr-dashboard.html" class="btn btn-outline-secondary btn-sm mb-2">HR compliance dashboard</a>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="card shadow-sm">
-					<div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-						<h5 class="mb-0">API snapshot</h5>
-						<button type="button" class="btn btn-sm btn-outline-primary" id="usis-hrms-reload">Reload</button>
-					</div>
-					<div class="card-body">
-						<p class="text-muted small mb-2">Scope: <strong id="usis-hrms-scope">—</strong></p>
-						<pre class="small bg-light border rounded p-3 mb-0 text-wrap" id="usis-hrms-raw" style="max-height: 22rem; overflow: auto;">{}</pre>
 					</div>
 				</div>
 			</div>
 		</main>
-
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
 <nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
@@ -516,9 +499,7 @@
 			</div>
 		</div>
 		<!-- End - Footer -->
-
 	</div>
-
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
@@ -529,14 +510,10 @@
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
-	<script src="assets/vendor/i18n/i18n.js"></script>
-	<script src="assets/js/translator.js"></script>
-	<script src="assets/js/aiReviewBus.js"></script>
 	<script src="assets/js/usis-notify.js"></script>
-	<script src="assets/js/usis-project-context.js"></script>
-	<script src="assets/js/usis-command-palette.js"></script>
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
-	<script src="assets/js/usis-hrms-home.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-email.js"></script>
 </body>
 </html>

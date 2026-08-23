@@ -1722,6 +1722,122 @@ def compose_email():
     return _jsonify(result)
 
 
+def _session_mailbox():
+    """Signed-in user's mailbox, or a Flask (response, status) tuple."""
+    from ._notifications import _resolve_from
+
+    cu = current_user()
+    if cu.user is None:
+        return None, (_jsonify({"error": "sign in required", "ok": False}), 401)
+    email = (cu.user.email or "").strip()
+    if not email:
+        return None, (
+            _jsonify({"error": "your account has no email address", "ok": False}),
+            400,
+        )
+    resolved = _resolve_from(email)
+    if (resolved or "").lower() != email.lower():
+        return None, (
+            _jsonify({"error": "mailbox domain is not allowed", "ok": False}),
+            403,
+        )
+    return email, None
+
+
+@bp.get("/mail/messages")
+def list_mail_messages():
+    """Inbox or Sent for the signed-in user's Outlook mailbox."""
+    from ._notifications import GraphMailError, graph_error_http, list_mailbox_messages
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    folder = (request.args.get("folder") or "inbox").strip().lower()
+    try:
+        top = int(request.args.get("top") or 50)
+    except (TypeError, ValueError):
+        top = 50
+    try:
+        return _jsonify(list_mailbox_messages(mailbox=mailbox, folder=folder, top=top))
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+
+
+@bp.get("/mail/messages/<path:message_id>/attachments/<path:attachment_id>")
+def download_mail_attachment(message_id: str, attachment_id: str):
+    from io import BytesIO
+
+    from flask import send_file
+
+    from ._notifications import GraphMailError, download_mailbox_attachment, graph_error_http
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    try:
+        data, name, ctype = download_mailbox_attachment(
+            mailbox=mailbox, message_id=message_id, attachment_id=attachment_id
+        )
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+    return send_file(
+        BytesIO(data),
+        as_attachment=True,
+        download_name=name,
+        mimetype=ctype,
+    )
+
+
+@bp.get("/mail/messages/<path:message_id>")
+def get_mail_message(message_id: str):
+    from ._notifications import GraphMailError, get_mailbox_message, graph_error_http
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    try:
+        return _jsonify(get_mailbox_message(mailbox=mailbox, message_id=message_id))
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+
+
+@bp.patch("/mail/messages/<path:message_id>")
+def patch_mail_message(message_id: str):
+    from ._notifications import GraphMailError, graph_error_http, mark_mailbox_message_read
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    data = request.get_json(silent=True) or {}
+    is_read = data.get("is_read", data.get("isRead", True))
+    try:
+        return _jsonify(
+            mark_mailbox_message_read(
+                mailbox=mailbox, message_id=message_id, is_read=bool(is_read)
+            )
+        )
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+
+
+@bp.delete("/mail/messages/<path:message_id>")
+def delete_mail_message(message_id: str):
+    from ._notifications import GraphMailError, delete_mailbox_message, graph_error_http
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    try:
+        return _jsonify(delete_mailbox_message(mailbox=mailbox, message_id=message_id))
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+
+
 @bp.post("/rfis/bulk")
 def bulk_rfi_action():
     data = request.get_json(silent=True) or {}

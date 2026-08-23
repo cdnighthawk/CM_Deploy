@@ -117,3 +117,114 @@ def test_send_plain_dry_run_when_unconfigured(monkeypatch, flask_app):
         )
     assert result["sent"] is False
     assert result["dry_run"] is True
+
+
+def _session_user(email: str):
+    cu = MagicMock()
+    cu.user = MagicMock()
+    cu.user.email = email
+    return cu
+
+
+def test_list_mailbox_uses_session_email_not_query_mailbox(client, monkeypatch):
+    from app.api import _notifications as mail
+    from app.api import v1 as v1_mod
+
+    staff = "charles@gousis.com"
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user(staff))
+    captured: list[str] = []
+
+    def fake_http(method, url, **kwargs):
+        captured.append(url)
+        return {
+            "value": [
+                {
+                    "id": "msg-1",
+                    "subject": "Hello",
+                    "from": {"emailAddress": {"name": "Pat", "address": "pat@example.com"}},
+                    "toRecipients": [{"emailAddress": {"address": staff}}],
+                    "receivedDateTime": "2026-08-23T12:00:00Z",
+                    "isRead": False,
+                    "bodyPreview": "Preview text",
+                    "hasAttachments": False,
+                }
+            ]
+        }
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    r = client.get(
+        "/api/v1/mail/messages",
+        query_string={"folder": "inbox", "mailbox": "victim@gousis.com"},
+    )
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["mailbox"] == staff
+    assert captured
+    assert "victim@gousis.com" not in captured[0]
+    assert "charles%40gousis.com" in captured[0] or "charles@gousis.com" in captured[0]
+    assert body["items"][0]["subject"] == "Hello"
+    assert body["items"][0]["is_read"] is False
+
+
+def test_compose_route_ignores_client_from(client, monkeypatch):
+    from app.api import _notifications as mail
+    from app.api import v1 as v1_mod
+
+    staff = "charles@gousis.com"
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user(staff))
+    seen: dict[str, str] = {}
+
+    def fake_compose(**kwargs):
+        seen.update(kwargs)
+        return {"ok": True, "sent": 1, "dry_run": False, "queued": False, "errors": []}
+
+    monkeypatch.setattr(mail, "send_compose_email", fake_compose)
+    r = client.post(
+        "/api/v1/messages/email",
+        json={
+            "to": "sub@example.com",
+            "subject": "RFI",
+            "message": "Please review",
+            "from": "victim@gousis.com",
+            "from_addr": "victim@gousis.com",
+        },
+    )
+    assert r.status_code == 200
+    assert seen.get("from_addr") == staff
+    assert seen.get("to") == "sub@example.com"
+
+
+def test_mailbox_graph_403_is_consent_error(client, monkeypatch):
+    from app.api import _notifications as mail
+    from app.api import v1 as v1_mod
+
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user("charles@gousis.com"))
+
+    def fake_http(method, url, **kwargs):
+        raise mail.GraphMailError(403, "Access denied")
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    r = client.get("/api/v1/mail/messages?folder=inbox")
+    assert r.status_code == 403
+    err = (r.get_json() or {}).get("error") or ""
+    assert "Mail.ReadWrite" in err
+
+
+def test_delete_mailbox_uses_session_user(client, monkeypatch):
+    from app.api import _notifications as mail
+    from app.api import v1 as v1_mod
+
+    staff = "charles@gousis.com"
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user(staff))
+    captured: list[tuple[str, str]] = []
+
+    def fake_http(method, url, **kwargs):
+        captured.append((method, url))
+        return None
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    r = client.delete("/api/v1/mail/messages/AAMkAGI")
+    assert r.status_code == 200
+    assert captured
+    assert captured[0][0] == "DELETE"
+    assert "charles%40gousis.com" in captured[0][1] or "charles@gousis.com" in captured[0][1]

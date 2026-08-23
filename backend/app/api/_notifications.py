@@ -17,11 +17,12 @@ Plug Procore's email triggers into the service layer by calling
 """
 from __future__ import annotations
 
+import base64
 import os
 import time
 import urllib.parse
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from flask import current_app
 
@@ -30,6 +31,29 @@ if TYPE_CHECKING:
     from ._perms import CurrentUser
 
 _graph_token_cache: dict[str, object] = {"token": None, "expires_at": 0.0}
+
+_GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+_MAIL_LIST_SELECT = (
+    "id,subject,from,toRecipients,receivedDateTime,sentDateTime,"
+    "isRead,bodyPreview,hasAttachments"
+)
+_MAIL_DETAIL_SELECT = (
+    "id,subject,from,toRecipients,ccRecipients,receivedDateTime,"
+    "sentDateTime,isRead,body,bodyPreview,hasAttachments"
+)
+_MAIL_FOLDERS = {"inbox": "inbox", "sent": "sentitems"}
+_GRAPH_ROOT = _GRAPH_BASE
+_MAIL_LIST_FIELDS = _MAIL_LIST_SELECT
+_MAIL_DETAIL_FIELDS = _MAIL_DETAIL_SELECT
+_MAIL_FOLDER_MAP = _MAIL_FOLDERS
+
+
+class GraphMailError(Exception):
+    """Microsoft Graph mail call failed."""
+
+    def __init__(self, status_code: int, message: str):
+        self.status_code = status_code
+        super().__init__(message)
 
 
 def _utcnow() -> datetime:
@@ -232,6 +256,168 @@ def _graph_access_token() -> str:
     _graph_token_cache["token"] = token
     _graph_token_cache["expires_at"] = now + int(payload.get("expires_in") or 3600)
     return token
+
+
+def _graph_http(method: str, url: str, **kwargs: Any) -> Any:
+    """Authenticated Graph HTTP. Raises GraphMailError on 4xx/5xx."""
+    import httpx
+
+    token = _graph_access_token()
+    headers = dict(kwargs.pop("headers", None) or {})
+    headers["Authorization"] = f"Bearer {token}"
+    with httpx.Client(timeout=60.0) as client:
+        response = client.request(method, url, headers=headers, **kwargs)
+    if response.status_code >= 400:
+        raise GraphMailError(
+            response.status_code,
+            f"Graph {method} {response.status_code}: {response.text[:500]}",
+        )
+    if response.status_code == 204 or not response.content:
+        return None
+    try:
+        return response.json()
+    except Exception:
+        return {"raw": response.content, "content_type": response.headers.get("content-type")}
+
+
+def _user_mail_url(mailbox: str, *parts: str) -> str:
+    encoded = urllib.parse.quote(mailbox)
+    extra = "/".join(urllib.parse.quote(p, safe="") for p in parts if p)
+    if extra:
+        return f"{_GRAPH_BASE}/users/{encoded}/{extra}"
+    return f"{_GRAPH_BASE}/users/{encoded}"
+
+
+def _addr_from_graph(obj: Any) -> dict[str, str]:
+    if not isinstance(obj, dict):
+        return {"name": "", "address": ""}
+    ea = obj.get("emailAddress") if "emailAddress" in obj else obj
+    if not isinstance(ea, dict):
+        return {"name": "", "address": ""}
+    return {
+        "name": str(ea.get("name") or ""),
+        "address": str(ea.get("address") or ""),
+    }
+
+
+def _serialize_message_summary(item: dict[str, Any]) -> dict[str, Any]:
+    to_list = [_addr_from_graph(x) for x in (item.get("toRecipients") or [])]
+    return {
+        "id": item.get("id"),
+        "subject": item.get("subject") or "(no subject)",
+        "from": _addr_from_graph(item.get("from") or {}),
+        "to": to_list,
+        "received": item.get("receivedDateTime") or item.get("sentDateTime"),
+        "is_read": bool(item.get("isRead")),
+        "preview": (item.get("bodyPreview") or "")[:240],
+        "has_attachments": bool(item.get("hasAttachments")),
+    }
+
+
+def _serialize_attachment_meta(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": item.get("id"),
+        "name": item.get("name") or "attachment",
+        "size": int(item.get("size") or 0),
+        "content_type": item.get("contentType") or "application/octet-stream",
+        "is_inline": bool(item.get("isInline")),
+    }
+
+
+def list_mailbox_messages(*, mailbox: str, folder: str, top: int = 50) -> dict[str, Any]:
+    """List inbox or sent items for ``mailbox`` (must be the signed-in user)."""
+    key = (folder or "inbox").strip().lower()
+    folder_id = _MAIL_FOLDERS.get(key)
+    if folder_id is None:
+        raise GraphMailError(400, "folder must be inbox or sent")
+    n = max(1, min(int(top or 50), 100))
+    url = _user_mail_url(mailbox, "mailFolders", folder_id, "messages")
+    params = {
+        "$top": str(n),
+        "$select": _MAIL_LIST_SELECT,
+        "$orderby": "receivedDateTime desc",
+    }
+    payload = _graph_http("GET", url, params=params) or {}
+    items = payload.get("value") or []
+    return {
+        "folder": key,
+        "mailbox": mailbox,
+        "items": [_serialize_message_summary(x) for x in items if isinstance(x, dict)],
+    }
+
+
+def get_mailbox_message(*, mailbox: str, message_id: str) -> dict[str, Any]:
+    url = _user_mail_url(mailbox, "messages", message_id)
+    params = {
+        "$select": _MAIL_DETAIL_SELECT,
+        "$expand": "attachments($select=id,name,size,contentType,isInline)",
+    }
+    item = _graph_http("GET", url, params=params) or {}
+    body = item.get("body") or {}
+    attachments = [
+        _serialize_attachment_meta(a)
+        for a in (item.get("attachments") or [])
+        if isinstance(a, dict)
+    ]
+    summary = _serialize_message_summary(item)
+    summary.update(
+        {
+            "cc": [_addr_from_graph(x) for x in (item.get("ccRecipients") or [])],
+            "body_content": body.get("content") or "",
+            "body_type": (body.get("contentType") or "text").lower(),
+            "attachments": attachments,
+        }
+    )
+    return summary
+
+
+def mark_mailbox_message_read(*, mailbox: str, message_id: str, is_read: bool = True) -> dict[str, Any]:
+    url = _user_mail_url(mailbox, "messages", message_id)
+    _graph_http("PATCH", url, json={"isRead": bool(is_read)})
+    return {"ok": True, "is_read": bool(is_read)}
+
+
+def delete_mailbox_message(*, mailbox: str, message_id: str) -> dict[str, Any]:
+    url = _user_mail_url(mailbox, "messages", message_id)
+    _graph_http("DELETE", url)
+    return {"ok": True}
+
+
+def download_mailbox_attachment(
+    *, mailbox: str, message_id: str, attachment_id: str
+) -> tuple[bytes, str, str]:
+    url = _user_mail_url(mailbox, "messages", message_id, "attachments", attachment_id)
+    item = _graph_http("GET", url) or {}
+    raw = item.get("contentBytes")
+    if not raw:
+        raise GraphMailError(404, "attachment has no file content")
+    data = base64.b64decode(raw)
+    name = str(item.get("name") or "attachment")
+    ctype = str(item.get("contentType") or "application/octet-stream")
+    return data, name, ctype
+
+
+def graph_error_http(exc: GraphMailError) -> tuple[dict[str, object], int]:
+    status = int(exc.status_code or 502)
+    if status == 400 and "folder must be" in str(exc):
+        return {"error": str(exc), "ok": False}, 400
+    if status in (401, 403):
+        return {
+            "ok": False,
+            "error": (
+                "Microsoft Graph refused mailbox access. Confirm application "
+                "Mail.ReadWrite is granted with admin consent, and that an "
+                "Exchange application access policy allows this mailbox."
+            ),
+            "detail": str(exc),
+        }, 403
+    if status == 404:
+        return {
+            "ok": False,
+            "error": "Mailbox or message was not found in Microsoft 365.",
+            "detail": str(exc),
+        }, 404
+    return {"ok": False, "error": str(exc)}, 502 if status >= 500 else status
 
 
 def _send_via_graph(

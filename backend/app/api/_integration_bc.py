@@ -112,10 +112,24 @@ def _ensure_access_token() -> str:
 def _pull_and_upsert(access_token: str) -> tuple[int, int, int]:
     base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
     include_closed = bool(current_app.config.get("BUILDINGCONNECTED_INCLUDE_CLOSED"))
+    updated_at_range = str(
+        current_app.config.get("BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT") or ""
+    ).strip() or None
+    seen: set[str] = set()
     norms: list[dict[str, str | None]] = []
     with BuildingConnectedClient(access_token, base) as cli:
+        for item in cli.iter_opportunities(updated_at_range=updated_at_range):
+            norm = bc_api_project_to_norm(item)
+            oid = norm.get("id")
+            if isinstance(oid, str) and oid:
+                seen.add(oid)
+            norms.append(norm)
         for proj in cli.iter_projects(include_closed=include_closed):
-            norms.append(bc_api_project_to_norm(proj))
+            norm = bc_api_project_to_norm(proj)
+            pid = norm.get("id")
+            if isinstance(pid, str) and pid in seen:
+                continue
+            norms.append(norm)
     return upsert_lead_estimate_norm_rows(db.session, norms)
 
 

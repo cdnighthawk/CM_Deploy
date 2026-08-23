@@ -10,8 +10,16 @@ from sqlalchemy.exc import OperationalError
 
 from app.api import _integration_bc
 from app.extensions import db
+from app.integrations.buildingconnected_client import next_cursor_state
 from app.models.buildingconnected_oauth import BuildingConnectedOAuthToken
 from app.models.lead_estimate import LeadEstimate
+
+
+def test_next_cursor_state_prefers_pagination_object():
+    assert next_cursor_state({"pagination": {"cursorState": "abc"}}) == "abc"
+    assert next_cursor_state({"cursorState": "root"}) == "root"
+    assert next_cursor_state({"pagination": {}}) is None
+    assert next_cursor_state({}) is None
 
 
 def _skip_if_no_bc_table(flask_app):
@@ -106,6 +114,9 @@ class _FakeBCClient:
 
     def __exit__(self, *args: object) -> None:
         return None
+
+    def iter_opportunities(self, **kwargs):
+        yield from ()
 
     def iter_projects(self, **kwargs):
         eid = "bc-api-test-" + uuid.uuid4().hex[:12]

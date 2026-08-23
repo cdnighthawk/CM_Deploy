@@ -205,6 +205,12 @@ class Config:
         BUILDINGCONNECTED_INCLUDE_CLOSED: bool = False
     else:
         BUILDINGCONNECTED_INCLUDE_CLOSED: bool = True
+    # Bid Board opportunities: APS filter[updatedAt] range. Open-ended from 2010 by default
+    # so historical invitations sync, not only the last few GC /projects rows.
+    BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT: str = (
+        (os.environ.get("BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT") or "").strip()
+        or "2010-01-01T00:00:00.000Z.."
+    )
     # Optional 32+ byte secret for Fernet; defaults to a SHA256-derived key from SECRET_KEY.
     TOKEN_ENCRYPTION_KEY: str | None = (os.environ.get("TOKEN_ENCRYPTION_KEY") or "").strip() or None
 

@@ -59,6 +59,7 @@ def lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
         "is_archived": row.is_archived,
         "is_parent": row.is_parent,
         "external_parent_id": row.external_parent_id,
+        "members": row.members if isinstance(row.members, (dict, list)) else None,
         "due_at": iso(row.due_at),
         "bc_updated_at": iso(row.bc_updated_at),
         "company_name": client_company_name(row.client),

@@ -263,7 +263,7 @@
 		var modalLists = {};
 
 		var emptyMessage =
-			'<tr><td colspan="9" class="text-muted">No rows in <code>lead_estimates</code> right now. Click <strong>Reload from API</strong> after the server has finished starting, or check the Flask log for import/seed messages.</td></tr>';
+			'<tr><td colspan="9" class="text-muted">No current Bid Board leads. The list matches Undecided parents/standalones that are assigned and still due.</td></tr>';
 
 		function esc(s) {
 			return String(s == null ? "" : s)
@@ -651,12 +651,22 @@
 
 		function isOpenLead(x) {
 			if (!x) return false;
-			if (x.is_archived === true) return false;
+			if (x.is_archived !== false) return false;
 			var st = String(x.submission_state || "").toLowerCase().replace(/[_-]/g, "");
-			if (st === "declined") return false;
+			if (st !== "undecided") return false;
 			var b = String(x.workflow_bucket || "").toUpperCase();
-			if (b.indexOf("ARCHIVED") >= 0 || b.indexOf("DECLINED") >= 0) return false;
-			return true;
+			if (b.indexOf("ARCHIVED") >= 0 || b.indexOf("DECLINED") >= 0 || b.indexOf("CHILD") >= 0) return false;
+			if (x.is_parent !== true) {
+				var parentId = x.external_parent_id;
+				if (parentId != null && String(parentId).trim() !== "") return false;
+			}
+			if (!x.due_at || isNaN(new Date(x.due_at).getTime()) || new Date(x.due_at).getTime() < Date.now()) {
+				return false;
+			}
+			var members = Array.isArray(x.members) ? x.members : [];
+			return members.some(function (m) {
+				return m && String(m.type || "").toUpperCase() === "ASSIGNEE";
+			});
 		}
 
 		function loadLeads() {

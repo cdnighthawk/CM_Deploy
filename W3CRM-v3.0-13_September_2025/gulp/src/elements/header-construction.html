@@ -19,30 +19,10 @@
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
-							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
-								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
-									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
-									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
-										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
-											<i class="icon feather icon-mail"></i>
-											<span class="d-none d-lg-inline ms-1">Email</span>
-										</a>
-										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
-											<i class="icon feather icon-message-square"></i>
-											<span class="d-none d-lg-inline ms-1">Chat</span>
-										</button>
-										<button type="button" class="btn btn-outline-secondary px-2" data-usis-report-problem title="Report a problem" aria-label="Report a problem">
-											<i class="icon feather icon-alert-circle"></i>
-											<span class="d-none d-lg-inline ms-1">Report a problem</span>
-										</button>
-									</div>
-								</div>
-							</li>
 							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
-									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
-									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
-									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem">
+									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
+									<span class="d-none d-lg-inline fs-6">Report a problem</span>
 								</button>
 							</li>
 							<li class="nav-item">
@@ -73,16 +53,6 @@
 									</div>
 								</div>
 							</li>
-							<li class="nav-item notification_dropdown d-none d-sm-flex">
-								<a class="nav-link dz-fullscreen" href="javascript:void(0);" aria-label="Fullscreen">
-									<svg id="icon-full" viewBox="0 0 24 24" width="20" height="20" stroke="var(--bs-body-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-									<svg id="icon-minimize" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bs-body-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minimize">
-										<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-								</a>
-							</li>	
 							<li class="nav-item header-profile-dropdown">
 								<div class="dropdown d-flex align-items-center">
 									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="usis-profile.html" title="My profile">

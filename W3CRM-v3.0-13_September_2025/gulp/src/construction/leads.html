@@ -663,10 +663,7 @@
 			if (!x.due_at || isNaN(new Date(x.due_at).getTime()) || new Date(x.due_at).getTime() < Date.now()) {
 				return false;
 			}
-			var members = Array.isArray(x.members) ? x.members : [];
-			return members.some(function (m) {
-				return m && String(m.type || "").toUpperCase() === "ASSIGNEE";
-			});
+			return true;
 		}
 
 		function loadLeads() {

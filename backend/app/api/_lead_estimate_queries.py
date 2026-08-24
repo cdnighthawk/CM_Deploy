@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import String, and_, cast, func, literal, or_
+from sqlalchemy import and_, func, literal, or_
 
 from ..models import LeadEstimate
 
@@ -45,11 +45,6 @@ def _has_open_due_date() -> Any:
     return and_(LeadEstimate.due_at.isnot(None), LeadEstimate.due_at >= func.now())
 
 
-def _has_assignee() -> Any:
-    """Bid Board's visible Undecided rows are assigned; follower-only invites stay off the board."""
-    return func.upper(func.coalesce(cast(LeadEstimate.members, String), literal(""))).like("%ASSIGNEE%")
-
-
 def _explicit_state_ok(norm_sql, norms: list[str]) -> Any:
     clauses: list[Any] = [norm_sql == literal(n) for n in norms if n]
     if not clauses:
@@ -66,8 +61,6 @@ def lead_estimates_ui_filter(submission_state: str) -> Any:
     norms = [submission_state_norm_param(p) for p in st_in.split(",") if p.strip()]
     state_ok = _explicit_state_ok(norm_sql, norms)
 
-    if len(norms) == 1 and norms[0] == "undecided":
-        return and_(state_ok, board_ok, _has_open_due_date(), _has_assignee())
-    if len(norms) == 1 and norms[0] == "willsubmit":
+    if len(norms) == 1 and norms[0] in ("undecided", "willsubmit"):
         return and_(state_ok, board_ok, _has_open_due_date())
     return and_(state_ok, board_ok)

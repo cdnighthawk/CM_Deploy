@@ -269,7 +269,6 @@ def test_lead_ui_filter_matches_current_bid_board():
     assert "declined" in sql
     assert "child" in sql
     assert "due_at" in sql
-    assert "assignee" in sql
     assert "submission_state" in sql
 
 

@@ -110,3 +110,78 @@ def test_admin_create_invalid_email(client, no_dev_admin):
         headers=hdr,
     )
     assert r.status_code == 400
+
+
+def test_admin_users_exclude_applicants_and_delete_staff(client, no_dev_admin):
+    from app.permissions.applicant import assign_applicant_role
+
+    with client.application.app_context():
+        role = db.session.scalar(select(Role).where(Role.code == "standard"))
+        if role is None:
+            role = Role(code="standard", name="Standard")
+            db.session.add(role)
+            db.session.flush()
+        admin = User(
+            email="adm_del_" + uuid.uuid4().hex[:8] + "@t.com",
+            first_name="Admin",
+            last_name="Delete",
+            is_superuser=True,
+        )
+        staff = User(
+            email="staff_del_" + uuid.uuid4().hex[:8] + "@t.com",
+            first_name="Staff",
+            last_name="Person",
+        )
+        applicant = User(
+            email="appl_del_" + uuid.uuid4().hex[:8] + "@t.com",
+            first_name="Job",
+            last_name="Applicant",
+        )
+        db.session.add_all([admin, staff, applicant])
+        db.session.flush()
+        db.session.add(UserRole(user_id=staff.id, role_id=role.id))
+        assign_applicant_role(applicant)
+        aid = str(admin.id)
+        staff_id = str(staff.id)
+        applicant_id = str(applicant.id)
+        staff_email = staff.email
+        applicant_email = applicant.email
+        db.session.commit()
+
+    hdr = {"X-Usis-User-Id": aid}
+
+    listed = client.get("/api/v1/admin/users?limit=500", headers=hdr)
+    assert listed.status_code == 200
+    emails = {row["email"] for row in listed.get_json()["items"]}
+    assert staff_email in emails
+    assert applicant_email not in emails
+
+    included = client.get("/api/v1/admin/users?limit=500&include_applicants=1", headers=hdr)
+    assert included.status_code == 200
+    included_emails = {row["email"] for row in included.get_json()["items"]}
+    assert applicant_email in included_emails
+
+    refuse_applicant = client.delete(
+        f"/api/v1/admin/users/{applicant_id}",
+        json={"confirm": True},
+        headers=hdr,
+    )
+    assert refuse_applicant.status_code == 400
+
+    refuse_self = client.delete(
+        f"/api/v1/admin/users/{aid}",
+        json={"confirm": True},
+        headers=hdr,
+    )
+    assert refuse_self.status_code == 400
+
+    deleted = client.delete(
+        f"/api/v1/admin/users/{staff_id}",
+        json={"confirm": True},
+        headers=hdr,
+    )
+    assert deleted.status_code == 200, deleted.get_data(as_text=True)
+    assert deleted.get_json()["deleted"] is True
+
+    gone = client.get(f"/api/v1/admin/users/{staff_id}", headers=hdr)
+    assert gone.status_code == 404

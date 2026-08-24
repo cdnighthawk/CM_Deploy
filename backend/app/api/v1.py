@@ -12,6 +12,7 @@ from typing import Any, Mapping
 
 from flask import Blueprint, Response, current_app, jsonify, request
 from sqlalchemy import and_, func, literal, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -2240,8 +2241,17 @@ def admin_list_users():
     except ValueError:
         return _jsonify({"error": "invalid limit or offset"}), 400
     try:
+        include_applicants = (request.args.get("include_applicants") or "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
         items, total = admin_users_svc.list_users(
-            current_user(), q=q, limit=limit, offset=offset
+            current_user(),
+            q=q,
+            limit=limit,
+            offset=offset,
+            include_applicants=include_applicants,
         )
         return _jsonify(
             {
@@ -2340,6 +2350,33 @@ def admin_patch_user(user_id: str):
         return _jsonify({"error": "user not found"}), 404
     db.session.commit()
     return _jsonify({"item": item, "entity": "directory_user"})
+
+
+@bp.delete("/admin/users/<user_id>")
+def admin_delete_user(user_id: str):
+    uid = _parse_uuid_param(user_id)
+    if not uid:
+        return _jsonify({"error": "invalid user id"}), 400
+    body = request.get_json(silent=True) or {}
+    if body and not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    confirm = bool((body or {}).get("confirm"))
+    try:
+        result = admin_users_svc.delete_user(current_user(), uid, confirm=confirm)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    if result is None:
+        return _jsonify({"error": "user not found"}), 404
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return _jsonify(
+            {
+                "error": "This user still has records that prevent deletion. Deactivate the account instead.",
+            }
+        ), 409
+    return _jsonify({**result, "entity": "directory_user_deleted"})
 
 
 def _project_membership_err(exc: project_members_svc.ApiError):

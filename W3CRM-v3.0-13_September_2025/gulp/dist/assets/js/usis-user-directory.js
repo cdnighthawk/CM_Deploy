@@ -29,6 +29,7 @@
 		page: 1,
 		limit: 200,
 		total: 0,
+		meId: "",
 	};
 
 	function apiBase() {
@@ -130,7 +131,8 @@
 	}
 
 	function isApplicantOnly(u) {
-		var r = u.roles || [];
+		if (u && u.is_applicant_only) return true;
+		var r = (u && u.roles) || [];
 		if (!r.length) return false;
 		return r.length === 1 && r[0].code === "applicant";
 	}
@@ -146,7 +148,10 @@
 			root.innerHTML = '<p class="text-muted small mb-0">No roles in database yet.</p>';
 			return;
 		}
-		root.innerHTML = sortRolesForDisplay(state.roles)
+		var assignable = state.roles.filter(function (r) {
+			return r.code !== "applicant";
+		});
+		root.innerHTML = sortRolesForDisplay(assignable)
 			.map(function (r) {
 				var chk = set[r.id] ? " checked" : "";
 				return (
@@ -303,58 +308,53 @@
 	function renderUsersTable() {
 		var tb = document.getElementById("usis-ud-users-body");
 		if (!tb) return;
-		if (!state.users.length) {
+		var rows = (state.users || []).filter(function (u) {
+			return !isApplicantOnly(u);
+		});
+		if (!rows.length) {
 			tb.innerHTML =
-				'<tr><td colspan="7" class="text-muted small">No users match this search, or the list is empty.</td></tr>';
-		} else {
-			tb.innerHTML = state.users
-				.map(function (u) {
-					var applicantActions = "";
-					if (isApplicantOnly(u)) {
-						applicantActions =
-							'<a class="btn btn-sm btn-outline-secondary py-0 me-1" href="usis-hr-application-detail.html?id=' +
-							encodeURIComponent(u.id) +
-							'">View application</a>' +
-							'<button type="button" class="btn btn-sm btn-outline-danger py-0 usis-ud-delete-applicant" data-id="' +
-							esc(u.id) +
-							'">Delete applicant</button>';
-					}
-					return (
-						"<tr>" +
-						"<td>" +
-						(isApplicantOnly(u)
-							? '<a class="text-decoration-none" href="usis-hr-application-detail.html?id=' +
-							  encodeURIComponent(u.id) +
-							  '">' +
-							  esc(displayName(u)) +
-							  "</a>"
-							: esc(displayName(u))) +
-						"</td>" +
-						"<td>" +
-						esc(u.email) +
-						"</td>" +
-						"<td><span class=\"small\">" +
-						esc(roleLabels(u)) +
-						"</span></td>" +
-						'<td class="text-center">' +
-						(u.is_active ? '<span class="text-success">Yes</span>' : '<span class="text-muted">No</span>') +
-						"</td>" +
-						'<td class="text-center">' +
-						(u.is_superuser ? "Yes" : "—") +
-						"</td>" +
-						'<td class="text-center">' +
-						(u.has_password ? "Yes" : "—") +
-						"</td>" +
-						'<td><button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-edit" data-id="' +
-						esc(u.id) +
-						'">Edit</button> ' +
-						applicantActions +
-						"</td>" +
-						"</tr>"
-					);
-				})
-				.join("");
+				'<tr><td colspan="7" class="text-muted small">No staff users match this search. Job applicants are listed under Applications.</td></tr>';
+			return;
 		}
+		tb.innerHTML = rows
+			.map(function (u) {
+				var actions =
+					'<button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-edit" data-id="' +
+					esc(u.id) +
+					'">Edit</button>';
+				if (u.id !== state.meId) {
+					actions +=
+						' <button type="button" class="btn btn-sm btn-outline-danger py-0 usis-ud-delete" data-id="' +
+						esc(u.id) +
+						'">Delete</button>';
+				}
+				return (
+					"<tr>" +
+					"<td>" +
+					esc(displayName(u)) +
+					"</td>" +
+					"<td>" +
+					esc(u.email) +
+					"</td>" +
+					"<td><span class=\"small\">" +
+					esc(roleLabels(u)) +
+					"</span></td>" +
+					'<td class="text-center">' +
+					(u.is_active ? '<span class="text-success">Yes</span>' : '<span class="text-muted">No</span>') +
+					"</td>" +
+					'<td class="text-center">' +
+					(u.is_superuser ? "Yes" : "—") +
+					"</td>" +
+					'<td class="text-center">' +
+					(u.has_password ? "Yes" : "—") +
+					"</td>" +
+					"<td class=\"text-nowrap\">" +
+					actions +
+					"</td>" +
+					"</tr>"
+				);
+			})
+			.join("");
 	}
 
 	function renderRolesTable() {
@@ -542,6 +542,7 @@
 			})
 			.then(function (res) {
 				if (!res.ok) return;
+				state.meId = (res.body && res.body.item && res.body.item.id) || "";
 				var caps = (res.body && res.body.capabilities) || {};
 				var mods = caps.modules || {};
 				var level = mods.user_admin || "none";
@@ -906,6 +907,50 @@
 			});
 	}
 
+	function deleteStaffUser(userId) {
+		var u = null;
+		for (var i = 0; i < state.users.length; i++) {
+			if (state.users[i].id === userId) {
+				u = state.users[i];
+				break;
+			}
+		}
+		var label = u ? u.email || displayName(u) : "this user";
+		if (
+			!window.confirm(
+				"Permanently delete " +
+					label +
+					"?\n\nThis removes their login. Job applicants are deleted from Applications, not here."
+			)
+		) {
+			return;
+		}
+		clearPageErr();
+		apiFetch("/api/v1/admin/users/" + encodeURIComponent(userId), {
+			method: "DELETE",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ confirm: true }),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					showPageErr((res.body && res.body.error) || "Could not delete user.");
+					return;
+				}
+				if (window.USISNotify && window.USISNotify.success) {
+					window.USISNotify.success("Deleted " + label + ".");
+				}
+				loadUsers(false);
+			})
+			.catch(function () {
+				showPageErr("Network error deleting user.");
+			});
+	}
+
 	function wire() {
 		var addBtn = document.getElementById("usis-ud-add");
 		if (addBtn) {
@@ -964,29 +1009,9 @@
 				openEditUser(b.getAttribute("data-id"));
 				return;
 			}
-			var del = ev.target.closest(".usis-ud-delete-applicant");
+			var del = ev.target.closest(".usis-ud-delete");
 			if (del && del.getAttribute("data-id")) {
-				var uid = del.getAttribute("data-id");
-				var reason = window.prompt("Reason for deleting this applicant account (required):");
-				if (!reason || !String(reason).trim()) return;
-				if (!window.confirm("Permanently delete this applicant and all hire data?")) return;
-				apiFetch("/api/v1/hr/applications/" + encodeURIComponent(uid), {
-					method: "DELETE",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ confirm: true, reason: String(reason).trim() }),
-				})
-					.then(function (r) {
-						return r.json().then(function (j) {
-							return { ok: r.ok, body: j };
-						});
-					})
-					.then(function (res) {
-						if (!res.ok) throw new Error((res.body && (res.body.error || res.body.message)) || "Delete failed");
-						loadUsers(false);
-					})
-					.catch(function (e) {
-						showPageErr(e.message || String(e));
-					});
+				deleteStaffUser(del.getAttribute("data-id"));
 			}
 		});
 		var search = document.getElementById("usis-ud-search");

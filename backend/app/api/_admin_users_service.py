@@ -11,11 +11,16 @@ from sqlalchemy.orm import selectinload
 from werkzeug.security import generate_password_hash
 
 from ..extensions import db
-from ..models import Role, RoleModulePermission, User, UserRole
+from ..models import HrHireApplication, Role, RoleModulePermission, User, UserRole
 from ..permissions.access import (
     capabilities_for_user,
     permissions_for_role,
     validate_permissions_payload,
+)
+from ..permissions.applicant import (
+    APPLICANT_ROLE_CODE,
+    applicant_only_user_id_subquery,
+    is_applicant_only_user,
 )
 from ..permissions.modules import catalog_public
 from ..users.test_artifacts import list_hr_demo_users, list_test_artifact_users
@@ -73,6 +78,7 @@ def user_public(u: User) -> dict[str, Any]:
         "created_at": _iso(u.created_at),
         "updated_at": _iso(u.updated_at),
         "roles": roles,
+        "is_applicant_only": is_applicant_only_user(u),
     }
 
 
@@ -179,11 +185,16 @@ def list_users(
     q: str | None = None,
     limit: int = 100,
     offset: int = 0,
+    include_applicants: bool = False,
 ) -> tuple[list[dict[str, Any]], int]:
     _require_admin(cu)
     qn = (q or "").strip().lower()
     stmt = select(User)
     count_stmt = select(func.count()).select_from(User)
+    if not include_applicants:
+        applicant_ids = applicant_only_user_id_subquery()
+        stmt = stmt.where(User.id.notin_(applicant_ids))
+        count_stmt = count_stmt.where(User.id.notin_(applicant_ids))
     if qn:
         filt = or_(
             func.lower(User.email).contains(qn),
@@ -247,6 +258,10 @@ def _set_roles(user: User, role_ids: list[uuid.UUID]) -> None:
     roles = db.session.scalars(select(Role).where(Role.id.in_(role_ids))).all() if role_ids else []
     if role_ids and len(roles) != len(set(role_ids)):
         raise ApiError("one or more role_ids are invalid")
+    if any((r.code or "") == APPLICANT_ROLE_CODE for r in roles):
+        raise ApiError(
+            "The applicant role is only for job applications. Manage those under Applications, not User admin."
+        )
     user.roles.clear()
     for r in roles:
         user.roles.append(UserRole(user_id=user.id, role_id=r.id))
@@ -442,6 +457,56 @@ def patch_user(cu: CurrentUser, user_id: uuid.UUID, data: dict[str, Any]) -> dic
     db.session.flush()
     db.session.refresh(u)
     return user_public(u)
+
+
+def delete_user(
+    cu: CurrentUser, user_id: uuid.UUID, *, confirm: bool = False
+) -> dict[str, Any] | None:
+    """Permanently delete a staff user. Applicant-only accounts belong under Applications."""
+    _require_admin(cu)
+    if not confirm:
+        raise ApiError("Set confirm=true in the JSON body to delete this user.")
+    u = db.session.scalar(
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.roles).selectinload(UserRole.role))
+    )
+    if u is None:
+        return None
+    if cu.user is not None and u.id == cu.user.id:
+        raise ApiError("You cannot delete your own account.")
+    if is_applicant_only_user(u):
+        raise ApiError(
+            "Job applicants are managed under Applications, not User admin.",
+            400,
+        )
+    if u.is_superuser:
+        remaining = db.session.scalar(
+            select(func.count())
+            .select_from(User)
+            .where(User.is_superuser.is_(True), User.id != u.id)
+        )
+        if not remaining:
+            raise ApiError("Cannot delete the last superuser account.")
+
+    from ..services.hire_application_review import purge_hire_application_files
+
+    hire = db.session.scalar(
+        select(HrHireApplication)
+        .where(HrHireApplication.user_id == u.id)
+        .options(
+            selectinload(HrHireApplication.i9_document_files),
+            selectinload(HrHireApplication.w4_document_files),
+            selectinload(HrHireApplication.union_document_files),
+        )
+    )
+    if hire is not None:
+        purge_hire_application_files(hire)
+
+    email = u.email
+    db.session.delete(u)
+    db.session.flush()
+    return {"deleted": True, "id": str(user_id), "email": email}
 
 
 def preview_purge_test_users(

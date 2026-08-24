@@ -159,3 +159,55 @@ def test_entra_user_from_bearer_matches_email(client, no_dev_admin, monkeypatch)
         found = entra_user_from_bearer("any-token")
         assert found is not None
         assert found.id == expected_id
+
+
+def _ensure_estimator_role_row() -> Role:
+    role = db.session.scalar(select(Role).where(Role.code == "estimator"))
+    if role is not None:
+        return role
+    role = Role(code="estimator", name="Estimator")
+    db.session.add(role)
+    db.session.flush()
+    db.session.add(RoleModulePermission(role_id=role.id, module_code="leads", access_level="write"))
+    db.session.add(RoleModulePermission(role_id=role.id, module_code="estimate", access_level="write"))
+    db.session.commit()
+    return role
+
+
+def test_entra_user_from_bearer_creates_missing_estimator(client, no_dev_admin, monkeypatch):
+    email = f"Estimator_{uuid.uuid4().hex[:8]}@GOUSIS.com"
+    with client.application.app_context():
+        _ensure_estimator_role_row()
+        monkeypatch.setitem(client.application.config, "MS_ENTRA_TENANT_ID", "tenant-1")
+        monkeypatch.setattr(
+            "app.api._auth_desktop._email_from_token",
+            lambda token, tenant, extra: email,
+        )
+        from app.api._auth_desktop import entra_user_from_bearer
+
+        found = entra_user_from_bearer("any-token")
+        assert found is not None
+        assert found.email == email.lower()
+        assert {ur.role.code for ur in found.roles if ur.role} == {"estimator"}
+
+        again = entra_user_from_bearer("any-token")
+        assert again is not None
+        assert again.id == found.id
+
+
+def test_estimate_queue_jits_unknown_desktop_account(client, no_dev_admin, monkeypatch):
+    email = f"Estimator_{uuid.uuid4().hex[:8]}@gousis.com"
+    with client.application.app_context():
+        _ensure_estimator_role_row()
+        monkeypatch.setitem(client.application.config, "MS_ENTRA_TENANT_ID", "tenant-1")
+        monkeypatch.setattr(
+            "app.api._auth_desktop._email_from_token",
+            lambda token, tenant, extra: email,
+        )
+
+    r = client.get(
+        "/api/v1/estimate-queue",
+        headers={"Authorization": "Bearer desktop-graph-token"},
+    )
+    assert r.status_code == 200, r.get_data(as_text=True)
+    assert "items" in r.get_json()

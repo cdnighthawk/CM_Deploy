@@ -14,8 +14,11 @@ from decimal import Decimal
 from typing import Any, Iterable, Mapping, Optional
 
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 
+from ..csi_spec import digits_from_csi
 from ..extensions import db
+from ..services.object_storage import UploadCategory, delete_stored
 from ..models import (
     Company,
     Contact,
@@ -436,6 +439,11 @@ def create_lookup(project_id: uuid.UUID, kind: str, data: Mapping[str, Any]) -> 
     }.get(kind)
     if Model is None:
         raise ApiError(f"unknown lookup: {kind}", 400)
+    if kind == "spec_sections":
+        created = add_spec_sections(project_id, [data])
+        if created:
+            return created[0]
+        raise ApiError("that CSI section is already on this project", 409)
     row = Model(project_id=project_id)
     for k, v in data.items():
         if hasattr(row, k):
@@ -443,8 +451,96 @@ def create_lookup(project_id: uuid.UUID, kind: str, data: Mapping[str, Any]) -> 
     if isinstance(row, Location) and not row.path:
         row.path = row.name
     db.session.add(row)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        raise ApiError("lookup row already exists", 409) from exc
     return lookup_public(row)
+
+
+def _spec_digits_on_project(project_id: uuid.UUID) -> dict[str, SpecSection]:
+    rows = db.session.scalars(select(SpecSection).where(SpecSection.project_id == project_id)).all()
+    out: dict[str, SpecSection] = {}
+    for row in rows:
+        digits = digits_from_csi(row.code) or (row.code or "").replace(" ", "")
+        if digits:
+            out[digits] = row
+    return out
+
+
+def add_spec_sections(project_id: uuid.UUID, items: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Add CSI sections to a project. Skips codes that are already present."""
+    from ..services.spec_book_import import resolve_manual_section
+
+    _project(project_id)
+    existing = _spec_digits_on_project(project_id)
+    created: list[SpecSection] = []
+    for raw in items:
+        if not isinstance(raw, Mapping):
+            continue
+        resolved = resolve_manual_section(str(raw.get("code") or ""), str(raw.get("title") or ""))
+        if resolved is None:
+            raise ApiError("CSI section code is required (e.g. 08 71 00)", 400)
+        if resolved["digits"] in existing:
+            continue
+        row = SpecSection(
+            project_id=project_id,
+            code=resolved["code"],
+            title=resolved["title"][:300],
+            is_active=True,
+        )
+        db.session.add(row)
+        existing[resolved["digits"]] = row
+        created.append(row)
+    if not created:
+        return []
+    try:
+        db.session.commit()
+    except IntegrityError as exc:
+        db.session.rollback()
+        raise ApiError("that CSI section is already on this project", 409) from exc
+    return [lookup_public(row) for row in created]
+
+
+def delete_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID) -> dict[str, Any]:
+    Model = {
+        "locations": Location,
+        "spec_sections": SpecSection,
+        "cost_codes": CostCode,
+        "project_stages": ProjectStage,
+        "sub_jobs": SubJob,
+    }.get(kind)
+    if Model is None:
+        raise ApiError(f"unknown lookup: {kind}", 400)
+    row = db.session.get(Model, row_id)
+    if row is None or getattr(row, "project_id", None) != project_id:
+        raise ApiError("lookup row not found", 404)
+    if isinstance(row, SpecSection):
+        delete_stored(UploadCategory.SPEC_SECTIONS, f"{row.id}.pdf")
+    db.session.delete(row)
+    db.session.commit()
+    return {"ok": True, "id": str(row_id), "entity": kind}
+
+
+def import_spec_book(project_id: uuid.UUID, pdf_bytes: bytes) -> dict[str, Any]:
+    from ..services.spec_book_import import extract_csi_sections_from_pdf
+
+    extracted = extract_csi_sections_from_pdf(pdf_bytes)
+    if not extracted:
+        raise ApiError(
+            "No CSI section numbers were found in that PDF. "
+            "Add sections from the CSI catalog, or use a spec book that lists codes like 08 71 00.",
+            400,
+        )
+    created = add_spec_sections(project_id, extracted)
+    return {
+        "items": created,
+        "created": len(created),
+        "found": len(extracted),
+        "skipped": len(extracted) - len(created),
+        "entity": "spec_sections",
+    }
 
 
 def patch_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, data: Mapping[str, Any]) -> dict[str, Any]:

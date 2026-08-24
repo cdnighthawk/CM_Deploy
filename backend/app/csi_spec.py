@@ -4,6 +4,29 @@ from __future__ import annotations
 import re
 
 _DOOR_HARDWARE_CANONICAL = "087100"
+# 08 71 00 Title — or 087100 Title — used when reading spec-book PDFs.
+CSI_LINE_RE = re.compile(
+    r"(?m)(?<![\d.])(?:(\d{2})\s+(\d{2})\s+(\d{2})|(\d{6}))(?:\s+[—\-:]\s*|\s+)([A-Za-z][A-Za-z0-9 /,&.'()\-]{1,90})"
+)
+CSI_CODE_RE = re.compile(r"(?<![\d.])(?:(\d{2})\s+(\d{2})\s+(\d{2})|(\d{6}))(?![\d.])")
+
+
+def digits_from_csi(raw: str | None) -> str | None:
+    """Return the 6-digit CSI number, or None if the value is not a section code."""
+    if raw is None:
+        return None
+    digits = re.sub(r"\D", "", str(raw).strip())
+    if len(digits) == 6:
+        return digits
+    return None
+
+
+def format_csi_display(raw: str | None) -> str | None:
+    """Format a section as ``08 71 00``. Returns None if it is not 6 digits."""
+    digits = digits_from_csi(raw) or normalize_csi_spec_section(raw)
+    if not digits or len(digits) != 6:
+        return None
+    return f"{digits[0:2]} {digits[2:4]} {digits[4:6]}"
 
 
 def normalize_csi_spec_section(raw: str | None) -> str | None:

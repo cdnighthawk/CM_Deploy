@@ -17,6 +17,7 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from ..config import client_debug_log_dev_open
+from ..csi_catalog import public_catalog
 from ..extensions import db
 from ..services import feedback as feedback_svc
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists
@@ -2044,6 +2045,71 @@ def put_rfi_column_prefs(scope_key: str):
 # Lookups (Locations, Spec Sections, Cost Codes, Project Stages, Sub Jobs) --
 
 
+@bp.get("/csi-sections")
+def list_csi_sections():
+    """Company CSI MasterFormat catalog for the Specs tab picker."""
+    q = (request.args.get("q") or "").strip() or None
+    try:
+        limit = int(request.args.get("limit") or 500)
+    except (TypeError, ValueError):
+        limit = 500
+    return _jsonify(public_catalog(q, limit))
+
+
+@bp.post("/projects/<project_id>/spec-sections/from-catalog")
+def add_spec_sections_from_catalog(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, Mapping):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    raw_items = data.get("items")
+    raw_codes = data.get("codes")
+    items: list[dict[str, Any]] = []
+    if isinstance(raw_items, list):
+        items.extend(x for x in raw_items if isinstance(x, Mapping))
+    if isinstance(raw_codes, list):
+        items.extend({"code": str(c)} for c in raw_codes if c not in (None, ""))
+    if not items:
+        return _jsonify({"error": "codes or items required"}), 400
+    try:
+        created = rfi_svc.add_spec_sections(pid, items)
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+    return _jsonify({"items": created, "created": len(created), "entity": "spec_sections"}), 201
+
+
+@bp.post("/projects/<project_id>/spec-book/import")
+def import_project_spec_book(project_id: str):
+    """Upload a spec-book PDF and create CSI sections found in it."""
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    f = request.files.get("file")
+    if f is None or not getattr(f, "filename", None):
+        return _jsonify({"error": "missing file field (multipart form-data)"}), 400
+    raw_name = secure_filename(f.filename) or "upload.pdf"
+    if not raw_name.lower().endswith(".pdf"):
+        return _jsonify({"error": "only PDF uploads are supported"}), 400
+    max_bytes = 52_428_800
+    cl = request.content_length
+    if cl is not None and cl > max_bytes:
+        return _jsonify({"error": "file too large (max 50MB)"}), 400
+    data = f.read()
+    if not data:
+        return _jsonify({"error": "empty upload"}), 400
+    if len(data) > max_bytes:
+        return _jsonify({"error": "file too large (max 50MB)"}), 400
+    try:
+        result = rfi_svc.import_spec_book(pid, data)
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+    return _jsonify(result), 201
+
+
 @bp.get("/projects/<project_id>/rfi-lookups/<kind>")
 def list_rfi_lookups(project_id: str, kind: str):
     pid = _parse_uuid_param(project_id)
@@ -2080,6 +2146,20 @@ def patch_rfi_lookup(project_id: str, kind: str, row_id: str):
         return _jsonify({"error": "expected JSON object body"}), 400
     try:
         return _jsonify({"item": rfi_svc.patch_lookup(pid, kind, rid, data), "entity": kind})
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.delete("/projects/<project_id>/rfi-lookups/<kind>/<row_id>")
+def delete_rfi_lookup(project_id: str, kind: str, row_id: str):
+    pid = _parse_uuid_param(project_id)
+    rid = _parse_uuid_param(row_id)
+    if not pid or not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        return _jsonify(rfi_svc.delete_lookup(pid, kind, rid))
     except rfi_svc.ApiError as exc:
         return _rfi_err(exc)
 

@@ -289,6 +289,11 @@ class Config:
         if d.strip()
     )
 
+    # Employee "Report a problem" — files a GitHub issue (same intake as USISPdfApp).
+    GITHUB_FEEDBACK_TOKEN: str = (os.environ.get("GITHUB_FEEDBACK_TOKEN") or "").strip()
+    GITHUB_FEEDBACK_OWNER: str = (os.environ.get("GITHUB_FEEDBACK_OWNER") or "cdnighthawk").strip() or "cdnighthawk"
+    GITHUB_FEEDBACK_REPO: str = (os.environ.get("GITHUB_FEEDBACK_REPO") or "CM_Deploy").strip() or "CM_Deploy"
+
 
 def client_debug_log_dev_open() -> bool:
     """True when anonymous ``POST /api/v1/__debug/client-log`` is allowed (local dev only).

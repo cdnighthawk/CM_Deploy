@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 
 from ..config import client_debug_log_dev_open
 from ..extensions import db
+from ..services import feedback as feedback_svc
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists
 from ..models import (
     AuditLog,
@@ -305,6 +306,41 @@ def permissions_catalog():
             "entity": "permission_modules",
         }
     )
+
+
+@bp.post("/feedback")
+def create_feedback():
+    """File a GitHub issue from the header Report a problem button. Includes the page URL."""
+    cu = current_user()
+    if cu.user is None:
+        return _jsonify({"error": "authentication required"}), 401
+
+    parsed = feedback_svc.parse_feedback_input(request.get_json(silent=True) or {})
+    if parsed.get("error"):
+        return _jsonify({"error": parsed["error"]}), 400
+
+    reporter_name = parsed["reporter_name"] or " ".join(
+        part for part in (cu.user.first_name or "", cu.user.last_name or "") if part
+    ).strip()
+    result = feedback_svc.submit_github_issue(
+        title=parsed["title"],
+        body=feedback_svc.build_issue_body(
+            kind=parsed["kind"],
+            details=parsed["details"],
+            reporter_name=reporter_name,
+            reporter_email=cu.user.email or "",
+            page=parsed["page"],
+            page_url=parsed["page_url"],
+            page_title=parsed["page_title"],
+            user_agent=parsed["user_agent"],
+        ),
+        labels=[parsed["kind"]["github_label"], "from-hub"],
+        config=current_app.config,
+    )
+    if not result.ok:
+        status = 503 if result.status == "not_configured" else 502
+        return _jsonify({"error": result.message}), status
+    return _jsonify({"message": result.message, "issueNumber": result.issue_number, "entity": "feedback"})
 
 
 @bp.patch("/me")

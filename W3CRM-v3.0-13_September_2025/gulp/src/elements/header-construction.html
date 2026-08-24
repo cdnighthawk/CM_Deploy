@@ -31,6 +31,10 @@
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
 										</button>
+										<button type="button" class="btn btn-outline-secondary px-2" data-usis-report-problem title="Report a problem" aria-label="Report a problem">
+											<i class="icon feather icon-alert-circle"></i>
+											<span class="d-none d-lg-inline ms-1">Report a problem</span>
+										</button>
 									</div>
 								</div>
 							</li>
@@ -143,6 +147,49 @@
 						</ul>
 					</div>
 				</nav>
+			</div>
+		</div>
+		<div class="modal fade" id="usis-report-problem-modal" tabindex="-1" aria-labelledby="usis-report-problem-title" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<form>
+						<div class="modal-header">
+							<h5 class="modal-title" id="usis-report-problem-title">Report a problem</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<p class="text-muted small mb-3">Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed. The page you are on is sent with the report.</p>
+							<div class="alert d-none" data-usis-report-status role="status"></div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-kind">Kind</label>
+								<select class="form-select" id="usis-report-kind" name="kind">
+									<option value="bug">Something broke</option>
+									<option value="enhancement">Recommend a change</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-title">Title</label>
+								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-name">Your name (optional)</label>
+								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-details">Details</label>
+								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?"></textarea>
+							</div>
+							<div class="mb-0">
+								<label class="form-label text-muted" for="usis-report-diagnostics">Sent with this report</label>
+								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+							<button type="submit" class="btn btn-primary">Send</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
 		<!-- End - Header -->

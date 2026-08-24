@@ -4,6 +4,10 @@ from __future__ import annotations
 from app.api._module_routes import resolve_modules
 
 
+def test_feedback_route_not_module_gated():
+    assert resolve_modules("/api/v1/feedback") is None
+
+
 def test_hr_me_self_service_routes_not_module_gated():
     assert resolve_modules("/api/v1/hr/me/hire-wizard") is None
     assert resolve_modules("/api/v1/hr/me/hire-application") is None

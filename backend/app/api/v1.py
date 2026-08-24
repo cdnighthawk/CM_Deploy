@@ -360,6 +360,39 @@ def create_feedback():
     return _jsonify({"message": result.message, "issueNumber": result.issue_number, "entity": "feedback"})
 
 
+@bp.get("/feedback/issues/confirm")
+def preview_feedback_issue_confirm():
+    """Public preview for the reporter confirmation page (signed email token)."""
+    token = (request.args.get("token") or "").strip()
+    try:
+        preview = feedback_svc.load_confirm_preview(
+            token=token,
+            config=current_app.config,
+            secret_key=str(current_app.config.get("SECRET_KEY") or ""),
+        )
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    return _jsonify({**preview, "entity": "feedback_confirm"})
+
+
+@bp.post("/feedback/issues/confirm")
+def confirm_feedback_issue():
+    """Reporter confirms by closing, or says the issue is still not fixed."""
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+    try:
+        result = feedback_svc.confirm_issue_from_token(
+            token=str(body.get("token") or ""),
+            action=str(body.get("action") or ""),
+            config=current_app.config,
+            secret_key=str(current_app.config.get("SECRET_KEY") or ""),
+        )
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    return _jsonify({**result, "entity": "feedback_confirm"})
+
+
 @bp.patch("/me")
 def patch_me():
     """Update name, email, phone, or password for the signed-in user only."""

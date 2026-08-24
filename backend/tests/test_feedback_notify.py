@@ -1,4 +1,4 @@
-"""Email the employee when their GitHub issue is closed."""
+"""Employee confirms a report is resolved by closing it."""
 from __future__ import annotations
 
 import hashlib
@@ -17,11 +17,21 @@ CLOSED_BODY = """## Something broke
 **From:** Sam Lee
 **Email:** sam@gousis.com
 """
+CONFIRM_BASE = "https://www.usiscm.com/usis-issue-confirm.html"
+SECRET = "test-secret-key"
 
 
 def _sign(secret: str, payload: bytes) -> str:
     digest = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
     return f"sha256={digest}"
+
+
+def _config():
+    return SimpleNamespace(
+        GITHUB_FEEDBACK_TOKEN="tok",
+        GITHUB_FEEDBACK_OWNER="cdnighthawk",
+        GITHUB_FEEDBACK_REPO="CM_Deploy",
+    )
 
 
 def test_parse_reporter_from_line_and_marker():
@@ -41,13 +51,7 @@ def test_extract_resolution_prefers_resolution_comment():
     assert "copies project name" in extracted["resolution"]
 
 
-def test_extract_resolution_not_planned_fallback():
-    extracted = feedback_svc.extract_resolution([], "not_planned")
-    assert extracted["status"] == "Not fixed"
-    assert "will not be changed" in extracted["resolution"]
-
-
-def test_build_status_email_includes_title_and_status():
+def test_build_status_email_asks_employee_to_close():
     message = feedback_svc.build_status_email(
         title="[idea] RFI should fill project info",
         reporter_name="Charles",
@@ -55,15 +59,64 @@ def test_build_status_email_includes_title_and_status():
         resolution="Create now copies the open project's fields.",
         issue_number=1,
         issue_url="https://github.com/cdnighthawk/CM_Deploy/issues/1",
+        confirm_url="https://www.usiscm.com/usis-issue-confirm.html?token=abc",
     )
-    assert message["subject"].startswith("Fixed:")
-    assert "Hi Charles," in message["body"]
-    assert "Create now copies" in message["body"]
-    assert "issue #1" in message["body"]
+    assert message["subject"].startswith("Please confirm and close:")
+    assert "confirm this is resolved by closing" in message["body"]
+    assert "usis-issue-confirm.html?token=abc" in message["body"]
 
 
-def test_notify_closed_issue_sends_and_marks(monkeypatch):
+def test_resolution_comment_emails_confirm_link():
     sent = {}
+    methods = []
+
+    def fake_send(**kwargs):
+        sent.update(kwargs)
+        return {"sent": True, "dry_run": False, "error": None}
+
+    comments = [
+        {
+            "body": "Resolution: Autofill project fields when opening RFI create from a project.",
+            "user": {"login": "cdnighthawk"},
+        }
+    ]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        methods.append(request.method)
+        if request.method == "GET":
+            return httpx.Response(200, json=comments)
+        assert request.method == "POST"
+        assert feedback_svc.NOTIFIED_MARKER in request.content.decode()
+        return httpx.Response(201, json={"id": 9})
+
+    result = feedback_svc.handle_github_feedback_event(
+        event="issue_comment",
+        payload={
+            "action": "created",
+            "comment": {"body": "Resolution: Autofill project fields when opening RFI create from a project."},
+            "issue": {
+                "number": 1,
+                "title": "[idea] RFI should fill project info",
+                "body": CLOSED_BODY,
+                "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/1",
+            },
+            "repository": {"full_name": "cdnighthawk/CM_Deploy"},
+        },
+        config=_config(),
+        send_email=fake_send,
+        confirm_base_url=CONFIRM_BASE,
+        secret_key=SECRET,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert result["status"] == "sent"
+    assert sent["to"] == "sam@gousis.com"
+    assert "usis-issue-confirm.html?token=" in sent["body"]
+    assert "PATCH" not in methods
+
+
+def test_team_close_reopens_and_asks_reporter_to_close():
+    sent = {}
+    patched = []
 
     def fake_send(**kwargs):
         sent.update(kwargs)
@@ -79,8 +132,9 @@ def test_notify_closed_issue_sends_and_marks(monkeypatch):
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "GET":
             return httpx.Response(200, json=comments)
-        assert request.method == "POST"
-        assert feedback_svc.NOTIFIED_MARKER in request.content.decode()
+        if request.method == "PATCH":
+            patched.append(json.loads(request.content.decode()))
+            return httpx.Response(200, json={})
         return httpx.Response(201, json={"id": 9})
 
     result = feedback_svc.notify_reporter_for_closed_issue(
@@ -95,20 +149,50 @@ def test_notify_closed_issue_sends_and_marks(monkeypatch):
             },
             "repository": {"full_name": "cdnighthawk/CM_Deploy"},
         },
-        config=SimpleNamespace(
-            GITHUB_FEEDBACK_TOKEN="tok",
-            GITHUB_FEEDBACK_OWNER="cdnighthawk",
-            GITHUB_FEEDBACK_REPO="CM_Deploy",
-        ),
+        config=_config(),
         send_email=fake_send,
+        confirm_base_url=CONFIRM_BASE,
+        secret_key=SECRET,
         client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
     assert result["status"] == "sent"
-    assert sent["to"] == "sam@gousis.com"
-    assert "Autofill project fields" in sent["body"]
+    assert patched == [{"state": "open"}]
+    assert "closing the issue" in sent["body"]
 
 
-def test_notify_skips_when_already_marked():
+def test_team_close_after_employee_confirm_stays_closed():
+    called = {"send": 0, "patch": 0}
+
+    def fake_send(**kwargs):
+        called["send"] += 1
+        return {"sent": True, "dry_run": False, "error": None}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "PATCH":
+            called["patch"] += 1
+        return httpx.Response(
+            200,
+            json=[{"body": f"{feedback_svc.CONFIRMED_MARKER}\nclosed by reporter", "user": {"login": "bot"}}],
+        )
+
+    result = feedback_svc.notify_reporter_for_closed_issue(
+        payload={
+            "action": "closed",
+            "issue": {"number": 2, "title": "x", "body": CLOSED_BODY, "state_reason": "completed"},
+            "repository": {"full_name": "cdnighthawk/CM_Deploy"},
+        },
+        config=_config(),
+        send_email=fake_send,
+        confirm_base_url=CONFIRM_BASE,
+        secret_key=SECRET,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert result["status"] == "already_confirmed"
+    assert called["send"] == 0
+    assert called["patch"] == 0
+
+
+def test_notify_skips_when_already_waiting():
     called = {"send": 0}
 
     def fake_send(**kwargs):
@@ -116,6 +200,8 @@ def test_notify_skips_when_already_marked():
         return {"sent": True, "dry_run": False, "error": None}
 
     def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "PATCH":
+            return httpx.Response(200, json={})
         return httpx.Response(
             200,
             json=[{"body": f"{feedback_svc.NOTIFIED_MARKER}\nalready sent", "user": {"login": "bot"}}],
@@ -127,12 +213,10 @@ def test_notify_skips_when_already_marked():
             "issue": {"number": 2, "title": "x", "body": CLOSED_BODY, "state_reason": "completed"},
             "repository": {"full_name": "cdnighthawk/CM_Deploy"},
         },
-        config=SimpleNamespace(
-            GITHUB_FEEDBACK_TOKEN="tok",
-            GITHUB_FEEDBACK_OWNER="cdnighthawk",
-            GITHUB_FEEDBACK_REPO="CM_Deploy",
-        ),
+        config=_config(),
         send_email=fake_send,
+        confirm_base_url=CONFIRM_BASE,
+        secret_key=SECRET,
         client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
     assert result["status"] == "already_notified"
@@ -146,14 +230,75 @@ def test_notify_skips_without_reporter_email():
             "issue": {"number": 3, "title": "x", "body": "no email here", "state_reason": "completed"},
             "repository": {"full_name": "cdnighthawk/CM_Deploy"},
         },
-        config=SimpleNamespace(
-            GITHUB_FEEDBACK_TOKEN="tok",
-            GITHUB_FEEDBACK_OWNER="cdnighthawk",
-            GITHUB_FEEDBACK_REPO="CM_Deploy",
-        ),
+        config=_config(),
         send_email=lambda **kwargs: {"sent": True},
+        confirm_base_url=CONFIRM_BASE,
+        secret_key=SECRET,
     )
     assert result["status"] == "skipped"
+
+
+def test_employee_close_confirms_and_closes_github():
+    calls = []
+    issue = {
+        "number": 1,
+        "title": "[idea] RFI should fill project info",
+        "body": CLOSED_BODY,
+        "state": "open",
+        "state_reason": None,
+    }
+    comments = [{"body": "Resolution: Copied project fields.", "user": {"login": "cdnighthawk"}}]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append((request.method, str(request.url)))
+        if request.method == "GET" and "/comments" in str(request.url):
+            return httpx.Response(200, json=comments)
+        if request.method == "GET":
+            return httpx.Response(200, json=issue)
+        if request.method == "POST":
+            assert feedback_svc.CONFIRMED_MARKER in request.content.decode()
+            return httpx.Response(201, json={"id": 3})
+        body = json.loads(request.content.decode())
+        assert body["state"] == "closed"
+        return httpx.Response(200, json={})
+
+    token = feedback_svc.mint_confirm_token(issue_number=1, email="sam@gousis.com", secret_key=SECRET)
+    result = feedback_svc.confirm_issue_from_token(
+        token=token,
+        action="close",
+        config=_config(),
+        secret_key=SECRET,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert result["status"] == "closed"
+    assert any(method == "PATCH" for method, _url in calls)
+
+
+def test_employee_reject_keeps_issue_open():
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and "/comments" in str(request.url):
+            return httpx.Response(200, json=[])
+        if request.method == "GET":
+            return httpx.Response(
+                200,
+                json={"number": 1, "title": "x", "body": CLOSED_BODY, "state": "open"},
+            )
+        if request.method == "POST":
+            assert feedback_svc.REJECTED_MARKER in request.content.decode()
+            return httpx.Response(201, json={"id": 4})
+        body = json.loads(request.content.decode())
+        assert body["state"] == "open"
+        return httpx.Response(200, json={})
+
+    token = feedback_svc.mint_confirm_token(issue_number=1, email="sam@gousis.com", secret_key=SECRET)
+    result = feedback_svc.confirm_issue_from_token(
+        token=token,
+        action="reject",
+        config=_config(),
+        secret_key=SECRET,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert result["status"] == "rejected"
 
 
 def test_webhook_unconfigured(client, flask_app):
@@ -162,7 +307,7 @@ def test_webhook_unconfigured(client, flask_app):
     assert r.status_code == 503
 
 
-def test_webhook_ping_and_closed(client, flask_app, monkeypatch):
+def test_webhook_ping_and_events(client, flask_app, monkeypatch):
     flask_app.config["GITHUB_WEBHOOK_SECRET"] = "whsec"
     ping = b'{"zen":"ok"}'
     r = client.post(
@@ -179,24 +324,23 @@ def test_webhook_ping_and_closed(client, flask_app, monkeypatch):
 
     captured = {}
 
-    def fake_notify(**kwargs):
+    def fake_handle(**kwargs):
         captured.update(kwargs)
         return {"ok": True, "status": "sent", "reason": "sam@gousis.com"}
 
-    monkeypatch.setattr(feedback_svc, "notify_reporter_for_closed_issue", fake_notify)
-    body = json.dumps({"action": "closed", "issue": {"number": 1}}).encode()
+    monkeypatch.setattr(feedback_svc, "handle_github_feedback_event", fake_handle)
+    body = json.dumps({"action": "created", "comment": {"body": "Resolution: done"}}).encode()
     r = client.post(
         "/api/webhooks/github",
         data=body,
         headers={
             "Content-Type": "application/json",
             "X-Hub-Signature-256": _sign("whsec", body),
-            "X-GitHub-Event": "issues",
+            "X-GitHub-Event": "issue_comment",
         },
     )
     assert r.status_code == 200
-    assert r.get_json()["status"] == "sent"
-    assert captured["payload"]["action"] == "closed"
+    assert captured["event"] == "issue_comment"
 
 
 def test_webhook_rejects_bad_signature(client, flask_app):
@@ -211,3 +355,24 @@ def test_webhook_rejects_bad_signature(client, flask_app):
         },
     )
     assert r.status_code == 400
+
+
+def test_confirm_routes_are_public(client, flask_app, monkeypatch):
+    flask_app.config["USIS_API_DEV_ALLOW_ANY"] = False
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+
+    def fake_preview(**kwargs):
+        return {
+            "issue_number": 1,
+            "title": "x",
+            "reporter_name": "Sam",
+            "status": "Fixed",
+            "resolution": "Done",
+            "already_confirmed": False,
+            "state": "open",
+        }
+
+    monkeypatch.setattr(feedback_svc, "load_confirm_preview", fake_preview)
+    r = client.get("/api/v1/feedback/issues/confirm?token=abc")
+    assert r.status_code == 200
+    assert r.get_json()["issue_number"] == 1

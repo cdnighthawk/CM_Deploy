@@ -6,6 +6,7 @@ from app.api._module_routes import resolve_modules
 
 def test_feedback_route_not_module_gated():
     assert resolve_modules("/api/v1/feedback") is None
+    assert resolve_modules("/api/v1/feedback/issues/confirm") is None
 
 
 def test_hr_me_self_service_routes_not_module_gated():

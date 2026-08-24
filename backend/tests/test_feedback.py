@@ -32,6 +32,7 @@ def test_parse_includes_page_in_title_and_fields():
     body = feedback_svc.build_issue_body(
         kind=parsed["kind"],
         details=parsed["details"],
+        reporter_email="sam@gousis.com",
         page=parsed["page"],
         page_url=parsed["page_url"],
         page_title=parsed["page_title"],
@@ -39,6 +40,8 @@ def test_parse_includes_page_in_title_and_fields():
     assert "**Page:** /construction/leads.html" in body
     assert "**Page URL:** https://usis-cm.onrender.com/construction/leads.html?q=west" in body
     assert "**Page title:** Leads" in body
+    assert "<!-- usis-reporter-email: sam@gousis.com -->" in body
+    assert "Resolution:" in body
 
 
 def test_parse_general_omits_page_and_uses_sitewide_body():

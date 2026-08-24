@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<!-- Title -->
+	<title>USIS</title>
+	
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="USIS">
+	<meta name="robots" content="index, follow">
+	<meta name="format-detection" content="telephone=no">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	<link rel="shortcut icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-api-fetch.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-public-apply.css" rel="stylesheet">
+
+</head>
+<body class="usis-public-page">
+
+	<div class="auth-wrapper">
+		<div class="row justify-content-center align-items-center min-vh-100 py-4">
+			<div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto">
+				<div class="auth-form">
+					<div class="text-center mb-4">
+						<div class="brand-logo mb-3">
+							<img class="usis-login-logo img-fluid" style="max-height:5rem;width:auto;object-fit:contain;"
+								src="assets/images/branding/usis-eagle-logo.png"
+								alt="US Interior Specialties"
+								onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
+						</div>
+						<h3 class="mb-0" id="usis-issue-heading">Confirm your report</h3>
+						<p class="mb-0 text-muted">Close this issue if it is resolved.</p>
+					</div>
+					<div id="usis-issue-err" class="alert alert-danger py-2 small d-none" role="alert"></div>
+					<div id="usis-issue-ok" class="alert alert-success py-2 small d-none" role="status"></div>
+					<div id="usis-issue-body" class="d-none">
+						<h5 id="usis-issue-title" class="mb-2"></h5>
+						<p class="small text-muted mb-2" id="usis-issue-status"></p>
+						<p class="mb-4" id="usis-issue-resolution" style="white-space:pre-wrap;"></p>
+						<div id="usis-issue-actions" class="d-grid gap-2">
+							<button type="button" class="btn btn-primary btn-lg" id="usis-issue-close">Close — this is resolved</button>
+							<button type="button" class="btn btn-outline-secondary" id="usis-issue-reject">Still not fixed</button>
+						</div>
+					</div>
+					<p class="text-center small mt-4 mb-0">
+						<a class="btn-link text-primary" href="page-login.html">Back to sign in</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script>
+	(function () {
+		function apiBase() {
+			if (typeof window.usisApiBase === "function") return window.usisApiBase();
+			if (typeof window.USIS_API_BASE === "string") return window.USIS_API_BASE.trim().replace(/\/$/, "");
+			return "";
+		}
+		function show(el, message, kind) {
+			if (!el) return;
+			el.textContent = message || "";
+			el.className = "alert alert-" + (kind || "danger") + " py-2 small";
+			el.classList.toggle("d-none", !message);
+		}
+		var params = new URLSearchParams(window.location.search);
+		var token = params.get("token") || "";
+		var errEl = document.getElementById("usis-issue-err");
+		var okEl = document.getElementById("usis-issue-ok");
+		var bodyEl = document.getElementById("usis-issue-body");
+		var closeBtn = document.getElementById("usis-issue-close");
+		var rejectBtn = document.getElementById("usis-issue-reject");
+		if (!token) {
+			show(errEl, "This confirmation link is missing. Use the link from your email.");
+			return;
+		}
+		fetch(apiBase() + "/api/v1/feedback/issues/confirm?token=" + encodeURIComponent(token), {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+			.then(function (res) {
+				if (!res.ok) throw new Error((res.body && res.body.error) || "Could not load this report.");
+				document.getElementById("usis-issue-title").textContent = res.body.title || "Your report";
+				document.getElementById("usis-issue-status").textContent = "Proposed status: " + (res.body.status || "Closed");
+				document.getElementById("usis-issue-resolution").textContent = res.body.resolution || "";
+				bodyEl.classList.remove("d-none");
+				if (res.body.already_confirmed) {
+					document.getElementById("usis-issue-heading").textContent = "Already closed";
+					show(okEl, "You already confirmed this is resolved.", "success");
+					document.getElementById("usis-issue-actions").classList.add("d-none");
+				}
+			})
+			.catch(function (ex) {
+				show(errEl, ex.message || String(ex));
+			});
+
+		function submit(action) {
+			show(errEl, "");
+			show(okEl, "");
+			if (closeBtn) closeBtn.disabled = true;
+			if (rejectBtn) rejectBtn.disabled = true;
+			fetch(apiBase() + "/api/v1/feedback/issues/confirm", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify({ token: token, action: action }),
+			})
+				.then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+				.then(function (res) {
+					if (!res.ok) throw new Error((res.body && res.body.error) || "Could not update this report.");
+					document.getElementById("usis-issue-actions").classList.add("d-none");
+					if (action === "close") {
+						document.getElementById("usis-issue-heading").textContent = "Issue closed";
+						show(okEl, "Thanks. You closed this issue and confirmed it is resolved.", "success");
+					} else {
+						document.getElementById("usis-issue-heading").textContent = "Still open";
+						show(okEl, "Thanks. We left this issue open and will keep working on it.", "success");
+					}
+				})
+				.catch(function (ex) {
+					show(errEl, ex.message || String(ex));
+				})
+				.finally(function () {
+					if (closeBtn) closeBtn.disabled = false;
+					if (rejectBtn) rejectBtn.disabled = false;
+				});
+		}
+		if (closeBtn) closeBtn.addEventListener("click", function () { submit("close"); });
+		if (rejectBtn) rejectBtn.addEventListener("click", function () { submit("reject"); });
+	})();
+	</script>
+</body>
+</html>

@@ -85,6 +85,13 @@ def serve_static(subpath: str):
         if home.is_file():
             return redirect("/usis-dashboard-dark.html", code=302)
 
+    if req_path == "/" or req_path == "/page-login.html":
+        raw = (os.environ.get("USIS_API_DEV_ALLOW_ANY") or "").strip().lower()
+        if raw not in ("", "0", "false", "no", "off"):
+            home = root / "usis-dashboard-dark.html"
+            if home.is_file():
+                return redirect("/usis-dashboard-dark.html", code=302)
+
     if req_path == "/":
         login = root / "page-login.html"
         if login.is_file():

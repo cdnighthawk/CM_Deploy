@@ -23,14 +23,19 @@ MAX_PAGE_TITLE = 200
 MAX_USER_AGENT = 400
 MAX_BODY = 50_000
 MAX_RESOLUTION = 4_000
+CONFIRM_TOKEN_MAX_AGE = 60 * 24 * 60 * 60
+CONFIRM_TOKEN_SALT = "usis-issue-confirm"
 NOTIFIED_MARKER = "<!-- usis-reporter-notified -->"
+CONFIRMED_MARKER = "<!-- usis-reporter-confirmed -->"
+REJECTED_MARKER = "<!-- usis-reporter-rejected -->"
 REPORTER_EMAIL_MARKER_RE = re.compile(r"<!--\s*usis-reporter-email:\s*([^ >]+)\s*-->", re.I)
 REPORTER_EMAIL_LINE_RE = re.compile(r"(?im)^\*\*Email:\*\*\s*(\S+@\S+)\s*$")
 REPORTER_NAME_LINE_RE = re.compile(r"(?im)^\*\*From:\*\*\s*(.+?)\s*$")
 RESOLUTION_RE = re.compile(r"(?is)^\s*(?:##\s*)?Resolution:\s*(.+)$")
 CLOSER_NOTE = (
-    "When closing this issue, add a comment that starts with `Resolution:` "
-    "explaining how it was fixed or why it was not. USIS emails that note to the reporter."
+    "Leave a comment that starts with `Resolution:` explaining how it was fixed "
+    "or why it was not. Leave the issue open — the employee confirms it is resolved "
+    "by closing it from the email link."
 )
 STATUS_COPY = {
     "completed": {
@@ -244,7 +249,7 @@ def submit_github_issue(
                 return SubmitResult(
                     ok=True,
                     status="created",
-                    message="Report sent. We'll email you when it's resolved.",
+                    message="Report sent. We'll email you when there is an update; you close it to confirm it's resolved.",
                     issue_number=number,
                 )
             if response.status_code != 422:
@@ -283,13 +288,26 @@ def parse_reporter_name(body: str | None) -> str:
     return (match.group(1).strip() if match else "")[:MAX_NAME]
 
 
+def latest_reporter_signal(comments: list[dict[str, Any]] | None, body: str | None = None) -> str | None:
+    if CONFIRMED_MARKER in (body or ""):
+        return "confirmed"
+    for comment in reversed(comments or []):
+        text = str(comment.get("body") or "")
+        if CONFIRMED_MARKER in text:
+            return "confirmed"
+        if REJECTED_MARKER in text:
+            return "rejected"
+        if NOTIFIED_MARKER in text:
+            return "notified"
+    return None
+
+
 def issue_already_notified(comments: list[dict[str, Any]] | None, body: str | None = None) -> bool:
-    if NOTIFIED_MARKER in (body or ""):
-        return True
-    for comment in comments or []:
-        if NOTIFIED_MARKER in str(comment.get("body") or ""):
-            return True
-    return False
+    return latest_reporter_signal(comments, body) == "notified"
+
+
+def issue_already_confirmed(comments: list[dict[str, Any]] | None, body: str | None = None) -> bool:
+    return latest_reporter_signal(comments, body) == "confirmed"
 
 
 def extract_resolution(comments: list[dict[str, Any]] | None, state_reason: str | None) -> dict[str, str]:
@@ -334,6 +352,7 @@ def build_status_email(
     resolution: str,
     issue_number: int,
     issue_url: str = "",
+    confirm_url: str = "",
 ) -> dict[str, str]:
     who = reporter_name or "there"
     clean_title = (title or "your report").strip() or "your report"
@@ -342,20 +361,67 @@ def build_status_email(
         "",
         f"You reported: {clean_title}",
         "",
-        f"Status: {status}",
+        f"Proposed status: {status}",
         "",
         resolution,
         "",
+        "Please confirm this is resolved by closing the issue.",
     ]
+    if confirm_url:
+        lines.extend(["", confirm_url])
+    lines.extend(
+        [
+            "",
+            'If it is still not fixed, open the same link and choose "Still not fixed".',
+            "",
+        ]
+    )
     if issue_number:
-        lines.append(f"This was issue #{issue_number}.")
+        lines.append(f"This is issue #{issue_number}.")
     if issue_url:
         lines.append(issue_url)
     lines.extend(["", "— USIS"])
     return {
-        "subject": f"{status}: {clean_title}"[:200],
+        "subject": f"Please confirm and close: {clean_title}"[:200],
         "body": "\n".join(lines),
     }
+
+
+def mint_confirm_token(*, issue_number: int, email: str, secret_key: str) -> str:
+    from itsdangerous import URLSafeTimedSerializer
+
+    serializer = URLSafeTimedSerializer(str(secret_key or ""), salt=CONFIRM_TOKEN_SALT)
+    return serializer.dumps({"n": int(issue_number), "e": (email or "").strip().lower()})
+
+
+def read_confirm_token(token: str, *, secret_key: str) -> dict[str, Any]:
+    from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
+    raw = (token or "").strip()
+    if not raw:
+        raise ValueError("This confirmation link is missing.")
+    serializer = URLSafeTimedSerializer(str(secret_key or ""), salt=CONFIRM_TOKEN_SALT)
+    try:
+        data = serializer.loads(raw, max_age=CONFIRM_TOKEN_MAX_AGE)
+    except SignatureExpired as exc:
+        raise ValueError("This confirmation link has expired.") from exc
+    except BadSignature as exc:
+        raise ValueError("This confirmation link is invalid.") from exc
+    number = int((data or {}).get("n") or 0)
+    email = str((data or {}).get("e") or "").strip().lower()
+    if not number or not _looks_like_email(email):
+        raise ValueError("This confirmation link is invalid.")
+    return {"issue_number": number, "email": email}
+
+
+def confirm_page_url(*, confirm_base_url: str, token: str) -> str:
+    from urllib.parse import quote
+
+    base = (confirm_base_url or "").strip()
+    if not base:
+        return ""
+    joiner = "&" if "?" in base else "?"
+    return f"{base}{joiner}token={quote(token, safe='')}"
 
 
 def verify_github_signature(*, secret: str, payload: bytes, signature_header: str) -> bool:
@@ -404,25 +470,22 @@ def fetch_issue_comments(
             http.close()
 
 
-def mark_issue_notified(
+def post_issue_comment(
     *,
     owner: str,
     repo: str,
     issue_number: int,
     token: str,
+    body: str,
     client: httpx.Client | None = None,
 ) -> bool:
-    if not token or not issue_number:
+    if not token or not issue_number or not body:
         return False
     url = f"https://api.github.com/repos/{owner}/{repo}/issues/{int(issue_number)}/comments"
     owns_client = client is None
     http = client or httpx.Client(timeout=15.0)
     try:
-        response = http.post(
-            url,
-            headers=_github_headers(token),
-            json={"body": f"{NOTIFIED_MARKER}\nEmailed the reporter about this close."},
-        )
+        response = http.post(url, headers=_github_headers(token), json={"body": body})
         return response.is_success
     except httpx.HTTPError:
         return False
@@ -431,45 +494,110 @@ def mark_issue_notified(
             http.close()
 
 
-def notify_reporter_for_closed_issue(
+def mark_issue_notified(
     *,
-    payload: dict[str, Any],
-    config: Any,
-    send_email: Callable[..., dict[str, Any]],
+    owner: str,
+    repo: str,
+    issue_number: int,
+    token: str,
     client: httpx.Client | None = None,
-) -> dict[str, Any]:
-    action = str(payload.get("action") or "")
-    if action != "closed":
-        return {"ok": True, "status": "ignored", "reason": action or "not_closed"}
+) -> bool:
+    return post_issue_comment(
+        owner=owner,
+        repo=repo,
+        issue_number=issue_number,
+        token=token,
+        body=f"{NOTIFIED_MARKER}\nEmailed the reporter to confirm and close.",
+        client=client,
+    )
 
-    issue = payload.get("issue") if isinstance(payload.get("issue"), dict) else {}
-    if issue.get("pull_request"):
-        return {"ok": True, "status": "ignored", "reason": "pull_request"}
 
-    options = feedback_options(config)
+def fetch_issue(
+    *,
+    owner: str,
+    repo: str,
+    issue_number: int,
+    token: str,
+    client: httpx.Client | None = None,
+) -> dict[str, Any] | None:
+    if not token or not issue_number:
+        return None
+    url = f"https://api.github.com/repos/{owner}/{repo}/issues/{int(issue_number)}"
+    owns_client = client is None
+    http = client or httpx.Client(timeout=15.0)
+    try:
+        response = http.get(url, headers=_github_headers(token))
+        if not response.is_success:
+            return None
+        payload = response.json()
+        return payload if isinstance(payload, dict) else None
+    except httpx.HTTPError:
+        return None
+    finally:
+        if owns_client:
+            http.close()
+
+
+def set_issue_state(
+    *,
+    owner: str,
+    repo: str,
+    issue_number: int,
+    token: str,
+    state: str,
+    state_reason: str | None = None,
+    client: httpx.Client | None = None,
+) -> bool:
+    if not token or not issue_number:
+        return False
+    url = f"https://api.github.com/repos/{owner}/{repo}/issues/{int(issue_number)}"
+    body: dict[str, Any] = {"state": state}
+    if state == "closed" and state_reason:
+        body["state_reason"] = state_reason
+    owns_client = client is None
+    http = client or httpx.Client(timeout=15.0)
+    try:
+        response = http.patch(url, headers=_github_headers(token), json=body)
+        return response.is_success
+    except httpx.HTTPError:
+        return False
+    finally:
+        if owns_client:
+            http.close()
+
+
+def _repo_matches(payload: dict[str, Any], options: dict[str, Any]) -> bool:
     repo_info = payload.get("repository") if isinstance(payload.get("repository"), dict) else {}
     full_name = str(repo_info.get("full_name") or "")
     expected = f"{options['owner']}/{options['repo']}"
-    if full_name and full_name.lower() != expected.lower():
-        return {"ok": True, "status": "ignored", "reason": "wrong_repo"}
+    return not full_name or full_name.lower() == expected.lower()
 
+
+def _request_reporter_confirmation(
+    *,
+    issue: dict[str, Any],
+    comments: list[dict[str, Any]],
+    options: dict[str, Any],
+    send_email: Callable[..., dict[str, Any]],
+    confirm_base_url: str,
+    secret_key: str,
+    client: httpx.Client | None,
+) -> dict[str, Any]:
     body = str(issue.get("body") or "")
     email = parse_reporter_email(body)
     if not email:
         return {"ok": True, "status": "skipped", "reason": "no_reporter_email"}
 
-    number = int(issue.get("number") or 0)
-    comments = fetch_issue_comments(
-        owner=options["owner"],
-        repo=options["repo"],
-        issue_number=number,
-        token=options["token"],
-        client=client,
-    )
-    if issue_already_notified(comments, body):
+    signal = latest_reporter_signal(comments, body)
+    if signal == "confirmed":
+        return {"ok": True, "status": "already_confirmed", "reason": "marker"}
+    if signal == "notified":
         return {"ok": True, "status": "already_notified", "reason": "marker"}
 
+    number = int(issue.get("number") or 0)
     extracted = extract_resolution(comments, issue.get("state_reason"))
+    token = mint_confirm_token(issue_number=number, email=email, secret_key=secret_key)
+    confirm_url = confirm_page_url(confirm_base_url=confirm_base_url, token=token)
     message = build_status_email(
         title=str(issue.get("title") or ""),
         reporter_name=parse_reporter_name(body),
@@ -477,6 +605,7 @@ def notify_reporter_for_closed_issue(
         resolution=extracted["resolution"],
         issue_number=number,
         issue_url=str(issue.get("html_url") or ""),
+        confirm_url=confirm_url,
     )
     result = send_email(to=email, subject=message["subject"], body=message["body"]) or {}
     if result.get("error") and not result.get("dry_run"):
@@ -491,3 +620,182 @@ def notify_reporter_for_closed_issue(
     )
     status = "dry_run" if result.get("dry_run") else "sent"
     return {"ok": True, "status": status, "reason": email}
+
+
+def handle_github_feedback_event(
+    *,
+    event: str,
+    payload: dict[str, Any],
+    config: Any,
+    send_email: Callable[..., dict[str, Any]],
+    confirm_base_url: str = "",
+    secret_key: str = "",
+    client: httpx.Client | None = None,
+) -> dict[str, Any]:
+    options = feedback_options(config)
+    if not _repo_matches(payload, options):
+        return {"ok": True, "status": "ignored", "reason": "wrong_repo"}
+
+    issue = payload.get("issue") if isinstance(payload.get("issue"), dict) else {}
+    if issue.get("pull_request"):
+        return {"ok": True, "status": "ignored", "reason": "pull_request"}
+
+    if event == "issue_comment":
+        if str(payload.get("action") or "") != "created":
+            return {"ok": True, "status": "ignored", "reason": str(payload.get("action") or "comment")}
+        comment = payload.get("comment") if isinstance(payload.get("comment"), dict) else {}
+        if not RESOLUTION_RE.match(str(comment.get("body") or "")):
+            return {"ok": True, "status": "ignored", "reason": "not_resolution"}
+    elif event == "issues":
+        if str(payload.get("action") or "") != "closed":
+            return {"ok": True, "status": "ignored", "reason": str(payload.get("action") or "not_closed")}
+    else:
+        return {"ok": True, "status": "ignored", "reason": event or "unknown_event"}
+
+    number = int(issue.get("number") or 0)
+    comments = fetch_issue_comments(
+        owner=options["owner"],
+        repo=options["repo"],
+        issue_number=number,
+        token=options["token"],
+        client=client,
+    )
+    body = str(issue.get("body") or "")
+    if event == "issues" and str(payload.get("action") or "") == "closed":
+        if issue_already_confirmed(comments, body):
+            return {"ok": True, "status": "already_confirmed", "reason": "marker"}
+        if parse_reporter_email(body):
+            set_issue_state(
+                owner=options["owner"],
+                repo=options["repo"],
+                issue_number=number,
+                token=options["token"],
+                state="open",
+                client=client,
+            )
+
+    return _request_reporter_confirmation(
+        issue=issue,
+        comments=comments,
+        options=options,
+        send_email=send_email,
+        confirm_base_url=confirm_base_url,
+        secret_key=secret_key,
+        client=client,
+    )
+
+
+def notify_reporter_for_closed_issue(
+    *,
+    payload: dict[str, Any],
+    config: Any,
+    send_email: Callable[..., dict[str, Any]],
+    client: httpx.Client | None = None,
+    confirm_base_url: str = "",
+    secret_key: str = "",
+) -> dict[str, Any]:
+    return handle_github_feedback_event(
+        event="issues",
+        payload=payload,
+        config=config,
+        send_email=send_email,
+        confirm_base_url=confirm_base_url,
+        secret_key=secret_key,
+        client=client,
+    )
+
+
+def load_confirm_preview(
+    *,
+    token: str,
+    config: Any,
+    secret_key: str,
+    client: httpx.Client | None = None,
+) -> dict[str, Any]:
+    claims = read_confirm_token(token, secret_key=secret_key)
+    options = feedback_options(config)
+    issue = fetch_issue(
+        owner=options["owner"],
+        repo=options["repo"],
+        issue_number=claims["issue_number"],
+        token=options["token"],
+        client=client,
+    )
+    if not issue:
+        raise ValueError("This report could not be found.")
+    body = str(issue.get("body") or "")
+    email = parse_reporter_email(body).lower()
+    if email != claims["email"]:
+        raise ValueError("This confirmation link does not match the report.")
+    comments = fetch_issue_comments(
+        owner=options["owner"],
+        repo=options["repo"],
+        issue_number=claims["issue_number"],
+        token=options["token"],
+        client=client,
+    )
+    extracted = extract_resolution(comments, issue.get("state_reason"))
+    return {
+        "issue_number": claims["issue_number"],
+        "title": str(issue.get("title") or ""),
+        "reporter_name": parse_reporter_name(body),
+        "status": extracted["status"],
+        "resolution": extracted["resolution"],
+        "already_confirmed": issue_already_confirmed(comments, body),
+        "state": str(issue.get("state") or "open"),
+    }
+
+
+def confirm_issue_from_token(
+    *,
+    token: str,
+    action: str,
+    config: Any,
+    secret_key: str,
+    client: httpx.Client | None = None,
+) -> dict[str, Any]:
+    choice = (action or "").strip().lower()
+    if choice not in {"close", "reject"}:
+        raise ValueError('Choose "close" or "reject".')
+    preview = load_confirm_preview(token=token, config=config, secret_key=secret_key, client=client)
+    options = feedback_options(config)
+    number = int(preview["issue_number"])
+    if choice == "close":
+        if preview["already_confirmed"]:
+            return {"ok": True, "status": "already_confirmed", "issue_number": number}
+        post_issue_comment(
+            owner=options["owner"],
+            repo=options["repo"],
+            issue_number=number,
+            token=options["token"],
+            body=f"{CONFIRMED_MARKER}\nReporter confirmed this is resolved and closed the issue.",
+            client=client,
+        )
+        set_issue_state(
+            owner=options["owner"],
+            repo=options["repo"],
+            issue_number=number,
+            token=options["token"],
+            state="closed",
+            state_reason="completed",
+            client=client,
+        )
+        return {"ok": True, "status": "closed", "issue_number": number}
+
+    post_issue_comment(
+        owner=options["owner"],
+        repo=options["repo"],
+        issue_number=number,
+        token=options["token"],
+        body=f"{REJECTED_MARKER}\nReporter said this is still not fixed.",
+        client=client,
+    )
+    set_issue_state(
+        owner=options["owner"],
+        repo=options["repo"],
+        issue_number=number,
+        token=options["token"],
+        state="open",
+        client=client,
+    )
+    return {"ok": True, "status": "rejected", "issue_number": number}

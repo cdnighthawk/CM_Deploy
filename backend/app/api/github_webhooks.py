@@ -1,9 +1,9 @@
-"""GitHub issue webhooks — email the reporter when their issue is closed.
+"""GitHub issue webhooks — ask the reporter to confirm by closing.
 
-Configure the repo webhook (Issues events) to POST
+Configure the repo webhook (Issues + Issue comments) to POST
 ``https://www.usiscm.com/api/webhooks/github`` with ``GITHUB_WEBHOOK_SECRET``.
-When closing, leave a comment that starts with ``Resolution:`` so the employee
-gets the fix / won't-fix explanation.
+Leave a ``Resolution:`` comment and keep the issue open. The employee closes it
+from the email link to confirm it is resolved.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import httpx
 from flask import Blueprint, current_app, jsonify, request
 
 from ..services import feedback as feedback_svc
-from ._notifications import send_plain_notification_email
+from ._notifications import public_app_origin, send_plain_notification_email
 
 bp = Blueprint("github_webhooks", __name__)
 
@@ -34,7 +34,7 @@ def github_webhook():
     event = (request.headers.get("X-GitHub-Event") or "").strip()
     if event == "ping":
         return jsonify({"ok": True, "pong": True})
-    if event != "issues":
+    if event not in {"issues", "issue_comment"}:
         return jsonify({"ok": True, "status": "ignored", "reason": event or "unknown_event"})
 
     try:
@@ -44,11 +44,15 @@ def github_webhook():
     if not isinstance(body, dict):
         return jsonify({"error": "JSON body required"}), 400
 
+    confirm_base_url = f"{public_app_origin()}/usis-issue-confirm.html"
     with httpx.Client(timeout=15.0) as client:
-        result = feedback_svc.notify_reporter_for_closed_issue(
+        result = feedback_svc.handle_github_feedback_event(
+            event=event,
             payload=body,
             config=current_app.config,
             send_email=send_plain_notification_email,
+            confirm_base_url=confirm_base_url,
+            secret_key=str(current_app.config.get("SECRET_KEY") or ""),
             client=client,
         )
     status = 502 if not result.get("ok") else 200

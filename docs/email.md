@@ -64,18 +64,8 @@ Render does **not** provision Redis in `render.yaml`; for MVP, leave Celery unse
 
 | Flow | Trigger | Sends when SMTP configured? |
 |------|---------|-------------------------------|
-| **Issue status (feedback)** | GitHub issue closed → `POST /api/webhooks/github` | Yes (`send_plain_notification_email`; uses `Resolution:` comment) |
+| **Issue status (feedback)** | `Resolution:` comment or team close → `POST /api/webhooks/github` | Yes — employee then closes the issue to confirm |
 | **RFI notifications** | RFI create/update/forward; `POST /api/v1/rfis/<id>/email` | Yes (log row + SMTP; Celery if broker set) |
-
-### Issue status emails
-
-When an employee uses **Report a problem**, closing that GitHub issue emails them the outcome.
-
-1. Set `GITHUB_WEBHOOK_SECRET` on Render (and in local `.env` if you test webhooks).
-2. In `cdnighthawk/CM_Deploy` → Settings → Webhooks, add `https://www.usiscm.com/api/webhooks/github`, secret matching the env var, events: **Issues**.
-3. When you close an issue, leave a comment that starts with `Resolution:` (for example `Resolution: RFI create now copies project name and number from the open project.`). Closing as **not planned** or **duplicate** uses that same comment as the why-not explanation.
-
-Existing reports that already include `**Email:**` in the issue body are included — no need to re-file them.
 | **Playbooks** | Checklist run start / reassignment | Yes (`send_plain_notification_email`) |
 | **Admin user invite** | `POST /api/v1/admin/users` with `"send_invite": true` or `USIS_SEND_USER_INVITE_EMAIL=1` | Yes (new) |
 | **Self-register / hire** | `POST /api/v1/auth/register`, `/apply.html` | **No** — account only, no verification email |
@@ -83,6 +73,17 @@ Existing reports that already include `**Email:**` in the issue body are include
 | **core-hr “Invite Employee” modal** | W3CRM template UI | **Not wired** — use **User admin** (`usis-user-directory.html`) instead |
 | **Microsoft SSO** | Entra login | **No email** — identity via Microsoft |
 | **HRMS in-app notifications** | DB table `hrms_notifications` | **In-app only** — no SMTP yet |
+
+### Issue status emails
+
+The employee confirms a report is resolved by closing it.
+
+1. Set `GITHUB_WEBHOOK_SECRET` on Render (and in local `.env` if you test webhooks).
+2. In `cdnighthawk/CM_Deploy` → Settings → Webhooks, add `https://www.usiscm.com/api/webhooks/github`, secret matching the env var, events: **Issues** and **Issue comments**.
+3. Leave a comment that starts with `Resolution:` and leave the issue **open**.
+4. The reporter gets an email with a link to close the issue or mark it still not fixed. If someone else closes it first, USIS reopens it until the reporter confirms.
+
+Existing reports that already include `**Email:**` in the issue body are included — no need to re-file them.
 
 ## User invite flow (staff)
 

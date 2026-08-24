@@ -54,6 +54,7 @@ _EXEMPT_EXACT = frozenset(
         "/api/v1/auth/mobile/login",
         "/api/v1/auth/mobile/refresh",
         "/api/v1/feedback",
+        "/api/v1/feedback/issues/confirm",
     }
 )
 

@@ -254,7 +254,7 @@ def test_iter_opportunities_respects_max_pages(monkeypatch):
     assert len(items) == 300
 
 
-def test_lead_ui_filter_excludes_archived_and_declined():
+def test_lead_ui_filter_matches_current_bid_board():
     from sqlalchemy.dialects import postgresql
 
     from app.api._lead_estimate_queries import lead_estimates_ui_filter
@@ -267,6 +267,10 @@ def test_lead_ui_filter_excludes_archived_and_declined():
     ).lower()
     assert "archived" in sql
     assert "declined" in sql
+    assert "child" in sql
+    assert "due_at" in sql
+    assert "assignee" in sql
+    assert "submission_state" in sql
 
 
 def test_estimate_ui_filter_excludes_grouped_children():

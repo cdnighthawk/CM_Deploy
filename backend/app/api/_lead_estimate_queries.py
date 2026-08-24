@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import and_, func, literal, or_
+from sqlalchemy import String, and_, cast, func, literal, or_
 
 from ..models import LeadEstimate
 
@@ -19,16 +19,12 @@ def submission_state_norm_param(submission_state: str) -> str:
 
 def _not_archived_or_declined() -> Any:
     """Leads/Estimates boards never list Bid Board archived or declined invitations."""
-    not_flagged_archived = or_(LeadEstimate.is_archived.is_(False), LeadEstimate.is_archived.is_(None))
     bucket = func.upper(func.coalesce(LeadEstimate.workflow_bucket, literal("")))
-    not_archived_bucket = ~bucket.like("%ARCHIVED%")
-    not_declined_bucket = ~bucket.like("%DECLINED%")
-    not_declined_state = submission_state_norm_sql() != literal("declined")
     return and_(
-        not_flagged_archived,
-        not_archived_bucket,
-        not_declined_bucket,
-        not_declined_state,
+        LeadEstimate.is_archived.is_(False),
+        ~bucket.like("%ARCHIVED%"),
+        ~bucket.like("%DECLINED%"),
+        submission_state_norm_sql() != literal("declined"),
     )
 
 
@@ -44,33 +40,32 @@ def _not_grouped_child() -> Any:
     return and_(not_child_bucket, standalone_or_parent)
 
 
+def _has_open_due_date() -> Any:
+    """Bid Board's current board is still-due work, not expired or undated invitations."""
+    return and_(LeadEstimate.due_at.isnot(None), LeadEstimate.due_at >= func.now())
+
+
+def _has_assignee() -> Any:
+    """Bid Board's visible Undecided rows are assigned; follower-only invites stay off the board."""
+    return func.upper(func.coalesce(cast(LeadEstimate.members, String), literal(""))).like("%ASSIGNEE%")
+
+
+def _explicit_state_ok(norm_sql, norms: list[str]) -> Any:
+    clauses: list[Any] = [norm_sql == literal(n) for n in norms if n]
+    if not clauses:
+        raise ValueError("submission_state has no valid tokens")
+    return or_(*clauses) if len(clauses) > 1 else clauses[0]
+
+
 def lead_estimates_ui_filter(submission_state: str) -> Any:
     st_in = (submission_state or "").strip()
     if not st_in:
         raise ValueError("submission_state cannot be empty")
-    board_ok = _not_archived_or_declined()
+    board_ok = and_(_not_archived_or_declined(), _not_grouped_child())
     norm_sql = submission_state_norm_sql()
-
-    parts = [p.strip() for p in st_in.split(",") if p.strip()]
-    norms = [submission_state_norm_param(p) for p in parts]
+    norms = [submission_state_norm_param(p) for p in st_in.split(",") if p.strip()]
+    state_ok = _explicit_state_ok(norm_sql, norms)
 
     if len(norms) == 1 and norms[0] == "undecided":
-        empty_or_ws = func.trim(func.coalesce(LeadEstimate.submission_state, literal(""))) == literal("")
-        state_ok = or_(empty_or_ws, norm_sql == literal("undecided"))
-        return and_(state_ok, board_ok)
-
-    empty_or_ws = func.trim(func.coalesce(LeadEstimate.submission_state, literal(""))) == literal("")
-    clauses: list[Any] = []
-    for n in norms:
-        if not n:
-            continue
-        if n == "undecided":
-            clauses.append(or_(empty_or_ws, norm_sql == literal("undecided")))
-        else:
-            clauses.append(norm_sql == literal(n))
-    if not clauses:
-        raise ValueError("submission_state has no valid tokens")
-    state_ok = or_(*clauses) if len(clauses) > 1 else clauses[0]
-    if len(norms) == 1 and norms[0] == "willsubmit":
-        return and_(state_ok, board_ok, _not_grouped_child())
+        return and_(state_ok, board_ok, _has_open_due_date(), _has_assignee())
     return and_(state_ok, board_ok)

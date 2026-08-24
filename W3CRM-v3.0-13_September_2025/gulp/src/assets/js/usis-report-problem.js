@@ -1,5 +1,6 @@
 /**
- * Header "Report a problem" — files a GitHub issue with the current page URL.
+ * Header "Report a problem" — files a GitHub issue. Page-specific kinds include the URL;
+ * a general recommendation stays site-wide.
  */
 (function (global) {
 	"use strict";
@@ -43,11 +44,24 @@
 		if (!openBtns.length || !modalEl || !global.bootstrap) return;
 
 		var form = modalEl.querySelector("form");
+		var kindSelect = modalEl.querySelector("[name='kind']");
 		var nameInput = modalEl.querySelector("[name='reporterName']");
 		var diagnostics = modalEl.querySelector("[data-usis-report-diagnostics]");
+		var pageBlock = modalEl.querySelector("[data-usis-report-page-block]");
+		var sitewideNote = modalEl.querySelector("[data-usis-report-sitewide]");
 		var statusEl = modalEl.querySelector("[data-usis-report-status]");
 		var sendBtn = modalEl.querySelector("[type='submit']");
 		var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+		function isGeneral() {
+			return kindSelect && kindSelect.value === "general";
+		}
+
+		function syncKindUi() {
+			var general = isGeneral();
+			if (pageBlock) pageBlock.classList.toggle("d-none", general);
+			if (sitewideNote) sitewideNote.classList.toggle("d-none", !general);
+		}
 
 		function refreshContext() {
 			var ctx = pageContext();
@@ -57,6 +71,11 @@
 				statusEl.className = "alert d-none";
 				statusEl.textContent = "";
 			}
+			syncKindUi();
+		}
+
+		if (kindSelect) {
+			kindSelect.addEventListener("change", syncKindUi);
 		}
 
 		openBtns.forEach(function (btn) {
@@ -73,7 +92,7 @@
 			event.preventDefault();
 			var title = (form.querySelector("[name='title']") || {}).value || "";
 			var details = (form.querySelector("[name='details']") || {}).value || "";
-			var kind = (form.querySelector("[name='kind']") || {}).value || "bug";
+			var kind = (kindSelect && kindSelect.value) || "bug";
 			var reporterName = (form.querySelector("[name='reporterName']") || {}).value || "";
 			title = title.trim();
 			details = details.trim();
@@ -83,6 +102,18 @@
 			}
 
 			var ctx = pageContext();
+			var payload = {
+				kind: kind,
+				title: title,
+				details: details,
+				reporterName: reporterName.trim(),
+				userAgent: ctx.userAgent,
+			};
+			if (kind !== "general") {
+				payload.page = ctx.page;
+				payload.pageUrl = ctx.pageUrl;
+				payload.pageTitle = ctx.pageTitle;
+			}
 			if (sendBtn) sendBtn.disabled = true;
 			var api = global.USIS_API;
 			if (!api || typeof api.fetchJson !== "function") {
@@ -94,21 +125,13 @@
 			api
 				.fetchJson("/api/v1/feedback", {
 					method: "POST",
-					body: {
-						kind: kind,
-						title: title,
-						details: details,
-						reporterName: reporterName.trim(),
-						page: ctx.page,
-						pageUrl: ctx.pageUrl,
-						pageTitle: ctx.pageTitle,
-						userAgent: ctx.userAgent,
-					},
+					body: payload,
 				})
 				.then(function (data) {
 					setStatus(statusEl, "success", (data && data.message) || "Report sent.");
 					form.reset();
 					if (diagnostics) diagnostics.value = diagnosticsText(pageContext());
+					syncKindUi();
 					setTimeout(function () {
 						modal.hide();
 					}, 1400);

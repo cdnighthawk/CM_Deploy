@@ -334,7 +334,7 @@ def create_feedback():
             page_title=parsed["page_title"],
             user_agent=parsed["user_agent"],
         ),
-        labels=[parsed["kind"]["github_label"], "from-hub"],
+        labels=feedback_svc.github_labels_for(parsed["kind"]),
         config=current_app.config,
     )
     if not result.ok:

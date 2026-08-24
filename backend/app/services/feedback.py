@@ -26,14 +26,35 @@ KINDS = {
         "heading": "Something broke",
         "title_prefix": "[bug] ",
         "github_label": "bug",
+        "site_wide": False,
+        "extra_labels": [],
     },
     "enhancement": {
         "value": "enhancement",
-        "heading": "Recommend a change",
+        "heading": "Recommend a change on this page",
         "title_prefix": "[idea] ",
         "github_label": "enhancement",
+        "site_wide": False,
+        "extra_labels": [],
+    },
+    "general": {
+        "value": "general",
+        "heading": "General recommendation",
+        "title_prefix": "[idea] ",
+        "github_label": "enhancement",
+        "site_wide": True,
+        "extra_labels": ["site-wide"],
     },
 }
+
+
+def github_labels_for(kind: dict[str, Any]) -> list[str]:
+    labels = [kind["github_label"], *kind.get("extra_labels", []), "from-hub"]
+    seen: list[str] = []
+    for label in labels:
+        if label and label not in seen:
+            seen.append(label)
+    return seen
 
 
 def _clean(value: Any, max_len: int) -> str:
@@ -61,7 +82,8 @@ def feedback_options(config: Any) -> dict[str, Any]:
 
 def parse_feedback_input(body: dict[str, Any] | None) -> dict[str, Any]:
     data = body if isinstance(body, dict) else {}
-    kind_key = "enhancement" if data.get("kind") == "enhancement" else "bug"
+    raw_kind = data.get("kind")
+    kind_key = raw_kind if raw_kind in KINDS else "bug"
     kind = KINDS[kind_key]
     title = _clean(data.get("title"), MAX_TITLE)
     details = _clean(data.get("details"), MAX_DETAILS)
@@ -70,13 +92,17 @@ def parse_feedback_input(body: dict[str, Any] | None) -> dict[str, Any]:
     page_url = _clean(data.get("pageUrl"), MAX_PAGE_URL)
     page_title = _clean(data.get("pageTitle"), MAX_PAGE_TITLE)
     user_agent = _clean(data.get("userAgent"), MAX_USER_AGENT)
+    if kind.get("site_wide"):
+        page = ""
+        page_url = ""
+        page_title = ""
 
     if not title or not details:
         return {"error": "Add a title and details."}
 
     if not title.startswith("["):
         title = f"{kind['title_prefix']}{title}"
-    if page and " — " not in title:
+    if page and not kind.get("site_wide") and " — " not in title:
         short_page = page.rsplit("/", 1)[-1] or page
         title = f"{title} — {short_page}"
 
@@ -109,12 +135,15 @@ def build_issue_body(
         f"## {kind['heading']}",
         "",
         "### Where it happened",
-        f"**Page:** {page or '(unknown)'}",
     ]
-    if page_url:
-        lines.append(f"**Page URL:** {page_url}")
-    if page_title:
-        lines.append(f"**Page title:** {page_title}")
+    if kind.get("site_wide"):
+        lines.append("**Page:** Site-wide")
+    else:
+        lines.append(f"**Page:** {page or '(unknown)'}")
+        if page_url:
+            lines.append(f"**Page URL:** {page_url}")
+        if page_title:
+            lines.append(f"**Page title:** {page_title}")
     lines.extend(["", "### Reporter"])
     if reporter_name:
         lines.append(f"**From:** {reporter_name}")

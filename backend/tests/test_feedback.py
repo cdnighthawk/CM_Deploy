@@ -41,6 +41,37 @@ def test_parse_includes_page_in_title_and_fields():
     assert "**Page title:** Leads" in body
 
 
+def test_parse_general_omits_page_and_uses_sitewide_body():
+    parsed = feedback_svc.parse_feedback_input(
+        {
+            "kind": "general",
+            "title": "Add a dark mode toggle back",
+            "details": "The header feels too sparse after the cleanup.",
+            "page": "/construction/leads.html",
+            "pageUrl": "https://usis-cm.onrender.com/construction/leads.html",
+            "pageTitle": "Leads",
+        }
+    )
+    assert "error" not in parsed
+    assert parsed["kind"]["value"] == "general"
+    assert parsed["page"] == ""
+    assert parsed["page_url"] == ""
+    assert parsed["page_title"] == ""
+    assert parsed["title"] == "[idea] Add a dark mode toggle back"
+    assert " — " not in parsed["title"]
+    assert feedback_svc.github_labels_for(parsed["kind"]) == ["enhancement", "site-wide", "from-hub"]
+    body = feedback_svc.build_issue_body(
+        kind=parsed["kind"],
+        details=parsed["details"],
+        page=parsed["page"],
+        page_url=parsed["page_url"],
+        page_title=parsed["page_title"],
+    )
+    assert "**Page:** Site-wide" in body
+    assert "leads.html" not in body
+    assert "**Page URL:**" not in body
+
+
 def test_feedback_requires_session(client, no_dev_admin):
     r = client.post("/api/v1/feedback", json={"title": "x", "details": "y" * 5})
     assert r.status_code == 401
@@ -86,6 +117,34 @@ def test_feedback_posts_page_url_to_github(client, monkeypatch):
     assert r.get_json()["issueNumber"] == 44
     assert "**Page:** /usis-dashboard-dark.html" in captured["body"]
     assert "**Page URL:** https://usis-cm.onrender.com/usis-dashboard-dark.html" in captured["body"]
+
+
+def test_feedback_posts_general_without_page(client, monkeypatch):
+    _signed_in(monkeypatch)
+    captured = {}
+
+    def fake_submit(**kwargs):
+        captured.update(kwargs)
+        return feedback_svc.SubmitResult(ok=True, status="created", message="Report sent.", issue_number=51)
+
+    monkeypatch.setattr(feedback_svc, "submit_github_issue", fake_submit)
+
+    r = client.post(
+        "/api/v1/feedback",
+        json={
+            "kind": "general",
+            "title": "Need a company-wide search",
+            "details": "I want to find a contact from any screen.",
+            "page": "/construction/leads.html",
+            "pageUrl": "https://usis-cm.onrender.com/construction/leads.html",
+        },
+    )
+    assert r.status_code == 200
+    assert r.get_json()["issueNumber"] == 51
+    assert captured["title"] == "[idea] Need a company-wide search"
+    assert captured["labels"] == ["enhancement", "site-wide", "from-hub"]
+    assert "**Page:** Site-wide" in captured["body"]
+    assert "leads.html" not in captured["body"]
 
 
 def test_submit_skips_github_when_token_missing():

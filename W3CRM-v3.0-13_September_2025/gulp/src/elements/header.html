@@ -225,13 +225,14 @@
 							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 						</div>
 						<div class="modal-body">
-							<p class="text-muted small mb-3">Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed. The page you are on is sent with the report.</p>
+							<p class="text-muted small mb-3">Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed.</p>
 							<div class="alert d-none" data-usis-report-status role="status"></div>
 							<div class="mb-3">
 								<label class="form-label" for="usis-report-kind">Kind</label>
 								<select class="form-select" id="usis-report-kind" name="kind">
 									<option value="bug">Something broke</option>
-									<option value="enhancement">Recommend a change</option>
+									<option value="enhancement">Recommend a change on this page</option>
+									<option value="general">General recommendation</option>
 								</select>
 							</div>
 							<div class="mb-3">
@@ -246,10 +247,11 @@
 								<label class="form-label" for="usis-report-details">Details</label>
 								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?"></textarea>
 							</div>
-							<div class="mb-0">
+							<div class="mb-0" data-usis-report-page-block>
 								<label class="form-label text-muted" for="usis-report-diagnostics">Sent with this report</label>
 								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
 							</div>
+							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide>Site-wide (not tied to a page).</p>
 						</div>
 						<div class="modal-footer">
 							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

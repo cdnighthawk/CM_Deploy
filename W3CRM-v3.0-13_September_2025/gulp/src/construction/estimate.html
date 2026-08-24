@@ -259,7 +259,7 @@
 		var modalLists = {};
 
 		var emptyMessage =
-			'<tr><td colspan="9" class="text-muted">No matching <code>lead_estimates</code> (undecided / will_submit / submitted, not archived). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>';
+			'<tr><td colspan="9" class="text-muted">No matching <code>lead_estimates</code> (will submit a bid, not yet submitted, not archived). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>';
 
 		function esc(s) {
 			return String(s == null ? "" : s)
@@ -635,7 +635,7 @@
 			tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Loading…</td></tr>';
 			fetch(
 				API.replace(/\/$/, "") +
-					"/api/v1/lead-estimates?limit=500&submission_state=undecided,will_submit,submitted",
+					"/api/v1/lead-estimates?limit=500&submission_state=will_submit",
 				{ credentials: "include", headers: { Accept: "application/json" } }
 			)
 				.then(function (r) {

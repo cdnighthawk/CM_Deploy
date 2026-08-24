@@ -22,7 +22,7 @@ _DEMO_ATTRS = (
 
 def _demo_rows() -> list[LeadEstimate]:
     # submission_state None/blank => ``submission_state=undecided`` on the Leads page API.
-    # Estimates page loads ``undecided,will_submit,submitted`` so the same rows appear there too.
+    # Leads page is undecided only. Estimates page is will_submit (not yet submitted).
     return [
         LeadEstimate(
             external_id="usis-seed-demo-bc-1",

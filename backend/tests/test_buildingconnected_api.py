@@ -223,3 +223,18 @@ def test_iter_opportunities_respects_max_pages(monkeypatch):
     items = list(cli.iter_opportunities(max_pages=3))
     assert calls["n"] == 3
     assert len(items) == 300
+
+
+def test_lead_ui_filter_excludes_archived_and_declined():
+    from sqlalchemy.dialects import postgresql
+
+    from app.api._lead_estimate_queries import lead_estimates_ui_filter
+
+    sql = str(
+        lead_estimates_ui_filter("undecided").compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert "archived" in sql
+    assert "declined" in sql

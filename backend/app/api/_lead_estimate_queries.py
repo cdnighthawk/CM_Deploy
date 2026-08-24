@@ -17,11 +17,26 @@ def submission_state_norm_param(submission_state: str) -> str:
     return (submission_state or "").strip().lower().replace("_", "").replace("-", "")
 
 
+def _not_archived_or_declined() -> Any:
+    """Leads/Estimates boards never list Bid Board archived or declined invitations."""
+    not_flagged_archived = or_(LeadEstimate.is_archived.is_(False), LeadEstimate.is_archived.is_(None))
+    bucket = func.upper(func.coalesce(LeadEstimate.workflow_bucket, literal("")))
+    not_archived_bucket = ~bucket.like("%ARCHIVED%")
+    not_declined_bucket = ~bucket.like("%DECLINED%")
+    not_declined_state = submission_state_norm_sql() != literal("declined")
+    return and_(
+        not_flagged_archived,
+        not_archived_bucket,
+        not_declined_bucket,
+        not_declined_state,
+    )
+
+
 def lead_estimates_ui_filter(submission_state: str) -> Any:
     st_in = (submission_state or "").strip()
     if not st_in:
         raise ValueError("submission_state cannot be empty")
-    not_archived = or_(LeadEstimate.is_archived.is_(False), LeadEstimate.is_archived.is_(None))
+    board_ok = _not_archived_or_declined()
     norm_sql = submission_state_norm_sql()
 
     parts = [p.strip() for p in st_in.split(",") if p.strip()]
@@ -30,7 +45,7 @@ def lead_estimates_ui_filter(submission_state: str) -> Any:
     if len(norms) == 1 and norms[0] == "undecided":
         empty_or_ws = func.trim(func.coalesce(LeadEstimate.submission_state, literal(""))) == literal("")
         state_ok = or_(empty_or_ws, norm_sql == literal("undecided"))
-        return and_(state_ok, not_archived)
+        return and_(state_ok, board_ok)
 
     empty_or_ws = func.trim(func.coalesce(LeadEstimate.submission_state, literal(""))) == literal("")
     clauses: list[Any] = []
@@ -44,4 +59,4 @@ def lead_estimates_ui_filter(submission_state: str) -> Any:
     if not clauses:
         raise ValueError("submission_state has no valid tokens")
     state_ok = or_(*clauses) if len(clauses) > 1 else clauses[0]
-    return and_(state_ok, not_archived)
+    return and_(state_ok, board_ok)

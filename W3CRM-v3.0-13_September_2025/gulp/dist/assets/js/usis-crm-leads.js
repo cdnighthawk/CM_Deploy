@@ -56,7 +56,14 @@
 				});
 			})
 			.then(function (data) {
-				var rows = data.items || [];
+				var rows = (data.items || []).filter(function (x) {
+					if (x && x.is_archived === true) return false;
+					var st = String((x && x.submission_state) || "").toLowerCase().replace(/[_-]/g, "");
+					if (st === "declined") return false;
+					var b = String((x && x.workflow_bucket) || "").toUpperCase();
+					if (b.indexOf("ARCHIVED") >= 0 || b.indexOf("DECLINED") >= 0) return false;
+					return true;
+				});
 				if (!rows.length) {
 					tb.innerHTML = '<tr><td colspan="5" class="text-muted">No rows.</td></tr>';
 					return;

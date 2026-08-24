@@ -1059,6 +1059,16 @@
 			}
 		}
 
+		function isOpenLead(x) {
+			if (!x) return false;
+			if (x.is_archived === true) return false;
+			var st = String(x.submission_state || "").toLowerCase().replace(/[_-]/g, "");
+			if (st === "declined") return false;
+			var b = String(x.workflow_bucket || "").toUpperCase();
+			if (b.indexOf("ARCHIVED") >= 0 || b.indexOf("DECLINED") >= 0) return false;
+			return true;
+		}
+
 		function loadLeads() {
 			if (!tbody) return;
 			isFetching = true;
@@ -1084,7 +1094,7 @@
 					return r.json();
 				})
 				.then(function (data) {
-					var items = data.items || [];
+					var items = (data.items || []).filter(isOpenLead);
 					allItems = items;
 					isFetching = false;
 					loadError = null;

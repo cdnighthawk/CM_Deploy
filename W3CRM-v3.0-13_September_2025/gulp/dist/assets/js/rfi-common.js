@@ -184,6 +184,13 @@
 		});
 	}
 
+	function loadProject(projectId) {
+		if (!projectId) return Promise.resolve(null);
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId)).then(function (data) {
+			return data.item || null;
+		});
+	}
+
 	function loadUsers(query) {
 		return fetchJson("/api/v1/rfi-users", { params: { q: query || "" } }).then(
 			function (data) { return data.items || []; }
@@ -360,6 +367,7 @@
 		impactLabel: impactLabel,
 		statusLabel: statusLabel,
 		loadProjects: loadProjects,
+		loadProject: loadProject,
 		loadUsers: loadUsers,
 		loadCompanies: loadCompanies,
 		loadLookup: loadLookup,

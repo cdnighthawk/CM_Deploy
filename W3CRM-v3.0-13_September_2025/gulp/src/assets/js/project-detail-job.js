@@ -1155,6 +1155,9 @@
 				if (!item) throw new Error("Missing item in response");
 				lastProjectId = pid;
 				lastProjectItem = item;
+				if (window.USISProjectContext && typeof window.USISProjectContext.setProjectId === "function") {
+					window.USISProjectContext.setProjectId(pid);
+				}
 				wireContractAdminToolsOnce();
 				wireProjectEditOnce();
 				render(item);

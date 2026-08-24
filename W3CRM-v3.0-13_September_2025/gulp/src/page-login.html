@@ -19,6 +19,10 @@
 		<div class="row justify-content-center align-items-center min-vh-100 py-4">
 			<div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto">
 				<div class="auth-form">
+					<div class="d-flex justify-content-end gap-1 mb-3">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-lang-en" data-usis-set-lang="en_GB">English</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-lang-es" data-usis-set-lang="es_ES">Español</button>
+					</div>
 					<div id="usis-login-staff">
 					<div class="text-center mb-4">
 						<div class="brand-logo mb-3">
@@ -27,18 +31,18 @@
 								alt="US Interior Specialties"
 								onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
 						</div>
-						<h3 class="mb-0">USIS Construction Management</h3>
-						<p class="mb-0 text-muted">Sign in to access projects, estimates, and field operations.</p>
+						<h3 class="mb-0" data-i18n="USIS Construction Management">USIS Construction Management</h3>
+						<p class="mb-0 text-muted" data-i18n="Sign in to access projects, estimates, and field operations.">Sign in to access projects, estimates, and field operations.</p>
 					</div>
 					<form id="usis-login-form" method="post" action="">
 						<div class="mb-3">
-							<label class="form-label" for="usis-login-email">Email</label>
+							<label class="form-label" for="usis-login-email" data-i18n="Email">Email</label>
 							<input type="email" class="form-control form-control-lg" id="usis-login-email" name="email" autocomplete="username" required placeholder="hello@example.com">
 						</div>
 						<div class="mb-3">
-							<label class="form-label" for="usis-login-password">Password</label>
+							<label class="form-label" for="usis-login-password" data-i18n="Password">Password</label>
 							<div class="position-relative">
-								<input type="password" id="usis-login-password" name="password" autocomplete="current-password" class="form-control form-control-lg dz-password" required placeholder="Enter your password">
+								<input type="password" id="usis-login-password" name="password" autocomplete="current-password" class="form-control form-control-lg dz-password" required placeholder="Enter your password" data-i18n-placeholder="Enter your password">
 								<span class="show-pass position-absolute top-50 end-0 me-2 translate-middle">
 									<span class="show"><i class="fa fa-eye-slash"></i></span>
 									<span class="hide"><i class="fa fa-eye"></i></span>
@@ -48,30 +52,30 @@
 						<div class="d-flex gap-2 flex-wrap justify-content-between mb-4 mb-lg-5">
 							<div class="form-check custom-checkbox mb-0">
 								<input type="checkbox" class="form-check-input" id="customCheckBox1" name="remember" value="1">
-								<label class="form-check-label" for="customCheckBox1">Remember me</label>
+								<label class="form-check-label" for="customCheckBox1" data-i18n="Remember me">Remember me</label>
 							</div>
-							<a href="page-forgot-password.html" class="btn-link text-primary">Forgot Password?</a>
+							<a href="page-forgot-password.html" class="btn-link text-primary" data-i18n="Forgot Password?">Forgot Password?</a>
 						</div>
 						<div class="text-center mb-4">
-							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Sign in to CM</button>
+							<button type="submit" class="btn btn-primary btn-lg w-100 mb-3" data-i18n="Sign in to CM">Sign in to CM</button>
 						</div>
 						<div class="text-center border-bottom border-grey position-relative my-3">
-							<span class="small bg-light position-absolute top-50 start-50 translate-middle px-2 ">Or sign in with</span>
+							<span class="small bg-light position-absolute top-50 start-50 translate-middle px-2 " data-i18n="Or sign in with">Or sign in with</span>
 						</div>
 						<div id="usis-ms-login-wrap" class="d-none text-center mb-3">
 							<a id="usis-ms-login-btn" class="btn btn-outline-dark btn-lg w-100" href="#">
-								<i class="fab fa-microsoft me-2"></i>Sign in with Microsoft
+								<i class="fab fa-microsoft me-2"></i><span data-i18n="Sign in with Microsoft">Sign in with Microsoft</span>
 							</a>
 						</div>
 						<div id="usis-login-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
 						<p class="text-center small mt-3 mb-0">
-							Need a staff account? <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html">Create one</a>
+							<span data-i18n="Need a staff account?">Need a staff account?</span> <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html" data-i18n="Create one">Create one</a>
 						</p>
 					</form>
 					<div class="card border-primary shadow-sm mt-4 mb-0">
 						<div class="card-body text-center py-4">
-							<p class="text-muted small mb-3 mb-md-2">Looking for a job with USIS?</p>
-							<a class="btn btn-outline-primary btn-lg w-100" id="usis-login-apply-btn" href="apply.html">Apply to USIS</a>
+							<p class="text-muted small mb-3 mb-md-2" data-i18n="Looking for a job with USIS?">Looking for a job with USIS?</p>
+							<a class="btn btn-outline-primary btn-lg w-100" id="usis-login-apply-btn" href="apply.html" data-i18n="Apply to USIS">Apply to USIS</a>
 						</div>
 					</div>
 					</div>
@@ -83,12 +87,12 @@
 									alt="US Interior Specialties"
 									onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
 							</div>
-							<h3 class="mb-0">Continue your application</h3>
+							<h3 class="mb-0" data-i18n="Continue your application">Continue your application</h3>
 							<p class="mb-0 text-muted">You are signed in as <strong id="usis-login-applicant-email">your account</strong>.</p>
 						</div>
 						<div class="d-grid gap-2 mb-3">
-							<a class="btn btn-primary btn-lg" id="usis-login-applicant-continue" href="apply/application.html">Continue job application</a>
-							<a class="btn btn-outline-secondary btn-lg usis-logout-link" href="#">Sign out</a>
+							<a class="btn btn-primary btn-lg" id="usis-login-applicant-continue" href="apply/application.html" data-i18n="Continue job application">Continue job application</a>
+							<a class="btn btn-outline-secondary btn-lg usis-logout-link" href="#" data-i18n="Sign out">Sign out</a>
 						</div>
 						<p class="text-center small text-muted mb-0">USIS staff? Sign out and sign in with your company account above.</p>
 					</div>
@@ -111,9 +115,12 @@
 			if (typeof window.USIS_API_BASE === "string") return window.USIS_API_BASE.trim().replace(/\/$/, "");
 			return "";
 		}
+		function t(s) {
+			return (window.USISI18n && window.USISI18n.tr) ? window.USISI18n.tr(s) : s;
+		}
 		var LOGIN_ERR = {
-			required: "Email and password are required.",
-			invalid: "Invalid email or password. On Render, create a user with the bootstrap script or register first."
+			required: t("Email and password are required."),
+			invalid: t("Invalid email or password. On Render, create a user with the bootstrap script or register first.")
 		};
 		var MS_ERR = {
 			not_configured: "Microsoft sign-in is not enabled on this server.",

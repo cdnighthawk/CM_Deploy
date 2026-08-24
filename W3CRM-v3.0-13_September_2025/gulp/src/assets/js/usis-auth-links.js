@@ -194,4 +194,13 @@
 		runWire();
 	}
 	window.addEventListener("load", runWire);
+
+	if (!window.USISI18n) {
+		var s = document.createElement("script");
+		s.src = (document.querySelector('script[src*="usis-auth-links.js"]') || {}).src
+			? (document.querySelector('script[src*="usis-auth-links.js"]').src.replace(/usis-auth-links\.js.*$/, "usis-i18n.js"))
+			: "assets/js/usis-i18n.js";
+		s.async = false;
+		document.head.appendChild(s);
+	}
 })();

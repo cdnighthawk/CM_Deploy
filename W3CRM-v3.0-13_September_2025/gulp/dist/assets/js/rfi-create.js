@@ -48,6 +48,90 @@
 		if (current) sel.value = current;
 	}
 
+	function currentProjectHint() {
+		var fromQuery = U.queryParam("project_id") || U.queryParam("projectId");
+		if (fromQuery) return fromQuery;
+		if (window.USISProjectContext && typeof window.USISProjectContext.getProjectId === "function") {
+			var fromCtx = window.USISProjectContext.getProjectId();
+			if (fromCtx) return fromCtx;
+		}
+		try {
+			return window.sessionStorage.getItem("usis.activeProjectId") || null;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function rememberProject(projectId) {
+		if (!projectId) return;
+		if (window.USISProjectContext && typeof window.USISProjectContext.setProjectId === "function") {
+			window.USISProjectContext.setProjectId(projectId);
+		}
+	}
+
+	function dash(s) {
+		if (s == null || String(s).trim() === "") return "—";
+		return String(s).trim();
+	}
+
+	function formatProjectAddress(item) {
+		if (!item) return "—";
+		var street = [item.address_line1, item.address_line2].filter(Boolean).join(", ");
+		var cityLine = [item.city, item.state, item.postal_code].filter(Boolean).join(" ");
+		if (item.country && item.country !== "US") {
+			cityLine = (cityLine ? cityLine + ", " : "") + item.country;
+		}
+		var parts = [street, cityLine].filter(Boolean);
+		return parts.length ? parts.join(" · ") : "—";
+	}
+
+	function renderProjectCard(item) {
+		var card = $("usis-rfi-project-card");
+		if (!card) return;
+		if (!item) {
+			card.classList.add("d-none");
+			return;
+		}
+		$("usis-rfi-proj-number").textContent = dash(item.number);
+		$("usis-rfi-proj-name").textContent = dash(item.name);
+		$("usis-rfi-proj-address").textContent = formatProjectAddress(item);
+		$("usis-rfi-proj-owner").textContent = dash(item.owner_company_name);
+		$("usis-rfi-proj-gc").textContent = dash(item.gc_company_name);
+		$("usis-rfi-proj-architect").textContent = dash(item.architect_company_name);
+		card.classList.remove("d-none");
+	}
+
+	function prefillResponsibleContractor(item) {
+		var sel = $("usis-rfi-responsible");
+		if (!sel || !item || sel.value) return;
+		var gcId = item.gc_company_id || "";
+		if (gcId && Array.prototype.some.call(sel.options, function (o) { return o.value === gcId; })) {
+			sel.value = gcId;
+			return;
+		}
+		var gcName = (item.gc_company_name || "").trim().toLowerCase();
+		if (!gcName) return;
+		var match = state.companies.find(function (c) {
+			return (c.name || "").trim().toLowerCase() === gcName;
+		});
+		if (match) sel.value = match.id;
+	}
+
+	function applySelectedProject(projectId) {
+		state.projectId = projectId || null;
+		if (!state.projectId) {
+			renderProjectCard(null);
+			return Promise.resolve();
+		}
+		rememberProject(state.projectId);
+		return U.loadProject(state.projectId).then(function (item) {
+			renderProjectCard(item);
+			prefillResponsibleContractor(item);
+		}).catch(function () {
+			renderProjectCard(null);
+		});
+	}
+
 	function loadProjects() {
 		return U.loadProjects().then(function (rows) {
 			var sel = $("usis-rfi-project");
@@ -55,13 +139,14 @@
 				rows.map(function (p) { return { id: p.id, label: (p.number ? p.number + " · " : "") + p.name }; }),
 				{ emptyLabel: "Select project…" }
 			);
-			var hint = U.queryParam("project_id");
+			var hint = currentProjectHint();
 			if (hint && Array.prototype.some.call(sel.options, function (o) { return o.value === hint; })) {
 				sel.value = hint;
 				state.projectId = hint;
-			} else if (sel.options.length > 1) {
-				sel.selectedIndex = 1;
-				state.projectId = sel.value;
+				rememberProject(hint);
+			} else {
+				sel.value = "";
+				state.projectId = null;
 			}
 		});
 	}
@@ -314,8 +399,9 @@
 		var sel = $("usis-rfi-project");
 		if (!sel) return;
 		sel.addEventListener("change", function () {
-			state.projectId = sel.value;
-			loadLookupsAndCustom().then(applyConfigurableFields);
+			applySelectedProject(sel.value).then(function () {
+				return loadLookupsAndCustom();
+			}).then(applyConfigurableFields);
 		});
 	}
 
@@ -408,6 +494,8 @@
 	function init() {
 		loadProjects().then(function () {
 			return Promise.all([loadUsersAndCompanies(), loadLookupsAndCustom()]);
+		}).then(function () {
+			return applySelectedProject(state.projectId);
 		}).then(applyConfigurableFields);
 
 		wireProjectChange();

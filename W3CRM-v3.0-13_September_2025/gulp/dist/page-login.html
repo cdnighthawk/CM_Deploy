@@ -61,6 +61,10 @@
 		<div class="row justify-content-center align-items-center min-vh-100 py-4">
 			<div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto">
 				<div class="auth-form">
+					<div class="d-flex justify-content-end gap-1 mb-3">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-lang-en" data-usis-set-lang="en_GB">English</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-lang-es" data-usis-set-lang="es_ES">Español</button>
+					</div>
 					<div id="usis-login-staff">
 					<div class="text-center mb-4">
 						<div class="brand-logo mb-3">
@@ -157,9 +161,12 @@
 			if (typeof window.USIS_API_BASE === "string") return window.USIS_API_BASE.trim().replace(/\/$/, "");
 			return "";
 		}
+		function t(s) {
+			return (window.USISI18n && window.USISI18n.tr) ? window.USISI18n.tr(s) : s;
+		}
 		var LOGIN_ERR = {
-			required: "Email and password are required.",
-			invalid: "Invalid email or password. On Render, create a user with the bootstrap script or register first."
+			required: t("Email and password are required."),
+			invalid: t("Invalid email or password. On Render, create a user with the bootstrap script or register first.")
 		};
 		var MS_ERR = {
 			not_configured: "Microsoft sign-in is not enabled on this server.",

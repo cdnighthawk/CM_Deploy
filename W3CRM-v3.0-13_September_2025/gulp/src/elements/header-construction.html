@@ -14,15 +14,15 @@
 											</svg>
 										</button>
 									</span>
-									<input type="text" class="form-control" placeholder="Search">
+									<input type="text" class="form-control" placeholder="Search" data-i18n-placeholder="Search">
 								</div>
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
 							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem">
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem" data-i18n-title="Report a problem" data-i18n-aria="Report a problem">
 									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
-									<span class="d-none d-lg-inline fs-6">Report a problem</span>
+									<span class="d-none d-lg-inline fs-6" data-i18n="Report a problem">Report a problem</span>
 								</button>
 							</li>
 							<li class="nav-item">
@@ -48,8 +48,8 @@
 									</button>
 									<div class="dropdown-menu dropdown-menu-end py-0">
 										<div class="dz-scroll p-2" style="height: 380px;">
-								<p class="text-muted small text-center mb-0 py-5">No notifications.</p>
-							<a class="d-block text-center p-3 border-top" href="javascript:void(0);">See all notifications <i class="fa fa-arrow-right"></i></a>
+								<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
+							<a class="d-block text-center p-3 border-top" href="javascript:void(0);"><span data-i18n="See all notifications">See all notifications</span> <i class="fa fa-arrow-right"></i></a>
 									</div>
 								</div>
 							</li>
@@ -88,7 +88,7 @@
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
-											<span class="ms-2">My profile</span>
+											<span class="ms-2" data-i18n="My profile">My profile</span>
 										</a>
 									</li>
 									<li>
@@ -97,7 +97,7 @@
 												<path stroke="var(--bs-primary)" d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
 												<path stroke="var(--bs-primary)" d="M22 12A10 10 0 0 0 12 2v10z"></path>
 											</svg>
-											<span class="ms-2">Dashboard</span>
+											<span class="ms-2" data-i18n="Dashboard">Dashboard</span>
 										</a>
 									</li>
 									<li><hr class="dropdown-divider"></li>
@@ -108,7 +108,7 @@
 												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
 												<line x1="21" y1="12" x2="9" y2="12"></line>
 											</svg>
-											<span class="ms-2 text-danger">Logout </span>
+											<span class="ms-2 text-danger" data-i18n="Logout">Logout</span>
 										</a>
 									</li>
 								</ul>
@@ -124,41 +124,41 @@
 				<div class="modal-content">
 					<form>
 						<div class="modal-header">
-							<h5 class="modal-title" id="usis-report-problem-title">Report a problem</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							<h5 class="modal-title" id="usis-report-problem-title" data-i18n="Report a problem">Report a problem</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-i18n-aria="Close"></button>
 						</div>
 						<div class="modal-body">
-							<p class="text-muted small mb-3">Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed.</p>
+							<p class="text-muted small mb-3" data-i18n="Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed.">Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed.</p>
 							<div class="alert d-none" data-usis-report-status role="status"></div>
 							<div class="mb-3">
-								<label class="form-label" for="usis-report-kind">Kind</label>
+								<label class="form-label" for="usis-report-kind" data-i18n="Kind">Kind</label>
 								<select class="form-select" id="usis-report-kind" name="kind">
-									<option value="bug">Something broke</option>
-									<option value="enhancement">Recommend a change on this page</option>
-									<option value="general">General recommendation</option>
+									<option value="bug" data-i18n="Something broke">Something broke</option>
+									<option value="enhancement" data-i18n="Recommend a change on this page">Recommend a change on this page</option>
+									<option value="general" data-i18n="General recommendation">General recommendation</option>
 								</select>
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="usis-report-title">Title</label>
-								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary">
+								<label class="form-label" for="usis-report-title" data-i18n="Title">Title</label>
+								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary" data-i18n-placeholder="Short summary">
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="usis-report-name">Your name (optional)</label>
-								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with">
+								<label class="form-label" for="usis-report-name" data-i18n="Your name (optional)">Your name (optional)</label>
+								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with" data-i18n-placeholder="So we know who to follow up with">
 							</div>
 							<div class="mb-3">
-								<label class="form-label" for="usis-report-details">Details</label>
-								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?"></textarea>
+								<label class="form-label" for="usis-report-details" data-i18n="Details">Details</label>
+								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?" data-i18n-placeholder="What happened, and what did you expect?"></textarea>
 							</div>
 							<div class="mb-0" data-usis-report-page-block>
-								<label class="form-label text-muted" for="usis-report-diagnostics">Sent with this report</label>
+								<label class="form-label text-muted" for="usis-report-diagnostics" data-i18n="Sent with this report">Sent with this report</label>
 								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
 							</div>
-							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide>Site-wide (not tied to a page).</p>
+							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide data-i18n="Site-wide (not tied to a page).">Site-wide (not tied to a page).</p>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-							<button type="submit" class="btn btn-primary">Send</button>
+							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+							<button type="submit" class="btn btn-primary" data-i18n="Send">Send</button>
 						</div>
 					</form>
 				</div>

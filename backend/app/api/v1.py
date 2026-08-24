@@ -119,6 +119,23 @@ def auth_status():
     ms_on = entra_fully_configured(current_app.config)
     allow_register = bool(current_app.config.get("USIS_ALLOW_SELF_REGISTER"))
     if cu.user is None:
+        if cu.is_dev_admin:
+            return _jsonify(
+                {
+                    "authenticated": True,
+                    "microsoft_sso_enabled": ms_on,
+                    "self_register_enabled": allow_register,
+                    "applicant_only": False,
+                    "role_codes": sorted(cu.role_codes),
+                    "dev_bypass": True,
+                    "user": {
+                        "id": None,
+                        "email": "local-dev@localhost",
+                        "first_name": "Local",
+                        "last_name": "Dev",
+                    },
+                }
+            )
         return _jsonify(
             {
                 "authenticated": False,
@@ -432,8 +449,11 @@ def _project_detail_public(p: Project) -> dict[str, Any]:
             "invoice_due_date": _iso(p.invoice_due_date) if p.invoice_due_date else None,
             "invoice_recipient_emails": p.invoice_recipient_emails,
             "notes": p.notes,
+            "gc_company_id": str(p.gc_company_id) if p.gc_company_id else None,
             "gc_company_name": _company_name_by_id(p.gc_company_id),
+            "owner_company_id": str(p.owner_company_id) if p.owner_company_id else None,
             "owner_company_name": _company_name_by_id(p.owner_company_id),
+            "architect_company_id": str(p.architect_company_id) if p.architect_company_id else None,
             "architect_company_name": _company_name_by_id(p.architect_company_id),
             "created_at": _iso(p.created_at),
         }

@@ -448,8 +448,11 @@ function getUrlParams(dParam){
 			return code && typeof translations !== 'undefined' && translations[code] ? code : 'en_GB';
 		}
 
-		let savedLang = getCookie('language');
+		let savedLang = (window.USISI18n && window.USISI18n.getLang()) || getCookie('language');
 		let CurrentLang = resolveLang(savedLang || dzSettingsOptions.language);
+		if (window.USISI18n && (CurrentLang === 'es_ES' || CurrentLang === 'en_GB')) {
+			CurrentLang = window.USISI18n.getLang();
+		}
 
 		// bootstrap-select must be initialized before .selectpicker('val', …).
 		// This script loads before custom.js, so we init here (not only in W3Crm.init).
@@ -467,11 +470,13 @@ function getUrlParams(dParam){
 		$langSwitcher.on('change', function () {
 			let selectedLang = resolveLang($(this).val());
 			
-			setCookie('language', selectedLang);
-			setCookie('direction', this.value);
-			
-			$('body').attr('data-language', selectedLang);
-			updateTranslations(translations[selectedLang]);
+			if (window.USISI18n && (selectedLang === 'es_ES' || selectedLang === 'en_GB')) {
+				window.USISI18n.apply(selectedLang);
+			} else {
+				setCookie('language', selectedLang);
+				$('body').attr('data-language', selectedLang);
+				updateTranslations(translations[selectedLang]);
+			}
 			
 		});
 		
@@ -491,6 +496,7 @@ function getUrlParams(dParam){
 					el.textContent = i18n(key);
 				}
 			});
+			if (window.USISI18n) window.USISI18n.apply(document.body.getAttribute('data-language') || 'en_GB');
 		}
 		
 	});
@@ -516,10 +522,9 @@ function getUrlParams(dParam){
 /* Cookies Function */
 function setCookie(cname, cvalue, exhours) {
     var d = new Date();
-    d.setTime(d.getTime() + (30 * 60 * 1000)); // 30 Minutes
+    d.setTime(d.getTime() + (365 * 24 * 60 * 60 * 1000));
     var expires = "expires=" + d.toUTCString();
-    var path = "path=/construction/"; // 👈 Restrict cookie to /construction/
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";" + path;
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=Lax";
 }
 
 
@@ -540,7 +545,7 @@ function getCookie(cname){
 }
 
 function deleteCookie(cname) {
-    document.cookie = cname + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/construction/";
+    document.cookie = cname + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
 }
 
 

@@ -1080,15 +1080,15 @@
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-due">Due (review)</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
+							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-due" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-submitby">Submit by</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
+							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-submitby" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-received">Received date</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
+							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-received" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom">Received from</label>
@@ -1096,10 +1096,17 @@
 						</div>
 					</div>
 					<hr class="my-3">
-					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-						<h6 class="mb-0 small">Line items (Sage CM style)</h6>
-						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-submittal-c-add-spec">+ Add from spec</button>
+					<div class="mb-2">
+						<h6 class="mb-1 small">Spec sections</h6>
+						<p class="text-muted small mb-2">Check the CSI sections to include. These become line items.</p>
+						<input type="search" class="form-control form-control-sm mb-2" id="usis-submittal-c-spec-q" placeholder="Find CSI section…" autocomplete="off">
+						<div class="alert alert-light border py-2 small mb-2 d-none" id="usis-submittal-c-spec-empty">
+							No CSI sections on this project. Add them on the Specs tab first.
+							<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="usis-submittal-c-open-specs">Open Specs tab</button>
+						</div>
+						<div class="border rounded px-2 py-1 bg-body" id="usis-submittal-c-spec-list" style="max-height: 12rem; overflow: auto;"></div>
 					</div>
+					<h6 class="mb-2 small">Selected line items</h6>
 					<div class="table-responsive mb-2" style="max-height: 14rem;">
 						<table class="table table-sm table-bordered align-middle mb-0">
 							<thead class="table-light">

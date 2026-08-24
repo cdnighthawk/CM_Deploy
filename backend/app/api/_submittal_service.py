@@ -306,6 +306,7 @@ def _apply_line_items(s: Submittal, raw_items: Any, project_id: uuid.UUID) -> No
                 catalog_id = new_cat.id
 
         li = SubmittalLineItem(
+            id=uuid.uuid4(),
             submittal_id=s.id,
             sort_order=int(item.get("sort_order") or idx),
             spec_section_id=spec_id,

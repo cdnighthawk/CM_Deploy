@@ -35,7 +35,7 @@ from ..services.hr_hire_signed_forms import signed_form_staff_url
 from ..services.hr_policy import HIRE_WIZARD_POLICY_VERSIONS
 from ..users.test_artifacts import hr_demo_user_id_subquery, is_hr_demo_user
 from . import _hr_dispatch_service as hr_dispatch_svc
-from ._perms import CurrentUser, current_user
+from ._perms import CurrentUser, can_manage_directory_users, current_user
 from .v1 import _iso, _jsonify
 
 # Human-readable labels for known seeded keys (fallback: format the key).
@@ -561,6 +561,8 @@ def register_hr_routes(bp: Blueprint) -> None:
                 "employee_dispatches": employee_dispatches,
                 "capabilities": {
                     "can_edit_hr_employee_records": _can_edit_hr_employee_records(cu),
+                    "can_resend_invite": can_manage_directory_users(cu)
+                    or _can_edit_hr_employee_records(cu),
                 },
                 "pending_hr_approvals": pending_hr_approvals,
                 "document_links": document_links,

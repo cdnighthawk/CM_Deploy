@@ -2379,6 +2379,20 @@ def admin_delete_user(user_id: str):
     return _jsonify({**result, "entity": "directory_user_deleted"})
 
 
+@bp.post("/admin/users/<user_id>/resend-invite")
+def admin_resend_user_invite(user_id: str):
+    uid = _parse_uuid_param(user_id)
+    if not uid:
+        return _jsonify({"error": "invalid user id"}), 400
+    try:
+        result = admin_users_svc.resend_user_invite(current_user(), uid)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    if result is None:
+        return _jsonify({"error": "user not found"}), 404
+    return _jsonify({**result, "entity": "directory_user_invite"})
+
+
 def _project_membership_err(exc: project_members_svc.ApiError):
     return _jsonify({"error": exc.message}), exc.status
 

@@ -723,7 +723,7 @@ def send_user_invite_email(
     login_url: str | None = None,
     temporary_password_set: bool = False,
     invited_by: str | None = None,
-) -> None:
+) -> dict[str, object]:
     """Best-effort invite when an admin creates a user (``POST /api/v1/admin/users``)."""
     url = login_url or public_login_url()
     lines = [
@@ -750,7 +750,7 @@ def send_user_invite_email(
     if invited_by:
         lines.extend(["", f"— invited by {invited_by}"])
     subject = "You're invited to USIS Construction Management"
-    send_plain_notification_email(to=to, subject=subject, body="\n".join(lines))
+    return send_plain_notification_email(to=to, subject=subject, body="\n".join(lines))
 
 
 def _mark_log_delivered(log_id: str, *, error: Optional[str] = None) -> None:

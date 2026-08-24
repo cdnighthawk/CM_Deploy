@@ -52,10 +52,19 @@ def _iso(dt: Any) -> str | None:
     return dt.isoformat()
 
 
+def _can_resend_user_invite(cu: CurrentUser) -> bool:
+    if can_manage_directory_users(cu):
+        return True
+    return bool(cu.is_dev_admin or cu.has_role("admin", "hr_admin", "executive"))
+
+
 def user_public(u: User) -> dict[str, Any]:
+    applicant_only = is_applicant_only_user(u)
     roles: list[dict[str, Any]] = []
     for ur in u.roles or ():
         if ur.role is None:
+            continue
+        if (ur.role.code or "") == APPLICANT_ROLE_CODE and not applicant_only:
             continue
         roles.append(
             {
@@ -507,6 +516,40 @@ def delete_user(
     db.session.delete(u)
     db.session.flush()
     return {"deleted": True, "id": str(user_id), "email": email}
+
+
+def resend_user_invite(cu: CurrentUser, user_id: uuid.UUID) -> dict[str, Any] | None:
+    """Send the login invite email again for a staff user."""
+    if not _can_resend_user_invite(cu):
+        raise ApiError("Admin privileges required to resend invites.", 403)
+    u = db.session.scalar(
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.roles).selectinload(UserRole.role))
+    )
+    if u is None:
+        return None
+    if is_applicant_only_user(u):
+        raise ApiError(
+            "Job applicants are managed under Applications, not User admin.",
+            400,
+        )
+    if not (u.email or "").strip():
+        raise ApiError("This user has no email address.")
+    from ._notifications import send_user_invite_email
+
+    inviter = cu.user.email if cu.user and cu.user.email else None
+    result = send_user_invite_email(
+        to=u.email,
+        temporary_password_set=bool(u.password_hash),
+        invited_by=inviter,
+    )
+    return {
+        "item": user_public(u),
+        "invite": result
+        if isinstance(result, dict)
+        else {"sent": False, "dry_run": False, "error": None},
+    }
 
 
 def preview_purge_test_users(

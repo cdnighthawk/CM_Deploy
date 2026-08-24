@@ -185,3 +185,71 @@ def test_admin_users_exclude_applicants_and_delete_staff(client, no_dev_admin):
 
     gone = client.get(f"/api/v1/admin/users/{staff_id}", headers=hdr)
     assert gone.status_code == 404
+
+
+def test_admin_users_include_superuser_with_applicant_role(client, no_dev_admin):
+    from app.permissions.applicant import assign_applicant_role
+
+    with client.application.app_context():
+        admin = User(
+            email="adm_su_" + uuid.uuid4().hex[:8] + "@t.com",
+            is_superuser=True,
+        )
+        db.session.add(admin)
+        db.session.flush()
+        assign_applicant_role(admin)
+        aid = str(admin.id)
+        admin_email = admin.email
+        db.session.commit()
+
+    listed = client.get(
+        "/api/v1/admin/users?limit=500",
+        headers={"X-Usis-User-Id": aid},
+    )
+    assert listed.status_code == 200
+    items = listed.get_json()["items"]
+    match = next((row for row in items if row["email"] == admin_email), None)
+    assert match is not None
+    assert match["is_superuser"] is True
+    assert match["is_applicant_only"] is False
+    assert all(r.get("code") != "applicant" for r in match["roles"] or [])
+
+
+def test_admin_resend_invite_staff(client, no_dev_admin):
+    with client.application.app_context():
+        admin = User(email="adm_inv_" + uuid.uuid4().hex[:8] + "@t.com", is_superuser=True)
+        staff = User(email="staff_inv_" + uuid.uuid4().hex[:8] + "@t.com")
+        db.session.add_all([admin, staff])
+        db.session.flush()
+        aid = str(admin.id)
+        staff_id = str(staff.id)
+        db.session.commit()
+
+    hdr = {"X-Usis-User-Id": aid}
+    r = client.post(f"/api/v1/admin/users/{staff_id}/resend-invite", headers=hdr)
+    assert r.status_code == 200, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["item"]["id"] == staff_id
+    assert "invite" in body
+    assert body["invite"]["sent"] is False
+    assert body["invite"]["dry_run"] is True
+
+
+def test_admin_resend_invite_refuses_applicant(client, no_dev_admin):
+    from app.permissions.applicant import assign_applicant_role
+
+    with client.application.app_context():
+        admin = User(email="adm_inv2_" + uuid.uuid4().hex[:8] + "@t.com", is_superuser=True)
+        applicant = User(email="appl_inv_" + uuid.uuid4().hex[:8] + "@t.com")
+        db.session.add_all([admin, applicant])
+        db.session.flush()
+        assign_applicant_role(applicant)
+        aid = str(admin.id)
+        applicant_id = str(applicant.id)
+        db.session.commit()
+
+    r = client.post(
+        f"/api/v1/admin/users/{applicant_id}/resend-invite",
+        headers={"X-Usis-User-Id": aid},
+    )
+    assert r.status_code == 400

@@ -201,6 +201,63 @@
 		return '<span class="badge bg-light text-muted">—</span>';
 	}
 
+	function setResendStatus(text, isError) {
+		var status = document.getElementById("usis-hr-emp-resend-status");
+		if (!status) return;
+		if (!text) {
+			status.textContent = "";
+			status.classList.add("d-none");
+			status.classList.remove("text-danger", "text-success", "text-muted");
+			return;
+		}
+		status.textContent = text;
+		status.classList.remove("d-none", "text-danger", "text-success", "text-muted");
+		status.classList.add(isError ? "text-danger" : "text-success");
+	}
+
+	function wireResendInvite(data, userId) {
+		var btn = document.getElementById("usis-hr-emp-resend-invite");
+		if (!btn) return;
+		var caps = (data && data.capabilities) || {};
+		if (!caps.can_resend_invite || !userId) {
+			btn.classList.add("d-none");
+			btn.onclick = null;
+			return;
+		}
+		btn.classList.remove("d-none");
+		btn.onclick = function () {
+			btn.disabled = true;
+			setResendStatus("Sending invite…", false);
+			fetch(apiBase() + "/api/v1/admin/users/" + encodeURIComponent(userId) + "/resend-invite", {
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: "{}",
+			})
+				.then(function (r) {
+					return r.json().then(function (j) {
+						return { ok: r.ok, body: j };
+					});
+				})
+				.then(function (res) {
+					btn.disabled = false;
+					var inv = (res.body && res.body.invite) || {};
+					var msg;
+					if (res.ok && inv.sent) msg = "Invite email sent.";
+					else if (res.ok && inv.dry_run) msg = "Invite recorded (mail is in dry-run; no message was delivered).";
+					else msg = (inv.error && String(inv.error)) || (res.body && res.body.error) || "Could not send invite.";
+					setResendStatus(msg, !(res.ok && (inv.sent || inv.dry_run)));
+					if (res.ok && (inv.sent || inv.dry_run) && window.USISNotify && window.USISNotify.success) {
+						window.USISNotify.success(msg);
+					}
+				})
+				.catch(function () {
+					btn.disabled = false;
+					setResendStatus("Network error sending invite.", true);
+				});
+		};
+	}
+
 	function loadEmployee() {
 		var statusEl = document.getElementById("usis-hr-emp-api-status");
 		var contentEl = document.getElementById("usis-hr-emp-content");
@@ -261,6 +318,7 @@
 					u.is_active === false ? "Inactive" : u.is_active === true ? "Active" : "—"
 				);
 				setText("usis-hr-emp-last-login", u.last_login_at ? fmtDate(u.last_login_at) : "—");
+				wireResendInvite(data, u.id);
 
 				renderPendingApprovals(data.pending_hr_approvals || []);
 				renderDocumentLinks(data.document_links || []);

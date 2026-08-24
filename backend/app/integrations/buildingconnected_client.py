@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -45,6 +46,14 @@ class BuildingConnectedClient:
     def __exit__(self, *args: object) -> None:
         self.close()
 
+    def _parse_json(self, resp: httpx.Response) -> Any:
+        if not resp.content:
+            return None
+        try:
+            return resp.json()
+        except ValueError:
+            return {"raw": (resp.text or "")[:2000]}
+
     def _get_json(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         resp = self._http.get(path, params=params)
         try:
@@ -57,6 +66,66 @@ class BuildingConnectedClient:
         if not isinstance(data, dict):
             raise ValueError(f"{path} response is not a JSON object")
         return data
+
+    def get_opportunity(self, opportunity_id: str) -> dict[str, Any]:
+        """GET /opportunities/{opportunityId}."""
+        data = self._get_json(f"/opportunities/{opportunity_id}", {})
+        return data
+
+    def patch_opportunity(self, opportunity_id: str, patch: dict[str, Any]) -> dict[str, Any]:
+        """
+        PATCH /opportunities/{opportunityId}
+
+        Example — Will Not Bid:
+            curl -X PATCH \\
+              "$BUILDINGCONNECTED_API_BASE/opportunities/OPPORTUNITY_ID" \\
+              -H "Authorization: Bearer $ACCESS_TOKEN" \\
+              -H "Content-Type: application/json" \\
+              -d '{"submissionState":"DECLINED"}'
+        """
+        if not opportunity_id:
+            raise ValueError("opportunity_id is required")
+        if not isinstance(patch, dict) or not patch:
+            raise ValueError("PATCH body is required")
+        path = f"/opportunities/{opportunity_id}"
+        last_exc: httpx.HTTPStatusError | None = None
+        for attempt in range(3):
+            resp = self._http.patch(path, json=patch, headers={"Content-Type": "application/json"})
+            body = self._parse_json(resp)
+            log.info(
+                "BuildingConnected PATCH opportunity id=%s status=%s request=%s response_keys=%s",
+                opportunity_id,
+                resp.status_code,
+                patch,
+                list(body.keys()) if isinstance(body, dict) else type(body).__name__,
+            )
+            if resp.status_code == 429 and attempt < 2:
+                retry_after = resp.headers.get("Retry-After")
+                try:
+                    wait_s = min(30.0, float(retry_after)) if retry_after else 0.5 * (2**attempt)
+                except ValueError:
+                    wait_s = 0.5 * (2**attempt)
+                log.warning("BuildingConnected PATCH rate-limited; retry in %ss", wait_s)
+                resp.close()
+                time.sleep(wait_s)
+                continue
+            try:
+                resp.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                last_exc = exc
+                log.warning(
+                    "BuildingConnected PATCH %s HTTP %s: %s",
+                    path,
+                    resp.status_code,
+                    (resp.text or "")[:500],
+                )
+                raise
+            if not isinstance(body, dict):
+                raise ValueError(f"{path} response is not a JSON object")
+            return body
+        if last_exc:
+            raise last_exc
+        raise RuntimeError("BuildingConnected PATCH opportunity failed")
 
     def get_projects_page(
         self,

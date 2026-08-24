@@ -19,9 +19,18 @@ from ..integrations.autodesk_oauth import (
     exchange_authorization_code,
     refresh_access_token,
 )
+from sqlalchemy import func, select
+
 from ..integrations.buildingconnected_client import BuildingConnectedClient
+from ..integrations.buildingconnected_write import (
+    apply_opportunity_to_lead,
+    build_opportunity_patch_body,
+    get_submission_change_block_reason,
+    message_for_bc_http_error,
+)
 from ..lead_estimate_csv_load import bc_api_project_to_norm, upsert_lead_estimate_norm_rows
 from ..models.buildingconnected_oauth import BuildingConnectedOAuthToken
+from ..models.lead_estimate import LeadEstimate
 
 log = logging.getLogger(__name__)
 
@@ -387,5 +396,150 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 "skipped": skipped,
                 "errors": errors,
                 "entity": "buildingconnected_sync",
+            }
+        )
+
+    def _resolve_lead_for_bc(identifier: str) -> LeadEstimate | None:
+        raw = (identifier or "").strip()
+        if not raw:
+            return None
+        try:
+            import uuid as uuid_mod
+
+            uid = uuid_mod.UUID(raw)
+            row = db.session.get(LeadEstimate, uid)
+            if row is not None:
+                return row
+        except ValueError:
+            pass
+        row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == raw))
+        if row is not None:
+            return row
+        return db.session.scalar(
+            select(LeadEstimate).where(func.lower(LeadEstimate.external_id) == raw.lower())
+        )
+
+    @bp.patch("/lead-estimates/<identifier>/buildingconnected")
+    def patch_lead_buildingconnected(identifier: str):
+        """
+        Push submissionState / outcome to BuildingConnected.
+
+        curl -X PATCH https://www.usiscm.com/api/v1/lead-estimates/BC_ID/buildingconnected \\
+          -H "Content-Type: application/json" \\
+          -d '{"submissionState":"DECLINED","note":"Outside service area"}'
+        """
+        if not current_app.config.get("BC_WRITE_ENABLED"):
+            return (
+                jsonify(
+                    {
+                        "error": "BuildingConnected write-back is disabled (set BC_WRITE_ENABLED=1).",
+                        "entity": "buildingconnected_write",
+                    }
+                ),
+                403,
+            )
+        row = _resolve_lead_for_bc(identifier)
+        if row is None:
+            return jsonify({"error": "lead estimate not found", "entity": "buildingconnected_write"}), 404
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "expected JSON object body", "entity": "buildingconnected_write"}), 400
+        try:
+            patch = build_opportunity_patch_body(data)
+        except ValueError as exc:
+            return jsonify({"error": str(exc), "entity": "buildingconnected_write"}), 400
+
+        outcome_state = None
+        if isinstance(row.outcome, dict):
+            outcome_state = row.outcome.get("state")
+        block = get_submission_change_block_reason(
+            external_id=row.external_id,
+            submission_state=row.submission_state,
+            is_archived=row.is_archived,
+            outcome_state=outcome_state,
+        )
+        if block and patch.get("submissionState"):
+            return jsonify({"error": block, "entity": "buildingconnected_write"}), 409
+        if not row.external_id:
+            return (
+                jsonify(
+                    {
+                        "error": "This lead is not linked to a BuildingConnected opportunity.",
+                        "entity": "buildingconnected_write",
+                    }
+                ),
+                409,
+            )
+
+        try:
+            access = _ensure_access_token()
+        except Exception as exc:
+            log.warning("BuildingConnected write auth failed: %s", exc)
+            return jsonify({"error": str(exc), "entity": "buildingconnected_write"}), 401
+
+        base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
+        note = str(data.get("note") or "").strip()
+        try:
+            with BuildingConnectedClient(access, base) as cli:
+                try:
+                    patched = cli.patch_opportunity(row.external_id, patch)
+                except httpx.HTTPStatusError as exc:
+                    if exc.response is None or exc.response.status_code != 401:
+                        raise
+                    _refresh_tokens_unlocked()
+                    db.session.commit()
+                    access = _ensure_access_token()
+                    with BuildingConnectedClient(access, base) as cli2:
+                        patched = cli2.patch_opportunity(row.external_id, patch)
+                        try:
+                            opportunity = cli2.get_opportunity(row.external_id)
+                        except Exception:
+                            opportunity = patched
+                else:
+                    try:
+                        opportunity = cli.get_opportunity(row.external_id)
+                    except Exception:
+                        opportunity = patched
+            if not isinstance(opportunity, dict):
+                opportunity = patched if isinstance(patched, dict) else {}
+            apply_opportunity_to_lead(row, opportunity)
+            db.session.commit()
+        except httpx.HTTPStatusError as exc:
+            db.session.rollback()
+            status = exc.response.status_code if exc.response is not None else 502
+            try:
+                body = exc.response.json() if exc.response is not None else None
+            except Exception:
+                body = {"raw": (exc.response.text if exc.response is not None else "")[:500]}
+            msg = message_for_bc_http_error(status, body, "BuildingConnected PATCH opportunity")
+            log.warning("BuildingConnected write failed lead=%s status=%s: %s", identifier, status, msg)
+            return (
+                jsonify({"error": msg, "details": body, "entity": "buildingconnected_write"}),
+                status if 400 <= status < 600 else 502,
+            )
+        except Exception as exc:
+            db.session.rollback()
+            log.exception("BuildingConnected write failed")
+            return jsonify({"error": str(exc), "entity": "buildingconnected_write"}), 502
+
+        log.info(
+            "BuildingConnected write ok lead=%s bc=%s patch=%s note=%s",
+            row.id,
+            row.external_id,
+            patch,
+            bool(note),
+        )
+        from ..api._serializers import lead_estimate_public
+
+        return jsonify(
+            {
+                "ok": True,
+                "item": lead_estimate_public(row),
+                "opportunity": {
+                    "id": opportunity.get("id") if isinstance(opportunity, dict) else row.external_id,
+                    "submissionState": row.submission_state,
+                    "outcome": row.outcome,
+                },
+                "entity": "buildingconnected_write",
             }
         )

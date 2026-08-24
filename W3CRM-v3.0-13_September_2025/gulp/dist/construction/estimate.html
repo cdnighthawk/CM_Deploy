@@ -78,6 +78,25 @@
 			word-break: break-word;
 			overflow-wrap: break-word;
 		}
+		#usis-estimate-table th.usis-est-col-company,
+		#usis-estimate-table td.usis-est-col-company,
+		#usis-estimate-table th.usis-est-col-city,
+		#usis-estimate-table td.usis-est-col-city {
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: break-word;
+			overflow: hidden;
+		}
+		#usis-estimate-table th.usis-est-col-company,
+		#usis-estimate-table td.usis-est-col-company {
+			width: 14%;
+			max-width: 14%;
+		}
+		#usis-estimate-table th.usis-est-col-city,
+		#usis-estimate-table td.usis-est-col-city {
+			width: 10%;
+			max-width: 10%;
+		}
 		.usis-col-filter-scroll { max-height: 14rem; overflow-y: auto; font-size: 0.8125rem; }
 		#usis-est-col-filter-modal .accordion-button { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
 	</style>
@@ -493,14 +512,14 @@
 						<table class="table table-sm m-0" id="usis-estimate-table">
 							<thead>
 								<tr>
-									<th class="text-nowrap">Project #</th>
-									<th class="usis-est-col-lead">Lead</th>
-									<th class="text-nowrap usis-est-col-trade">Trade invited</th>
-									<th>Company</th>
-									<th class="text-nowrap">City</th>
-									<th class="text-nowrap">State</th>
-									<th class="text-nowrap">Bid due date</th>
-									<th class="text-center text-nowrap">Estimator</th>
+									<th class="text-nowrap" data-sort-key="number">Project #</th>
+									<th class="usis-est-col-lead" data-sort-key="name">Lead</th>
+									<th class="text-nowrap usis-est-col-trade" data-sort-key="trade_name">Trade invited</th>
+									<th class="usis-est-col-company" data-sort-key="company_name">Company</th>
+									<th class="usis-est-col-city" data-sort-key="city">City</th>
+									<th class="text-nowrap" data-sort-key="state">State</th>
+									<th class="text-nowrap" data-sort-key="due_at">Bid due date</th>
+									<th class="text-center text-nowrap" data-sort-key="estimator">Estimator</th>
 									<th class="text-end text-nowrap">Action</th>
 								</tr>
 							</thead>
@@ -641,6 +660,7 @@
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-table-sort.js"></script>
 
 	<script>
 	(function () {
@@ -967,8 +987,8 @@
 				'<td class="text-nowrap">' + numInner + "</td>" +
 				"<td class=\"usis-est-col-lead\">" + leadCell + "</td>" +
 				"<td class=\"usis-est-col-trade\">" + tradeCell + "</td>" +
-				"<td>" + company + "</td>" +
-				'<td class="text-nowrap">' + city + "</td>" +
+				'<td class="usis-est-col-company" title="' + company + '">' + company + "</td>" +
+				'<td class="usis-est-col-city" title="' + city + '">' + city + "</td>" +
 				'<td class="text-nowrap">' + state + "</td>" +
 				'<td class="text-nowrap">' + bidDue + "</td>" +
 				'<td class="text-center">—</td>' +
@@ -1023,7 +1043,8 @@
 				tbody.innerHTML =
 					'<tr><td colspan="9" class="text-muted">No rows match your column filters and/or search. Adjust <strong>Column filters</strong> or clear the search box.</td></tr>';
 			} else {
-				tbody.innerHTML = filtered.map(renderRow).join("");
+				var rows = tableSort ? tableSort.apply(filtered) : filtered;
+				tbody.innerHTML = rows.map(renderRow).join("");
 			}
 			if (filterCount) {
 				var ac = activeColumnFilterCount();
@@ -1082,6 +1103,34 @@
 						".</td></tr>";
 				});
 		}
+
+		var tableSort = window.USIS_TABLE_SORT
+			? window.USIS_TABLE_SORT.bind({
+					table: "#usis-estimate-table",
+					defaultKey: "due_at",
+					defaultDir: "asc",
+					storageKey: "usis-estimate-table-sort",
+					columns: [
+						{ key: "number", type: "text" },
+						{ key: "name", type: "text" },
+						{ key: "trade_name", type: "text" },
+						{ key: "company_name", type: "text" },
+						{ key: "city", type: "text" },
+						{ key: "state", type: "text" },
+						{ key: "due_at", type: "date" },
+						{
+							key: "estimator",
+							type: "text",
+							getValue: function (row) {
+								return row.estimator_name || row.estimator || "";
+							},
+						},
+					],
+					onChange: function () {
+						applyTableFilter();
+					},
+				})
+			: null;
 
 		document.addEventListener("DOMContentLoaded", loadEstimates);
 		var btn = document.getElementById("usis-estimate-sync-stub");

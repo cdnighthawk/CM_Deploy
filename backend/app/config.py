@@ -187,8 +187,10 @@ class Config:
     AUTODESK_CLIENT_ID: str | None = (os.environ.get("AUTODESK_CLIENT_ID") or "").strip() or None
     AUTODESK_CLIENT_SECRET: str | None = (os.environ.get("AUTODESK_CLIENT_SECRET") or "").strip() or None
     AUTODESK_OAUTH_REDIRECT_URI: str | None = (os.environ.get("AUTODESK_OAUTH_REDIRECT_URI") or "").strip() or None
-    # Space-separated APS scopes (e.g. ``data:read``). Must match the app registration.
-    AUTODESK_OAUTH_SCOPES: str = (os.environ.get("AUTODESK_OAUTH_SCOPES") or "data:read").strip() or "data:read"
+    # Space-separated APS scopes. Write-back (Will Not Bid) needs data:write; reconnect after changing.
+    AUTODESK_OAUTH_SCOPES: str = (
+        os.environ.get("AUTODESK_OAUTH_SCOPES") or "data:read data:write"
+    ).strip() or "data:read data:write"
     BUILDINGCONNECTED_API_BASE: str = (
         (os.environ.get("BUILDINGCONNECTED_API_BASE") or "").strip()
         or "https://developer.api.autodesk.com/construction/buildingconnected/v2"
@@ -213,6 +215,14 @@ class Config:
     # Shared secret so the hourly Render cron can POST /integrations/buildingconnected/sync
     # without a staff session. Header: X-Cron-Secret.
     BC_SYNC_CRON_SECRET: str | None = (os.environ.get("BC_SYNC_CRON_SECRET") or "").strip() or None
+    # Push bid status (Will Not Bid / Will Bid) to BuildingConnected. Production is off unless 1.
+    _bc_write_raw = (os.environ.get("BC_WRITE_ENABLED") or "").strip().lower()
+    if _bc_write_raw in ("1", "true", "yes", "on"):
+        BC_WRITE_ENABLED: bool = True
+    elif _bc_write_raw in ("0", "false", "no", "off"):
+        BC_WRITE_ENABLED: bool = False
+    else:
+        BC_WRITE_ENABLED: bool = os.environ.get("FLASK_ENV", "").strip().lower() != "production"
     # Optional 32+ byte secret for Fernet; defaults to a SHA256-derived key from SECRET_KEY.
     TOKEN_ENCRYPTION_KEY: str | None = (os.environ.get("TOKEN_ENCRYPTION_KEY") or "").strip() or None
 

@@ -89,12 +89,12 @@
 						<table class="table table-sm m-0" id="usis-projects-table">
 							<thead>
 								<tr>
-									<th class="text-nowrap">Project #</th>
-									<th>Name</th>
-									<th class="text-nowrap">City</th>
-									<th class="text-nowrap">State</th>
-									<th class="text-nowrap">Status</th>
-									<th class="text-nowrap">Type</th>
+									<th class="text-nowrap" data-sort-key="number">Project #</th>
+									<th data-sort-key="name">Name</th>
+									<th class="text-nowrap" data-sort-key="city">City</th>
+									<th class="text-nowrap" data-sort-key="state">State</th>
+									<th class="text-nowrap" data-sort-key="status">Status</th>
+									<th class="text-nowrap" data-sort-key="project_type">Type</th>
 									<th class="text-end text-nowrap">Action</th>
 								</tr>
 							</thead>
@@ -130,6 +130,7 @@
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-table-sort.js"></script>
 
 	<script>
 	(function () {
@@ -218,7 +219,8 @@
 					'<tr><td colspan="7" class="text-muted">No projects match this filter.</td></tr>';
 				return;
 			}
-			tbody.innerHTML = rows.map(renderRow).join("");
+			var sorted = tableSort ? tableSort.apply(rows) : rows;
+			tbody.innerHTML = sorted.map(renderRow).join("");
 		}
 
 		function loadProjects() {
@@ -261,6 +263,26 @@
 						".</td></tr>";
 				});
 		}
+
+		var tableSort = window.USIS_TABLE_SORT
+			? window.USIS_TABLE_SORT.bind({
+					table: "#usis-projects-table",
+					defaultKey: "number",
+					defaultDir: "asc",
+					storageKey: "usis-projects-table-sort",
+					columns: [
+						{ key: "number", type: "text" },
+						{ key: "name", type: "text" },
+						{ key: "city", type: "text" },
+						{ key: "state", type: "text" },
+						{ key: "status", type: "text" },
+						{ key: "project_type", type: "text" },
+					],
+					onChange: function () {
+						applyFilter();
+					},
+				})
+			: null;
 
 		document.addEventListener("DOMContentLoaded", loadProjects);
 		var btn = document.getElementById("usis-projects-reload");

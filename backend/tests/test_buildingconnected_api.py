@@ -272,6 +272,100 @@ def test_lead_ui_filter_matches_current_bid_board():
     assert "submission_state" in sql
 
 
+def test_bc_write_helpers_and_errors():
+    from app.integrations.buildingconnected_write import (
+        build_opportunity_patch_body,
+        get_submission_change_block_reason,
+        message_for_bc_http_error,
+    )
+
+    assert build_opportunity_patch_body({"submissionState": "DECLINED"}) == {
+        "submissionState": "DECLINED"
+    }
+    assert build_opportunity_patch_body({"submissionState": "DECLINED", "note": "Too far"})[
+        "declineReasons"
+    ] == ["OTHER"]
+    try:
+        build_opportunity_patch_body({"submissionState": "SUBMITTED"})
+        raise AssertionError("expected SUBMITTED to fail")
+    except ValueError as exc:
+        assert "SUBMITTED" in str(exc)
+    assert get_submission_change_block_reason(external_id=None, submission_state="UNDECIDED", is_archived=False)
+    assert get_submission_change_block_reason(
+        external_id="abc", submission_state="SUBMITTED", is_archived=False
+    )
+    assert "data:write" in message_for_bc_http_error(403, {"detail": "insufficient scope data:write"})
+    assert "not found" in message_for_bc_http_error(404, {}).lower()
+
+
+def test_bc_write_disabled_returns_403(client, flask_app):
+    flask_app.config["BC_WRITE_ENABLED"] = False
+    r = client.patch(
+        "/api/v1/lead-estimates/does-not-exist/buildingconnected",
+        json={"submissionState": "DECLINED"},
+    )
+    assert r.status_code == 403
+
+
+def test_bc_write_patches_opportunity(monkeypatch, client, flask_app):
+    _skip_if_no_bc_table(flask_app)
+    flask_app.config["BC_WRITE_ENABLED"] = True
+    flask_app.config["SECRET_KEY"] = "unit-test-secret-key-not-for-production-use"
+    flask_app.config["BUILDINGCONNECTED_API_BASE"] = (
+        "https://developer.api.autodesk.com/construction/buildingconnected/v2"
+    )
+
+    calls = {"patch": None}
+
+    class _WriteClient:
+        def __init__(self, _token, _base):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def patch_opportunity(self, opportunity_id, patch):
+            calls["patch"] = (opportunity_id, patch)
+            return {"id": opportunity_id, "submissionState": patch["submissionState"]}
+
+        def get_opportunity(self, opportunity_id):
+            return {"id": opportunity_id, "submissionState": "DECLINED", "isArchived": False}
+
+    monkeypatch.setattr(_integration_bc, "BuildingConnectedClient", _WriteClient)
+    monkeypatch.setattr(_integration_bc, "_ensure_access_token", lambda: "at-write")
+
+    eid = "bc-write-" + uuid.uuid4().hex[:10]
+    with flask_app.app_context():
+        le = LeadEstimate(external_id=eid, name="Write test lead", submission_state="UNDECIDED")
+        db.session.add(le)
+        db.session.commit()
+        lead_id = str(le.id)
+
+    try:
+        r = client.patch(
+            f"/api/v1/lead-estimates/{lead_id}/buildingconnected",
+            json={"submissionState": "DECLINED", "note": "Too far"},
+        )
+        assert r.status_code == 200, r.get_data(as_text=True)
+        body = r.get_json()
+        assert body.get("ok") is True
+        assert calls["patch"][0] == eid
+        assert calls["patch"][1]["submissionState"] == "DECLINED"
+        with flask_app.app_context():
+            row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
+            assert row is not None
+            assert str(row.submission_state).upper() == "DECLINED"
+    finally:
+        with flask_app.app_context():
+            row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
+            if row is not None:
+                db.session.delete(row)
+                db.session.commit()
+
+
 def test_estimate_ui_filter_excludes_grouped_children():
     from sqlalchemy.dialects import postgresql
 

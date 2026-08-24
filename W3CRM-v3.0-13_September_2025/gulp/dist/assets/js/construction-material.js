@@ -39,6 +39,15 @@
 		return isNaN(n) ? String(v) : "$" + n.toFixed(2);
 	}
 
+	function fmtHours(cell) {
+		var v = cell.getValue();
+		if (v == null || v === "") return "—";
+		var n = Number(v);
+		if (isNaN(n)) return String(v);
+		var label = n === 1 ? " hr" : " hrs";
+		return n.toLocaleString(undefined, { maximumFractionDigits: 4 }) + label;
+	}
+
 	function setStatus(text) {
 		var el = document.getElementById("usis-mat-status");
 		if (el) el.textContent = text || "";
@@ -152,7 +161,7 @@
 				{ title: "Description", field: "description", minWidth: 160, widthGrow: 2 },
 				{ title: "Mounting", field: "mounting_type", width: 100 },
 				{ title: "Cost", field: "cost", width: 90, hozAlign: "right", formatter: fmtMoney },
-				{ title: "Labor", field: "labor_per", width: 90, hozAlign: "right", formatter: fmtMoney },
+				{ title: "Labor (hr)", field: "labor_per", width: 100, hozAlign: "right", formatter: fmtHours },
 				{ title: "UOM", field: "unit_of_measure", width: 64 },
 			],
 		});

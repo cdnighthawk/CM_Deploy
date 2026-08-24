@@ -295,6 +295,8 @@
 			opts +
 			"</select>" +
 			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-crm-save-stage">Save stage</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-danger" id="usis-crm-wnb">Will Not Bid</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-success" id="usis-crm-will-bid">Will Bid</button>' +
 			'<button type="button" class="btn btn-sm btn-success" id="usis-crm-award">Award (new project)</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-crm-ai">AI feasibility</button>' +
 			'<a class="btn btn-sm btn-outline-dark" href="' +
@@ -332,6 +334,22 @@
 					.catch(function (e) {
 						if (window.USISNotify) window.USISNotify.error(String(e.message || e));
 					});
+			});
+		}
+		var wnb = document.getElementById("usis-crm-wnb");
+		if (wnb) {
+			wnb.addEventListener("click", function () {
+				if (typeof window.usisBcUpdateSubmission === "function") {
+					window.usisBcUpdateSubmission(idForApi, "DECLINED", item.name);
+				}
+			});
+		}
+		var willBid = document.getElementById("usis-crm-will-bid");
+		if (willBid) {
+			willBid.addEventListener("click", function () {
+				if (typeof window.usisBcUpdateSubmission === "function") {
+					window.usisBcUpdateSubmission(idForApi, "WILL_SUBMIT", item.name);
+				}
 			});
 		}
 		var award = document.getElementById("usis-crm-award");

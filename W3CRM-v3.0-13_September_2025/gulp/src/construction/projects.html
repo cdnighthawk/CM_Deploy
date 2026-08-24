@@ -224,7 +224,7 @@
 		function loadProjects() {
 			if (!tbody) return;
 			tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading…</td></tr>';
-			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000", {
+			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000&exclude_status=planning", {
 					credentials: "include",
 					headers: { Accept: "application/json" },
 				})
@@ -233,7 +233,9 @@
 					return r.json();
 				})
 				.then(function (data) {
-					lastItems = data.items || [];
+					lastItems = (data.items || []).filter(function (r) {
+						return String(r.status || "").toLowerCase() !== "planning";
+					});
 					var hint = document.getElementById("usis-projects-scope-hint");
 					if (hint && data.project_scope === "assigned") {
 						hint.textContent =

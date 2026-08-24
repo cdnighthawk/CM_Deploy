@@ -69,6 +69,26 @@ def test_get_project_denies_unassigned(client, no_dev_admin):
     assert ok.status_code == 404
 
 
+def test_list_projects_can_exclude_planning(client, no_dev_admin):
+    with client.application.app_context():
+        u, _ = _mk_user_with_role("executive")
+        active = _mk_project("Active Job")
+        planning = Project(name="Planning Job", status="planning", project_type="commercial")
+        db.session.add(planning)
+        db.session.commit()
+        uid = str(u.id)
+        active_id, planning_id = str(active.id), str(planning.id)
+
+    r = client.get(
+        "/api/v1/projects?limit=2000&exclude_status=planning",
+        headers={"X-Usis-User-Id": uid},
+    )
+    assert r.status_code == 200
+    ids = {x["id"] for x in r.get_json()["items"]}
+    assert active_id in ids
+    assert planning_id not in ids
+
+
 def test_executive_sees_all_projects(client, no_dev_admin):
     with client.application.app_context():
         u, _ = _mk_user_with_role("executive")

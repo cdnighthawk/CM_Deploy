@@ -923,6 +923,11 @@ def list_projects():
 
     cu = current_user()
     filt = and_(Project.deleted_at.is_(None), project_access_clause(cu))
+    exclude_raw = (request.args.get("exclude_status") or "").strip()
+    if exclude_raw:
+        excluded = [s.strip().lower() for s in exclude_raw.split(",") if s.strip()]
+        if excluded:
+            filt = and_(filt, ~Project.status.in_(excluded))
     total = db.session.scalar(select(func.count()).select_from(Project).where(filt)) or 0
     q = select(Project).where(filt).order_by(Project.number.asc().nullslast(), Project.name.asc()).offset(offset).limit(limit)
     rows = db.session.scalars(q).all()

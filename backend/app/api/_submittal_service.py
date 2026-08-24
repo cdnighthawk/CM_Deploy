@@ -19,7 +19,7 @@ from ..models import (
     SubmittalLineItem,
     SubmittalPdfAnnotation,
 )
-from ._perms import CurrentUser
+from ._perms import CurrentUser, can_create_submittal, can_view_submittal_log
 from ._rfi_service import ApiError, _parse_dt, _parse_uuid
 
 __all__ = [
@@ -53,7 +53,7 @@ def _is_admin(cu: CurrentUser) -> bool:
 
 
 def _is_writer(cu: CurrentUser) -> bool:
-    return _is_admin(cu) or cu.has_role("standard")
+    return can_create_submittal(cu)
 
 
 def _bic_matches_user(cu: CurrentUser, ball_in_court: str | None) -> bool:
@@ -72,7 +72,7 @@ def _bic_matches_user(cu: CurrentUser, ball_in_court: str | None) -> bool:
 
 
 def _can_edit_submittal(cu: CurrentUser, s: Submittal) -> bool:
-    return _is_admin(cu) or _bic_matches_user(cu, s.ball_in_court)
+    return _is_writer(cu) or _bic_matches_user(cu, s.ball_in_court)
 
 
 def _can_annotate_submittal(cu: CurrentUser, s: Submittal) -> bool:
@@ -80,12 +80,7 @@ def _can_annotate_submittal(cu: CurrentUser, s: Submittal) -> bool:
 
 
 def _can_view_submittal(cu: CurrentUser, s: Submittal) -> bool:
-    return (
-        _is_admin(cu)
-        or _is_writer(cu)
-        or cu.has_role("read_only", "readonly")
-        or _bic_matches_user(cu, s.ball_in_court)
-    )
+    return can_view_submittal_log(cu) or _bic_matches_user(cu, s.ball_in_court)
 
 
 def _submittal_snapshot(s: Submittal) -> dict[str, Any]:
@@ -345,14 +340,18 @@ def _get_submittal_eager(sid: uuid.UUID) -> Submittal | None:
     return db.session.scalars(stmt).first()
 
 
-def list_submittals(project_id: uuid.UUID) -> dict[str, Any]:
+def list_submittals(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     rows = db.session.scalars(
         select(Submittal)
         .where(Submittal.project_id == project_id)
         .options(selectinload(Submittal.documents))
         .order_by(Submittal.number.asc(), Submittal.created_at.asc())
     ).all()
-    return {"items": [_submittal_public(s) for s in rows], "entity": "submittals"}
+    return {
+        "items": [_submittal_public(s) for s in rows],
+        "entity": "submittals",
+        "permissions": {"can_create": can_create_submittal(cu)},
+    }
 
 
 def get_submittal_detail(sid: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:

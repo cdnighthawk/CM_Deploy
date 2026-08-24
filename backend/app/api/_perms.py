@@ -7,6 +7,7 @@ that matrix down to the few decisions actually consulted by the API:
 
 - ``can_view_rfi``        — is this user allowed to read the RFI?
 - ``can_create_rfi``      — can they POST /projects/<pid>/rfis?
+- ``can_create_submittal`` — can they POST /projects/<pid>/submittals?
 - ``can_create_open_rfi`` — can they create one directly as ``open`` (vs.
                             ``draft``)?
 - ``can_edit_rfi``        — can they PATCH the RFI in its current status?
@@ -313,6 +314,16 @@ def can_view_rfi(cu: CurrentUser, rfi: "Rfi") -> bool:
 
 def can_create_rfi(cu: CurrentUser) -> bool:
     return _is_standard(cu) or _is_admin(cu)
+
+
+def can_create_submittal(cu: CurrentUser) -> bool:
+    """Field writers (PE / PM / superintendent / standard) and admins."""
+    return _is_standard(cu)
+
+
+def can_view_submittal_log(cu: CurrentUser) -> bool:
+    """Field readers and writers may open the register and detail."""
+    return _is_read_only(cu)
 
 
 def can_create_open_rfi(cu: CurrentUser) -> bool:

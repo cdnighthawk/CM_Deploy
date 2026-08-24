@@ -765,7 +765,7 @@
 									<h5 class="mb-0">Submittals</h5>
 									<p class="text-muted small mb-0">Procore-style register: workflow dates, contractor, responses, and attachments. Open a row for PDF review markup. Pair with the <strong>RFIs</strong> tab for questions linked to drawings or specs.</p>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create">+ Create submittal</button>
+								<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-open-create" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create">+ Create submittal</button>
 								</div>
 								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading submittals…</div>
 								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
@@ -1484,16 +1484,16 @@
 							<input class="form-control form-control-sm" id="usis-submittal-c-rev" maxlength="50" placeholder="0 / A / B">
 						</div>
 						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-due">Due (review)</label>
-							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-due" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
+							<label class="form-label small mb-0" for="usis-submittal-c-due">Review due</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-submitby">Submit by</label>
-							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-submitby" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-received">Received date</label>
-							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-received" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom">Received from</label>
@@ -1502,12 +1502,11 @@
 					</div>
 					<hr class="my-3">
 					<div class="mb-2">
-						<h6 class="mb-1 small">Spec sections</h6>
-						<p class="text-muted small mb-2">Check the CSI sections to include. These become line items.</p>
+						<h6 class="mb-1 small">Spec sections <span class="text-muted fw-normal">(optional)</span></h6>
+						<p class="text-muted small mb-2">Title is enough to create. Check CSI sections only if you want line items.</p>
 						<input type="search" class="form-control form-control-sm mb-2" id="usis-submittal-c-spec-q" placeholder="Find CSI section…" autocomplete="off">
 						<div class="alert alert-light border py-2 small mb-2 d-none" id="usis-submittal-c-spec-empty">
-							No CSI sections on this project. Add them on the Specs tab first.
-							<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="usis-submittal-c-open-specs">Open Specs tab</button>
+							No spec sections on this project yet. You can still create the submittal.
 						</div>
 						<div class="border rounded px-2 py-1 bg-body" id="usis-submittal-c-spec-list" style="max-height: 12rem; overflow: auto;"></div>
 					</div>

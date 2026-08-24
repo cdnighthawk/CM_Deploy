@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import Project, Role, User, UserRole
+from app.models import Project, ProjectMember, Role, User, UserRole
 
 
 @pytest.fixture
@@ -110,6 +110,12 @@ def test_annotation_requires_ball_in_court_or_admin(client, no_dev_admin):
         p = Project(name="BIC test")
         db.session.add(p)
         db.session.flush()
+        db.session.add_all(
+            [
+                ProjectMember(user_id=u1.id, project_id=p.id),
+                ProjectMember(user_id=u2.id, project_id=p.id),
+            ]
+        )
         pid = str(p.id)
         db.session.commit()
         uid1 = str(u1.id)
@@ -183,6 +189,97 @@ def test_annotation_admin_override(client, no_dev_admin):
         headers={"X-Usis-User-Id": adm_id},
     )
     assert r_put.status_code == 200
+
+
+def _role(code: str) -> Role:
+    role = db.session.scalar(select(Role).where(Role.code == code))
+    if role is None:
+        role = Role(code=code, name=code.replace("_", " ").title())
+        db.session.add(role)
+        db.session.flush()
+    return role
+
+
+def _user_with_role(role_code: str, email_prefix: str) -> User:
+    role = _role(role_code)
+    u = User(
+        email=f"{email_prefix}_{uuid.uuid4().hex[:8]}@t.com",
+        first_name=email_prefix.title(),
+        last_name="User",
+        is_active=True,
+    )
+    db.session.add(u)
+    db.session.flush()
+    db.session.add(UserRole(user_id=u.id, role_id=role.id))
+    return u
+
+
+def test_project_engineer_can_create_and_edit_submittal(client, no_dev_admin):
+    with client.application.app_context():
+        pe = _user_with_role("project_engineer", "pe")
+        p = Project(name="PE submittal " + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        db.session.add(ProjectMember(user_id=pe.id, project_id=p.id))
+        pid = str(p.id)
+        uid = str(pe.id)
+        db.session.commit()
+
+    headers = {"X-Usis-User-Id": uid}
+    created = client.post(
+        f"/api/v1/projects/{pid}/submittals",
+        json={"title": "Hardware package"},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    item = created.get_json()["item"]
+    sid = item["id"]
+    assert item["title"] == "Hardware package"
+    assert created.get_json()["permissions"]["can_edit"] is True
+
+    listed = client.get(f"/api/v1/projects/{pid}/submittals", headers=headers)
+    assert listed.status_code == 200
+    body = listed.get_json()
+    assert body["permissions"]["can_create"] is True
+    assert any(row["id"] == sid for row in body["items"])
+
+    detail = client.get(f"/api/v1/projects/{pid}/submittals/{sid}", headers=headers)
+    assert detail.status_code == 200
+    assert detail.get_json()["permissions"]["can_edit"] is True
+
+    patched = client.patch(
+        f"/api/v1/projects/{pid}/submittals/{sid}",
+        json={"title": "Hardware package rev A"},
+        headers=headers,
+    )
+    assert patched.status_code == 200
+    assert patched.get_json()["item"]["title"] == "Hardware package rev A"
+
+
+def test_field_readonly_cannot_create_submittal(client, no_dev_admin):
+    with client.application.app_context():
+        ro = _user_with_role("field_readonly", "ro")
+        p = Project(name="RO submittal " + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        db.session.add(ProjectMember(user_id=ro.id, project_id=p.id))
+        pid = str(p.id)
+        uid = str(ro.id)
+        db.session.commit()
+
+    headers = {"X-Usis-User-Id": uid}
+    listed = client.get(f"/api/v1/projects/{pid}/submittals", headers=headers)
+    assert listed.status_code == 200
+    assert listed.get_json()["permissions"]["can_create"] is False
+
+    denied = client.post(
+        f"/api/v1/projects/{pid}/submittals",
+        json={"title": "Should fail"},
+        headers=headers,
+    )
+    assert denied.status_code == 403
+    err = (denied.get_json() or {}).get("error", "")
+    assert "not allowed to create submittals" in err or "access denied" in err.lower()
 
 
 def test_get_project_detail(client):

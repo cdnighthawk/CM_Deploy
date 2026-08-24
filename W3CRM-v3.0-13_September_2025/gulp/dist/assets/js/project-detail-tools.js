@@ -174,16 +174,10 @@
 			});
 	}
 
-	function openSpecsTabFromSubmittal() {
-		var modalEl = document.getElementById("usis-modal-submittal-create");
-		if (modalEl && window.bootstrap && window.bootstrap.Modal) {
-			var inst = window.bootstrap.Modal.getInstance(modalEl);
-			if (inst) inst.hide();
-		}
-		var tab = document.getElementById("proj-tab-specs");
-		if (tab && window.bootstrap && window.bootstrap.Tab) {
-			window.bootstrap.Tab.getOrCreateInstance(tab).show();
-		}
+	function setSubmittalCreateVisible(canCreate) {
+		var btn = document.getElementById("usis-submittal-open-create");
+		if (!btn) return;
+		btn.classList.toggle("d-none", canCreate === false);
 	}
 
 	function apiBase() {
@@ -248,11 +242,26 @@
 		return fetch(url, opts).then(function (res) {
 			if (!res.ok) {
 				return res.text().then(function (t) {
-					throw new Error(res.status + " " + (t || res.statusText));
+					throw new Error(apiErrorMessage(res.status, t || res.statusText));
 				});
 			}
 			return res.json();
 		});
+	}
+
+	function apiErrorMessage(status, text) {
+		var raw = String(text || "").trim();
+		try {
+			var j = JSON.parse(raw);
+			if (j && j.error) raw = String(j.error);
+		} catch (e) {
+			/* keep raw */
+		}
+		if (status === 403 && /not allowed to create submittals/i.test(raw)) {
+			return "Your role cannot create submittals.";
+		}
+		if (status === 403) return raw || "You do not have permission to do that.";
+		return raw || String(status);
 	}
 
 	function isoFromDateInput(el) {
@@ -666,10 +675,6 @@
 		if (specSearch) {
 			specSearch.addEventListener("input", renderSubmittalSpecPicker);
 		}
-		var openSpecs = document.getElementById("usis-submittal-c-open-specs");
-		if (openSpecs) {
-			openSpecs.addEventListener("click", openSpecsTabFromSubmittal);
-		}
 		var subModal = document.getElementById("usis-modal-submittal-create");
 		if (subModal) {
 			subModal.addEventListener("show.bs.modal", function () {
@@ -788,6 +793,7 @@
 				.then(function (d) {
 					cache.submittals = d.items || [];
 					setPaneLoading("proj-pane-submittals", false);
+					setSubmittalCreateVisible(!(d.permissions && d.permissions.can_create === false));
 					applySubmittalFilter();
 				})
 				.catch(function (err) {

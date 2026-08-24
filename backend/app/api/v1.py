@@ -2679,7 +2679,7 @@ def list_project_submittals(project_id: str):
         return _jsonify({"error": "invalid project id"}), 400
     if not _project_exists(pid):
         return _jsonify({"error": "project not found"}), 404
-    return _jsonify(submittal_svc.list_submittals(pid))
+    return _jsonify(submittal_svc.list_submittals(pid, current_user()))
 
 
 @bp.get("/projects/<project_id>/submittals/<submittal_id>")

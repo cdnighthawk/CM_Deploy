@@ -57,6 +57,8 @@ def lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
         "source": row.source,
         "workflow_bucket": row.workflow_bucket,
         "is_archived": row.is_archived,
+        "is_parent": row.is_parent,
+        "external_parent_id": row.external_parent_id,
         "due_at": iso(row.due_at),
         "bc_updated_at": iso(row.bc_updated_at),
         "company_name": client_company_name(row.client),

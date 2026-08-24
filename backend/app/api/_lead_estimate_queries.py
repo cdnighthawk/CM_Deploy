@@ -32,6 +32,18 @@ def _not_archived_or_declined() -> Any:
     )
 
 
+def _not_grouped_child() -> Any:
+    """Bid Board's active list is parents and standalones, not grouped child trades."""
+    bucket = func.upper(func.coalesce(LeadEstimate.workflow_bucket, literal("")))
+    not_child_bucket = ~bucket.like("%CHILD%")
+    standalone_or_parent = or_(
+        LeadEstimate.is_parent.is_(True),
+        LeadEstimate.external_parent_id.is_(None),
+        func.trim(func.coalesce(LeadEstimate.external_parent_id, literal(""))) == literal(""),
+    )
+    return and_(not_child_bucket, standalone_or_parent)
+
+
 def lead_estimates_ui_filter(submission_state: str) -> Any:
     st_in = (submission_state or "").strip()
     if not st_in:
@@ -59,4 +71,6 @@ def lead_estimates_ui_filter(submission_state: str) -> Any:
     if not clauses:
         raise ValueError("submission_state has no valid tokens")
     state_ok = or_(*clauses) if len(clauses) > 1 else clauses[0]
+    if len(norms) == 1 and norms[0] == "willsubmit":
+        return and_(state_ok, board_ok, _not_grouped_child())
     return and_(state_ok, board_ok)

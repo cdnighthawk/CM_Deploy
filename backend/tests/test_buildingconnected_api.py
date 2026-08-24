@@ -238,3 +238,18 @@ def test_lead_ui_filter_excludes_archived_and_declined():
     ).lower()
     assert "archived" in sql
     assert "declined" in sql
+
+
+def test_estimate_ui_filter_excludes_grouped_children():
+    from sqlalchemy.dialects import postgresql
+
+    from app.api._lead_estimate_queries import lead_estimates_ui_filter
+
+    sql = str(
+        lead_estimates_ui_filter("will_submit").compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert "child" in sql
+    assert "parent" in sql

@@ -1057,7 +1057,12 @@
 					return r.json();
 				})
 				.then(function (data) {
-					var items = data.items || [];
+					var items = (data.items || []).filter(function (x) {
+						var b = String((x && x.workflow_bucket) || "").toUpperCase();
+						if (b.indexOf("CHILD") >= 0) return false;
+						if (x && x.is_parent === false && x.external_parent_id) return false;
+						return true;
+					});
 					allItems = items;
 					isFetching = false;
 					loadError = null;

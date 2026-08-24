@@ -44,6 +44,40 @@ def client_company_name(client: Any) -> str | None:
     return None
 
 
+def _loc_text(loc: Mapping[str, Any], *keys: str) -> str | None:
+    for key in keys:
+        value = loc.get(key)
+        if value and str(value).strip():
+            return str(value).strip()
+    return None
+
+
+def desktop_queue_item(row: LeadEstimate) -> dict[str, Any]:
+    """Shape expected by USISPdfApp ``CloudEstimate`` / ``GetEstimateQueueAsync``."""
+    loc = row.location if isinstance(row.location, Mapping) else {}
+    city, state = location_bits(loc)
+    return {
+        "leadEstimateId": str(row.id),
+        "name": row.name or "",
+        "number": row.number,
+        "tradeName": row.trade_name,
+        "submissionState": row.submission_state or "",
+        "dueAt": iso(row.due_at),
+        "city": city,
+        "state": state,
+        "siteZip": _loc_text(loc, "zip", "postalCode", "zipcode", "zipCode"),
+        "siteAddress": _loc_text(loc, "complete", "streetName", "address", "street"),
+        "gcName": client_company_name(row.client),
+        "workflowBucket": row.workflow_bucket,
+        "isParent": row.is_parent,
+        "externalParentId": row.external_parent_id,
+        "isArchived": bool(row.is_archived),
+        "cloudEstimateId": str(row.primary_estimate_id) if row.primary_estimate_id else None,
+        "estimateStatus": "Approved" if row.estimate_approved_at else None,
+        "total": num_or_none(row.final_value),
+    }
+
+
 def lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
     city, state = location_bits(row.location)
     return {

@@ -18,3 +18,11 @@ def test_hr_me_self_service_routes_not_module_gated():
 def test_hr_admin_routes_remain_module_gated():
     assert resolve_modules("/api/v1/hr/dashboard-summary") == ("hr",)
     assert resolve_modules("/api/v1/hr/employees/a1700000-0000-4000-8000-000000000001") == ("hr",)
+
+
+def test_desktop_estimate_queue_uses_leads_or_estimate():
+    assert resolve_modules("/api/v1/estimate-queue") == ("leads", "estimate")
+
+
+def test_desktop_estimate_queue_uses_leads_or_estimate():
+    assert resolve_modules("/api/v1/estimate-queue") == ("leads", "estimate")

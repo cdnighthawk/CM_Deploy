@@ -64,7 +64,18 @@ Render does **not** provision Redis in `render.yaml`; for MVP, leave Celery unse
 
 | Flow | Trigger | Sends when SMTP configured? |
 |------|---------|-------------------------------|
+| **Issue status (feedback)** | GitHub issue closed → `POST /api/webhooks/github` | Yes (`send_plain_notification_email`; uses `Resolution:` comment) |
 | **RFI notifications** | RFI create/update/forward; `POST /api/v1/rfis/<id>/email` | Yes (log row + SMTP; Celery if broker set) |
+
+### Issue status emails
+
+When an employee uses **Report a problem**, closing that GitHub issue emails them the outcome.
+
+1. Set `GITHUB_WEBHOOK_SECRET` on Render (and in local `.env` if you test webhooks).
+2. In `cdnighthawk/CM_Deploy` → Settings → Webhooks, add `https://www.usiscm.com/api/webhooks/github`, secret matching the env var, events: **Issues**.
+3. When you close an issue, leave a comment that starts with `Resolution:` (for example `Resolution: RFI create now copies project name and number from the open project.`). Closing as **not planned** or **duplicate** uses that same comment as the why-not explanation.
+
+Existing reports that already include `**Email:**` in the issue body are included — no need to re-file them.
 | **Playbooks** | Checklist run start / reassignment | Yes (`send_plain_notification_email`) |
 | **Admin user invite** | `POST /api/v1/admin/users` with `"send_invite": true` or `USIS_SEND_USER_INVITE_EMAIL=1` | Yes (new) |
 | **Self-register / hire** | `POST /api/v1/auth/register`, `/apply.html` | **No** — account only, no verification email |

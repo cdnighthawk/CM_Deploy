@@ -369,7 +369,10 @@ def test_bc_write_patches_opportunity(monkeypatch, client, flask_app):
 def test_estimate_ui_filter_excludes_grouped_children():
     from sqlalchemy.dialects import postgresql
 
-    from app.api._lead_estimate_queries import lead_estimates_ui_filter
+    from app.api._lead_estimate_queries import (
+        active_estimate_queue_filter,
+        lead_estimates_ui_filter,
+    )
 
     sql = str(
         lead_estimates_ui_filter("will_submit").compile(
@@ -380,3 +383,11 @@ def test_estimate_ui_filter_excludes_grouped_children():
     assert "child" in sql
     assert "parent" in sql
     assert "due_at" in sql
+
+    queue_sql = str(
+        active_estimate_queue_filter().compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert queue_sql == sql

@@ -231,9 +231,11 @@ def bearer_user_from_request() -> User | None:
     if not token:
         return None
     uid = decode_access_token(token)
-    if uid is None:
-        return None
-    u = db.session.get(User, uid)
-    if u is None or not u.is_active:
-        return None
-    return u
+    if uid is not None:
+        u = db.session.get(User, uid)
+        if u is not None and u.is_active:
+            return u
+
+    from ._auth_desktop import entra_user_from_bearer
+
+    return entra_user_from_bearer(token)

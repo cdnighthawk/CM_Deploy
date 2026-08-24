@@ -72,8 +72,8 @@
 		"Your name (optional)": "Su nombre (opcional)",
 		"Short summary": "Resumen corto",
 		"What happened, and what did you expect?": "¿Qué pasó y qué esperaba?",
-		"Tell us what broke or what to change. USIS files a GitHub issue for you — no GitHub account needed.":
-			"Díganos qué falló o qué cambiar. USIS abre un reporte — no necesita cuenta de GitHub.",
+		"Tell us what broke or what to change. We'll email you when it's resolved and how it was handled.":
+			"Díganos qué falló o qué cambiar. Le enviaremos un correo cuando se resuelva y cómo se atendió.",
 		"Something broke": "Algo falló",
 		"Recommend a change on this page": "Recomendar un cambio en esta página",
 		"General recommendation": "Recomendación general",

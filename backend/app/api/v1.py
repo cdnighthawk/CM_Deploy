@@ -930,6 +930,20 @@ def list_lead_estimates():
     )
 
 
+@bp.get("/estimate-queue")
+def list_estimate_queue():
+    """Desktop Estimating → Queue. Same auth as other /api/v1 routes, desktop Bearer accepted."""
+    filt = lead_q.desktop_estimate_queue_filter()
+    q = (
+        select(LeadEstimate)
+        .where(filt)
+        .order_by(LeadEstimate.due_at.asc().nullslast(), LeadEstimate.name.asc())
+        .limit(500)
+    )
+    rows = db.session.scalars(q).all()
+    return _jsonify({"items": [ser.desktop_queue_item(r) for r in rows]})
+
+
 @bp.get("/projects")
 def list_projects():
     """Active directory jobs (``projects``), excluding soft-deleted rows."""

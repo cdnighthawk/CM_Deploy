@@ -25,6 +25,16 @@ def test_auth_status_unauthenticated(client, no_dev_admin):
     assert body.get("microsoft_sso_enabled") is False
 
 
+def test_auth_status_dev_bypass(client, monkeypatch):
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "1")
+    r = client.get("/api/v1/auth/status")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["authenticated"] is True
+    assert body.get("dev_bypass") is True
+    assert body["user"]["email"] == "local-dev@localhost"
+
+
 def test_login_get_redirects_to_shell_template(client):
     r = client.get(
         "/auth/login",

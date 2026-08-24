@@ -303,6 +303,7 @@ class Config:
     GITHUB_FEEDBACK_TOKEN: str = (os.environ.get("GITHUB_FEEDBACK_TOKEN") or "").strip()
     GITHUB_FEEDBACK_OWNER: str = (os.environ.get("GITHUB_FEEDBACK_OWNER") or "cdnighthawk").strip() or "cdnighthawk"
     GITHUB_FEEDBACK_REPO: str = (os.environ.get("GITHUB_FEEDBACK_REPO") or "CM_Deploy").strip() or "CM_Deploy"
+    GITHUB_WEBHOOK_SECRET: str = (os.environ.get("GITHUB_WEBHOOK_SECRET") or "").strip()
 
 
 def client_debug_log_dev_open() -> bool:

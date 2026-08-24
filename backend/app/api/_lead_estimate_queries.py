@@ -52,6 +52,16 @@ def _explicit_state_ok(norm_sql, norms: list[str]) -> Any:
     return or_(*clauses) if len(clauses) > 1 else clauses[0]
 
 
+def active_estimate_queue_filter() -> Any:
+    """Website Estimates board (will-submit, still due)."""
+    return lead_estimates_ui_filter("will_submit")
+
+
+def desktop_estimate_queue_filter() -> Any:
+    """Desktop Estimating → Queue. Client filters All / Will submit / Undecided / Submitted."""
+    return and_(_not_archived_or_declined(), _not_grouped_child())
+
+
 def lead_estimates_ui_filter(submission_state: str) -> Any:
     st_in = (submission_state or "").strip()
     if not st_in:

@@ -203,4 +203,13 @@
 		s.async = false;
 		document.head.appendChild(s);
 	}
+
+	if (!document.querySelector('script[src*="usis-header-notifications.js"]')) {
+		var n = document.createElement("script");
+		n.src = (document.querySelector('script[src*="usis-auth-links.js"]') || {}).src
+			? (document.querySelector('script[src*="usis-auth-links.js"]').src.replace(/usis-auth-links\.js.*$/, "usis-header-notifications.js"))
+			: "assets/js/usis-header-notifications.js";
+		document.head.appendChild(n);
+	}
 })();
+

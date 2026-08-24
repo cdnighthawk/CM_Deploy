@@ -105,6 +105,35 @@ def test_bc_sync_disabled_returns_403(client, flask_app):
     assert r.status_code == 403
 
 
+def test_bc_sync_cron_secret_skips_session(monkeypatch, client, flask_app):
+    flask_app.config["BUILDINGCONNECTED_SYNC_ENABLED"] = True
+    flask_app.config["BC_SYNC_CRON_SECRET"] = "hourly-test-secret"
+    flask_app.config["TESTING"] = True
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+
+    def fake_token():
+        return "at-cron"
+
+    def fake_pull(access_token, full=False):
+        assert access_token == "at-cron"
+        return (2, 0, 0)
+
+    monkeypatch.setattr(_integration_bc, "_ensure_access_token", fake_token)
+    monkeypatch.setattr(_integration_bc, "_pull_and_upsert", fake_pull)
+
+    denied = client.post("/api/v1/integrations/buildingconnected/sync")
+    assert denied.status_code == 401
+
+    ok = client.post(
+        "/api/v1/integrations/buildingconnected/sync",
+        headers={"X-Cron-Secret": "hourly-test-secret"},
+    )
+    assert ok.status_code == 200, ok.get_data(as_text=True)
+    body = ok.get_json()
+    assert body.get("ok") is True
+    assert body.get("loaded") == 2
+
+
 class _FakeBCClient:
     def __init__(self, _token: str, _base: str):
         pass

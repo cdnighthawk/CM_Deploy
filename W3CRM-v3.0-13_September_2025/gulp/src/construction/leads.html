@@ -101,6 +101,9 @@
 							</button>
 						</div>
 						<div class="d-flex flex-wrap gap-2">
+							<button type="button" class="btn btn-primary w-xs-100" id="usis-bc-pull" title="Pull latest BuildingConnected opportunities">
+								<i class="icon feather icon-download me-1"></i> Sync BC
+							</button>
 							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-bc-sync-stub" title="Reload lead list">
 								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
 							</button>
@@ -222,6 +225,7 @@
 	<!-- Script For Custom JS -->
     	<script src="assets/js/aiReviewBus.js"></script>
 	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-bc-pull.js"></script>
 	<script src="assets/js/usis-project-context.js"></script>
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
@@ -704,6 +708,14 @@
 		document.addEventListener("DOMContentLoaded", loadLeads);
 		var btn = document.getElementById("usis-bc-sync-stub");
 		if (btn) btn.addEventListener("click", loadLeads);
+		var pullBtn = document.getElementById("usis-bc-pull");
+		if (pullBtn) {
+			pullBtn.addEventListener("click", function () {
+				if (typeof window.usisPullBuildingConnected === "function") {
+					window.usisPullBuildingConnected({ button: pullBtn, onDone: loadLeads });
+				}
+			});
+		}
 		if (filterInput) {
 			filterInput.addEventListener("input", applyTableFilter);
 			filterInput.addEventListener("keydown", function (e) {

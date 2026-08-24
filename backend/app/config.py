@@ -210,6 +210,9 @@ class Config:
     BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT: str = (
         (os.environ.get("BUILDINGCONNECTED_OPPORTUNITIES_UPDATED_AT") or "").strip()
     )
+    # Shared secret so the hourly Render cron can POST /integrations/buildingconnected/sync
+    # without a staff session. Header: X-Cron-Secret.
+    BC_SYNC_CRON_SECRET: str | None = (os.environ.get("BC_SYNC_CRON_SECRET") or "").strip() or None
     # Optional 32+ byte secret for Fernet; defaults to a SHA256-derived key from SECRET_KEY.
     TOKEN_ENCRYPTION_KEY: str | None = (os.environ.get("TOKEN_ENCRYPTION_KEY") or "").strip() or None
 

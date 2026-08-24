@@ -31,6 +31,17 @@ _SYNC_RUNNING = False
 _PAGE_UPSERT = 100
 
 
+def cron_secret_matches(req=None, app=None) -> bool:
+    """True when X-Cron-Secret matches BC_SYNC_CRON_SECRET (hourly Render job)."""
+    cfg = app or current_app
+    incoming = req or request
+    expected = str(cfg.config.get("BC_SYNC_CRON_SECRET") or "").strip()
+    provided = str(incoming.headers.get("X-Cron-Secret") or "").strip()
+    if not expected or not provided:
+        return False
+    return secrets.compare_digest(expected, provided)
+
+
 def _fernet() -> Fernet:
     raw = (current_app.config.get("TOKEN_ENCRYPTION_KEY") or "").strip()
     if raw:

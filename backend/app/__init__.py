@@ -170,6 +170,11 @@ def create_app(config_object: str | None = None) -> Flask:
         # Cursor debug: client logs to workspace NDJSON (dev only; see POST handler in api.v1).
         if path == "/api/v1/__debug/client-log" and client_debug_log_dev_open():
             return None
+        if path == "/api/v1/integrations/buildingconnected/sync":
+            from .api._integration_bc import cron_secret_matches
+
+            if cron_secret_matches(request, app):
+                return None
         from .api._perms import allow_dev_anonymous_access, current_user
 
         cu = current_user()

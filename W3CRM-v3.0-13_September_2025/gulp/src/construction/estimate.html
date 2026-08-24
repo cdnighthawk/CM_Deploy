@@ -651,6 +651,9 @@
 						var b = String((x && x.workflow_bucket) || "").toUpperCase();
 						if (b.indexOf("CHILD") >= 0) return false;
 						if (x && x.is_parent === false && x.external_parent_id) return false;
+						if (!x.due_at || isNaN(new Date(x.due_at).getTime()) || new Date(x.due_at).getTime() < Date.now()) {
+							return false;
+						}
 						return true;
 					});
 					allItems = items;

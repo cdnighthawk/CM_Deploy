@@ -68,4 +68,6 @@ def lead_estimates_ui_filter(submission_state: str) -> Any:
 
     if len(norms) == 1 and norms[0] == "undecided":
         return and_(state_ok, board_ok, _has_open_due_date(), _has_assignee())
+    if len(norms) == 1 and norms[0] == "willsubmit":
+        return and_(state_ok, board_ok, _has_open_due_date())
     return and_(state_ok, board_ok)

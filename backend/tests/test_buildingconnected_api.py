@@ -286,3 +286,4 @@ def test_estimate_ui_filter_excludes_grouped_children():
     ).lower()
     assert "child" in sql
     assert "parent" in sql
+    assert "due_at" in sql

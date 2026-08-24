@@ -92,6 +92,7 @@ def test_estimate_queue_hides_declined_and_archived(client, no_dev_admin):
             external_id=f"keep-{suffix}",
             name="Keep me",
             submission_state="UNDECIDED",
+            due_at=datetime.now(timezone.utc) + timedelta(days=2),
             is_archived=False,
         )
         declined = LeadEstimate(
@@ -119,6 +120,45 @@ def test_estimate_queue_hides_declined_and_archived(client, no_dev_admin):
     assert keep_id in ids
     assert declined_id not in ids
     assert archived_id not in ids
+
+
+def test_estimate_queue_hides_expired(client, no_dev_admin):
+    suffix = uuid.uuid4().hex[:8]
+    with client.application.app_context():
+        u = _estimator()
+        current = LeadEstimate(
+            external_id=f"current-{suffix}",
+            name="Still due",
+            submission_state="WILL_SUBMIT",
+            due_at=datetime.now(timezone.utc) + timedelta(days=5),
+            is_archived=False,
+        )
+        expired = LeadEstimate(
+            external_id=f"expired-{suffix}",
+            name="Past due",
+            submission_state="WILL_SUBMIT",
+            due_at=datetime.now(timezone.utc) - timedelta(days=5),
+            is_archived=False,
+        )
+        undated = LeadEstimate(
+            external_id=f"undated-{suffix}",
+            name="No due date",
+            submission_state="WILL_SUBMIT",
+            is_archived=False,
+        )
+        db.session.add_all([current, expired, undated])
+        db.session.commit()
+        uid = str(u.id)
+        current_id = str(current.id)
+        expired_id = str(expired.id)
+        undated_id = str(undated.id)
+
+    r = client.get("/api/v1/estimate-queue", headers={"X-Usis-User-Id": uid})
+    assert r.status_code == 200
+    ids = {x["leadEstimateId"] for x in r.get_json()["items"]}
+    assert current_id in ids
+    assert expired_id not in ids
+    assert undated_id not in ids
 
 
 def test_estimate_queue_accepts_desktop_microsoft_token(client, no_dev_admin, monkeypatch):

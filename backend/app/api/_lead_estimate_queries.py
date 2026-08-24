@@ -58,8 +58,12 @@ def active_estimate_queue_filter() -> Any:
 
 
 def desktop_estimate_queue_filter() -> Any:
-    """Desktop Estimating → Queue. Client filters All / Will submit / Undecided / Submitted."""
-    return and_(_not_archived_or_declined(), _not_grouped_child())
+    """Desktop Estimating → Queue: current Bid Board work only.
+
+    Client filters All / Will submit / Undecided / Submitted among still-due
+    parents. Expired invitations stay off the live queue.
+    """
+    return and_(_not_archived_or_declined(), _not_grouped_child(), _has_open_due_date())
 
 
 def lead_estimates_ui_filter(submission_state: str) -> Any:

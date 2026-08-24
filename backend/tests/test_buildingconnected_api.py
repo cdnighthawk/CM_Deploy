@@ -391,3 +391,18 @@ def test_estimate_ui_filter_excludes_grouped_children():
         )
     ).lower()
     assert queue_sql == sql
+
+
+def test_desktop_queue_filter_requires_open_due_date():
+    from sqlalchemy.dialects import postgresql
+
+    from app.api._lead_estimate_queries import desktop_estimate_queue_filter
+
+    sql = str(
+        desktop_estimate_queue_filter().compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert "due_at" in sql
+    assert "child" in sql

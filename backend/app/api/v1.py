@@ -971,7 +971,7 @@ def list_estimate_queue():
         select(LeadEstimate)
         .where(filt)
         .order_by(LeadEstimate.due_at.asc().nullslast(), LeadEstimate.name.asc())
-        .limit(500)
+        .limit(2000)
     )
     rows = db.session.scalars(q).all()
     return _jsonify({"items": [ser.desktop_queue_item(r) for r in rows]})

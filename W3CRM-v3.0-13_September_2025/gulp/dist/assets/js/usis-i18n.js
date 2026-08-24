@@ -30,6 +30,8 @@
 		Search: "Buscar",
 		"Report a problem": "Reportar un problema",
 		"My profile": "Mi perfil",
+		Language: "Idioma",
+		"Menus and login use this language.": "Los menús e inicio de sesión usan este idioma.",
 		Logout: "Cerrar sesión",
 		"Logout ": "Cerrar sesión",
 		Login: "Iniciar sesión",
@@ -185,10 +187,54 @@
 				global.jQuery(switcher).selectpicker("val", lang);
 			}
 		}
-		var loginToggle = document.getElementById("usis-lang-es");
-		var loginEn = document.getElementById("usis-lang-en");
-		if (loginToggle) loginToggle.classList.toggle("active", lang === "es_ES");
-		if (loginEn) loginEn.classList.toggle("active", lang === "en_GB");
+		document.querySelectorAll("[data-usis-set-lang]").forEach(function (btn) {
+			var on = btn.getAttribute("data-usis-set-lang") === lang;
+			btn.classList.toggle("active", on);
+			btn.setAttribute("aria-pressed", on ? "true" : "false");
+			if (btn.classList.contains("btn")) {
+				btn.classList.toggle("btn-primary", on);
+				btn.classList.toggle("btn-outline-secondary", !on);
+			}
+		});
+	}
+
+	function profileMenuItem() {
+		var menu = document.querySelector(".header-profile-dropdown .dropdown-menu");
+		if (!menu) return null;
+		var links = menu.querySelectorAll("a.dropdown-item[href]");
+		for (var i = 0; i < links.length; i++) {
+			var href = (links[i].getAttribute("href") || "").split("?")[0];
+			if (href.indexOf("usis-profile.html") !== -1) return links[i].closest("li");
+		}
+		return null;
+	}
+
+	function ensureProfileLangMenu() {
+		var menu = document.querySelector(".header-profile-dropdown .dropdown-menu");
+		if (!menu || menu.querySelector("[data-usis-profile-lang]")) return;
+		var li = document.createElement("li");
+		li.setAttribute("data-usis-profile-lang", "1");
+		li.innerHTML =
+			'<div class="px-3 py-2">' +
+			'<div class="small text-muted mb-1" data-i18n="Language">Language</div>' +
+			'<div class="btn-group btn-group-sm w-100" role="group" aria-label="Language">' +
+			'<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="en_GB">English</button>' +
+			'<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="es_ES">Español</button>' +
+			"</div></div>";
+		var after = profileMenuItem();
+		if (after && after.parentNode) {
+			if (after.nextSibling) after.parentNode.insertBefore(li, after.nextSibling);
+			else after.parentNode.appendChild(li);
+			return;
+		}
+		var firstDivider = menu.querySelector(".dropdown-divider");
+		if (firstDivider && firstDivider.closest("li")) {
+			var wrap = firstDivider.closest("li");
+			if (wrap.nextSibling) menu.insertBefore(li, wrap.nextSibling);
+			else menu.appendChild(li);
+			return;
+		}
+		menu.appendChild(li);
 	}
 
 	function bind() {
@@ -210,8 +256,9 @@
 	}
 
 	function init() {
-		apply(getLang());
+		ensureProfileLangMenu();
 		bind();
+		apply(getLang());
 	}
 
 	global.USISI18n = {

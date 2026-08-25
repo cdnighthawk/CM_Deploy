@@ -116,8 +116,8 @@
 	}
 
 	/**
-	 * Resolve a URL id that may be either an estimate UUID or a legacy lead id.
-	 * On lead-id hits, replace the URL with the current estimate id.
+	 * Resolve a URL id that may be either an estimate UUID or a lead id.
+	 * A lead without an estimate is not an error — Job information still loads.
 	 */
 	function resolveEstimateId(urlId) {
 		if (!urlId) return Promise.reject(new Error("Missing estimate id."));
@@ -131,12 +131,7 @@
 					var lead = data.item;
 					var eid = lead && lead.current_estimate_id;
 					if (!eid) {
-						var missing = new Error(
-							"This lead has no estimates yet. Open the lead and create one."
-						);
-						missing.status = 404;
-						missing.lead = lead;
-						throw missing;
+						return { item: lead, missingEstimate: true, lead: lead };
 					}
 					if (global.history && global.history.replaceState) {
 						try {

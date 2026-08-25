@@ -347,6 +347,11 @@
 		if (!root || !lk) return;
 		var detail = ev.detail || {};
 		var item = detail.item;
+		if (detail.missingEstimate) {
+			root.innerHTML =
+				'<p class="text-muted small mb-0">No estimate on this lead yet. Job information is still available on the Job information tab.</p>';
+			return;
+		}
 		if (!item) {
 			root.innerHTML =
 				'<p class="text-danger small mb-0">' +

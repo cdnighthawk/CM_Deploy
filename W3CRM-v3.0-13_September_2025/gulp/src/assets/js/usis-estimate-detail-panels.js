@@ -1,6 +1,7 @@
 /**
  * Estimate detail — Job information, Drawings, Specs (static), RFI tabs.
- * Listens for CustomEvent "usis-lead-estimate-loaded" { detail: { item, error? } } from usis-estimate-detail.js.
+ * Job information loads from the lead (GET /lead-estimates/:id). An Estimate row is not required.
+ * Also listens for CustomEvent "usis-lead-estimate-loaded" { detail: { item, error? } }.
  * When item.project_id is set, loads project job + drawings + RFIs (same APIs as project detail).
  */
 (function () {
@@ -305,6 +306,12 @@
 		if (root) root.classList.remove("d-none");
 	}
 
+	function pick(item, snap, key) {
+		if (item && item[key] != null && item[key] !== "") return item[key];
+		if (snap && snap[key] != null && snap[key] !== "") return snap[key];
+		return item ? item[key] : null;
+	}
+
 	function leadFromEstimateItem(item) {
 		var snap = (item && item.lead) || {};
 		return {
@@ -317,10 +324,22 @@
 			city: item.city || snap.city,
 			state: item.state || snap.state,
 			company_name: item.company_name || snap.company_name,
-			rom: item.rom,
-			win_probability: item.win_probability,
+			rom: pick(item, snap, "rom"),
+			win_probability: pick(item, snap, "win_probability"),
 			due_at: snap.due_at || item.due_at,
-			project_information: item.project_information,
+			project_information: pick(item, snap, "project_information"),
+			architect: pick(item, snap, "architect"),
+			engineer: pick(item, snap, "engineer"),
+			property_owner: pick(item, snap, "property_owner"),
+			property_tenant: pick(item, snap, "property_tenant"),
+			job_walk_at: pick(item, snap, "job_walk_at"),
+			rfis_due_at: pick(item, snap, "rfis_due_at"),
+			expected_start_at: pick(item, snap, "expected_start_at"),
+			expected_finish_at: pick(item, snap, "expected_finish_at"),
+			client_contact: pick(item, snap, "client_contact"),
+			request_type: pick(item, snap, "request_type"),
+			market_sector: pick(item, snap, "market_sector"),
+			trade_specific_instructions: pick(item, snap, "trade_specific_instructions"),
 			external_id: snap.external_id || item.external_id,
 			id:
 				item.lead_id ||
@@ -366,17 +385,36 @@
 			tr("Due", fmtDate(le.due_at)),
 			tr("Location", fmtDash(locLine || null)),
 			tr("Company", fmtDash(le.company_name)),
+			tr("Primary contact", fmtDash(le.client_contact)),
+			tr("Architect", fmtDash(le.architect)),
+			tr("Engineer", fmtDash(le.engineer)),
+			tr("Property owner", fmtDash(le.property_owner)),
+			tr("Tenant", fmtDash(le.property_tenant)),
+			tr("Job walk", fmtDate(le.job_walk_at)),
+			tr("RFIs due", fmtDate(le.rfis_due_at)),
+			tr("Expected start", fmtDate(le.expected_start_at)),
+			tr("Expected finish", fmtDate(le.expected_finish_at)),
+			tr("Request type", fmtDash(le.request_type)),
+			tr("Market sector", fmtDash(le.market_sector)),
 			tr("ROM", fmtMoney(le.rom)),
 			tr("Win probability", le.win_probability != null ? esc(String(le.win_probability)) : "—"),
 		];
 		if (tbody) tbody.innerHTML = rows.join("");
 		if (notes) {
 			var pi = le.project_information;
+			var trade = le.trade_specific_instructions;
+			var noteBits = [];
 			if (typeof pi === "string" && pi.trim()) {
-				notes.innerHTML = "<div class=\"text-body\">" + esc(pi).replace(/\n/g, "<br>") + "</div>";
-			} else {
-				notes.innerHTML = '<span class="text-muted">—</span>';
+				noteBits.push("<div class=\"text-body\">" + esc(pi).replace(/\n/g, "<br>") + "</div>");
 			}
+			if (typeof trade === "string" && trade.trim()) {
+				noteBits.push(
+					"<div class=\"mt-2\"><div class=\"text-muted small mb-1\">Trade instructions</div><div class=\"text-body\">" +
+						esc(trade).replace(/\n/g, "<br>") +
+						"</div></div>"
+				);
+			}
+			notes.innerHTML = noteBits.length ? noteBits.join("") : '<span class="text-muted">—</span>';
 		}
 		var lid = le.external_id || le.id;
 		if (extras) {
@@ -417,35 +455,57 @@
 
 	function onLeadEstimateLoaded(ev) {
 		var d = ev.detail || {};
-		var item = d.item;
-		var err = d.error;
+		var item = d.item || d.lead;
+		if (item) {
+			loadJobPanel(item);
+			if (docPanels) docPanels.onItemLoaded(item);
+			return;
+		}
+		if (jobRootVisible()) return;
+		setJobLoading(false);
+		setJobErr(d.error || "Could not load job information.");
+		if (docPanels) docPanels.showNoProject();
+	}
 
-		if (docPanels) docPanels.reset();
+	function jobRootVisible() {
+		var jr = document.getElementById("usis-estd-job-root");
+		return jr && !jr.classList.contains("d-none");
+	}
 
-		if (err || !item) {
+	function loadJobFromUrl() {
+		var id = new URLSearchParams(window.location.search).get("id");
+		if (!id || !String(id).trim()) {
 			setJobLoading(false);
-			setJobErr(err || "Estimate not loaded.");
-			var jr = document.getElementById("usis-estd-job-root");
-			if (jr) jr.classList.add("d-none");
+			setJobErr("Open this page from Estimates or a lead.");
 			if (docPanels) docPanels.showNoProject();
 			return;
 		}
-
-		loadJobPanel(item);
-
-		if (docPanels) {
-			docPanels.onItemLoaded(item);
-		}
+		setJobErr("");
+		setJobLoading(true);
+		fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(id))
+			.then(function (data) {
+				if (!data.item) throw new Error("Lead not found.");
+				loadJobPanel(data.item);
+				if (docPanels) docPanels.onItemLoaded(data.item);
+			})
+			.catch(function () {
+				return fetchJson("/api/v1/estimates/" + encodeURIComponent(id)).then(function (data) {
+					if (!data.item) throw new Error("Job information not found.");
+					loadJobPanel(data.item);
+					if (docPanels) docPanels.onItemLoaded(data.item);
+				});
+			})
+			.catch(function (err) {
+				if (jobRootVisible()) return;
+				setJobLoading(false);
+				setJobErr(err.message || String(err));
+				if (docPanels) docPanels.showNoProject();
+			});
 	}
 
 	document.addEventListener("usis-lead-estimate-loaded", onLeadEstimateLoaded);
 
 	document.addEventListener("DOMContentLoaded", function () {
-		var id = new URLSearchParams(window.location.search).get("id");
-		if (!id || !String(id).trim()) {
-			setJobLoading(false);
-			setJobErr("No estimate id in URL — open this page from a lead's Estimates list.");
-			if (docPanels) docPanels.showNoProject();
-		}
+		loadJobFromUrl();
 	});
 })();

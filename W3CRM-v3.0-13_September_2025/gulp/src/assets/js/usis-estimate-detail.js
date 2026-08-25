@@ -635,10 +635,27 @@
 		});
 	}
 
-	function fireEstimateLoaded(item, error) {
-		var detail = { item: item || null, error: error || null };
+	function fireEstimateLoaded(item, error, extra) {
+		var detail = Object.assign({ item: item || null, error: error || null }, extra || {});
 		document.dispatchEvent(new CustomEvent("usis-lead-estimate-loaded", { detail: detail }));
 		document.dispatchEvent(new CustomEvent("usis-estimate-loaded", { detail: detail }));
+	}
+
+	function applyLeadOnly(lead) {
+		leadItem = lead;
+		var idline = document.getElementById("usis-est-detail-idline");
+		if (idline) {
+			idline.textContent =
+				((lead && (lead.name || lead.title)) || "Lead") +
+				" · " +
+				((lead && lead.number) || "—");
+		}
+		var noId = document.getElementById("usis-est-detail-no-id");
+		if (noId) noId.classList.add("d-none");
+		var wrap = document.getElementById("usis-est-detail-root");
+		if (wrap) wrap.classList.remove("d-none");
+		showErr("");
+		fireEstimateLoaded(lead, null, { missingEstimate: true });
 	}
 
 	function applyEstimateItem(item) {
@@ -670,6 +687,9 @@
 		showErr("");
 		var loadPromise = Api
 			? Api.resolveEstimateId(leadKey).then(function (resolved) {
+					if (resolved.missingEstimate) {
+						return { __leadOnly: true, item: resolved.item || resolved.lead || null };
+					}
 					if (resolved.item && resolved.item.id) leadKey = resolved.item.id;
 					return resolved.item;
 				})
@@ -691,10 +711,20 @@
 				});
 		return loadPromise
 			.then(function (item) {
+				if (item && item.__leadOnly) {
+					if (!item.item) throw new Error("Lead not found for this id.");
+					applyLeadOnly(item.item);
+					return;
+				}
 				if (!item) throw new Error("Estimate not found for this id.");
 				applyEstimateItem(item);
 			})
 			.catch(function (e) {
+				var lead = e.lead || null;
+				if (lead) {
+					applyLeadOnly(lead);
+					return;
+				}
 				var msg = e.message || String(e);
 				if (e.status === 403) msg = mapApiError(e.body || {}, e.status);
 				showErr(msg);
@@ -702,12 +732,8 @@
 				if (wrap) wrap.classList.remove("d-none");
 				var noId = document.getElementById("usis-est-detail-no-id");
 				if (noId) {
-					var lid = e.lead && (e.lead.id || e.lead.external_id);
-					noId.innerHTML = lid
-						? 'This estimate could not be opened. <a href="construction/lead-detail.html?id=' +
-							encodeURIComponent(lid) +
-							'">Back to the lead estimates list</a>.'
-						: 'This estimate could not be opened. <a href="construction/estimate.html">Back to Estimates</a> or <a href="construction/leads.html">Leads</a>.';
+					noId.innerHTML =
+						'This estimate could not be opened. <a href="construction/estimate.html">Back to Estimates</a> or <a href="construction/leads.html">Leads</a>.';
 					noId.classList.remove("d-none");
 				}
 				fireEstimateLoaded(null, msg);

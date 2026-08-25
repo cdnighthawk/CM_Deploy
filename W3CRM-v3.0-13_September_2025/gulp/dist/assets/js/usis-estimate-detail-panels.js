@@ -831,6 +831,40 @@
 		if (card) card.classList.remove("d-none");
 	}
 
+	var GROUP_COLLAPSE_KEY = "usis-estd-group-summary-collapsed";
+
+	function groupSummaryCollapsedPref() {
+		try {
+			return sessionStorage.getItem(GROUP_COLLAPSE_KEY) === "1";
+		} catch (err) {
+			return false;
+		}
+	}
+
+	function applyGroupCollapsed(collapsed) {
+		var card = document.getElementById("usis-estd-group-summary");
+		var toggle = document.getElementById("usis-estd-group-summary-toggle");
+		if (card) card.classList.toggle("is-collapsed", !!collapsed);
+		if (toggle) {
+			toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+			toggle.setAttribute("aria-label", collapsed ? "Expand opportunities" : "Collapse opportunities");
+		}
+	}
+
+	function bindGroupSummaryToggle() {
+		var toggle = document.getElementById("usis-estd-group-summary-toggle");
+		if (!toggle || toggle.dataset.bound === "1") return;
+		toggle.dataset.bound = "1";
+		toggle.addEventListener("click", function () {
+			var card = document.getElementById("usis-estd-group-summary");
+			var next = !(card && card.classList.contains("is-collapsed"));
+			try {
+				sessionStorage.setItem(GROUP_COLLAPSE_KEY, next ? "1" : "0");
+			} catch (err) {}
+			applyGroupCollapsed(next);
+		});
+	}
+
 	function renderGroupSummary(summary, item) {
 		var card = document.getElementById("usis-estd-group-summary");
 		var list = document.getElementById("usis-estd-group-summary-list");
@@ -876,6 +910,8 @@
 			list.appendChild(row);
 		});
 		if (countEl) countEl.textContent = String(children.length);
+		bindGroupSummaryToggle();
+		applyGroupCollapsed(groupSummaryCollapsedPref());
 		card.classList.remove("d-none");
 	}
 

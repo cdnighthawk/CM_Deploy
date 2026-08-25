@@ -1,4 +1,12 @@
-from app.services.ingest import folder_to_project_number, parse_ingest_metadata, project_matches_query
+from types import SimpleNamespace
+
+from app.services.ingest import (
+    folder_to_project_number,
+    lead_is_archived,
+    parse_ingest_metadata,
+    project_matches_query,
+    serialize_project,
+)
 
 
 def test_folder_to_project_number_proj_year_seq():
@@ -15,6 +23,28 @@ def test_parse_ingest_metadata_json_string():
     assert meta["source"] == "autodesk_desktop_connector"
     assert parse_ingest_metadata("not-json") == {}
     assert parse_ingest_metadata(None) == {}
+
+
+def test_lead_is_archived_flag_and_bucket():
+    assert lead_is_archived(SimpleNamespace(is_archived=True, workflow_bucket=None, submission_state=None))
+    assert lead_is_archived(SimpleNamespace(is_archived=False, workflow_bucket="BC_ARCHIVED", submission_state=None))
+    assert lead_is_archived(SimpleNamespace(is_archived=False, workflow_bucket=None, submission_state="DECLINED"))
+    assert not lead_is_archived(SimpleNamespace(is_archived=False, workflow_bucket="ACTIVE", submission_state="UNDECIDED"))
+
+
+def test_serialize_project_includes_archived_false_by_default():
+    import uuid
+
+    row = serialize_project(
+        project_id=uuid.UUID("11111111-1111-4111-8111-111111111111"),
+        kind="lead",
+        name="Rooms To Go",
+        project_number=None,
+        job_id=None,
+        lead_estimate_id=uuid.UUID("11111111-1111-4111-8111-111111111111"),
+        archived=False,
+    )
+    assert row["archived"] is False
 
 
 def test_project_matches_query_uses_folder_hints():

@@ -8,10 +8,12 @@ import re
 import uuid
 from typing import Any
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, select
+from sqlalchemy.orm import joinedload
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
+from ..api._lead_estimate_queries import _not_archived_or_declined, _not_grouped_child
 from ..extensions import db
 from ..models import Document, Drawing, LeadEstimate, Project
 from .drawing_upload import _create_drawing_row
@@ -87,6 +89,17 @@ def parse_ingest_metadata(raw: Any) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
+def lead_is_archived(lead: LeadEstimate) -> bool:
+    """True when Bid Board would hide this row as archived or declined."""
+    if lead.is_archived is True:
+        return True
+    bucket = (lead.workflow_bucket or "").upper()
+    if "ARCHIVED" in bucket or "DECLINED" in bucket:
+        return True
+    state = (lead.submission_state or "").strip().lower().replace("_", "").replace("-", "")
+    return state == "declined"
+
+
 def serialize_project(
     *,
     project_id: uuid.UUID,
@@ -95,6 +108,7 @@ def serialize_project(
     project_number: str | None,
     job_id: uuid.UUID | None,
     lead_estimate_id: uuid.UUID | None,
+    archived: bool = False,
 ) -> dict[str, Any]:
     number = text(project_number)
     label = text(name)
@@ -108,10 +122,12 @@ def serialize_project(
         "job_id": str(job_id) if job_id else None,
         "lead_estimate_id": str(lead_estimate_id) if lead_estimate_id else None,
         "folder_hints": hints,
+        "archived": bool(archived),
     }
 
 
 def project_from_job(job: Project, lead: LeadEstimate | None = None) -> dict[str, Any]:
+    archived = (job.status or "") == "archived" or (lead is not None and lead_is_archived(lead))
     return serialize_project(
         project_id=job.id,
         kind="job",
@@ -119,6 +135,7 @@ def project_from_job(job: Project, lead: LeadEstimate | None = None) -> dict[str
         project_number=job.number or (lead.number if lead else None),
         job_id=job.id,
         lead_estimate_id=lead.id if lead else None,
+        archived=archived,
     )
 
 
@@ -133,6 +150,7 @@ def project_from_lead(lead: LeadEstimate) -> dict[str, Any]:
         project_number=lead.number,
         job_id=lead.project_id,
         lead_estimate_id=lead.id,
+        archived=lead_is_archived(lead),
     )
 
 
@@ -164,11 +182,12 @@ def list_ingest_projects(query: str = "") -> list[dict[str, Any]]:
         ).all()
     )
     job_ids = [j.id for j in jobs]
+    active_lead = and_(_not_archived_or_declined(), _not_grouped_child())
     leads_for_jobs: dict[uuid.UUID, LeadEstimate] = {}
     if job_ids:
         for lead in db.session.scalars(
             select(LeadEstimate)
-            .where(LeadEstimate.project_id.in_(job_ids))
+            .where(LeadEstimate.project_id.in_(job_ids), active_lead)
             .order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.id.asc())
         ).all():
             if lead.project_id is not None and lead.project_id not in leads_for_jobs:
@@ -186,10 +205,12 @@ def list_ingest_projects(query: str = "") -> list[dict[str, Any]]:
     leads = list(
         db.session.scalars(
             select(LeadEstimate)
-            .where(or_(LeadEstimate.is_archived.is_(False), LeadEstimate.is_archived.is_(None)))
+            .options(joinedload(LeadEstimate.project))
+            .where(active_lead)
             .order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
-            .limit(500)
-        ).all()
+            .limit(2000)
+        ).unique()
+        .all()
     )
     for lead in leads:
         if str(lead.id) in seen:

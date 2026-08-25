@@ -9,7 +9,7 @@ import uuid
 from pypdf import PdfWriter
 
 from app.extensions import db
-from app.models import Document, Drawing, Project
+from app.models import Document, Drawing, LeadEstimate, Project
 
 
 def _pdf_bytes() -> bytes:
@@ -69,11 +69,55 @@ def test_ingest_projects_returns_json_list(client, flask_app):
     assert match is not None
     assert match["project_number"] == "240142"
     assert match["kind"] == "job"
+    assert match["archived"] is False
 
     r2 = client.get("/api/projects?q=PROJ-2024-0142", headers=headers)
     assert r2.status_code == 200
     found = next((row for row in r2.get_json()["projects"] if row["project_id"] == pid), None)
     assert found is not None
+
+
+def test_ingest_projects_omits_archived_lead_estimates(client, flask_app):
+    headers = _auth(flask_app)
+    suffix = uuid.uuid4().hex[:8]
+    with flask_app.app_context():
+        keep = LeadEstimate(
+            external_id=f"ingest-keep-{suffix}",
+            name=f"Active Ingest Lead {suffix}",
+            is_archived=False,
+            is_parent=True,
+            submission_state="UNDECIDED",
+        )
+        archived = LeadEstimate(
+            external_id=f"ingest-arch-{suffix}",
+            name=f"Archived Ingest Lead {suffix}",
+            is_archived=True,
+            workflow_bucket="ARCHIVED",
+            submission_state="UNDECIDED",
+        )
+        child = LeadEstimate(
+            external_id=f"ingest-child-{suffix}",
+            name=f"Active Ingest Lead {suffix}",
+            is_archived=False,
+            is_parent=False,
+            external_parent_id="parent-1",
+            workflow_bucket="CHILD",
+            submission_state="UNDECIDED",
+        )
+        db.session.add_all([keep, archived, child])
+        db.session.commit()
+        keep_id = str(keep.id)
+        archived_id = str(archived.id)
+        child_id = str(child.id)
+
+    r = client.get("/api/projects", headers=headers)
+    assert r.status_code == 200, r.get_data(as_text=True)
+    ids = {row["project_id"] for row in r.get_json()["projects"]}
+    assert keep_id in ids
+    assert archived_id not in ids
+    assert child_id not in ids
+    keep_row = next(row for row in r.get_json()["projects"] if row["project_id"] == keep_id)
+    assert keep_row["archived"] is False
 
 
 def test_ingest_document_and_drawing_upload(client, flask_app):

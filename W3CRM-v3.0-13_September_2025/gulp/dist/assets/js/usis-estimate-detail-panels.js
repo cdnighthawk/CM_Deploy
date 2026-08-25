@@ -238,72 +238,341 @@
 		});
 	}
 
-	function renderJobFromProject(item) {
+	function formatIsoDateTime(iso) {
+		if (!iso) return null;
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return String(iso);
+			try {
+				return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+			} catch (e2) {
+				return d.toLocaleString();
+			}
+		} catch (e) {
+			return String(iso);
+		}
+	}
+
+	function formatMoneyCur(n, currency) {
+		if (n == null || n === "") return null;
+		var cur = (currency || "USD").toString().trim() || "USD";
+		try {
+			return new Intl.NumberFormat(undefined, { style: "currency", currency: cur }).format(Number(n));
+		} catch (e) {
+			return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + cur;
+		}
+	}
+
+	function formatPercent(p) {
+		if (p == null || p === "") return null;
+		var x = Number(p);
+		if (isNaN(x)) return null;
+		if (x >= 0 && x <= 1) x = x * 100;
+		return x.toFixed(1).replace(/\.0$/, "") + "%";
+	}
+
+	function formatLocation(loc) {
+		if (!loc || typeof loc !== "object") return null;
+		var keys = [
+			"formatted",
+			"formattedAddress",
+			"address",
+			"address1",
+			"street",
+			"line1",
+			"city",
+			"state",
+			"region",
+			"postalCode",
+			"zip",
+			"country",
+		];
+		var parts = [];
+		var seen = {};
+		for (var i = 0; i < keys.length; i++) {
+			var v = loc[keys[i]];
+			if (v == null || String(v).trim() === "") continue;
+			var text = String(v).trim();
+			if (seen[text.toLowerCase()]) continue;
+			seen[text.toLowerCase()] = 1;
+			parts.push(text);
+		}
+		return parts.length ? parts.join(", ") : null;
+	}
+
+	function submissionBadgeClass(state) {
+		var s = (state || "").toLowerCase();
+		if (!s) return "bg-secondary";
+		if (s.indexOf("declin") >= 0 || s.indexOf("lost") >= 0 || s.indexOf("no bid") >= 0) return "bg-danger";
+		if (s.indexOf("submit") >= 0 || s.indexOf("award") >= 0 || s.indexOf("won") >= 0) return "bg-success";
+		if (s.indexOf("review") >= 0 || s.indexOf("undecided") >= 0 || s.indexOf("new") >= 0) return "bg-warning text-dark";
+		return "bg-primary";
+	}
+
+	function yn(v) {
+		if (v === true) return "Yes";
+		if (v === false) return "No";
+		return "—";
+	}
+
+	function appendFieldRow(tbody, label, htmlValue) {
+		if (!tbody) return;
+		var row = document.createElement("tr");
+		row.innerHTML =
+			'<th class="text-muted fw-normal ps-3 py-2" scope="row" style="width:42%">' +
+			esc(label) +
+			'</th><td class="py-2 pe-3">' +
+			htmlValue +
+			"</td>";
+		tbody.appendChild(row);
+	}
+
+	function appendDateRow(tbody, label, iso) {
+		appendFieldRow(tbody, label, iso ? fmtDash(formatIsoDateTime(iso)) : '<span class="text-muted">—</span>');
+	}
+
+	function setJobBadges(container, item) {
+		if (!container) return;
+		container.innerHTML = "";
+		function addBadge(text, cls) {
+			if (!text) return;
+			var span = document.createElement("span");
+			span.className = "badge " + (cls || "bg-secondary") + " me-1 mb-1";
+			span.textContent = text;
+			container.appendChild(span);
+		}
+		if (item.submission_state) addBadge(item.submission_state, submissionBadgeClass(item.submission_state));
+		if (item.workflow_bucket) addBadge(item.workflow_bucket, "bg-dark");
+		if (item.source) addBadge(String(item.source).replace(/_/g, " "), "bg-light text-dark border");
+		if (item.trade_name) addBadge("Trade: " + item.trade_name, "bg-light text-dark border");
+		if (item.estimate_approved_at) addBadge("Estimate approved", "bg-success");
+		else if (item.estimate_locked_at) addBadge("Estimate locked", "bg-secondary");
+		if (item.priority) addBadge("Priority: " + item.priority, "bg-info text-dark");
+		if (item.request_type) addBadge(item.request_type, "bg-secondary");
+		if (item.market_sector) addBadge(item.market_sector, "bg-secondary");
+		if (item.status) addBadge(item.status, "bg-light text-dark border");
+	}
+
+	function renderMembers(container, members) {
+		if (!container) return;
+		container.innerHTML = "";
+		if (!members) {
+			container.innerHTML = '<p class="text-muted mb-0 small">No team list in import.</p>';
+			return;
+		}
+		if (Array.isArray(members) && members.length) {
+			var ul = document.createElement("ul");
+			ul.className = "list-unstyled mb-0";
+			members.forEach(function (m) {
+				if (!m || typeof m !== "object") return;
+				var li = document.createElement("li");
+				li.className = "mb-2 pb-2 border-bottom";
+				var name =
+					m.name ||
+					[m.firstName, m.lastName].filter(Boolean).join(" ") ||
+					m.displayName ||
+					m.email ||
+					"Member";
+				var role = m.role || m.title || m.tradeName || "";
+				var co = (m.company && m.company.name) || m.companyName || "";
+				li.innerHTML =
+					'<div class="fw-medium">' +
+					esc(name) +
+					"</div>" +
+					(role ? '<div class="text-muted">' + esc(role) + "</div>" : "") +
+					(co ? '<div class="text-muted">' + esc(co) + "</div>" : "");
+				ul.appendChild(li);
+			});
+			container.appendChild(ul);
+			return;
+		}
+		container.innerHTML = '<p class="text-muted mb-0 small">No team list in import.</p>';
+	}
+
+	function showJobRoot() {
+		var root = document.getElementById("usis-estd-job-root");
+		if (root) root.classList.remove("d-none");
+	}
+
+	function renderJobDetailed(item) {
 		var title = document.getElementById("usis-estd-job-title");
+		if (title) title.textContent = item.name || "Untitled opportunity";
+
 		var sub = document.getElementById("usis-estd-job-subtitle");
-		var badges = document.getElementById("usis-estd-job-badges");
-		var tbody = document.getElementById("usis-estd-job-tbody");
-		var notes = document.getElementById("usis-estd-job-notes");
-		var extras = document.getElementById("usis-estd-job-extras");
-		if (title) title.textContent = item.name || "—";
 		if (sub) {
 			var bits = [];
-			if (item.number) bits.push("#" + item.number);
+			if (item.number) bits.push(item.number);
 			if (item.city || item.state) bits.push([item.city, item.state].filter(Boolean).join(", "));
-			sub.textContent = bits.join(" · ") || "Active project";
+			sub.textContent = bits.join(" · ") || "Opportunity details";
 		}
-		if (badges) {
-			badges.innerHTML =
-				'<span class="badge bg-light text-dark border">' +
-				esc(item.status || "—") +
-				'</span> <span class="badge bg-light text-muted border text-capitalize">' +
-				esc((item.project_type || "—").replace(/_/g, " ")) +
-				"</span>";
-		}
-		var addr = [item.address_line1, item.address_line2].filter(Boolean).join(", ");
-		var cityLine = [item.city, item.state, item.postal_code].filter(Boolean).join(" ");
-		if (item.country && item.country !== "US") cityLine = (cityLine ? cityLine + ", " : "") + item.country;
-		var rows = [
-			tr("Project id", fmtDash(item.id)),
-			tr("Number", fmtDash(item.number)),
-			tr("Address", fmtDash(addr || null)),
-			tr("City / ZIP", fmtDash(cityLine || null)),
-			tr("Contract value", fmtMoney(item.contract_value)),
-			tr("Contract date", fmtDate(item.contract_date)),
-			tr("Start date", fmtDate(item.start_date)),
-			tr("Substantial completion", fmtDate(item.substantial_completion_date)),
-			tr("Closeout", fmtDate(item.closeout_date)),
-			tr("Retention %", item.retention_percentage != null ? esc(String(item.retention_percentage)) : "—"),
-			tr("Prevailing wage", esc(item.prevailing_wage ? "Yes" : "No")),
-			tr("DBE required", esc(item.dbe_required ? "Yes" : "No")),
-			tr("GC", fmtDash(item.gc_company_name)),
-			tr("Owner", fmtDash(item.owner_company_name)),
-			tr("Architect", fmtDash(item.architect_company_name)),
-			tr("Sage project id", fmtDash(item.sage_project_id)),
-		];
-		if (tbody) tbody.innerHTML = rows.join("");
-		if (notes) {
-			notes.innerHTML = item.notes
-				? "<div class=\"text-body\">" + esc(item.notes).replace(/\n/g, "<br>") + "</div>"
-				: '<span class="text-muted">—</span>';
-		}
-		if (extras) {
-			var bits2 = [];
-			if (item.primary_lead_detail_id) {
-				var href = "construction/lead-detail.html?id=" + encodeURIComponent(item.primary_lead_detail_id);
-				bits2.push('<a class="link-primary" href="' + href + '">Linked lead / opportunity</a>');
+
+		var dueBadge = document.getElementById("usis-estd-job-badge-due");
+		if (dueBadge) {
+			if (item.due_at) {
+				dueBadge.className = "badge bg-danger fs-6 fw-normal";
+				var dueStr = formatIsoDateTime(item.due_at);
+				dueBadge.textContent = dueStr ? "Due " + dueStr : "Due (see dates)";
+			} else {
+				dueBadge.className = "badge bg-light text-muted border fs-6 fw-normal";
+				dueBadge.textContent = "No bid due date";
 			}
-			if (item.id) {
-				bits2.push(
-					'<a class="link-secondary" href="construction/project-detail.html?id=' +
-						encodeURIComponent(item.id) +
+		}
+
+		setJobBadges(document.getElementById("usis-estd-job-badges"), item);
+
+		var cur = item.default_currency || "USD";
+		var pub = document.getElementById("usis-estd-job-public-tbody");
+		if (pub) {
+			pub.innerHTML = "";
+			appendFieldRow(pub, "Project #", fmtDash(item.number));
+			appendFieldRow(pub, "Project name", fmtDash(item.name));
+			appendDateRow(pub, "Bid due", item.due_at);
+			var locStr = formatLocation(item.location);
+			if (locStr) {
+				appendFieldRow(pub, "Location", '<div class="small" style="white-space:pre-wrap;">' + esc(locStr) + "</div>");
+			} else if (item.city || item.state) {
+				appendFieldRow(pub, "Location", fmtDash([item.city, item.state].filter(Boolean).join(", ")));
+			} else {
+				appendFieldRow(pub, "Location", '<span class="text-muted">No location on file.</span>');
+			}
+			appendDateRow(pub, "Job walk", item.job_walk_at);
+			appendDateRow(pub, "RFIs due", item.rfis_due_at);
+			appendDateRow(pub, "Expected start", item.expected_start_at);
+			appendDateRow(pub, "Expected finish", item.expected_finish_at);
+			appendFieldRow(pub, "Project size", fmtDash(formatMoneyCur(item.project_size, cur)));
+			appendFieldRow(pub, "Architect", fmtDash(item.architect || item.architect_company_name));
+			appendFieldRow(pub, "Engineer", fmtDash(item.engineer));
+			appendFieldRow(pub, "Property owner", fmtDash(item.property_owner || item.owner_company_name));
+			appendFieldRow(pub, "Tenant", fmtDash(item.property_tenant));
+			appendDateRow(pub, "Invite received", item.invited_at);
+			appendDateRow(pub, "Contract start", item.contract_start_at || item.contract_date || item.start_date);
+			appendDateRow(pub, "Created (BC)", item.bc_created_at);
+			appendDateRow(pub, "Last updated (BC)", item.bc_updated_at);
+		}
+
+		var desc = document.getElementById("usis-estd-job-description");
+		if (desc) {
+			var narrative = item.project_information || item.notes;
+			if (narrative && String(narrative).trim()) {
+				desc.innerHTML = '<div class="small" style="white-space:pre-wrap;">' + esc(narrative) + "</div>";
+			} else {
+				desc.innerHTML =
+					'<p class="text-muted small mb-0">No project description was provided in Building Connected for this opportunity.</p>';
+			}
+		}
+
+		var trade = document.getElementById("usis-estd-job-trade");
+		if (trade) {
+			if (item.trade_specific_instructions && String(item.trade_specific_instructions).trim()) {
+				trade.innerHTML =
+					'<div style="white-space:pre-wrap;">' + esc(item.trade_specific_instructions) + "</div>";
+			} else {
+				trade.innerHTML = '<p class="text-muted small mb-0">No trade-specific instructions.</p>';
+			}
+		}
+
+		var adv = document.getElementById("usis-estd-job-advanced");
+		if (adv) {
+			var abits = [];
+			abits.push("<div><strong>NDA required:</strong> " + yn(item.is_nda_required) + "</div>");
+			abits.push("<div><strong>Sealed bidding:</strong> " + yn(item.is_sealed_bidding) + "</div>");
+			abits.push("<div><strong>Discoverable / public project:</strong> " + yn(item.project_is_public) + "</div>");
+			abits.push("<div><strong>Archived:</strong> " + yn(item.is_archived) + "</div>");
+			if (item.is_parent != null) {
+				abits.push("<div><strong>Parent invite (BC):</strong> " + yn(item.is_parent) + "</div>");
+			}
+			adv.innerHTML = abits.join("");
+		}
+
+		var priv = document.getElementById("usis-estd-job-private-tbody");
+		if (priv) {
+			priv.innerHTML = "";
+			appendFieldRow(priv, "Request type / budgeting", fmtDash(item.request_type));
+			appendFieldRow(priv, "Client (company)", fmtDash(item.company_name || item.gc_company_name));
+			appendFieldRow(priv, "Primary contact", fmtDash(item.client_contact));
+			appendFieldRow(priv, "Fee %", fmtDash(formatPercent(item.fee_percentage)));
+			appendFieldRow(priv, "Profit margin", fmtDash(formatPercent(item.profit_margin)));
+			appendFieldRow(priv, "Market sector", fmtDash(item.market_sector));
+			appendFieldRow(priv, "Owning office (id)", fmtDash(item.owning_office_id));
+			appendFieldRow(priv, "Workflow bucket", fmtDash(item.workflow_bucket));
+			appendFieldRow(priv, "ROM", fmtDash(formatMoneyCur(item.rom, cur)));
+			appendFieldRow(
+				priv,
+				"Project value / final",
+				fmtDash(formatMoneyCur(item.final_value != null ? item.final_value : item.contract_value, cur))
+			);
+			appendFieldRow(priv, "CRM stage", fmtDash(item.crm_stage));
+			appendFieldRow(priv, "Win probability", fmtDash(formatPercent(item.win_probability)));
+			appendFieldRow(priv, "Estimating hours", fmtDash(item.estimating_hours));
+			appendFieldRow(priv, "Contract duration (days)", fmtDash(item.contract_duration));
+			appendFieldRow(priv, "Avg. crew size", fmtDash(item.average_crew_size));
+			if (item.takeoff_line_count != null) {
+				appendFieldRow(priv, "Takeoff lines", '<span class="fw-medium">' + esc(String(item.takeoff_line_count)) + "</span>");
+			}
+			appendFieldRow(priv, "Priority", fmtDash(item.priority));
+			appendDateRow(priv, "Follow-up", item.follow_up_at);
+		}
+
+		renderMembers(document.getElementById("usis-estd-job-members"), item.members);
+
+		var foot = document.getElementById("usis-estd-job-footer");
+		if (foot) {
+			var lid = item.external_id || item.id;
+			var extras = [];
+			extras.push(
+				"Building Connected ref <code>" +
+					esc(item.external_id || "—") +
+					"</code> · Internal id <code>" +
+					esc(item.id || "—") +
+					"</code>"
+			);
+			if (item.project_id) {
+				extras.push(' · Linked project <code class="ms-1">' + esc(item.project_id) + "</code>");
+				extras.push(
+					' · <a class="link-secondary" href="construction/project-detail.html?id=' +
+						encodeURIComponent(item.project_id) +
 						'">Open project workspace</a>'
 				);
 			}
-			extras.innerHTML = bits2.length ? bits2.join("<br>") : "";
+			if (lid) {
+				extras.push(
+					' · <a class="link-primary" href="construction/lead-detail.html?id=' +
+						encodeURIComponent(lid) +
+						'">Open lead</a>'
+				);
+			}
+			foot.innerHTML = extras.join("");
 		}
-		var root = document.getElementById("usis-estd-job-root");
-		if (root) root.classList.remove("d-none");
+
+		showJobRoot();
+	}
+
+	function renderJobFromProject(item) {
+		renderJobDetailed({
+			name: item.name,
+			number: item.number,
+			city: item.city,
+			state: item.state,
+			location: {
+				address: [item.address_line1, item.address_line2].filter(Boolean).join(", "),
+				city: item.city,
+				state: item.state,
+				postalCode: item.postal_code,
+				country: item.country,
+			},
+			status: item.status,
+			request_type: item.project_type,
+			architect_company_name: item.architect_company_name,
+			owner_company_name: item.owner_company_name,
+			gc_company_name: item.gc_company_name,
+			contract_value: item.contract_value,
+			contract_date: item.contract_date,
+			start_date: item.start_date,
+			notes: item.notes,
+			id: item.id,
+			project_id: item.id,
+			external_id: item.primary_lead_detail_id,
+		});
 	}
 
 	function pick(item, snap, key) {
@@ -314,32 +583,62 @@
 
 	function leadFromEstimateItem(item) {
 		var snap = (item && item.lead) || {};
+		function g(key) {
+			return pick(item, snap, key);
+		}
 		return {
 			name: snap.name || item.lead_name || item.name,
 			number: snap.number || item.number,
-			trade_name: snap.trade_name || item.trade_name,
-			submission_state: snap.submission_state || item.submission_state,
-			crm_stage: snap.crm_stage || item.crm_stage,
+			trade_name: g("trade_name"),
+			submission_state: g("submission_state"),
+			crm_stage: g("crm_stage"),
 			location: item.location || snap.location,
 			city: item.city || snap.city,
 			state: item.state || snap.state,
-			company_name: item.company_name || snap.company_name,
-			rom: pick(item, snap, "rom"),
-			win_probability: pick(item, snap, "win_probability"),
+			company_name: g("company_name"),
+			rom: g("rom"),
+			win_probability: g("win_probability"),
 			due_at: snap.due_at || item.due_at,
-			project_information: pick(item, snap, "project_information"),
-			architect: pick(item, snap, "architect"),
-			engineer: pick(item, snap, "engineer"),
-			property_owner: pick(item, snap, "property_owner"),
-			property_tenant: pick(item, snap, "property_tenant"),
-			job_walk_at: pick(item, snap, "job_walk_at"),
-			rfis_due_at: pick(item, snap, "rfis_due_at"),
-			expected_start_at: pick(item, snap, "expected_start_at"),
-			expected_finish_at: pick(item, snap, "expected_finish_at"),
-			client_contact: pick(item, snap, "client_contact"),
-			request_type: pick(item, snap, "request_type"),
-			market_sector: pick(item, snap, "market_sector"),
-			trade_specific_instructions: pick(item, snap, "trade_specific_instructions"),
+			project_information: g("project_information"),
+			architect: g("architect"),
+			engineer: g("engineer"),
+			property_owner: g("property_owner"),
+			property_tenant: g("property_tenant"),
+			job_walk_at: g("job_walk_at"),
+			rfis_due_at: g("rfis_due_at"),
+			expected_start_at: g("expected_start_at"),
+			expected_finish_at: g("expected_finish_at"),
+			client_contact: g("client_contact"),
+			request_type: g("request_type"),
+			market_sector: g("market_sector"),
+			trade_specific_instructions: g("trade_specific_instructions"),
+			invited_at: g("invited_at"),
+			contract_start_at: g("contract_start_at"),
+			bc_created_at: g("bc_created_at"),
+			bc_updated_at: g("bc_updated_at"),
+			follow_up_at: g("follow_up_at"),
+			project_size: g("project_size"),
+			default_currency: g("default_currency") || "USD",
+			is_nda_required: g("is_nda_required"),
+			is_sealed_bidding: g("is_sealed_bidding"),
+			project_is_public: g("project_is_public"),
+			is_archived: g("is_archived"),
+			is_parent: g("is_parent"),
+			fee_percentage: g("fee_percentage"),
+			profit_margin: g("profit_margin"),
+			owning_office_id: g("owning_office_id"),
+			workflow_bucket: g("workflow_bucket"),
+			final_value: g("final_value"),
+			estimating_hours: g("estimating_hours"),
+			contract_duration: g("contract_duration"),
+			average_crew_size: g("average_crew_size"),
+			takeoff_line_count: g("takeoff_line_count"),
+			priority: g("priority"),
+			source: g("source"),
+			members: g("members"),
+			estimate_approved_at: g("estimate_approved_at") || item.approved_at,
+			estimate_locked_at: g("estimate_locked_at") || item.locked_at,
+			project_id: item.project_id || snap.project_id,
 			external_id: snap.external_id || item.external_id,
 			id:
 				item.lead_id ||
@@ -352,105 +651,13 @@
 	}
 
 	function renderJobFromLead(raw) {
-		var le = leadFromEstimateItem(raw);
-		var title = document.getElementById("usis-estd-job-title");
-		var sub = document.getElementById("usis-estd-job-subtitle");
-		var badges = document.getElementById("usis-estd-job-badges");
-		var tbody = document.getElementById("usis-estd-job-tbody");
-		var notes = document.getElementById("usis-estd-job-notes");
-		var extras = document.getElementById("usis-estd-job-extras");
-		if (title) title.textContent = le.name || "—";
-		if (sub) {
-			sub.textContent = [le.number ? "#" + le.number : "", le.trade_name || ""].filter(Boolean).join(" · ");
-		}
-		if (badges) {
-			var st = le.submission_state || "—";
-			var crm = le.crm_stage ? String(le.crm_stage) : "";
-			badges.innerHTML =
-				'<span class="badge bg-light text-dark border">' +
-				esc(st) +
-				"</span>" +
-				(crm
-					? ' <span class="badge bg-light text-muted border">' + esc(crm) + "</span>"
-					: "");
-		}
-		var loc = le.location && typeof le.location === "object" ? le.location : {};
-		var city = loc.city != null ? String(loc.city) : le.city || "";
-		var state = loc.state != null ? String(loc.state) : le.state || "";
-		var locLine = [city, state].filter(function (x) {
-			return String(x).trim();
-		}).join(", ");
-		var rows = [
-			tr("Lead id", fmtDash(le.external_id || le.id)),
-			tr("Due", fmtDate(le.due_at)),
-			tr("Location", fmtDash(locLine || null)),
-			tr("Company", fmtDash(le.company_name)),
-			tr("Primary contact", fmtDash(le.client_contact)),
-			tr("Architect", fmtDash(le.architect)),
-			tr("Engineer", fmtDash(le.engineer)),
-			tr("Property owner", fmtDash(le.property_owner)),
-			tr("Tenant", fmtDash(le.property_tenant)),
-			tr("Job walk", fmtDate(le.job_walk_at)),
-			tr("RFIs due", fmtDate(le.rfis_due_at)),
-			tr("Expected start", fmtDate(le.expected_start_at)),
-			tr("Expected finish", fmtDate(le.expected_finish_at)),
-			tr("Request type", fmtDash(le.request_type)),
-			tr("Market sector", fmtDash(le.market_sector)),
-			tr("ROM", fmtMoney(le.rom)),
-			tr("Win probability", le.win_probability != null ? esc(String(le.win_probability)) : "—"),
-		];
-		if (tbody) tbody.innerHTML = rows.join("");
-		if (notes) {
-			var pi = le.project_information;
-			var trade = le.trade_specific_instructions;
-			var noteBits = [];
-			if (typeof pi === "string" && pi.trim()) {
-				noteBits.push("<div class=\"text-body\">" + esc(pi).replace(/\n/g, "<br>") + "</div>");
-			}
-			if (typeof trade === "string" && trade.trim()) {
-				noteBits.push(
-					"<div class=\"mt-2\"><div class=\"text-muted small mb-1\">Trade instructions</div><div class=\"text-body\">" +
-						esc(trade).replace(/\n/g, "<br>") +
-						"</div></div>"
-				);
-			}
-			notes.innerHTML = noteBits.length ? noteBits.join("") : '<span class="text-muted">—</span>';
-		}
-		var lid = le.external_id || le.id;
-		if (extras) {
-			extras.innerHTML =
-				'<a class="link-primary" href="construction/lead-detail.html?id=' +
-				encodeURIComponent(lid) +
-				'">Open full lead / job card</a>' +
-				'<br><span class="text-muted">Drawings use the same viewer as Projects — open the Drawings tab or upload a PDF.</span>';
-		}
-		var root = document.getElementById("usis-estd-job-root");
-		if (root) root.classList.remove("d-none");
+		renderJobDetailed(leadFromEstimateItem(raw));
 	}
 
 	function loadJobPanel(le) {
 		setJobErr("");
-		setJobLoading(true);
-		var rootEl = document.getElementById("usis-estd-job-root");
-		if (rootEl) rootEl.classList.add("d-none");
-		var pid = le.project_id;
-		if (!pid) {
-			setJobLoading(false);
-			renderJobFromLead(le);
-			return;
-		}
-		fetchJson("/api/v1/projects/" + encodeURIComponent(pid))
-			.then(function (data) {
-				setJobLoading(false);
-				var item = data.item;
-				if (!item) throw new Error("Missing project in response");
-				renderJobFromProject(item);
-			})
-			.catch(function (err) {
-				setJobLoading(false);
-				setJobErr(err.message || String(err));
-				renderJobFromLead(le);
-			});
+		setJobLoading(false);
+		renderJobFromLead(le);
 	}
 
 	function onLeadEstimateLoaded(ev) {

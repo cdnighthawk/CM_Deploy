@@ -55,6 +55,12 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
+		.usis-bc-job-hero {
+			border-color: var(--bs-border-color, #dee2e6) !important;
+			background-color: var(--bs-light, #f8f9fa);
+			background-image: linear-gradient(135deg, var(--bs-light, #f8f9fa) 0%, #f1f3f5 100%);
+		}
+		.usis-bc-job-hero #usis-estd-job-title { letter-spacing: -0.02em; }
 		#usis-est-lines-table input.form-control-sm,
 		#usis-est-lines-table select.form-select-sm { font-size: 0.8125rem; min-width: 3rem; }
 		#usis-est-lines-table.usis-est-lines-compact input.form-control-sm,
@@ -468,7 +474,6 @@
 						<div>
 							<p class="text-muted mb-1 small" id="usis-est-detail-idline"></p>
 							<a href="construction/estimate.html" class="small">&larr; Back to Estimates</a>
-							<a href="construction/leads.html" class="small d-none ms-2" id="usis-est-back-lead">&larr; Back to lead</a>
 						</div>
 						<div class="d-flex flex-wrap gap-1">
 							<button type="button" class="btn btn-primary btn-sm" id="usis-estd-new-estimate">New Estimate</button>
@@ -480,7 +485,7 @@
 				<div class="col-xl-12 mb-3">
 					<ul class="nav nav-pills flex-wrap gap-1 usis-detail-toolbar" role="tablist">
 						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="estd-tab-job" data-bs-toggle="pill" data-bs-target="#estd-pane-job" type="button" role="tab" aria-controls="estd-pane-job" aria-selected="false">Job information</button>
+							<button class="nav-link active" id="estd-tab-job" data-bs-toggle="pill" data-bs-target="#estd-pane-job" type="button" role="tab" aria-controls="estd-pane-job" aria-selected="true">Job information</button>
 						</li>
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="estd-tab-drawings" data-bs-toggle="pill" data-bs-target="#estd-pane-drawings" type="button" role="tab" aria-controls="estd-pane-drawings" aria-selected="false">Drawings</button>
@@ -492,7 +497,7 @@
 							<button class="nav-link" id="estd-tab-rfi" data-bs-toggle="pill" data-bs-target="#estd-pane-rfi" type="button" role="tab" aria-controls="estd-pane-rfi" aria-selected="false">RFI</button>
 						</li>
 						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="estd-tab-takeoff" data-bs-toggle="pill" data-bs-target="#estd-pane-takeoff" type="button" role="tab" aria-controls="estd-pane-takeoff" aria-selected="true">Takeoff</button>
+							<button class="nav-link" id="estd-tab-takeoff" data-bs-toggle="pill" data-bs-target="#estd-pane-takeoff" type="button" role="tab" aria-controls="estd-pane-takeoff" aria-selected="false">Takeoff</button>
 						</li>
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="estd-tab-estimate" data-bs-toggle="pill" data-bs-target="#estd-pane-estimate" type="button" role="tab" aria-controls="estd-pane-estimate" aria-selected="false">Estimate</button>
@@ -505,31 +510,69 @@
 
 				<div class="col-xl-12">
 					<div class="tab-content card card-body border-0 shadow-sm">
-						<div class="tab-pane fade" id="estd-pane-job" role="tabpanel" aria-labelledby="estd-tab-job" tabindex="0">
+						<div class="tab-pane fade show active" id="estd-pane-job" role="tabpanel" aria-labelledby="estd-tab-job" tabindex="0">
 							<div class="alert alert-light border py-2 mb-2" data-usis-estd-job-loading>Loading job information…</div>
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-estd-job-error role="alert"></div>
 							<div id="usis-estd-job-root" class="d-none">
-								<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
-									<div>
-										<h4 class="mb-1 fw-semibold" id="usis-estd-job-title">—</h4>
-										<p class="text-muted small mb-0" id="usis-estd-job-subtitle"></p>
-									</div>
-									<div class="d-flex flex-wrap gap-1" id="usis-estd-job-badges"></div>
-								</div>
-								<div class="row g-3">
-									<div class="col-xl-8">
-										<table class="table table-sm table-bordered bg-white mb-0">
-											<tbody id="usis-estd-job-tbody"></tbody>
-										</table>
-									</div>
-									<div class="col-xl-4">
-										<div class="card border-0 shadow-sm">
-											<div class="card-header bg-white py-2 fw-semibold border-bottom">Notes</div>
-											<div class="card-body small text-muted" id="usis-estd-job-notes">—</div>
+								<div class="rounded-3 border usis-bc-job-hero px-3 px-md-4 py-3 mb-4">
+									<div class="d-flex flex-wrap justify-content-between gap-3 align-items-start">
+										<div class="flex-grow-1" style="min-width: 12rem;">
+											<div class="text-uppercase text-muted small fw-semibold mb-1" style="letter-spacing: 0.04em;">Building Connected</div>
+											<h4 class="mb-1 fw-semibold" id="usis-estd-job-title">—</h4>
+											<div class="text-muted small" id="usis-estd-job-subtitle"></div>
 										</div>
-										<p class="text-muted small mt-3 mb-0" id="usis-estd-job-extras"></p>
+										<div class="text-md-end">
+											<span class="badge bg-light text-muted border fs-6 fw-normal" id="usis-estd-job-badge-due">Due</span>
+										</div>
+									</div>
+									<div class="d-flex flex-wrap gap-1 mt-3 pt-2 border-top border-opacity-25" id="usis-estd-job-badges"></div>
+								</div>
+
+								<div class="row g-3">
+									<div class="col-xl-7">
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Public project information</div>
+											<div class="card-body p-0">
+												<p class="text-muted small px-3 pt-3 mb-2">Mirrors Building Connected’s left column: number, name, key dates, location, size, design team, then narrative fields.</p>
+												<table class="table table-sm mb-0">
+													<tbody id="usis-estd-job-public-tbody"></tbody>
+												</table>
+											</div>
+											<div class="card-footer bg-white border-top small text-muted">
+												Location in BC is powered by Google Maps; imported CSV rows may only include city/state or a partial address.
+											</div>
+										</div>
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Description</div>
+											<div class="card-body" id="usis-estd-job-description"></div>
+										</div>
+										<div class="card border-0 shadow-sm mb-0">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Trade-specific instructions</div>
+											<div class="card-body small" id="usis-estd-job-trade"></div>
+										</div>
+									</div>
+									<div class="col-xl-5">
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Advanced options</div>
+											<div class="card-body small" id="usis-estd-job-advanced"></div>
+										</div>
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Private information</div>
+											<div class="card-body p-0">
+												<p class="text-muted small px-3 pt-3 mb-2">Internal / imported fields (in BC, private fields are visible only to your company on the Information tab).</p>
+												<table class="table table-sm mb-0">
+													<tbody id="usis-estd-job-private-tbody"></tbody>
+												</table>
+											</div>
+										</div>
+										<div class="card border-0 shadow-sm mb-0">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Invitees / team</div>
+											<div class="card-body small" id="usis-estd-job-members"></div>
+										</div>
 									</div>
 								</div>
+
+								<p class="text-muted small mt-4 mb-0 border-top pt-3" id="usis-estd-job-footer"></p>
 							</div>
 						</div>
 
@@ -633,7 +676,7 @@
 							</div>
 						</div>
 
-						<div class="tab-pane fade show active" id="estd-pane-takeoff" role="tabpanel" aria-labelledby="estd-tab-takeoff" tabindex="0">
+						<div class="tab-pane fade" id="estd-pane-takeoff" role="tabpanel" aria-labelledby="estd-tab-takeoff" tabindex="0">
 							<p id="usis-estimate-takeoff-no-lead" class="text-muted mb-0">Open this page with an estimate id in the URL (<code>?id=…</code>) to load takeoff lines.</p>
 							<div id="usis-estimate-takeoff-root" class="d-none">
 								<div class="mb-3">

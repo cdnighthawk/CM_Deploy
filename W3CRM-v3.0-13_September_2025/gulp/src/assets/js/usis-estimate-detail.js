@@ -161,9 +161,6 @@
 		if (!h || !item) return;
 		var lead = item.lead || {};
 		var leadName = lead.name || item.lead_name || item.company_name || "";
-		var leadHref = parentLeadId(item)
-			? "construction/lead-detail.html?id=" + encodeURIComponent(parentLeadId(item))
-			: "construction/leads.html";
 		var version = item.version_label || item.version || "";
 		var gc = item.gc_name || item.company_name || "—";
 		h.innerHTML =
@@ -201,15 +198,7 @@
 			"<div>Profit margin: <strong>" +
 			pct(item.profit_margin) +
 			"</strong></div>" +
-			'<div class="mt-1"><a class="small" href="' +
-			esc(leadHref) +
-			'">&larr; Back to lead</a></div>' +
 			"</div>";
-		var back = document.getElementById("usis-est-back-lead");
-		if (back) {
-			back.setAttribute("href", leadHref);
-			back.classList.remove("d-none");
-		}
 	}
 
 	var quoteColumnCatalog = null;
@@ -675,12 +664,6 @@
 		if (wrap) wrap.classList.add("d-none");
 		var rev = document.getElementById("usis-estd-revision");
 		if (rev) rev.classList.add("d-none");
-		var back = document.getElementById("usis-est-back-lead");
-		var lid = currentLeadId();
-		if (back && lid) {
-			back.href = "construction/lead-detail.html?id=" + encodeURIComponent(lid);
-			back.classList.remove("d-none");
-		}
 		showErr("");
 		fireEstimateLoaded(lead, null, { missingEstimate: true });
 	}
@@ -710,12 +693,6 @@
 		if (wrap) wrap.classList.remove("d-none");
 		var rev = document.getElementById("usis-estd-revision");
 		if (rev) rev.classList.remove("d-none");
-		var back = document.getElementById("usis-est-back-lead");
-		var lid = parentLeadId(item);
-		if (back && lid) {
-			back.href = "construction/lead-detail.html?id=" + encodeURIComponent(lid);
-			back.classList.remove("d-none");
-		}
 		fireEstimateLoaded(item, null);
 	}
 

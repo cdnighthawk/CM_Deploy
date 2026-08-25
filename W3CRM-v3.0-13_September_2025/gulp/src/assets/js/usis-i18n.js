@@ -80,6 +80,7 @@
 		"Sent with this report": "Se envía con este reporte",
 		"Site-wide (not tied to a page).": "En todo el sitio (no ligado a una página).",
 		"So we know who to follow up with": "Para saber a quién contactar",
+		"Back to dashboard": "Volver al inicio",
 	};
 
 	function supported(code) {
@@ -131,6 +132,8 @@
 	}
 
 	function applyText(el, lang) {
+		// Never flatten wrappers: .auth-form p often contains <a href> links.
+		if (el.children && el.children.length) return;
 		var key = el.getAttribute("data-i18n") || remember(el, "", (el.textContent || "").trim());
 		if (!key) return;
 		remember(el, "", key);
@@ -164,7 +167,7 @@
 			applyText(el, lang);
 		});
 		document.querySelectorAll(".auth-form h3, .auth-form p, .auth-form label, .auth-form .btn, .auth-form .form-check-label, .auth-form a.btn-link, .auth-form span.small").forEach(function (el) {
-			if (el.querySelector && el.querySelector("strong, i, svg, img")) return;
+			if (el.children && el.children.length) return;
 			applyText(el, lang);
 		});
 		document.querySelectorAll("[data-i18n-placeholder], .header-search input[placeholder]").forEach(function (el) {

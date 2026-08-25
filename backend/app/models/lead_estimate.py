@@ -175,6 +175,18 @@ class LeadEstimate(UUIDPKMixin, TimestampMixin, db.Model):
         cascade="all, delete-orphan",
         order_by="TakeoffLineItem.sort_order",
     )
+    estimates = relationship(
+        "Estimate",
+        back_populates="lead_estimate",
+        foreign_keys="Estimate.lead_estimate_id",
+        cascade="all, delete-orphan",
+    )
+    drawing_sets = relationship(
+        "DrawingSet",
+        back_populates="lead_estimate",
+        cascade="all, delete-orphan",
+        order_by="DrawingSet.created_at",
+    )
     door_openings = relationship(
         "DoorOpening",
         back_populates="lead_estimate",

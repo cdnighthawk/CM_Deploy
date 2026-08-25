@@ -102,17 +102,29 @@
 		var filtersWired = false;
 		var drawingsTabulator = null;
 		var activeProjectId = null;
+		var activeLeadId = null;
 
 		function viewerHref(pid, drawingRevId) {
-			var q =
-				"construction/drawing-viewer.html?project_id=" +
-				encodeURIComponent(pid) +
-				"&drawing_id=" +
-				encodeURIComponent(drawingRevId);
+			var parts = [];
+			if (pid) parts.push("project_id=" + encodeURIComponent(pid));
+			if (drawingRevId) parts.push("drawing_id=" + encodeURIComponent(drawingRevId));
+			if (activeLeadId) parts.push("lead_id=" + encodeURIComponent(activeLeadId));
+			if (cfg.fromPage) parts.push("from=" + encodeURIComponent(cfg.fromPage));
 			if (cfg.returnUrl) {
-				q += "&return_url=" + encodeURIComponent(global.location.href);
+				parts.push("return_url=" + encodeURIComponent(global.location.href));
 			}
-			return q;
+			return "construction/drawing-viewer.html" + (parts.length ? "?" + parts.join("&") : "");
+		}
+
+		function updateOpenViewer(pid) {
+			var btn = el(ids.openViewer);
+			if (!btn) return;
+			if (pid || activeLeadId) {
+				btn.classList.remove("d-none");
+				btn.setAttribute("href", viewerHref(pid, null));
+			} else {
+				btn.classList.add("d-none");
+			}
 		}
 
 		function setPaneLoading(paneId, loading) {
@@ -136,11 +148,15 @@
 			}
 		}
 
-		function fetchJson(path) {
+		function fetchJson(path, options) {
+			var opts = options || {};
 			var url = apiBase() + path;
+			var headers = Object.assign({ Accept: "application/json" }, actorHeaders(), opts.headers || {});
 			return fetch(url, {
+				method: opts.method || "GET",
 				credentials: "include",
-				headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+				headers: headers,
+				body: opts.body,
 			}).then(function (res) {
 				if (!res.ok) {
 					return res.text().then(function (t) {
@@ -171,6 +187,8 @@
 				sroot.innerHTML = "";
 			}
 			if (sfull) sfull.classList.add("d-none");
+			if (cfg.allowDrawingsWithoutProject && upb) upb.classList.remove("d-none");
+			updateOpenViewer(null);
 			if (panes.drawings) setPaneLoading(panes.drawings, false);
 			if (panes.rfi) setPaneLoading(panes.rfi, false);
 		}
@@ -192,13 +210,27 @@
 			if (snp) snp.classList.add("d-none");
 			if (sroot) sroot.classList.remove("d-none");
 			if (sfull) sfull.classList.remove("d-none");
+			updateOpenViewer(activeProjectId);
 		}
 
 		function updateRfiLinks(pid) {
 			var open = el(ids.rfiOpenLog);
 			var create = el(ids.rfiOpenCreate);
-			if (open) open.setAttribute("href", "construction/rfis.html?project_id=" + encodeURIComponent(pid));
-			if (create) create.setAttribute("href", "construction/rfi-create.html?project_id=" + encodeURIComponent(pid));
+			var qs = [];
+			if (pid) qs.push("project_id=" + encodeURIComponent(pid));
+			if (activeLeadId) qs.push("lead_id=" + encodeURIComponent(activeLeadId));
+			var q = qs.length ? "?" + qs.join("&") : "";
+			if (open) {
+				open.setAttribute("href", "construction/rfis.html" + q);
+				open.classList.remove("d-none");
+			}
+			if (create) {
+				create.setAttribute("href", "construction/rfi-create.html" + q);
+				create.classList.remove("d-none");
+			}
+			if (pid && global.USISProjectContext && typeof global.USISProjectContext.setProjectId === "function") {
+				global.USISProjectContext.setProjectId(pid);
+			}
 		}
 
 		function repopulateDrawingFacetSelects(items) {
@@ -309,7 +341,7 @@
 						wrap.className = "d-flex gap-1 flex-wrap justify-content-end";
 						var data = cell.getRow().getData();
 						var cr = data.current_revision;
-						if (cr && cr.id && pid) {
+						if (cr && cr.id) {
 							var a = document.createElement("a");
 							a.href = viewerHref(pid, cr.id);
 							a.className = "btn btn-primary btn-sm py-0";
@@ -490,8 +522,14 @@
 			var sfull = el(ids.specsOpenFull);
 			if (sfull && projectId) {
 				sfull.setAttribute("href", "construction/specs-viewer.html?project_id=" + encodeURIComponent(projectId));
+				sfull.classList.remove("d-none");
 			}
-			if (!sroot || !projectId || typeof global.USISSpecsBook === "undefined") return;
+			if (!sroot || !projectId) return;
+			sroot.classList.remove("d-none");
+			if (typeof global.USISSpecsBook === "undefined") {
+				sroot.innerHTML = '<div class="alert alert-danger">Spec book script failed to load.</div>';
+				return;
+			}
 			sroot.innerHTML = "";
 			global.USISSpecsBook.mount(sroot, projectId);
 		}
@@ -566,20 +604,106 @@
 			if (cfg.projectIdGlobalKey) global[cfg.projectIdGlobalKey] = projectId;
 			showProject();
 			updateRfiLinks(projectId);
-			return loadDrawingsAndRfis(projectId).then(function () {
-				mountSpecs(projectId);
+			mountSpecs(projectId);
+			return loadDrawingsAndRfis(projectId);
+		}
+
+		function leadIdentifier(item) {
+			if (typeof cfg.getLeadId === "function") return cfg.getLeadId(item);
+			if (!item) return null;
+			return item.id || item.external_id || null;
+		}
+
+		function projectIdFromItem(item) {
+			if (typeof cfg.getProjectId === "function") return cfg.getProjectId(item);
+			if (!item) return null;
+			return item.drawing_project_id || item.project_id || null;
+		}
+
+		function postEnsureProject(lid) {
+			return fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(lid) + "/ensure-project", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: "{}",
 			});
 		}
 
+		function applyEnsuredProject(item, data) {
+			var next = (data && data.item) || {};
+			var newPid = (data && data.project_id) || next.project_id || next.drawing_project_id;
+			if (item && newPid) {
+				item.project_id = newPid;
+				item.drawing_project_id = next.drawing_project_id || newPid;
+			}
+			return newPid || null;
+		}
+
+		function showRfiEnsureError(err) {
+			if (panes.rfi) {
+				setPaneLoading(panes.rfi, false);
+				setPaneError(panes.rfi, err && (err.message || String(err)) ? (err.message || String(err)) : "Could not open the RFI log.");
+			}
+			var sroot = el(ids.specsRoot);
+			var snp = el(ids.specsNoProject);
+			if (snp && err) {
+				snp.textContent = err.message || String(err);
+				snp.classList.remove("d-none");
+			}
+			if (sroot) sroot.classList.add("d-none");
+		}
+
+		function ensureProjectThenLoad(item) {
+			activeLeadId = leadIdentifier(item);
+			var pid = projectIdFromItem(item);
+			updateOpenViewer(pid);
+			updateRfiLinks(pid);
+			var lid = cfg.ensureProjectFromLead ? activeLeadId : null;
+
+			function loadOrHide(id) {
+				if (id) return loadProject(id);
+				resetCache();
+				showNoProject();
+				return Promise.resolve();
+			}
+
+			if (pid && !lid) return loadOrHide(pid);
+
+			if (!lid) {
+				return loadOrHide(pid);
+			}
+
+			if (pid) {
+				var loading = loadProject(pid);
+				return postEnsureProject(lid)
+					.then(function (data) {
+						var newPid = applyEnsuredProject(item, data);
+						if (newPid && newPid !== pid) return loadProject(newPid);
+						return loading;
+					})
+					.catch(function () {
+						return loading;
+					});
+			}
+
+			return postEnsureProject(lid)
+				.then(function (data) {
+					var newPid = applyEnsuredProject(item, data);
+					if (!newPid) {
+						resetCache();
+						showNoProject();
+						return;
+					}
+					return loadProject(newPid);
+				})
+				.catch(function (err) {
+					resetCache();
+					showNoProject();
+					showRfiEnsureError(err);
+				});
+		}
+
 		function onItemLoaded(item) {
-			var getPid = cfg.getProjectId || function (it) {
-				return it && it.project_id;
-			};
-			var pid = item ? getPid(item) : null;
-			if (pid) return loadProject(pid);
-			resetCache();
-			showNoProject();
-			return Promise.resolve();
+			return ensureProjectThenLoad(item);
 		}
 
 		if (cfg.event) {

@@ -178,8 +178,13 @@
 		}
 	}
 
+	function sameId(a, b) {
+		if (a == null || b == null) return false;
+		return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+	}
+
 	function loadProjects() {
-		return fetchJson("/api/v1/projects?limit=500").then(function (data) {
+		return fetchJson("/api/v1/projects?limit=2000").then(function (data) {
 			return data.items || [];
 		});
 	}
@@ -387,5 +392,6 @@
 		flashError: flashError,
 		debounce: debounce,
 		queryParam: queryParam,
+		sameId: sameId,
 	};
 })();

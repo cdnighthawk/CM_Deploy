@@ -29,9 +29,11 @@ from ..models import (
     DoorOpening,
     Drawing,
     Document,
+    Estimate,
     LeadEstimate,
     MaterialPrice,
     Project,
+    ProjectMember,
     Rfi,
     SpecSection,
     Submittal,
@@ -39,6 +41,7 @@ from ..models import (
     User,
     WageRate,
 )
+from . import _estimate_service as est_svc
 from ..models.hrms_core import HrmsTimesheetEntry
 from ..services import door_schedule as door_schedule_svc
 from . import _commitment_service as commitment_svc
@@ -686,9 +689,23 @@ def _takeoff_locked_response():
 
 
 def _require_lead_unlocked_for_takeoff(lead: LeadEstimate | None):
-    if lead is not None and _lead_estimate_is_locked(lead):
+    if lead is None:
+        return None
+    real = db.session.get(LeadEstimate, lead.id) if getattr(lead, "id", None) else None
+    if real is not None:
+        est = est_svc.current_estimate_for_lead(real)
+        if est_svc.estimate_is_locked(est):
+            return _takeoff_locked_response()
+    if _lead_estimate_is_locked(lead):
         return _takeoff_locked_response()
     return None
+
+
+def _require_unlocked_for_line(t: TakeoffLineItem):
+    est = _takeoff_line_parent_estimate(t)
+    if est_svc.estimate_is_locked(est):
+        return _takeoff_locked_response()
+    return _require_lead_unlocked_for_takeoff(_takeoff_line_parent_lead(t))
 
 
 def _takeoff_line_parent_lead(t: TakeoffLineItem) -> LeadEstimate | None:
@@ -698,6 +715,12 @@ def _takeoff_line_parent_lead(t: TakeoffLineItem) -> LeadEstimate | None:
         op = db.session.get(DoorOpening, t.door_opening_id)
         if op is not None and op.lead_estimate_id:
             return db.session.get(LeadEstimate, op.lead_estimate_id)
+    return None
+
+
+def _takeoff_line_parent_estimate(t: TakeoffLineItem) -> Estimate | None:
+    if t.estimate_id:
+        return db.session.get(Estimate, t.estimate_id)
     return None
 
 
@@ -741,6 +764,66 @@ def _resolve_lead(identifier: str) -> LeadEstimate | None:
     return row
 
 
+def _ensure_project_membership(project_id: uuid.UUID, cu) -> None:
+    if cu is None or cu.id is None:
+        return
+    existing = db.session.get(ProjectMember, {"user_id": cu.id, "project_id": project_id})
+    if existing is not None:
+        return
+    db.session.add(
+        ProjectMember(
+            user_id=cu.id,
+            project_id=project_id,
+            member_role="estimator",
+            created_by_id=cu.id,
+        )
+    )
+
+
+def ensure_lead_workspace_project(row: LeadEstimate, cu) -> Project:
+    """Link the same project the drawing viewer uses on Projects.
+
+    Reuses ``project_id`` or a job with the same number. Creates a planning
+    project only when none exists. Does not award the lead.
+    """
+    existing = _drawing_project_for_lead(row)
+    if existing is not None:
+        if row.project_id != existing.id:
+            row.project_id = existing.id
+        _ensure_project_membership(existing.id, cu)
+        db.session.commit()
+        return existing
+    loc = row.location if isinstance(row.location, Mapping) else {}
+    city, state = ser.location_bits(loc)
+    name_raw = row.name or row.number or "Lead workspace"
+    name = str(name_raw).strip()[:255] or "Lead workspace"
+    number = (row.number or "").strip() or None
+    if number:
+        taken = db.session.scalar(
+            select(Project.id).where(
+                Project.deleted_at.is_(None),
+                func.lower(func.trim(Project.number)) == number.lower(),
+            )
+        )
+        if taken:
+            number = None
+    proj = Project(
+        name=name,
+        number=number,
+        status="planning",
+        project_type="commercial",
+        city=city,
+        state=state,
+        notes="Created from lead/estimate workspace.",
+    )
+    db.session.add(proj)
+    db.session.flush()
+    row.project_id = proj.id
+    _ensure_project_membership(proj.id, cu)
+    db.session.commit()
+    return proj
+
+
 def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
     mat_cat = None
     if t.material_pricing_id is not None:
@@ -769,6 +852,7 @@ def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
         "takeoff_location": t.takeoff_location,
         "material_pricing_id": str(t.material_pricing_id) if t.material_pricing_id else None,
         "material_catalog": mat_cat,
+        "estimate_id": str(t.estimate_id) if t.estimate_id else None,
         "door_opening_id": str(t.door_opening_id) if t.door_opening_id else None,
         "line_role": t.line_role,
         "created_at": _iso(t.created_at),
@@ -776,8 +860,27 @@ def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
     }
 
 
-def _lead_estimate_detail(row: LeadEstimate) -> dict[str, Any]:
+def _drawing_project_for_lead(row: LeadEstimate) -> Project | None:
+    """Project used by the shared drawing viewer: explicit link, else same job number."""
+    if row.project_id:
+        project = db.session.get(Project, row.project_id)
+        if project is not None and project.deleted_at is None:
+            return project
+    number = (row.number or "").strip()
+    if not number:
+        return None
+    return db.session.scalar(
+        select(Project).where(
+            Project.deleted_at.is_(None),
+            func.lower(func.trim(Project.number)) == number.lower(),
+        )
+    )
+
+
+def _lead_estimate_detail(row: LeadEstimate, estimate: Estimate | None = None) -> dict[str, Any]:
     out = dict(_lead_estimate_public(row))
+    drawing_project = _drawing_project_for_lead(row)
+    out["drawing_project_id"] = str(drawing_project.id) if drawing_project is not None else None
     out.update(
         {
             "default_currency": row.default_currency,
@@ -829,12 +932,18 @@ def _lead_estimate_detail(row: LeadEstimate) -> dict[str, Any]:
         out["estimate_approved_by_email"] = u.email if u is not None else None
     else:
         out["estimate_approved_by_email"] = None
-    lines = db.session.scalars(
-        select(TakeoffLineItem)
-        .where(TakeoffLineItem.lead_estimate_id == row.id)
-        .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-        .options(joinedload(TakeoffLineItem.material_price))
-    ).all()
+    scoped = estimate or est_svc.current_estimate_for_lead(row)
+    if scoped is not None:
+        est_svc.overlay_estimate_on_lead_detail(out, scoped)
+        lines = est_svc.takeoff_lines_for_estimate(scoped.id)
+    else:
+        out["current_estimate_id"] = None
+        lines = db.session.scalars(
+            select(TakeoffLineItem)
+            .where(TakeoffLineItem.lead_estimate_id == row.id)
+            .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
+            .options(joinedload(TakeoffLineItem.material_price))
+        ).all()
     out["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
     out["takeoff_line_count"] = len(lines)
     return out
@@ -3227,7 +3336,11 @@ def render_lead_quote_report_html(identifier: str):
     columns = request.args.get("columns")
     try:
         html = document_render_svc.render_quote_report_html(
-            row, current_user(), columns_raw=columns, line_limit=limit
+            row,
+            current_user(),
+            columns_raw=columns,
+            line_limit=limit,
+            estimate=est_svc.current_estimate_for_lead(row),
         )
         return Response(html, mimetype="text/html; charset=utf-8")
     except rfi_svc.ApiError as exc:
@@ -3436,10 +3549,15 @@ def _wage_total_loaded(w: WageRate) -> float:
 
 @bp.get("/lead-estimates/<identifier>")
 def get_lead_estimate(identifier: str):
-    """Single lead estimate by UUID primary key or BuildingConnected ``external_id``."""
+    """Deprecated compatibility: current (or oldest) Estimate for this lead.
+
+    Prefer ``GET /api/v1/estimates/<estimate_id>`` and
+    ``GET /api/v1/leads/<lead_id>/estimates`` for new clients.
+    """
     row = _resolve_lead(identifier)
     if row is None:
         return _jsonify({"error": "lead estimate not found"}), 404
+    ensure_lead_workspace_project(row, current_user())
     return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
 
 
@@ -3485,6 +3603,12 @@ def approve_lead_estimate_for_takeoff(identifier: str):
     row.estimate_approved_at = now
     row.estimate_approved_by_user_id = cu.user.id if cu.user else None
     row.estimate_locked_at = now
+    current = est_svc.ensure_current_estimate(row, user_id=cu.user.id if cu.user else None)
+    if current.approved_at is None:
+        current.approved_at = now
+        current.estimate_locked_at = now
+        if est_svc.normalize_status(current.status) == "draft":
+            current.status = "submitted"
     _append_lead_estimate_audit(
         cu,
         row.id,
@@ -3508,6 +3632,9 @@ def lock_lead_estimate_for_takeoff(identifier: str):
     cu = current_user()
     lock_at = datetime.now(timezone.utc)
     row.estimate_locked_at = lock_at
+    current = est_svc.ensure_current_estimate(row, user_id=cu.user.id if cu.user else None)
+    if current.estimate_locked_at is None:
+        current.estimate_locked_at = lock_at
     _append_lead_estimate_audit(
         cu,
         row.id,
@@ -3531,6 +3658,9 @@ def unlock_lead_estimate_for_takeoff(identifier: str):
         return _jsonify({"error": "estimate is not locked"}), 400
     prev_iso = _iso(row.estimate_locked_at)
     row.estimate_locked_at = None
+    current = est_svc.current_estimate_for_lead(row)
+    if current is not None:
+        current.estimate_locked_at = None
     _append_lead_estimate_audit(
         cu,
         row.id,
@@ -3570,6 +3700,22 @@ def get_lead_estimate_audit_trail(identifier: str):
     return _jsonify({"items": items, "entity": "lead_estimate_audit"})
 
 
+@bp.post("/lead-estimates/<identifier>/ensure-project")
+def ensure_lead_estimate_project(identifier: str):
+    """Create or reuse a planning project so Specs/Drawings match the project book."""
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    proj = ensure_lead_workspace_project(row, current_user())
+    return _jsonify(
+        {
+            "item": _lead_estimate_detail(row),
+            "project_id": str(proj.id),
+            "entity": "lead_estimate",
+        }
+    )
+
+
 @bp.post("/lead-estimates/<identifier>/award")
 def award_lead_estimate(identifier: str):
     """Create or attach a ``Project``, mark CRM stage Awarded, propagate ``project_id`` to takeoff lines."""
@@ -3598,6 +3744,9 @@ def award_lead_estimate(identifier: str):
         db.session.add(proj)
         db.session.flush()
         row.project_id = proj.id
+    awarded = db.session.get(Project, row.project_id) if row.project_id else None
+    if awarded is not None and awarded.status == "planning":
+        awarded.status = "active"
     row.crm_stage = "Awarded"
     for line in row.takeoff_lines:
         line.project_id = row.project_id
@@ -3685,17 +3834,14 @@ def list_takeoff_lines(identifier: str):
     lead = _resolve_lead(identifier)
     if lead is None:
         return _jsonify({"error": "lead estimate not found"}), 404
-    lines = db.session.scalars(
-        select(TakeoffLineItem)
-        .where(TakeoffLineItem.lead_estimate_id == lead.id)
-        .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-        .options(joinedload(TakeoffLineItem.material_price))
-    ).all()
+    lines = est_svc.takeoff_lines_for_lead_compat(lead)
+    current = est_svc.current_estimate_for_lead(lead)
     return _jsonify(
         {
             "items": [_takeoff_line_public(x) for x in lines],
             "entity": "takeoff_line_items",
             "lead_estimate_id": str(lead.id),
+            "estimate_id": str(current.id) if current is not None else None,
         }
     )
 
@@ -3714,10 +3860,14 @@ def create_takeoff_line(identifier: str):
     if not isinstance(data, Mapping):
         data = {}
     try:
+        current = est_svc.ensure_current_estimate(lead)
         t = TakeoffLineItem(
             lead_estimate_id=lead.id,
+            estimate_id=current.id,
             project_id=lead.project_id,
-            sort_order=int(data["sort_order"]) if data.get("sort_order") is not None else _next_sort_order(lead.id),
+            sort_order=int(data["sort_order"])
+            if data.get("sort_order") is not None
+            else est_svc.next_sort_order(estimate_id=current.id, lead_estimate_id=lead.id),
         )
         _apply_takeoff_payload(t, data, partial=False)
     except (ValueError, TypeError) as exc:
@@ -3737,8 +3887,7 @@ def patch_takeoff_line(line_id: str):
     t = db.session.get(TakeoffLineItem, lid)
     if t is None:
         return _jsonify({"error": "takeoff line not found"}), 404
-    lead = _takeoff_line_parent_lead(t)
-    blocked = _require_lead_unlocked_for_takeoff(lead)
+    blocked = _require_unlocked_for_line(t)
     if blocked:
         return blocked
     data = request.get_json(silent=True)
@@ -3762,8 +3911,7 @@ def delete_takeoff_line(line_id: str):
     t = db.session.get(TakeoffLineItem, lid)
     if t is None:
         return _jsonify({"error": "takeoff line not found"}), 404
-    lead = _takeoff_line_parent_lead(t)
-    blocked = _require_lead_unlocked_for_takeoff(lead)
+    blocked = _require_unlocked_for_line(t)
     if blocked:
         return blocked
     db.session.delete(t)
@@ -4269,8 +4417,10 @@ from . import _hr_dashboard  # noqa: E402
 from . import _integration_bc  # noqa: E402
 from . import _integration_textura  # noqa: E402
 from .extra_plan_routes import register_extra_routes  # noqa: E402
+from ._independent_estimate_routes import register_independent_estimate_routes  # noqa: E402
 
 register_extra_routes(bp)
+register_independent_estimate_routes(bp)
 _hr_dashboard.register_hr_routes(bp)
 from . import _hr_hire_wizard  # noqa: E402
 

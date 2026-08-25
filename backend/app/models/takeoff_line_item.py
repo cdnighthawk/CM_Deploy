@@ -28,6 +28,14 @@ class TakeoffLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     )
     lead_estimate = relationship("LeadEstimate", back_populates="takeoff_lines")
 
+    estimate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("estimates.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    estimate = relationship("Estimate", back_populates="takeoff_lines")
+
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="SET NULL"),

@@ -326,10 +326,17 @@
 				sel.appendChild(opt);
 			});
 			var hint = U.queryParam("project_id") || state.projectId;
-			if (hint && Array.prototype.some.call(sel.options, function (o) { return o.value === hint; })) {
-				sel.value = hint;
-				state.projectId = hint;
-			} else if (sel.options.length) {
+			var matched = false;
+			if (hint) {
+				Array.prototype.forEach.call(sel.options, function (o) {
+					if (U.sameId && U.sameId(o.value, hint)) {
+						sel.value = o.value;
+						state.projectId = o.value;
+						matched = true;
+					}
+				});
+			}
+			if (!matched && sel.options.length) {
 				sel.selectedIndex = 0;
 				state.projectId = sel.value;
 			}

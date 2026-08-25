@@ -271,8 +271,16 @@ def _make_line(
     md: dict[str, Any] = {"source": "door_schedule", "component": line_role}
     if hardware_set:
         md["hardware_set"] = hardware_set
+    estimate_id = None
+    if opening.lead_estimate_id:
+        from ..api._estimate_service import ensure_current_estimate
+
+        lead = db.session.get(LeadEstimate, opening.lead_estimate_id)
+        if lead is not None:
+            estimate_id = ensure_current_estimate(lead).id
     t = TakeoffLineItem(
         lead_estimate_id=opening.lead_estimate_id,
+        estimate_id=estimate_id,
         project_id=opening.project_id,
         door_opening_id=opening.id,
         line_role=line_role,

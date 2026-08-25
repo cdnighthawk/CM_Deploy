@@ -42,7 +42,10 @@ def test_format_and_catalog():
     catalog = public_catalog("fire extinguish", 20)
     codes = [row["code"] for row in catalog["items"]]
     assert "10 44 16" in codes
-    assert catalog["total"] > 100
+    assert catalog["total"] > 800
+    full = public_catalog(None, 5000)
+    divisions = {row["division"] for row in full["items"]}
+    assert {"00", "08", "09", "10", "23", "26", "34", "35", "49"}.issubset(divisions)
 
 
 def test_parse_codes_from_spec_text():

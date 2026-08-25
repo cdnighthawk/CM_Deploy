@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from ..extensions import db
-from ..models import Company, Project
+from ..models import Company, Estimate, Project
 from ..models.door_opening import DoorOpening
 from ..models.lead_estimate import LeadEstimate
 from ..models.takeoff_line_item import TakeoffLineItem
@@ -290,6 +290,7 @@ def render_quote_report_html(
     *,
     columns_raw: str | None = None,
     line_limit: int = 500,
+    estimate: Estimate | None = None,
 ) -> str:
     """Client-facing quote print: letterhead, project + opportunity metadata, column-selectable takeoff."""
     _ = cu
@@ -305,11 +306,13 @@ def render_quote_report_html(
         for c in visible
     ]
 
+    line_q = select(TakeoffLineItem).options(joinedload(TakeoffLineItem.material_price))
+    if estimate is not None:
+        line_q = line_q.where(TakeoffLineItem.estimate_id == estimate.id)
+    else:
+        line_q = line_q.where(TakeoffLineItem.lead_estimate_id == lead.id)
     lines_all = db.session.scalars(
-        select(TakeoffLineItem)
-        .where(TakeoffLineItem.lead_estimate_id == lead.id)
-        .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-        .options(joinedload(TakeoffLineItem.material_price))
+        line_q.order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
     ).all()
     total_line_count = len(lines_all)
     total_extended = sum(float(x.extended_total or 0) for x in lines_all)

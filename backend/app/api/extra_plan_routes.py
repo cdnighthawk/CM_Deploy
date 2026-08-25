@@ -392,6 +392,9 @@ def register_extra_routes(bp: Blueprint) -> None:
                 "version": e.version,
                 "status": e.status,
                 "title": e.title,
+                "name": e.name,
+                "gc_name": e.gc_name,
+                "is_current": bool(e.is_current),
                 "total": float(e.total) if e.total is not None else None,
                 "due_at": _iso(e.due_at),
             }
@@ -407,22 +410,27 @@ def register_extra_routes(bp: Blueprint) -> None:
         pj_id = _parse_uuid_param(str(data.get("project_id") or "").strip())
         if not le_id and not pj_id:
             return _jsonify({"error": "need lead_estimate_id or project_id"}), 400
-        title = str(data.get("title") or "").strip()[:255] or None
+        title = str(data.get("title") or data.get("name") or "").strip()[:255] or None
         due_at = _parse_dt(data.get("due_at"))
+        le = db.session.get(LeadEstimate, le_id) if le_id else None
         e = Estimate(
             lead_estimate_id=le_id,
             project_id=pj_id,
             title=title,
-            status="Draft",
+            name=title or "Original Estimate",
+            status="draft",
             version=1,
             due_at=due_at,
+            fee_percentage=(le.fee_percentage if le is not None and le.fee_percentage is not None else 0),
+            profit_margin=le.profit_margin if le is not None else None,
+            rom=le.rom if le is not None else None,
         )
         db.session.add(e)
         db.session.flush()
-        if le_id:
-            le = db.session.get(LeadEstimate, le_id)
-            if le is not None:
-                le.primary_estimate_id = e.id
+        if le is not None:
+            from ._estimate_service import mark_current
+
+            mark_current(e)
         db.session.commit()
         return (
             _jsonify(
@@ -443,6 +451,15 @@ def register_extra_routes(bp: Blueprint) -> None:
 
     @bp.patch("/estimates/<estimate_id>")
     def patch_estimate(estimate_id: str):
+        from ._estimate_service import EstimateError, estimate_summary_public, patch_estimate as apply_estimate_patch
+
+        if not _takeoff_writes_enabled():
+            return _jsonify(
+                {
+                    "error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)",
+                    "error_code": "TAKEOFF_WRITES_DISABLED",
+                }
+            ), 403
         eid = _parse_uuid_param(estimate_id)
         if not eid:
             return _jsonify({"error": "invalid estimate id"}), 400
@@ -452,36 +469,23 @@ def register_extra_routes(bp: Blueprint) -> None:
         data = request.get_json(silent=True)
         if not isinstance(data, Mapping):
             return _jsonify({"error": "expected JSON object body"}), 400
-        if "title" in data:
-            t = data.get("title")
-            est.title = str(t).strip()[:255] or None if t is not None else None
-        if "status" in data and data["status"] is not None:
-            est.status = str(data["status"]).strip()[:40] or est.status
-        if "notes" in data:
-            n = data.get("notes")
-            est.notes = str(n) if n is not None else None
+        try:
+            apply_estimate_patch(est, data)
+        except EstimateError as exc:
+            body: dict[str, Any] = {"error": exc.message}
+            if exc.error_code:
+                body["error_code"] = exc.error_code
+            return _jsonify(body), exc.status
         if "total" in data:
             tv = data.get("total")
             est.total = None if tv is None else _decimal_from_json(tv, Decimal("0"))
         if "due_at" in data:
             est.due_at = _parse_dt(data.get("due_at"))
         db.session.commit()
-        return _jsonify(
-            {
-                "item": {
-                    "id": str(est.id),
-                    "lead_estimate_id": str(est.lead_estimate_id) if est.lead_estimate_id else None,
-                    "project_id": str(est.project_id) if est.project_id else None,
-                    "version": est.version,
-                    "status": est.status,
-                    "title": est.title,
-                    "notes": est.notes,
-                    "total": float(est.total) if est.total is not None else None,
-                    "due_at": _iso(est.due_at),
-                },
-                "entity": "estimate",
-            }
-        )
+        item = estimate_summary_public(est)
+        item["title"] = est.title
+        item["notes"] = est.notes
+        return _jsonify({"item": item, "entity": "estimate"})
 
     @bp.post("/estimates/<estimate_id>/line-items")
     def add_estimate_line_item(estimate_id: str):

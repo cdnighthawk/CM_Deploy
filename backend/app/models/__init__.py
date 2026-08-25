@@ -9,6 +9,7 @@ from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
 from .corecon_transaction import CoreconTransaction
 from .document import Document, Drawing, DrawingAnnotation
+from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
 from .estimate import Estimate, EstimateLineItem
@@ -108,6 +109,7 @@ __all__ = [
     "DoorOpening",
     "Drawing",
     "DrawingAnnotation",
+    "DrawingSet",
     "Estimate",
     "EstimateLineItem",
     "HrEmployeeDispatch",

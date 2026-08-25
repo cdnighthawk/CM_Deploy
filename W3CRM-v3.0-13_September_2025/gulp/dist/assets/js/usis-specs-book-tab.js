@@ -182,7 +182,7 @@
 			'<div class="bg-white rounded shadow-lg m-3 mx-auto p-3" style="max-width:720px;max-height:calc(100vh - 2rem);display:flex;flex-direction:column;">' +
 			'<div class="d-flex justify-content-between align-items-start gap-2 mb-2">' +
 			"<div><h5 class=\"mb-1\">CSI MasterFormat catalog</h5>" +
-			'<p class="text-muted small mb-0">Check the sections used on this job. You can also type a custom code.</p></div>' +
+			'<p class="text-muted small mb-0 usis-specs-cat-sub">All 50 MasterFormat divisions. Search or browse, then check the sections used on this job.</p></div>' +
 			'<button type="button" class="btn-close usis-specs-modal-close" aria-label="Close"></button>' +
 			"</div>" +
 			'<input type="search" class="form-control form-control-sm mb-2 usis-specs-cat-q" placeholder="Search CSI code or title…" autocomplete="off">' +
@@ -464,34 +464,55 @@
 			catErr.classList.remove("d-none");
 		}
 
-		function renderCatalog(items) {
+		function renderCatalog(items, total) {
 			catalogItems = items || [];
+			var sub = container.querySelector(".usis-specs-cat-sub");
+			if (sub && total) {
+				sub.textContent =
+					total +
+					" sections across all 50 MasterFormat divisions. Search or browse, then check the sections used on this job.";
+			}
 			if (!catList) return;
 			if (!catalogItems.length) {
 				catList.innerHTML = '<p class="text-muted px-2 py-3 mb-0">No CSI sections match that search.</p>';
 				return;
 			}
-			var html = '<div class="list-group list-group-flush">';
+			var groups = {};
 			catalogItems.forEach(function (item) {
-				html +=
-					'<label class="list-group-item list-group-item-action py-2 px-2 d-flex gap-2 align-items-start">' +
-					'<input type="checkbox" class="form-check-input mt-1 usis-specs-cat-check" value="' +
-					esc(item.code) +
-					'" data-title="' +
-					esc(item.title) +
-					'">' +
-					"<div><div class=\"fw-medium\">" +
-					esc(item.code) +
-					" · " +
-					esc(item.title) +
-					"</div>" +
-					'<div class="text-muted" style="font-size:0.7rem;">Division ' +
-					esc(item.division) +
-					" · " +
-					esc(item.division_name) +
-					"</div></div></label>";
+				var key = item.division || "??";
+				if (!groups[key]) groups[key] = { name: item.division_name || "", items: [] };
+				groups[key].items.push(item);
 			});
-			html += "</div>";
+			var html = "";
+			Object.keys(groups)
+				.sort()
+				.forEach(function (div) {
+					var g = groups[div];
+					html +=
+						'<div class="px-2 py-1 bg-light border-bottom fw-semibold sticky-top">Division ' +
+						esc(div) +
+						" · " +
+						esc(g.name) +
+						" (" +
+						g.items.length +
+						")</div>";
+					html += '<div class="list-group list-group-flush">';
+					g.items.forEach(function (item) {
+						html +=
+							'<label class="list-group-item list-group-item-action py-2 px-2 d-flex gap-2 align-items-start">' +
+							'<input type="checkbox" class="form-check-input mt-1 usis-specs-cat-check" value="' +
+							esc(item.code) +
+							'" data-title="' +
+							esc(item.title) +
+							'">' +
+							'<div class="fw-medium">' +
+							esc(item.code) +
+							" · " +
+							esc(item.title) +
+							"</div></label>";
+					});
+					html += "</div>";
+				});
 			catList.innerHTML = html;
 		}
 
@@ -499,7 +520,7 @@
 			if (!catList) return;
 			catList.innerHTML = '<p class="text-muted px-2 py-3 mb-0">Loading CSI catalog…</p>';
 			var base = apiBase();
-			var url = base + "/api/v1/csi-sections?limit=400";
+			var url = base + "/api/v1/csi-sections?limit=3000";
 			if (q) url += "&q=" + encodeURIComponent(q);
 			fetch(url, {
 				credentials: "include",
@@ -512,7 +533,7 @@
 					return res.json();
 				})
 				.then(function (data) {
-					renderCatalog(data.items || []);
+					renderCatalog(data.items || [], data.total);
 				})
 				.catch(function (e) {
 					catList.innerHTML =

@@ -10,7 +10,13 @@
 		typeof window.USISProjectDocPanels !== "undefined"
 			? window.USISProjectDocPanels.init({
 					returnUrl: true,
+					ensureProjectFromLead: true,
+					allowDrawingsWithoutProject: true,
+					fromPage: "estimate",
 					projectIdGlobalKey: "__USIS_ESTIMATE_PROJECT_ID__",
+					getProjectId: function (it) {
+						return it && (it.drawing_project_id || it.project_id);
+					},
 					panes: {
 						drawings: "estd-pane-drawings",
 						specs: "estd-pane-specs",
@@ -19,6 +25,7 @@
 					ids: {
 						drawingsNoProject: "usis-estd-drawings-no-project",
 						drawingsTools: "usis-estd-drawings-tools",
+						openViewer: "usis-estd-open-viewer",
 						drawingUploadOpen: "usis-estd-drawing-upload-open",
 						gridDrawings: "usis-estd-grid-drawings",
 						searchDrawings: "usis-estd-search-drawings",
@@ -349,7 +356,7 @@
 				'<a class="link-primary" href="construction/lead-detail.html?id=' +
 				encodeURIComponent(lid) +
 				'">Open full lead / job card</a>' +
-				'<br><span class="text-muted">No project linked yet — drawings and RFIs unlock after award / link.</span>';
+				'<br><span class="text-muted">Drawings use the same viewer as Projects — open the Drawings tab or upload a PDF.</span>';
 		}
 		var root = document.getElementById("usis-estd-job-root");
 		if (root) root.classList.remove("d-none");
@@ -399,8 +406,7 @@
 		loadJobPanel(item);
 
 		if (docPanels) {
-			if (item.project_id) docPanels.loadProject(item.project_id);
-			else docPanels.showNoProject();
+			docPanels.onItemLoaded(item);
 		}
 	}
 

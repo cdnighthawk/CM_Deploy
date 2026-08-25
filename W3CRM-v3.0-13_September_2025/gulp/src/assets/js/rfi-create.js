@@ -48,6 +48,23 @@
 		if (current) sel.value = current;
 	}
 
+	function currentLeadHint() {
+		return U.queryParam("lead_id") || U.queryParam("leadId");
+	}
+
+	function ensureLeadWorkspace(leadId) {
+		if (!leadId) return Promise.resolve(null);
+		return U.fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(leadId) + "/ensure-project", {
+			method: "POST",
+			body: {},
+		}).then(function (data) {
+			var next = (data && data.item) || {};
+			return (data && data.project_id) || next.project_id || next.drawing_project_id || null;
+		}).catch(function () {
+			return null;
+		});
+	}
+
 	function currentProjectHint() {
 		var fromQuery = U.queryParam("project_id") || U.queryParam("projectId");
 		if (fromQuery) return fromQuery;
@@ -69,6 +86,10 @@
 		}
 	}
 
+	function sameId(a, b) {
+		return U.sameId ? U.sameId(a, b) : String(a || "").toLowerCase() === String(b || "").toLowerCase();
+	}
+
 	function dash(s) {
 		if (s == null || String(s).trim() === "") return "—";
 		return String(s).trim();
@@ -85,6 +106,19 @@
 		return parts.length ? parts.join(" · ") : "—";
 	}
 
+	function formatTypeStatus(item) {
+		if (!item) return "—";
+		var bits = [item.project_type, item.status].filter(function (x) {
+			return x && String(x).trim();
+		});
+		return bits.length ? bits.join(" · ") : "—";
+	}
+
+	function setText(id, value) {
+		var el = $(id);
+		if (el) el.textContent = value;
+	}
+
 	function renderProjectCard(item) {
 		var card = $("usis-rfi-project-card");
 		if (!card) return;
@@ -92,13 +126,51 @@
 			card.classList.add("d-none");
 			return;
 		}
-		$("usis-rfi-proj-number").textContent = dash(item.number);
-		$("usis-rfi-proj-name").textContent = dash(item.name);
-		$("usis-rfi-proj-address").textContent = formatProjectAddress(item);
-		$("usis-rfi-proj-owner").textContent = dash(item.owner_company_name);
-		$("usis-rfi-proj-gc").textContent = dash(item.gc_company_name);
-		$("usis-rfi-proj-architect").textContent = dash(item.architect_company_name);
+		setText("usis-rfi-proj-number", dash(item.number));
+		setText("usis-rfi-proj-name", dash(item.name));
+		setText("usis-rfi-proj-type-status", formatTypeStatus(item));
+		setText("usis-rfi-proj-address", formatProjectAddress(item));
+		setText("usis-rfi-proj-owner", dash(item.owner_company_name));
+		setText("usis-rfi-proj-gc", dash(item.gc_company_name));
+		setText("usis-rfi-proj-architect", dash(item.architect_company_name));
+		setText("usis-rfi-proj-contract", item.contract_value != null ? U.fmtMoney(item.contract_value) : "—");
+		setText("usis-rfi-proj-start", item.start_date ? U.fmtDate(item.start_date) : "—");
 		card.classList.remove("d-none");
+	}
+
+	function selectProjectOption(sel, projectId) {
+		if (!sel || !projectId) return false;
+		var matched = false;
+		Array.prototype.forEach.call(sel.options, function (o) {
+			if (sameId(o.value, projectId)) {
+				sel.value = o.value;
+				matched = true;
+			}
+		});
+		return matched;
+	}
+
+	function ensureProjectOption(sel, item, projectId) {
+		if (!sel) return;
+		var id = (item && item.id) || projectId;
+		if (!id) return;
+		if (!selectProjectOption(sel, id)) {
+			var opt = document.createElement("option");
+			opt.value = id;
+			opt.textContent = ((item && item.number) ? item.number + " · " : "") + ((item && item.name) || "Current project");
+			sel.appendChild(opt);
+			sel.value = id;
+		}
+	}
+
+	function syncProjectQuery(projectId) {
+		if (!projectId || !window.history || !window.history.replaceState) return;
+		try {
+			var u = new URL(window.location.href);
+			if (sameId(u.searchParams.get("project_id"), projectId)) return;
+			u.searchParams.set("project_id", projectId);
+			window.history.replaceState({}, "", u.pathname + u.search + u.hash);
+		} catch (e) {}
 	}
 
 	function prefillResponsibleContractor(item) {
@@ -117,6 +189,14 @@
 		if (match) sel.value = match.id;
 	}
 
+	function prefillFromProject(item) {
+		prefillResponsibleContractor(item);
+		var prefix = $("usis-rfi-prefix");
+		if (prefix && !prefix.value.trim() && item && item.number) {
+			prefix.value = String(item.number).trim();
+		}
+	}
+
 	function applySelectedProject(projectId) {
 		state.projectId = projectId || null;
 		if (!state.projectId) {
@@ -124,30 +204,56 @@
 			return Promise.resolve();
 		}
 		rememberProject(state.projectId);
+		syncProjectQuery(state.projectId);
 		return U.loadProject(state.projectId).then(function (item) {
+			ensureProjectOption($("usis-rfi-project"), item, state.projectId);
+			if (item && item.id) state.projectId = item.id;
 			renderProjectCard(item);
-			prefillResponsibleContractor(item);
+			prefillFromProject(item);
 		}).catch(function () {
 			renderProjectCard(null);
 		});
 	}
 
 	function loadProjects() {
+		var leadId = currentLeadHint();
+		var hinted = Promise.resolve(currentProjectHint());
+		if (!currentProjectHint() && leadId) {
+			hinted = ensureLeadWorkspace(leadId);
+		}
+		return hinted.then(function (resolvedHint) {
 		return U.loadProjects().then(function (rows) {
 			var sel = $("usis-rfi-project");
 			fillSelect(sel,
 				rows.map(function (p) { return { id: p.id, label: (p.number ? p.number + " · " : "") + p.name }; }),
 				{ emptyLabel: "Select project…" }
 			);
-			var hint = currentProjectHint();
-			if (hint && Array.prototype.some.call(sel.options, function (o) { return o.value === hint; })) {
-				sel.value = hint;
-				state.projectId = hint;
-				rememberProject(hint);
-			} else {
+			var hint = resolvedHint || currentProjectHint();
+			if (!hint) {
 				sel.value = "";
 				state.projectId = null;
+				return null;
 			}
+			if (selectProjectOption(sel, hint)) {
+				state.projectId = sel.value;
+				rememberProject(sel.value);
+				return null;
+			}
+			state.projectId = hint;
+			return U.loadProject(hint).then(function (item) {
+				if (!item) {
+					state.projectId = null;
+					return null;
+				}
+				ensureProjectOption(sel, item, item.id);
+				state.projectId = item.id;
+				rememberProject(item.id);
+				return item;
+			}).catch(function () {
+				state.projectId = null;
+				return null;
+			});
+		});
 		});
 	}
 

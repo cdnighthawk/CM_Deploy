@@ -9,6 +9,12 @@
 	window.USISProjectDocPanels.init({
 		event: "usis-lead-loaded",
 		returnUrl: true,
+		ensureProjectFromLead: true,
+		allowDrawingsWithoutProject: true,
+		fromPage: "lead",
+		getProjectId: function (it) {
+			return it && (it.drawing_project_id || it.project_id);
+		},
 		panes: {
 			drawings: "lead-pane-drawings",
 			specs: "lead-pane-specs",
@@ -17,6 +23,7 @@
 		ids: {
 			drawingsNoProject: "usis-lead-drawings-no-project",
 			drawingsTools: "usis-lead-drawings-tools",
+			openViewer: "usis-lead-open-viewer",
 			drawingUploadOpen: "usis-lead-drawing-upload-open",
 			gridDrawings: "usis-lead-grid-drawings",
 			searchDrawings: "usis-lead-search-drawings",

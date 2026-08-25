@@ -47,6 +47,8 @@
 	var revisions = [];
 	var revIndex = 0;
 	var projectId = null;
+	var leadId = null;
+	var fromPage = null;
 	var activeDrawingId = null;
 	var takeoffLineId = null;
 	var takeoffListCache = [];
@@ -120,11 +122,15 @@
 		return "";
 	}
 
-	function fetchJson(path) {
+	function fetchJson(path, options) {
+		var opts = options || {};
 		var base = apiBase();
+		var headers = Object.assign({ Accept: "application/json" }, opts.headers || {});
 		return fetch(base + path, {
+			method: opts.method || "GET",
 			credentials: "include",
-			headers: { Accept: "application/json" },
+			headers: headers,
+			body: opts.body,
 		}).then(function (res) {
 			if (!res.ok) {
 				return res.text().then(function (t) {
@@ -2118,21 +2124,32 @@
 		});
 	}
 
-	function init() {
-		var q = new URLSearchParams(window.location.search);
-		projectId = q.get("project_id");
-		activeDrawingId = q.get("drawing_id");
-		takeoffLineId = (q.get("takeoff_line") || "").trim() || null;
-		_usisDbg("E", "drawing-viewer.js:init", "init_query", {
-			projectId: projectId,
-			activeDrawingId: activeDrawingId,
-			hasPdfjsLib: !!window.pdfjsLib,
-			origin: window.location && window.location.origin,
-		});
+	function setBackLink(q) {
 		var back = document.getElementById("usis-dv-back");
-		if (back && projectId) {
-			back.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(projectId));
+		if (!back) return;
+		var returnUrl = (q.get("return_url") || "").trim();
+		if (returnUrl) {
+			back.setAttribute("href", returnUrl);
+			back.textContent = "\u2190 Back";
+			return;
 		}
+		if (leadId && fromPage === "estimate") {
+			back.setAttribute("href", "construction/estimate-detail.html?id=" + encodeURIComponent(leadId));
+			back.textContent = "\u2190 Estimate";
+			return;
+		}
+		if (leadId) {
+			back.setAttribute("href", "construction/lead-detail.html?id=" + encodeURIComponent(leadId));
+			back.textContent = "\u2190 Lead";
+			return;
+		}
+		if (projectId) {
+			back.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(projectId));
+			back.textContent = "\u2190 Project";
+		}
+	}
+
+	function startViewer() {
 		if (!pdfjsLib) {
 			_usisDbg("C", "drawing-viewer.js:init", "pdfjsLib_missing", {});
 			showErr("PDF.js failed to load from CDN.");
@@ -2156,13 +2173,59 @@
 				showPicker();
 			} else {
 				showErr(
-					"Add drawing_id to the URL (from Project detail → Drawings → open a sheet), or add project_id to pick a drawing here."
+					"Add drawing_id to the URL (from Project, Lead, or Estimate Drawings), or add project_id / lead_id to pick a sheet here."
 				);
 			}
 			return;
 		}
 		_usisDbg("E", "drawing-viewer.js:init", "calling_loadRevisionsAndPdf", {});
 		loadRevisionsAndPdf();
+	}
+
+	function resolveLeadProjectThenStart() {
+		if (!leadId || projectId) {
+			startViewer();
+			return;
+		}
+		fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(leadId))
+			.then(function (data) {
+				var item = (data && data.item) || {};
+				projectId = item.drawing_project_id || item.project_id || null;
+				if (projectId) return null;
+				return fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(leadId) + "/ensure-project", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: "{}",
+				}).then(function (ensured) {
+					var next = (ensured && ensured.item) || {};
+					projectId = ensured.project_id || next.drawing_project_id || next.project_id || null;
+				});
+			})
+			.catch(function () {
+				/* keep going; drawing_id can still load */
+			})
+			.then(function () {
+				setBackLink(new URLSearchParams(window.location.search));
+				startViewer();
+			});
+	}
+
+	function init() {
+		var q = new URLSearchParams(window.location.search);
+		projectId = q.get("project_id");
+		leadId = (q.get("lead_id") || "").trim() || null;
+		fromPage = (q.get("from") || "").trim() || null;
+		activeDrawingId = q.get("drawing_id");
+		takeoffLineId = (q.get("takeoff_line") || "").trim() || null;
+		_usisDbg("E", "drawing-viewer.js:init", "init_query", {
+			projectId: projectId,
+			leadId: leadId,
+			activeDrawingId: activeDrawingId,
+			hasPdfjsLib: !!window.pdfjsLib,
+			origin: window.location && window.location.origin,
+		});
+		setBackLink(q);
+		resolveLeadProjectThenStart();
 	}
 
 	if (document.readyState === "loading") {

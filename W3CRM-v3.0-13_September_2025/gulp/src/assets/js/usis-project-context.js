@@ -9,10 +9,51 @@
   function readQuery() {
     try {
       var params = new URLSearchParams(global.location.search);
-      return params.get("project_id") || params.get("projectId");
+      var pid = params.get("project_id") || params.get("projectId");
+      if (pid) return pid;
+      var path = (global.location.pathname || "").toLowerCase();
+      if (/project-detail\.html/.test(path)) {
+        return params.get("id");
+      }
+      return null;
     } catch (e) {
       return null;
     }
+  }
+
+  function stampRfiLinks(projectId) {
+    if (!projectId) return;
+    var createIds = [
+      "usis-rfi-open-create",
+      "usis-lead-rfi-open-create",
+      "usis-estd-rfi-open-create",
+      "usis-rfi-create-link",
+    ];
+    createIds.forEach(function (id) {
+      var a = document.getElementById(id);
+      if (a) {
+        a.setAttribute(
+          "href",
+          "construction/rfi-create.html?project_id=" + encodeURIComponent(projectId)
+        );
+        a.classList.remove("d-none");
+      }
+    });
+    var logIds = [
+      "usis-rfi-open-log",
+      "usis-lead-rfi-open-log",
+      "usis-estd-rfi-open-log",
+    ];
+    logIds.forEach(function (id) {
+      var log = document.getElementById(id);
+      if (log) {
+        log.setAttribute(
+          "href",
+          "construction/rfis.html?project_id=" + encodeURIComponent(projectId)
+        );
+        log.classList.remove("d-none");
+      }
+    });
   }
 
   function apply(id) {
@@ -21,6 +62,7 @@
     try {
       global.sessionStorage.setItem(KEY, id);
     } catch (e) {}
+    stampRfiLinks(id);
   }
 
   function apiBase() {

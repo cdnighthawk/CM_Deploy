@@ -131,7 +131,10 @@
 						"drawing_id=" +
 						encodeURIComponent(did) +
 						"&takeoff_line=" +
-						encodeURIComponent(row.id);
+						encodeURIComponent(row.id) +
+						"&lead_id=" +
+						encodeURIComponent(leadKeyFromUrl() || "") +
+						"&from=estimate";
 					var a = document.createElement("a");
 					a.className = "small";
 					a.href = "construction/drawing-viewer.html?" + q;
@@ -212,11 +215,13 @@
 			'<a class="btn btn-sm btn-outline-primary" href="construction/door-schedule.html?id=' +
 			encodeURIComponent(leadKey) +
 			'">Door schedule (Div 08)</a>' +
-			(projectId
-				? '<a class="btn btn-sm btn-outline-secondary" href="construction/drawing-viewer.html?project_id=' +
-				  encodeURIComponent(projectId) +
-				  '">Open drawing viewer</a>'
-				: '<span class="text-muted small">Link a project on the lead to open the viewer with a sheet picker.</span>') +
+			'<a class="btn btn-sm btn-outline-secondary" href="construction/drawing-viewer.html?' +
+			(projectId ? "project_id=" + encodeURIComponent(projectId) + "&" : "") +
+			"lead_id=" +
+			encodeURIComponent(leadKey) +
+			"&from=estimate&return_url=" +
+			encodeURIComponent(window.location.href) +
+			'">Open drawing viewer</a>' +
 			'<button type="button" class="btn btn-sm btn-primary" id="usis-est-takeoff-add">Add line</button></div></div>' +
 			'<div id="usis-grid-est-takeoff" class="border rounded overflow-hidden bg-white mb-2"></div>' +
 			'<p class="text-muted small mb-0">Writes require <code>TAKEOFF_API_WRITES_ENABLED=1</code> on the API. Use <strong>View</strong> when a line has a drawing to measure on the PDF.</p>';
@@ -346,7 +351,7 @@
 				"</p>";
 			return;
 		}
-		var pid = item.project_id || null;
+		var pid = item.drawing_project_id || item.project_id || null;
 		if (mountedLeadKey === lk && activeProjectId === pid) {
 			reloadTakeoff(lk).catch(function () {});
 			return;

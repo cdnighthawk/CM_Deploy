@@ -2,11 +2,16 @@
 
 Used by the Specs tab picker and spec-book PDF import. Codes are stored as
 6-digit strings; display form is ``08 71 00``.
+
+The list covers all 50 MasterFormat divisions (00–49), including reserved
+division headers. Titles follow common industry usage of the six-digit
+numbers; this is not a licensed copy of CSI's published title list.
 """
 from __future__ import annotations
 
 from typing import Any
 
+from .csi_catalog_extra import EXTRA_SECTIONS
 from .csi_spec import digits_from_csi, format_csi_display
 
 # (digits, title) — MasterFormat 2016/2020 common commercial sections.
@@ -331,16 +336,31 @@ DIVISION_NAMES: dict[str, str] = {
     "12": "Furnishings",
     "13": "Special Construction",
     "14": "Conveying Equipment",
+    "15": "Reserved for Future Expansion",
+    "16": "Reserved for Future Expansion",
+    "17": "Reserved for Future Expansion",
+    "18": "Reserved for Future Expansion",
+    "19": "Reserved for Future Expansion",
+    "20": "Reserved for Future Expansion",
     "21": "Fire Suppression",
     "22": "Plumbing",
     "23": "Heating, Ventilating, and Air Conditioning (HVAC)",
+    "24": "Reserved for Future Expansion",
     "25": "Integrated Automation",
     "26": "Electrical",
     "27": "Communications",
     "28": "Electronic Safety and Security",
+    "29": "Reserved for Future Expansion",
+    "30": "Reserved for Future Expansion",
     "31": "Earthwork",
     "32": "Exterior Improvements",
     "33": "Utilities",
+    "34": "Transportation",
+    "35": "Waterway and Marine Construction",
+    "36": "Reserved for Future Expansion",
+    "37": "Reserved for Future Expansion",
+    "38": "Reserved for Future Expansion",
+    "39": "Reserved for Future Expansion",
     "40": "Process Interconnections",
     "41": "Material Processing and Handling Equipment",
     "42": "Process Heating, Cooling, and Drying Equipment",
@@ -348,7 +368,9 @@ DIVISION_NAMES: dict[str, str] = {
     "44": "Pollution and Waste Control Equipment",
     "45": "Industry-Specific Manufacturing Equipment",
     "46": "Water and Wastewater Equipment",
+    "47": "Reserved for Future Expansion",
     "48": "Electrical Power Generation",
+    "49": "Reserved for Future Expansion",
 }
 
 
@@ -363,8 +385,19 @@ def _item(digits: str, title: str) -> dict[str, str]:
     }
 
 
-_BY_DIGITS: dict[str, dict[str, str]] = {d: _item(d, t) for d, t in _SECTIONS}
-_ITEMS: list[dict[str, str]] = [_BY_DIGITS[d] for d, _t in _SECTIONS]
+def _merged_titles() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for raw, title in (*_SECTIONS, *EXTRA_SECTIONS):
+        digits = digits_from_csi(raw)
+        if not digits or not (title or "").strip():
+            continue
+        out.setdefault(digits, title.strip())
+    return out
+
+
+_TITLES: dict[str, str] = _merged_titles()
+_BY_DIGITS: dict[str, dict[str, str]] = {d: _item(d, t) for d, t in _TITLES.items()}
+_ITEMS: list[dict[str, str]] = [_BY_DIGITS[d] for d in sorted(_TITLES)]
 
 
 def catalog_size() -> int:
@@ -386,8 +419,8 @@ def get_section(raw: str | None) -> dict[str, str] | None:
     return _BY_DIGITS.get(digits)
 
 
-def list_catalog(q: str | None = None, limit: int = 500) -> list[dict[str, str]]:
-    cap = max(1, min(int(limit or 500), 1000))
+def list_catalog(q: str | None = None, limit: int = 3000) -> list[dict[str, str]]:
+    cap = max(1, min(int(limit or 3000), 5000))
     qq = (q or "").strip().lower()
     if not qq:
         return _ITEMS[:cap]
@@ -402,6 +435,6 @@ def list_catalog(q: str | None = None, limit: int = 500) -> list[dict[str, str]]
     return out
 
 
-def public_catalog(q: str | None = None, limit: int = 500) -> dict[str, Any]:
+def public_catalog(q: str | None = None, limit: int = 3000) -> dict[str, Any]:
     items = list_catalog(q, limit)
     return {"items": items, "total": catalog_size(), "entity": "csi_sections"}

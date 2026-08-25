@@ -611,6 +611,10 @@
 		wireAttachments();
 		wireAiDraft();
 		autoFillRespFromUser();
+		var subject = U.queryParam("subject");
+		var question = U.queryParam("question");
+		if (subject && $("usis-rfi-subject")) $("usis-rfi-subject").value = subject;
+		if (question && $("usis-rfi-question")) $("usis-rfi-question").value = question;
 	}
 
 	if (document.readyState === "loading") {

@@ -1915,6 +1915,9 @@
 						mode: "construction_review",
 						drawing_id: did,
 					});
+					window.aiReviewBus.emit("review-complete", {
+						drawing_id: did,
+					});
 				}
 				if (window.USISNotify) window.USISNotify.info("AI review requested (stub — Plan 12).");
 			});

@@ -1,0 +1,412 @@
+(function () {
+	"use strict";
+
+	var STATUSES = ["New", "Triaged", "In Progress", "Pending Review", "Resolved", "Closed"];
+	var state = { items: [], view: "kanban", selected: null };
+
+	function apiBase() {
+		if (typeof window.usisApiBase === "function") return window.usisApiBase();
+		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
+			return window.USIS_API_BASE.trim().replace(/\/$/, "");
+		}
+		if (window.location.protocol === "file:") return "http://127.0.0.1:5000";
+		return "";
+	}
+
+	function qs(name) {
+		return new URLSearchParams(window.location.search).get(name);
+	}
+
+	function esc(value) {
+		var d = document.createElement("div");
+		d.textContent = value == null ? "" : String(value);
+		return d.innerHTML;
+	}
+
+	function projectId() {
+		return (
+			document.getElementById("usis-issue-project").value ||
+			qs("project_id") ||
+			qs("projectId") ||
+			(window.USISProjectContext && window.USISProjectContext.getProjectId()) ||
+			""
+		);
+	}
+
+	function notify(kind, message) {
+		if (window.USISNotify && window.USISNotify[kind]) window.USISNotify[kind](message);
+	}
+
+	function fetchJson(path, opts) {
+		opts = opts || {};
+		return fetch(apiBase() + path, {
+			method: opts.method || "GET",
+			headers: Object.assign({ Accept: "application/json" }, opts.body ? { "Content-Type": "application/json" } : {}),
+			credentials: "include",
+			body: opts.body ? JSON.stringify(opts.body) : undefined,
+		}).then(function (res) {
+			return res.json().then(function (data) {
+				if (!res.ok) throw new Error(data.error || res.statusText || "Request failed");
+				return data;
+			});
+		});
+	}
+
+	function queryString() {
+		var p = new URLSearchParams();
+		var pid = projectId();
+		if (pid) p.set("project_id", pid);
+		var status = document.getElementById("usis-issue-status").value;
+		var severity = document.getElementById("usis-issue-severity").value;
+		var trade = document.getElementById("usis-issue-trade").value;
+		var source = document.getElementById("usis-issue-source").value;
+		var search = document.getElementById("usis-issue-search").value.trim();
+		if (status) p.set("status", status);
+		if (severity) p.set("severity", severity);
+		if (trade) p.set("trade", trade);
+		if (source) p.set("source_type", source);
+		if (search) p.set("search", search);
+		return p.toString();
+	}
+
+	function loadProjects() {
+		return fetchJson("/api/v1/projects").then(function (data) {
+			var items = data.items || data.projects || [];
+			var sel = document.getElementById("usis-issue-project");
+			var current = qs("project_id") || qs("projectId") || "";
+			sel.innerHTML =
+				'<option value="">All projects</option>' +
+				items
+					.map(function (p) {
+						return '<option value="' + esc(p.id) + '">' + esc(p.name || p.title || p.id) + "</option>";
+					})
+					.join("");
+			if (current) sel.value = current;
+		});
+	}
+
+	function load() {
+		document.getElementById("usis-issue-count").textContent = "Loading…";
+		return fetchJson("/api/v1/issues?" + queryString())
+			.then(function (data) {
+				state.items = data.items || [];
+				var summary = data.summary || {};
+				document.getElementById("usis-issue-count").textContent =
+					state.items.length + " shown · " + (summary.open_critical || 0) + " open critical";
+				render();
+			})
+			.catch(function (err) {
+				document.getElementById("usis-issue-count").textContent = "Could not load issues";
+				notify("error", err.message);
+			});
+	}
+
+	function cardHtml(issue) {
+		return (
+			'<button type="button" class="usis-issue-card" data-id="' +
+			esc(issue.id) +
+			'">' +
+			'<div class="d-flex justify-content-between"><span class="badge usis-issue-sev-' +
+			esc(issue.severity) +
+			'">' +
+			esc(issue.severity) +
+			"</span><span class=\"small text-muted\">" +
+			esc(issue.sheet_number || "") +
+			"</span></div>" +
+			'<div class="fw-semibold mt-2">' +
+			esc(issue.title) +
+			"</div>" +
+			'<div class="usis-issue-card-desc mt-1">' +
+			esc(issue.description) +
+			"</div>" +
+			'<div class="d-flex flex-wrap gap-1 mt-2">' +
+			'<span class="badge text-bg-light">' +
+			esc(issue.trade) +
+			"</span>" +
+			'<span class="badge text-bg-light">' +
+			esc(issue.source_type) +
+			"</span></div>" +
+			'<div class="small text-muted mt-2">' +
+			esc(issue.assignee_name || "Unassigned") +
+			"</div></button>"
+		);
+	}
+
+	function renderKanban() {
+		var root = document.getElementById("usis-issue-kanban");
+		root.innerHTML = STATUSES.map(function (status) {
+			var cards = state.items.filter(function (item) {
+				return item.status === status;
+			});
+			return (
+				'<section class="usis-issue-col" data-status="' +
+				esc(status) +
+				'"><div class="usis-issue-col-head"><h3>' +
+				esc(status) +
+				'</h3><span class="badge text-bg-light">' +
+				cards.length +
+				"</span></div><div class=\"usis-issue-col-body\">" +
+				(cards.map(cardHtml).join("") || '<div class="small text-muted">No issues</div>') +
+				"</div></section>"
+			);
+		}).join("");
+		root.querySelectorAll(".usis-issue-card").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				openIssue(btn.getAttribute("data-id"));
+			});
+			var startX = 0;
+			btn.addEventListener("touchstart", function (ev) {
+				startX = ev.changedTouches[0] ? ev.changedTouches[0].clientX : 0;
+			});
+			btn.addEventListener("touchend", function (ev) {
+				var endX = ev.changedTouches[0] ? ev.changedTouches[0].clientX : 0;
+				var delta = endX - startX;
+				if (Math.abs(delta) < 70) return;
+				var issue = state.items.find(function (item) {
+					return item.id === btn.getAttribute("data-id");
+				});
+				if (!issue) return;
+				var idx = STATUSES.indexOf(issue.status);
+				var next = STATUSES[idx + (delta < 0 ? 1 : -1)];
+				if (next) changeStatus(issue.id, next);
+			});
+		});
+	}
+
+	function renderTable() {
+		var tb = document.getElementById("usis-issue-tbody");
+		if (!state.items.length) {
+			tb.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-4">No issues yet.</td></tr>';
+			return;
+		}
+		tb.innerHTML = state.items
+			.map(function (issue) {
+				return (
+					"<tr data-id=\"" +
+					esc(issue.id) +
+					"\"><td>" +
+					esc(issue.severity) +
+					"</td><td>" +
+					esc(issue.title) +
+					"</td><td>" +
+					esc(issue.status) +
+					"</td><td>" +
+					esc(issue.trade) +
+					"</td><td>" +
+					esc(issue.source_type) +
+					(issue.sheet_number ? " · " + esc(issue.sheet_number) : "") +
+					"</td><td>" +
+					esc(issue.assignee_name || "—") +
+					"</td></tr>"
+				);
+			})
+			.join("");
+		tb.querySelectorAll("tr[data-id]").forEach(function (row) {
+			row.addEventListener("click", function () {
+				openIssue(row.getAttribute("data-id"));
+			});
+		});
+	}
+
+	function render() {
+		var kanban = document.getElementById("usis-issue-kanban");
+		var table = document.getElementById("usis-issue-table-wrap");
+		if (state.view === "table") {
+			kanban.classList.add("d-none");
+			table.classList.remove("d-none");
+			renderTable();
+		} else {
+			table.classList.add("d-none");
+			kanban.classList.remove("d-none");
+			renderKanban();
+		}
+	}
+
+	function changeStatus(id, status) {
+		return fetchJson("/api/v1/issues/" + encodeURIComponent(id) + "/status", {
+			method: "PATCH",
+			body: { status: status },
+		})
+			.then(function (data) {
+				notify("success", "Moved to " + status);
+				if (data.issue) {
+					state.items = state.items.map(function (item) {
+						return item.id === data.issue.id ? data.issue : item;
+					});
+				}
+				render();
+				if (state.selected && state.selected.id === id) openIssue(id);
+			})
+			.catch(function (err) {
+				notify("error", err.message);
+			});
+	}
+
+	function openIssue(id) {
+		fetchJson("/api/v1/issues/" + encodeURIComponent(id))
+			.then(function (data) {
+				state.selected = data.issue;
+				var issue = data.issue;
+				document.getElementById("usis-issue-drawer-title").textContent = issue.title;
+				var viewer = "";
+				if (issue.drawing_id) {
+					viewer =
+						'<a class="btn btn-sm btn-outline-secondary" href="construction/drawing-viewer.html?drawing_id=' +
+						encodeURIComponent(issue.drawing_id) +
+						(issue.project_id ? "&project_id=" + encodeURIComponent(issue.project_id) : "") +
+						(issue.source_id ? "&annotation_id=" + encodeURIComponent(issue.source_id) : "") +
+						'">Open in DrawingViewer</a>';
+				}
+				document.getElementById("usis-issue-drawer-body").innerHTML =
+					'<p class="text-muted">' +
+					esc(issue.description || "No description yet.") +
+					"</p>" +
+					'<div class="d-flex flex-wrap gap-1 mb-3"><span class="badge usis-issue-sev-' +
+					esc(issue.severity) +
+					'">' +
+					esc(issue.severity) +
+					'</span><span class="badge text-bg-light">' +
+					esc(issue.trade) +
+					'</span><span class="badge text-bg-light">' +
+					esc(issue.source_type) +
+					"</span></div>" +
+					'<label class="form-label small">Change status</label>' +
+					'<select class="form-select form-select-sm mb-3" id="usis-issue-status-change">' +
+					STATUSES.map(function (status) {
+						return (
+							'<option' +
+							(status === issue.status ? " selected" : "") +
+							">" +
+							esc(status) +
+							"</option>"
+						);
+					}).join("") +
+					"</select>" +
+					'<div class="d-flex flex-wrap gap-2 mb-3">' +
+					'<button type="button" class="btn btn-sm btn-primary" id="usis-issue-create-co">Create Change Order</button>' +
+					'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-issue-create-rfi">Create RFI</button>' +
+					viewer +
+					"</div>" +
+					(issue.events && issue.events.length
+						? "<h3 class=\"h6\">History</h3><ul class=\"usis-issue-history\">" +
+							issue.events
+								.map(function (event) {
+									return (
+										"<li><strong>" +
+										esc(event.action) +
+										"</strong>" +
+										(event.detail ? " — " + esc(event.detail) : "") +
+										'<div class="small text-muted">' +
+										esc(event.created_by_name || "System") +
+										"</div></li>"
+									);
+								})
+								.join("") +
+							"</ul>"
+						: "");
+				var canvas = document.getElementById("usis-issue-drawer");
+				if (window.bootstrap && window.bootstrap.Offcanvas) {
+					window.bootstrap.Offcanvas.getOrCreateInstance(canvas).show();
+				} else {
+					canvas.classList.add("show");
+				}
+				document.getElementById("usis-issue-status-change").addEventListener("change", function (ev) {
+					changeStatus(issue.id, ev.target.value);
+				});
+				document.getElementById("usis-issue-create-rfi").addEventListener("click", function () {
+					fetchJson("/api/v1/issues/" + encodeURIComponent(issue.id) + "/create-rfi", { method: "POST" })
+						.then(function (result) {
+							notify("success", "RFI prefill ready");
+							if (result.redirect_to) window.location.href = result.redirect_to;
+						})
+						.catch(function (err) {
+							notify("error", err.message);
+						});
+				});
+				document.getElementById("usis-issue-create-co").addEventListener("click", function () {
+					fetchJson("/api/v1/issues/" + encodeURIComponent(issue.id) + "/create-co", { method: "POST" })
+						.then(function (result) {
+							notify("success", "Change order prepared from this issue");
+							if (result.redirect_to) window.location.href = result.redirect_to;
+						})
+						.catch(function (err) {
+							notify("error", err.message);
+						});
+				});
+			})
+			.catch(function (err) {
+				notify("error", err.message);
+			});
+	}
+
+	function setView(view) {
+		state.view = view;
+		document.getElementById("usis-issue-view-kanban").className =
+			"btn btn-sm " + (view === "kanban" ? "btn-primary" : "btn-outline-primary");
+		document.getElementById("usis-issue-view-table").className =
+			"btn btn-sm " + (view === "table" ? "btn-primary" : "btn-outline-primary");
+		render();
+	}
+
+	document.addEventListener("DOMContentLoaded", function () {
+		["usis-issue-project", "usis-issue-status", "usis-issue-severity", "usis-issue-trade", "usis-issue-source"].forEach(
+			function (id) {
+				document.getElementById(id).addEventListener("change", load);
+			}
+		);
+		document.getElementById("usis-issue-search").addEventListener("input", function () {
+			clearTimeout(window.__usisIssueSearch);
+			window.__usisIssueSearch = setTimeout(load, 250);
+		});
+		document.getElementById("usis-issue-refresh").addEventListener("click", load);
+		document.getElementById("usis-issue-view-kanban").addEventListener("click", function () {
+			setView("kanban");
+		});
+		document.getElementById("usis-issue-view-table").addEventListener("click", function () {
+			setView("table");
+		});
+		document.getElementById("usis-issue-new").addEventListener("click", function () {
+			var modal = document.getElementById("usis-issue-new-modal");
+			if (window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).show();
+		});
+		document.getElementById("usis-issue-new-form").addEventListener("submit", function (ev) {
+			ev.preventDefault();
+			var form = ev.target;
+			var body = {
+				title: form.title.value,
+				description: form.description.value,
+				severity: form.severity.value,
+				trade: form.trade.value,
+				source_type: form.source_type.value,
+				project_id: projectId() || undefined,
+			};
+			fetchJson("/api/v1/issues", { method: "POST", body: body })
+				.then(function (data) {
+					notify("success", "Issue created");
+					var modal = document.getElementById("usis-issue-new-modal");
+					if (window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).hide();
+					form.reset();
+					return load().then(function () {
+						if (data.issue) openIssue(data.issue.id);
+					});
+				})
+				.catch(function (err) {
+					notify("error", err.message);
+				});
+		});
+		if (window.aiReviewBus && window.aiReviewBus.on) {
+			window.aiReviewBus.on("review-complete", function () {
+				notify("info", "AI review findings added to Issues");
+				load();
+			});
+		}
+		if (qs("track") === "1") {
+			var form = document.getElementById("usis-issue-new-form");
+			form.title.value = qs("title") || "";
+			form.description.value = qs("description") || "";
+			var modal = document.getElementById("usis-issue-new-modal");
+			if (window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).show();
+		}
+		loadProjects().finally(load);
+	});
+})();

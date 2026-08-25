@@ -323,6 +323,15 @@ def register_extra_routes(bp: Blueprint) -> None:
         )
         db.session.add(ann)
         db.session.commit()
+        if at == "ai_review":
+            try:
+                from ._issue_service import upsert_from_annotation
+                from ._perms import current_user
+
+                upsert_from_annotation(ann, current_user())
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         return (
             _jsonify(
                 {

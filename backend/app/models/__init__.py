@@ -26,6 +26,7 @@ from .hr import (
 )
 from .hr_dispatch import HrEmployeeDispatch
 from .invoice_delivery_method import InvoiceDeliveryMethod
+from .issue import Issue, IssueEvent
 from .material_order import ProjectMaterialOrder
 from .product_catalog import ManufacturerProductData
 from .hrms_core import (
@@ -114,6 +115,8 @@ __all__ = [
     "EstimateLineItem",
     "HrEmployeeDispatch",
     "InvoiceDeliveryMethod",
+    "Issue",
+    "IssueEvent",
     "HrEmployeeDocument",
     "HrEmployeePayScale",
     "HrHireApplication",

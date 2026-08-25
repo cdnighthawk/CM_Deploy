@@ -63,6 +63,11 @@
       global.sessionStorage.setItem(KEY, id);
     } catch (e) {}
     stampRfiLinks(id);
+    var issuesLink = document.getElementById("usis-issue-open-log");
+    if (issuesLink) {
+      issuesLink.setAttribute("href", "construction/issues.html?project_id=" + encodeURIComponent(id));
+      issuesLink.classList.remove("d-none");
+    }
   }
 
   function apiBase() {

@@ -1,0 +1,80 @@
+/**
+ * USIS UI scale — one body size, one compact size, theme colors only.
+ * Body type is already 0.875rem from the theme.
+ */
+:root {
+	--usis-fs: 0.875rem;
+	--usis-fs-sm: 0.75rem;
+	--usis-control-h: 1.5rem;
+}
+
+.content-body h4 { font-size: 1.125rem; }
+.content-body h5 { font-size: 1rem; }
+.content-body h6 { font-size: var(--usis-fs); }
+
+.content-body .small,
+.content-body .form-label,
+.content-body .form-label.small {
+	font-size: var(--usis-fs-sm);
+}
+
+#usis-site-guide-root .card {
+	border-color: var(--bs-border-color) !important;
+}
+
+.usis-tool-toolbar .form-label {
+	font-size: var(--usis-fs-sm);
+	color: var(--bs-secondary-color);
+	margin-bottom: 0.15rem;
+}
+
+.usis-tool-toolbar .form-control,
+.usis-tool-toolbar .form-select {
+	min-width: 0;
+	font-size: var(--usis-fs-sm);
+	padding: 0.1rem 0.4rem;
+	min-height: var(--usis-control-h);
+	height: var(--usis-control-h);
+}
+
+.usis-tool-toolbar .usis-sheet-filter { width: 9rem; }
+.usis-tool-toolbar .usis-sheet-search { width: 16rem; max-width: 100%; }
+
+body .tabulator {
+	font-size: var(--usis-fs-sm);
+	color: var(--bs-body-color);
+}
+
+body .tabulator .tabulator-header {
+	color: var(--bs-body-color);
+	background-color: var(--bs-body-bg);
+	font-weight: 600;
+}
+
+body .tabulator .tabulator-header .tabulator-col {
+	padding: 0.2rem 0.35rem 0.25rem;
+}
+
+body .tabulator .tabulator-header .tabulator-col .tabulator-col-title {
+	font-size: var(--usis-fs-sm);
+	font-weight: 600;
+}
+
+body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter {
+	margin-top: 2px;
+	padding: 0;
+}
+
+body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter input,
+body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select {
+	box-sizing: border-box;
+	font-size: var(--usis-fs-sm);
+	line-height: 1.2;
+	padding: 0 0.35rem;
+	height: 1.35rem;
+	min-height: 1.35rem;
+	border-radius: var(--bs-border-radius-sm, 0.2rem);
+	color: var(--bs-body-color);
+	background-color: var(--bs-body-bg);
+	border-color: var(--bs-border-color);
+}

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import OperationalError
 
 from app.api import _integration_bc
@@ -406,3 +406,233 @@ def test_desktop_queue_filter_requires_open_due_date():
     ).lower()
     assert "due_at" in sql
     assert "child" in sql
+
+
+def test_group_summary_for_lead_roles(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.api import v1 as v1_mod
+
+    parent = SimpleNamespace(
+        id=uuid.uuid4(),
+        external_id="p-1",
+        external_parent_id=None,
+        is_parent=True,
+        name="Park",
+        number="26063",
+        trade_name="Operable Partitions",
+        client={"company": {"name": "Parent"}},
+        submission_state="WILL_SUBMIT",
+        workflow_bucket="ACCEPTED_ACTIVE_PARENT",
+        is_archived=False,
+        due_at=None,
+        source=None,
+        crm_stage="New Lead",
+        win_probability=None,
+        members=None,
+        bc_updated_at=None,
+        project_id=None,
+        primary_estimate_id=None,
+        primary_rfp_id=None,
+        estimate_locked_at=None,
+        estimate_approved_at=None,
+        estimate_approved_by_user_id=None,
+        location=None,
+    )
+    child = SimpleNamespace(
+        id=uuid.uuid4(),
+        external_id="c-1",
+        external_parent_id="p-1",
+        is_parent=False,
+        name="Park",
+        number=None,
+        trade_name="Lockers",
+        client={"company": {"name": "VCC"}},
+        submission_state="WILL_SUBMIT",
+        workflow_bucket="ACCEPTED_ACTIVE_CHILD",
+        is_archived=False,
+        due_at=None,
+        source=None,
+        crm_stage="New Lead",
+        win_probability=None,
+        members=None,
+        bc_updated_at=None,
+        project_id=None,
+        primary_estimate_id=None,
+        primary_rfp_id=None,
+        estimate_locked_at=None,
+        estimate_approved_at=None,
+        estimate_approved_by_user_id=None,
+        location=None,
+    )
+
+    class _Rows:
+        def __init__(self, rows):
+            self._rows = rows
+
+        def all(self):
+            return self._rows
+
+    class _Session:
+        def scalar(self, _stmt):
+            return parent
+
+        def scalars(self, _stmt):
+            return _Rows([child])
+
+    monkeypatch.setattr(v1_mod.db, "session", _Session())
+    child_gs = v1_mod._group_summary_for_lead(child)
+    assert child_gs["role"] == "child"
+    assert child_gs["parent"]["external_id"] == "p-1"
+    assert [c["external_id"] for c in child_gs["children"]] == ["c-1"]
+
+    standalone = SimpleNamespace(external_id="s-1", external_parent_id=None, is_parent=False)
+
+    class _Empty:
+        def scalar(self, _stmt):
+            return None
+
+        def scalars(self, _stmt):
+            return _Rows([])
+
+    monkeypatch.setattr(v1_mod.db, "session", _Empty())
+    alone = v1_mod._group_summary_for_lead(standalone)
+    assert alone == {"role": "standalone", "parent": None, "children": []}
+
+
+def test_group_child_sort_puts_stubs_last():
+    from types import SimpleNamespace
+
+    from app.api.v1 import _group_child_sort_key
+
+    live = SimpleNamespace(
+        is_archived=False,
+        workflow_bucket="ACCEPTED_ACTIVE_CHILD",
+        client={"company": {"name": "VCC"}},
+        trade_name="Lockers",
+        name="Park",
+    )
+    stub = SimpleNamespace(
+        is_archived=False,
+        workflow_bucket="ACCEPTED_ACTIVE_CHILD",
+        client=None,
+        trade_name=None,
+        name="Park",
+    )
+    declined = SimpleNamespace(
+        is_archived=True,
+        workflow_bucket="DECLINED_ARCHIVED_CHILD",
+        client={"company": {"name": "Nibbi Brothers"}},
+        trade_name="Signage",
+        name="Park",
+    )
+    ordered = sorted([stub, declined, live], key=_group_child_sort_key)
+    assert ordered == [live, declined, stub]
+
+
+def test_lead_estimate_group_summary_lists_children(client, flask_app):
+    from sqlalchemy.exc import OperationalError
+
+    try:
+        with flask_app.app_context():
+            db.session.execute(select(LeadEstimate.external_id).limit(1))
+    except OperationalError as exc:
+        pytest.skip(f"database unavailable: {exc}")
+
+    suffix = uuid.uuid4().hex[:10]
+    parent_id = f"gs-parent-{suffix}"
+    child_vcc = f"gs-vcc-{suffix}"
+    child_nibbi = f"gs-nibbi-{suffix}"
+    child_stub = f"gs-stub-{suffix}"
+    standalone_id = f"gs-alone-{suffix}"
+    ids = [parent_id, child_vcc, child_nibbi, child_stub, standalone_id]
+
+    with flask_app.app_context():
+        db.session.add_all(
+            [
+                LeadEstimate(
+                    external_id=parent_id,
+                    name="City Park Group",
+                    number="26063",
+                    is_parent=True,
+                    submission_state="WILL_SUBMIT",
+                    workflow_bucket="ACCEPTED_ACTIVE_PARENT",
+                    trade_name="Operable Partitions",
+                    client={"company": {"name": "Parent GC"}},
+                ),
+                LeadEstimate(
+                    external_id=child_vcc,
+                    external_parent_id=parent_id,
+                    name="City Park Group",
+                    is_parent=False,
+                    submission_state="WILL_SUBMIT",
+                    workflow_bucket="ACCEPTED_ACTIVE_CHILD",
+                    trade_name="Fire Extinguishers & Cabinets",
+                    client={"company": {"name": "VCC"}},
+                ),
+                LeadEstimate(
+                    external_id=child_nibbi,
+                    external_parent_id=parent_id,
+                    name="City Park Group",
+                    is_parent=False,
+                    submission_state="WILL_SUBMIT",
+                    workflow_bucket="ACCEPTED_ACTIVE_CHILD",
+                    trade_name="Miscellaneous Building Specialties",
+                    client={"company": {"name": "Nibbi Brothers"}},
+                ),
+                LeadEstimate(
+                    external_id=child_stub,
+                    external_parent_id=parent_id,
+                    name="City Park Group",
+                    is_parent=False,
+                    submission_state="WILL_SUBMIT",
+                    workflow_bucket="ACCEPTED_ACTIVE_CHILD",
+                ),
+                LeadEstimate(
+                    external_id=standalone_id,
+                    name="Standalone job",
+                    is_parent=False,
+                    submission_state="WILL_SUBMIT",
+                    workflow_bucket="ACCEPTED_ACTIVE_ORPHAN",
+                ),
+            ]
+        )
+        db.session.commit()
+
+    try:
+        from app.api.v1 import _group_summary_for_lead
+
+        with flask_app.app_context():
+            parent_row = db.session.scalar(
+                select(LeadEstimate).where(LeadEstimate.external_id == parent_id)
+            )
+            child_row = db.session.scalar(
+                select(LeadEstimate).where(LeadEstimate.external_id == child_vcc)
+            )
+            alone_row = db.session.scalar(
+                select(LeadEstimate).where(LeadEstimate.external_id == standalone_id)
+            )
+            parent_gs = _group_summary_for_lead(parent_row)
+            child_gs = _group_summary_for_lead(child_row)
+            alone_gs = _group_summary_for_lead(alone_row)
+
+        assert parent_gs["role"] == "group"
+        assert parent_gs["parent"]["external_id"] == parent_id
+        assert parent_gs["parent"]["number"] == "26063"
+        child_ids = [c["external_id"] for c in parent_gs["children"]]
+        assert child_ids == [child_nibbi, child_vcc, child_stub]
+        assert parent_gs["children"][0]["company_name"] == "Nibbi Brothers"
+        assert parent_gs["children"][1]["company_name"] == "VCC"
+        assert parent_gs["children"][2]["trade_name"] is None
+
+        assert child_gs["role"] == "child"
+        assert [c["external_id"] for c in child_gs["children"]] == child_ids
+
+        assert alone_gs["role"] == "standalone"
+        assert alone_gs["parent"] is None
+        assert alone_gs["children"] == []
+    finally:
+        with flask_app.app_context():
+            db.session.rollback()
+            db.session.execute(delete(LeadEstimate).where(LeadEstimate.external_id.in_(ids)))
+            db.session.commit()

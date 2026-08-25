@@ -877,6 +877,71 @@ def _drawing_project_for_lead(row: LeadEstimate) -> Project | None:
     )
 
 
+def _parent_id_norm(value: str | None) -> str | None:
+    s = (value or "").strip()
+    return s or None
+
+
+def _group_child_sort_key(row: LeadEstimate) -> tuple:
+    bucket = (row.workflow_bucket or "").upper()
+    inactive = bool(row.is_archived) or "ARCHIVED" in bucket or "DECLINED" in bucket
+    company = (_client_company_name(row.client) or "").strip().lower()
+    trade = (row.trade_name or "").strip().lower()
+    stub = not company and not trade
+    return (1 if stub else 0, 1 if inactive else 0, company, trade, (row.name or "").lower())
+
+
+def _group_parent_brief(row: LeadEstimate) -> dict[str, Any]:
+    pub = _lead_estimate_public(row)
+    return {
+        "id": pub.get("id"),
+        "external_id": pub.get("external_id"),
+        "name": pub.get("name"),
+        "number": pub.get("number"),
+    }
+
+
+def _group_summary_for_lead(row: LeadEstimate) -> dict[str, Any]:
+    """Parent + nested child opportunities for the estimate-detail Group Summary card."""
+    child_parent_id = _parent_id_norm(row.external_parent_id)
+    if child_parent_id:
+        parent_row = db.session.scalar(
+            select(LeadEstimate).where(LeadEstimate.external_id == child_parent_id)
+        )
+        family_id = child_parent_id
+        role = "child"
+    else:
+        parent_row = row
+        family_id = _parent_id_norm(row.external_id)
+        role = "group" if row.is_parent is True else "standalone"
+
+    children: list[LeadEstimate] = []
+    if family_id:
+        children = list(
+            db.session.scalars(
+                select(LeadEstimate).where(LeadEstimate.external_parent_id == family_id)
+            ).all()
+        )
+    if role == "standalone" and children:
+        role = "group"
+    if not children:
+        parent_brief = _group_parent_brief(parent_row) if role == "child" and parent_row is not None else None
+        return {"role": role if role == "child" else "standalone", "parent": parent_brief, "children": []}
+
+    children_sorted = sorted(children, key=_group_child_sort_key)
+    parent_brief = _group_parent_brief(parent_row) if parent_row is not None else {
+        "id": None,
+        "external_id": family_id,
+        "name": None,
+        "number": None,
+    }
+    return {
+        "role": role,
+        "parent": parent_brief,
+        "children": [_lead_estimate_public(c) for c in children_sorted],
+    }
+
+
 def _lead_estimate_detail(row: LeadEstimate, estimate: Estimate | None = None) -> dict[str, Any]:
     out = dict(_lead_estimate_public(row))
     drawing_project = _drawing_project_for_lead(row)
@@ -3558,7 +3623,9 @@ def get_lead_estimate(identifier: str):
     if row is None:
         return _jsonify({"error": "lead estimate not found"}), 404
     ensure_lead_workspace_project(row, current_user())
-    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+    item = _lead_estimate_detail(row)
+    item["group_summary"] = _group_summary_for_lead(row)
+    return _jsonify({"item": item, "entity": "lead_estimate"})
 
 
 @bp.patch("/lead-estimates/<identifier>")

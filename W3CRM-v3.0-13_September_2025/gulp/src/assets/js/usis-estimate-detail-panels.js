@@ -654,10 +654,116 @@
 		renderJobDetailed(leadFromEstimateItem(raw));
 	}
 
+	function pageLeadKeys(item) {
+		var urlId = (new URLSearchParams(window.location.search).get("id") || "").trim();
+		var keys = {};
+		function add(v) {
+			if (v != null && String(v).trim()) keys[String(v).trim()] = true;
+		}
+		add(urlId);
+		if (item) {
+			add(item.id);
+			add(item.external_id);
+			add(item.lead_id);
+			add(item.lead_estimate_id);
+		}
+		return keys;
+	}
+
+	function companyInitials(name) {
+		var parts = String(name || "")
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean);
+		if (!parts.length) return "GC";
+		if (parts.length === 1) return parts[0].slice(0, 2);
+		return (parts[0].charAt(0) + parts[1].charAt(0));
+	}
+
+	function formatDueCountdown(iso) {
+		var due = new Date(iso);
+		if (isNaN(due.getTime())) return null;
+		var ms = due.getTime() - Date.now();
+		if (ms <= 0 || ms > 48 * 60 * 60 * 1000) return null;
+		var totalMin = Math.floor(ms / 60000);
+		var hours = Math.floor(totalMin / 60);
+		var mins = totalMin % 60;
+		if (hours <= 0) return "Due " + mins + "m";
+		return "Due " + hours + "h " + mins + "m";
+	}
+
+	function groupChildStatus(child) {
+		var bucket = String(child.workflow_bucket || "").toUpperCase();
+		var state = String(child.submission_state || "").toUpperCase().replace(/-/g, "_");
+		var archived = child.is_archived === true || bucket.indexOf("ARCHIVED") >= 0;
+		var declined = state === "DECLINED" || bucket.indexOf("DECLINED") >= 0;
+		if (declined) return { text: archived ? "Declined / Archived" : "Declined", dueSoon: false };
+		if (archived) {
+			var accepted = state === "WILL_SUBMIT" || state === "SUBMITTED" || bucket.indexOf("ACCEPTED") >= 0;
+			return { text: accepted ? "Accepted / Archived" : "Archived", dueSoon: false };
+		}
+		if (child.due_at) {
+			var countdown = formatDueCountdown(child.due_at);
+			if (countdown) return { text: countdown, dueSoon: true };
+			var dueLabel = formatIsoDateTime(child.due_at);
+			return { text: dueLabel ? "Due " + dueLabel : "Due", dueSoon: false };
+		}
+		return { text: child.submission_state || "—", dueSoon: false };
+	}
+
+	function renderGroupSummary(summary, item) {
+		var card = document.getElementById("usis-estd-group-summary");
+		var list = document.getElementById("usis-estd-group-summary-list");
+		var countEl = document.getElementById("usis-estd-group-summary-count");
+		if (!card || !list) return;
+		var children = summary && Array.isArray(summary.children) ? summary.children : [];
+		if (!children.length) {
+			card.classList.add("d-none");
+			list.innerHTML = "";
+			if (countEl) countEl.textContent = "";
+			return;
+		}
+		var current = pageLeadKeys(item);
+		list.innerHTML = "";
+		children.forEach(function (child) {
+			var gc = child.company_name || "";
+			var trade = child.trade_name || "(no trade)";
+			var status = groupChildStatus(child);
+			var isCurrent = !!(current[child.id] || current[child.external_id]);
+			var href = child.external_id
+				? "construction/estimate-detail.html?id=" + encodeURIComponent(child.external_id)
+				: "construction/estimate-detail.html?id=" + encodeURIComponent(child.id || "");
+			var row = document.createElement("a");
+			row.href = href;
+			row.className = "usis-estd-group-row" + (isCurrent ? " is-current" : "");
+			row.innerHTML =
+				'<div class="usis-estd-group-avatar" aria-hidden="true">' +
+				esc(companyInitials(gc || child.name)) +
+				"</div>" +
+				'<div class="flex-grow-1" style="min-width:0">' +
+				'<div class="fw-semibold">' +
+				esc(child.name || "Untitled opportunity") +
+				"</div>" +
+				'<div class="text-muted small">' +
+				esc((gc ? gc + " | " : "") + trade) +
+				"</div>" +
+				"</div>" +
+				'<div class="text-end small text-nowrap' +
+				(status.dueSoon ? " usis-estd-group-due" : " text-muted") +
+				'">' +
+				esc(status.text) +
+				"</div>";
+			list.appendChild(row);
+		});
+		if (countEl) countEl.textContent = String(children.length);
+		card.classList.remove("d-none");
+	}
+
 	function loadJobPanel(le) {
 		setJobErr("");
 		setJobLoading(false);
 		renderJobFromLead(le);
+		renderGroupSummary(le && le.group_summary, le);
 	}
 
 	function onLeadEstimateLoaded(ev) {

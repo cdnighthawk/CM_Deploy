@@ -540,7 +540,12 @@
 			var trade = row.trade_name || "";
 			var lid = row.external_id != null && row.external_id !== "" ? row.external_id : row.id;
 			var lidEnc = lid != null && lid !== "" ? encodeURIComponent(String(lid)) : "";
-			var detailHref = lidEnc ? "construction/estimate-detail.html?id=" + lidEnc : "javascript:void(0);";
+			var estimateId = row.current_estimate_id || "";
+			var detailHref = estimateId
+				? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
+				: lidEnc
+					? "construction/estimate-detail.html?id=" + lidEnc
+					: "javascript:void(0);";
 			var jobHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc : "";
 			var numInner = lidEnc
 				? '<a class="link-primary text-decoration-none" href="' + detailHref + '">' + num + "</a>"

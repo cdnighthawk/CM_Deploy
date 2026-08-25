@@ -276,11 +276,16 @@
 		el.classList.remove("d-none");
 		var linkId = item.external_id || item.id;
 		var linkEnc = encodeURIComponent(String(linkId));
-		var estHref = "construction/estimate-detail.html?id=" + linkEnc;
-		var quoteHref = apiBase() + "/api/v1/lead-estimates/" + linkEnc + "/render/quote-report";
+		var estimateId = item.current_estimate_id || null;
+		var estHref = estimateId
+			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
+			: "construction/estimate-detail.html?id=" + linkEnc;
+		var quoteHref = estimateId
+			? apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateId) + "/render/quote-report"
+			: apiBase() + "/api/v1/lead-estimates/" + linkEnc + "/render/quote-report";
 		var lockTitle = item.estimate_locked_at
 			? "Takeoff may be read-only while locked."
-			: "Open takeoff grid for this lead.";
+			: "Open takeoff grid for this estimate.";
 		var stages = ["New Lead", "Invited", "Estimating", "Submitted", "Awarded", "Lost"];
 		var stage = item.crm_stage || "New Lead";
 		var opts = stages
@@ -299,6 +304,7 @@
 			'<button type="button" class="btn btn-sm btn-outline-success" id="usis-crm-will-bid">Will Bid</button>' +
 			'<button type="button" class="btn btn-sm btn-success" id="usis-crm-award">Award (new project)</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-crm-ai">AI feasibility</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-dark" id="usis-crm-open-estimates">Estimates</button>' +
 			'<a class="btn btn-sm btn-outline-dark" href="' +
 			estHref +
 			'" title="' +
@@ -312,6 +318,17 @@
 			'">RFP list</a>' +
 			"</div></div>";
 		var idForApi = item.id;
+		var openEstimates = document.getElementById("usis-crm-open-estimates");
+		if (openEstimates) {
+			openEstimates.addEventListener("click", function () {
+				var tab = document.getElementById("lead-tab-estimates");
+				if (tab && window.bootstrap && bootstrap.Tab) {
+					bootstrap.Tab.getOrCreateInstance(tab).show();
+					return;
+				}
+				if (tab) tab.click();
+			});
+		}
 		var sel = document.getElementById("usis-crm-stage");
 		var save = document.getElementById("usis-crm-save-stage");
 		if (save && sel) {

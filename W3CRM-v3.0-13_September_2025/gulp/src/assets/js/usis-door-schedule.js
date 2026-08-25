@@ -495,6 +495,9 @@
 		fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(leadId))
 			.then(function (body) {
 				var item = body.item || {};
+				if (estLink && item.current_estimate_id) {
+					estLink.href = "estimate-detail.html?id=" + encodeURIComponent(item.current_estimate_id);
+				}
 				if (leadLine) {
 					leadLine.textContent = (item.name || item.number || leadId) + " (" + leadId + ")";
 				}

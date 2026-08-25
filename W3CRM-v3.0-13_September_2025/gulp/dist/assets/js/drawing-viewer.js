@@ -48,6 +48,7 @@
 	var revIndex = 0;
 	var projectId = null;
 	var leadId = null;
+	var estimateId = null;
 	var fromPage = null;
 	var activeDrawingId = null;
 	var takeoffLineId = null;
@@ -2133,8 +2134,11 @@
 			back.textContent = "\u2190 Back";
 			return;
 		}
-		if (leadId && fromPage === "estimate") {
-			back.setAttribute("href", "construction/estimate-detail.html?id=" + encodeURIComponent(leadId));
+		if (fromPage === "estimate" && (estimateId || leadId)) {
+			back.setAttribute(
+				"href",
+				"construction/estimate-detail.html?id=" + encodeURIComponent(estimateId || leadId)
+			);
 			back.textContent = "\u2190 Estimate";
 			return;
 		}
@@ -2214,6 +2218,7 @@
 		var q = new URLSearchParams(window.location.search);
 		projectId = q.get("project_id");
 		leadId = (q.get("lead_id") || "").trim() || null;
+		estimateId = (q.get("estimate_id") || "").trim() || null;
 		fromPage = (q.get("from") || "").trim() || null;
 		activeDrawingId = q.get("drawing_id");
 		takeoffLineId = (q.get("takeoff_line") || "").trim() || null;

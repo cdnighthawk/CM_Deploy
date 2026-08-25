@@ -305,7 +305,35 @@
 		if (root) root.classList.remove("d-none");
 	}
 
-	function renderJobFromLead(le) {
+	function leadFromEstimateItem(item) {
+		var snap = (item && item.lead) || {};
+		return {
+			name: snap.name || item.lead_name || item.name,
+			number: snap.number || item.number,
+			trade_name: snap.trade_name || item.trade_name,
+			submission_state: snap.submission_state || item.submission_state,
+			crm_stage: snap.crm_stage || item.crm_stage,
+			location: item.location || snap.location,
+			city: item.city || snap.city,
+			state: item.state || snap.state,
+			company_name: item.company_name || snap.company_name,
+			rom: item.rom,
+			win_probability: item.win_probability,
+			due_at: snap.due_at || item.due_at,
+			project_information: item.project_information,
+			external_id: snap.external_id || item.external_id,
+			id:
+				item.lead_id ||
+				item.lead_estimate_id ||
+				snap.id ||
+				snap.external_id ||
+				item.external_id ||
+				item.id,
+		};
+	}
+
+	function renderJobFromLead(raw) {
+		var le = leadFromEstimateItem(raw);
 		var title = document.getElementById("usis-estd-job-title");
 		var sub = document.getElementById("usis-estd-job-subtitle");
 		var badges = document.getElementById("usis-estd-job-badges");
@@ -416,7 +444,7 @@
 		var id = new URLSearchParams(window.location.search).get("id");
 		if (!id || !String(id).trim()) {
 			setJobLoading(false);
-			setJobErr("No lead id in URL — open this page from the Estimates table.");
+			setJobErr("No estimate id in URL — open this page from a lead's Estimates list.");
 			if (docPanels) docPanels.showNoProject();
 		}
 	});

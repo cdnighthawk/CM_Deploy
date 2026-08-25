@@ -466,6 +466,7 @@
 				<div class="col-xl-12 mb-3">
 					<p class="text-muted mb-1 small" id="usis-est-detail-idline"></p>
 					<a href="construction/estimate.html" class="small">&larr; Back to Estimates</a>
+					<a href="construction/leads.html" class="small d-none ms-2" id="usis-est-back-lead">&larr; Back to lead</a>
 				</div>
 
 				<div class="col-xl-12 mb-3">
@@ -625,7 +626,7 @@
 						</div>
 
 						<div class="tab-pane fade show active" id="estd-pane-takeoff" role="tabpanel" aria-labelledby="estd-tab-takeoff" tabindex="0">
-							<p id="usis-estimate-takeoff-no-lead" class="text-muted mb-0">Open this page with a lead id in the URL (<code>?id=…</code>) to load takeoff lines.</p>
+							<p id="usis-estimate-takeoff-no-lead" class="text-muted mb-0">Open this page with an estimate id in the URL (<code>?id=…</code>) to load takeoff lines.</p>
 							<div id="usis-estimate-takeoff-root" class="d-none">
 								<div class="mb-3">
 									<a class="btn btn-outline-primary btn-sm" id="usis-estd-goto-door-schedule" href="construction/door-schedule.html">Door schedule takeoff (Div 08)</a>
@@ -724,7 +725,7 @@
 									</div>
 								</div>
 							</div>
-							<p id="usis-est-detail-no-id" class="text-muted mb-0">Open this page from the Estimate table with a lead id in the URL.</p>
+							<p id="usis-est-detail-no-id" class="text-muted mb-0">Open this page from a lead's Estimates list with an estimate id in the URL. <a href="construction/leads.html">Back to Leads</a>.</p>
 						</div>
 						<div class="tab-pane fade" id="estd-pane-rfp" role="tabpanel" aria-labelledby="estd-tab-rfp" tabindex="0">
 							<h5 class="mb-2">RFP</h5>
@@ -833,6 +834,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
 	<script src="assets/js/usis-specs-book-tab.js"></script>
 	<script src="assets/js/usis-project-doc-panels.js"></script>
+	<script src="assets/js/usis-estimate-api.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
 	<script src="assets/js/usis-estimate-detail.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>
@@ -843,7 +845,7 @@
 		var el = document.getElementById("usis-est-detail-idline");
 		var noId = document.getElementById("usis-est-detail-no-id");
 		if (!id) {
-			if (el) el.textContent = "No id in URL — open this page from the Estimate table (click project # or lead name).";
+			if (el) el.textContent = "No estimate id in URL — open this page from a lead's Estimates list.";
 			return;
 		}
 		if (el) el.textContent = "Loading estimate…";

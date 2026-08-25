@@ -1,14 +1,15 @@
 /**
- * Estimate detail — Takeoff tab: Tabulator grid for lead-scoped takeoff lines
- * (GET/POST /api/v1/lead-estimates/<id>/takeoff-lines, PATCH/DELETE /api/v1/takeoff-lines/<line_id>).
- * Requires URL ?id=<lead external_id or UUID>. Uses item.project_id from usis-lead-estimate-loaded for viewer links.
+ * Estimate detail — Takeoff tab: Tabulator grid for estimate-scoped takeoff lines
+ * (GET/POST /api/v1/estimates/<id>/takeoff-lines, PATCH/DELETE /api/v1/takeoff-lines/<line_id>).
+ * Requires URL ?id=<estimate UUID>. Uses parent lead + project_id from usis-lead-estimate-loaded for viewer links.
  */
 (function () {
 	"use strict";
 
 	var takeoffTable = null;
-	var mountedLeadKey = null;
+	var mountedEstimateKey = null;
 	var activeProjectId = null;
+	var parentLeadKey = null;
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") {
@@ -184,9 +185,9 @@
 		];
 	}
 
-	function reloadTakeoff(leadKey) {
+	function reloadTakeoff(estimateKey) {
 		return fetch(
-			apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines",
+			apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/takeoff-lines",
 			{
 				credentials: "include",
 				headers: { Accept: "application/json" },
@@ -207,18 +208,20 @@
 			});
 	}
 
-	function mountGrid(root, leadKey, projectId) {
+	function mountGrid(root, estimateKey, projectId, leadKey) {
+		var doorId = leadKey || estimateKey;
 		root.innerHTML =
 			'<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">' +
-			'<h5 class="mb-0">Takeoff (lead)</h5>' +
+			'<h5 class="mb-0">Takeoff</h5>' +
 			'<div class="d-flex flex-wrap gap-2 align-items-center">' +
 			'<a class="btn btn-sm btn-outline-primary" href="construction/door-schedule.html?id=' +
-			encodeURIComponent(leadKey) +
+			encodeURIComponent(doorId) +
 			'">Door schedule (Div 08)</a>' +
 			'<a class="btn btn-sm btn-outline-secondary" href="construction/drawing-viewer.html?' +
 			(projectId ? "project_id=" + encodeURIComponent(projectId) + "&" : "") +
-			"lead_id=" +
-			encodeURIComponent(leadKey) +
+			(leadKey ? "lead_id=" + encodeURIComponent(leadKey) + "&" : "") +
+			"estimate_id=" +
+			encodeURIComponent(estimateKey) +
 			"&from=estimate&return_url=" +
 			encodeURIComponent(window.location.href) +
 			'">Open drawing viewer</a>' +
@@ -293,7 +296,7 @@
 			btn.addEventListener("click", function () {
 				var desc = window.prompt("Description", "New line");
 				if (desc == null) return;
-				fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
+				fetch(apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/takeoff-lines", {
 					method: "POST",
 					headers: { "Content-Type": "application/json", Accept: "application/json" },
 					credentials: "include",
@@ -326,7 +329,7 @@
 			});
 		}
 
-		reloadTakeoff(leadKey).catch(function () {});
+		reloadTakeoff(estimateKey).catch(function () {});
 
 		var takeoffTab = document.getElementById("estd-tab-takeoff");
 		if (takeoffTab && typeof bootstrap !== "undefined" && bootstrap.Tab) {
@@ -347,18 +350,25 @@
 		if (!item) {
 			root.innerHTML =
 				'<p class="text-danger small mb-0">' +
-				(detail.error ? String(detail.error) : "Could not load lead estimate.") +
+				(detail.error ? String(detail.error) : "Could not load estimate.") +
 				"</p>";
 			return;
 		}
+		var estimateKey = item.id || lk;
+		var leadKey =
+			(window.USISEstimateApi && window.USISEstimateApi.leadIdFromItem(item)) ||
+			item.lead_id ||
+			item.lead_estimate_id ||
+			lk;
 		var pid = item.drawing_project_id || item.project_id || null;
-		if (mountedLeadKey === lk && activeProjectId === pid) {
-			reloadTakeoff(lk).catch(function () {});
+		if (mountedEstimateKey === estimateKey && activeProjectId === pid) {
+			reloadTakeoff(estimateKey).catch(function () {});
 			return;
 		}
-		mountedLeadKey = lk;
+		mountedEstimateKey = estimateKey;
+		parentLeadKey = leadKey;
 		activeProjectId = pid;
-		mountGrid(root, lk, pid);
+		mountGrid(root, estimateKey, pid, leadKey);
 	}
 
 	function init() {

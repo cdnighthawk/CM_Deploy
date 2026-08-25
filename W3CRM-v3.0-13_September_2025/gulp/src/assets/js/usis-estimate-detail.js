@@ -1,6 +1,6 @@
 /**
- * Estimate detail: load lead estimate + takeoff lines, edit grid, rollups, cost library hints.
- * Expects URL ?id=<lead external_id or UUID>. Uses window.USIS_API_BASE or http://127.0.0.1:5000
+ * Estimate detail: load a real Estimate record + takeoff lines, edit grid, rollups, cost library hints.
+ * Expects URL ?id=<estimate UUID>. Legacy lead ids redirect to the lead's current estimate.
  */
 (function () {
 	var API =
@@ -9,11 +9,19 @@
 			: typeof window.USIS_API_BASE === "string"
 				? window.USIS_API_BASE.trim().replace(/\/$/, "")
 				: "http://127.0.0.1:5000";
+	var Api = typeof window.USISEstimateApi !== "undefined" ? window.USISEstimateApi : null;
 	var leadKey = null;
 	var leadItem = null;
 	var sessionMe = null;
 	var activeLineId = null;
 	var dirtyByLine = {};
+
+	function parentLeadId(item) {
+		if (Api) return Api.leadIdFromItem(item);
+		if (!item) return null;
+		var lead = item.lead || {};
+		return item.lead_id || item.lead_estimate_id || lead.id || item.external_id || null;
+	}
 
 	function rowStatusEl(tr) {
 		return tr ? tr.querySelector(".usis-est-row-status") : null;
@@ -132,37 +140,76 @@
 		set("usis-est-roll-total", "$" + money(total));
 	}
 
+	function statusBadgeHtml(status) {
+		var s = String(status || "draft").toLowerCase();
+		var cls = "bg-light text-dark border";
+		if (s === "submitted") cls = "bg-primary";
+		else if (s === "awarded") cls = "bg-success";
+		else if (s === "superseded") cls = "bg-warning text-dark";
+		else if (s === "archived") cls = "bg-dark";
+		else if (s === "draft") cls = "bg-secondary";
+		return '<span class="badge ' + cls + ' text-capitalize">' + esc(s) + "</span>";
+	}
+
+	function drawingSetLabel(item) {
+		if (item.drawing_set && item.drawing_set.name) return item.drawing_set.name;
+		return "";
+	}
+
 	function renderHeader(item) {
 		var h = document.getElementById("usis-est-header");
 		if (!h || !item) return;
+		var lead = item.lead || {};
+		var leadName = lead.name || item.lead_name || item.company_name || "";
+		var leadHref = parentLeadId(item)
+			? "construction/lead-detail.html?id=" + encodeURIComponent(parentLeadId(item))
+			: "construction/leads.html";
+		var version = item.version_label || item.version || "";
+		var gc = item.gc_name || item.company_name || "—";
 		h.innerHTML =
-			'<div class="col-md-6">' +
+			'<div class="col-md-7">' +
 			'<h5 class="mb-1">' +
-			esc(item.name || "—") +
+			esc(item.name || item.title || "—") +
+			(version ? ' <span class="text-muted fw-normal small">v' + esc(String(version)) + "</span>" : "") +
+			" " +
+			statusBadgeHtml(item.status) +
 			"</h5>" +
 			'<p class="text-muted small mb-0">' +
+			'<span class="me-2">GC: <strong>' +
+			esc(gc) +
+			"</strong></span>" +
+			'<span class="me-2">Drawing set: <strong>' +
+			esc(drawingSetLabel(item) || "—") +
+			"</strong></span><br>" +
 			'<span class="me-2">Project # <strong>' +
-			esc(item.number || "—") +
+			esc(item.number || lead.number || "—") +
 			"</strong></span>" +
 			'<span class="me-2">Trade: ' +
-			esc(item.trade_name || "—") +
+			esc(item.trade_name || lead.trade_name || "—") +
 			"</span><br>" +
 			"Due: " +
-			esc(item.due_at || "—") +
-			" · Company: " +
-			esc(item.company_name || "—") +
+			esc(item.due_at || lead.due_at || "—") +
+			(leadName ? " · Lead: " + esc(leadName) : "") +
 			"</p></div>" +
-			'<div class="col-md-6 text-md-end small">' +
+			'<div class="col-md-5 text-md-end small">' +
 			"<div>ROM: <strong>$" +
 			money(item.rom) +
 			"</strong></div>" +
-			"<div>Fee % (from BC): <strong>" +
+			"<div>Fee %: <strong>" +
 			pct(item.fee_percentage) +
 			"</strong></div>" +
 			"<div>Profit margin: <strong>" +
 			pct(item.profit_margin) +
 			"</strong></div>" +
+			'<div class="mt-1"><a class="small" href="' +
+			esc(leadHref) +
+			'">&larr; Back to lead</a></div>' +
 			"</div>";
+		var back = document.getElementById("usis-est-back-lead");
+		if (back) {
+			back.setAttribute("href", leadHref);
+			back.classList.remove("d-none");
+		}
 	}
 
 	var quoteColumnCatalog = null;
@@ -208,7 +255,7 @@
 		var banner = document.getElementById("usis-est-lock-banner");
 		if (!leadItem) return;
 		var locked = !!leadItem.estimate_locked_at;
-		var approved = !!leadItem.estimate_approved_at;
+		var approved = !!leadItem.estimate_approved_at || !!leadItem.approved_at;
 		if (banner) {
 			if (!locked) {
 				banner.classList.add("d-none");
@@ -262,9 +309,15 @@
 		}
 	}
 
-	function postLeadAction(pathSuffix) {
+	function postEstimateAction(action) {
 		if (!leadKey) return Promise.resolve();
-		return fetch(apiBaseTrimmed() + "/api/v1/lead-estimates/" + encodeURIComponent(leadKey) + pathSuffix, {
+		if (Api) {
+			return Api.postEstimateAction(leadKey, action).catch(function (err) {
+				var mapped = mapApiError(err.body || {}, err.status);
+				throw new Error(mapped);
+			});
+		}
+		return fetch(apiBaseTrimmed() + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/" + action, {
 			method: "POST",
 			credentials: "include",
 			headers: { Accept: "application/json" },
@@ -277,8 +330,7 @@
 					j = {};
 				}
 				if (!r.ok) {
-					var msg = mapApiError(j, r.status);
-					throw new Error(msg);
+					throw new Error(mapApiError(j, r.status));
 				}
 				return j;
 			});
@@ -392,8 +444,13 @@
 				/* ignore */
 			}
 		}
-		var q = ids.length ? "?columns=" + encodeURIComponent(ids.join(",")) : "";
-		var url = apiBaseTrimmed() + "/api/v1/lead-estimates/" + encodeURIComponent(leadKey) + "/render/quote-report" + q;
+		var url = Api
+			? Api.quoteReportUrl(leadKey, ids)
+			: apiBaseTrimmed() +
+				"/api/v1/estimates/" +
+				encodeURIComponent(leadKey) +
+				"/render/quote-report" +
+				(ids.length ? "?columns=" + encodeURIComponent(ids.join(",")) : "");
 		window.open(url, "_blank", "noopener,noreferrer");
 		if (modalEl && window.bootstrap) {
 			var inst = bootstrap.Modal.getInstance(modalEl);
@@ -578,16 +635,48 @@
 		});
 	}
 
+	function fireEstimateLoaded(item, error) {
+		var detail = { item: item || null, error: error || null };
+		document.dispatchEvent(new CustomEvent("usis-lead-estimate-loaded", { detail: detail }));
+		document.dispatchEvent(new CustomEvent("usis-estimate-loaded", { detail: detail }));
+	}
+
+	function applyEstimateItem(item) {
+		leadItem = item;
+		if (item && item.id) leadKey = item.id;
+		var lines = (item && item.takeoff_lines) || [];
+		renderHeader(item);
+		renderTable(lines);
+		renderRollup(lines, item.fee_percentage);
+		applyTakeoffLockUI();
+		var idline = document.getElementById("usis-est-detail-idline");
+		if (idline) {
+			idline.textContent =
+				(item.name || item.title || "—") +
+				" · " +
+				(item.number || (item.lead && item.lead.number) || "—") +
+				" · estimate " +
+				item.id;
+		}
+		var noId = document.getElementById("usis-est-detail-no-id");
+		if (noId) noId.classList.add("d-none");
+		var wrap = document.getElementById("usis-est-detail-root");
+		if (wrap) wrap.classList.remove("d-none");
+		fireEstimateLoaded(item, null);
+	}
+
 	function loadDetail() {
 		if (!leadKey) return Promise.resolve();
 		showErr("");
-		return fetch(API + "/api/v1/lead-estimates/" + encodeURIComponent(leadKey), {
-			credentials: "include",
-			headers: { Accept: "application/json" },
-		})
-			.then(function (r) {
-				if (r.status === 404) throw new Error("Lead estimate not found for this id.");
-				if (!r.ok) {
+		var loadPromise = Api
+			? Api.resolveEstimateId(leadKey).then(function (resolved) {
+					if (resolved.item && resolved.item.id) leadKey = resolved.item.id;
+					return resolved.item;
+				})
+			: fetch(API + "/api/v1/estimates/" + encodeURIComponent(leadKey), {
+					credentials: "include",
+					headers: { Accept: "application/json" },
+				}).then(function (r) {
 					return r.text().then(function (text) {
 						var j = {};
 						try {
@@ -595,38 +684,33 @@
 						} catch (eLd) {
 							j = {};
 						}
-						throw new Error(mapApiError(j, r.status));
+						if (r.status === 404) throw new Error("Estimate not found for this id.");
+						if (!r.ok) throw new Error(mapApiError(j, r.status));
+						return j.item;
 					});
-				}
-				return r.json();
-			})
-			.then(function (data) {
-				leadItem = data.item;
-				var lines = leadItem.takeoff_lines || [];
-				renderHeader(leadItem);
-				renderTable(lines);
-				renderRollup(lines, leadItem.fee_percentage);
-				applyTakeoffLockUI();
-				var idline = document.getElementById("usis-est-detail-idline");
-				if (idline) {
-					idline.textContent =
-						(leadItem.name || "—") +
-						" · " +
-						(leadItem.number || "—") +
-						" · id " +
-						(leadItem.external_id || leadItem.id);
-				}
-				document.dispatchEvent(
-					new CustomEvent("usis-lead-estimate-loaded", { detail: { item: leadItem } })
-				);
+				});
+		return loadPromise
+			.then(function (item) {
+				if (!item) throw new Error("Estimate not found for this id.");
+				applyEstimateItem(item);
 			})
 			.catch(function (e) {
-				showErr(e.message || String(e));
-				document.dispatchEvent(
-					new CustomEvent("usis-lead-estimate-loaded", {
-						detail: { item: null, error: e.message || String(e) },
-					})
-				);
+				var msg = e.message || String(e);
+				if (e.status === 403) msg = mapApiError(e.body || {}, e.status);
+				showErr(msg);
+				var wrap = document.getElementById("usis-est-detail-root");
+				if (wrap) wrap.classList.remove("d-none");
+				var noId = document.getElementById("usis-est-detail-no-id");
+				if (noId) {
+					var lid = e.lead && (e.lead.id || e.lead.external_id);
+					noId.innerHTML = lid
+						? 'This estimate could not be opened. <a href="construction/lead-detail.html?id=' +
+							encodeURIComponent(lid) +
+							'">Back to the lead estimates list</a>.'
+						: 'This estimate could not be opened. <a href="construction/estimate.html">Back to Estimates</a> or <a href="construction/leads.html">Leads</a>.';
+					noId.classList.remove("d-none");
+				}
+				fireEstimateLoaded(null, msg);
 			});
 	}
 
@@ -636,7 +720,7 @@
 			showErr("This estimate is locked.");
 			return;
 		}
-		fetch(API + "/api/v1/lead-estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
+		fetch(API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
 			method: "POST",
 			headers: { "Content-Type": "application/json", Accept: "application/json" },
 			credentials: "include",
@@ -826,7 +910,7 @@
 		if (appr) {
 			appr.addEventListener("click", function () {
 				if (!window.confirm("Approve this estimate and lock takeoff editing?")) return;
-				postLeadAction("/approve-estimate")
+				postEstimateAction("approve")
 					.then(function () {
 						flashOk("Estimate approved and locked.");
 						return loadDetail();
@@ -840,7 +924,7 @@
 		if (lck) {
 			lck.addEventListener("click", function () {
 				if (!window.confirm("Lock this estimate (no formal approval recorded)?")) return;
-				postLeadAction("/lock-estimate")
+				postEstimateAction("lock")
 					.then(function () {
 						flashOk("Estimate locked.");
 						return loadDetail();
@@ -854,7 +938,7 @@
 		if (unl) {
 			unl.addEventListener("click", function () {
 				if (!window.confirm("Unlock takeoff editing for this estimate?")) return;
-				postLeadAction("/unlock-estimate")
+				postEstimateAction("unlock")
 					.then(function () {
 						flashOk("Estimate unlocked.");
 						return loadDetail();

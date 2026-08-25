@@ -611,7 +611,14 @@
 		function leadIdentifier(item) {
 			if (typeof cfg.getLeadId === "function") return cfg.getLeadId(item);
 			if (!item) return null;
-			return item.id || item.external_id || null;
+			return (
+				item.lead_id ||
+				item.lead_estimate_id ||
+				(item.lead && (item.lead.id || item.lead.external_id)) ||
+				item.external_id ||
+				item.id ||
+				null
+			);
 		}
 
 		function projectIdFromItem(item) {

@@ -574,10 +574,17 @@
 			var state = esc(row.state || "—");
 			var bidDue = formatBidDueDate(row.due_at);
 			var apiRoot = (API || "").replace(/\/$/, "");
-			var estHref = lidEnc ? "construction/estimate-detail.html?id=" + lidEnc : "javascript:void(0);";
-			var quoteHref = lidEnc
-				? (apiRoot ? apiRoot : "") + "/api/v1/lead-estimates/" + lidEnc + "/render/quote-report"
-				: "javascript:void(0);";
+			var estimateId = row.current_estimate_id || "";
+			var estHref = estimateId
+				? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
+				: lidEnc
+					? "construction/estimate-detail.html?id=" + lidEnc
+					: "javascript:void(0);";
+			var quoteHref = estimateId
+				? (apiRoot ? apiRoot : "") + "/api/v1/estimates/" + encodeURIComponent(estimateId) + "/render/quote-report"
+				: lidEnc
+					? (apiRoot ? apiRoot : "") + "/api/v1/lead-estimates/" + lidEnc + "/render/quote-report"
+					: "javascript:void(0);";
 			var actions =
 				'<div class="dropdown custom-dropdown mb-0 tbl-orders-style">' +
 				'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></div>' +

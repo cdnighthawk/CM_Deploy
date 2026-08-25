@@ -24,22 +24,27 @@
 								alt="US Interior Specialties"
 								onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
 						</div>
-						<h3 class="mb-0" id="usis-issue-heading">Confirm your report</h3>
-						<p class="mb-0 text-muted">Close this issue if it is resolved.</p>
+						<h3 class="mb-0" id="usis-issue-heading">Review the fix</h3>
+						<p class="mb-0 text-muted">Tell us whether this is resolved.</p>
 					</div>
 					<div id="usis-issue-err" class="alert alert-danger py-2 small d-none" role="alert"></div>
 					<div id="usis-issue-ok" class="alert alert-success py-2 small d-none" role="status"></div>
 					<div id="usis-issue-body" class="d-none">
 						<h5 id="usis-issue-title" class="mb-2"></h5>
-						<p class="small text-muted mb-2" id="usis-issue-status"></p>
+						<p class="small text-muted mb-3" id="usis-issue-status"></p>
+						<h6 class="text-uppercase small text-muted mb-1">What we changed</h6>
 						<p class="mb-4" id="usis-issue-resolution" style="white-space:pre-wrap;"></p>
-						<div id="usis-issue-actions" class="d-grid gap-2">
-							<button type="button" class="btn btn-primary btn-lg" id="usis-issue-close">Close — this is resolved</button>
-							<button type="button" class="btn btn-outline-secondary" id="usis-issue-reject">Still not fixed</button>
+						<div id="usis-issue-actions">
+							<label class="form-label small" for="usis-issue-note">Your feedback (optional)</label>
+							<textarea class="form-control mb-3" id="usis-issue-note" rows="3" maxlength="2000" placeholder="Anything still wrong, or notes on the fix"></textarea>
+							<div class="d-grid gap-2">
+								<button type="button" class="btn btn-primary btn-lg" id="usis-issue-close">This is resolved</button>
+								<button type="button" class="btn btn-outline-secondary" id="usis-issue-reject">Still not fixed</button>
+							</div>
 						</div>
 					</div>
 					<p class="text-center small mt-4 mb-0">
-						<a class="btn-link text-primary" href="page-login.html">Back to sign in</a>
+						<a class="btn-link text-primary" href="usis-dashboard-dark.html">Back to dashboard</a>
 					</p>
 				</div>
 			</div>
@@ -62,16 +67,21 @@
 		}
 		var params = new URLSearchParams(window.location.search);
 		var token = params.get("token") || "";
+		var issue = params.get("issue") || "";
 		var errEl = document.getElementById("usis-issue-err");
 		var okEl = document.getElementById("usis-issue-ok");
 		var bodyEl = document.getElementById("usis-issue-body");
 		var closeBtn = document.getElementById("usis-issue-close");
 		var rejectBtn = document.getElementById("usis-issue-reject");
-		if (!token) {
-			show(errEl, "This confirmation link is missing. Use the link from your email.");
+		var noteEl = document.getElementById("usis-issue-note");
+		if (!token && !issue) {
+			show(errEl, "This confirmation link is missing. Open the notice in your bell, or use the link from your email.");
 			return;
 		}
-		fetch(apiBase() + "/api/v1/feedback/issues/confirm?token=" + encodeURIComponent(token), {
+		var previewQs = token
+			? "token=" + encodeURIComponent(token)
+			: "issue=" + encodeURIComponent(issue);
+		fetch(apiBase() + "/api/v1/feedback/issues/confirm?" + previewQs, {
 			credentials: "include",
 			headers: { Accept: "application/json" },
 		})
@@ -97,11 +107,14 @@
 			show(okEl, "");
 			if (closeBtn) closeBtn.disabled = true;
 			if (rejectBtn) rejectBtn.disabled = true;
+			var payload = { action: action, note: noteEl ? noteEl.value : "" };
+			if (token) payload.token = token;
+			if (issue) payload.issue = issue;
 			fetch(apiBase() + "/api/v1/feedback/issues/confirm", {
 				method: "POST",
 				credentials: "include",
 				headers: { "Content-Type": "application/json", Accept: "application/json" },
-				body: JSON.stringify({ token: token, action: action }),
+				body: JSON.stringify(payload),
 			})
 				.then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
 				.then(function (res) {

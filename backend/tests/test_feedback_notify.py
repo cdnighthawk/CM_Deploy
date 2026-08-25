@@ -376,3 +376,84 @@ def test_confirm_routes_are_public(client, flask_app, monkeypatch):
     r = client.get("/api/v1/feedback/issues/confirm?token=abc")
     assert r.status_code == 200
     assert r.get_json()["issue_number"] == 1
+
+
+def test_in_app_confirm_path():
+    assert feedback_svc.in_app_confirm_path(10) == "/usis-issue-confirm.html?issue=10"
+
+
+def test_confirm_issue_by_number_includes_note():
+    calls = []
+    issue = {
+        "number": 10,
+        "title": "[bug] Test — leads.html",
+        "body": CLOSED_BODY,
+        "state": "open",
+        "state_reason": None,
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.method)
+        if request.method == "GET" and "/comments" in str(request.url):
+            return httpx.Response(
+                200,
+                json=[{"body": "Resolution: The issue is closed.", "user": {"login": "cdnighthawk"}}],
+            )
+        if request.method == "GET":
+            return httpx.Response(200, json=issue)
+        if request.method == "POST":
+            body = request.content.decode()
+            assert feedback_svc.CONFIRMED_MARKER in body
+            assert "Looks good" in body
+            return httpx.Response(201, json={"id": 11})
+        return httpx.Response(200, json={})
+
+    result = feedback_svc.confirm_issue(
+        issue_number=10,
+        action="close",
+        expected_email="sam@gousis.com",
+        note="Looks good",
+        config=_config(),
+        secret_key=SECRET,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert result["status"] == "closed"
+    assert "POST" in calls
+
+
+def test_confirm_issue_rejects_other_email():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"number": 10, "title": "x", "body": CLOSED_BODY, "state": "open"},
+        )
+
+    try:
+        feedback_svc.load_issue_confirm_preview(
+            issue_number=10,
+            expected_email="other@gousis.com",
+            config=_config(),
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        raise AssertionError("expected mismatch")
+    except ValueError as exc:
+        assert "not assigned" in str(exc)
+
+
+def test_confirm_route_accepts_issue_query(client, monkeypatch):
+    def fake_preview(**kwargs):
+        assert kwargs["issue_number"] == 10
+        return {
+            "issue_number": 10,
+            "title": "[bug] Test — leads.html",
+            "reporter_name": "Charles",
+            "status": "Closed",
+            "resolution": "The issue is closed.",
+            "already_confirmed": False,
+            "state": "open",
+        }
+
+    monkeypatch.setattr(feedback_svc, "load_issue_confirm_preview", fake_preview)
+    r = client.get("/api/v1/feedback/issues/confirm?issue=10")
+    assert r.status_code == 200
+    assert r.get_json()["resolution"] == "The issue is closed."

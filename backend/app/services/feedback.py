@@ -424,6 +424,16 @@ def confirm_page_url(*, confirm_base_url: str, token: str) -> str:
     return f"{base}{joiner}token={quote(token, safe='')}"
 
 
+def in_app_confirm_path(issue_number: int) -> str:
+    return f"/usis-issue-confirm.html?issue={int(issue_number)}"
+
+
+def sanitize_reporter_note(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    return value.replace("\x00", "").strip()[:2_000]
+
+
 def verify_github_signature(*, secret: str, payload: bytes, signature_header: str) -> bool:
     if not secret or not signature_header:
         return False
@@ -611,6 +621,13 @@ def _request_reporter_confirmation(
     if result.get("error") and not result.get("dry_run"):
         return {"ok": False, "status": "failed", "reason": str(result.get("error"))}
 
+    _notify_reporter_in_app(
+        email=email,
+        issue_number=number,
+        title=str(issue.get("title") or ""),
+        resolution=extracted["resolution"],
+    )
+
     mark_issue_notified(
         owner=options["owner"],
         repo=options["repo"],
@@ -705,19 +722,19 @@ def notify_reporter_for_closed_issue(
     )
 
 
-def load_confirm_preview(
+def load_issue_confirm_preview(
     *,
-    token: str,
+    issue_number: int,
     config: Any,
-    secret_key: str,
+    expected_email: str = "",
+    allow_any: bool = False,
     client: httpx.Client | None = None,
 ) -> dict[str, Any]:
-    claims = read_confirm_token(token, secret_key=secret_key)
     options = feedback_options(config)
     issue = fetch_issue(
         owner=options["owner"],
         repo=options["repo"],
-        issue_number=claims["issue_number"],
+        issue_number=int(issue_number),
         token=options["token"],
         client=client,
     )
@@ -725,18 +742,19 @@ def load_confirm_preview(
         raise ValueError("This report could not be found.")
     body = str(issue.get("body") or "")
     email = parse_reporter_email(body).lower()
-    if email != claims["email"]:
-        raise ValueError("This confirmation link does not match the report.")
+    viewer = (expected_email or "").strip().lower()
+    if not allow_any and (not viewer or email != viewer):
+        raise ValueError("This report is not assigned to your account.")
     comments = fetch_issue_comments(
         owner=options["owner"],
         repo=options["repo"],
-        issue_number=claims["issue_number"],
+        issue_number=int(issue_number),
         token=options["token"],
         client=client,
     )
     extracted = extract_resolution(comments, issue.get("state_reason"))
     return {
-        "issue_number": claims["issue_number"],
+        "issue_number": int(issue.get("number") or issue_number),
         "title": str(issue.get("title") or ""),
         "reporter_name": parse_reporter_name(body),
         "status": extracted["status"],
@@ -746,6 +764,27 @@ def load_confirm_preview(
     }
 
 
+def load_confirm_preview(
+    *,
+    token: str,
+    config: Any,
+    secret_key: str,
+    client: httpx.Client | None = None,
+) -> dict[str, Any]:
+    claims = read_confirm_token(token, secret_key=secret_key)
+    return load_issue_confirm_preview(
+        issue_number=claims["issue_number"],
+        config=config,
+        expected_email=claims["email"],
+        client=client,
+    )
+
+
+def _reporter_note_block(note: str) -> str:
+    text = sanitize_reporter_note(note)
+    return f"\n\nReporter note:\n{text}" if text else ""
+
+
 def confirm_issue_from_token(
     *,
     token: str,
@@ -753,13 +792,50 @@ def confirm_issue_from_token(
     config: Any,
     secret_key: str,
     client: httpx.Client | None = None,
+    note: str = "",
+) -> dict[str, Any]:
+    return confirm_issue(
+        token=token,
+        action=action,
+        config=config,
+        secret_key=secret_key,
+        client=client,
+        note=note,
+    )
+
+
+def confirm_issue(
+    *,
+    action: str,
+    config: Any,
+    secret_key: str = "",
+    token: str = "",
+    issue_number: int = 0,
+    expected_email: str = "",
+    allow_any: bool = False,
+    note: str = "",
+    client: httpx.Client | None = None,
 ) -> dict[str, Any]:
     choice = (action or "").strip().lower()
     if choice not in {"close", "reject"}:
         raise ValueError('Choose "close" or "reject".')
-    preview = load_confirm_preview(token=token, config=config, secret_key=secret_key, client=client)
+    if (token or "").strip():
+        preview = load_confirm_preview(
+            token=token, config=config, secret_key=secret_key, client=client
+        )
+    elif int(issue_number or 0) > 0:
+        preview = load_issue_confirm_preview(
+            issue_number=int(issue_number),
+            config=config,
+            expected_email=expected_email,
+            allow_any=allow_any,
+            client=client,
+        )
+    else:
+        raise ValueError("This confirmation link is missing.")
     options = feedback_options(config)
     number = int(preview["issue_number"])
+    extra = _reporter_note_block(note)
     if choice == "close":
         if preview["already_confirmed"]:
             return {"ok": True, "status": "already_confirmed", "issue_number": number}
@@ -768,7 +844,10 @@ def confirm_issue_from_token(
             repo=options["repo"],
             issue_number=number,
             token=options["token"],
-            body=f"{CONFIRMED_MARKER}\nReporter confirmed this is resolved and closed the issue.",
+            body=(
+                f"{CONFIRMED_MARKER}\nReporter confirmed this is resolved and closed the issue."
+                f"{extra}"
+            ),
             client=client,
         )
         set_issue_state(
@@ -787,7 +866,7 @@ def confirm_issue_from_token(
         repo=options["repo"],
         issue_number=number,
         token=options["token"],
-        body=f"{REJECTED_MARKER}\nReporter said this is still not fixed.",
+        body=f"{REJECTED_MARKER}\nReporter said this is still not fixed.{extra}",
         client=client,
     )
     set_issue_state(
@@ -799,3 +878,30 @@ def confirm_issue_from_token(
         client=client,
     )
     return {"ok": True, "status": "rejected", "issue_number": number}
+
+
+def _notify_reporter_in_app(
+    *,
+    email: str,
+    issue_number: int,
+    title: str,
+    resolution: str,
+) -> None:
+    try:
+        from ..api._in_app_notifications import notify_user_by_email
+        from ..extensions import db
+    except Exception:
+        return
+    try:
+        notify_user_by_email(
+            email=email,
+            title=f"Please confirm issue #{int(issue_number)}",
+            body=(resolution or "Please confirm this is resolved.")[:400],
+            url=in_app_confirm_path(issue_number),
+        )
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass

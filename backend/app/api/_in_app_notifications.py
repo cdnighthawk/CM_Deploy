@@ -6,9 +6,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from flask import Blueprint, jsonify
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from ..extensions import db
+from ..models import User
 from ..models.hrms_core import HrmsNotification
 from ._perms import CurrentUser, current_user
 
@@ -49,6 +50,22 @@ def create_in_app_notification(
     return row
 
 
+def notify_user_by_email(
+    *,
+    email: str,
+    title: str,
+    body: str | None = None,
+    url: str | None = None,
+) -> HrmsNotification | None:
+    address = (email or "").strip().lower()
+    if not address:
+        return None
+    user = db.session.scalars(select(User).where(func.lower(User.email) == address)).first()
+    if user is None:
+        return None
+    return create_in_app_notification(user_id=user.id, title=title, body=body, url=url)
+
+
 def notification_public(row: HrmsNotification) -> dict[str, Any]:
     payload = row.payload if isinstance(row.payload, dict) else {}
     return {
@@ -84,6 +101,7 @@ def mark_read(cu: CurrentUser, notification_id: uuid.UUID) -> dict[str, Any] | N
     if row.read_at is None:
         row.read_at = _utcnow()
         db.session.flush()
+        db.session.commit()
     return notification_public(row)
 
 

@@ -68,11 +68,17 @@
 		list.innerHTML = items
 			.map(function (n) {
 				var unread = !n.read;
+				var href = String(n.url || "").trim();
+				if (href && href.charAt(0) !== "/" && !/^https?:\/\//i.test(href)) {
+					href = "/" + href.replace(/^\.\//, "");
+				}
 				return (
-					'<a class="d-flex align-items-start p-2 rounded text-decoration-none text-body usis-header-notif-item' +
+					'<a class="dropdown-item d-flex align-items-start p-2 rounded text-decoration-none text-body usis-header-notif-item' +
 					(unread ? " bg-action-light" : "") +
 					'" href="' +
-					esc(n.url || "javascript:void(0);") +
+					esc(href || "#") +
+					'" data-notif-url="' +
+					esc(href) +
 					'" data-notif-id="' +
 					esc(n.id) +
 					'">' +
@@ -90,14 +96,20 @@
 			})
 			.join("");
 		list.querySelectorAll(".usis-header-notif-item").forEach(function (a) {
-			a.addEventListener("click", function () {
+			a.addEventListener("click", function (ev) {
 				var id = a.getAttribute("data-notif-id");
-				if (!id) return;
-				fetch(apiBase() + "/api/v1/me/notifications/" + encodeURIComponent(id) + "/read", {
-					method: "POST",
-					credentials: "include",
-					headers: { Accept: "application/json" },
-				}).catch(function () {});
+				var href = a.getAttribute("data-notif-url") || a.getAttribute("href") || "";
+				if (id) {
+					fetch(apiBase() + "/api/v1/me/notifications/" + encodeURIComponent(id) + "/read", {
+						method: "POST",
+						credentials: "include",
+						headers: { Accept: "application/json" },
+					}).catch(function () {});
+				}
+				if (href && href !== "#" && href.indexOf("javascript:") !== 0) {
+					ev.preventDefault();
+					window.location.assign(href);
+				}
 			});
 		});
 	}

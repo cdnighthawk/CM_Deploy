@@ -56,3 +56,29 @@ def test_notifications_require_sign_in(client, no_dev_admin):
     register_on_app(client.application)
     r = client.get("/api/v1/me/notifications")
     assert r.status_code in (401, 403)
+
+
+def test_notify_user_by_email(client, no_dev_admin):
+    from app.api._in_app_notifications import notify_user_by_email, register_on_app
+
+    register_on_app(client.application)
+    with client.application.app_context():
+        email = "bell_" + uuid.uuid4().hex[:8] + "@t.com"
+        u = User(email=email, is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        row = notify_user_by_email(
+            email=email,
+            title="Please confirm issue #10",
+            body="The issue is closed.",
+            url="/usis-issue-confirm.html?issue=10",
+        )
+        db.session.commit()
+        uid = str(u.id)
+        assert row is not None
+        assert row.payload.get("url") == "/usis-issue-confirm.html?issue=10"
+
+    listed = client.get("/api/v1/me/notifications", headers={"X-Usis-User-Id": uid})
+    assert listed.status_code == 200
+    item = listed.get_json()["items"][0]
+    assert item["url"] == "/usis-issue-confirm.html?issue=10"

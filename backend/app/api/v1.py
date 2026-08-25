@@ -361,16 +361,46 @@ def create_feedback():
     return _jsonify({"message": result.message, "issueNumber": result.issue_number, "entity": "feedback"})
 
 
+def _confirm_viewer():
+    from ._perms import current_user
+
+    cu = current_user()
+    email = (cu.user.email or "").strip().lower() if cu.user is not None else ""
+    allow_any = bool(cu.is_dev_admin or (cu.user is not None and cu.user.is_superuser))
+    return email, allow_any
+
+
+def _parse_issue_number(raw) -> int:
+    try:
+        return int(str(raw or "").strip())
+    except (TypeError, ValueError):
+        return 0
+
+
 @bp.get("/feedback/issues/confirm")
 def preview_feedback_issue_confirm():
-    """Public preview for the reporter confirmation page (signed email token)."""
+    """Preview for the reporter confirmation page (email token or signed-in issue)."""
     token = (request.args.get("token") or "").strip()
+    issue_number = _parse_issue_number(request.args.get("issue"))
     try:
-        preview = feedback_svc.load_confirm_preview(
-            token=token,
-            config=current_app.config,
-            secret_key=str(current_app.config.get("SECRET_KEY") or ""),
-        )
+        if token:
+            preview = feedback_svc.load_confirm_preview(
+                token=token,
+                config=current_app.config,
+                secret_key=str(current_app.config.get("SECRET_KEY") or ""),
+            )
+        elif issue_number:
+            email, allow_any = _confirm_viewer()
+            if not email and not allow_any:
+                return _jsonify({"error": "Sign in to review this report."}), 401
+            preview = feedback_svc.load_issue_confirm_preview(
+                issue_number=issue_number,
+                config=current_app.config,
+                expected_email=email,
+                allow_any=allow_any,
+            )
+        else:
+            return _jsonify({"error": "This confirmation link is missing."}), 400
     except ValueError as exc:
         return _jsonify({"error": str(exc)}), 400
     return _jsonify({**preview, "entity": "feedback_confirm"})
@@ -382,10 +412,17 @@ def confirm_feedback_issue():
     body = request.get_json(silent=True) or {}
     if not isinstance(body, dict):
         return _jsonify({"error": "JSON body required"}), 400
+    token = str(body.get("token") or "").strip()
+    issue_number = _parse_issue_number(body.get("issue"))
+    email, allow_any = _confirm_viewer()
     try:
-        result = feedback_svc.confirm_issue_from_token(
-            token=str(body.get("token") or ""),
+        result = feedback_svc.confirm_issue(
+            token=token,
+            issue_number=issue_number,
             action=str(body.get("action") or ""),
+            note=str(body.get("note") or ""),
+            expected_email=email,
+            allow_any=allow_any,
             config=current_app.config,
             secret_key=str(current_app.config.get("SECRET_KEY") or ""),
         )
@@ -2050,9 +2087,9 @@ def list_csi_sections():
     """Company CSI MasterFormat catalog for the Specs tab picker."""
     q = (request.args.get("q") or "").strip() or None
     try:
-        limit = int(request.args.get("limit") or 500)
+        limit = int(request.args.get("limit") or 3000)
     except (TypeError, ValueError):
-        limit = 500
+        limit = 3000
     return _jsonify(public_catalog(q, limit))
 
 

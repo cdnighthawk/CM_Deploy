@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 class UploadCategory(StrEnum):
     DRAWINGS = "drawings"
+    DOCUMENTS = "documents"
     SPEC_SECTIONS = "spec_sections"
     RFI_ATTACHMENTS = "rfi_attachments"
     HR_I9 = "hr_i9"
@@ -31,6 +32,7 @@ class UploadCategory(StrEnum):
 
 _CATEGORY_CONFIG_KEY: dict[UploadCategory, str] = {
     UploadCategory.DRAWINGS: "DRAWING_UPLOAD_FOLDER",
+    UploadCategory.DOCUMENTS: "DOCUMENT_UPLOAD_FOLDER",
     UploadCategory.SPEC_SECTIONS: "SPEC_SECTION_UPLOAD_FOLDER",
     UploadCategory.RFI_ATTACHMENTS: "RFI_ATTACHMENT_UPLOAD_FOLDER",
     UploadCategory.HR_I9: "HR_I9_DOCUMENT_UPLOAD_FOLDER",
@@ -42,6 +44,7 @@ _CATEGORY_CONFIG_KEY: dict[UploadCategory, str] = {
 
 _CATEGORY_INSTANCE_SUBDIR: dict[UploadCategory, str] = {
     UploadCategory.DRAWINGS: "drawing_uploads",
+    UploadCategory.DOCUMENTS: "document_uploads",
     UploadCategory.SPEC_SECTIONS: "spec_section_uploads",
     UploadCategory.RFI_ATTACHMENTS: "rfi_attachment_uploads",
     UploadCategory.HR_I9: "hr_i9_document_uploads",

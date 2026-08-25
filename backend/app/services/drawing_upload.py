@@ -37,7 +37,7 @@ def _base_name(raw_filename: str) -> str:
 
 def _create_drawing_row(
     *,
-    project_id: uuid.UUID,
+    project_id: uuid.UUID | None,
     pdf_bytes: bytes,
     raw_name: str,
     page_index: int | None,

@@ -1,0 +1,444 @@
+"""Autodesk Desktop Connector ingest: project match + file upload."""
+from __future__ import annotations
+
+import hashlib
+import io
+import json
+import re
+import uuid
+from typing import Any
+
+from sqlalchemy import or_, select
+from werkzeug.datastructures import FileStorage
+from werkzeug.utils import secure_filename
+
+from ..extensions import db
+from ..models import Document, Drawing, LeadEstimate, Project
+from .drawing_upload import _create_drawing_row
+from .object_storage import UploadCategory, save_upload
+
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+_DOCUMENT_TYPES = frozenset(
+    {
+        "drawing",
+        "rfi",
+        "submittal",
+        "specification",
+        "contract",
+        "change_order",
+        "invoice",
+        "photo",
+        "report",
+        "ai_review_export",
+        "safety_doc",
+        "permit",
+        "other",
+    }
+)
+_MAX_BYTES = 52_428_800
+
+
+class IngestError(Exception):
+    def __init__(self, message: str, status: int = 400):
+        self.message = message
+        self.status = status
+
+
+def as_uuid(value: Any) -> uuid.UUID | None:
+    raw = text(value)
+    if not raw or not _UUID_RE.match(raw):
+        return None
+    return uuid.UUID(raw)
+
+
+def text(value: Any) -> str:
+    return str(value).strip() if isinstance(value, str) else ""
+
+
+def folder_to_project_number(folder_name: str) -> str:
+    raw = text(folder_name)
+    if not raw:
+        return ""
+    proj = re.match(r"^PROJ[-_]?(\d{4})[-_](\d{1,6})$", raw, re.IGNORECASE)
+    if proj:
+        year = int(proj.group(1))
+        seq = proj.group(2)
+        return f"{year % 100:02d}{seq.zfill(4)}"
+    digits = re.match(r"^(\d{6,})$", raw)
+    if digits:
+        return digits.group(1)
+    return raw
+
+
+def parse_ingest_metadata(raw: Any) -> dict[str, Any]:
+    if raw is None or raw == "":
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    if not isinstance(raw, str):
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def serialize_project(
+    *,
+    project_id: uuid.UUID,
+    kind: str,
+    name: str | None,
+    project_number: str | None,
+    job_id: uuid.UUID | None,
+    lead_estimate_id: uuid.UUID | None,
+) -> dict[str, Any]:
+    number = text(project_number)
+    label = text(name)
+    hints = [h for h in dict.fromkeys([number, label]) if h]
+    return {
+        "id": str(project_id),
+        "project_id": str(project_id),
+        "kind": kind,
+        "name": label,
+        "project_number": number or None,
+        "job_id": str(job_id) if job_id else None,
+        "lead_estimate_id": str(lead_estimate_id) if lead_estimate_id else None,
+        "folder_hints": hints,
+    }
+
+
+def project_from_job(job: Project, lead: LeadEstimate | None = None) -> dict[str, Any]:
+    return serialize_project(
+        project_id=job.id,
+        kind="job",
+        name=job.name,
+        project_number=job.number or (lead.number if lead else None),
+        job_id=job.id,
+        lead_estimate_id=lead.id if lead else None,
+    )
+
+
+def project_from_lead(lead: LeadEstimate) -> dict[str, Any]:
+    job = lead.project
+    if job is not None and job.deleted_at is None:
+        return project_from_job(job, lead)
+    return serialize_project(
+        project_id=lead.id,
+        kind="lead",
+        name=lead.name,
+        project_number=lead.number,
+        job_id=lead.project_id,
+        lead_estimate_id=lead.id,
+    )
+
+
+def project_matches_query(project: dict[str, Any], query: str) -> bool:
+    q = text(query).lower()
+    if not q:
+        return True
+    number_guess = folder_to_project_number(query).lower()
+    haystack = [
+        project.get("id"),
+        project.get("project_id"),
+        project.get("project_number"),
+        project.get("name"),
+        project.get("job_id"),
+        project.get("lead_estimate_id"),
+        *(project.get("folder_hints") or []),
+    ]
+    values = [str(v).lower() for v in haystack if v]
+    return any(v == q or v == number_guess or q in v for v in values)
+
+
+def list_ingest_projects(query: str = "") -> list[dict[str, Any]]:
+    jobs = list(
+        db.session.scalars(
+            select(Project)
+            .where(Project.deleted_at.is_(None))
+            .order_by(Project.number.asc().nullslast(), Project.name.asc())
+            .limit(500)
+        ).all()
+    )
+    job_ids = [j.id for j in jobs]
+    leads_for_jobs: dict[uuid.UUID, LeadEstimate] = {}
+    if job_ids:
+        for lead in db.session.scalars(
+            select(LeadEstimate)
+            .where(LeadEstimate.project_id.in_(job_ids))
+            .order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.id.asc())
+        ).all():
+            if lead.project_id is not None and lead.project_id not in leads_for_jobs:
+                leads_for_jobs[lead.project_id] = lead
+
+    seen: set[str] = set()
+    projects: list[dict[str, Any]] = []
+    for job in jobs:
+        item = project_from_job(job, leads_for_jobs.get(job.id))
+        seen.add(item["id"])
+        if item["lead_estimate_id"]:
+            seen.add(item["lead_estimate_id"])
+        projects.append(item)
+
+    leads = list(
+        db.session.scalars(
+            select(LeadEstimate)
+            .where(or_(LeadEstimate.is_archived.is_(False), LeadEstimate.is_archived.is_(None)))
+            .order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
+            .limit(500)
+        ).all()
+    )
+    for lead in leads:
+        if str(lead.id) in seen:
+            continue
+        if lead.project_id is not None and str(lead.project_id) in seen:
+            continue
+        item = project_from_lead(lead)
+        if item["id"] in seen:
+            continue
+        seen.add(item["id"])
+        projects.append(item)
+
+    q = text(query)
+    return [p for p in projects if project_matches_query(p, q)] if q else projects
+
+
+def resolve_ingest_project(metadata: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    project_id = as_uuid(metadata.get("project_id") or metadata.get("projectId"))
+    folder_name = text(
+        metadata.get("folder_name") or metadata.get("folderName") or metadata.get("project_folder")
+    )
+    project_number = text(
+        metadata.get("project_number")
+        or metadata.get("projectNumber")
+        or folder_to_project_number(folder_name)
+    )
+
+    if project_id:
+        job = db.session.get(Project, project_id)
+        if job is not None and job.deleted_at is None:
+            lead = db.session.scalar(
+                select(LeadEstimate)
+                .where(LeadEstimate.project_id == job.id)
+                .order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.id.asc())
+            )
+            return project_from_job(job, lead), "project_id"
+        lead = db.session.get(LeadEstimate, project_id)
+        if lead is not None:
+            return project_from_lead(lead), "project_id"
+
+    if project_number:
+        job = db.session.scalar(
+            select(Project).where(Project.deleted_at.is_(None), Project.number == project_number)
+        )
+        if job is not None:
+            lead = db.session.scalar(
+                select(LeadEstimate)
+                .where(LeadEstimate.project_id == job.id)
+                .order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.id.asc())
+            )
+            return project_from_job(job, lead), "project_number"
+        lead = db.session.scalar(select(LeadEstimate).where(LeadEstimate.number == project_number))
+        if lead is not None:
+            return project_from_lead(lead), "project_number"
+
+    name_query = folder_name or project_number
+    if name_query:
+        matches = list_ingest_projects(name_query)
+        if len(matches) == 1:
+            return matches[0], "folder_name"
+
+    return None, None
+
+
+def _document_tags(doc: Document) -> dict[str, Any]:
+    tags = doc.tags if isinstance(doc.tags, dict) else {}
+    return dict(tags)
+
+
+def find_by_content_hash(checksum: str, project_id: uuid.UUID | None) -> Document | None:
+    q = select(Document).where(Document.tags.contains({"content_hash": checksum}))
+    if project_id is not None:
+        q = q.where(Document.project_id == project_id)
+    q = q.order_by(Document.created_at.desc())
+    return db.session.scalars(q).first()
+
+
+def serialize_ingest_doc(doc: Document, *, kind: str, project: dict[str, Any] | None) -> dict[str, Any]:
+    tags = _document_tags(doc)
+    checksum = text(tags.get("content_hash"))
+    created = doc.created_at.isoformat() if doc.created_at is not None else None
+    return {
+        "id": str(doc.id),
+        "document_id": str(doc.id),
+        "drawing_id": str(doc.id) if kind == "drawing" or isinstance(doc, Drawing) else None,
+        "project_id": (
+            (project or {}).get("id")
+            or (str(doc.project_id) if doc.project_id else None)
+        ),
+        "filename": doc.original_filename or doc.title,
+        "mimeType": doc.mime_type,
+        "sizeBytes": str(doc.file_size_bytes) if doc.file_size_bytes is not None else None,
+        "content_hash": checksum or None,
+        "checksumSha256": checksum or None,
+        "source": text(tags.get("source")) or None,
+        "sourceSystem": text(tags.get("source")) or None,
+        "sourceId": text(tags.get("source_id")) or None,
+        "file_url": doc.file_url,
+        "createdAt": created,
+    }
+
+
+def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, kind: str) -> tuple[dict[str, Any], int]:
+    if file is None or not getattr(file, "filename", None):
+        raise IngestError('multipart uploads require a non-empty file field "file".')
+    payload = file.read()
+    if not payload:
+        raise IngestError("multipart uploads require a non-empty file field.")
+    if len(payload) > _MAX_BYTES:
+        raise IngestError("file too large (max 50MB).")
+
+    checksum = hashlib.sha256(payload).hexdigest()
+    claimed = text(metadata.get("content_hash") or metadata.get("contentHash"))
+    if claimed and claimed.lower() != checksum:
+        raise IngestError("content_hash does not match the uploaded file.")
+
+    project, matched_by = resolve_ingest_project(metadata)
+    if project and project.get("kind") == "job":
+        job_id = as_uuid(project.get("job_id") or project.get("id"))
+    else:
+        job_id = as_uuid((project or {}).get("job_id")) if project else None
+
+    existing = find_by_content_hash(checksum, job_id)
+    if existing is not None:
+        item = serialize_ingest_doc(existing, kind=kind, project=project)
+        body: dict[str, Any] = {
+            "document": item,
+            "duplicate": True,
+            "project": project,
+            "matchedBy": matched_by,
+        }
+        if kind == "drawing":
+            body["drawing"] = item
+        return body, 200
+
+    filename = (
+        text(metadata.get("filename") or metadata.get("file_name"))
+        or (file.filename or "").strip()
+        or "upload"
+    )
+    filename = filename.replace("\\", "/").split("/")[-1][:500] or "upload"
+    mime = (
+        text(metadata.get("mimeType") or metadata.get("mime_type"))
+        or (getattr(file, "mimetype", None) or "").strip()
+        or ("application/pdf" if kind == "drawing" else "application/octet-stream")
+    )
+    if kind == "drawing" and "pdf" not in mime.lower() and not filename.lower().endswith(".pdf"):
+        raise IngestError("POST /drawings requires a PDF.")
+
+    source = (
+        text(metadata.get("source") or metadata.get("sourceSystem"))
+        or "autodesk_desktop_connector"
+    )
+    source_id = text(metadata.get("source_id") or metadata.get("sourceId") or metadata.get("relative_path")) or checksum
+    tags = {
+        "content_hash": checksum,
+        "source": source,
+        "source_id": source_id,
+    }
+
+    if kind == "drawing":
+        split_raw = metadata.get("split_pages")
+        split_pages = str(split_raw).strip().lower() in ("1", "true", "yes", "on") if split_raw is not None else False
+        try:
+            from pypdf import PdfReader
+
+            reader = PdfReader(io.BytesIO(payload))
+            page_count = len(reader.pages)
+        except Exception as exc:
+            raise IngestError(f"invalid or unreadable PDF: {exc}") from exc
+        if page_count < 1:
+            raise IngestError("PDF has no pages.")
+
+        created: list[Drawing] = []
+        do_split = split_pages and page_count > 1
+        if do_split:
+            from .drawing_upload import _page_pdf_bytes
+
+            for i in range(page_count):
+                page_bytes = _page_pdf_bytes(reader, i)
+                created.append(
+                    _create_drawing_row(
+                        project_id=job_id,
+                        pdf_bytes=page_bytes,
+                        raw_name=filename,
+                        page_index=i,
+                        page_count=page_count,
+                        sheet_number=text(metadata.get("sheet_number")) or None,
+                        sheet_title=text(metadata.get("sheet_title")) or None,
+                        discipline=text(metadata.get("discipline")) or None,
+                        drawing_set=text(metadata.get("drawing_set")) or None,
+                        revision=text(metadata.get("revision")) or "0",
+                    )
+                )
+        else:
+            created.append(
+                _create_drawing_row(
+                    project_id=job_id,
+                    pdf_bytes=payload,
+                    raw_name=filename,
+                    page_index=None,
+                    page_count=1,
+                    sheet_number=text(metadata.get("sheet_number")) or None,
+                    sheet_title=text(metadata.get("sheet_title")) or None,
+                    discipline=text(metadata.get("discipline")) or None,
+                    drawing_set=text(metadata.get("drawing_set")) or None,
+                    revision=text(metadata.get("revision")) or "0",
+                )
+            )
+        for row in created:
+            row.tags = {**_document_tags(row), **tags}
+        db.session.flush()
+        first = created[0]
+        item = serialize_ingest_doc(first, kind="drawing", project=project)
+        body = {
+            "document": item,
+            "drawing": item,
+            "project": project,
+            "matchedBy": matched_by,
+        }
+        if len(created) > 1:
+            body["items"] = [serialize_ingest_doc(d, kind="drawing", project=project) for d in created]
+            body["split"] = True
+            body["count"] = len(created)
+        return body, 201
+
+    raw_type = text(metadata.get("document_type") or metadata.get("documentType")).lower() or "other"
+    dtype = raw_type if raw_type in _DOCUMENT_TYPES and raw_type != "drawing" else "other"
+    safe = secure_filename(filename) or "upload"
+    title = text(metadata.get("title")) or safe
+    doc = Document(
+        project_id=job_id,
+        document_type=dtype,
+        title=title[:500],
+        original_filename=filename[:500],
+        mime_type=mime[:120],
+        file_size_bytes=len(payload),
+        tags=tags,
+    )
+    db.session.add(doc)
+    db.session.flush()
+    object_name = f"{doc.id}_{safe}"[:200]
+    save_upload(UploadCategory.DOCUMENTS, object_name, io.BytesIO(payload))
+    doc.file_url = f"/api/v1/documents/{doc.id}/file"
+    tags = {**tags, "storage_object": object_name}
+    doc.tags = tags
+    item = serialize_ingest_doc(doc, kind="document", project=project)
+    return {
+        "document": item,
+        "project": project,
+        "matchedBy": matched_by,
+    }, 201

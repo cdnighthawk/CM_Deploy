@@ -33,6 +33,7 @@ Optional overrides:
 | `CORS_ORIGINS` | Auto from `USIS_APP_PUBLIC_URL`, else `RENDER_EXTERNAL_URL` |
 | `USIS_POST_LOGIN_REDIRECT` | `{USIS_APP_PUBLIC_URL}/usis-dashboard.html` if public URL set, else Render default |
 | `USIS_APP_PUBLIC_URL` | Canonical HTTPS origin (required for custom domain; see §8) |
+| `CM_API_KEY` | Long-lived Bearer token for the Autodesk ingest PC (`GET /api/projects`, `POST /api/documents`, `POST /api/drawings`). Do not commit. |
 
 ### Object storage (Backblaze B2, recommended for production uploads)
 

@@ -65,6 +65,9 @@ services:
         sync: false
       - key: GITHUB_WEBHOOK_SECRET
         sync: false
+      # Autodesk Desktop Connector ingest agent (Bearer token for /api/projects etc.).
+      - key: CM_API_KEY
+        sync: false
       # Backblaze B2 — set in Render Dashboard (see docs/backblaze-b2.md).
       # Use B2_PREFIX=prod/usis-cm on Render; dev machines use dev/usis-cm in backend/.env.
       - key: B2_APPLICATION_KEY_ID

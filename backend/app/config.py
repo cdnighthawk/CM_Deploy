@@ -226,6 +226,10 @@ class Config:
     # Optional 32+ byte secret for Fernet; defaults to a SHA256-derived key from SECRET_KEY.
     TOKEN_ENCRYPTION_KEY: str | None = (os.environ.get("TOKEN_ENCRYPTION_KEY") or "").strip() or None
 
+    # Autodesk Desktop Connector ingest agent (Bearer ``CM_API_KEY`` on ``/api/projects`` etc.).
+    CM_API_KEY: str | None = (os.environ.get("CM_API_KEY") or "").strip() or None
+    CM_INGEST_API_KEY: str | None = (os.environ.get("CM_INGEST_API_KEY") or "").strip() or None
+
     # --- Oracle Textura Payment Management (TPM REST) ---
     TEXTURA_API_BASE: str = (
         (os.environ.get("TEXTURA_API_BASE") or "").strip()
@@ -252,6 +256,8 @@ class Config:
 
     # Drawing PDFs uploaded via ``POST /api/v1/projects/<id>/drawings`` (defaults under Flask ``instance/``).
     DRAWING_UPLOAD_FOLDER: str | None = (os.environ.get("DRAWING_UPLOAD_FOLDER") or "").strip() or None
+    # Non-drawing files from the Autodesk ingest agent (``POST /api/documents``).
+    DOCUMENT_UPLOAD_FOLDER: str | None = (os.environ.get("DOCUMENT_UPLOAD_FOLDER") or "").strip() or None
     # Spec section PDFs (``POST .../rfi-lookups/spec_sections/<id>/file``); defaults under ``instance/``.
     SPEC_SECTION_UPLOAD_FOLDER: str | None = (os.environ.get("SPEC_SECTION_UPLOAD_FOLDER") or "").strip() or None
     # RFI attachment binaries (``POST /api/v1/rfis/<id>/attachments/upload``).

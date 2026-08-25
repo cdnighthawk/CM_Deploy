@@ -272,6 +272,43 @@ def register_extra_routes(bp: Blueprint) -> None:
             201,
         )
 
+    @bp.get("/documents/<document_id>/file")
+    def get_document_file(document_id: str):
+        """Stream a stored project document (ingest uploads and similar)."""
+        from ..services.object_storage import UploadCategory, send_stored_file
+
+        did = _parse_uuid_param(document_id)
+        if not did:
+            return _jsonify({"error": "invalid document id"}), 400
+        row = db.session.get(Document, did)
+        if row is None:
+            return _jsonify({"error": "document not found"}), 404
+        if isinstance(row, Drawing) or row.document_type == "drawing":
+            name = f"{row.id}.pdf"
+            dl = (row.original_filename or "drawing.pdf").replace('"', "")
+            if not dl.lower().endswith(".pdf"):
+                dl = dl + ".pdf"
+            resp = send_stored_file(
+                UploadCategory.DRAWINGS,
+                name,
+                mimetype="application/pdf",
+                download_name=dl[:200],
+            )
+        else:
+            tags = row.tags if isinstance(row.tags, dict) else {}
+            name = str(tags.get("storage_object") or "").strip() or f"{row.id}"
+            dl = (row.original_filename or row.title or "document").replace('"', "")[:200]
+            mime = (row.mime_type or "application/octet-stream").strip() or "application/octet-stream"
+            resp = send_stored_file(
+                UploadCategory.DOCUMENTS,
+                name,
+                mimetype=mime,
+                download_name=dl or "document",
+            )
+        if resp is None:
+            return _jsonify({"error": "file not found on server"}), 404
+        return resp
+
     @bp.get("/drawings/<drawing_id>/annotations")
     def list_drawing_annotations(drawing_id: str):
         did = _parse_uuid_param(drawing_id)

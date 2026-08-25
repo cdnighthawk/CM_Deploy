@@ -349,7 +349,18 @@
 		var item = detail.item;
 		if (detail.missingEstimate) {
 			root.innerHTML =
-				'<p class="text-muted small mb-0">No estimate on this lead yet. Job information is still available on the Job information tab.</p>';
+				'<div class="alert alert-light border mb-0">' +
+				'<div class="fw-semibold mb-1">Create an estimate to start takeoff</div>' +
+				'<p class="text-muted small mb-2">Takeoff lines are saved on the estimate, not the lead.</p>' +
+				'<button type="button" class="btn btn-primary btn-sm" id="usis-estd-takeoff-create">Create estimate</button>' +
+				"</div>";
+			var takeoffCreate = document.getElementById("usis-estd-takeoff-create");
+			if (takeoffCreate) {
+				takeoffCreate.addEventListener("click", function () {
+					var newEst = document.getElementById("usis-estd-new-estimate");
+					if (newEst) newEst.click();
+				});
+			}
 			return;
 		}
 		if (!item) {

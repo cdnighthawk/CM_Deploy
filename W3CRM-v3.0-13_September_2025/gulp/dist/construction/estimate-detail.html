@@ -464,9 +464,17 @@
 
 			<div class="container-fluid">
 				<div class="col-xl-12 mb-3">
-					<p class="text-muted mb-1 small" id="usis-est-detail-idline"></p>
-					<a href="construction/estimate.html" class="small">&larr; Back to Estimates</a>
-					<a href="construction/leads.html" class="small d-none ms-2" id="usis-est-back-lead">&larr; Back to lead</a>
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+						<div>
+							<p class="text-muted mb-1 small" id="usis-est-detail-idline"></p>
+							<a href="construction/estimate.html" class="small">&larr; Back to Estimates</a>
+							<a href="construction/leads.html" class="small d-none ms-2" id="usis-est-back-lead">&larr; Back to lead</a>
+						</div>
+						<div class="d-flex flex-wrap gap-1">
+							<button type="button" class="btn btn-primary btn-sm" id="usis-estd-new-estimate">New Estimate</button>
+							<button type="button" class="btn btn-outline-primary btn-sm d-none" id="usis-estd-revision">Create Revision</button>
+						</div>
+					</div>
 				</div>
 
 				<div class="col-xl-12 mb-3">
@@ -725,7 +733,14 @@
 									</div>
 								</div>
 							</div>
-							<p id="usis-est-detail-no-id" class="text-muted mb-0">Open this page from a lead's Estimates list with an estimate id in the URL. <a href="construction/leads.html">Back to Leads</a>.</p>
+							<div id="usis-est-create-cta" class="d-none">
+								<div class="alert alert-light border">
+									<div class="fw-semibold mb-1">No estimate on this lead yet</div>
+									<p class="text-muted small mb-2">Create an estimate to start takeoff and pricing. Job information stays on the lead.</p>
+									<button type="button" class="btn btn-primary btn-sm" id="usis-estd-create-from-cta">Create estimate</button>
+								</div>
+							</div>
+							<p id="usis-est-detail-no-id" class="text-muted mb-0">Open this page from Estimates or a lead, then create an estimate. <a href="construction/estimate.html">Back to Estimates</a>.</p>
 						</div>
 						<div class="tab-pane fade" id="estd-pane-rfp" role="tabpanel" aria-labelledby="estd-tab-rfp" tabindex="0">
 							<h5 class="mb-2">RFP</h5>
@@ -773,6 +788,56 @@
 				<div class="modal-footer">
 					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-primary btn-sm" id="usis-estd-drawing-upload-submit">Upload</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="usis-est-create-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-create-title">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title fs-6" id="usis-est-create-title">New estimate</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body py-2">
+					<div class="alert alert-danger py-2 d-none" id="usis-est-create-err" role="alert"></div>
+					<div class="mb-2 d-none" id="usis-est-create-lead-wrap">
+						<label class="form-label small mb-0" for="usis-est-create-lead">Lead <span class="text-danger">*</span></label>
+						<select class="form-select form-select-sm" id="usis-est-create-lead">
+							<option value="">Select a lead…</option>
+						</select>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-name">Name <span class="text-danger">*</span></label>
+						<input type="text" class="form-control form-control-sm" id="usis-est-create-name" maxlength="255" required>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-gc">GC</label>
+						<input type="text" class="form-control form-control-sm" id="usis-est-create-gc" maxlength="255" placeholder="Turner Construction">
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-drawing-set">Drawing set</label>
+						<select class="form-select form-select-sm" id="usis-est-create-drawing-set">
+							<option value="">— None —</option>
+						</select>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-fee">Fee %</label>
+						<input type="number" step="any" class="form-control form-control-sm" id="usis-est-create-fee" placeholder="8.5">
+					</div>
+					<div class="form-check mb-2">
+						<input class="form-check-input" type="checkbox" id="usis-est-create-copy">
+						<label class="form-check-label small" for="usis-est-create-copy">Copy lines &amp; pricing from existing estimate</label>
+					</div>
+					<div class="mb-0 d-none" id="usis-est-create-copy-wrap">
+						<label class="form-label small mb-0" for="usis-est-create-copy-from">Copy from</label>
+						<select class="form-select form-select-sm" id="usis-est-create-copy-from"></select>
+					</div>
+				</div>
+				<div class="modal-footer py-2">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-est-create-submit">Create</button>
 				</div>
 			</div>
 		</div>
@@ -835,6 +900,7 @@
 	<script src="assets/js/usis-specs-book-tab.js"></script>
 	<script src="assets/js/usis-project-doc-panels.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
+	<script src="assets/js/usis-estimates-list.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
 	<script src="assets/js/usis-estimate-detail.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>

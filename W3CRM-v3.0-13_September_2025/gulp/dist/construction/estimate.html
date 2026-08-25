@@ -498,9 +498,9 @@
 							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-estimate-sync-stub" title="Reload estimate list">
 								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
 							</button>
-							<a href="javascript:void(0);" class="btn btn-primary w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#estimate-detail-offcanvas">
-								<i class="icon feather icon-plus me-1"></i> Add estimate
-							</a>
+							<button type="button" class="btn btn-primary w-xs-100" id="usis-est-add-estimate">
+								<i class="icon feather icon-plus me-1"></i> New estimate
+							</button>
 						</div>
 					</div>
 				</div>
@@ -592,46 +592,52 @@
 		</div>
 	</div>
 
-	<!-- Estimate detail / manual add (stub — wire to Flask) -->
-	<div class="custom-offcanvas-width offcanvas offcanvas-end" tabindex="-1" id="estimate-detail-offcanvas" aria-labelledby="estimate-detail-title" aria-modal="true" role="dialog">
-		<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
-			<div class="d-flex align-items-center gap-2">
-				<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-				<h5 class="offcanvas-title fw-semibold" id="estimate-detail-title">Estimate (Building Connected)</h5>
-			</div>
-			<div>
-				<button type="button" class="btn btn-primary">Save</button>
-			</div>
-		</div>
-		<div class="offcanvas-body">
-			<div class="mb-3">
-				<label class="form-label" for="est-bc-doc-no">Building Connected document / opportunity ref</label>
-				<input type="text" class="form-control" id="est-bc-doc-no" placeholder="e.g. BC-OPP-10482 (BC = Building Connected)" autocomplete="off">
-			</div>
-			<div class="mb-3">
-				<label class="form-label" for="est-bc-company">Company name</label>
-				<input type="text" class="form-control" id="est-bc-company" autocomplete="organization">
-			</div>
-			<div class="mb-3">
-				<label class="form-label" for="est-bc-contact">Primary contact</label>
-				<input type="text" class="form-control" id="est-bc-contact" autocomplete="name">
-			</div>
-			<div class="mb-3">
-				<label class="form-label" for="est-bc-stage">Pipeline stage</label>
-				<select class="form-select" id="est-bc-stage">
-					<option>New from Building Connected</option>
-					<option>In review</option>
-					<option>Qualified</option>
-					<option>Archived</option>
-				</select>
-			</div>
-			<div class="mb-3">
-				<label class="form-label" for="est-bc-notes">Notes</label>
-				<textarea class="form-control" id="est-bc-notes" rows="4" placeholder="Synced description or internal notes"></textarea>
-			</div>
-			<div class="mb-0">
-				<label class="form-label" for="est-bc-last-sync">Last imported (read-only)</label>
-				<input type="text" class="form-control" id="est-bc-last-sync" value="—" readonly>
+	<div class="modal fade" id="usis-est-create-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-create-title">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title fs-6" id="usis-est-create-title">New estimate</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body py-2">
+					<div class="alert alert-danger py-2 d-none" id="usis-est-create-err" role="alert"></div>
+					<div class="mb-2" id="usis-est-create-lead-wrap">
+						<label class="form-label small mb-0" for="usis-est-create-lead">Lead <span class="text-danger">*</span></label>
+						<select class="form-select form-select-sm" id="usis-est-create-lead">
+							<option value="">Select a lead…</option>
+						</select>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-name">Name <span class="text-danger">*</span></label>
+						<input type="text" class="form-control form-control-sm" id="usis-est-create-name" maxlength="255" required>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-gc">GC</label>
+						<input type="text" class="form-control form-control-sm" id="usis-est-create-gc" maxlength="255" placeholder="Turner Construction">
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-drawing-set">Drawing set</label>
+						<select class="form-select form-select-sm" id="usis-est-create-drawing-set">
+							<option value="">— None —</option>
+						</select>
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-est-create-fee">Fee %</label>
+						<input type="number" step="any" class="form-control form-control-sm" id="usis-est-create-fee" placeholder="8.5">
+					</div>
+					<div class="form-check mb-2">
+						<input class="form-check-input" type="checkbox" id="usis-est-create-copy">
+						<label class="form-check-label small" for="usis-est-create-copy">Copy lines &amp; pricing from existing estimate</label>
+					</div>
+					<div class="mb-0 d-none" id="usis-est-create-copy-wrap">
+						<label class="form-label small mb-0" for="usis-est-create-copy-from">Copy from</label>
+						<select class="form-select form-select-sm" id="usis-est-create-copy-from"></select>
+					</div>
+				</div>
+				<div class="modal-footer py-2">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-est-create-submit">Create</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -661,6 +667,8 @@
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-sort.js"></script>
+	<script src="assets/js/usis-estimate-api.js"></script>
+	<script src="assets/js/usis-estimates-list.js"></script>
 
 	<script>
 	(function () {
@@ -985,6 +993,11 @@
 					? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>'
 					: "") +
 				'<a class="dropdown-item" href="' + (lidEnc ? detailHref : "javascript:void(0);") + '">Takeoff / estimate</a>' +
+				(lidEnc
+					? '<button type="button" class="dropdown-item usis-est-row-create" data-lead-id="' +
+						esc(String(row.id || row.external_id || "")) +
+						'">New estimate</button>'
+					: "") +
 				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.external_id || row.id) + "</span>" +
 				"</div></div></div>";
 			return (
@@ -1090,6 +1103,7 @@
 						return true;
 					});
 					allItems = items;
+					window.__USIS_ESTIMATE_LEADS = items;
 					isFetching = false;
 					loadError = null;
 					if (!items.length) {
@@ -1166,6 +1180,25 @@
 			});
 		}
 		if (colFilterResetAll) colFilterResetAll.addEventListener("click", resetAllColumnFiltersInModal);
+
+		var addEst = document.getElementById("usis-est-add-estimate");
+		if (addEst) {
+			addEst.addEventListener("click", function () {
+				if (!window.USISEstimateCreate) return;
+				window.USISEstimateCreate.open(null, { leadOptions: window.__USIS_ESTIMATE_LEADS || allItems || [] });
+			});
+		}
+		if (tbody) {
+			tbody.addEventListener("click", function (e) {
+				var btn = e.target.closest(".usis-est-row-create");
+				if (!btn) return;
+				e.preventDefault();
+				if (!window.USISEstimateCreate) return;
+				window.USISEstimateCreate.open(btn.getAttribute("data-lead-id"), {
+					leadOptions: window.__USIS_ESTIMATE_LEADS || allItems || [],
+				});
+			});
+		}
 
 		updateColFilterBadge();
 	})();

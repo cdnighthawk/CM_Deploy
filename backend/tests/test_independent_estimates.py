@@ -68,6 +68,34 @@ def test_create_fresh_estimate(client, flask_app):
             _cleanup_lead(eid)
 
 
+def test_create_estimate_when_takeoff_writes_disabled(client, flask_app):
+    eid = "est-nowrite-" + uuid.uuid4().hex[:12]
+    try:
+        with flask_app.app_context():
+            le = _make_lead(eid)
+            lid = str(le.id)
+            flask_app.config["TAKEOFF_API_WRITES_ENABLED"] = False
+
+        created = client.post(
+            f"/api/v1/leads/{lid}/estimates",
+            json={"name": "Original Estimate"},
+        )
+        assert created.status_code == 201, created.get_data(as_text=True)
+        est_id = created.get_json()["item"]["id"]
+        assert created.get_json()["item"]["lead_estimate_id"] == lid
+
+        denied = client.post(
+            f"/api/v1/estimates/{est_id}/takeoff-lines",
+            json={"description": "A", "quantity": 1, "unit": "EA", "unit_cost": 1, "cost_type": "M"},
+        )
+        assert denied.status_code == 403
+        assert denied.get_json()["error_code"] == "TAKEOFF_WRITES_DISABLED"
+    finally:
+        with flask_app.app_context():
+            flask_app.config["TAKEOFF_API_WRITES_ENABLED"] = True
+            _cleanup_lead(eid)
+
+
 def test_copy_estimate_deep_copies_lines(client, flask_app):
     eid = "est-copy-" + uuid.uuid4().hex[:12]
     try:

@@ -641,6 +641,23 @@
 		document.dispatchEvent(new CustomEvent("usis-estimate-loaded", { detail: detail }));
 	}
 
+	function currentLeadId() {
+		return parentLeadId(leadItem) || (leadItem && (leadItem.id || leadItem.external_id)) || leadKey;
+	}
+
+	function openCreateEstimate(opts) {
+		var id = currentLeadId();
+		if (!window.USISEstimateCreate) {
+			flashErr("Create estimate is not available on this page.");
+			return;
+		}
+		if (!id) {
+			flashErr("Open this page from a lead, then create an estimate.");
+			return;
+		}
+		window.USISEstimateCreate.open(id, opts || {});
+	}
+
 	function applyLeadOnly(lead) {
 		leadItem = lead;
 		var idline = document.getElementById("usis-est-detail-idline");
@@ -652,8 +669,18 @@
 		}
 		var noId = document.getElementById("usis-est-detail-no-id");
 		if (noId) noId.classList.add("d-none");
+		var cta = document.getElementById("usis-est-create-cta");
+		if (cta) cta.classList.remove("d-none");
 		var wrap = document.getElementById("usis-est-detail-root");
-		if (wrap) wrap.classList.remove("d-none");
+		if (wrap) wrap.classList.add("d-none");
+		var rev = document.getElementById("usis-estd-revision");
+		if (rev) rev.classList.add("d-none");
+		var back = document.getElementById("usis-est-back-lead");
+		var lid = currentLeadId();
+		if (back && lid) {
+			back.href = "construction/lead-detail.html?id=" + encodeURIComponent(lid);
+			back.classList.remove("d-none");
+		}
 		showErr("");
 		fireEstimateLoaded(lead, null, { missingEstimate: true });
 	}
@@ -677,8 +704,18 @@
 		}
 		var noId = document.getElementById("usis-est-detail-no-id");
 		if (noId) noId.classList.add("d-none");
+		var cta = document.getElementById("usis-est-create-cta");
+		if (cta) cta.classList.add("d-none");
 		var wrap = document.getElementById("usis-est-detail-root");
 		if (wrap) wrap.classList.remove("d-none");
+		var rev = document.getElementById("usis-estd-revision");
+		if (rev) rev.classList.remove("d-none");
+		var back = document.getElementById("usis-est-back-lead");
+		var lid = parentLeadId(item);
+		if (back && lid) {
+			back.href = "construction/lead-detail.html?id=" + encodeURIComponent(lid);
+			back.classList.remove("d-none");
+		}
 		fireEstimateLoaded(item, null);
 	}
 
@@ -914,6 +951,20 @@
 				compactBtn.textContent = on ? "Comfortable density" : "Compact density";
 			});
 		}
+		var newEst = document.getElementById("usis-estd-new-estimate");
+		if (newEst) newEst.addEventListener("click", function () {
+			openCreateEstimate({});
+		});
+		var revEst = document.getElementById("usis-estd-revision");
+		if (revEst) {
+			revEst.addEventListener("click", function () {
+				openCreateEstimate({ copyFromId: leadItem && leadItem.id ? leadItem.id : "" });
+			});
+		}
+		var ctaBtn = document.getElementById("usis-estd-create-from-cta");
+		if (ctaBtn) ctaBtn.addEventListener("click", function () {
+			openCreateEstimate({});
+		});
 		var addBtn = document.getElementById("usis-est-add-line");
 		if (addBtn) addBtn.addEventListener("click", addLine);
 		var qrBtn = document.getElementById("usis-est-quote-report");

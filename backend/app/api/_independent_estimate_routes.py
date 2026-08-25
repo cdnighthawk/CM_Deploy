@@ -88,13 +88,6 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         )
 
     def _create_for_lead(identifier: str):
-        if not _takeoff_writes_enabled():
-            return _jsonify(
-                {
-                    "error": "takeoff writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)",
-                    "error_code": "TAKEOFF_WRITES_DISABLED",
-                }
-            ), 403
         lead = _resolve_lead(identifier)
         if lead is None:
             return _jsonify({"error": "lead estimate not found"}), 404

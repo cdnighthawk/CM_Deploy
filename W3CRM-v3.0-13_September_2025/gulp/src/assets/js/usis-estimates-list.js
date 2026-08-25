@@ -168,12 +168,39 @@
 		if (sel) sel.disabled = !on || !estimates.length;
 	}
 
+	function fillLeadPicker(items, selectedId) {
+		var wrap = document.getElementById("usis-est-create-lead-wrap");
+		var sel = document.getElementById("usis-est-create-lead");
+		if (!wrap || !sel) return;
+		var show = !leadId;
+		wrap.classList.toggle("d-none", !show);
+		if (!show) return;
+		var opts = '<option value="">Select a lead…</option>';
+		(items || []).forEach(function (row) {
+			var id = row.id || row.external_id;
+			if (!id) return;
+			var label = (row.name || "Lead") + (row.number ? " · #" + row.number : "");
+			var selAttr = selectedId && String(id) === String(selectedId) ? " selected" : "";
+			opts += '<option value="' + esc(String(id)) + '"' + selAttr + ">" + esc(label) + "</option>";
+		});
+		sel.innerHTML = opts;
+	}
+
+	function resolveCreateLeadId() {
+		if (leadId) return leadId;
+		var sel = document.getElementById("usis-est-create-lead");
+		return sel ? String(sel.value || "").trim() : "";
+	}
+
 	function openModal(opts) {
 		opts = opts || {};
+		if (Object.prototype.hasOwnProperty.call(opts, "leadId")) leadId = opts.leadId || null;
+		if (Array.isArray(opts.estimates)) estimates = opts.estimates;
 		copyFromId = opts.copyFromId || "";
 		showModalErr("");
 		var title = document.getElementById("usis-est-create-title");
 		if (title) title.textContent = copyFromId ? "Copy estimate" : "New estimate";
+		fillLeadPicker(opts.leadOptions || window.__USIS_ESTIMATE_LEADS || [], leadId);
 		var nameEl = document.getElementById("usis-est-create-name");
 		var gcEl = document.getElementById("usis-est-create-gc");
 		var feeEl = document.getElementById("usis-est-create-fee");
@@ -187,15 +214,23 @@
 			}
 		}
 		if (nameEl) {
-			nameEl.value = src ? src.name + " copy" : "";
+			nameEl.value = src ? src.name + " copy" : "Original Estimate";
 			nameEl.focus();
 		}
 		if (gcEl) gcEl.value = src && src.gc_name ? src.gc_name : "";
 		if (feeEl) feeEl.value = src ? Api.feeToPercent(src.fee_percentage) : "";
 		fillCopyDropdown(copyFromId);
 		setCopyEnabled(!!copyFromId);
-		if (Api && leadId) {
-			Api.listDrawingSets(leadId)
+		var lid = resolveCreateLeadId();
+		if (Api && lid) {
+			Api.listForLead(lid)
+				.then(function (data) {
+					if (!estimates.length) estimates = data.items || [];
+					fillCopyDropdown(copyFromId);
+					if (!copyFromId) setCopyEnabled(false);
+				})
+				.catch(function () {});
+			Api.listDrawingSets(lid)
 				.then(function (data) {
 					fillDrawingSets(data.items || [], src && src.drawing_set_id);
 				})
@@ -229,7 +264,12 @@
 	}
 
 	function submitCreate() {
-		if (!Api || !leadId) return;
+		if (!Api) return;
+		var createLeadId = resolveCreateLeadId();
+		if (!createLeadId) {
+			showModalErr("Choose a lead for this estimate.");
+			return;
+		}
 		var nameEl = document.getElementById("usis-est-create-name");
 		var gcEl = document.getElementById("usis-est-create-gc");
 		var feeEl = document.getElementById("usis-est-create-fee");
@@ -272,7 +312,7 @@
 		var btn = document.getElementById("usis-est-create-submit");
 		if (btn) btn.disabled = true;
 		showModalErr("");
-		Api.createForLead(leadId, body)
+		Api.createForLead(createLeadId, body)
 			.then(function (data) {
 				var item = data.item || {};
 				if (!item.id) throw new Error("Create succeeded but no estimate id was returned.");
@@ -286,12 +326,10 @@
 
 	function init() {
 		if (!Api) return;
-		leadId = leadIdFromUrl();
 		var root = document.getElementById("usis-lead-estimates-root");
-		if (!root) return;
-		if (!leadId) {
-			showListErr("Open this page from the Leads table to manage estimates.");
-			return;
+		if (root) {
+			leadId = leadIdFromUrl();
+			if (!leadId) showListErr("Open this page from the Leads table to manage estimates.");
 		}
 		var newBtn = document.getElementById("usis-lead-est-new");
 		if (newBtn) newBtn.addEventListener("click", function () {
@@ -324,8 +362,40 @@
 		}
 		var submit = document.getElementById("usis-est-create-submit");
 		if (submit) submit.addEventListener("click", submitCreate);
-		loadList();
+		var leadSel = document.getElementById("usis-est-create-lead");
+		if (leadSel) {
+			leadSel.addEventListener("change", function () {
+				leadId = String(leadSel.value || "").trim() || null;
+				if (leadId && Api) {
+					Api.listForLead(leadId)
+						.then(function (data) {
+							estimates = data.items || [];
+							fillCopyDropdown(copyFromId);
+						})
+						.catch(function () {
+							estimates = [];
+							fillCopyDropdown("");
+						});
+					Api.listDrawingSets(leadId)
+						.then(function (data) {
+							fillDrawingSets(data.items || [], null);
+						})
+						.catch(function () {
+							fillDrawingSets([], null);
+						});
+				}
+			});
+		}
+		if (root && leadId) loadList();
 	}
+
+	window.USISEstimateCreate = {
+		open: function (id, opts) {
+			opts = opts || {};
+			opts.leadId = id || null;
+			openModal(opts);
+		},
+	};
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
 	else init();

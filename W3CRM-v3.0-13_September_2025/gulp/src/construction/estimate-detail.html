@@ -78,6 +78,8 @@
 			text-transform: uppercase;
 		}
 		.usis-estd-group-due { color: #dc3545; font-weight: 500; }
+		.usis-estd-child-nav a { text-decoration: none; }
+		.usis-estd-child-nav a.disabled { pointer-events: none; opacity: 0.45; }
 	</style>
 
 </head>
@@ -178,6 +180,25 @@
 										</div>
 									</div>
 									<div class="d-flex flex-wrap gap-1 mt-3 pt-2 border-top border-opacity-25" id="usis-estd-job-badges"></div>
+								</div>
+
+								<div id="usis-estd-child-nav" class="d-none d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 usis-estd-child-nav">
+									<a id="usis-estd-back-group" href="#">&larr; Back to group overview</a>
+									<div class="small">
+										<a id="usis-estd-prev-opp" href="#">&laquo; Previous</a>
+										<span class="text-muted mx-2" id="usis-estd-opp-index"></span>
+										<a id="usis-estd-next-opp" href="#">Next &raquo;</a>
+									</div>
+								</div>
+
+								<div id="usis-estd-opp-detail" class="card border shadow-none mb-4 d-none">
+									<div class="card-header bg-white py-2 fw-semibold">Opportunity Detail</div>
+									<div class="card-body">
+										<div class="mb-3" id="usis-estd-opp-client"></div>
+										<table class="table table-sm mb-0">
+											<tbody id="usis-estd-opp-tbody"></tbody>
+										</table>
+									</div>
 								</div>
 
 								<div id="usis-estd-group-summary" class="card border shadow-none mb-4 d-none">

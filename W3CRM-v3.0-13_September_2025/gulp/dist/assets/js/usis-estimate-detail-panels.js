@@ -394,14 +394,28 @@
 		if (root) root.classList.remove("d-none");
 	}
 
+	function groupParentOf(item) {
+		var gs = item && item.group_summary;
+		return (gs && gs.parent) || null;
+	}
+
+	function isChildOpportunity(item) {
+		var gs = item && item.group_summary;
+		if (gs && gs.role === "child") return true;
+		return !!(item && item.external_parent_id);
+	}
+
 	function renderJobDetailed(item) {
+		var parent = groupParentOf(item);
+		var jobName = (parent && parent.name) || item.name || "Untitled opportunity";
+		var jobNumber = (parent && parent.number) || item.number;
 		var title = document.getElementById("usis-estd-job-title");
-		if (title) title.textContent = item.name || "Untitled opportunity";
+		if (title) title.textContent = jobNumber ? jobNumber + " | " + jobName : jobName;
 
 		var sub = document.getElementById("usis-estd-job-subtitle");
 		if (sub) {
 			var bits = [];
-			if (item.number) bits.push(item.number);
+			if (item.trade_name) bits.push(item.trade_name);
 			if (item.city || item.state) bits.push([item.city, item.state].filter(Boolean).join(", "));
 			sub.textContent = bits.join(" · ") || "Opportunity details";
 		}
@@ -424,8 +438,8 @@
 		var pub = document.getElementById("usis-estd-job-public-tbody");
 		if (pub) {
 			pub.innerHTML = "";
-			appendFieldRow(pub, "Project #", fmtDash(item.number));
-			appendFieldRow(pub, "Project name", fmtDash(item.name));
+			appendFieldRow(pub, "Project #", fmtDash(jobNumber));
+			appendFieldRow(pub, "Project name", fmtDash(jobName));
 			appendDateRow(pub, "Bid due", item.due_at);
 			var locStr = formatLocation(item.location);
 			if (locStr) {
@@ -624,6 +638,7 @@
 			project_is_public: g("project_is_public"),
 			is_archived: g("is_archived"),
 			is_parent: g("is_parent"),
+			external_parent_id: g("external_parent_id"),
 			fee_percentage: g("fee_percentage"),
 			profit_margin: g("profit_margin"),
 			owning_office_id: g("owning_office_id"),
@@ -636,6 +651,8 @@
 			priority: g("priority"),
 			source: g("source"),
 			members: g("members"),
+			client: g("client") || item.client,
+			group_summary: item.group_summary || snap.group_summary,
 			estimate_approved_at: g("estimate_approved_at") || item.approved_at,
 			estimate_locked_at: g("estimate_locked_at") || item.locked_at,
 			project_id: item.project_id || snap.project_id,
@@ -711,13 +728,116 @@
 		return { text: child.submission_state || "—", dueSoon: false };
 	}
 
+	function estimateDetailHref(id) {
+		if (!id) return "#";
+		return "construction/estimate-detail.html?id=" + encodeURIComponent(id);
+	}
+
+	function formatClientFromJson(client) {
+		if (!client || typeof client !== "object") return { company: "", contact: "", office: "" };
+		var company = "";
+		if (client.company && client.company.name) company = String(client.company.name);
+		var office = client.office && client.office.name ? String(client.office.name) : "";
+		if (company && office && company.toLowerCase().indexOf(office.toLowerCase()) < 0) {
+			company = company + " - " + office;
+		}
+		var pc = client.lead || client.primaryContact || client.contact || {};
+		var name = [pc.firstName || pc.first_name, pc.lastName || pc.last_name].filter(Boolean).join(" ");
+		var phone = pc.phoneNumber || pc.phone || pc.mobile || "";
+		var email = pc.email || pc.emailAddress || "";
+		return { company: company, contact: [name, phone, email].filter(Boolean).join(" | "), office: office };
+	}
+
+	function setNavLink(el, href, enabled) {
+		if (!el) return;
+		if (enabled && href) {
+			el.href = href;
+			el.classList.remove("disabled");
+		} else {
+			el.href = "#";
+			el.classList.add("disabled");
+		}
+	}
+
+	function renderChildOpportunity(raw) {
+		var nav = document.getElementById("usis-estd-child-nav");
+		var card = document.getElementById("usis-estd-opp-detail");
+		var clientBox = document.getElementById("usis-estd-opp-client");
+		var tbody = document.getElementById("usis-estd-opp-tbody");
+		var gs = raw && raw.group_summary;
+		var childView = isChildOpportunity(raw);
+		if (!childView) {
+			if (nav) nav.classList.add("d-none");
+			if (card) card.classList.add("d-none");
+			return;
+		}
+		var parent = (gs && gs.parent) || {};
+		var siblings = (gs && gs.children) || [];
+		var currentId = String(raw.external_id || raw.id || "");
+		var idx = -1;
+		siblings.forEach(function (c, i) {
+			if (c.external_id === currentId || c.id === currentId) idx = i;
+		});
+		setNavLink(
+			document.getElementById("usis-estd-back-group"),
+			estimateDetailHref(parent.external_id || parent.id),
+			!!(parent.external_id || parent.id)
+		);
+		setNavLink(
+			document.getElementById("usis-estd-prev-opp"),
+			idx > 0 ? estimateDetailHref(siblings[idx - 1].external_id || siblings[idx - 1].id) : "",
+			idx > 0
+		);
+		setNavLink(
+			document.getElementById("usis-estd-next-opp"),
+			idx >= 0 && idx < siblings.length - 1
+				? estimateDetailHref(siblings[idx + 1].external_id || siblings[idx + 1].id)
+				: "",
+			idx >= 0 && idx < siblings.length - 1
+		);
+		var indexEl = document.getElementById("usis-estd-opp-index");
+		if (indexEl) {
+			indexEl.textContent = idx >= 0 ? idx + 1 + " of " + siblings.length : siblings.length ? siblings.length + " opportunities" : "";
+		}
+		if (nav) nav.classList.remove("d-none");
+
+		var parsed = formatClientFromJson(raw.client);
+		var company = raw.company_name || parsed.company || "—";
+		var contact = raw.client_contact || parsed.contact || "";
+		if (clientBox) {
+			clientBox.innerHTML =
+				'<div class="text-uppercase text-muted small fw-semibold mb-1">Client</div>' +
+				'<div class="d-flex align-items-start gap-2">' +
+				'<div class="usis-estd-group-avatar" aria-hidden="true">' +
+				esc(companyInitials(company)) +
+				"</div>" +
+				"<div>" +
+				'<div class="fw-semibold">' +
+				esc(company) +
+				"</div>" +
+				(contact ? '<div class="text-muted small">' + esc(contact) + "</div>" : "") +
+				"</div></div>";
+		}
+		if (tbody) {
+			tbody.innerHTML = "";
+			appendFieldRow(tbody, "Opportunity", fmtDash(raw.name));
+			appendFieldRow(tbody, "Trade", fmtDash(raw.trade_name || "(no trade)"));
+			appendDateRow(tbody, "Invited", raw.invited_at);
+			appendDateRow(tbody, "Date due", raw.due_at);
+			appendDateRow(tbody, "Job walk", raw.job_walk_at);
+			appendDateRow(tbody, "RFIs due", raw.rfis_due_at);
+			appendFieldRow(tbody, "Status", fmtDash(raw.submission_state));
+		}
+		if (card) card.classList.remove("d-none");
+	}
+
 	function renderGroupSummary(summary, item) {
 		var card = document.getElementById("usis-estd-group-summary");
 		var list = document.getElementById("usis-estd-group-summary-list");
 		var countEl = document.getElementById("usis-estd-group-summary-count");
 		if (!card || !list) return;
 		var children = summary && Array.isArray(summary.children) ? summary.children : [];
-		if (!children.length) {
+		if (!children.length || isChildOpportunity(item)) {
 			card.classList.add("d-none");
 			list.innerHTML = "";
 			if (countEl) countEl.textContent = "";
@@ -742,10 +862,10 @@
 				"</div>" +
 				'<div class="flex-grow-1" style="min-width:0">' +
 				'<div class="fw-semibold">' +
-				esc(child.name || "Untitled opportunity") +
+				esc(gc || child.name || "Untitled opportunity") +
 				"</div>" +
 				'<div class="text-muted small">' +
-				esc((gc ? gc + " | " : "") + trade) +
+				esc(trade) +
 				"</div>" +
 				"</div>" +
 				'<div class="text-end small text-nowrap' +
@@ -763,6 +883,7 @@
 		setJobErr("");
 		setJobLoading(false);
 		renderJobFromLead(le);
+		renderChildOpportunity(le);
 		renderGroupSummary(le && le.group_summary, le);
 	}
 

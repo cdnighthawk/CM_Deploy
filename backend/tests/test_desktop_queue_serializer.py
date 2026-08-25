@@ -43,4 +43,22 @@ def test_desktop_queue_item_maps_cloud_estimate_fields():
 
 def test_claims_email_prefers_work_account():
     assert claims_email({"preferred_username": "rodrigo@gousis.com"}) == "rodrigo@gousis.com"
+
+
+def test_client_company_includes_office():
+    from app.api._serializers import client_company_name
+    from app.api.v1 import _client_contact_line
+
+    client = {
+        "company": {"name": "Erickson-Hall Construction Co."},
+        "office": {"name": "Escondido"},
+        "lead": {
+            "firstName": "Michael",
+            "lastName": "Budd",
+            "email": "mbudd@ericksonhall.com",
+            "phoneNumber": "+1 760-796-7700",
+        },
+    }
+    assert client_company_name(client) == "Erickson-Hall Construction Co. - Escondido"
+    assert _client_contact_line(client) == "Michael Budd | +1 760-796-7700 | mbudd@ericksonhall.com"
     assert graph_email({"mail": None, "userPrincipalName": "Rodrigo@gousis.com"}) == "rodrigo@gousis.com"

@@ -37,11 +37,19 @@ def location_bits(loc: Any) -> tuple[str | None, str | None]:
 def client_company_name(client: Any) -> str | None:
     if not isinstance(client, Mapping):
         return None
+    name = None
     comp = client.get("company")
     if isinstance(comp, Mapping):
-        n = comp.get("name")
-        return str(n).strip() if n else None
-    return None
+        raw = comp.get("name")
+        name = str(raw).strip() if raw else None
+    office = client.get("office")
+    office_name = None
+    if isinstance(office, Mapping):
+        raw_office = office.get("name")
+        office_name = str(raw_office).strip() if raw_office else None
+    if name and office_name and office_name.lower() not in name.lower():
+        return f"{name} - {office_name}"
+    return name
 
 
 def _loc_text(loc: Mapping[str, Any], *keys: str) -> str | None:

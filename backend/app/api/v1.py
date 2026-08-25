@@ -455,20 +455,14 @@ _project_public = ser.project_public
 
 
 def _client_company_name(client: Any) -> str | None:
-    if not isinstance(client, Mapping):
-        return None
-    comp = client.get("company")
-    if isinstance(comp, Mapping):
-        n = comp.get("name")
-        return str(n).strip() if n else None
-    return None
+    return ser.client_company_name(client)
 
 
 def _client_contact_line(client: Any) -> str | None:
     """Best-effort primary contact string from BC ``client`` JSON."""
     if not isinstance(client, Mapping):
         return None
-    for key in ("primaryContact", "contact", "person", "primary_contact"):
+    for key in ("primaryContact", "contact", "person", "primary_contact", "lead"):
         pc = client.get(key)
         if not isinstance(pc, Mapping):
             continue
@@ -479,12 +473,11 @@ def _client_contact_line(client: Any) -> str | None:
         name = (fn + " " + ln).strip()
         email = pc.get("email") or pc.get("emailAddress")
         email_s = str(email).strip() if email else ""
-        if name and email_s:
-            return f"{name} · {email_s}"
-        if name:
-            return name
-        if email_s:
-            return email_s
+        phone = pc.get("phone") or pc.get("phoneNumber") or pc.get("mobile")
+        phone_s = str(phone).strip() if phone else ""
+        parts = [p for p in (name, phone_s, email_s) if p]
+        if parts:
+            return " | ".join(parts)
     return None
 
 

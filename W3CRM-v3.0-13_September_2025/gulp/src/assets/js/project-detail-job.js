@@ -7,6 +7,7 @@
 	var lastProjectId = null;
 	var lastProjectItem = null;
 	var lastSageProjectIdStr = "";
+	var lastContractItems = [];
 	var lastPrimeContractValueNum = null;
 	var invoiceMethods = [];
 	var INVOICE_ADD_NEW = "__add_new__";
@@ -230,9 +231,10 @@
 			var ownerName = (data && data.owner_company_name) || (lastProjectItem && lastProjectItem.owner_company_name);
 			ownerEl.textContent = "Owner: " + (ownerName && String(ownerName).trim() ? ownerName : "— (set on Job info)");
 		}
+		var items = (data && data.items) || [];
+		lastContractItems = items;
 		var totalEl = document.getElementById("usis-ca-contract-total");
 		if (totalEl) {
-			var items = (data && data.items) || [];
 			var total = data && data.total_contract_value;
 			if (items.length > 1 && total != null) {
 				totalEl.textContent = items.length + " contracts · combined value " + moneyPlain(total);
@@ -965,7 +967,10 @@
 		var addContractBtn = document.getElementById("usis-ca-contract-add");
 		if (addContractBtn) {
 			addContractBtn.addEventListener("click", function () {
-				fillContractForm({ title: "", is_primary: false });
+				fillContractForm({
+					title: lastContractItems.length ? "" : "Prime contract",
+					is_primary: lastContractItems.length === 0,
+				});
 				var modal = contractModal();
 				if (modal) modal.show();
 			});

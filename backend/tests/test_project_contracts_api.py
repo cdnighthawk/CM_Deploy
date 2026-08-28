@@ -96,6 +96,45 @@ def test_project_contracts_list_add_and_primary(client, no_dev_admin):
         assert rows[0].title == "Phase 2 interiors"
 
 
+def test_project_contracts_first_row_on_empty_project(client, no_dev_admin):
+    with client.application.app_context():
+        uid, pid = _standard_user_and_project(contract_value=None)
+        db.session.commit()
+
+    hdr = {"X-Usis-User-Id": uid}
+    r0 = client.get(f"/api/v1/projects/{pid}/contracts", headers=hdr)
+    assert r0.status_code == 200, r0.get_data(as_text=True)
+    assert r0.get_json()["items"] == []
+
+    r1 = client.post(
+        f"/api/v1/projects/{pid}/contracts",
+        headers=hdr,
+        json={"title": "Base bid", "contract_value": "50000.00"},
+    )
+    assert r1.status_code == 201, r1.get_data(as_text=True)
+    item = r1.get_json()["item"]
+    assert item["is_primary"] is True
+    assert item["title"] == "Base bid"
+
+    r2 = client.get(f"/api/v1/projects/{pid}", headers=hdr)
+    assert r2.status_code == 200
+    assert float(r2.get_json()["item"]["contract_value"]) == 50000.0
+
+    r3 = client.post(
+        f"/api/v1/projects/{pid}/contracts",
+        headers=hdr,
+        json={"title": "Phase 2", "contract_value": "12000.00"},
+    )
+    assert r3.status_code == 201, r3.get_data(as_text=True)
+    assert r3.get_json()["item"]["is_primary"] is False
+
+    r4 = client.get(f"/api/v1/projects/{pid}/contracts", headers=hdr)
+    assert r4.status_code == 200
+    body = r4.get_json()
+    assert len(body["items"]) == 2
+    assert float(body["total_contract_value"]) == 62000.0
+
+
 def test_project_contracts_require_title(client, no_dev_admin):
     with client.application.app_context():
         uid, pid = _standard_user_and_project()

@@ -51,6 +51,7 @@ from . import _pay_application_service as pay_app_svc
 from . import _reports_catalog_service as reports_catalog_svc
 from . import _power_bi_service as power_bi_svc
 from . import _prime_contract_sov_service as prime_sov_svc
+from . import _project_contract_service as project_contract_svc
 from . import _calendar_service as calendar_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
@@ -1326,6 +1327,18 @@ def list_calendar_events():
     range_start = calendar_svc._parse_date_param(request.args.get("start"))
     range_end = calendar_svc._parse_date_param(request.args.get("end"))
     project_statuses = calendar_svc._parse_project_statuses(request.args.get("project_status"))
+    assignee_raw = request.args.get("assignee")
+    assignee_uid = None
+    if assignee_raw and str(assignee_raw).strip():
+        key = str(assignee_raw).strip().lower()
+        if key in {"me", "mine"}:
+            assignee_uid = cu.id
+            if assignee_uid is None:
+                return _jsonify({"error": "sign in required for assignee=me"}), 401
+        else:
+            assignee_uid = _parse_uuid_param(assignee_raw)
+            if not assignee_uid:
+                return _jsonify({"error": "invalid assignee"}), 400
     payload = calendar_svc.list_calendar_events(
         cu,
         project_id=pid,
@@ -1333,6 +1346,7 @@ def list_calendar_events():
         range_start=range_start,
         range_end=range_end,
         project_statuses=project_statuses,
+        assignee_user_id=assignee_uid,
     )
     return _jsonify(payload)
 
@@ -1360,7 +1374,7 @@ def create_project_schedule_item(project_id: str):
     if not isinstance(body, dict):
         return _jsonify({"error": "JSON body required"}), 400
     try:
-        item = project_schedule_svc.create_schedule_item(pid, body)
+        item = project_schedule_svc.create_schedule_item(pid, body, actor=current_user())
     except ValueError as e:
         return _jsonify({"error": str(e)}), 400
     db.session.commit()
@@ -1379,7 +1393,7 @@ def patch_project_schedule_item(project_id: str, item_id: str):
     if not isinstance(body, dict):
         return _jsonify({"error": "JSON body required"}), 400
     try:
-        item = project_schedule_svc.patch_schedule_item(pid, iid, body)
+        item = project_schedule_svc.patch_schedule_item(pid, iid, body, actor=current_user())
     except ValueError as e:
         return _jsonify({"error": str(e)}), 400
     if item is None:
@@ -1401,6 +1415,18 @@ def delete_project_schedule_item(project_id: str, item_id: str):
         return _jsonify({"error": "schedule item not found"}), 404
     db.session.commit()
     return _jsonify({"ok": True})
+
+
+@bp.route("/integrations/calendar-reminders/run", methods=["GET", "POST"])
+def run_calendar_reminders():
+    """Daily cron: remind assignees the day before / morning a window starts."""
+    from ._integration_bc import cron_secret_matches
+
+    if not cron_secret_matches(request) and current_user().user is None:
+        return _jsonify({"error": "authentication required"}), 401
+    payload = project_schedule_svc.send_due_schedule_reminders()
+    db.session.commit()
+    return _jsonify(payload)
 
 
 @bp.get("/projects/<project_id>/drawings")
@@ -3466,6 +3492,68 @@ def _pay_app_err(exc: rfi_svc.ApiError):
 
 def _prime_sov_err(exc: rfi_svc.ApiError):
     return _jsonify({"error": exc.message}), exc.status
+
+
+def _project_contract_err(exc: rfi_svc.ApiError):
+    return _jsonify({"error": exc.message}), exc.status
+
+
+@bp.get("/projects/<project_id>/contracts")
+def list_project_contracts(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        return _jsonify(project_contract_svc.list_contracts(pid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _project_contract_err(exc)
+
+
+@bp.post("/projects/<project_id>/contracts")
+def create_project_contract(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        body = project_contract_svc.create_contract(pid, data, current_user())
+        return _jsonify(body), 201
+    except rfi_svc.ApiError as exc:
+        return _project_contract_err(exc)
+
+
+@bp.patch("/projects/<project_id>/contracts/<contract_id>")
+def patch_project_contract(project_id: str, contract_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(contract_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify(project_contract_svc.patch_contract(pid, cid, data, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _project_contract_err(exc)
+
+
+@bp.delete("/projects/<project_id>/contracts/<contract_id>")
+def delete_project_contract(project_id: str, contract_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(contract_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        project_contract_svc.delete_contract(pid, cid, current_user())
+        return ("", 204)
+    except rfi_svc.ApiError as exc:
+        return _project_contract_err(exc)
 
 
 @bp.get("/projects/<project_id>/prime-contract/sov")

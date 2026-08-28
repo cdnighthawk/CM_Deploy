@@ -63,6 +63,7 @@ from .playbook import (
 from .material_pricing import MaterialPrice
 from .pay_application import PayApplication, PayApplicationLine
 from .prime_contract_sov import PrimeContractSovLine
+from .project_contract import ProjectContract
 from .procurement import ProcurementPoType, ProjectDirectoryCompany
 from .purchase_order import (
     PurchaseOrderReceipt,
@@ -179,6 +180,7 @@ __all__ = [
     "PayApplication",
     "PayApplicationLine",
     "PrimeContractSovLine",
+    "ProjectContract",
     "ProcurementPoType",
     "PurchaseOrderReceipt",
     "PurchaseOrderReceiptLine",

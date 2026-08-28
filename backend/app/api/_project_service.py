@@ -166,6 +166,9 @@ def patch_project(project_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]
             raise ApiError("unknown invoice_method code")
 
     db.session.flush()
+    from . import _project_contract_service as project_contract_svc
+
+    project_contract_svc.sync_primary_from_project(p)
     db.session.refresh(p)
     from .v1 import _project_detail_public
 

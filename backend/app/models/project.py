@@ -94,6 +94,12 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
         cascade="all, delete-orphan",
         order_by="PrimeContractSovLine.sort_order",
     )
+    contracts = relationship(
+        "ProjectContract",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectContract.is_primary.desc(), ProjectContract.sort_order",
+    )
     schedule_items = relationship(
         "ProjectScheduleItem",
         back_populates="project",

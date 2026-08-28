@@ -168,6 +168,245 @@
 		setTextById("usis-ca-prevailing", fmtBool(!!item.prevailing_wage));
 		setTextById("usis-ca-dbe", fmtBool(!!item.dbe_required));
 		updateCopySageButton();
+		loadProjectContracts();
+	}
+
+	function setContractErr(msg) {
+		var el = document.getElementById("usis-ca-c-err");
+		if (!el) return;
+		if (msg) {
+			el.textContent = msg;
+			el.classList.remove("d-none");
+		} else {
+			el.classList.add("d-none");
+		}
+	}
+
+	function contractModal() {
+		var el = document.getElementById("usis-modal-project-contract");
+		if (!el || !window.bootstrap) return null;
+		return window.bootstrap.Modal.getOrCreateInstance(el);
+	}
+
+	function fillContractForm(item) {
+		document.getElementById("usis-ca-c-id").value = item && item.id ? item.id : "";
+		document.getElementById("usis-ca-c-number").value = (item && item.contract_number) || "";
+		document.getElementById("usis-ca-c-title").value = (item && item.title) || "";
+		document.getElementById("usis-ca-c-value").value =
+			item && item.contract_value != null ? String(item.contract_value) : "";
+		document.getElementById("usis-ca-c-date").value = isoToInputDate(item && item.contract_date);
+		document.getElementById("usis-ca-c-retention").value =
+			item && item.retention_percentage != null ? String(item.retention_percentage) : "";
+		document.getElementById("usis-ca-c-start").value = isoToInputDate(item && item.start_date);
+		document.getElementById("usis-ca-c-substantial").value = isoToInputDate(
+			item && item.substantial_completion_date
+		);
+		document.getElementById("usis-ca-c-closeout").value = isoToInputDate(item && item.closeout_date);
+		document.getElementById("usis-ca-c-notes").value = (item && item.notes) || "";
+		document.getElementById("usis-ca-c-primary").checked = !!(item && item.is_primary);
+		var label = document.getElementById("usis-modal-project-contract-label");
+		if (label) label.textContent = item && item.id ? "Edit contract" : "Add contract";
+		setContractErr("");
+	}
+
+	function contractFormPayload() {
+		return {
+			contract_number: document.getElementById("usis-ca-c-number").value.trim() || null,
+			title: document.getElementById("usis-ca-c-title").value.trim(),
+			contract_value: document.getElementById("usis-ca-c-value").value.trim() || null,
+			contract_date: document.getElementById("usis-ca-c-date").value || null,
+			retention_percentage: document.getElementById("usis-ca-c-retention").value.trim() || null,
+			start_date: document.getElementById("usis-ca-c-start").value || null,
+			substantial_completion_date: document.getElementById("usis-ca-c-substantial").value || null,
+			closeout_date: document.getElementById("usis-ca-c-closeout").value || null,
+			notes: document.getElementById("usis-ca-c-notes").value.trim() || null,
+			is_primary: document.getElementById("usis-ca-c-primary").checked,
+		};
+	}
+
+	function renderProjectContracts(data) {
+		var ownerEl = document.getElementById("usis-ca-contract-owner");
+		if (ownerEl) {
+			var ownerName = (data && data.owner_company_name) || (lastProjectItem && lastProjectItem.owner_company_name);
+			ownerEl.textContent = "Owner: " + (ownerName && String(ownerName).trim() ? ownerName : "— (set on Job info)");
+		}
+		var totalEl = document.getElementById("usis-ca-contract-total");
+		if (totalEl) {
+			var items = (data && data.items) || [];
+			var total = data && data.total_contract_value;
+			if (items.length > 1 && total != null) {
+				totalEl.textContent = items.length + " contracts · combined value " + moneyPlain(total);
+			} else if (items.length > 1) {
+				totalEl.textContent = items.length + " contracts";
+			} else {
+				totalEl.textContent = "";
+			}
+		}
+		var tbody = document.getElementById("usis-ca-contract-tbody");
+		if (!tbody) return;
+		var rows = (data && data.items) || [];
+		if (!rows.length) {
+			tbody.innerHTML =
+				'<tr><td colspan="6" class="text-muted">No owner contracts yet. Add the first contract for this job.</td></tr>';
+			return;
+		}
+		tbody.innerHTML = rows
+			.map(function (row) {
+				var badge = row.is_primary
+					? '<span class="badge text-bg-primary">Primary</span>'
+					: "";
+				var delBtn = row.is_primary
+					? ""
+					: '<button type="button" class="btn btn-link btn-sm text-danger p-0 usis-ca-c-del" data-id="' +
+						esc(row.id) +
+						'">Delete</button>';
+				return (
+					"<tr>" +
+					"<td>" +
+					fmtDash(row.contract_number) +
+					"</td>" +
+					"<td>" +
+					fmtDash(row.title) +
+					"</td>" +
+					'<td class="text-end">' +
+					fmtMoney(row.contract_value) +
+					"</td>" +
+					"<td>" +
+					fmtDate(row.contract_date) +
+					"</td>" +
+					"<td>" +
+					badge +
+					"</td>" +
+					'<td class="text-nowrap text-end">' +
+					'<button type="button" class="btn btn-link btn-sm p-0 me-2 usis-ca-c-edit" data-id="' +
+					esc(row.id) +
+					'">Edit</button>' +
+					delBtn +
+					"</td>" +
+					"</tr>"
+				);
+			})
+			.join("");
+		tbody.querySelectorAll(".usis-ca-c-edit").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var id = btn.getAttribute("data-id");
+				var found = rows.filter(function (r) {
+					return r.id === id;
+				})[0];
+				if (!found) return;
+				fillContractForm(found);
+				var modal = contractModal();
+				if (modal) modal.show();
+			});
+		});
+		tbody.querySelectorAll(".usis-ca-c-del").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var id = btn.getAttribute("data-id");
+				if (!id || !lastProjectId) return;
+				if (!window.confirm("Delete this contract from the project?")) return;
+				fetch(
+					apiBase() +
+						"/api/v1/projects/" +
+						encodeURIComponent(lastProjectId) +
+						"/contracts/" +
+						encodeURIComponent(id),
+					{
+						method: "DELETE",
+						credentials: "include",
+						headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+					}
+				)
+					.then(function (res) {
+						if (res.status === 204) return { ok: true, body: {} };
+						return res.json().then(function (j) {
+							return { ok: res.ok, body: j };
+						});
+					})
+					.then(function (res) {
+						if (!res.ok) {
+							window.alert((res.body && res.body.error) || "Could not delete contract.");
+							return;
+						}
+						loadProjectContracts();
+					})
+					.catch(function () {
+						window.alert("Network error deleting contract.");
+					});
+			});
+		});
+	}
+
+	function loadProjectContracts() {
+		var tbody = document.getElementById("usis-ca-contract-tbody");
+		if (!lastProjectId || !tbody) return;
+		fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(lastProjectId) + "/contracts", {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					tbody.innerHTML =
+						'<tr><td colspan="6" class="text-danger">' +
+						esc((res.body && res.body.error) || "Could not load contracts.") +
+						"</td></tr>";
+					return;
+				}
+				renderProjectContracts(res.body);
+			})
+			.catch(function () {
+				tbody.innerHTML = '<tr><td colspan="6" class="text-danger">Network error loading contracts.</td></tr>';
+			});
+	}
+
+	function saveProjectContract() {
+		if (!lastProjectId) return;
+		var payload = contractFormPayload();
+		if (!payload.title) {
+			setContractErr("Title is required.");
+			return;
+		}
+		var id = document.getElementById("usis-ca-c-id").value.trim();
+		var url =
+			apiBase() +
+			"/api/v1/projects/" +
+			encodeURIComponent(lastProjectId) +
+			"/contracts" +
+			(id ? "/" + encodeURIComponent(id) : "");
+		setContractErr("");
+		fetch(url, {
+			method: id ? "PATCH" : "POST",
+			credentials: "include",
+			headers: Object.assign(
+				{ Accept: "application/json", "Content-Type": "application/json" },
+				actorHeaders()
+			),
+			body: JSON.stringify(payload),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					setContractErr((res.body && res.body.error) || "Save failed.");
+					return;
+				}
+				var modal = contractModal();
+				if (modal) modal.hide();
+				loadProjectContracts();
+				if (res.body.item && res.body.item.is_primary) {
+					reloadProjectAndContractAdmin();
+				}
+			})
+			.catch(function () {
+				setContractErr("Network error saving contract.");
+			});
 	}
 
 	function actorHeaders() {
@@ -722,6 +961,18 @@
 		var reloadBtn = document.getElementById("usis-ca-reload-project");
 		if (reloadBtn) {
 			reloadBtn.addEventListener("click", reloadProjectAndContractAdmin);
+		}
+		var addContractBtn = document.getElementById("usis-ca-contract-add");
+		if (addContractBtn) {
+			addContractBtn.addEventListener("click", function () {
+				fillContractForm({ title: "", is_primary: false });
+				var modal = contractModal();
+				if (modal) modal.show();
+			});
+		}
+		var saveContractBtn = document.getElementById("usis-ca-c-save");
+		if (saveContractBtn) {
+			saveContractBtn.addEventListener("click", saveProjectContract);
 		}
 		var copySageBtn = document.getElementById("usis-ca-copy-sage");
 		if (copySageBtn) {

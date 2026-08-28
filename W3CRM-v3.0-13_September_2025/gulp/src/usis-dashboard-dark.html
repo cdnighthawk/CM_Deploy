@@ -29,6 +29,14 @@
 				})
 			</div>
 
+			<div class="container-fluid">
+				<div class="usis-page-header pt-0">
+					<div class="usis-page-header__text">
+						<p class="text-muted small mb-0">Billing, jobs, submittals, and hours.</p>
+					</div>
+				</div>
+			</div>
+
 			<div id="usis-dashboard-dark-page" class="container-fluid">
 
 				<div class="row g-3 mb-3">
@@ -104,8 +112,12 @@
 							<div class="card-header border-0 pb-0">
 								<h4 class="card-title mb-0">Billing &amp; revenue trend</h4>
 							</div>
-							<div class="card-body text-center text-muted py-5">
-								<p class="mb-0">No billing data connected yet.</p>
+							<div class="card-body">
+								<div class="usis-empty py-4">
+									<div class="usis-empty__icon" aria-hidden="true"><i class="icon feather icon-bar-chart-2"></i></div>
+									<div class="usis-empty__title">No billing data</div>
+									<p class="usis-empty__body mb-0">Connect Corecon billing to see the revenue trend.</p>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -115,8 +127,12 @@
 								<h4 class="card-title mb-0">Month-end checklist</h4>
 								<a href="construction/projects.html" class="small">View jobs</a>
 							</div>
-							<div class="card-body text-center text-muted py-5">
-								<p class="mb-0">No checklist items yet.</p>
+							<div class="card-body">
+								<div class="usis-empty py-4">
+									<div class="usis-empty__icon" aria-hidden="true"><i class="icon feather icon-check-square"></i></div>
+									<div class="usis-empty__title">No checklist items</div>
+									<p class="usis-empty__body mb-0">Month-end tasks will appear when jobs are ready to invoice.</p>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -128,8 +144,12 @@
 							<div class="card-header border-0 pb-0">
 								<h4 class="card-title mb-0">Jobs billing this period</h4>
 							</div>
-							<div class="card-body text-center text-muted py-5">
-								<p class="mb-0">No jobs to display. Data will appear when billing is integrated.</p>
+							<div class="card-body">
+								<div class="usis-empty py-4">
+									<div class="usis-empty__icon" aria-hidden="true"><i class="icon feather icon-briefcase"></i></div>
+									<div class="usis-empty__title">No jobs this period</div>
+									<p class="usis-empty__body mb-0">Jobs will list here when billing is connected.</p>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -138,8 +158,12 @@
 							<div class="card-header border-0 pb-0">
 								<h4 class="card-title mb-0">Billing calendar</h4>
 							</div>
-							<div class="card-body text-center text-muted py-5">
-								<p class="mb-0">No scheduled billing events.</p>
+							<div class="card-body">
+								<div class="usis-empty py-4">
+									<div class="usis-empty__icon" aria-hidden="true"><i class="icon feather icon-calendar"></i></div>
+									<div class="usis-empty__title">No billing events</div>
+									<p class="usis-empty__body mb-0">Scheduled billing dates will show here.</p>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -149,21 +173,21 @@
 								<h4 class="card-title mb-0">Job pipeline</h4>
 							</div>
 							<div class="card-body">
-								<div class="d-flex justify-content-between mb-2 text-muted small">
-									<span><i class="fa-solid fa-square text-primary me-1"></i> Closed</span>
-									<span>—</span>
+								<div class="d-flex justify-content-between align-items-center mb-2">
+									<span class="usis-status-chip usis-status-chip--draft">Closed</span>
+									<span class="text-muted small">—</span>
 								</div>
-								<div class="d-flex justify-content-between mb-2 text-muted small">
-									<span><i class="fa-solid fa-square text-success me-1"></i> Active</span>
-									<span>—</span>
+								<div class="d-flex justify-content-between align-items-center mb-2">
+									<span class="usis-status-chip usis-status-chip--approved">Active</span>
+									<span class="text-muted small">—</span>
 								</div>
-								<div class="d-flex justify-content-between mb-2 text-muted small">
-									<span><i class="fa-solid fa-square text-danger me-1"></i> On hold</span>
-									<span>—</span>
+								<div class="d-flex justify-content-between align-items-center mb-2">
+									<span class="usis-status-chip usis-status-chip--warning">On hold</span>
+									<span class="text-muted small">—</span>
 								</div>
-								<div class="d-flex justify-content-between text-muted small">
-									<span><i class="fa-solid fa-square text-warning me-1"></i> Bid / pre-award</span>
-									<span>—</span>
+								<div class="d-flex justify-content-between align-items-center">
+									<span class="usis-status-chip usis-status-chip--progress">Bid / pre-award</span>
+									<span class="text-muted small">—</span>
 								</div>
 							</div>
 						</div>
@@ -175,43 +199,39 @@
 						<div class="card overflow-hidden mb-0">
 							<div class="card-header border-0 pb-0 flex-wrap">
 								<h4 class="card-title mb-2 mb-sm-0">Hours worked by project</h4>
-								<ul class="nav nav-pills nav-pills-sm nav-pills-bg gap-2 usis-hours-project-chart-tab" id="usis-hours-project-tabs" role="tablist">
-									<li class="nav-item" role="presentation">
-										<button class="nav-link" data-period="day" type="button" role="tab" aria-selected="false">Day</button>
-									</li>
-									<li class="nav-item" role="presentation">
-										<button class="nav-link" data-period="week" type="button" role="tab" aria-selected="false">Week</button>
-									</li>
-									<li class="nav-item" role="presentation">
-										<button class="nav-link active" data-period="month" type="button" role="tab" aria-selected="true">Month</button>
-									</li>
-									<li class="nav-item" role="presentation">
-										<button class="nav-link" data-period="year" type="button" role="tab" aria-selected="false">Year</button>
-									</li>
-								</ul>
+								<div class="usis-seg usis-hours-project-chart-tab" id="usis-hours-project-tabs" role="tablist">
+									<button class="btn btn-sm nav-link" data-period="day" type="button" role="tab" aria-selected="false">Day</button>
+									<button class="btn btn-sm nav-link" data-period="week" type="button" role="tab" aria-selected="false">Week</button>
+									<button class="btn btn-sm nav-link active" data-period="month" type="button" role="tab" aria-selected="true">Month</button>
+									<button class="btn btn-sm nav-link" data-period="year" type="button" role="tab" aria-selected="false">Year</button>
+								</div>
 							</div>
 							<div class="card-body p-0 position-relative">
 								<div id="usis-hours-project-loading" class="text-center text-muted small py-5 d-none">Loading hours…</div>
-								<div id="usis-hours-project-empty" class="text-center text-muted small py-5 d-none">No project hours logged for this period.</div>
+								<div id="usis-hours-project-empty" class="usis-empty py-5 d-none">
+									<div class="usis-empty__icon" aria-hidden="true"><i class="icon feather icon-clock"></i></div>
+									<div class="usis-empty__title">No hours this period</div>
+									<p class="usis-empty__body mb-0">No project hours logged for this period.</p>
+								</div>
 								<div id="usisHoursByProjectChart"></div>
 							</div>
 							<div class="card-footer p-0 border-0">
 								<div class="row text-center g-0">
 									<div class="col-sm-3 col-6 border-end border-top p-3">
-										<h5 class="mb-0" id="usis-hours-kpi-total">—</h5>
-										<span>Total hours</span>
+										<div class="usis-kpi__value" id="usis-hours-kpi-total">—</div>
+										<div class="usis-kpi__label mb-0">Total hours</div>
 									</div>
 									<div class="col-sm-3 col-6 border-end border-top p-3">
-										<h5 class="mb-0" id="usis-hours-kpi-projects">—</h5>
-										<span>Projects with time</span>
+										<div class="usis-kpi__value" id="usis-hours-kpi-projects">—</div>
+										<div class="usis-kpi__label mb-0">Projects with time</div>
 									</div>
 									<div class="col-sm-3 col-6 border-end border-top p-3">
-										<h5 class="mb-0" id="usis-hours-kpi-avg">—</h5>
-										<span>Avg hours / project</span>
+										<div class="usis-kpi__value" id="usis-hours-kpi-avg">—</div>
+										<div class="usis-kpi__label mb-0">Avg hours / project</div>
 									</div>
 									<div class="col-sm-3 col-6 border-top p-3">
-										<h5 class="mb-0 text-primary text-truncate px-1" id="usis-hours-kpi-top" title="">—</h5>
-										<span>Top project</span>
+										<div class="usis-kpi__value text-primary text-truncate px-1" id="usis-hours-kpi-top" title="">—</div>
+										<div class="usis-kpi__label mb-0">Top project</div>
 									</div>
 								</div>
 							</div>
@@ -242,15 +262,6 @@
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-submittal-dashboard.js"></script>
-
-	<script>
-		jQuery(document).ready(function () {
-			setTimeout(function () {
-				dzSettingsOptions.version = 'dark';
-				new dzSettings(dzSettingsOptions);
-			}, 1500);
-		});
-	</script>
 
 </body>
 </html>

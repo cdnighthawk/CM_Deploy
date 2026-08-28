@@ -5,7 +5,10 @@
  */
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,650;0,700;1,400&display=swap");
 
-:root {
+:root,
+html,
+body,
+[data-bs-theme="light"] {
 	--usis-fs: 0.875rem;
 	--usis-fs-sm: 0.75rem;
 	--usis-control-h: 1.5rem;
@@ -168,6 +171,24 @@ html .header,
 	border-right: 1px solid var(--usis-divider);
 }
 
+.deznav .metismenu > li:hover > a,
+.deznav .metismenu > li:focus > a,
+.deznav .metismenu > li.mm-active > a,
+.deznav .metismenu ul a:hover,
+.deznav .metismenu ul a:focus,
+.deznav .metismenu ul a.mm-active {
+	color: var(--usis-primary);
+}
+
+.deznav .metismenu > li.mm-active > a {
+	background-color: rgba(var(--usis-primary-rgb), 0.08);
+	font-weight: 600;
+}
+
+.deznav .metismenu > li.mm-active > a i {
+	color: var(--usis-primary) !important;
+}
+
 .card,
 .modal-content,
 .offcanvas {
@@ -236,10 +257,28 @@ html .header,
 	margin-bottom: 0.25rem;
 }
 
+#usis-site-guide-root {
+	display: none;
+}
+
 #usis-site-guide-root .card {
 	border-color: var(--usis-divider);
 	background: transparent;
 	box-shadow: none;
+}
+
+.usis-hub-tile {
+	display: flex;
+	flex-direction: column;
+	min-height: 12.75rem;
+}
+
+.usis-hub-tile__actions {
+	margin-top: auto;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
 }
 
 #usis-site-guide-root h6 {
@@ -657,21 +696,18 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 }
 
 /* ——— KPI cards ——— */
-.usis-kpi,
-#usis-dashboard-dark-page .card .card-body {
+.usis-kpi {
 	min-height: 6.5rem;
 }
 
-.usis-kpi__value,
-#usis-dashboard-dark-page .card .card-body > h3 {
+.usis-kpi__value {
 	font-size: 1.375rem;
 	font-weight: 650;
 	color: var(--usis-text);
 	line-height: 1.2;
 }
 
-.usis-kpi__label,
-#usis-dashboard-dark-page .card .card-body > h6 {
+.usis-kpi__label {
 	font-size: 0.75rem;
 	font-weight: 500;
 	color: var(--usis-text-secondary);
@@ -744,6 +780,11 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 .usis-seg .btn[aria-pressed="true"] {
 	background: var(--usis-primary);
 	color: #fff;
+}
+
+.usis-seg .btn.nav-link {
+	padding: 0.25rem 0.7rem;
+	min-height: 32px;
 }
 
 /* ——— Drawing viewer chrome only ——— */

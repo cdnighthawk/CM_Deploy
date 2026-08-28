@@ -16,7 +16,6 @@
 		Projects: "Proyectos",
 		Calendar: "Calendario",
 		Safety: "Seguridad",
-		"CRM pipeline": "Embudo CRM",
 		Documents: "Documentos",
 		Email: "Correo",
 		HR: "RH",

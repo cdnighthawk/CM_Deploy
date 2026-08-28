@@ -91,17 +91,10 @@
 				},
 			},
 			fill: {
-				type: "gradient",
-				gradient: {
-					shade: "light",
-					type: "vertical",
-					colorStops: [
-						{ offset: 0, color: "var(--bs-primary)", opacity: 1 },
-						{ offset: 100, color: "var(--bs-primary)", opacity: 0.85 },
-					],
-				},
+				type: "solid",
+				opacity: 1,
 			},
-			colors: ["var(--bs-primary)"],
+			colors: ["#1F4E5F"],
 			dataLabels: { enabled: false },
 			xaxis: {
 				categories: labels,
@@ -199,7 +192,11 @@
 				setVisible("usis-hours-project-empty", true);
 				var empty = document.getElementById("usis-hours-project-empty");
 				if (empty) {
-					empty.textContent = err.message || "Could not load project hours.";
+					var body = empty.querySelector(".usis-empty__body");
+					var title = empty.querySelector(".usis-empty__title");
+					if (title) title.textContent = "Could not load hours";
+					if (body) body.textContent = err.message || "Could not load project hours.";
+					else empty.textContent = err.message || "Could not load project hours.";
 				}
 			});
 	}

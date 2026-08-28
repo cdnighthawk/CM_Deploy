@@ -17,13 +17,6 @@
       "category": "usis"
     },
     {
-      "path": "usis-crm-leads.html",
-      "order": 3,
-      "title": "USIS CRM Leads",
-      "summary": "USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.",
-      "category": "usis"
-    },
-    {
       "path": "usis-dashboard.html",
       "order": 4,
       "title": "USIS Dashboard",

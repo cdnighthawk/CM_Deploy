@@ -9,7 +9,6 @@
     { "path": "construction/estimate.html", "in_nav": "deznav,bottomnav" },
     { "path": "construction/drawing-viewer.html", "in_nav": "bottomnav" },
     { "path": "usis-safety.html", "in_nav": "deznav" },
-    { "path": "usis-crm-leads.html", "in_nav": "deznav" },
     { "path": "usis-crm-bid-detail.html", "in_nav": "js" },
     { "path": "usis-documents-hub.html", "in_nav": "deznav" },
     { "path": "usis-hr-dashboard.html", "in_nav": "deznav" },

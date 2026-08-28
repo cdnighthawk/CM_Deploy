@@ -17,7 +17,6 @@ flowchart TD
     Bottomnav[usis_bottomnav_via_footer]
   end
   subgraph product [USIS product pages]
-    CRM[usis_crm_leads]
     RFP[usis_rfp_list]
     Docs[usis_documents_hub]
     Safety[usis_safety]
@@ -25,8 +24,6 @@ flowchart TD
     Playbooks[usis_playbooks]
   end
   Deznav --> Dash
-  Deznav --> CRM
-  Dash --> CRM
   Dash --> RFP
   Dash --> HR
   Deznav --> Playbooks
@@ -44,7 +41,7 @@ flowchart TD
 • **usis-hr** — CTA on `usis-hr.html`.
 • **usis-rfp-list** — In-page link (e.g. Compare).
 • **footer / bottomnav** — `elements/footer.html` includes `elements/usis-bottomnav.html` (mobile primary links).
-• **JS / URL** — Deep links built in JavaScript (e.g. `usis-crm-leads.js` row → `usis-crm-bid-detail.html?…`); document as “JS navigation”.
+• **JS / URL** — Deep links built in JavaScript (e.g. leads row → `construction/lead-detail.html?…`); document as “JS navigation”.
 • **TBD** — Planned in module plans but not wired in HTML yet.
 
 --------------------------------------------------------------------
@@ -53,8 +50,7 @@ A. Built USIS pages (`usis-*.html` at `gulp/src/`)
 | Page | Role | Linked from |
 |------|------|-------------|
 | usis-dashboard.html | Post-login style hub | deznav (USIS) “Dashboard”; usis-bottomnav (footer) first icon |
-| usis-crm-leads.html | CRM pipeline / bids list | deznav “CRM pipeline”; usis-dashboard card “Leads & bids” |
-| usis-crm-bid-detail.html | Bid / lead detail shell | JS from usis-crm-leads (row click; see Plan 2); typically `?bid=` or lead UUID |
+| usis-crm-bid-detail.html | Bid / lead detail shell (redirect) | site index / leftover deep links; typically `?bid=` or lead UUID |
 | usis-rfp-list.html | RFP list | usis-dashboard card “RFP”; `construction/project-detail.html` RFP tab (opens list with `?project_id=` when applicable) |
 | usis-rfp-detail.html | RFP editor / detail | JS from usis-rfp-list (not a deznav direct link) |
 | usis-rfp-compare.html | Vendor compare (demo) | usis-rfp-list button “Compare (demo)” |
@@ -112,7 +108,7 @@ For each, **Linked from** is intended navigation once built.
 
 **Plan 1 Core** — usis-command-palette (global); login shell (page-login pattern). Linked from: header / keyboard (TBD).
 
-**Plan 2 CRM** — usis-bid-kanban.html (optional). Linked from: usis-crm-leads or bid detail tabs.
+**Plan 2 CRM** — usis-bid-kanban.html (optional). Linked from: bid detail tabs. `usis-crm-leads.html` (CRM pipeline) was removed; use `construction/leads.html`.
 
 **Plan 3 Takeoff** — usis-takeoff.html; elements/usis-takeoff-row.html. Linked from: bid detail “Estimating” tab; estimate workspace.
 
@@ -193,3 +189,4 @@ H. Revision history (manual)
 • 2026-05-14 — **HRMS scaffold:** `Plan/HRMS/README.md`; Alembic `0030_hrms_foundation`; models `hrms_core`; API ``/api/v1/hrms/*`` (`app/hrms`); `usis-hrms-home.html` + deznav “HR suite”; `tools/usis-site-pages.json`; seed `scripts/seed_hrms_sample.py` (HR roles).
 • 2026-05-13 — §A + deznav + dashboard: `usis-user-directory.html` + `usis-user-directory.js`; admin APIs `/api/v1/admin/users`, `/api/v1/admin/roles`; `tools/usis-site-pages.json` (user admin + repaired `usis-procurement.html` entry); replaces static `user.html` / `user-roles.html` for live directory management.
 • 2026-05-17 — §I: active-page fake-data policy; `tools/usis-active-pages-checklist.json`, `tools/lint_active_pages_no_fake_data.py`; header session chrome uses live user / empty states (no template profile).
+• 2026-08-27 — Retired `usis-crm-leads.html` (CRM pipeline) from deznav and the site tour; leads stay on `construction/leads.html`.

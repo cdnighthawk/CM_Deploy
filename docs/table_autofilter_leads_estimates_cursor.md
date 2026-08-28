@@ -306,4 +306,4 @@ If `TakeoffTable.tsx` or the CRM table view does not exist yet:
 - Create the thinnest DataGrid wrapper that matches Page 2 (Estimating) and Page 7 (CRM) layouts in the attached module notes.
 - Still embed existing `ChatBot.tsx` in the estimating sidebar and CRM AI panel. Do not fork ChatBot.
 
-If you are unsure whether a page is “the leads table,” prefer the CRM pipeline table toggle over contacts-only directories.
+If you are unsure whether a page is “the leads table,” prefer `construction/leads.html` over contacts-only directories.

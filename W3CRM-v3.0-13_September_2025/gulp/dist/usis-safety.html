@@ -321,12 +321,6 @@
 							<span class="nav-text" data-i18n="Safety">Safety</span>
 						</a>
 					</li>
-					<li data-usis-module="crm">
-						<a href="usis-crm-leads.html" aria-expanded="false">
-							<i class="icon feather icon-git-branch"></i>
-							<span class="nav-text" data-i18n="CRM pipeline">CRM pipeline</span>
-						</a>
-					</li>
 					<li data-usis-module="projects">
 						<a href="usis-submittal-register.html" aria-expanded="false">
 							<i class="icon feather icon-check-circle"></i>
@@ -428,90 +422,119 @@
 				</nav>
 			</div>
 
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-							<div class="me-2">
-								<h6 class="mb-1">USIS Safety</h6>
-								<p class="text-muted small mb-0">Safety module home (Plan 7): company and site programs, field inspection, incidents—canonical store for OSHA-oriented training and JHAs.</p>
-							</div>
-							<div class="text-nowrap small">
-								<a href="usis-rfp-list.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="construction/add-quotation.html">Next</a>
-							</div>
-						</div>
-						<p class="text-muted small mt-2 mb-0">Plan references: Plan 7 (Safety), Plan 21 (HR + Safety operating model), Plan 20 — Site map and navigation.</p>
+			<div class="container-fluid">
+				<div class="usis-page-header pt-0">
+					<div class="usis-page-header__text">
+						<p class="text-muted small mb-0">Training, JHAs, observations, and incidents. Certs are edited here; HR shows a read-only snapshot.</p>
+					</div>
+					<div class="usis-page-header__actions">
+						<a href="usis-documents-hub.html" class="btn btn-outline-secondary btn-sm">Documents hub</a>
+						<a href="construction/projects.html" class="btn btn-primary btn-sm">Open projects</a>
 					</div>
 				</div>
-			</div>
 
-			<div class="container-fluid">
-				<p class="text-muted small mb-3">
-					<strong>Safety</strong> owns regulatory training records, project JHAs, daily pretasks, observations, and incidents (Plan 7).
-					<strong>HR</strong> owns onboarding and policy acknowledgments; <a href="core-hr.html">Core HR</a> (directory) and the <a href="usis-hr-dashboard.html">HR dashboard</a> show read-only safety cert snapshots only—edit certs and site programs here, not in HR.
-				</p>
+				<div class="row g-3 mb-3">
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Open incidents</div>
+								<div class="usis-kpi__value">—</div>
+								<p class="text-muted small mb-0">Recordables and near-misses</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Observations this week</div>
+								<div class="usis-kpi__value">—</div>
+								<p class="text-muted small mb-0">Field / inspect</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Certs expiring (30 days)</div>
+								<div class="usis-kpi__value">—</div>
+								<p class="text-muted small mb-0"><a href="usis-hr-dashboard.html">HR snapshot</a></p>
+							</div>
+						</div>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Training overdue</div>
+								<div class="usis-kpi__value">—</div>
+								<p class="text-muted small mb-0">Company register</p>
+							</div>
+						</div>
+					</div>
+				</div>
 
 				<div class="row g-3 mb-3">
 					<div class="col-xl-3 col-md-6">
-						<div class="card border-0 shadow-sm h-100">
-							<div class="card-body d-flex flex-column">
-								<h5 class="card-title">Company-wide</h5>
-								<p class="text-muted small flex-grow-1">Policies, manuals, JHA <em>templates</em>, training register, leadership KPIs (TRIR / DART / near-miss).</p>
-								<div class="d-flex flex-wrap gap-1">
+						<div class="card mb-0 h-100">
+							<div class="card-body usis-hub-tile">
+								<span class="usis-overline">Company</span>
+								<h4 class="card-title mb-2">Policies &amp; training</h4>
+								<p class="text-muted small mb-3">Policies, manuals, and the training register.</p>
+								<div class="usis-hub-tile__actions">
 									<a href="usis-documents-hub.html" class="btn btn-primary btn-sm">Documents hub</a>
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-jha-library.html (Plan 7 section 3)">JHA templates</button>
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-safety-dashboard.html">Safety KPIs</button>
 								</div>
+								<p class="usis-kpi__label mb-0 mt-2">Coming soon: JHA templates, Safety KPIs</p>
 							</div>
 						</div>
 					</div>
 					<div class="col-xl-3 col-md-6">
-						<div class="card border-0 shadow-sm h-100">
-							<div class="card-body d-flex flex-column">
-								<h5 class="card-title">Project / site</h5>
-								<p class="text-muted small flex-grow-1">Project safety plan, <strong>project JHAs</strong>, daily pretask, crew checklists, site conditions.</p>
-								<div class="d-flex flex-wrap gap-1">
+						<div class="card mb-0 h-100">
+							<div class="card-body usis-hub-tile">
+								<span class="usis-overline">Project / site</span>
+								<h4 class="card-title mb-2">Site programs</h4>
+								<p class="text-muted small mb-3">Project safety plans, crew checklists, and site conditions.</p>
+								<div class="usis-hub-tile__actions">
 									<a href="construction/projects.html" class="btn btn-primary btn-sm">Projects</a>
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-project-jha-list.html (Plan 7 section 3)">Project JHAs</button>
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Plan 8 field / daily log — pretask tab">Daily pretask</button>
 								</div>
+								<p class="usis-kpi__label mb-0 mt-2">Coming soon: Project JHAs, Daily pretask</p>
 							</div>
 						</div>
 					</div>
 					<div class="col-xl-3 col-md-6">
-						<div class="card border-0 shadow-sm h-100">
-							<div class="card-body d-flex flex-column">
-								<h5 class="card-title">Field / inspect</h5>
-								<p class="text-muted small flex-grow-1">Quick observation with photo, PPE checks, optional <strong>AI safety review</strong> (local model).</p>
-								<div class="d-flex flex-wrap gap-1">
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-safety-observation.html">Observation</button>
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Plan 7 — usis-ai-drawer safety_review mode">AI review</button>
+						<div class="card mb-0 h-100">
+							<div class="card-body usis-hub-tile">
+								<span class="usis-overline">Field</span>
+								<h4 class="card-title mb-2">Inspect</h4>
+								<p class="text-muted small mb-3">Observations, PPE checks, and Local AI review.</p>
+								<div class="usis-hub-tile__actions">
+									<span class="usis-status-chip usis-status-chip--draft">Coming soon</span>
 								</div>
+								<p class="usis-kpi__label mb-0 mt-2">Observation, Review with Local AI</p>
 							</div>
 						</div>
 					</div>
 					<div class="col-xl-3 col-md-6">
-						<div class="card border-0 shadow-sm h-100">
-							<div class="card-body d-flex flex-column">
-								<h5 class="card-title">Incidents &amp; corrective</h5>
-								<p class="text-muted small flex-grow-1">Recordables, root cause, corrective actions linked to punch list / change orders.</p>
-								<div class="d-flex flex-wrap gap-1">
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Planned: usis-safety-incident.html">Incident report</button>
-									<button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Plan 7 — corrective action tracking">Corrective actions</button>
+						<div class="card mb-0 h-100">
+							<div class="card-body usis-hub-tile">
+								<span class="usis-overline">Incidents</span>
+								<h4 class="card-title mb-2">Corrective actions</h4>
+								<p class="text-muted small mb-3">Recordables, root cause, and follow-up.</p>
+								<div class="usis-hub-tile__actions">
+									<span class="usis-status-chip usis-status-chip--draft">Coming soon</span>
 								</div>
+								<p class="usis-kpi__label mb-0 mt-2">Incident report, Corrective actions</p>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<div class="card border-0 shadow-sm">
-					<div class="card-body py-3">
-						<h6 class="fw-semibold mb-2">Also in scope (Plan 7)</h6>
-						<ul class="small text-muted mb-0 ps-3">
-							<li><strong>Subcontractors:</strong> safety docs and attestations via RFP / vendor flows — <a href="usis-rfp-list.html">RFP list</a>.</li>
-							<li><strong>Compliance:</strong> Cal/OSHA / OSHA-oriented exports ship with incident and training workflows.</li>
-							<li><strong>HR handoff:</strong> workers’ comp / return-to-work stays coordinated with HR case files when those flows exist (Plan 21).</li>
-						</ul>
+				<div class="card mb-0">
+					<div class="card-header border-0 pb-0">
+						<h4 class="card-title mb-0">Related</h4>
+					</div>
+					<div class="card-body d-flex flex-wrap gap-2">
+						<a href="usis-rfp-list.html" class="btn btn-outline-secondary btn-sm">RFP list</a>
+						<a href="core-hr.html" class="btn btn-outline-secondary btn-sm">Core HR</a>
+						<a href="usis-hr-dashboard.html" class="btn btn-outline-secondary btn-sm">HR dashboard</a>
 					</div>
 				</div>
 			</div>

@@ -168,6 +168,65 @@ def write_lead_opportunity(row: LeadEstimate, data: dict) -> dict:
     }
 
 
+def _truthy_flag(value: object) -> bool:
+    if value is True:
+        return True
+    if value is False or value is None:
+        return False
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+def apply_bulk_bc_writes(raw_ids: list, data: dict) -> dict:
+    """Push the same BuildingConnected patch to each lead."""
+    updated: list[dict] = []
+    failed: list[dict] = []
+    for raw in raw_ids:
+        ident = str(raw or "").strip()
+        row = resolve_lead_for_bc(ident)
+        if row is None:
+            failed.append({"id": ident, "error": "lead estimate not found"})
+            continue
+        try:
+            result = write_lead_opportunity(row, data)
+            item = result.get("item") or {}
+            updated.append(
+                {
+                    "id": str(row.id),
+                    "external_id": row.external_id,
+                    "submission_state": row.submission_state,
+                    "item": item,
+                }
+            )
+        except BcWriteError as exc:
+            failed.append({"id": str(row.id), "error": exc.message})
+    return {
+        "ok": True,
+        "updated": updated,
+        "failed": failed,
+        "updated_count": len(updated),
+        "failed_count": len(failed),
+        "entity": "buildingconnected_write",
+    }
+
+
+def _run_bulk_write_job(app, raw_ids: list, data: dict) -> None:
+    with app.app_context():
+        try:
+            result = apply_bulk_bc_writes(raw_ids, data)
+            log.info(
+                "BuildingConnected bulk write background done updated=%s failed=%s",
+                result.get("updated_count"),
+                result.get("failed_count"),
+            )
+            if result.get("failed"):
+                log.warning(
+                    "BuildingConnected bulk write background failures: %s",
+                    result.get("failed"),
+                )
+        except Exception:
+            log.exception("BuildingConnected bulk write background job failed")
+
+
 def cron_secret_matches(req=None, app=None) -> bool:
     """True when X-Cron-Secret matches BC_SYNC_CRON_SECRET (hourly Render job)."""
     cfg = app or current_app
@@ -621,38 +680,33 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         except ValueError as exc:
             return jsonify({"error": str(exc), "entity": "buildingconnected_write"}), 400
 
-        updated: list[dict] = []
-        failed: list[dict] = []
-        for raw in raw_ids:
-            ident = str(raw or "").strip()
-            row = resolve_lead_for_bc(ident)
-            if row is None:
-                failed.append({"id": ident, "error": "lead estimate not found"})
-                continue
-            try:
-                result = write_lead_opportunity(row, data)
-                item = result.get("item") or {}
-                updated.append(
+        idents = [str(raw or "").strip() for raw in raw_ids if str(raw or "").strip()]
+        payload = {k: v for k, v in data.items() if k not in ("ids", "lead_ids", "async")}
+        if _truthy_flag(data.get("async")):
+            app = current_app._get_current_object()
+            threading.Thread(
+                target=_run_bulk_write_job,
+                args=(app, idents, payload),
+                daemon=True,
+                name="bc-bulk-write",
+            ).start()
+            return (
+                jsonify(
                     {
-                        "id": str(row.id),
-                        "external_id": row.external_id,
-                        "submission_state": row.submission_state,
-                        "item": item,
+                        "ok": True,
+                        "status": "started",
+                        "total": len(idents),
+                        "entity": "buildingconnected_write",
+                        "message": (
+                            f"Updating {len(idents)} opportunities in BuildingConnected "
+                            "in the background. You can keep working."
+                        ),
                     }
-                )
-            except BcWriteError as exc:
-                failed.append({"id": str(row.id), "error": exc.message})
+                ),
+                202,
+            )
 
-        return jsonify(
-            {
-                "ok": True,
-                "updated": updated,
-                "failed": failed,
-                "updated_count": len(updated),
-                "failed_count": len(failed),
-                "entity": "buildingconnected_write",
-            }
-        )
+        return jsonify(apply_bulk_bc_writes(idents, payload))
 
     @bp.patch("/lead-estimates/<identifier>/buildingconnected")
     def patch_lead_buildingconnected(identifier: str):

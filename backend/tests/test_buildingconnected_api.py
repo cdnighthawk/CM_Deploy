@@ -1,6 +1,7 @@
 """Tests for BuildingConnected OAuth + sync routes (mocked HTTP to APS/BC)."""
 from __future__ import annotations
 
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -456,6 +457,89 @@ def test_bc_bulk_write_rejects_empty_ids(client, flask_app):
         json={"ids": [], "submissionState": "WILL_SUBMIT"},
     )
     assert r.status_code == 400
+
+
+def test_bc_bulk_write_async_returns_202_immediately(client, flask_app):
+    flask_app.config["BC_WRITE_ENABLED"] = True
+    r = client.post(
+        "/api/v1/lead-estimates/bulk/buildingconnected",
+        json={"ids": ["missing-lead"], "submissionState": "WILL_SUBMIT", "async": True},
+    )
+    assert r.status_code == 202, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body.get("ok") is True
+    assert body.get("status") == "started"
+    assert body.get("total") == 1
+    assert "background" in (body.get("message") or "").lower()
+
+
+def test_bc_bulk_write_async_patches_in_background(monkeypatch, client, flask_app):
+    _skip_if_no_bc_table(flask_app)
+    flask_app.config["BC_WRITE_ENABLED"] = True
+    flask_app.config["SECRET_KEY"] = "unit-test-secret-key-not-for-production-use"
+    flask_app.config["BUILDINGCONNECTED_API_BASE"] = (
+        "https://developer.api.autodesk.com/construction/buildingconnected/v2"
+    )
+
+    patched_ids: list[str] = []
+
+    class _WriteClient:
+        def __init__(self, _token, _base):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def patch_opportunity(self, opportunity_id, patch):
+            patched_ids.append(opportunity_id)
+            return {"id": opportunity_id, "submissionState": patch["submissionState"]}
+
+        def get_opportunity(self, opportunity_id):
+            return {"id": opportunity_id, "submissionState": "DECLINED", "isArchived": False}
+
+    monkeypatch.setattr(_integration_bc, "BuildingConnectedClient", _WriteClient)
+    monkeypatch.setattr(_integration_bc, "_ensure_access_token", lambda: "at-write")
+
+    eids = ["bc-async-a-" + uuid.uuid4().hex[:8], "bc-async-b-" + uuid.uuid4().hex[:8]]
+    lead_ids: list[str] = []
+    with flask_app.app_context():
+        for eid in eids:
+            le = LeadEstimate(external_id=eid, name="Async write " + eid, submission_state="UNDECIDED")
+            db.session.add(le)
+            db.session.flush()
+            lead_ids.append(str(le.id))
+        db.session.commit()
+
+    try:
+        r = client.post(
+            "/api/v1/lead-estimates/bulk/buildingconnected",
+            json={"ids": lead_ids, "submissionState": "DECLINED", "async": True},
+        )
+        assert r.status_code == 202, r.get_data(as_text=True)
+        body = r.get_json()
+        assert body.get("status") == "started"
+        assert body.get("total") == 2
+
+        for _ in range(80):
+            if len(patched_ids) >= 2:
+                break
+            time.sleep(0.05)
+        assert sorted(patched_ids) == sorted(eids)
+        with flask_app.app_context():
+            for eid in eids:
+                row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
+                assert row is not None
+                assert str(row.submission_state).upper() == "DECLINED"
+    finally:
+        with flask_app.app_context():
+            for eid in eids:
+                row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
+                if row is not None:
+                    db.session.delete(row)
+            db.session.commit()
 
 
 def test_estimate_ui_filter_excludes_grouped_children():

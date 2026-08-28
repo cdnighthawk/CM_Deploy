@@ -194,12 +194,21 @@
 			method: "POST",
 			credentials: "include",
 			headers: { Accept: "application/json", "Content-Type": "application/json" },
-			body: JSON.stringify(Object.assign({ ids: ids }, body)),
+			body: JSON.stringify(Object.assign({ ids: ids, async: true }, body)),
 		}).then(function (r) {
 			return r.json().then(function (j) {
 				if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
 				return j;
 			});
+		});
+	}
+
+	function refreshListsInBackground() {
+		[4000, 12000, 25000].forEach(function (ms) {
+			window.setTimeout(function () {
+				reloadLists();
+				document.dispatchEvent(new CustomEvent("usis-bc-write-done", { detail: { background: true } }));
+			}, ms);
 		});
 	}
 
@@ -266,6 +275,21 @@
 			confirmBtn.disabled = true;
 			var req = ids.length > 1 ? patchSubmissionBulk(ids, payload) : patchSubmission(ids[0], payload);
 			req.then(function (result) {
+					if (window.bootstrap && window.bootstrap.Modal) {
+						window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+					}
+					if (ids.length > 1 && result && result.status === "started") {
+						if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
+							window.USISListBulk.clear();
+						}
+						notify(
+							"info",
+							result.message ||
+								"Sending " + ids.length + " updates to BuildingConnected in the background."
+						);
+						refreshListsInBackground();
+						return;
+					}
 					if (ids.length > 1) summarizeBulk(result, state);
 					else {
 						notify(
@@ -274,9 +298,6 @@
 								? "Marked Will Not Bid in BuildingConnected."
 								: "BuildingConnected status updated.",
 						);
-					}
-					if (window.bootstrap && window.bootstrap.Modal) {
-						window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 					}
 					if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
 						window.USISListBulk.clear();

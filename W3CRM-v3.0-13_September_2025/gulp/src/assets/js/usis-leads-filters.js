@@ -21,10 +21,12 @@
 		"activity_to",
 		"value_min",
 		"value_max",
+		"distance_miles",
 		"owner_id",
 		"sort",
 		"saved_filter_id",
 	];
+	var DISTANCE_PRESETS = { "25": true, "50": true, "100": true, "150": true, "250": true };
 
 	var TRADE_LABELS = {
 		drywall: "Drywall",
@@ -76,6 +78,7 @@
 			activity_to: "",
 			value_min: "",
 			value_max: "",
+			distance_miles: "",
 			owner_id: [],
 			sort: "due_date.asc",
 			saved_filter_id: "",
@@ -154,6 +157,9 @@
 				label: "Value: " + (q.value_min ? "$" + q.value_min : "…") + " – " + (q.value_max ? "$" + q.value_max : "…"),
 			});
 		}
+		if (q.distance_miles) {
+			out.push({ key: "distance", label: "Within " + q.distance_miles + " mi of office" });
+		}
 		(q.owner_id || []).forEach(function (id) {
 			out.push({ key: "owner_id", value: id, label: "Owner: " + (ownerLabels[id] || id) });
 		});
@@ -197,9 +203,114 @@
 		if (q.activity_to) params.activity_to = q.activity_to;
 		if (q.value_min) params.value_min = q.value_min;
 		if (q.value_max) params.value_max = q.value_max;
+		if (q.distance_miles) params.distance_miles = q.distance_miles;
 		if (q.owner_id && q.owner_id.length) params.owner_id = csv(q.owner_id);
 		if (q.saved_filter_id) params.saved_filter_id = q.saved_filter_id;
 		return params;
+	}
+
+	var officeState = { configured: false, label: "" };
+
+	function readDistanceMiles() {
+		var preset = document.getElementById("usis-leads-f-distance-preset");
+		var custom = document.getElementById("usis-leads-f-distance");
+		var choice = preset && preset.value ? String(preset.value) : "";
+		if (choice === "custom") {
+			return custom && custom.value ? String(custom.value).trim() : "";
+		}
+		return choice;
+	}
+
+	function writeDistanceMiles(raw) {
+		var preset = document.getElementById("usis-leads-f-distance-preset");
+		var custom = document.getElementById("usis-leads-f-distance");
+		var miles = raw ? String(raw).trim() : "";
+		if (!preset) return;
+		if (!miles) {
+			preset.value = "";
+		} else if (DISTANCE_PRESETS[miles]) {
+			preset.value = miles;
+		} else {
+			preset.value = "custom";
+			if (custom) custom.value = miles;
+		}
+		toggleCustomDistance();
+	}
+
+	function toggleCustomDistance() {
+		var preset = document.getElementById("usis-leads-f-distance-preset");
+		var custom = document.getElementById("usis-leads-f-distance");
+		if (!custom) return;
+		var show = !!(preset && preset.value === "custom");
+		custom.classList.toggle("d-none", !show);
+		if (show) custom.focus();
+	}
+
+	function paintOffice() {
+		var label = document.getElementById("usis-leads-f-office-label");
+		var form = document.getElementById("usis-leads-f-office-form");
+		if (label) {
+			if (officeState.configured && officeState.label) {
+				label.textContent = "From your office in " + officeState.label + ". Jobs without a mapped site are hidden.";
+			} else if (officeState.configured) {
+				label.textContent = "From your saved office. Jobs without a mapped site are hidden.";
+			} else {
+				label.textContent = "Save your office city or ZIP to filter by distance. Jobs without a mapped site are hidden.";
+			}
+		}
+		if (form) form.classList.toggle("d-none", !!officeState.configured);
+	}
+
+	function loadOffice() {
+		if (!api()) return Promise.resolve(officeState);
+		return api()
+			.fetchJson("/api/v1/office-location")
+			.then(function (data) {
+				officeState = {
+					configured: !!(data && data.configured),
+					label: (data && (data.label || [data.city, data.state].filter(Boolean).join(", "))) || "",
+				};
+				paintOffice();
+				return officeState;
+			})
+			.catch(function () {
+				paintOffice();
+				return officeState;
+			});
+	}
+
+	function saveOffice() {
+		if (!api()) return;
+		var city = document.getElementById("usis-leads-f-office-city");
+		var state = document.getElementById("usis-leads-f-office-state");
+		var zip = document.getElementById("usis-leads-f-office-zip");
+		var payload = {
+			city: city && city.value ? city.value.trim() : "",
+			state: state && state.value ? state.value.trim() : "",
+			postal_code: zip && zip.value ? zip.value.trim() : "",
+		};
+		if (!payload.city && !payload.postal_code) {
+			notify("warning", "Enter a city or ZIP for your office");
+			return;
+		}
+		var btn = document.getElementById("usis-leads-f-office-save");
+		if (btn) btn.disabled = true;
+		api()
+			.fetchJson("/api/v1/office-location", { method: "PATCH", body: payload })
+			.then(function (data) {
+				officeState = {
+					configured: !!(data && data.configured),
+					label: (data && (data.label || [data.city, data.state].filter(Boolean).join(", "))) || "",
+				};
+				paintOffice();
+				notify("success", officeState.label ? "Office set to " + officeState.label : "Office location saved");
+			})
+			.catch(function () {
+				notify("error", "Could not map that office address. Try a US city and state or ZIP.");
+			})
+			.then(function () {
+				if (btn) btn.disabled = false;
+			});
 	}
 
 	function readDraft() {
@@ -223,6 +334,7 @@
 		q.value_min = el && el.value ? el.value : "";
 		el = document.getElementById("usis-leads-f-value-max");
 		q.value_max = el && el.value ? el.value : "";
+		q.distance_miles = readDistanceMiles();
 		q.owner_id = multiValues(document.getElementById("usis-leads-f-owner"));
 		q.sort = "due_date.asc";
 		return q;
@@ -259,6 +371,7 @@
 		if (el) el.value = q.value_min || "";
 		el = document.getElementById("usis-leads-f-value-max");
 		if (el) el.value = q.value_max || "";
+		writeDistanceMiles(q.distance_miles);
 		setMultiValues(document.getElementById("usis-leads-f-owner"), q.owner_id);
 		if ((q.activity_from || q.activity_to) && document.getElementById("usis-leads-f-extra-dates")) {
 			document.getElementById("usis-leads-f-extra-dates").classList.remove("d-none");
@@ -295,7 +408,7 @@
 		q.company_id = splitCsv(raw.company_id);
 		q.sector = splitCsv(raw.sector);
 		q.stage = splitCsv(raw.stage);
-		["due_from", "due_to", "start_from", "start_to", "activity_from", "activity_to", "value_min", "value_max", "saved_filter_id"].forEach(
+		["due_from", "due_to", "start_from", "start_to", "activity_from", "activity_to", "value_min", "value_max", "distance_miles", "saved_filter_id"].forEach(
 			function (k) {
 				q[k] = raw[k] ? String(raw[k]) : "";
 			}
@@ -430,6 +543,8 @@
 		} else if (key === "value") {
 			q.value_min = "";
 			q.value_max = "";
+		} else if (key === "distance") {
+			q.distance_miles = "";
 		} else if (key === "company_id") {
 			q.company_id = (q.company_id || []).filter(function (id) {
 				return id !== value;
@@ -749,10 +864,23 @@
 		var applyBtn = document.getElementById("usis-leads-filter-apply");
 		if (applyBtn) {
 			applyBtn.addEventListener("click", function () {
-				applyQuery(readDraft());
+				var draft = readDraft();
+				if (draft.distance_miles && !officeState.configured) {
+					notify("warning", "Save your office location before filtering by distance");
+					var form = document.getElementById("usis-leads-f-office-form");
+					if (form) form.classList.remove("d-none");
+					return;
+				}
+				applyQuery(draft);
 				closeDrawer();
 			});
 		}
+		var preset = document.getElementById("usis-leads-f-distance-preset");
+		if (preset) {
+			preset.addEventListener("change", toggleCustomDistance);
+		}
+		var officeSave = document.getElementById("usis-leads-f-office-save");
+		if (officeSave) officeSave.addEventListener("click", saveOffice);
 		var resetBtn = document.getElementById("usis-leads-filter-reset");
 		if (resetBtn) resetBtn.addEventListener("click", resetAll);
 		var saveBtn = document.getElementById("usis-leads-filter-save");
@@ -937,7 +1065,8 @@
 		opts = options || {};
 		bindEvents();
 		writeDraft(applied);
-		return Promise.all([loadOwners(), bootInitialQuery()]).then(function () {
+		paintOffice();
+		return Promise.all([loadOwners(), loadOffice(), bootInitialQuery()]).then(function () {
 			return applied;
 		});
 	}

@@ -127,6 +127,25 @@
 		global.document.body.appendChild(btn);
 	}
 
+	function ensureUiJs() {
+		if (global.USISUi) {
+			return;
+		}
+		var existing = global.document.querySelector('script[src*="usis-ui.js"]');
+		if (existing) {
+			return;
+		}
+		var marker = global.document.querySelector('script[src*="usis-theme.js"]');
+		var src = "assets/js/usis-ui.js";
+		if (marker && marker.getAttribute("src")) {
+			src = marker.getAttribute("src").replace("usis-theme.js", "usis-ui.js");
+		}
+		var s = global.document.createElement("script");
+		s.src = src;
+		s.defer = true;
+		(marker && marker.parentNode ? marker.parentNode : global.document.head || global.document.body).appendChild(s);
+	}
+
 	function init() {
 		var theme = readStored() || get();
 		applyDom(theme);
@@ -134,6 +153,16 @@
 		ensureAuthToggle();
 		syncToggleButton(theme);
 		bindToggle();
+		ensureUiJs();
+		if (boot && typeof boot.apply === "function") {
+			/* usis-theme-boot already applied theme; re-pin UI CSS last. */
+		}
+		if (global.document && global.document.head) {
+			var pin = global.document.querySelector('link[href*="usis-ui.css"]');
+			if (pin && pin.parentNode === global.document.head) {
+				global.document.head.appendChild(pin);
+			}
+		}
 	}
 
 	global.USISTheme = {

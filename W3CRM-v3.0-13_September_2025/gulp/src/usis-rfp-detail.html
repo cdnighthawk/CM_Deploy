@@ -34,8 +34,36 @@
 				</div>
 			</div>
 			<div class="container-fluid">
-				<pre class="small bg-light p-3 border rounded" id="usis-rfp-detail-json"></pre>
-				<p><a href="#" id="usis-rfp-email-preview">Email preview (JSON)</a></p>
+				<div class="usis-page-header">
+					<div class="usis-page-header__text">
+						<span class="usis-overline">Procurement</span>
+						<h1 class="h5 mb-1">RFP detail</h1>
+					</div>
+					<div class="usis-page-header__actions">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-email-preview">Email preview</button>
+					</div>
+				</div>
+				<div class="card">
+					<div class="card-body p-3">
+						<pre class="small mb-0" id="usis-rfp-detail-json"></pre>
+					</div>
+				</div>
+				<div class="modal fade" id="usis-rfp-email-modal" tabindex="-1" aria-labelledby="usis-rfp-email-title" aria-hidden="true">
+					<div class="modal-dialog modal-lg modal-dialog-scrollable">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="usis-rfp-email-title">Email preview</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+								<pre class="small mb-0" id="usis-rfp-email-body"></pre>
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</main>
 		@@include("elements/footer.html")
@@ -73,7 +101,12 @@
 					return r.json();
 				})
 				.then(function (d) {
-					alert(d.html || JSON.stringify(d));
+					var body = document.getElementById("usis-rfp-email-body");
+					if (body) body.textContent = d.html || JSON.stringify(d, null, 2);
+					var modalEl = document.getElementById("usis-rfp-email-modal");
+					if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+						window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+					}
 				});
 		});
 	})();

@@ -299,17 +299,19 @@
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
 						</a>
 					</li>
-					<li data-usis-module="leads">
-						<a href="construction/leads.html" aria-expanded="false">
-							<i class="icon feather icon-users"></i>
-							<span class="nav-text" data-i18n="Leads">Leads</span>
-						</a>
-					</li>
-					<li data-usis-module="estimate">
-						<a href="construction/estimate.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-file-text"></i>
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="estimate">
+								<a href="construction/estimate.html" data-i18n="Estimate">Estimate</a>
+							</li>
+							<li data-usis-module="leads">
+								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
+							</li>
+						</ul>
 					</li>
 					<li data-usis-module="projects">
 						<a href="construction/projects.html" aria-expanded="false">
@@ -320,7 +322,7 @@
 					<li data-usis-module="projects">
 						<a href="usis-calendar.html" aria-expanded="false">
 							<i class="icon feather icon-calendar"></i>
-							<span class="nav-text">Calendar</span>
+							<span class="nav-text" data-i18n="Calendar">Calendar</span>
 						</a>
 					</li>
 					<li data-usis-module="safety">
@@ -332,80 +334,83 @@
 					<li data-usis-module="crm">
 						<a href="usis-crm-leads.html" aria-expanded="false">
 							<i class="icon feather icon-git-branch"></i>
-							<span class="nav-text">CRM pipeline</span>
+							<span class="nav-text" data-i18n="CRM pipeline">CRM pipeline</span>
 						</a>
 					</li>
-					<li data-usis-module="documents">
-						<a href="usis-documents-hub.html" aria-expanded="false">
-							<i class="icon feather icon-folder"></i>
-							<span class="nav-text">Documents</span>
+					<li data-usis-module="projects">
+						<a href="usis-submittal-register.html" aria-expanded="false">
+							<i class="icon feather icon-check-circle"></i>
+							<span class="nav-text" data-i18n="Submittals">Submittals</span>
 						</a>
 					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
 							<i class="icon feather icon-mail"></i>
-							<span class="nav-text">Email</span>
+							<span class="nav-text" data-i18n="Email">Email</span>
 						</a>
 					</li>
-					<li data-usis-module="hr">
-						<a href="usis-hr-dashboard.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-user-check"></i>
 							<span class="nav-text" data-i18n="HR">HR</span>
 						</a>
-					</li>
-					<li data-usis-module="hr">
-						<a href="usis-hr-applications.html" aria-expanded="false">
-							<i class="icon feather icon-inbox"></i>
-							<span class="nav-text">Applications</span>
-						</a>
-					</li>
-					<li data-usis-module="hrms">
-						<a href="usis-hrms-home.html" aria-expanded="false">
-							<i class="icon feather icon-briefcase"></i>
-							<span class="nav-text">HR suite</span>
-						</a>
-					</li>
-					<li data-usis-module="hrms">
-						<a href="usis-hrms-expenses.html" aria-expanded="false">
-							<i class="icon feather icon-credit-card"></i>
-							<span class="nav-text">Expenses</span>
-						</a>
-					</li>
-					<li data-usis-module="playbooks">
-						<a href="usis-playbooks.html" aria-expanded="false">
-							<i class="icon feather icon-check-square"></i>
-							<span class="nav-text">Playbooks</span>
-						</a>
-					</li>
-					<li data-usis-module="user_admin">
-						<a href="usis-user-directory.html" aria-expanded="false">
-							<i class="icon feather icon-settings"></i>
-							<span class="nav-text">User admin</span>
-						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="hr">
+								<a href="usis-hr-dashboard.html" data-i18n="HR">HR dashboard</a>
+							</li>
+							<li data-usis-module="hr">
+								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
+							</li>
+							<li data-usis-module="hrms">
+								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
+							</li>
+						</ul>
 					</li>
 					<li data-usis-module="procurement">
 						<a href="usis-procurement.html" aria-expanded="false">
 							<i class="icon feather icon-shopping-cart"></i>
-							<span class="nav-text">Procurement</span>
+							<span class="nav-text" data-i18n="Procurement">Procurement</span>
 						</a>
 					</li>
-					<li data-usis-module="ap">
-						<a href="usis-invoices.html" aria-expanded="false">
-							<i class="icon feather icon-file-text"></i>
-							<span class="nav-text">Invoices</span>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-dollar-sign"></i>
+							<span class="nav-text" data-i18n="Finance">Finance</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="ap">
+								<a href="usis-invoices.html" data-i18n="Invoices">Invoices</a>
+							</li>
+							<li data-usis-module="ap">
+								<a href="usis-invoice-approvals.html" data-i18n="Invoice approvals">Invoice approvals</a>
+							</li>
+							<li data-usis-module="hrms">
+								<a href="usis-hrms-expenses.html" data-i18n="Expenses">Expenses</a>
+							</li>
+						</ul>
 					</li>
-					<li data-usis-module="ap">
-						<a href="usis-invoice-approvals.html" aria-expanded="false">
-							<i class="icon feather icon-check-circle"></i>
-							<span class="nav-text">Invoice approvals</span>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-settings"></i>
+							<span class="nav-text" data-i18n="Admin">Admin</span>
 						</a>
-					</li>
-					<li data-usis-module="reports">
-						<a href="reports.html" aria-expanded="false">
-							<i class="icon feather icon-pie-chart"></i>
-							<span class="nav-text">Reports</span>
-						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="user_admin">
+								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
+							</li>
+							<li data-usis-module="playbooks">
+								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+							</li>
+							<li data-usis-module="reports">
+								<a href="reports.html" data-i18n="Reports">Reports</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							</li>
+							<li data-usis-module="projects">
+								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
+							</li>
+						</ul>
 					</li>
 				</ul>
 			</div>

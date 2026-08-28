@@ -65,6 +65,11 @@ class VendorInvoice(UUIDPKMixin, TimestampMixin, db.Model):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     payment_ref: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    match_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="unmatched", server_default="unmatched", index=True
+    )
+    match_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    match_checked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     files: Mapped[List["VendorInvoiceFile"]] = relationship(
         back_populates="invoice", cascade="all, delete-orphan"

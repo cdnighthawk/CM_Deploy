@@ -9,6 +9,24 @@ from .models import Rfp, RfpVendorQuote
 
 public_bp = Blueprint("public_portal", __name__)
 
+_PUBLIC_CHROME = """
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650;700&display=swap" rel="stylesheet">
+<style>
+:root{--usis-primary:#1F4E5F;--usis-bg:#F4F6F8;--usis-paper:#fff;--usis-text:#1B242C;--usis-muted:#5C6B76;--usis-line:#E3E8EE}
+body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background:var(--usis-bg);color:var(--usis-text);margin:0}
+.usis-public-rfp-header{background:var(--usis-paper);border-bottom:1px solid var(--usis-line);padding:12px 16px}
+.usis-public-rfp-header strong{font-size:1.125rem}
+.usis-public-rfp .wrap{max-width:40rem;margin:0 auto;padding:24px 16px}
+.usis-public-rfp .card-like{background:var(--usis-paper);border:1px solid var(--usis-line);border-radius:10px;padding:16px}
+.usis-public-rfp h1{font-size:1.375rem;font-weight:650;margin:0 0 .35rem}
+.usis-public-rfp .muted{color:var(--usis-muted);font-size:.8125rem}
+.usis-public-rfp .form-control,.usis-public-rfp .form-select{font-size:.8125rem;border-radius:8px}
+.usis-public-rfp .btn-primary{background:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px;width:100%}
+.usis-public-rfp .table{font-size:.8125rem}
+.usis-chip{display:inline-flex;align-items:center;height:24px;padding:0 .55rem;border:1px solid var(--usis-line);border-radius:999px;font-size:12px;font-weight:600;color:var(--usis-muted)}
+</style>
+"""
+
 
 def _rfp_by_token(token: str) -> Rfp | None:
     raw = (token or "").strip()
@@ -26,15 +44,25 @@ def public_rfp_get(token: str):
     rows = "".join(
         f"<tr><td>{x.description}</td><td>{float(x.quantity)}</td><td>{x.unit}</td></tr>" for x in lines
     )
-    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>{r.title}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head>
-    <body class="p-4"><div class="container"><h1>{r.title}</h1>
-    <p class="text-muted">Submit a quote using the form below.</p>
+    due = getattr(r, "due_at", None) or getattr(r, "due_date", None) or ""
+    html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{r.title}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    {_PUBLIC_CHROME}</head>
+    <body class="usis-public-rfp">
+    <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
+      <strong>US Interior Specialties</strong>
+      <span class="usis-chip">RFP{(' · due ' + str(due)[:10]) if due else ''}</span>
+    </header>
+    <div class="wrap"><div class="card-like">
+    <h1>{r.title}</h1>
+    <p class="muted mb-3">Submit a quote using the form below.</p>
     <table class="table table-sm"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th></tr></thead><tbody>{rows}</tbody></table>
-    <form method="post" class="mt-4"><div class="mb-3"><label class="form-label">Vendor name</label>
-    <input name="vendor_label" class="form-control" required></div>
-    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="3"></textarea></div>
-    <button class="btn btn-primary" type="submit">Submit quote</button></form></div></body></html>"""
+    <form method="post" class="mt-3"><div class="mb-3"><label class="form-label">Vendor name</label>
+    <input name="vendor_label" class="form-control form-control-sm" required></div>
+    <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="3"></textarea></div>
+    <button class="btn btn-primary" type="submit">Submit quote</button></form>
+    </div></div></body></html>"""
     return html
 
 
@@ -48,7 +76,17 @@ def public_rfp_post(token: str):
     q = RfpVendorQuote(rfp_id=r.id, vendor_label=vendor, notes=notes, line_prices={})
     db.session.add(q)
     db.session.commit()
-    return "<p>Thank you — quote received.</p>", 200
+    return (
+        f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Quote received</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        {_PUBLIC_CHROME}</head>
+        <body class="usis-public-rfp"><div class="wrap"><div class="card-like">
+        <h1>Quote received</h1>
+        <p class="muted mb-0">Thank you — we have your response.</p>
+        </div></div></body></html>""",
+        200,
+    )
 
 
 @public_bp.post("/api/public/submittals/<token>")
@@ -76,15 +114,25 @@ def public_submittal_form(token: str):
         return "<p>Submittal not found</p>", 404
     title = s.title
     number = s.submittal_number or f"#{s.number}"
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>{number}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head>
-    <body class="p-4"><div class="container"><h1>{number}</h1><p>{title}</p>
-    <p class="text-muted">Upload product data for this package only. You cannot see other vendors.</p>
-    <form method="post" action="/api/public/submittals/{token}" class="mt-4">
+    return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{number}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    {_PUBLIC_CHROME}</head>
+    <body class="usis-public-rfp">
+    <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
+      <strong>US Interior Specialties</strong>
+      <span class="usis-chip">{number}</span>
+    </header>
+    <div class="wrap"><div class="card-like">
+    <h1>{number}</h1>
+    <p class="muted mb-3">{title}</p>
+    <p class="muted">Upload product data for this package only. You cannot see other vendors.</p>
+    <form method="post" action="/api/public/submittals/{token}" class="mt-3">
     <div class="mb-3"><label class="form-label">Vendor name</label>
-    <input name="vendor_label" class="form-control" required></div>
+    <input name="vendor_label" class="form-control form-control-sm" required></div>
     <div class="mb-3"><label class="form-label">File URL</label>
-    <input name="file_url" class="form-control" required placeholder="https://…/cutsheet.pdf"></div>
+    <input name="file_url" class="form-control form-control-sm" required placeholder="https://…/cutsheet.pdf"></div>
     <div class="mb-3"><label class="form-label">Notes</label>
-    <textarea name="notes" class="form-control" rows="3"></textarea></div>
-    <button class="btn btn-primary" type="submit">Upload package</button></form></div></body></html>"""
+    <textarea name="notes" class="form-control form-control-sm" rows="3"></textarea></div>
+    <button class="btn btn-primary" type="submit">Upload package</button></form>
+    </div></div></body></html>"""

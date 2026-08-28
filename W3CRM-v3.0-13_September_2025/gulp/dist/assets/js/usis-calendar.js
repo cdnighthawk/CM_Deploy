@@ -32,12 +32,12 @@
 
 	var CATEGORY_COLORS = {
 		procurement_order: { bg: "#ffc107", border: "#e0a800", text: "#212529" },
-		procurement_delivery: { bg: "#198754", border: "#146c43", text: "#fff" },
-		schedule: { bg: "#0d6efd", border: "#0a58ca", text: "#fff" },
-		rfi: { bg: "#dc3545", border: "#b02a37", text: "#fff" },
-		submittal: { bg: "#6c757d", border: "#565e64", text: "#fff" },
-		rfp: { bg: "#6f42c1", border: "#59359a", text: "#fff" },
-		project_milestone: { bg: "#20c997", border: "#1aa179", text: "#212529" },
+		procurement_delivery: { bg: "#2E7D4F", border: "#246640", text: "#fff" },
+		schedule: { bg: "#1F4E5F", border: "#163845", text: "#fff" },
+		rfi: { bg: "#B42318", border: "#8f1c13", text: "#fff" },
+		submittal: { bg: "#5B6570", border: "#4a535c", text: "#fff" },
+		rfp: { bg: "#1F4E5F", border: "#163845", text: "#fff" },
+		project_milestone: { bg: "#2E7D4F", border: "#246640", text: "#fff" },
 	};
 
 	function apiBase() {

@@ -23,15 +23,34 @@ Get-Mailbox -ResultSize Unlimited | Where-Object {
 }
 Add-DistributionGroupMember -Identity $GroupName -Member $Noreply -BypassSecurityGroupManagerCheck -ErrorAction SilentlyContinue
 
-$existing = Get-ApplicationAccessPolicy | Where-Object { $_.AppId -eq $AppId }
+# Get-ApplicationAccessPolicy with no Identity searches '*', which Exchange
+# Hosted sometimes fails to resolve (OU=...onmicrosoft.com\*) even when
+# policies exist. Treat that as "none found" and create-or-update below.
+$existing = $null
+try {
+    $existing = @(Get-ApplicationAccessPolicy -ErrorAction Stop) |
+        Where-Object { $_.AppId -eq $AppId } |
+        Select-Object -First 1
+} catch {
+    if ($_.Exception.Message -notmatch "couldn't be found") {
+        throw
+    }
+}
+
 if ($existing) {
     Set-ApplicationAccessPolicy -Identity $existing.Identity -PolicyScopeGroupId $group.PrimarySmtpAddress
 } else {
-    New-ApplicationAccessPolicy `
-        -AppId $AppId `
-        -PolicyScopeGroupId $group.PrimarySmtpAddress `
-        -AccessRight RestrictAccess `
-        -Description "USIS CRM may only send/read mail for gousis.com + noreply"
+    try {
+        New-ApplicationAccessPolicy `
+            -AppId $AppId `
+            -PolicyScopeGroupId $group.PrimarySmtpAddress `
+            -AccessRight RestrictAccess `
+            -Description "USIS CRM may only send/read mail for gousis.com + noreply"
+    } catch {
+        if ($_.Exception.Message -notmatch "already exists") {
+            throw
+        }
+    }
 }
 
 Write-Host "Application access policy applied for $AppId on group '$GroupName'."

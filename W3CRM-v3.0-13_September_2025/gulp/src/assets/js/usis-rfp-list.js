@@ -31,7 +31,9 @@
 		var tb = document.getElementById("usis-rfp-tbody");
 		if (!tb) return;
 		if (!q) {
-			tb.innerHTML = '<tr><td colspan="4" class="text-muted">Add ?lead_estimate_id= or ?project_id=</td></tr>';
+			tb.innerHTML = '<tr><td colspan="4">' +
+				(window.USISUi ? window.USISUi.emptyState({ title: "Select a job first", body: "Add ?lead_estimate_id= or ?project_id= to load RFPs." }) : '<span class="text-muted">Add ?lead_estimate_id= or ?project_id=</span>') +
+				"</td></tr>";
 			return;
 		}
 		tb.innerHTML = '<tr><td colspan="4">Loading…</td></tr>';
@@ -42,7 +44,9 @@
 			.then(function (data) {
 				var rows = data.items || [];
 				if (!rows.length) {
-					tb.innerHTML = '<tr><td colspan="4" class="text-muted">No RFPs yet.</td></tr>';
+					tb.innerHTML = '<tr><td colspan="4">' +
+						(window.USISUi ? window.USISUi.emptyState({ title: "No RFPs yet", body: "Create a draft to send to vendors." }) : '<span class="text-muted">No RFPs yet.</span>') +
+						"</td></tr>";
 					return;
 				}
 				tb.innerHTML = rows
@@ -54,7 +58,7 @@
 							"<tr><td>" +
 							esc(x.title) +
 							"</td><td>" +
-							esc(x.status) +
+							(window.USISUi ? window.USISUi.statusChip(x.status) : esc(x.status)) +
 							"</td><td><code class=\"small\">" +
 							esc(x.public_token) +
 							"</code></td><td>" +

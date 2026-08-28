@@ -42,6 +42,23 @@
 				}
 			}
 		});
+		document.querySelectorAll(".deznav .metismenu > li").forEach(function (parent) {
+			var kids = parent.querySelectorAll(":scope > ul > li[data-usis-module]");
+			if (!kids.length) return;
+			var anyVisible = false;
+			kids.forEach(function (kid) {
+				if (kid.getAttribute("aria-hidden") !== "true" && kid.style.display !== "none") {
+					anyVisible = true;
+				}
+			});
+			if (anyVisible) {
+				parent.style.display = "";
+				parent.removeAttribute("aria-hidden");
+			} else {
+				parent.style.display = "none";
+				parent.setAttribute("aria-hidden", "true");
+			}
+		});
 	}
 
 	function refresh() {

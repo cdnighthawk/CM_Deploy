@@ -41,8 +41,30 @@
 		applyToEl(doc.body, theme);
 	}
 
+	function ensureUiCss() {
+		var doc = global.document;
+		if (!doc || !doc.head) {
+			return;
+		}
+		var existing = doc.querySelectorAll('link[href*="usis-ui.css"]');
+		var i;
+		for (i = 0; i < existing.length; i++) {
+			existing[i].parentNode.removeChild(existing[i]);
+		}
+		var link = doc.createElement("link");
+		link.rel = "stylesheet";
+		link.href = "assets/css/usis-ui.css";
+		doc.head.appendChild(link);
+	}
+
 	var theme = resolveTheme();
 	applyToEl(global.document.documentElement, theme);
+	ensureUiCss();
+	if (global.document.readyState === "loading") {
+		global.document.addEventListener("DOMContentLoaded", ensureUiCss);
+	} else {
+		ensureUiCss();
+	}
 
 	if (global.document.body) {
 		applyToEl(global.document.body, theme);

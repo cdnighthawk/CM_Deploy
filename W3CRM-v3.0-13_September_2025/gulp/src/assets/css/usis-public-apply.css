@@ -2,7 +2,7 @@
 	min-height: 100vh;
 	display: flex;
 	flex-direction: column;
-	background: linear-gradient(180deg, #f8fafc 0%, #fff 42%);
+	background: #F4F6F8;
 }
 
 .usis-public-brand-title {

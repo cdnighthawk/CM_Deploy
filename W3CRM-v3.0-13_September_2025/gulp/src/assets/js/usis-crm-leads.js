@@ -25,15 +25,17 @@
 		if (x.estimate_approved_at) {
 			var t = x.estimate_approved_at ? String(x.estimate_approved_at).slice(0, 16) : "";
 			parts.push(
-				'<span class="badge bg-success" title="Approved' +
-					(t ? " · " + esc(t) : "") +
-					'">Approved</span>'
+				window.USISUi
+					? window.USISUi.statusChip("Approved", { title: "Approved" + (t ? " · " + t : "") })
+					: '<span class="badge bg-success" title="Approved' + (t ? " · " + esc(t) : "") + '">Approved</span>'
 			);
 		} else if (x.estimate_locked_at) {
 			parts.push(
-				'<span class="badge bg-secondary" title="Locked (draft) · ' +
-					esc(String(x.estimate_locked_at).slice(0, 16)) +
-					'">Locked</span>'
+				window.USISUi
+					? window.USISUi.statusChip("Locked", { title: "Locked (draft) · " + String(x.estimate_locked_at).slice(0, 16) })
+					: '<span class="badge bg-secondary" title="Locked (draft) · ' +
+						esc(String(x.estimate_locked_at).slice(0, 16)) +
+						'">Locked</span>'
 			);
 		} else {
 			parts.push('<span class="text-muted small">—</span>');
@@ -65,7 +67,9 @@
 					return true;
 				});
 				if (!rows.length) {
-					tb.innerHTML = '<tr><td colspan="5" class="text-muted">No rows.</td></tr>';
+					tb.innerHTML = '<tr><td colspan="5">' +
+						(window.USISUi ? window.USISUi.emptyState({ title: "No leads in this view", body: "Try another CRM stage or open the main Leads table." }) : '<span class="text-muted">No rows.</span>') +
+						"</td></tr>";
 					return;
 				}
 				tb.innerHTML = rows
@@ -74,7 +78,7 @@
 						var href = "construction/lead-detail.html?id=" + encodeURIComponent(ext);
 						return (
 							"<tr><td>" +
-							esc(x.crm_stage || "—") +
+							(window.USISUi ? window.USISUi.statusChip(x.crm_stage || "New") : esc(x.crm_stage || "—")) +
 							"</td><td>" +
 							esc(x.name || x.number || "") +
 							'</td><td class="text-nowrap">' +

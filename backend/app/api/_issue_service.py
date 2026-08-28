@@ -546,29 +546,75 @@ def assign_issue(issue_id: uuid.UUID, assignee_id: uuid.UUID | None, cu: Current
     return serialize_issue(row, include_events=True)
 
 
-def create_rfi_from_issue(issue_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
-    row = db.session.get(Issue, issue_id)
-    if row is None:
-        raise KeyError("Issue not found.")
-    prefill = {
+def _nonempty_text(value: Any) -> str | None:
+    text = _text(value)
+    return text or None
+
+
+def _issue_rfi_prefill(row: Issue) -> dict[str, Any]:
+    trade = _text(row.trade)
+    if trade.lower() == "general":
+        trade = ""
+    citation = _text(row.cbc_citation)
+    ref_bits = [bit for bit in (trade, citation) if bit]
+    return {
         "kind": "rfi",
         "issue_id": str(row.id),
         "project_id": str(row.project_id) if row.project_id else None,
         "subject": row.title,
         "question": row.description or row.title,
-        "trade": row.trade,
-        "drawing_number": row.sheet_number,
+        "trade": trade or None,
+        "drawing_number": _nonempty_text(row.sheet_number),
+        "reference": " · ".join(ref_bits) if ref_bits else None,
+        "cost_impact": float(row.cost_impact) if row.cost_impact is not None else None,
+        "schedule_impact_days": row.schedule_impact_days,
     }
+
+
+def _rfi_create_redirect(prefill: Mapping[str, Any]) -> str:
+    from urllib.parse import urlencode
+
+    keys = (
+        "project_id",
+        "subject",
+        "question",
+        "drawing_number",
+        "trade",
+        "reference",
+        "issue_id",
+        "cost_impact",
+        "schedule_impact_days",
+    )
+    qs: list[tuple[str, str]] = []
+    for key in keys:
+        val = prefill.get(key)
+        if val is None:
+            continue
+        if isinstance(val, float) and val.is_integer():
+            text = str(int(val))
+        else:
+            text = str(val).strip()
+        if not text:
+            continue
+        qs.append((key, text))
+    path = "construction/rfi-create.html"
+    return f"{path}?{urlencode(qs)}" if qs else path
+
+
+def create_rfi_from_issue(issue_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
+    row = db.session.get(Issue, issue_id)
+    if row is None:
+        raise KeyError("Issue not found.")
+    prefill = _issue_rfi_prefill(row)
     if not row.linked_rfi_id:
         row.linked_rfi_id = None
     _add_event(row, cu, "create-rfi", "Prepared RFI from issue", prefill)
     db.session.commit()
-    from urllib.parse import quote
-
-    redirect = "construction/rfi-create.html"
-    if row.project_id:
-        redirect += f"?project_id={row.project_id}&subject={quote(row.title)}"
-    return {"issue": serialize_issue(row, include_events=True), "prefill": prefill, "redirect_to": redirect}
+    return {
+        "issue": serialize_issue(row, include_events=True),
+        "prefill": prefill,
+        "redirect_to": _rfi_create_redirect(prefill),
+    }
 
 
 def create_co_from_issue(issue_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:

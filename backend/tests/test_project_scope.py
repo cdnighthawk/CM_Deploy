@@ -55,6 +55,45 @@ def test_list_projects_scoped_to_assignments(client, no_dev_admin):
     assert bid not in ids
 
 
+def test_assigned_pe_can_get_assigned_project(client, no_dev_admin):
+    with client.application.app_context():
+        u, _ = _mk_user_with_role("project_engineer")
+        a = _mk_project("Assigned PE Job")
+        db.session.add(ProjectMember(user_id=u.id, project_id=a.id))
+        db.session.commit()
+        uid = str(u.id)
+        aid = str(a.id)
+
+    ok = client.get(f"/api/v1/projects/{aid}", headers={"X-Usis-User-Id": uid})
+    assert ok.status_code == 200
+    assert ok.get_json()["item"]["id"] == aid
+
+
+def test_assigned_pe_sees_planning_jobs_despite_exclude(client, no_dev_admin):
+    """Projects list defaults new jobs to planning; assigned PEs must still see them."""
+    with client.application.app_context():
+        u, _ = _mk_user_with_role("project_engineer")
+        planning = Project(name="PE Planning Job", status="planning", project_type="commercial")
+        other = Project(name="Other Planning", status="planning", project_type="commercial")
+        db.session.add_all([planning, other])
+        db.session.flush()
+        db.session.add(ProjectMember(user_id=u.id, project_id=planning.id))
+        db.session.commit()
+        uid = str(u.id)
+        pid, other_id = str(planning.id), str(other.id)
+
+    r = client.get(
+        "/api/v1/projects?limit=2000&exclude_status=planning",
+        headers={"X-Usis-User-Id": uid},
+    )
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["project_scope"] == "assigned"
+    ids = {x["id"] for x in body["items"]}
+    assert pid in ids
+    assert other_id not in ids
+
+
 def test_get_project_denies_unassigned(client, no_dev_admin):
     with client.application.app_context():
         u, _ = _mk_user_with_role("field_readonly")

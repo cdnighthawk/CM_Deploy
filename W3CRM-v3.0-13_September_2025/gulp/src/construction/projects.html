@@ -57,7 +57,7 @@
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
-								<h6 class="mb-1">Construction — Projects</h6>
+								<h6 class="mb-1" data-i18n="Construction — Projects">Construction — Projects</h6>
 								
 							</div>
 							<div class="text-nowrap small">
@@ -75,29 +75,29 @@
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<p class="small text-muted mb-0 d-none" id="usis-projects-scope-hint"></p>
 						<div class="input-group message-search-area width200 w-xs-100">
-							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state">
+							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state" data-i18n-placeholder="Filter by #, name, city, or state">
 							<div class="input-group-append">
 								<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-projects-filter-clear" aria-label="Clear filter"><i class="flaticon-381-search-2"></i></button>
 							</div>
 						</div>
 						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Reload project list">
-							<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
+							<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Reload from API">Reload from API</span>
 						</button>
 					</div>
 				</div>
 
 				<div class="alert alert-secondary py-2 mb-2 d-none" id="usis-projects-bulk-bar" role="region" aria-live="polite">
 					<span id="usis-projects-bulk-count" class="fw-semibold me-2">0 selected</span>
-					<label class="small me-1 mb-0" for="usis-projects-bulk-status">Set status</label>
+					<label class="small me-1 mb-0" for="usis-projects-bulk-status" data-i18n="Set status">Set status</label>
 					<select class="form-select form-select-sm d-inline-block w-auto me-1" id="usis-projects-bulk-status">
-						<option value="active">Active</option>
-						<option value="on_hold">On hold</option>
-						<option value="complete">Complete</option>
-						<option value="archived">Archived</option>
-						<option value="cancelled">Cancelled</option>
+						<option value="active" data-i18n="Active">Active</option>
+						<option value="on_hold" data-i18n="On hold">On hold</option>
+						<option value="complete" data-i18n="Complete">Complete</option>
+						<option value="archived" data-i18n="Archived">Archived</option>
+						<option value="cancelled" data-i18n="Cancelled">Cancelled</option>
 					</select>
-					<button type="button" class="btn btn-sm btn-primary" id="usis-projects-bulk-apply">Apply</button>
-					<button type="button" class="btn btn-sm btn-link" id="usis-projects-bulk-clear">Clear</button>
+					<button type="button" class="btn btn-sm btn-primary" id="usis-projects-bulk-apply" data-i18n="Apply">Apply</button>
+					<button type="button" class="btn btn-sm btn-link" id="usis-projects-bulk-clear" data-i18n="Clear">Clear</button>
 				</div>
 
 				<div class="col-xl-12">
@@ -106,18 +106,18 @@
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-projects-check-all" aria-label="Select all visible projects"></th>
-									<th class="text-nowrap" data-sort-key="number">Project #</th>
-									<th data-sort-key="name">Name</th>
-									<th class="text-nowrap" data-sort-key="city">City</th>
-									<th class="text-nowrap" data-sort-key="state">State</th>
-									<th class="text-nowrap" data-sort-key="status">Status</th>
-									<th class="text-nowrap" data-sort-key="project_type">Type</th>
-									<th class="text-end text-nowrap">Action</th>
+									<th class="text-nowrap" data-sort-key="number" data-i18n="Project #">Project #</th>
+									<th data-sort-key="name" data-i18n="Name">Name</th>
+									<th class="text-nowrap" data-sort-key="city" data-i18n="City">City</th>
+									<th class="text-nowrap" data-sort-key="state" data-i18n="State">State</th>
+									<th class="text-nowrap" data-sort-key="status" data-i18n="Status">Status</th>
+									<th class="text-nowrap" data-sort-key="project_type" data-i18n="Type">Type</th>
+									<th class="text-end text-nowrap" data-i18n="Action">Action</th>
 								</tr>
 							</thead>
 							<tbody id="usis-projects-tbody">
 								<tr>
-									<td colspan="8" class="text-muted">Loading projects from API…</td>
+									<td colspan="8" class="text-muted" data-i18n="Loading projects from API…">Loading projects from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -156,6 +156,10 @@
 		var tbody = document.getElementById("usis-projects-tbody");
 		var filterInput = document.getElementById("usis-projects-filter");
 		var lastItems = [];
+
+		function t(key) {
+			return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
+		}
 
 		function esc(s) {
 			return String(s == null ? "" : s)
@@ -245,7 +249,7 @@
 			}
 			if (!rows.length) {
 				tbody.innerHTML =
-					'<tr><td colspan="8" class="text-muted">No projects match this filter.</td></tr>';
+					'<tr><td colspan="8" class="text-muted">' + t("No projects match this filter.") + "</td></tr>";
 				return;
 			}
 			var sorted = tableSort ? tableSort.apply(rows) : rows;
@@ -256,42 +260,56 @@
 		function loadProjects() {
 			if (!tbody) return;
 			if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
-			tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="8" class="text-muted">' + t("Loading…") + "</td></tr>";
 			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000&exclude_status=planning", {
 					credentials: "include",
 					headers: { Accept: "application/json" },
 				})
 				.then(function (r) {
-					if (!r.ok) throw new Error("HTTP " + r.status);
-					return r.json();
+					return r.json().then(function (j) {
+						if (!r.ok) {
+							var err = new Error((j && j.error) || "HTTP " + r.status);
+							err.status = r.status;
+							throw err;
+						}
+						return j;
+					});
 				})
 				.then(function (data) {
+					var scope = data.project_scope;
 					lastItems = (data.items || []).filter(function (r) {
+						if (scope === "assigned") return true;
 						return String(r.status || "").toLowerCase() !== "planning";
 					});
 					var hint = document.getElementById("usis-projects-scope-hint");
-					if (hint && data.project_scope === "assigned") {
+					if (hint && scope === "assigned") {
 						hint.textContent =
-							"Showing only projects assigned to you. Contact an administrator if a job is missing.";
+							t("Showing only projects assigned to you (including jobs still in planning). Contact an administrator if a job is missing.");
 						hint.classList.remove("d-none");
 					} else if (hint) {
 						hint.classList.add("d-none");
 					}
 					if (!lastItems.length) {
 						var msg =
-							data.project_scope === "assigned"
-								? "No projects are assigned to your account. Ask an administrator to assign jobs in User admin."
-								: "No projects yet. Add projects in your system, then reload.";
+							scope === "assigned"
+								? t("No projects are assigned to your account. Ask an administrator to assign jobs in User admin.")
+								: t("No projects yet. Add projects in your system, then reload.");
 						tbody.innerHTML = '<tr><td colspan="8" class="text-muted">' + esc(msg) + "</td></tr>";
 						return;
 					}
 					applyFilter();
 				})
 				.catch(function (err) {
+					var msg = err && err.message ? err.message : "request failed";
+					if (err && err.status === 403) {
+						msg = "You do not have permission to load Projects. Ask an administrator to check your role.";
+					} else if (err && err.status === 401) {
+						msg = "Sign in to view your assigned projects.";
+					}
 					tbody.innerHTML =
 						'<tr><td colspan="8" class="text-danger">Could not load projects: ' +
-						esc(err.message) +
-						".</td></tr>";
+						esc(msg) +
+						"</td></tr>";
 				});
 		}
 

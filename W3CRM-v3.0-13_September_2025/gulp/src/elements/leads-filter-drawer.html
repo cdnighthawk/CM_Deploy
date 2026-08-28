@@ -1,37 +1,37 @@
 	<div class="offcanvas offcanvas-end usis-leads-filter-drawer" tabindex="-1" id="usis-leads-filter-drawer" aria-labelledby="usis-leads-filter-title">
 		<div class="offcanvas-header py-3">
-			<h5 class="offcanvas-title fw-semibold mb-0" id="usis-leads-filter-title">Filter</h5>
+			<h5 class="offcanvas-title fw-semibold mb-0" id="usis-leads-filter-title" data-i18n="Filter">Filter</h5>
 			<div class="d-flex align-items-center gap-1">
-				<button type="button" class="btn btn-link btn-sm text-decoration-none" id="usis-leads-filter-reset">Reset all</button>
+				<button type="button" class="btn btn-link btn-sm text-decoration-none" id="usis-leads-filter-reset" data-i18n="Reset all">Reset all</button>
 				<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 			</div>
 		</div>
 		<div class="offcanvas-body p-0 d-flex flex-column">
 			<ul class="nav nav-tabs usis-leads-filter-tabs px-3 pt-1" role="tablist">
 				<li class="nav-item" role="presentation">
-					<button class="nav-link active" id="usis-leads-tab-filter-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-filter" type="button" role="tab" aria-controls="usis-leads-tab-filter" aria-selected="true">Filter</button>
+					<button class="nav-link active" id="usis-leads-tab-filter-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-filter" type="button" role="tab" aria-controls="usis-leads-tab-filter" aria-selected="true" data-i18n="Filter">Filter</button>
 				</li>
 				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="usis-leads-tab-saved-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-saved" type="button" role="tab" aria-controls="usis-leads-tab-saved" aria-selected="false">Saved filters</button>
+					<button class="nav-link" id="usis-leads-tab-saved-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-saved" type="button" role="tab" aria-controls="usis-leads-tab-saved" aria-selected="false" data-i18n="Saved filters">Saved filters</button>
 				</li>
 			</ul>
 			<div class="tab-content flex-grow-1 overflow-auto">
 				<div class="tab-pane fade show active p-3" id="usis-leads-tab-filter" role="tabpanel" aria-labelledby="usis-leads-tab-filter-btn">
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-q">Search</label>
-						<input type="search" class="form-control" id="usis-leads-f-q" placeholder="job name, GC, city, bid #" autocomplete="off">
+						<label class="usis-section-overline" for="usis-leads-f-q" data-i18n="Search">Search</label>
+						<input type="search" class="form-control" id="usis-leads-f-q" placeholder="job name, GC, city, bid #" data-i18n-placeholder="job name, GC, city, bid #" autocomplete="off">
 					</div>
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-distance-preset">Distance from office</label>
+						<label class="usis-section-overline" for="usis-leads-f-distance-preset" data-i18n="Distance from office">Distance from office</label>
 						<div class="d-flex align-items-center gap-2">
 							<select class="form-select" id="usis-leads-f-distance-preset" aria-label="Distance from office">
-								<option value="">Any distance</option>
-								<option value="25">Within 25 miles</option>
-								<option value="50">Within 50 miles</option>
-								<option value="100">Within 100 miles</option>
-								<option value="150">Within 150 miles</option>
-								<option value="250">Within 250 miles</option>
-								<option value="custom">Custom miles…</option>
+								<option value="" data-i18n="Any distance">Any distance</option>
+								<option value="25" data-i18n="Within 25 miles">Within 25 miles</option>
+								<option value="50" data-i18n="Within 50 miles">Within 50 miles</option>
+								<option value="100" data-i18n="Within 100 miles">Within 100 miles</option>
+								<option value="150" data-i18n="Within 150 miles">Within 150 miles</option>
+								<option value="250" data-i18n="Within 250 miles">Within 250 miles</option>
+								<option value="custom" data-i18n="Custom miles…">Custom miles…</option>
 							</select>
 							<input type="number" class="form-control d-none" id="usis-leads-f-distance" min="1" max="5000" step="1" placeholder="miles" aria-label="Maximum miles from office">
 						</div>
@@ -42,23 +42,23 @@
 								<input type="text" class="form-control" id="usis-leads-f-office-state" placeholder="ST" maxlength="2" style="max-width:4.5rem" autocomplete="address-level1" aria-label="Office state">
 								<input type="text" class="form-control" id="usis-leads-f-office-zip" placeholder="ZIP" maxlength="10" style="max-width:6.5rem" autocomplete="postal-code" aria-label="Office ZIP">
 							</div>
-							<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-leads-f-office-save">Save office</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-leads-f-office-save" data-i18n="Save office">Save office</button>
 						</div>
 					</div>
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-trade">Work performed</label>
+						<label class="usis-section-overline" for="usis-leads-f-trade" data-i18n="Work performed">Work performed</label>
 						<select class="form-select" id="usis-leads-f-trade" multiple size="5">
-							<option value="drywall">Drywall</option>
-							<option value="paint">Paint</option>
-							<option value="flooring">Flooring</option>
-							<option value="ceilings">Ceilings</option>
-							<option value="trim">Trim</option>
-							<option value="specialties">Specialties</option>
-							<option value="multi">Multi</option>
+							<option value="drywall" data-i18n="Drywall">Drywall</option>
+							<option value="paint" data-i18n="Paint">Paint</option>
+							<option value="flooring" data-i18n="Flooring">Flooring</option>
+							<option value="ceilings" data-i18n="Ceilings">Ceilings</option>
+							<option value="trim" data-i18n="Trim">Trim</option>
+							<option value="specialties" data-i18n="Specialties">Specialties</option>
+							<option value="multi" data-i18n="Multi">Multi</option>
 						</select>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Companies</span>
+						<span class="usis-section-overline" data-i18n="Companies">Companies</span>
 						<div class="position-relative">
 							<input type="search" class="form-control" id="usis-leads-f-company-q" placeholder="Company" autocomplete="off" aria-autocomplete="list" aria-controls="usis-leads-f-company-results">
 							<div class="list-group usis-leads-typeahead d-none" id="usis-leads-f-company-results" role="listbox"></div>
@@ -66,44 +66,44 @@
 						<div class="d-flex flex-wrap gap-1 mt-2" id="usis-leads-f-company-chips"></div>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Sector</span>
+						<span class="usis-section-overline" data-i18n="Sector">Sector</span>
 						<div class="form-check">
 							<input class="form-check-input" type="checkbox" value="commercial" id="usis-leads-f-sector-commercial">
-							<label class="form-check-label" for="usis-leads-f-sector-commercial">Commercial</label>
+							<label class="form-check-label" for="usis-leads-f-sector-commercial" data-i18n="Commercial">Commercial</label>
 						</div>
 						<div class="form-check">
 							<input class="form-check-input" type="checkbox" value="government" id="usis-leads-f-sector-government">
-							<label class="form-check-label" for="usis-leads-f-sector-government">Government</label>
+							<label class="form-check-label" for="usis-leads-f-sector-government" data-i18n="Government">Government</label>
 						</div>
 					</div>
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-stage">Pipeline stage</label>
+						<label class="usis-section-overline" for="usis-leads-f-stage" data-i18n="Pipeline stage">Pipeline stage</label>
 						<select class="form-select" id="usis-leads-f-stage" multiple size="5">
-							<option value="new">New Lead</option>
-							<option value="invited">Invited</option>
-							<option value="estimating">Estimating</option>
-							<option value="submitted">Submitted</option>
-							<option value="awarded">Awarded</option>
-							<option value="lost">Lost</option>
+							<option value="new" data-i18n="New Lead">New Lead</option>
+							<option value="invited" data-i18n="Invited">Invited</option>
+							<option value="estimating" data-i18n="Estimating">Estimating</option>
+							<option value="submitted" data-i18n="Submitted">Submitted</option>
+							<option value="awarded" data-i18n="Awarded">Awarded</option>
+							<option value="lost" data-i18n="Lost">Lost</option>
 						</select>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Date filters</span>
-						<label class="form-label small mb-1" for="usis-leads-f-due-from">Bid due date</label>
+						<span class="usis-section-overline" data-i18n="Date filters">Date filters</span>
+						<label class="form-label small mb-1" for="usis-leads-f-due-from" data-i18n="Bid due date">Bid due date</label>
 						<div class="d-flex align-items-center gap-2">
 							<input type="date" class="form-control" id="usis-leads-f-due-from" aria-label="Bid due from">
 							<span class="text-muted">→</span>
 							<input type="date" class="form-control" id="usis-leads-f-due-to" aria-label="Bid due to">
 						</div>
-						<label class="form-label small mb-1 mt-2" for="usis-leads-f-start-from">Expected start date</label>
+						<label class="form-label small mb-1 mt-2" for="usis-leads-f-start-from" data-i18n="Expected start date">Expected start date</label>
 						<div class="d-flex align-items-center gap-2">
 							<input type="date" class="form-control" id="usis-leads-f-start-from" aria-label="Expected start from">
 							<span class="text-muted">→</span>
 							<input type="date" class="form-control" id="usis-leads-f-start-to" aria-label="Expected start to">
 						</div>
-						<button type="button" class="btn btn-link btn-sm px-0 mt-2" id="usis-leads-f-more-dates" aria-expanded="false" aria-controls="usis-leads-f-extra-dates">View all date filters</button>
+						<button type="button" class="btn btn-link btn-sm px-0 mt-2" id="usis-leads-f-more-dates" aria-expanded="false" aria-controls="usis-leads-f-extra-dates" data-i18n="View all date filters">View all date filters</button>
 						<div class="d-none" id="usis-leads-f-extra-dates">
-							<label class="form-label small mb-1" for="usis-leads-f-activity-from">Last activity date</label>
+							<label class="form-label small mb-1" for="usis-leads-f-activity-from" data-i18n="Last activity date">Last activity date</label>
 							<div class="d-flex align-items-center gap-2">
 								<input type="date" class="form-control" id="usis-leads-f-activity-from" aria-label="Last activity from">
 								<span class="text-muted">→</span>
@@ -112,7 +112,7 @@
 						</div>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Value</span>
+						<span class="usis-section-overline" data-i18n="Value">Value</span>
 						<div class="d-flex align-items-center gap-2">
 							<input type="number" class="form-control" id="usis-leads-f-value-min" min="0" step="1000" placeholder="min $" aria-label="Minimum value">
 							<span class="text-muted">–</span>
@@ -120,20 +120,20 @@
 						</div>
 					</div>
 					<div class="mb-0">
-						<label class="usis-section-overline" for="usis-leads-f-owner">Owner / estimator</label>
+						<label class="usis-section-overline" for="usis-leads-f-owner" data-i18n="Owner / estimator">Owner / estimator</label>
 						<select class="form-select" id="usis-leads-f-owner" multiple size="4"></select>
 					</div>
 				</div>
 				<div class="tab-pane fade p-3" id="usis-leads-tab-saved" role="tabpanel" aria-labelledby="usis-leads-tab-saved-btn">
 					<div id="usis-leads-saved-empty" class="usis-empty py-4">
-						<p class="usis-empty__body mb-0">No saved filters yet. Set criteria, then Save filter.</p>
+						<p class="usis-empty__body mb-0" data-i18n="No saved filters yet. Set criteria, then Save filter.">No saved filters yet. Set criteria, then Save filter.</p>
 					</div>
 					<div id="usis-leads-saved-list" class="d-none"></div>
 				</div>
 			</div>
 			<div class="usis-leads-filter-footer border-top p-3 d-flex justify-content-between gap-2">
-				<button type="button" class="btn btn-outline-primary" id="usis-leads-filter-save">Save filter</button>
-				<button type="button" class="btn btn-primary" id="usis-leads-filter-apply">Apply</button>
+				<button type="button" class="btn btn-outline-primary" id="usis-leads-filter-save" data-i18n="Save filter">Save filter</button>
+				<button type="button" class="btn btn-primary" id="usis-leads-filter-apply" data-i18n="Apply">Apply</button>
 			</div>
 		</div>
 	</div>
@@ -142,20 +142,20 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="usis-leads-save-title">Save filter</h5>
+					<h5 class="modal-title" id="usis-leads-save-title" data-i18n="Save filter">Save filter</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<label class="form-label" for="usis-leads-save-name">Filter name</label>
+					<label class="form-label" for="usis-leads-save-name" data-i18n="Filter name">Filter name</label>
 					<input type="text" class="form-control" id="usis-leads-save-name" maxlength="80" required>
 					<div class="form-check mt-3">
 						<input class="form-check-input" type="checkbox" id="usis-leads-save-default">
-						<label class="form-check-label" for="usis-leads-save-default">Set as my default view</label>
+						<label class="form-check-label" for="usis-leads-save-default" data-i18n="Set as my default view">Set as my default view</label>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" id="usis-leads-save-confirm">Save</button>
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="button" class="btn btn-primary" id="usis-leads-save-confirm" data-i18n="Save">Save</button>
 				</div>
 			</div>
 		</div>

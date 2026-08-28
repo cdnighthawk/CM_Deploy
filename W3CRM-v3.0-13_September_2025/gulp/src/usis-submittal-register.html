@@ -19,34 +19,34 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
-						<h4 class="mb-0">Submittal register</h4>
-						<p class="text-muted small mb-0">Internal QC gate — no stamp, no buy / receive / install.</p>
+						<h4 class="mb-0" data-i18n="Submittal register">Submittal register</h4>
+						<p class="text-muted small mb-0" data-i18n="Internal QC gate — no stamp, no buy / receive / install.">Internal QC gate — no stamp, no buy / receive / install.</p>
 					</div>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-sub-log">Log submittal</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-sub-log" data-i18n="Log submittal">Log submittal</button>
 				</div>
 				<div class="row g-2 align-items-end mb-3">
-					<div class="col-md-2"><label class="form-label small mb-0">Status</label>
+					<div class="col-md-2"><label class="form-label small mb-0" data-i18n="Status">Status</label>
 						<input class="form-control form-control-sm" id="usis-sub-f-status" placeholder="in_qc"></div>
-					<div class="col-md-2"><label class="form-label small mb-0">Trade</label>
+					<div class="col-md-2"><label class="form-label small mb-0" data-i18n="Trade">Trade</label>
 						<input class="form-control form-control-sm" id="usis-sub-f-trade" placeholder="paint"></div>
-					<div class="col-md-2"><label class="form-label small mb-0">Spec</label>
+					<div class="col-md-2"><label class="form-label small mb-0" data-i18n="Spec">Spec</label>
 						<input class="form-control form-control-sm" id="usis-sub-f-spec" placeholder="09 91 00"></div>
 					<div class="col-md-2 form-check mt-4">
 						<input class="form-check-input" type="checkbox" id="usis-sub-f-overdue">
-						<label class="form-check-label small" for="usis-sub-f-overdue">Overdue</label>
+						<label class="form-check-label small" for="usis-sub-f-overdue" data-i18n="Overdue">Overdue</label>
 					</div>
 					<div class="col-md-3 form-check mt-4">
 						<input class="form-check-input" type="checkbox" id="usis-sub-f-rubber">
-						<label class="form-check-label small" for="usis-sub-f-rubber">Rubber-stamp suspect</label>
+						<label class="form-check-label small" for="usis-sub-f-rubber" data-i18n="Rubber-stamp suspect">Rubber-stamp suspect</label>
 					</div>
-					<div class="col-md-1"><button type="button" class="btn btn-outline-secondary btn-sm" id="usis-sub-filter">Apply</button></div>
+					<div class="col-md-1"><button type="button" class="btn btn-outline-secondary btn-sm" id="usis-sub-filter" data-i18n="Apply">Apply</button></div>
 				</div>
 				<div class="table-responsive">
 					<table class="table table-sm table-hover align-middle">
 						<thead class="table-light">
 							<tr>
-								<th>Number</th><th>Title</th><th>Spec</th><th>Trade</th><th>Vendor</th>
-								<th>Status</th><th>Rev</th><th>Needed by</th><th>Reviewer</th>
+								<th data-i18n="Number">Number</th><th data-i18n="Title">Title</th><th data-i18n="Spec">Spec</th><th data-i18n="Trade">Trade</th><th data-i18n="Vendor">Vendor</th>
+								<th data-i18n="Status">Status</th><th data-i18n="Rev">Rev</th><th data-i18n="Needed by">Needed by</th><th data-i18n="Reviewer">Reviewer</th>
 								<th>AI</th><th>Complete</th><th></th>
 							</tr>
 						</thead>
@@ -60,23 +60,23 @@
 	<div class="modal fade" id="usis-sub-create-modal" tabindex="-1">
 		<div class="modal-dialog">
 			<div class="modal-content">
-				<div class="modal-header"><h5 class="modal-title">Log submittal</h5>
+				<div class="modal-header"><h5 class="modal-title" data-i18n="Log submittal">Log submittal</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
 				<div class="modal-body">
 					<div class="alert alert-danger d-none" id="usis-sub-create-err"></div>
-					<label class="form-label small">Project ID</label>
+					<label class="form-label small" data-i18n="Project ID">Project ID</label>
 					<input class="form-control form-control-sm mb-2" id="usis-sub-c-project">
-					<label class="form-label small">Title</label>
+					<label class="form-label small" data-i18n="Title">Title</label>
 					<input class="form-control form-control-sm mb-2" id="usis-sub-c-title">
-					<label class="form-label small">Spec section</label>
+					<label class="form-label small" data-i18n="Spec section">Spec section</label>
 					<input class="form-control form-control-sm mb-2" id="usis-sub-c-spec" placeholder="09 91 00">
-					<label class="form-label small">Trade</label>
+					<label class="form-label small" data-i18n="Trade">Trade</label>
 					<input class="form-control form-control-sm mb-2" id="usis-sub-c-trade" placeholder="paint">
-					<label class="form-label small">Needed by</label>
+					<label class="form-label small" data-i18n="Needed by">Needed by</label>
 					<input type="date" class="form-control form-control-sm" id="usis-sub-c-needed">
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-primary btn-sm" id="usis-sub-c-save">Create</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-sub-c-save" data-i18n="Create">Create</button>
 				</div>
 			</div>
 		</div>

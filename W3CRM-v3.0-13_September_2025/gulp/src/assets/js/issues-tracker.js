@@ -11,10 +11,15 @@
 		manual: "Manual",
 		feedback: "Website",
 	};
-	var state = { items: [], view: "kanban", selected: null };
+	var state = { items: [], view: "kanban", selected: null, summary: {} };
+
+	function t(key) {
+		return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
+	}
 
 	function sourceLabel(value) {
-		return SOURCE_LABELS[value] || value || "";
+		var label = SOURCE_LABELS[value] || value || "";
+		return t(label);
 	}
 
 	function issueNumber(issue) {
@@ -44,13 +49,11 @@
 	}
 
 	function projectId() {
-		return (
-			document.getElementById("usis-issue-project").value ||
-			qs("project_id") ||
-			qs("projectId") ||
-			(window.USISProjectContext && window.USISProjectContext.getProjectId()) ||
-			""
-		);
+		var sel = document.getElementById("usis-issue-project");
+		if (sel && sel.options && sel.options.length) {
+			return sel.value || "";
+		}
+		return qs("project_id") || qs("projectId") || "";
 	}
 
 	function notify(kind, message) {
@@ -95,7 +98,9 @@
 			var sel = document.getElementById("usis-issue-project");
 			var current = qs("project_id") || qs("projectId") || "";
 			sel.innerHTML =
-				'<option value="">All projects</option>' +
+				'<option value="" data-i18n="All projects">' +
+				t("All projects") +
+				"</option>" +
 				items
 					.map(function (p) {
 						return '<option value="' + esc(p.id) + '">' + esc(p.name || p.title || p.id) + "</option>";
@@ -107,21 +112,28 @@
 
 	function load(opts) {
 		var silent = opts && opts.silent;
-		if (!silent) document.getElementById("usis-issue-count").textContent = "Loading…";
+		if (!silent) document.getElementById("usis-issue-count").textContent = t("Loading…");
 		return fetchJson("/api/v1/issues?" + queryString())
 			.then(function (data) {
 				state.items = data.items || [];
-				var summary = data.summary || {};
-				document.getElementById("usis-issue-count").textContent =
-					state.items.length + " shown · " + (summary.open_critical || 0) + " open critical";
+				state.summary = data.summary || {};
+				paintCount();
 				render();
 			})
 			.catch(function (err) {
 				if (!silent) {
-					document.getElementById("usis-issue-count").textContent = "Could not load issues";
+					document.getElementById("usis-issue-count").textContent = t("Could not load issues");
 					notify("error", err.message);
 				}
 			});
+	}
+
+	function paintCount() {
+		var el = document.getElementById("usis-issue-count");
+		if (!el) return;
+		el.textContent = t("{n} shown · {c} open critical")
+			.replace("{n}", state.items.length)
+			.replace("{c}", (state.summary && state.summary.open_critical) || 0);
 	}
 
 	function cardHtml(issue) {
@@ -134,7 +146,7 @@
 			'</span><span class="badge usis-issue-sev-' +
 			esc(issue.severity) +
 			'">' +
-			esc(issue.severity) +
+			esc(t(issue.severity || "")) +
 			"</span></div>" +
 			'<div class="fw-semibold mt-2">' +
 			esc(issue.title) +
@@ -144,13 +156,13 @@
 			"</div>" +
 			'<div class="d-flex flex-wrap gap-1 mt-2">' +
 			'<span class="badge text-bg-light">' +
-			esc(issue.trade) +
+			esc(t(issue.trade || "")) +
 			"</span>" +
 			'<span class="badge text-bg-light">' +
 			esc(sourceLabel(issue.source_type)) +
 			"</span></div>" +
 			'<div class="small text-muted mt-2">' +
-			esc(issue.assignee_name || "Unassigned") +
+			esc(issue.assignee_name || t("Unassigned")) +
 			"</div></button>"
 		);
 	}
@@ -165,11 +177,11 @@
 				'<section class="usis-issue-col" data-status="' +
 				esc(status) +
 				'"><div class="usis-issue-col-head"><h3>' +
-				esc(status) +
+				esc(t(status)) +
 				'</h3><span class="badge text-bg-light">' +
 				cards.length +
 				"</span></div><div class=\"usis-issue-col-body\">" +
-				(cards.map(cardHtml).join("") || '<div class="small text-muted">No issues</div>') +
+				(cards.map(cardHtml).join("") || '<div class="small text-muted">' + t("No issues") + "</div>") +
 				"</div></section>"
 			);
 		}).join("");
@@ -183,7 +195,7 @@
 	function renderTable() {
 		var tb = document.getElementById("usis-issue-tbody");
 		if (!state.items.length) {
-			tb.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">No issues yet.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">' + t("No issues yet.") + "</td></tr>";
 			return;
 		}
 		tb.innerHTML = state.items
@@ -194,13 +206,13 @@
 					"\"><td>" +
 					esc(issueNumber(issue) || "—") +
 					"</td><td>" +
-					esc(issue.severity) +
+					esc(t(issue.severity || "")) +
 					"</td><td>" +
 					esc(issue.title) +
 					"</td><td>" +
-					esc(issue.status) +
+					esc(t(issue.status || "")) +
 					"</td><td>" +
-					esc(issue.trade) +
+					esc(t(issue.trade || "")) +
 					"</td><td>" +
 					esc(sourceLabel(issue.source_type)) +
 					(issue.sheet_number ? " · " + esc(issue.sheet_number) : "") +
@@ -245,31 +257,37 @@
 						encodeURIComponent(issue.drawing_id) +
 						(issue.project_id ? "&project_id=" + encodeURIComponent(issue.project_id) : "") +
 						(issue.source_id ? "&annotation_id=" + encodeURIComponent(issue.source_id) : "") +
-						'">Open in DrawingViewer</a>';
+						'">' +
+						t("Open in DrawingViewer") +
+						"</a>";
 				}
 				document.getElementById("usis-issue-drawer-body").innerHTML =
 					'<p class="text-muted">' +
-					esc(issue.description || "No description yet.") +
+					esc(issue.description || t("No description yet.")) +
 					"</p>" +
 					'<div class="d-flex flex-wrap gap-1 mb-3"><span class="badge usis-issue-sev-' +
 					esc(issue.severity) +
 					'">' +
-					esc(issue.severity) +
+					esc(t(issue.severity || "")) +
 					'</span><span class="badge text-bg-light">' +
-					esc(issue.trade) +
+					esc(t(issue.trade || "")) +
 					'</span><span class="badge text-bg-light">' +
 					esc(sourceLabel(issue.source_type)) +
 					"</span></div>" +
 					'<div class="mb-3"><span class="badge text-bg-primary">' +
-					esc(issue.status) +
+					esc(t(issue.status || "")) +
 					"</span></div>" +
 					'<div class="d-flex flex-wrap gap-2 mb-3">' +
-					'<button type="button" class="btn btn-sm btn-primary" id="usis-issue-create-co">Create Change Order</button>' +
-					'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-issue-create-rfi">Create RFI</button>' +
+					'<button type="button" class="btn btn-sm btn-primary" id="usis-issue-create-co">' +
+					t("Create Change Order") +
+					"</button>" +
+					'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-issue-create-rfi">' +
+					t("Create RFI") +
+					"</button>" +
 					viewer +
 					"</div>" +
 					(issue.events && issue.events.length
-						? "<h3 class=\"h6\">History</h3><ul class=\"usis-issue-history\">" +
+						? "<h3 class=\"h6\">" + t("History") + "</h3><ul class=\"usis-issue-history\">" +
 							issue.events
 								.map(function (event) {
 									return (
@@ -294,7 +312,7 @@
 				document.getElementById("usis-issue-create-rfi").addEventListener("click", function () {
 					fetchJson("/api/v1/issues/" + encodeURIComponent(issue.id) + "/create-rfi", { method: "POST" })
 						.then(function (result) {
-							notify("success", "RFI prefill ready");
+							notify("success", t("RFI prefill ready"));
 							if (result.redirect_to) window.location.href = result.redirect_to;
 						})
 						.catch(function (err) {
@@ -304,7 +322,7 @@
 				document.getElementById("usis-issue-create-co").addEventListener("click", function () {
 					fetchJson("/api/v1/issues/" + encodeURIComponent(issue.id) + "/create-co", { method: "POST" })
 						.then(function (result) {
-							notify("success", "Change order prepared from this issue");
+							notify("success", t("Change order prepared from this issue"));
 							if (result.redirect_to) window.location.href = result.redirect_to;
 						})
 						.catch(function (err) {
@@ -360,7 +378,7 @@
 			};
 			fetchJson("/api/v1/issues", { method: "POST", body: body })
 				.then(function (data) {
-					notify("success", "Issue created");
+					notify("success", t("Issue created"));
 					var modal = document.getElementById("usis-issue-new-modal");
 					if (window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).hide();
 					form.reset();
@@ -374,7 +392,7 @@
 		});
 		if (window.aiReviewBus && window.aiReviewBus.on) {
 			window.aiReviewBus.on("review-complete", function () {
-				notify("info", "AI review findings added to Issues");
+				notify("info", t("AI review findings added to Issues"));
 				load();
 			});
 		}
@@ -385,6 +403,14 @@
 			var modal = document.getElementById("usis-issue-new-modal");
 			if (window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).show();
 		}
+		document.addEventListener("usis:languagechange", function () {
+			var sel = document.getElementById("usis-issue-project");
+			if (sel && sel.options && sel.options[0] && !sel.options[0].value) {
+				sel.options[0].textContent = t("All projects");
+			}
+			if (state.items) paintCount();
+			render();
+		});
 		loadProjects().finally(load);
 		setInterval(function () {
 			if (document.hidden) return;

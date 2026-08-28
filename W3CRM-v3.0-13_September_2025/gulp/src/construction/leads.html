@@ -96,7 +96,7 @@
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
-								<h6 class="mb-1">Construction — Leads</h6>
+								<h6 class="mb-1" data-i18n="Construction — Leads">Construction — Leads</h6>
 								
 							</div>
 							<div class="text-nowrap small">
@@ -115,42 +115,42 @@
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 							<div class="input-group message-search-area width200 w-xs-100">
-								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
+								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" data-i18n-placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
 								<div class="input-group-append">
 									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-bc-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
 								</div>
 							</div>
 							<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-bc-filter-count" aria-live="polite"></span>
 							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-leads-filter-btn" data-bs-toggle="offcanvas" data-bs-target="#usis-leads-filter-drawer" aria-controls="usis-leads-filter-drawer">
-								<i class="fa fa-filter me-1"></i> Filter <span class="badge text-bg-primary ms-1 d-none" id="usis-leads-filter-badge"></span>
+								<i class="fa fa-filter me-1"></i> <span data-i18n="Filter">Filter</span> <span class="badge text-bg-primary ms-1 d-none" id="usis-leads-filter-badge"></span>
 							</button>
 							<div class="dropdown">
 								<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" id="usis-leads-saved-btn" data-bs-toggle="dropdown" aria-expanded="false">
-									Saved
+									<span data-i18n="Saved">Saved</span>
 								</button>
 								<ul class="dropdown-menu" id="usis-leads-saved-menu" aria-labelledby="usis-leads-saved-btn">
-									<li><span class="dropdown-item-text text-muted">No saved filters yet</span></li>
+									<li><span class="dropdown-item-text text-muted" data-i18n="No saved filters yet">No saved filters yet</span></li>
 								</ul>
 							</div>
 							<button type="button" class="btn btn-outline-secondary btn-sm d-md-none" id="usis-bc-sort-filter" title="Sort and filter columns">
-								<i class="fa fa-filter me-1"></i> Sort &amp; Filter
+								<i class="fa fa-filter me-1"></i> <span data-i18n="Sort &amp; Filter">Sort &amp; Filter</span>
 							</button>
 							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-bc-reset-view" title="Clear header filters, sort, and hidden columns">
-								Reset view
+								<span data-i18n="Reset view">Reset view</span>
 							</button>
 						</div>
 						<div class="d-flex flex-wrap gap-2">
 							<button type="button" class="btn btn-outline-secondary w-xs-100" id="usis-bc-pull" title="Pull latest BuildingConnected opportunities">
-								<i class="icon feather icon-download me-1"></i> Sync BC
+								<i class="icon feather icon-download me-1"></i> <span data-i18n="Sync BC">Sync BC</span>
 							</button>
 							<a href="/api/v1/integrations/buildingconnected/oauth/start" class="btn btn-outline-secondary w-xs-100" data-usis-bc-reconnect title="Grant BuildingConnected write access (data:write) and refresh the stored token">
-								<i class="icon feather icon-link me-1"></i> Reconnect BC
+								<i class="icon feather icon-link me-1"></i> <span data-i18n="Reconnect BC">Reconnect BC</span>
 							</a>
 							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-bc-sync-stub" title="Reload lead list">
-								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
+								<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Reload from API">Reload from API</span>
 							</button>
 							<a href="javascript:void(0);" class="btn btn-primary w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#lead-detail-offcanvas">
-								<i class="icon feather icon-plus me-1"></i> Add lead
+								<i class="icon feather icon-plus me-1"></i> <span data-i18n="Add lead">Add lead</span>
 							</a>
 						</div>
 					</div>
@@ -161,10 +161,10 @@
 
 				<div class="alert alert-secondary py-2 mb-2 d-none" id="usis-bc-leads-bulk-bar" role="region" aria-live="polite">
 					<span id="usis-bc-leads-bulk-count" class="fw-semibold me-2">0 selected</span>
-					<button type="button" class="btn btn-sm btn-outline-success me-1" data-usis-bulk-bc="WILL_SUBMIT">Will Bid</button>
-					<button type="button" class="btn btn-sm btn-outline-danger me-1" data-usis-bulk-bc="DECLINED">Will Not Bid</button>
-					<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-usis-bulk-bc="UNDECIDED">Undecided</button>
-					<button type="button" class="btn btn-sm btn-link" id="usis-bc-leads-bulk-clear">Clear</button>
+					<button type="button" class="btn btn-sm btn-outline-success me-1" data-usis-bulk-bc="WILL_SUBMIT" data-i18n="Will Bid">Will Bid</button>
+					<button type="button" class="btn btn-sm btn-outline-danger me-1" data-usis-bulk-bc="DECLINED" data-i18n="Will Not Bid">Will Not Bid</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-usis-bulk-bc="UNDECIDED" data-i18n="Undecided">Undecided</button>
+					<button type="button" class="btn btn-sm btn-link" id="usis-bc-leads-bulk-clear" data-i18n="Clear">Clear</button>
 				</div>
 
 				<!-- Start - Leads table -->
@@ -174,21 +174,21 @@
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-bc-leads-check-all" aria-label="Select all visible leads"></th>
-									<th class="text-nowrap" data-sort-key="number">Project #</th>
-									<th class="usis-bc-col-lead" data-sort-key="name">Lead</th>
-									<th class="text-nowrap usis-bc-col-trade" data-sort-key="trade_name">Trade invited</th>
-									<th class="usis-bc-col-company" data-sort-key="company_name">Company</th>
-									<th class="usis-bc-col-city" data-sort-key="city">City</th>
-									<th class="text-nowrap" data-sort-key="state">State</th>
-									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles">Dist</th>
-									<th class="text-nowrap" data-sort-key="due_at">Bid due date</th>
-									<th class="text-center text-nowrap" data-sort-key="estimate">Estimate</th>
-									<th class="text-end text-nowrap">Action</th>
+									<th class="text-nowrap" data-sort-key="number" data-i18n="Project #">Project #</th>
+									<th class="usis-bc-col-lead" data-sort-key="name" data-i18n="Lead">Lead</th>
+									<th class="text-nowrap usis-bc-col-trade" data-sort-key="trade_name" data-i18n="Trade invited">Trade invited</th>
+									<th class="usis-bc-col-company" data-sort-key="company_name" data-i18n="Company">Company</th>
+									<th class="usis-bc-col-city" data-sort-key="city" data-i18n="City">City</th>
+									<th class="text-nowrap" data-sort-key="state" data-i18n="State">State</th>
+									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles" data-i18n="Dist">Dist</th>
+									<th class="text-nowrap" data-sort-key="due_at" data-i18n="Bid due date">Bid due date</th>
+									<th class="text-center text-nowrap" data-sort-key="estimate" data-i18n="Estimate">Estimate</th>
+									<th class="text-end text-nowrap" data-i18n="Action">Action</th>
 								</tr>
 							</thead>
 							<tbody id="usis-bc-leads-tbody">
 								<tr>
-									<td colspan="11" class="text-muted">Loading leads from API…</td>
+									<td colspan="11" class="text-muted" data-i18n="Loading leads from API…">Loading leads from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -209,10 +209,10 @@
 		<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
 			<div class="d-flex align-items-center gap-2">
 				<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-				<h5 class="offcanvas-title fw-semibold" id="lead-detail-title">Lead (Building Connected)</h5>
+				<h5 class="offcanvas-title fw-semibold" id="lead-detail-title" data-i18n="Lead (Building Connected)">Lead (Building Connected)</h5>
 			</div>
 			<div>
-				<button type="button" class="btn btn-primary">Save</button>
+				<button type="button" class="btn btn-primary" data-i18n="Save">Save</button>
 			</div>
 		</div>
 		<div class="offcanvas-body">

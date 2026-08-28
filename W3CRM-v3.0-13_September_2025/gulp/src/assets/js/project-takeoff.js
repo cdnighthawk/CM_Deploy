@@ -27,7 +27,11 @@
 	}
 
 	function projectId() {
-		return new URLSearchParams(window.location.search).get("id");
+		if (window.USISProjectContext && typeof window.USISProjectContext.projectIdFromQuery === "function") {
+			return window.USISProjectContext.projectIdFromQuery();
+		}
+		var p = new URLSearchParams(window.location.search);
+		return (p.get("id") || p.get("project_id") || p.get("projectId") || "").trim() || null;
 	}
 
 	function notifyErr(msg) {

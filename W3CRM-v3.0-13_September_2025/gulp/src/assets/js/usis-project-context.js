@@ -6,19 +6,23 @@
 
   var KEY = "usis.activeProjectId";
 
-  function readQuery() {
+  function projectIdFromQuery() {
     try {
       var params = new URLSearchParams(global.location.search);
-      var pid = params.get("project_id") || params.get("projectId");
+      var pid = (params.get("project_id") || params.get("projectId") || "").trim();
       if (pid) return pid;
       var path = (global.location.pathname || "").toLowerCase();
       if (/project-detail\.html/.test(path)) {
-        return params.get("id");
+        return (params.get("id") || "").trim() || null;
       }
       return null;
     } catch (e) {
       return null;
     }
+  }
+
+  function readQuery() {
+    return projectIdFromQuery();
   }
 
   function stampRfiLinks(projectId) {
@@ -119,11 +123,12 @@
 
   global.USISProjectContext = {
     init: init,
+    projectIdFromQuery: projectIdFromQuery,
     setProjectId: function (id) {
       apply(id);
     },
     getProjectId: function () {
-      return document.body.getAttribute("data-project-id") || null;
+      return document.body.getAttribute("data-project-id") || projectIdFromQuery();
     },
     clear: function () {
       document.body.removeAttribute("data-project-id");

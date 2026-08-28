@@ -745,7 +745,13 @@ let translations = {
 			"Close": "Cerrar",
 			"Dashboard": "Inicio",
 			"Email": "Correo",
-			"Reports": "Reportes"
+			"Reports": "Reportes",
+			"Submittals": "Submittals",
+			"Issues": "Incidencias",
+			"Admin": "Administración",
+			"Finance": "Finanzas",
+			"HR dashboard": "Panel de RH",
+			"RFIs": "RFIs"
 		},
 	},
 	'ar_TN' : {

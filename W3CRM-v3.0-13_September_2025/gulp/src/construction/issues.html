@@ -51,57 +51,57 @@
 			<div class="container-fluid pb-5">
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
-						<h1 class="h4 mb-0">Issues</h1>
+						<h1 class="h4 mb-0" data-i18n="Issues">Issues</h1>
 						<div class="small text-muted" id="usis-issue-count">Loading…</div>
-						<div class="small text-muted">Status updates from GitHub: work or assign → In Progress, <code>Resolution:</code> comment → Pending Review, reporter confirms → Closed.</div>
+						<div class="small text-muted" data-i18n="Status updates from GitHub: work or assign → In Progress, Resolution: comment → Pending Review, reporter confirms → Closed.">Status updates from GitHub: work or assign → In Progress, Resolution: comment → Pending Review, reporter confirms → Closed.</div>
 					</div>
 					<div class="d-flex flex-wrap gap-2">
 						<div class="btn-group" role="group" aria-label="View">
-							<button type="button" class="btn btn-sm btn-primary" id="usis-issue-view-kanban">Kanban</button>
-							<button type="button" class="btn btn-sm btn-outline-primary" id="usis-issue-view-table">Table</button>
+							<button type="button" class="btn btn-sm btn-primary" id="usis-issue-view-kanban" data-i18n="Kanban">Kanban</button>
+							<button type="button" class="btn btn-sm btn-outline-primary" id="usis-issue-view-table" data-i18n="Table">Table</button>
 						</div>
-						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-issue-refresh">Refresh</button>
-						<button type="button" class="btn btn-sm btn-primary" id="usis-issue-new">New Issue</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-issue-refresh" data-i18n="Refresh">Refresh</button>
+						<button type="button" class="btn btn-sm btn-primary" id="usis-issue-new" data-i18n="New Issue">New Issue</button>
 					</div>
 				</div>
 
 				<div class="usis-issue-filters mb-3">
 					<select class="form-select form-select-sm" id="usis-issue-project" aria-label="Project"></select>
-					<input class="form-control form-control-sm" id="usis-issue-search" type="search" placeholder="Search issues" aria-label="Search issues">
+					<input class="form-control form-control-sm" id="usis-issue-search" type="search" placeholder="Search issues" aria-label="Search issues" data-i18n-placeholder="Search issues">
 					<select class="form-select form-select-sm" id="usis-issue-status" aria-label="Status">
-						<option value="">All statuses</option>
-						<option>New</option>
-						<option>Triaged</option>
-						<option>In Progress</option>
-						<option>Pending Review</option>
-						<option>Resolved</option>
-						<option>Closed</option>
+						<option value="" data-i18n="All statuses">All statuses</option>
+						<option value="New" data-i18n="New">New</option>
+						<option value="Triaged" data-i18n="Triaged">Triaged</option>
+						<option value="In Progress" data-i18n="In Progress">In Progress</option>
+						<option value="Pending Review" data-i18n="Pending Review">Pending Review</option>
+						<option value="Resolved" data-i18n="Resolved">Resolved</option>
+						<option value="Closed" data-i18n="Closed">Closed</option>
 					</select>
 					<select class="form-select form-select-sm" id="usis-issue-severity" aria-label="Severity">
-						<option value="">All severities</option>
-						<option>Critical</option>
-						<option>Major</option>
-						<option>Minor</option>
+						<option value="" data-i18n="All severities">All severities</option>
+						<option value="Critical" data-i18n="Critical">Critical</option>
+						<option value="Major" data-i18n="Major">Major</option>
+						<option value="Minor" data-i18n="Minor">Minor</option>
 					</select>
 					<select class="form-select form-select-sm" id="usis-issue-trade" aria-label="Trade">
-						<option value="">All trades</option>
-						<option>Drywall</option>
-						<option>Paint</option>
-						<option>Flooring</option>
-						<option>Acoustical</option>
-						<option>Doors &amp; Hardware</option>
-						<option>Specialties</option>
-						<option>General</option>
+						<option value="" data-i18n="All trades">All trades</option>
+						<option value="Drywall" data-i18n="Drywall">Drywall</option>
+						<option value="Paint" data-i18n="Paint">Paint</option>
+						<option value="Flooring" data-i18n="Flooring">Flooring</option>
+						<option value="Acoustical" data-i18n="Acoustical">Acoustical</option>
+						<option value="Doors &amp; Hardware" data-i18n="Doors &amp; Hardware">Doors &amp; Hardware</option>
+						<option value="Specialties" data-i18n="Specialties">Specialties</option>
+						<option value="General" data-i18n="General">General</option>
 					</select>
 					<select class="form-select form-select-sm" id="usis-issue-source" aria-label="Source">
-						<option value="">All sources</option>
-						<option value="ai_review">AI Review</option>
-						<option value="rfi">RFI</option>
-						<option value="punch">Punch</option>
-						<option value="field">Field</option>
-						<option value="safety">Safety</option>
-						<option value="manual">Manual</option>
-						<option value="feedback">Website</option>
+						<option value="" data-i18n="All sources">All sources</option>
+						<option value="ai_review" data-i18n="AI Review">AI Review</option>
+						<option value="rfi" data-i18n="RFI">RFI</option>
+						<option value="punch" data-i18n="Punch">Punch</option>
+						<option value="field" data-i18n="Field">Field</option>
+						<option value="safety" data-i18n="Safety">Safety</option>
+						<option value="manual" data-i18n="Manual">Manual</option>
+						<option value="feedback" data-i18n="Website">Website</option>
 					</select>
 				</div>
 
@@ -111,12 +111,12 @@
 						<thead>
 							<tr>
 								<th>#</th>
-								<th>Severity</th>
-								<th>Title</th>
-								<th>Status</th>
-								<th>Trade</th>
-								<th>Source</th>
-								<th>Assignee</th>
+								<th data-i18n="Severity">Severity</th>
+								<th data-i18n="Title">Title</th>
+								<th data-i18n="Status">Status</th>
+								<th data-i18n="Trade">Trade</th>
+								<th data-i18n="Source">Source</th>
+								<th data-i18n="Assignee">Assignee</th>
 							</tr>
 						</thead>
 						<tbody id="usis-issue-tbody"></tbody>
@@ -128,7 +128,7 @@
 
 	<div class="offcanvas offcanvas-end usis-issue-drawer" tabindex="-1" id="usis-issue-drawer">
 		<div class="offcanvas-header">
-			<h2 class="offcanvas-title h5 mb-0" id="usis-issue-drawer-title">Issue</h2>
+			<h2 class="offcanvas-title h5 mb-0" id="usis-issue-drawer-title" data-i18n="Issue">Issue</h2>
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 		</div>
 		<div class="offcanvas-body" id="usis-issue-drawer-body"></div>
@@ -138,25 +138,25 @@
 		<div class="modal-dialog">
 			<form class="modal-content" id="usis-issue-new-form">
 				<div class="modal-header">
-					<h2 class="modal-title h5">New issue</h2>
+					<h2 class="modal-title h5" data-i18n="New issue">New issue</h2>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body d-grid gap-2">
-					<input class="form-control" name="title" required placeholder="Title">
-					<textarea class="form-control" name="description" rows="3" placeholder="Description"></textarea>
+					<input class="form-control" name="title" required placeholder="Title" data-i18n-placeholder="Title">
+					<textarea class="form-control" name="description" rows="3" placeholder="Description" data-i18n-placeholder="Description"></textarea>
 					<select class="form-select" name="severity">
-						<option>Minor</option>
-						<option>Major</option>
-						<option>Critical</option>
+						<option value="Minor" data-i18n="Minor">Minor</option>
+						<option value="Major" data-i18n="Major">Major</option>
+						<option value="Critical" data-i18n="Critical">Critical</option>
 					</select>
 					<select class="form-select" name="trade">
-						<option>General</option>
-						<option>Drywall</option>
-						<option>Paint</option>
-						<option>Flooring</option>
-						<option>Acoustical</option>
-						<option>Doors &amp; Hardware</option>
-						<option>Specialties</option>
+						<option value="General" data-i18n="General">General</option>
+						<option value="Drywall" data-i18n="Drywall">Drywall</option>
+						<option value="Paint" data-i18n="Paint">Paint</option>
+						<option value="Flooring" data-i18n="Flooring">Flooring</option>
+						<option value="Acoustical" data-i18n="Acoustical">Acoustical</option>
+						<option value="Doors &amp; Hardware" data-i18n="Doors &amp; Hardware">Doors &amp; Hardware</option>
+						<option value="Specialties" data-i18n="Specialties">Specialties</option>
 					</select>
 					<select class="form-select" name="source_type">
 						<option value="manual">manual</option>
@@ -166,8 +166,8 @@
 					</select>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="submit" class="btn btn-primary">Create</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="submit" class="btn btn-primary" data-i18n="Create">Create</button>
 				</div>
 			</form>
 		</div>

@@ -15,6 +15,10 @@
 	var U = window.USIS_RFI;
 	var prefsStore = U.localStore("usis_rfi_log_prefs");
 
+	function t(key) {
+		return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
+	}
+
 	var DEFAULT_COLUMNS = [
 		{ key: "display_number", label: "#", visible: true, sortable: true, sortKey: "number_asc:number_desc" },
 		{ key: "subject", label: "Subject", visible: true, sortable: true, sortKey: "subject_asc:subject_asc" },
@@ -100,14 +104,14 @@
 			if (c.sortable && c.sortKey) {
 				var parts = c.sortKey.split(":");
 				var cur = state.sort === parts[0] ? parts[1] : parts[0];
-				th.innerHTML = U.esc(c.label) + ' <span class="text-muted small">' +
+				th.innerHTML = U.esc(t(c.label)) + ' <span class="text-muted small">' +
 					(state.sort === parts[0] ? "↑" : state.sort === parts[1] ? "↓" : "") + "</span>";
 				th.addEventListener("click", function () {
 					state.sort = state.sort === parts[0] ? parts[1] : parts[0];
 					reload();
 				});
 			} else {
-				th.textContent = c.label;
+				th.textContent = t(c.label);
 			}
 			thr.appendChild(th);
 		});
@@ -213,7 +217,7 @@
 		var visible = state.columns.filter(function (c) { return c.visible; });
 		var colSpan = visible.length + 2; // checkbox + actions
 		if (!state.items.length) {
-			tbody.innerHTML = '<tr><td colspan="' + colSpan + '" class="text-muted text-center py-4">No RFIs match the current filters.</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="' + colSpan + '" class="text-muted text-center py-4">' + t("No RFIs match the current filters.") + "</td></tr>";
 			updateCounter();
 			return;
 		}
@@ -247,7 +251,9 @@
 		var total = state.page.total || state.items.length;
 		var from = state.items.length ? state.page.offset + 1 : 0;
 		var to = state.page.offset + state.items.length;
-		el.textContent = total ? from + "–" + to + " of " + total : "0 of 0";
+		el.textContent = total
+			? t("{from}–{to} of {total}").replace("{from}", from).replace("{to}", to).replace("{total}", total)
+			: t("0 of 0");
 	}
 
 	function wireRowEvents() {
@@ -295,7 +301,7 @@
 		if (!bar) return;
 		if (state.selection.size > 0) {
 			bar.classList.remove("d-none");
-			if (cnt) cnt.textContent = state.selection.size + " selected";
+			if (cnt) cnt.textContent = t("{n} selected").replace("{n}", state.selection.size);
 		} else {
 			bar.classList.add("d-none");
 		}
@@ -381,11 +387,11 @@
 			offset: state.page.offset,
 		};
 		var tbody = document.getElementById("usis-rfi-tbody");
-		if (tbody) tbody.innerHTML = '<tr><td colspan="20" class="text-muted text-center py-3">Loading RFIs…</td></tr>';
+		if (tbody) tbody.innerHTML = '<tr><td colspan="20" class="text-muted text-center py-3">' + t("Loading RFIs…") + "</td></tr>";
 
 		var pid = state.projectId;
 		if (!pid) {
-			if (tbody) tbody.innerHTML = '<tr><td colspan="20" class="text-muted text-center py-4">Select a project to see its RFIs.</td></tr>';
+			if (tbody) tbody.innerHTML = '<tr><td colspan="20" class="text-muted text-center py-4">' + t("Select a project to see its RFIs.") + "</td></tr>";
 			return Promise.resolve();
 		}
 		return Promise.all([
@@ -584,7 +590,7 @@
 		var sel = document.getElementById("usis-rfi-saved-view");
 		if (!sel) return Promise.resolve();
 		return U.listSavedViews(state.projectId).then(function (rows) {
-			sel.innerHTML = '<option value="">Default (all)</option>';
+			sel.innerHTML = '<option value="">' + t("Default (all)") + "</option>";
 			rows.forEach(function (v) {
 				var opt = document.createElement("option");
 				opt.value = v.id;
@@ -659,6 +665,11 @@
 		wireExport();
 		wireColumns();
 		wireSavedViews();
+		document.addEventListener("usis:languagechange", function () {
+			renderHeader();
+			renderBody();
+			updateCounter();
+		});
 	}
 
 	if (document.readyState === "loading") {

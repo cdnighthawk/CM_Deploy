@@ -110,52 +110,52 @@
 				<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3 usis-rfi-toolbar">
 					<div class="d-flex flex-wrap gap-2 align-items-center">
 						<div>
-							<label class="form-label small text-muted mb-1" for="usis-rfi-project">Project</label>
+							<label class="form-label small text-muted mb-1" for="usis-rfi-project" data-i18n="Project">Project</label>
 							<select class="form-select form-select-sm" id="usis-rfi-project">
-								<option value="">Loading projects…</option>
+								<option value="" data-i18n="Loading projects…">Loading projects…</option>
 							</select>
 						</div>
 						<div>
-							<label class="form-label small text-muted mb-1" for="usis-rfi-saved-view">Saved view</label>
+							<label class="form-label small text-muted mb-1" for="usis-rfi-saved-view" data-i18n="Saved view">Saved view</label>
 							<select class="form-select form-select-sm" id="usis-rfi-saved-view">
-								<option value="">Default (all)</option>
+								<option value="" data-i18n="Default (all)">Default (all)</option>
 							</select>
 						</div>
 						<div>
-							<label class="form-label small text-muted mb-1" for="usis-rfi-status">Status</label>
+							<label class="form-label small text-muted mb-1" for="usis-rfi-status" data-i18n="Status">Status</label>
 							<select class="form-select form-select-sm" id="usis-rfi-status">
-								<option value="">All statuses</option>
-								<option value="draft">Draft</option>
-								<option value="open">Open</option>
-								<option value="closed">Closed</option>
-								<option value="closed_draft">Closed-Draft</option>
+								<option value="" data-i18n="All statuses">All statuses</option>
+								<option value="draft" data-i18n="Draft">Draft</option>
+								<option value="open" data-i18n="Open">Open</option>
+								<option value="closed" data-i18n="Closed">Closed</option>
+								<option value="closed_draft" data-i18n="Closed-Draft">Closed-Draft</option>
 							</select>
 						</div>
 						<div>
-							<label class="form-label small text-muted mb-1" for="usis-rfi-search">Search</label>
-							<input type="search" class="form-control form-control-sm" id="usis-rfi-search" placeholder="Subject, question, reference…" autocomplete="off">
+							<label class="form-label small text-muted mb-1" for="usis-rfi-search" data-i18n="Search">Search</label>
+							<input type="search" class="form-control form-control-sm" id="usis-rfi-search" placeholder="Subject, question, reference…" autocomplete="off" data-i18n-placeholder="Subject, question, reference…">
 						</div>
 						<div>
-							<label class="form-label small text-muted mb-1" for="usis-rfi-recycle">Recycle bin</label>
+							<label class="form-label small text-muted mb-1" for="usis-rfi-recycle" data-i18n="Recycle bin">Recycle bin</label>
 							<select class="form-select form-select-sm" id="usis-rfi-recycle">
-								<option value="0">Hide deleted</option>
-								<option value="1">Show only deleted</option>
+								<option value="0" data-i18n="Hide deleted">Hide deleted</option>
+								<option value="1" data-i18n="Show only deleted">Show only deleted</option>
 							</select>
 						</div>
 					</div>
 					<div class="d-flex flex-wrap gap-2 align-items-end">
 						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-rfi-customize" title="Customize columns / row height">
-							<i class="fa fa-cog me-1"></i> Columns
+							<i class="fa fa-cog me-1"></i> <span data-i18n="Columns">Columns</span>
 						</button>
 						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-rfi-save-view" title="Save current filters/columns as a view">
-							<i class="fa fa-bookmark me-1"></i> Save view
+							<i class="fa fa-bookmark me-1"></i> <span data-i18n="Save view">Save view</span>
 						</button>
 						<div class="btn-group btn-group-sm">
 							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-export-csv">CSV</button>
 							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-export-pdf">PDF</button>
 						</div>
 						<a class="btn btn-primary btn-sm" id="usis-rfi-create-link" href="construction/rfi-create.html">
-							<i class="fa fa-plus me-1"></i> Create RFI
+							<i class="fa fa-plus me-1"></i> <span data-i18n="Create RFI">Create RFI</span>
 						</a>
 					</div>
 				</div>
@@ -163,11 +163,11 @@
 				<!-- Bulk-action toolbar (only visible when rows are checked) -->
 				<div class="alert alert-secondary py-2 mb-2 d-none" id="usis-rfi-bulk-bar" role="region" aria-live="polite">
 					<span id="usis-rfi-bulk-count" class="fw-semibold me-2">0 selected</span>
-					<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-bulk="patch">Bulk edit…</button>
-					<button type="button" class="btn btn-sm btn-outline-success me-1" data-bulk="close">Close</button>
-					<button type="button" class="btn btn-sm btn-outline-danger me-1" data-bulk="delete">Recycle</button>
-					<button type="button" class="btn btn-sm btn-outline-primary me-1" data-bulk="restore">Restore</button>
-					<button type="button" class="btn btn-sm btn-link" id="usis-rfi-bulk-clear">Clear</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-bulk="patch" data-i18n="Bulk edit…">Bulk edit…</button>
+					<button type="button" class="btn btn-sm btn-outline-success me-1" data-bulk="close" data-i18n="Close">Close</button>
+					<button type="button" class="btn btn-sm btn-outline-danger me-1" data-bulk="delete" data-i18n="Recycle">Recycle</button>
+					<button type="button" class="btn btn-sm btn-outline-primary me-1" data-bulk="restore" data-i18n="Restore">Restore</button>
+					<button type="button" class="btn btn-sm btn-link" id="usis-rfi-bulk-clear" data-i18n="Clear">Clear</button>
 				</div>
 
 				<div class="card m-0">
@@ -180,15 +180,15 @@
 								</tr>
 							</thead>
 							<tbody id="usis-rfi-tbody">
-								<tr><td colspan="20" class="text-muted text-center py-4">Loading RFIs from API…</td></tr>
+								<tr><td colspan="20" class="text-muted text-center py-4" data-i18n="Loading RFIs from API…">Loading RFIs from API…</td></tr>
 							</tbody>
 						</table>
 					</div>
 					<div class="d-flex justify-content-between align-items-center px-3 py-2 small text-muted">
 						<div id="usis-rfi-counter">—</div>
 						<div class="btn-group btn-group-sm" role="group">
-							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-prev">&larr; Prev</button>
-							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-next">Next &rarr;</button>
+							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-prev"><span data-i18n="← Prev">&larr; Prev</span></button>
+							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-next"><span data-i18n="Next →">Next &rarr;</span></button>
 						</div>
 					</div>
 				</div>
@@ -205,25 +205,25 @@
 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header py-2">
-					<h5 class="modal-title">Customize columns</h5>
+					<h5 class="modal-title" data-i18n="Customize columns">Customize columns</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<p class="text-muted small mb-2">Drag rows to reorder. Toggle the checkbox to hide / show. Row height applies to the entire log.</p>
 					<div class="mb-3">
-						<label class="form-label small text-muted mb-1" for="usis-rfi-row-height">Row height</label>
+						<label class="form-label small text-muted mb-1" for="usis-rfi-row-height" data-i18n="Row height">Row height</label>
 						<select id="usis-rfi-row-height" class="form-select form-select-sm" style="max-width:14rem">
-							<option value="compact">Compact</option>
-							<option value="default" selected>Default</option>
-							<option value="comfortable">Comfortable</option>
+							<option value="compact" data-i18n="Compact">Compact</option>
+							<option value="default" selected data-i18n="Default">Default</option>
+							<option value="comfortable" data-i18n="Comfortable">Comfortable</option>
 						</select>
 					</div>
 					<div id="usis-rfi-col-list"></div>
 				</div>
 				<div class="modal-footer py-2">
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-rfi-cols-reset">Reset to default</button>
-					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-rfi-cols-apply">Apply</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-rfi-cols-reset" data-i18n="Reset to default">Reset to default</button>
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-rfi-cols-apply" data-i18n="Apply">Apply</button>
 				</div>
 			</div>
 		</div>
@@ -234,30 +234,30 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header py-2">
-					<h5 class="modal-title">Save view</h5>
+					<h5 class="modal-title" data-i18n="Save view">Save view</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<div class="mb-2">
-						<label class="form-label small text-muted mb-1" for="usis-rfi-saveview-name">Name</label>
-						<input type="text" class="form-control form-control-sm" id="usis-rfi-saveview-name" placeholder="My open RFIs">
+						<label class="form-label small text-muted mb-1" for="usis-rfi-saveview-name" data-i18n="Name">Name</label>
+						<input type="text" class="form-control form-control-sm" id="usis-rfi-saveview-name" placeholder="My open RFIs" data-i18n-placeholder="My open RFIs">
 					</div>
 					<div class="mb-2">
-						<label class="form-label small text-muted mb-1" for="usis-rfi-saveview-scope">Scope</label>
+						<label class="form-label small text-muted mb-1" for="usis-rfi-saveview-scope" data-i18n="Scope">Scope</label>
 						<select class="form-select form-select-sm" id="usis-rfi-saveview-scope">
-							<option value="user">My views</option>
-							<option value="project">Project (everyone on this project)</option>
-							<option value="company">Company (everyone)</option>
+							<option value="user" data-i18n="My views">My views</option>
+							<option value="project" data-i18n="Project (everyone on this project)">Project (everyone on this project)</option>
+							<option value="company" data-i18n="Company (everyone)">Company (everyone)</option>
 						</select>
 					</div>
 					<div class="form-check">
 						<input class="form-check-input" type="checkbox" id="usis-rfi-saveview-default">
-						<label class="form-check-label small" for="usis-rfi-saveview-default">Make this my default view</label>
+						<label class="form-check-label small" for="usis-rfi-saveview-default" data-i18n="Make this my default view">Make this my default view</label>
 					</div>
 				</div>
 				<div class="modal-footer py-2">
-					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-rfi-saveview-apply">Save</button>
+					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-rfi-saveview-apply" data-i18n="Save">Save</button>
 				</div>
 			</div>
 		</div>
@@ -268,7 +268,7 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header py-2">
-					<h5 class="modal-title">Bulk edit RFIs</h5>
+					<h5 class="modal-title" data-i18n="Bulk edit RFIs">Bulk edit RFIs</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">

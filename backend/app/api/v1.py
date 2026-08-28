@@ -1225,7 +1225,7 @@ def list_estimate_queue():
 @bp.get("/projects")
 def list_projects():
     """Active directory jobs (``projects``), excluding soft-deleted rows."""
-    from ..permissions.project_scope import project_access_clause, project_scope_label
+    from ..permissions.project_scope import can_see_all_projects, project_access_clause, project_scope_label
 
     try:
         limit = max(1, min(int(request.args.get("limit", 500)), 2000))
@@ -1236,7 +1236,10 @@ def list_projects():
     cu = current_user()
     filt = and_(Project.deleted_at.is_(None), project_access_clause(cu))
     exclude_raw = (request.args.get("exclude_status") or "").strip()
-    if exclude_raw:
+    # Assigned-scope users must see every job they are on, including default
+    # ``planning`` workspaces. The planning filter is only for company-wide
+    # directories so bid/lead shells do not flood Projects.
+    if exclude_raw and can_see_all_projects(cu):
         excluded = [s.strip().lower() for s in exclude_raw.split(",") if s.strip()]
         if excluded:
             filt = and_(filt, ~Project.status.in_(excluded))
@@ -4030,7 +4033,7 @@ def global_search():
                 "type": "project",
                 "label": p.name,
                 "id": str(p.id),
-                "href": f"construction/project-detail.html?project_id={p.id}",
+                "href": f"construction/project-detail.html?id={p.id}",
             }
         )
     for le in db.session.scalars(

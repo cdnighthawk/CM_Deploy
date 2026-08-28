@@ -45,6 +45,15 @@
 		document.querySelectorAll(".deznav .metismenu > li").forEach(function (parent) {
 			var kids = parent.querySelectorAll(":scope > ul > li[data-usis-module]");
 			if (!kids.length) return;
+			// Keep a parent that is itself an allowed module link (Projects is tagged
+			// data-usis-module="projects" and must stay visible when that module is allowed).
+			if (
+				parent.getAttribute("data-usis-module") &&
+				parent.getAttribute("aria-hidden") !== "true" &&
+				parent.style.display !== "none"
+			) {
+				return;
+			}
 			var anyVisible = false;
 			kids.forEach(function (kid) {
 				if (kid.getAttribute("aria-hidden") !== "true" && kid.style.display !== "none") {

@@ -2,6 +2,9 @@
  * Procore-parity Create RFI page.
  *
  * - Project picker pre-selects ``?project_id=`` query param.
+ * - Project detail prefills prefix, GC contractor, location/stage/sub-job,
+ *   RFI manager, reference, and general information. Query params
+ *   (subject, question, drawing/sheet, spec, cost code, impacts) win first.
  * - Lookups (Locations, Spec Sections, Cost Codes, Project Stages, Sub Jobs)
  *   load on project change.
  * - Users (Assignees / RFI Manager / Distribution / Received From) load once.
@@ -17,8 +20,10 @@
 
 	var state = {
 		projectId: null,
+		projectItem: null,
 		users: [],
 		companies: [],
+		lookups: {},
 		customFieldDefs: [],
 		configurable: [],
 		assignees: [],
@@ -28,6 +33,10 @@
 
 	function $(id) { return document.getElementById(id); }
 
+	function t(key) {
+		return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
+	}
+
 	function fillSelect(sel, items, options) {
 		options = options || {};
 		if (!sel) return;
@@ -36,7 +45,8 @@
 		if (options.allowEmpty !== false) {
 			var blank = document.createElement("option");
 			blank.value = "";
-			blank.textContent = options.emptyLabel || "—";
+			blank.textContent = t(options.emptyLabel || "—");
+			if (options.emptyLabel) blank.setAttribute("data-i18n", options.emptyLabel);
 			sel.appendChild(blank);
 		}
 		items.forEach(function (it) {
@@ -173,33 +183,188 @@
 		} catch (e) {}
 	}
 
+	function currentActorUserId() {
+		try {
+			return window.localStorage.getItem("usisActorUserId") || null;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function selectIfEmpty(sel, raw) {
+		if (!sel || sel.value) return false;
+		return selectByIdOrLabel(sel, raw);
+	}
+
+	function setInputIfEmpty(el, value) {
+		if (!el || value == null) return false;
+		var next = String(value).trim();
+		if (!next || String(el.value || "").trim()) return false;
+		el.value = next;
+		return true;
+	}
+
+	function selectByIdOrLabel(sel, raw) {
+		if (!sel || raw == null || String(raw).trim() === "") return false;
+		var want = String(raw).trim();
+		if (selectProjectOption(sel, want)) return true;
+		var lower = want.toLowerCase();
+		var matched = false;
+		Array.prototype.forEach.call(sel.options, function (o) {
+			if (matched || !o.value) return;
+			var label = (o.textContent || "").trim().toLowerCase();
+			if (
+				label === lower ||
+				label.indexOf(lower + " —") === 0 ||
+				label.indexOf(lower + " ·") === 0 ||
+				label.indexOf(lower + " -") === 0
+			) {
+				sel.value = o.value;
+				matched = true;
+			}
+		});
+		return matched;
+	}
+
+	function firstRealOptionValue(sel) {
+		if (!sel) return "";
+		var values = [];
+		Array.prototype.forEach.call(sel.options, function (o) {
+			if (o.value) values.push(o.value);
+		});
+		return values.length === 1 ? values[0] : "";
+	}
+
+	function firstQueryValue(names) {
+		for (var i = 0; i < names.length; i++) {
+			var v = U.queryParam(names[i]);
+			if (v != null && String(v).trim() !== "") return String(v).trim();
+		}
+		return "";
+	}
+
+	function applyQueryPrefill() {
+		setInputIfEmpty($("usis-rfi-subject"), firstQueryValue(["subject"]));
+		setInputIfEmpty($("usis-rfi-question"), firstQueryValue(["question"]));
+		setInputIfEmpty(
+			$("usis-rfi-drawing-number"),
+			firstQueryValue(["drawing_number", "drawing", "sheet", "sheet_number"])
+		);
+		setInputIfEmpty($("usis-rfi-reference"), firstQueryValue(["reference", "trade"]));
+		setInputIfEmpty($("usis-rfi-general"), firstQueryValue(["general", "general_information"]));
+		setInputIfEmpty($("usis-rfi-prefix"), firstQueryValue(["prefix"]));
+		selectIfEmpty($("usis-rfi-spec"), firstQueryValue(["spec_section_id", "spec_section", "spec"]));
+		selectIfEmpty($("usis-rfi-location"), firstQueryValue(["location_id", "location"]));
+		selectIfEmpty($("usis-rfi-cost-code"), firstQueryValue(["cost_code_id", "cost_code"]));
+		selectIfEmpty($("usis-rfi-stage"), firstQueryValue(["project_stage_id", "project_stage", "stage"]));
+		selectIfEmpty($("usis-rfi-sub-job"), firstQueryValue(["sub_job_id", "sub_job"]));
+		selectIfEmpty($("usis-rfi-manager"), firstQueryValue(["rfi_manager_user_id", "rfi_manager", "manager"]));
+		selectIfEmpty(
+			$("usis-rfi-received-from"),
+			firstQueryValue(["received_from_user_id", "received_from"])
+		);
+		selectIfEmpty($("usis-rfi-responsible"), firstQueryValue(["responsible_contractor_company_id", "responsible"]));
+
+		var costAmt = firstQueryValue(["cost_impact"]);
+		var costChoice = $("usis-rfi-cost-choice");
+		var costInput = $("usis-rfi-cost-amount");
+		if (costAmt && costChoice && !costChoice.value) {
+			if (/^(yes|yes_unknown|no|tbd|na)$/i.test(costAmt)) {
+				costChoice.value = costAmt.toLowerCase();
+			} else if (!isNaN(Number(costAmt))) {
+				costChoice.value = "yes";
+				setInputIfEmpty(costInput, costAmt);
+			}
+		}
+		var schedDays = firstQueryValue(["schedule_impact_days"]);
+		var schedChoice = $("usis-rfi-sched-choice");
+		var schedInput = $("usis-rfi-sched-days");
+		if (schedDays && schedChoice && !schedChoice.value) {
+			if (/^(yes|yes_unknown|no|tbd|na)$/i.test(schedDays)) {
+				schedChoice.value = schedDays.toLowerCase();
+			} else if (!isNaN(Number(schedDays))) {
+				schedChoice.value = "yes";
+				setInputIfEmpty(schedInput, schedDays);
+			}
+		}
+	}
+
 	function prefillResponsibleContractor(item) {
 		var sel = $("usis-rfi-responsible");
 		if (!sel || !item || sel.value) return;
 		var gcId = item.gc_company_id || "";
-		if (gcId && Array.prototype.some.call(sel.options, function (o) { return o.value === gcId; })) {
-			sel.value = gcId;
+		if (gcId && selectProjectOption(sel, gcId)) return;
+		var gcName = (item.gc_company_name || "").trim();
+		if (gcName) selectByIdOrLabel(sel, gcName);
+	}
+
+	function prefillLookupIfSingleOrMatch(selId, matchValues) {
+		var sel = $(selId);
+		if (!sel || sel.value) return;
+		var i;
+		for (i = 0; i < (matchValues || []).length; i++) {
+			if (selectIfEmpty(sel, matchValues[i])) return;
+		}
+		var only = firstRealOptionValue(sel);
+		if (only) sel.value = only;
+	}
+
+	function applyStagePrefix(item) {
+		var prefix = $("usis-rfi-prefix");
+		if (!prefix || prefix.value.trim()) return;
+		var stageId = $("usis-rfi-stage") && $("usis-rfi-stage").value;
+		var rows = state.lookups.project_stages || [];
+		var stage = rows.find(function (r) { return sameId(r.id, stageId); });
+		if (stage && stage.prefix) {
+			prefix.value = String(stage.prefix).trim();
 			return;
 		}
-		var gcName = (item.gc_company_name || "").trim().toLowerCase();
-		if (!gcName) return;
-		var match = state.companies.find(function (c) {
-			return (c.name || "").trim().toLowerCase() === gcName;
-		});
-		if (match) sel.value = match.id;
+		if (item && item.number) prefix.value = String(item.number).trim();
+	}
+
+	function prefillManager() {
+		var sel = $("usis-rfi-manager");
+		if (!sel || sel.value) return;
+		selectIfEmpty(sel, currentActorUserId());
+	}
+
+	function projectContextBlurb(item) {
+		if (!item) return "";
+		var head = [item.number, item.name].filter(Boolean).join(" — ");
+		var addr = formatProjectAddress(item);
+		var parties = [
+			item.owner_company_name ? "Owner: " + item.owner_company_name : "",
+			item.gc_company_name ? "GC: " + item.gc_company_name : "",
+			item.architect_company_name ? "Architect: " + item.architect_company_name : "",
+		].filter(Boolean).join("; ");
+		return [head, addr !== "—" ? addr : "", parties].filter(Boolean).join(". ");
 	}
 
 	function prefillFromProject(item) {
+		if (!item) return;
 		prefillResponsibleContractor(item);
-		var prefix = $("usis-rfi-prefix");
-		if (prefix && !prefix.value.trim() && item && item.number) {
-			prefix.value = String(item.number).trim();
-		}
+		prefillLookupIfSingleOrMatch("usis-rfi-location", [
+			item.address_line1,
+			item.city,
+			[item.city, item.state].filter(Boolean).join(", "),
+		]);
+		prefillLookupIfSingleOrMatch("usis-rfi-stage", [item.status, item.project_type]);
+		prefillLookupIfSingleOrMatch("usis-rfi-sub-job", []);
+		applyStagePrefix(item);
+		prefillManager();
+		setInputIfEmpty($("usis-rfi-reference"), [item.number, item.name].filter(Boolean).join(" · "));
+		setInputIfEmpty($("usis-rfi-general"), projectContextBlurb(item));
+	}
+
+	function applyProjectDerivedFields() {
+		applyQueryPrefill();
+		prefillFromProject(state.projectItem);
 	}
 
 	function applySelectedProject(projectId) {
 		state.projectId = projectId || null;
 		if (!state.projectId) {
+			state.projectItem = null;
 			renderProjectCard(null);
 			return Promise.resolve();
 		}
@@ -208,9 +373,11 @@
 		return U.loadProject(state.projectId).then(function (item) {
 			ensureProjectOption($("usis-rfi-project"), item, state.projectId);
 			if (item && item.id) state.projectId = item.id;
+			state.projectItem = item || null;
 			renderProjectCard(item);
 			prefillFromProject(item);
 		}).catch(function () {
+			state.projectItem = null;
 			renderProjectCard(null);
 		});
 	}
@@ -285,6 +452,7 @@
 		];
 		var tasks = kinds.map(function (k) {
 			return U.loadLookup(state.projectId, k[0]).then(function (rows) {
+				state.lookups[k[0]] = rows || [];
 				var formatted = rows.map(function (r) {
 					var label = r[k[2]] || r.code || r.name || "(no name)";
 					if (k[0] === "spec_sections" && r.title) label = r.code + " — " + r.title;
@@ -292,7 +460,9 @@
 					return { id: r.id, label: label };
 				});
 				fillSelect($(k[1]), formatted);
-			}).catch(function () {});
+			}).catch(function () {
+				state.lookups[k[0]] = [];
+			});
 		});
 		tasks.push(loadCustomFields());
 		return Promise.all(tasks);
@@ -445,7 +615,7 @@
 
 	function submit(status) {
 		U.flashError($("usis-rfi-error"), "");
-		if (!state.projectId) { U.flashError($("usis-rfi-error"), "Choose a project."); return; }
+		if (!state.projectId) { U.flashError($("usis-rfi-error"), t("Choose a project.")); return; }
 		var payload = readPayload();
 		payload.status = status;
 		var customFields = readCustomFields();
@@ -507,7 +677,10 @@
 		sel.addEventListener("change", function () {
 			applySelectedProject(sel.value).then(function () {
 				return loadLookupsAndCustom();
-			}).then(applyConfigurableFields);
+			}).then(function () {
+				applyProjectDerivedFields();
+				return applyConfigurableFields();
+			});
 		});
 	}
 
@@ -598,11 +771,15 @@
 	}
 
 	function init() {
+		applyQueryPrefill();
 		loadProjects().then(function () {
 			return Promise.all([loadUsersAndCompanies(), loadLookupsAndCustom()]);
 		}).then(function () {
 			return applySelectedProject(state.projectId);
-		}).then(applyConfigurableFields);
+		}).then(function () {
+			applyProjectDerivedFields();
+			return applyConfigurableFields();
+		});
 
 		wireProjectChange();
 		wireAssignees();
@@ -611,10 +788,6 @@
 		wireAttachments();
 		wireAiDraft();
 		autoFillRespFromUser();
-		var subject = U.queryParam("subject");
-		var question = U.queryParam("question");
-		if (subject && $("usis-rfi-subject")) $("usis-rfi-subject").value = subject;
-		if (question && $("usis-rfi-question")) $("usis-rfi-question").value = question;
 	}
 
 	if (document.readyState === "loading") {

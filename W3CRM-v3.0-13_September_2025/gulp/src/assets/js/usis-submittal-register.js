@@ -1,6 +1,10 @@
 (function () {
 	"use strict";
 
+	function t(key) {
+		return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
+	}
+
 	function fetchJson(path, opts) {
 		if (window.USIS_API) return window.USIS_API.fetchJson(path, opts || {});
 		return fetch(path, Object.assign({ credentials: "include", headers: { Accept: "application/json" } }, opts || {})).then(function (r) {
@@ -54,12 +58,12 @@
 					(row.rubberStampSuspect ? (window.USISUi ? " " + window.USISUi.statusChip("Warning", { label: "Rubber" }) : ' <span class="badge bg-warning text-dark">Rubber</span>') : "") +
 					"</td><td>" + esc(row.revision) + "</td><td>" + esc(row.neededByDate) + "</td><td>" +
 					esc(row.reviewerName) + "</td><td>" + severityDot(row.aiMaxSeverity) + "</td><td>" +
-					(row.packageComplete ? "Yes" : "No") + '</td><td><a class="btn btn-link btn-sm" href="' + href + '">Open</a></td>';
+					(row.packageComplete ? t("Yes") : t("No")) + '</td><td><a class="btn btn-link btn-sm" href="' + href + '">' + t("View") + "</a></td>";
 				tb.appendChild(trEl);
 			});
 			if (!(body.items || []).length) {
 				tb.innerHTML = '<tr><td colspan="12">' +
-					(window.USISUi ? window.USISUi.emptyState({ title: "No submittals", body: "Create a package to start internal QC." }) : '<span class="text-muted">No submittals.</span>') +
+					(window.USISUi ? window.USISUi.emptyState({ title: t("No submittals"), body: t("Create a package to start internal QC.") }) : '<span class="text-muted">' + t("No submittals.") + "</span>") +
 					"</td></tr>";
 			}
 		}).catch(function (e) {

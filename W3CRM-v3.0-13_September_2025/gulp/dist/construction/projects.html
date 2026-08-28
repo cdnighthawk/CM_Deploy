@@ -68,6 +68,8 @@
 		}
 		#usis-projects-table thead th { font-weight: 600; }
 		#usis-projects-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
+		#usis-projects-table th.usis-bulk-col,
+		#usis-projects-table td.usis-bulk-col { width: 28px; max-width: 28px; }
 	</style>
 
 </head>
@@ -305,17 +307,19 @@
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
 						</a>
 					</li>
-					<li data-usis-module="leads">
-						<a href="construction/leads.html" aria-expanded="false">
-							<i class="icon feather icon-users"></i>
-							<span class="nav-text" data-i18n="Leads">Leads</span>
-						</a>
-					</li>
-					<li data-usis-module="estimate">
-						<a href="construction/estimate.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-file-text"></i>
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="estimate">
+								<a href="construction/estimate.html" data-i18n="Estimate">Estimate</a>
+							</li>
+							<li data-usis-module="leads">
+								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
+							</li>
+						</ul>
 					</li>
 					<li data-usis-module="projects">
 						<a href="construction/projects.html" aria-expanded="false">
@@ -324,9 +328,15 @@
 						</a>
 					</li>
 					<li data-usis-module="projects">
+						<a href="construction/issues.html" aria-expanded="false">
+							<i class="icon feather icon-alert-triangle"></i>
+							<span class="nav-text" data-i18n="Issues">Issues</span>
+						</a>
+					</li>
+					<li data-usis-module="projects">
 						<a href="usis-calendar.html" aria-expanded="false">
 							<i class="icon feather icon-calendar"></i>
-							<span class="nav-text">Calendar</span>
+							<span class="nav-text" data-i18n="Calendar">Calendar</span>
 						</a>
 					</li>
 					<li data-usis-module="safety">
@@ -338,74 +348,83 @@
 					<li data-usis-module="crm">
 						<a href="usis-crm-leads.html" aria-expanded="false">
 							<i class="icon feather icon-git-branch"></i>
-							<span class="nav-text">CRM pipeline</span>
+							<span class="nav-text" data-i18n="CRM pipeline">CRM pipeline</span>
 						</a>
 					</li>
 					<li data-usis-module="documents">
 						<a href="usis-documents-hub.html" aria-expanded="false">
 							<i class="icon feather icon-folder"></i>
-							<span class="nav-text">Documents</span>
+							<span class="nav-text" data-i18n="Documents">Documents</span>
+						</a>
+					</li>
+					<li data-usis-module="projects">
+						<a href="usis-submittal-register.html" aria-expanded="false">
+							<i class="icon feather icon-check-circle"></i>
+							<span class="nav-text" data-i18n="Submittals">Submittals</span>
 						</a>
 					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
 							<i class="icon feather icon-mail"></i>
-							<span class="nav-text">Email</span>
+							<span class="nav-text" data-i18n="Email">Email</span>
 						</a>
 					</li>
-					<li data-usis-module="hr">
-						<a href="usis-hr-dashboard.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-user-check"></i>
 							<span class="nav-text" data-i18n="HR">HR</span>
 						</a>
-					</li>
-					<li data-usis-module="hr">
-						<a href="usis-hr-applications.html" aria-expanded="false">
-							<i class="icon feather icon-inbox"></i>
-							<span class="nav-text">Applications</span>
-						</a>
-					</li>
-					<li data-usis-module="hrms">
-						<a href="usis-hrms-home.html" aria-expanded="false">
-							<i class="icon feather icon-briefcase"></i>
-							<span class="nav-text">HR suite</span>
-						</a>
-					</li>
-					<li data-usis-module="hrms">
-						<a href="usis-hrms-expenses.html" aria-expanded="false">
-							<i class="icon feather icon-credit-card"></i>
-							<span class="nav-text">Expenses</span>
-						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="hr">
+								<a href="usis-hr-dashboard.html" data-i18n="HR">HR dashboard</a>
+							</li>
+							<li data-usis-module="hr">
+								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
+							</li>
+							<li data-usis-module="hrms">
+								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
+							</li>
+						</ul>
 					</li>
 					<li data-usis-module="playbooks">
 						<a href="usis-playbooks.html" aria-expanded="false">
 							<i class="icon feather icon-check-square"></i>
-							<span class="nav-text">Playbooks</span>
+							<span class="nav-text" data-i18n="Playbooks">Playbooks</span>
 						</a>
 					</li>
-					<li data-usis-module="user_admin">
-						<a href="usis-user-directory.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-settings"></i>
-							<span class="nav-text">User admin</span>
+							<span class="nav-text" data-i18n="Admin">Admin</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="user_admin">
+								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
+							</li>
+						</ul>
 					</li>
 					<li data-usis-module="procurement">
 						<a href="usis-procurement.html" aria-expanded="false">
 							<i class="icon feather icon-shopping-cart"></i>
-							<span class="nav-text">Procurement</span>
+							<span class="nav-text" data-i18n="Procurement">Procurement</span>
 						</a>
 					</li>
-					<li data-usis-module="ap">
-						<a href="usis-invoices.html" aria-expanded="false">
-							<i class="icon feather icon-file-text"></i>
-							<span class="nav-text">Invoices</span>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-dollar-sign"></i>
+							<span class="nav-text" data-i18n="Finance">Finance</span>
 						</a>
-					</li>
-					<li data-usis-module="ap">
-						<a href="usis-invoice-approvals.html" aria-expanded="false">
-							<i class="icon feather icon-check-circle"></i>
-							<span class="nav-text">Invoice approvals</span>
-						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="ap">
+								<a href="usis-invoices.html" data-i18n="Invoices">Invoices</a>
+							</li>
+							<li data-usis-module="ap">
+								<a href="usis-invoice-approvals.html" data-i18n="Invoice approvals">Invoice approvals</a>
+							</li>
+							<li data-usis-module="hrms">
+								<a href="usis-hrms-expenses.html" data-i18n="Expenses">Expenses</a>
+							</li>
+						</ul>
 					</li>
 					<li data-usis-module="reports">
 						<a href="reports.html" aria-expanded="false">
@@ -475,11 +494,26 @@
 					</div>
 				</div>
 
+				<div class="alert alert-secondary py-2 mb-2 d-none" id="usis-projects-bulk-bar" role="region" aria-live="polite">
+					<span id="usis-projects-bulk-count" class="fw-semibold me-2">0 selected</span>
+					<label class="small me-1 mb-0" for="usis-projects-bulk-status">Set status</label>
+					<select class="form-select form-select-sm d-inline-block w-auto me-1" id="usis-projects-bulk-status">
+						<option value="active">Active</option>
+						<option value="on_hold">On hold</option>
+						<option value="complete">Complete</option>
+						<option value="archived">Archived</option>
+						<option value="cancelled">Cancelled</option>
+					</select>
+					<button type="button" class="btn btn-sm btn-primary" id="usis-projects-bulk-apply">Apply</button>
+					<button type="button" class="btn btn-sm btn-link" id="usis-projects-bulk-clear">Clear</button>
+				</div>
+
 				<div class="col-xl-12">
 					<div class="card m-0 table-hover text-nowrap overflow-auto">
 						<table class="table table-sm m-0" id="usis-projects-table">
 							<thead>
 								<tr>
+									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-projects-check-all" aria-label="Select all visible projects"></th>
 									<th class="text-nowrap" data-sort-key="number">Project #</th>
 									<th data-sort-key="name">Name</th>
 									<th class="text-nowrap" data-sort-key="city">City</th>
@@ -491,7 +525,7 @@
 							</thead>
 							<tbody id="usis-projects-tbody">
 								<tr>
-									<td colspan="7" class="text-muted">Loading projects from API…</td>
+									<td colspan="8" class="text-muted">Loading projects from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -561,6 +595,7 @@
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-sort.js"></script>
+	<script src="assets/js/usis-list-bulk.js"></script>
 
 	<script>
 	(function () {
@@ -575,6 +610,13 @@
 				.replace(/</g, "&lt;")
 				.replace(/>/g, "&gt;")
 				.replace(/"/g, "&quot;");
+		}
+
+		function escAttr(s) {
+			return String(s == null ? "" : s)
+				.replace(/&/g, "&amp;")
+				.replace(/"/g, "&quot;")
+				.replace(/</g, "&lt;");
 		}
 
 		function renderRow(row) {
@@ -611,8 +653,12 @@
 				'<a class="dropdown-item" href="' + (pidEnc ? detailHref : "javascript:void(0);") + '">Project detail</a>' +
 				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.id) + "</span>" +
 				"</div></div></div>";
+			var bulk = window.USISListBulk && window.USISListBulk.checkboxHtml
+				? window.USISListBulk.checkboxHtml(row.id)
+				: '<td class="usis-bulk-col"></td>';
 			return (
-				"<tr>" +
+				'<tr data-id="' + escAttr(row.id) + '">' +
+				bulk +
 				'<td class="text-nowrap">' + numInner + "</td>" +
 				"<td>" + nameInner + "</td>" +
 				'<td class="text-nowrap">' + city + "</td>" +
@@ -646,16 +692,18 @@
 			}
 			if (!rows.length) {
 				tbody.innerHTML =
-					'<tr><td colspan="7" class="text-muted">No projects match this filter.</td></tr>';
+					'<tr><td colspan="8" class="text-muted">No projects match this filter.</td></tr>';
 				return;
 			}
 			var sorted = tableSort ? tableSort.apply(rows) : rows;
 			tbody.innerHTML = sorted.map(renderRow).join("");
+			if (window.USISListBulk && window.USISListBulk.afterRender) window.USISListBulk.afterRender();
 		}
 
 		function loadProjects() {
 			if (!tbody) return;
-			tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading…</td></tr>';
+			if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
+			tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
 			fetch(API.replace(/\/$/, "") + "/api/v1/projects?limit=2000", {
 					credentials: "include",
 					headers: { Accept: "application/json" },
@@ -679,14 +727,14 @@
 							data.project_scope === "assigned"
 								? "No projects are assigned to your account. Ask an administrator to assign jobs in User admin."
 								: "No projects yet. Add projects in your system, then reload.";
-						tbody.innerHTML = '<tr><td colspan="7" class="text-muted">' + esc(msg) + "</td></tr>";
+						tbody.innerHTML = '<tr><td colspan="8" class="text-muted">' + esc(msg) + "</td></tr>";
 						return;
 					}
 					applyFilter();
 				})
 				.catch(function (err) {
 					tbody.innerHTML =
-						'<tr><td colspan="7" class="text-danger">Could not load projects: ' +
+						'<tr><td colspan="8" class="text-danger">Could not load projects: ' +
 						esc(err.message) +
 						".</td></tr>";
 				});
@@ -711,6 +759,70 @@
 					},
 				})
 			: null;
+
+		if (window.USISListBulk) {
+			window.USISListBulk.attach({
+				tbodyId: "usis-projects-tbody",
+				checkAllId: "usis-projects-check-all",
+				barId: "usis-projects-bulk-bar",
+				countId: "usis-projects-bulk-count",
+				clearId: "usis-projects-bulk-clear",
+			});
+		}
+
+		var applyBulk = document.getElementById("usis-projects-bulk-apply");
+		if (applyBulk) {
+			applyBulk.addEventListener("click", function () {
+				var ids = window.USISListBulk ? window.USISListBulk.ids() : [];
+				var statusSel = document.getElementById("usis-projects-bulk-status");
+				var status = statusSel ? statusSel.value : "";
+				if (!ids.length) return;
+				if (!window.confirm("Set status to '" + status.replace("_", " ") + "' for " + ids.length + " project(s)?")) {
+					return;
+				}
+				applyBulk.disabled = true;
+				var req = window.USISListBulk && window.USISListBulk.fetchJson
+					? window.USISListBulk.fetchJson("/api/v1/projects/bulk", {
+							method: "POST",
+							body: { ids: ids, status: status },
+						})
+					: fetch((API || "").replace(/\/$/, "") + "/api/v1/projects/bulk", {
+							method: "POST",
+							credentials: "include",
+							headers: { Accept: "application/json", "Content-Type": "application/json" },
+							body: JSON.stringify({ ids: ids, status: status }),
+						}).then(function (r) {
+							return r.json().then(function (j) {
+								if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+								return j;
+							});
+						});
+				req.then(function (result) {
+						var updated = (result && result.updated_count) || 0;
+						var failed = (result && result.failed) || [];
+						var note = failed.length
+							? "Updated " + updated + ". " + failed.length + " failed: " + (failed[0].error || "")
+							: "Updated " + updated + " project" + (updated === 1 ? "" : "s") + ".";
+						if (window.USISNotify && window.USISNotify[failed.length ? "warning" : "success"]) {
+							window.USISNotify[failed.length ? "warning" : "success"](note);
+						} else {
+							window.alert(note);
+						}
+						if (window.USISListBulk) window.USISListBulk.clear();
+						loadProjects();
+					})
+					.catch(function (err) {
+						if (window.USISNotify && window.USISNotify.error) {
+							window.USISNotify.error(err.message || "Bulk update failed");
+						} else {
+							window.alert(err.message || "Bulk update failed");
+						}
+					})
+					.finally(function () {
+						applyBulk.disabled = false;
+					});
+			});
+		}
 
 		document.addEventListener("DOMContentLoaded", loadProjects);
 		var btn = document.getElementById("usis-projects-reload");

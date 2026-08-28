@@ -110,6 +110,14 @@
 		});
 	}
 
+	function asIdList(idOrIds) {
+		if (Array.isArray(idOrIds)) {
+			return idOrIds.map(function (id) { return String(id || "").trim(); }).filter(Boolean);
+		}
+		var one = String(idOrIds || "").trim();
+		return one ? [one] : [];
+	}
+
 	function patchSubmission(id, body) {
 		return fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(id) + "/buildingconnected", {
 			method: "PATCH",
@@ -124,14 +132,67 @@
 		});
 	}
 
-	function openDialog(id, state, name) {
+	function patchSubmissionBulk(ids, body) {
+		return fetch(apiBase() + "/api/v1/lead-estimates/bulk/buildingconnected", {
+			method: "POST",
+			credentials: "include",
+			headers: { Accept: "application/json", "Content-Type": "application/json" },
+			body: JSON.stringify(Object.assign({ ids: ids }, body)),
+		}).then(function (r) {
+			return r.json().then(function (j) {
+				if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+				return j;
+			});
+		});
+	}
+
+	function reloadLists() {
+		var refresh =
+			document.getElementById("usis-bc-sync-stub") ||
+			document.getElementById("usis-estimate-sync-stub") ||
+			document.getElementById("usis-crm-refresh");
+		if (refresh) refresh.click();
+	}
+
+	function summarizeBulk(result, state) {
+		var updated = (result && result.updated_count) || 0;
+		var failed = (result && result.failed) || [];
+		var label =
+			state === "DECLINED" ? "Will Not Bid" : state === "WILL_SUBMIT" ? "Will Bid" : "Undecided";
+		if (failed.length) {
+			var first = failed[0].error || "update failed";
+			notify(
+				updated ? "warning" : "error",
+				updated
+					? "Updated " + updated + " to " + label + ". " + failed.length + " failed: " + first
+					: "BuildingConnected update failed: " + first,
+			);
+			return;
+		}
+		notify(
+			"success",
+			updated > 1
+				? "Marked " + updated + " opportunities " + label + " in BuildingConnected."
+				: state === "DECLINED"
+					? "Marked Will Not Bid in BuildingConnected."
+					: "BuildingConnected status updated.",
+		);
+	}
+
+	function openDialog(idOrIds, state, name) {
+		var ids = asIdList(idOrIds);
+		if (!ids.length) return;
 		ensureModal();
 		var modalEl = document.getElementById("usis-bc-write-modal");
 		var title =
 			state === "DECLINED" ? "Will Not Bid" : state === "WILL_SUBMIT" ? "Will Bid" : "Undecided";
+		var target =
+			ids.length > 1
+				? ids.length + " selected opportunities"
+				: name || "this opportunity";
 		document.getElementById("usis-bc-write-title").textContent = title;
 		document.getElementById("usis-bc-write-copy").textContent =
-			"Push " + title + " to BuildingConnected for " + (name || "this opportunity") + "?";
+			"Push " + title + " to BuildingConnected for " + target + "?";
 		document.getElementById("usis-bc-write-decline-fields").classList.toggle("d-none", state !== "DECLINED");
 		document.getElementById("usis-bc-write-note").value = "";
 		document.getElementById("usis-bc-write-reason").value = "TOO_BUSY";
@@ -144,20 +205,27 @@
 				payload.note = document.getElementById("usis-bc-write-note").value;
 			}
 			confirmBtn.disabled = true;
-			patchSubmission(id, payload)
-				.then(function () {
-					notify(
-						"success",
-						state === "DECLINED"
-							? "Marked Will Not Bid in BuildingConnected."
-							: "BuildingConnected status updated.",
-					);
+			var req = ids.length > 1 ? patchSubmissionBulk(ids, payload) : patchSubmission(ids[0], payload);
+			req.then(function (result) {
+					if (ids.length > 1) summarizeBulk(result, state);
+					else {
+						notify(
+							"success",
+							state === "DECLINED"
+								? "Marked Will Not Bid in BuildingConnected."
+								: "BuildingConnected status updated.",
+						);
+					}
 					if (window.bootstrap && window.bootstrap.Modal) {
 						window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
 					}
-					document.dispatchEvent(new CustomEvent("usis-bc-write-done", { detail: { id: id, state: state } }));
-					var refresh = document.getElementById("usis-bc-sync-stub") || document.getElementById("usis-crm-refresh");
-					if (refresh) refresh.click();
+					if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
+						window.USISListBulk.clear();
+					}
+					document.dispatchEvent(
+						new CustomEvent("usis-bc-write-done", { detail: { ids: ids, state: state } }),
+					);
+					reloadLists();
 				})
 				.catch(function (err) {
 					notify("error", err.message || "BuildingConnected update failed");
@@ -177,7 +245,24 @@
 		openDialog(id, state || "DECLINED", name);
 	};
 
+	window.usisBcUpdateSubmissionBulk = function (ids, state) {
+		openDialog(ids, state || "DECLINED", null);
+	};
+
 	document.addEventListener("click", function (e) {
+		var bulkBtn = e.target.closest("[data-usis-bulk-bc]");
+		if (bulkBtn) {
+			e.preventDefault();
+			var selected = window.USISListBulk && typeof window.USISListBulk.ids === "function"
+				? window.USISListBulk.ids()
+				: [];
+			if (!selected.length) {
+				notify("error", "Select one or more rows first.");
+				return;
+			}
+			openDialog(selected, bulkBtn.getAttribute("data-usis-bulk-bc"), null);
+			return;
+		}
 		var btn = e.target.closest("[data-usis-bc-write]");
 		if (!btn) return;
 		e.preventDefault();
@@ -186,7 +271,7 @@
 
 	function watchTables() {
 		enhanceMenus(document);
-		var tables = document.querySelectorAll("#usis-bc-leads-table tbody, #usis-crm-tbody");
+		var tables = document.querySelectorAll("#usis-bc-leads-table tbody, #usis-estimate-table tbody, #usis-crm-tbody");
 		tables.forEach(function (tb) {
 			if (tb.getAttribute("data-usis-bc-write-watched")) return;
 			tb.setAttribute("data-usis-bc-write-watched", "1");

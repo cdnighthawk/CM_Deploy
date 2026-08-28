@@ -366,6 +366,89 @@ def test_bc_write_patches_opportunity(monkeypatch, client, flask_app):
                 db.session.commit()
 
 
+def test_bc_bulk_write_patches_opportunities(monkeypatch, client, flask_app):
+    _skip_if_no_bc_table(flask_app)
+    flask_app.config["BC_WRITE_ENABLED"] = True
+    flask_app.config["SECRET_KEY"] = "unit-test-secret-key-not-for-production-use"
+    flask_app.config["BUILDINGCONNECTED_API_BASE"] = (
+        "https://developer.api.autodesk.com/construction/buildingconnected/v2"
+    )
+
+    patched_ids: list[str] = []
+
+    class _WriteClient:
+        def __init__(self, _token, _base):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def patch_opportunity(self, opportunity_id, patch):
+            patched_ids.append(opportunity_id)
+            return {"id": opportunity_id, "submissionState": patch["submissionState"]}
+
+        def get_opportunity(self, opportunity_id):
+            return {"id": opportunity_id, "submissionState": "WILL_SUBMIT", "isArchived": False}
+
+    monkeypatch.setattr(_integration_bc, "BuildingConnectedClient", _WriteClient)
+    monkeypatch.setattr(_integration_bc, "_ensure_access_token", lambda: "at-write")
+
+    eids = ["bc-bulk-a-" + uuid.uuid4().hex[:8], "bc-bulk-b-" + uuid.uuid4().hex[:8]]
+    lead_ids: list[str] = []
+    with flask_app.app_context():
+        for eid in eids:
+            le = LeadEstimate(external_id=eid, name="Bulk write " + eid, submission_state="UNDECIDED")
+            db.session.add(le)
+            db.session.flush()
+            lead_ids.append(str(le.id))
+        db.session.commit()
+
+    try:
+        r = client.post(
+            "/api/v1/lead-estimates/bulk/buildingconnected",
+            json={"ids": lead_ids, "submissionState": "WILL_SUBMIT"},
+        )
+        assert r.status_code == 200, r.get_data(as_text=True)
+        body = r.get_json()
+        assert body.get("ok") is True
+        assert body.get("updated_count") == 2
+        assert body.get("failed_count") == 0
+        assert sorted(patched_ids) == sorted(eids)
+        with flask_app.app_context():
+            for eid in eids:
+                row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
+                assert row is not None
+                assert str(row.submission_state).upper() == "WILL_SUBMIT"
+    finally:
+        with flask_app.app_context():
+            for eid in eids:
+                row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
+                if row is not None:
+                    db.session.delete(row)
+            db.session.commit()
+
+
+def test_bc_bulk_write_disabled_returns_403(client, flask_app):
+    flask_app.config["BC_WRITE_ENABLED"] = False
+    r = client.post(
+        "/api/v1/lead-estimates/bulk/buildingconnected",
+        json={"ids": ["does-not-exist"], "submissionState": "WILL_SUBMIT"},
+    )
+    assert r.status_code == 403
+
+
+def test_bc_bulk_write_rejects_empty_ids(client, flask_app):
+    flask_app.config["BC_WRITE_ENABLED"] = True
+    r = client.post(
+        "/api/v1/lead-estimates/bulk/buildingconnected",
+        json={"ids": [], "submissionState": "WILL_SUBMIT"},
+    )
+    assert r.status_code == 400
+
+
 def test_estimate_ui_filter_excludes_grouped_children():
     from sqlalchemy.dialects import postgresql
 

@@ -1251,6 +1251,48 @@ def patch_project(project_id: str):
     return _jsonify({"item": item, "entity": "project"})
 
 
+@bp.post("/projects/bulk")
+def bulk_patch_projects():
+    """Set the same status on several projects the caller can access."""
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    raw_ids = body.get("ids") or body.get("project_ids") or []
+    if not isinstance(raw_ids, list) or not raw_ids:
+        return _jsonify({"error": "ids must be a non-empty list"}), 400
+    allowed: list[str] = []
+    skipped: list[dict[str, str]] = []
+    for raw in raw_ids:
+        pid = _parse_uuid_param(str(raw) if raw is not None else "")
+        if not pid:
+            skipped.append({"id": str(raw), "error": "invalid project id"})
+            continue
+        if not _project_exists(pid):
+            skipped.append({"id": str(pid), "error": "project not found"})
+            continue
+        allowed.append(str(pid))
+    if not allowed:
+        return _jsonify(
+            {
+                "ok": True,
+                "updated": [],
+                "failed": skipped,
+                "updated_count": 0,
+                "failed_count": len(skipped),
+                "entity": "projects",
+            }
+        )
+    try:
+        payload = project_svc.bulk_patch_status(allowed, body.get("status"))
+    except project_svc.ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    payload["failed"] = list(skipped) + list(payload.get("failed") or [])
+    payload["failed_count"] = len(payload["failed"])
+    payload["entity"] = "projects"
+    db.session.commit()
+    return _jsonify(payload)
+
+
 @bp.get("/invoice-delivery-methods")
 def list_invoice_delivery_methods():
     items = invoice_delivery_svc.list_methods()

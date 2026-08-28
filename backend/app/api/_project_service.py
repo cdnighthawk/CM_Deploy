@@ -170,3 +170,44 @@ def patch_project(project_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]
     from .v1 import _project_detail_public
 
     return _project_detail_public(p)
+
+
+_BULK_MAX = 100
+
+
+def bulk_patch_status(ids: list[Any], status: str) -> dict[str, Any]:
+    """Set the same status on many projects. Caller commits."""
+    st = str(status or "").strip().lower()
+    if st not in PROJECT_STATUSES:
+        raise ApiError("invalid status")
+    if not isinstance(ids, list) or not ids:
+        raise ApiError("ids must be a non-empty list")
+    if len(ids) > _BULK_MAX:
+        raise ApiError(f"ids cannot exceed {_BULK_MAX}")
+
+    updated: list[dict[str, Any]] = []
+    failed: list[dict[str, str]] = []
+    seen: set[uuid.UUID] = set()
+    for raw in ids:
+        try:
+            pid = uuid.UUID(str(raw))
+        except (ValueError, TypeError, AttributeError):
+            failed.append({"id": str(raw), "error": "invalid project id"})
+            continue
+        if pid in seen:
+            continue
+        seen.add(pid)
+        p = db.session.get(Project, pid)
+        if p is None or p.deleted_at is not None:
+            failed.append({"id": str(pid), "error": "project not found"})
+            continue
+        p.status = st
+        updated.append({"id": str(pid), "status": st})
+    db.session.flush()
+    return {
+        "ok": True,
+        "updated": updated,
+        "failed": failed,
+        "updated_count": len(updated),
+        "failed_count": len(failed),
+    }

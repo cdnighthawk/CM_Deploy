@@ -77,6 +77,8 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     invoice_due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     invoice_recipient_emails: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    require_ae_before_release: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    allow_po_without_submittal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     gc_company = relationship("Company", foreign_keys=[gc_company_id])
     owner_company = relationship("Company", foreign_keys=[owner_company_id])

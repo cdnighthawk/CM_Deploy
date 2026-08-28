@@ -20,6 +20,13 @@ _MODE_HINTS: dict[str, str] = {
     "field_review": "Focus on daily logs, as-builts, and site conditions.",
     "safety_review": "Focus on hazards, PPE, and corrective actions.",
     "analytics_review": "Focus on trends, summaries, and reporting.",
+    "submittal_review": (
+        "Focus on finish-trade product data vs spec and drawings. Check CBC 2025/2026, "
+        "Title 24 VOC, ADA where relevant, fire-rated assemblies, substitution detection, "
+        "color/finish mismatch, and family/config snapshot mismatch (PENCO-style frozen takeoff). "
+        "Return structured findings: severity (Critical/Major/Minor/Info), title, detail, "
+        "spec_citation, drawing_ref, suggested_checklist_item, cost_impact, delay_impact_days."
+    ),
 }
 
 

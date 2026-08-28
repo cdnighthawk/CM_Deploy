@@ -143,10 +143,15 @@ def create_app(config_object: str | None = None) -> Flask:
     from .ap import ap_bp
     from .hrms import hrms_bp
     from .public_portal import public_bp
+    from .api.submittals_bp import submittals_bp, workflows_bp
+    from .api.purchase_orders_bp import purchase_orders_bp
 
     app.register_blueprint(v1_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(public_bp)
+    app.register_blueprint(submittals_bp)
+    app.register_blueprint(workflows_bp)
+    app.register_blueprint(purchase_orders_bp)
     app.register_blueprint(hrms_bp)
     app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
@@ -156,7 +161,13 @@ def create_app(config_object: str | None = None) -> Flask:
     register_on_app(app)
 
     def _protected_api_path(path: str) -> bool:
-        return path.startswith("/api/v1") or path.startswith("/api/ai")
+        return (
+            path.startswith("/api/v1")
+            or path.startswith("/api/ai")
+            or path.startswith("/api/submittals")
+            or path.startswith("/api/workflows")
+            or path.startswith("/api/purchase-orders")
+        )
 
     @app.before_request
     def _require_session_for_api_v1() -> None:

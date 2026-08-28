@@ -63,6 +63,12 @@ from .material_pricing import MaterialPrice
 from .pay_application import PayApplication, PayApplicationLine
 from .prime_contract_sov import PrimeContractSovLine
 from .procurement import ProcurementPoType, ProjectDirectoryCompany
+from .purchase_order import (
+    PurchaseOrderReceipt,
+    PurchaseOrderReceiptLine,
+    PurchaseOrderShipment,
+    PurchaseOrderShipmentLine,
+)
 from .project import Project
 from .project_member import ProjectMember
 from .project_schedule import ProjectScheduleItem
@@ -83,7 +89,23 @@ from .rfi import (
 from .rfi_lookups import CostCode, Location, ProjectStage, SpecSection, SubJob
 from .rfp import Rfp, RfpLineItem, RfpVendorQuote
 from .safety_training import SafetyTrainingRecord
-from .submittal import Submittal, SubmittalAudit, SubmittalLineItem, SubmittalPdfAnnotation
+from .submittal import (
+    Submittal,
+    SubmittalAudit,
+    SubmittalChecklistItem,
+    SubmittalHold,
+    SubmittalLineItem,
+    SubmittalPdfAnnotation,
+    SubmittalRevision,
+)
+from .workflow import (
+    WorkflowDefinition,
+    WorkflowDefinitionStep,
+    WorkflowInstance,
+    WorkflowInstanceStep,
+    WorkflowQueue,
+    WorkflowQueueMember,
+)
 from .textura_credential import TexturaCredential
 from .textura_sync_log import TexturaSyncLog
 from .vendor_invoice import VendorInvoice, VendorInvoiceEvent, VendorInvoiceFile
@@ -157,6 +179,10 @@ __all__ = [
     "PayApplicationLine",
     "PrimeContractSovLine",
     "ProcurementPoType",
+    "PurchaseOrderReceipt",
+    "PurchaseOrderReceiptLine",
+    "PurchaseOrderShipment",
+    "PurchaseOrderShipmentLine",
     "Project",
     "ProjectDirectoryCompany",
     "ProjectMember",
@@ -185,8 +211,17 @@ __all__ = [
     "SubJob",
     "Submittal",
     "SubmittalAudit",
+    "SubmittalChecklistItem",
+    "SubmittalHold",
     "SubmittalLineItem",
     "SubmittalPdfAnnotation",
+    "SubmittalRevision",
+    "WorkflowDefinition",
+    "WorkflowDefinitionStep",
+    "WorkflowInstance",
+    "WorkflowInstanceStep",
+    "WorkflowQueue",
+    "WorkflowQueueMember",
     "TexturaCredential",
     "TexturaSyncLog",
     "SalesTaxRate",

@@ -1,0 +1,25 @@
+Submittal {{ number }} — {{ submittal.title }}
+
+Event: {{ event }}
+Status: {{ submittal.status }}
+Spec: {{ submittal.spec_section or "—" }}
+Trade: {{ submittal.trade or "—" }}
+Needed by: {{ submittal.needed_by_date or submittal.due_at or "—" }}
+
+{% if event == "assigned" %}
+You are in the QC queue for this package. Complete completeness, Local AI review, checklist, and stamp before procurement can release.
+{% elif event == "due_48h" %}
+This package is due within 48 hours.
+{% elif event == "overdue" %}
+This package is past its needed-by date and still unreleased.
+{% elif event in ("rejected", "revise_resubmit") %}
+A new revision shell was opened. Holds stay on until a later revision is internally approved.
+{% elif event == "stamped" %}
+Internal stamp recorded. Status is now {{ submittal.status }}.
+{% elif event == "transmitted" %}
+Logged as submitted to GC/AE. This is not an architect portal.
+{% endif %}
+{% if actor_email %}
+
+— sent by {{ actor_email }}
+{% endif %}

@@ -69,6 +69,8 @@
 							<div class="text-muted small mb-1">Submittal <span id="usis-sub-num">—</span></div>
 							<h4 id="usis-sub-title" class="mb-1">Loading…</h4>
 							<div class="small text-muted">Status <strong id="usis-sub-status">—</strong> · Ball in court <strong id="usis-sub-bic">—</strong></div>
+							<div id="usis-sub-workflow-stepper" class="mt-2 small"></div>
+							<div id="usis-sub-holds-banner" class="alert alert-warning py-2 mt-2 mb-0 d-none"></div>
 						</div>
 						<div class="small text-muted" id="usis-sub-perms"></div>
 					</div>
@@ -76,7 +78,10 @@
 
 				<ul class="nav nav-tabs mb-3" role="tablist">
 					<li class="nav-item" role="presentation">
-						<button class="nav-link active" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-general" type="button">General</button>
+						<button class="nav-link active" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-qc" type="button">Package</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-general" type="button">General</button>
 					</li>
 					<li class="nav-item" role="presentation">
 						<button class="nav-link" data-bs-toggle="tab" data-bs-target="#usis-pane-sub-history" type="button">Change history</button>
@@ -87,7 +92,57 @@
 				</ul>
 
 				<div class="tab-content">
-					<div class="tab-pane fade show active" id="usis-pane-sub-general">
+					<div class="tab-pane fade show active" id="usis-pane-sub-qc">
+						<div class="row g-3">
+							<div class="col-lg-7">
+								<div class="card border mb-3">
+									<div class="card-body">
+										<h6>Completeness</h6>
+										<p class="small text-muted mb-2" id="usis-qc-complete-score">—</p>
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-qc-recompute">Recompute completeness</button>
+									</div>
+								</div>
+								<div class="card border mb-3">
+									<div class="card-body">
+										<h6>Human QC checklist</h6>
+										<div id="usis-qc-checklist"></div>
+										<button type="button" class="btn btn-primary btn-sm mt-2" id="usis-qc-checklist-save">Save checklist</button>
+									</div>
+								</div>
+							</div>
+							<div class="col-lg-5">
+								<div class="card border mb-3">
+									<div class="card-body">
+										<h6>Local AI first pass</h6>
+										<p class="small text-muted">Uses existing ChatBot / <code>/api/ai/chat</code> with mode <code>submittal_review</code>. Grok toggle is unchanged.</p>
+										<button type="button" class="btn btn-sm text-white" style="background:#6f42c1" id="usis-qc-ai">Review this package with Local AI</button>
+										<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-qc-ai-override">Override AI (reason required)</button>
+										<div id="usis-qc-ai-status" class="small mt-2"></div>
+									</div>
+								</div>
+								<div class="card border">
+									<div class="card-body">
+										<h6>Internal stamp</h6>
+										<p class="small text-muted" id="usis-qc-stamp-unmet"></p>
+										<select class="form-select form-select-sm mb-2" id="usis-qc-stamp-value">
+											<option value="no_exceptions">No exceptions</option>
+											<option value="make_corrections_noted">Approved as noted</option>
+											<option value="revise_resubmit">Revise &amp; resubmit</option>
+											<option value="rejected">Rejected</option>
+											<option value="for_info_only">For information only</option>
+										</select>
+										<textarea class="form-control form-control-sm mb-2" id="usis-qc-stamp-comments" rows="2" placeholder="Stamp comments"></textarea>
+										<div class="form-check mb-2">
+											<input class="form-check-input" type="checkbox" id="usis-qc-rush">
+											<label class="form-check-label small" for="usis-qc-rush">PM / superintendent rush exception</label>
+										</div>
+										<button type="button" class="btn btn-success btn-sm" id="usis-qc-stamp" disabled>Stamp</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="usis-pane-sub-general">
 						<div class="row g-3">
 							<div class="col-lg-8">
 								<div class="row g-2">
@@ -240,5 +295,6 @@
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
 	<script type="module" src="assets/js/submittal-detail-app.js"></script>
+	<script src="assets/js/usis-submittal-qc.js"></script>
 </body>
 </html>

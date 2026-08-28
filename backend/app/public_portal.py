@@ -49,3 +49,42 @@ def public_rfp_post(token: str):
     db.session.add(q)
     db.session.commit()
     return "<p>Thank you — quote received.</p>", 200
+
+
+@public_bp.post("/api/public/submittals/<token>")
+def public_submittal_upload(token: str):
+    from flask import jsonify
+
+    from .api._rfi_service import ApiError
+    from .api import _submittal_qc as qc
+
+    data = request.get_json(silent=True) or request.form.to_dict()
+    try:
+        return jsonify(qc.public_upload(token, data)), 201
+    except ApiError as exc:
+        return jsonify({"error": exc.message}), exc.status
+
+
+@public_bp.get("/public/submittals/<token>")
+def public_submittal_form(token: str):
+    from sqlalchemy import select
+
+    from .models import Submittal
+
+    s = db.session.scalar(select(Submittal).where(Submittal.public_token == token))
+    if s is None:
+        return "<p>Submittal not found</p>", 404
+    title = s.title
+    number = s.submittal_number or f"#{s.number}"
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>{number}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+    <body class="p-4"><div class="container"><h1>{number}</h1><p>{title}</p>
+    <p class="text-muted">Upload product data for this package only. You cannot see other vendors.</p>
+    <form method="post" action="/api/public/submittals/{token}" class="mt-4">
+    <div class="mb-3"><label class="form-label">Vendor name</label>
+    <input name="vendor_label" class="form-control" required></div>
+    <div class="mb-3"><label class="form-label">File URL</label>
+    <input name="file_url" class="form-control" required placeholder="https://…/cutsheet.pdf"></div>
+    <div class="mb-3"><label class="form-label">Notes</label>
+    <textarea name="notes" class="form-control" rows="3"></textarea></div>
+    <button class="btn btn-primary" type="submit">Upload package</button></form></div></body></html>"""

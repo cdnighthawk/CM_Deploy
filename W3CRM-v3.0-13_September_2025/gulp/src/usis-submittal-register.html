@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-submittal-register.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Submittals" })
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h4 class="mb-0">Submittal register</h4>
+						<p class="text-muted small mb-0">Internal QC gate — no stamp, no buy / receive / install.</p>
+					</div>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-sub-log">Log submittal</button>
+				</div>
+				<div class="row g-2 align-items-end mb-3">
+					<div class="col-md-2"><label class="form-label small mb-0">Status</label>
+						<input class="form-control form-control-sm" id="usis-sub-f-status" placeholder="in_qc"></div>
+					<div class="col-md-2"><label class="form-label small mb-0">Trade</label>
+						<input class="form-control form-control-sm" id="usis-sub-f-trade" placeholder="paint"></div>
+					<div class="col-md-2"><label class="form-label small mb-0">Spec</label>
+						<input class="form-control form-control-sm" id="usis-sub-f-spec" placeholder="09 91 00"></div>
+					<div class="col-md-2 form-check mt-4">
+						<input class="form-check-input" type="checkbox" id="usis-sub-f-overdue">
+						<label class="form-check-label small" for="usis-sub-f-overdue">Overdue</label>
+					</div>
+					<div class="col-md-3 form-check mt-4">
+						<input class="form-check-input" type="checkbox" id="usis-sub-f-rubber">
+						<label class="form-check-label small" for="usis-sub-f-rubber">Rubber-stamp suspect</label>
+					</div>
+					<div class="col-md-1"><button type="button" class="btn btn-outline-secondary btn-sm" id="usis-sub-filter">Apply</button></div>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-sm table-hover align-middle">
+						<thead class="table-light">
+							<tr>
+								<th>Number</th><th>Title</th><th>Spec</th><th>Trade</th><th>Vendor</th>
+								<th>Status</th><th>Rev</th><th>Needed by</th><th>Reviewer</th>
+								<th>AI</th><th>Complete</th><th></th>
+							</tr>
+						</thead>
+						<tbody id="usis-sub-tbody"></tbody>
+					</table>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	<div class="modal fade" id="usis-sub-create-modal" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header"><h5 class="modal-title">Log submittal</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+				<div class="modal-body">
+					<div class="alert alert-danger d-none" id="usis-sub-create-err"></div>
+					<label class="form-label small">Project ID</label>
+					<input class="form-control form-control-sm mb-2" id="usis-sub-c-project">
+					<label class="form-label small">Title</label>
+					<input class="form-control form-control-sm mb-2" id="usis-sub-c-title">
+					<label class="form-label small">Spec section</label>
+					<input class="form-control form-control-sm mb-2" id="usis-sub-c-spec" placeholder="09 91 00">
+					<label class="form-label small">Trade</label>
+					<input class="form-control form-control-sm mb-2" id="usis-sub-c-trade" placeholder="paint">
+					<label class="form-label small">Needed by</label>
+					<input type="date" class="form-control form-control-sm" id="usis-sub-c-needed">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary btn-sm" id="usis-sub-c-save">Create</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-submittal-register.js"></script>
+</body>
+</html>

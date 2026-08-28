@@ -19,7 +19,10 @@ from ..models import (
     CostCode,
     Project,
     ProjectDirectoryCompany,
+    PurchaseOrderReceipt,
+    PurchaseOrderReceiptLine,
     Rfp,
+    Submittal,
     User,
 )
 from . import _procurement_lookup_service as proc_lookup_svc
@@ -140,6 +143,8 @@ def _serialize_line(li: CommitmentLineItem) -> dict[str, Any]:
         "resource": li.resource,
         "delivery_date": _iso(li.delivery_date) if li.delivery_date else None,
         "takeoff_line_item_id": str(li.takeoff_line_item_id) if li.takeoff_line_item_id else None,
+        "submittal_id": str(li.submittal_id) if li.submittal_id else None,
+        "submittal_release_required": bool(li.submittal_release_required),
         "created_at": _iso(li.created_at),
         "updated_at": _iso(li.updated_at),
     }
@@ -457,6 +462,8 @@ def _build_line_item_from_payload(
         resource=_validate_resource(resource),
         delivery_date=delivery_date,
         takeoff_line_item_id=_parse_uuid(data.get("takeoff_line_item_id")),
+        submittal_id=_parse_uuid(data.get("submittal_id")),
+        submittal_release_required=bool(data.get("submittal_release_required", True)),
     )
 
 
@@ -661,6 +668,10 @@ def patch_line_item(
         li.delivery_date = _parse_date(data.get("delivery_date"))
     if "takeoff_line_item_id" in data:
         li.takeoff_line_item_id = _parse_uuid(data.get("takeoff_line_item_id"))
+    if "submittal_id" in data:
+        li.submittal_id = _parse_uuid(data.get("submittal_id"))
+    if "submittal_release_required" in data:
+        li.submittal_release_required = bool(data.get("submittal_release_required"))
     db.session.flush()
     db.session.commit()
     return _serialize_line(li)
@@ -739,3 +750,96 @@ def delete_bill_allocation(
 def list_bill_allocations(project_id: uuid.UUID, commitment_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     detail = get_commitment_detail(project_id, commitment_id, cu)
     return {"items": detail["bill_allocations"], "entity": "commitment_bill_allocations"}
+
+
+def _assert_submittal_gates(c: Commitment, *, allow_held_unapproved: bool = False) -> None:
+    from . import _submittal_qc as qc
+
+    project = db.session.get(Project, c.project_id)
+    if project is None:
+        raise ApiError("project not found", 404)
+    for li in c.line_items or []:
+        sub = db.session.get(Submittal, li.submittal_id) if li.submittal_id else None
+        qc.assert_po_line_released(
+            submittal=sub,
+            release_required=bool(li.submittal_release_required),
+            project=project,
+            spec_hint=sub.spec_section if sub else None,
+            allow_held_unapproved=allow_held_unapproved,
+        )
+
+
+def issue_purchase_order(commitment_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
+    if not _can_mutate(cu):
+        raise ApiError("forbidden", 403)
+    c = db.session.scalars(
+        select(Commitment)
+        .where(Commitment.id == commitment_id)
+        .options(selectinload(Commitment.line_items))
+    ).first()
+    if c is None:
+        raise ApiError("purchase order not found", 404)
+    if c.commitment_kind != "purchase_order":
+        raise ApiError("not a purchase order", 400)
+    _assert_submittal_gates(c, allow_held_unapproved=False)
+    today = date.today()
+    c.issue_date = _parse_date(data.get("issue_date")) or today
+    c.issued_by_user_id = cu.id
+    if c.status == "draft":
+        c.status = "approved"
+        c.status_effective_date = c.status_effective_date or today
+        c.approved_at = _utcnow()
+    db.session.commit()
+    return get_commitment_detail(c.project_id, c.id, cu)
+
+
+def create_purchase_order_receipt(
+    commitment_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser
+) -> dict[str, Any]:
+    if not _can_mutate(cu):
+        raise ApiError("forbidden", 403)
+    c = db.session.scalars(
+        select(Commitment)
+        .where(Commitment.id == commitment_id)
+        .options(selectinload(Commitment.line_items))
+    ).first()
+    if c is None:
+        raise ApiError("purchase order not found", 404)
+    held = str(data.get("condition") or "").strip().lower() == "held_unapproved"
+    _assert_submittal_gates(c, allow_held_unapproved=held)
+    received_on = _parse_date(data.get("received_on")) or date.today()
+    receipt = PurchaseOrderReceipt(
+        commitment_id=c.id,
+        received_on=received_on,
+        received_by_user_id=cu.id,
+        packing_slip_ref=(str(data.get("packing_slip_ref") or "").strip()[:120] or None),
+        document_id=_parse_uuid(data.get("document_id")),
+        status="posted" if not held else "draft",
+        notes=(str(data.get("notes") or "").strip() or None) if data.get("notes") else None,
+    )
+    db.session.add(receipt)
+    db.session.flush()
+    raw_lines = data.get("lines") if isinstance(data.get("lines"), list) else []
+    for idx, raw in enumerate(raw_lines):
+        if not isinstance(raw, Mapping):
+            continue
+        line_id = _parse_uuid(raw.get("commitment_line_item_id") or raw.get("line_id"))
+        if line_id is None:
+            continue
+        db.session.add(
+            PurchaseOrderReceiptLine(
+                receipt_id=receipt.id,
+                commitment_line_item_id=line_id,
+                sort_order=int(raw.get("sort_order") or idx),
+                quantity=_dec(raw.get("quantity")) or Decimal("0"),
+                notes=(str(raw.get("notes") or "").strip() or None) if raw.get("notes") else None,
+            )
+        )
+    db.session.commit()
+    return {
+        "entity": "purchase_order_receipt",
+        "id": str(receipt.id),
+        "commitment_id": str(c.id),
+        "status": receipt.status,
+        "held_unapproved": held,
+    }

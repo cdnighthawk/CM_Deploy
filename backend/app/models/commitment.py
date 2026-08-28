@@ -23,9 +23,11 @@ from .base import TimestampMixin, UUIDPKMixin
 if TYPE_CHECKING:
     from .auth import User
     from .company import Company, Contact
+    from .estimate import EstimateLineItem
     from .project import Project
+    from .purchase_order import PurchaseOrderReceipt, PurchaseOrderShipment
     from .rfi_lookups import CostCode
-    from .rfp import Rfp
+    from .rfp import Rfp, RfpLineItem
     from .takeoff_line_item import TakeoffLineItem
 
 commitment_kind_enum = ENUM(
@@ -108,6 +110,13 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
     )
     default_tax_code: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     default_resource: Mapped[Optional[str]] = mapped_column(commitment_resource_enum, nullable=True)
+    promised_ship_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    revised_ship_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    actual_ship_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    needed_on_site_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    fulfillment_status: Mapped[str] = mapped_column(
+        String(40), nullable=False, default="open", server_default="open", index=True
+    )
 
     project: Mapped["Project"] = relationship("Project", back_populates="commitments")
     vendor: Mapped["Company"] = relationship("Company", foreign_keys=[vendor_company_id])
@@ -126,6 +135,35 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
     bill_allocations: Mapped[List["CommitmentBillAllocation"]] = relationship(
         back_populates="commitment", cascade="all, delete-orphan"
     )
+    shipments: Mapped[List["PurchaseOrderShipment"]] = relationship(
+        back_populates="commitment",
+        cascade="all, delete-orphan",
+        order_by="PurchaseOrderShipment.sort_order",
+    )
+    receipts: Mapped[List["PurchaseOrderReceipt"]] = relationship(
+        back_populates="commitment",
+        cascade="all, delete-orphan",
+        order_by="PurchaseOrderReceipt.received_on",
+    )
+
+    @property
+    def ship_date(self) -> date | None:
+        """UI ship date: revised if set, otherwise promised."""
+        return self.revised_ship_date or self.promised_ship_date
+
+    @property
+    def missed_ship_date(self) -> bool:
+        effective = self.ship_date
+        if effective is None or self.actual_ship_date is not None:
+            return False
+        return date.today() > effective
+
+    @property
+    def late_vs_job(self) -> bool:
+        effective = self.ship_date
+        if effective is None or self.needed_on_site_date is None:
+            return False
+        return effective > self.needed_on_site_date
 
 
 class CommitmentLineItem(UUIDPKMixin, TimestampMixin, db.Model):
@@ -150,11 +188,39 @@ class CommitmentLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     takeoff_line_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("takeoff_line_items.id", ondelete="SET NULL"), nullable=True
     )
+    rfp_line_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfp_line_items.id", ondelete="SET NULL"), nullable=True
+    )
+    estimate_line_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("estimate_line_items.id", ondelete="SET NULL"), nullable=True
+    )
+    qty_shipped: Mapped[Decimal] = mapped_column(
+        Numeric(15, 4), nullable=False, default=Decimal("0"), server_default="0"
+    )
+    qty_received: Mapped[Decimal] = mapped_column(
+        Numeric(15, 4), nullable=False, default=Decimal("0"), server_default="0"
+    )
+    qty_invoiced: Mapped[Decimal] = mapped_column(
+        Numeric(15, 4), nullable=False, default=Decimal("0"), server_default="0"
+    )
+    submittal_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("submittals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    submittal_release_required: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
 
     commitment: Mapped["Commitment"] = relationship("Commitment", back_populates="line_items")
+    submittal = relationship("Submittal", foreign_keys=[submittal_id])
     cost_code: Mapped[Optional["CostCode"]] = relationship("CostCode", foreign_keys=[cost_code_id])
     takeoff_line_item: Mapped[Optional["TakeoffLineItem"]] = relationship(
         "TakeoffLineItem", foreign_keys=[takeoff_line_item_id]
+    )
+    rfp_line_item: Mapped[Optional["RfpLineItem"]] = relationship(
+        "RfpLineItem", foreign_keys=[rfp_line_item_id]
+    )
+    estimate_line_item: Mapped[Optional["EstimateLineItem"]] = relationship(
+        "EstimateLineItem", foreign_keys=[estimate_line_item_id]
     )
 
 

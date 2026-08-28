@@ -509,6 +509,8 @@ def _project_detail_public(p: Project) -> dict[str, Any]:
             "retention_percentage": _num_or_none(p.retention_percentage),
             "prevailing_wage": p.prevailing_wage,
             "dbe_required": p.dbe_required,
+            "require_ae_before_release": getattr(p, "require_ae_before_release", False),
+            "allow_po_without_submittal": getattr(p, "allow_po_without_submittal", False),
             "sage_project_id": p.sage_project_id,
             "textura_project_id": p.textura_project_id,
             "invoice_method": (p.invoice_method or "").strip() or None,

@@ -193,6 +193,13 @@ def _submittal_public(s: Submittal, include_lines: bool = False) -> dict[str, An
         "current_attachment": _current_attachment(s),
         "created_at": _iso(s.created_at),
         "updated_at": _iso(s.updated_at),
+        "submittal_number": getattr(s, "submittal_number", None),
+        "trade": getattr(s, "trade", None),
+        "action_type": getattr(s, "action_type", None),
+        "needed_by_date": s.needed_by_date.isoformat() if getattr(s, "needed_by_date", None) else None,
+        "assigned_reviewer_id": str(s.assigned_reviewer_id) if getattr(s, "assigned_reviewer_id", None) else None,
+        "workflow_instance_id": str(s.workflow_instance_id) if getattr(s, "workflow_instance_id", None) else None,
+        "public_token": getattr(s, "public_token", None),
     }
     if include_lines:
         lines = sorted(s.line_items or [], key=lambda x: (x.sort_order, x.created_at or _utcnow()))
@@ -407,6 +414,9 @@ def create_submittal(project_id: uuid.UUID, data: Mapping[str, Any], cu: Current
     db.session.add(s)
     db.session.flush()
     _apply_line_items(s, data.get("line_items"), project_id)
+    from . import _submittal_qc as qc
+
+    qc.bootstrap_qc(s, cu)
     _append_audit(
         s,
         "create",

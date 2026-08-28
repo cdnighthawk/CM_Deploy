@@ -129,6 +129,14 @@ def patch_project(project_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]
         if not isinstance(data["dbe_required"], bool):
             raise ApiError("dbe_required must be boolean")
         p.dbe_required = data["dbe_required"]
+    if "require_ae_before_release" in data:
+        if not isinstance(data["require_ae_before_release"], bool):
+            raise ApiError("require_ae_before_release must be boolean")
+        p.require_ae_before_release = data["require_ae_before_release"]
+    if "allow_po_without_submittal" in data:
+        if not isinstance(data["allow_po_without_submittal"], bool):
+            raise ApiError("allow_po_without_submittal must be boolean")
+        p.allow_po_without_submittal = data["allow_po_without_submittal"]
     if "sage_project_id" in data:
         s = data.get("sage_project_id")
         p.sage_project_id = None if s is None else (str(s).strip()[:100] or None)

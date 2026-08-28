@@ -135,10 +135,16 @@ def message_for_bc_http_error(status: int, body: Any, action: str = "BuildingCon
     if status == 401:
         return "BuildingConnected authorization expired or is invalid. Reconnect BuildingConnected."
     if status == 403:
-        if "scope" in blob.lower() or "data:write" in blob.lower():
+        if (
+            "scope" in blob.lower()
+            or "data:write" in blob.lower()
+            or "privilege" in blob.lower()
+            or "auth-010" in blob.lower()
+        ):
             return (
-                "This action needs the Autodesk data:write scope. "
-                "Reconnect BuildingConnected to grant write access."
+                "BuildingConnected write is not authorized on this connection. "
+                "In Autodesk APS the app needs data:write, then Reconnect BC while signed in "
+                "as a Bid Board Pro user who can change bid status."
             )
         if "bid board" in blob.lower() or "subscription" in blob.lower() or "pro" in blob.lower():
             return "BuildingConnected denied this update. Confirm the office has Bid Board Pro."

@@ -382,7 +382,7 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
     def bc_oauth_start():
         cid = current_app.config.get("AUTODESK_CLIENT_ID")
         redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI")
-        scopes = str(current_app.config.get("AUTODESK_OAUTH_SCOPES") or "data:read")
+        scopes = str(current_app.config.get("AUTODESK_OAUTH_SCOPES") or "data:read data:write")
         if not cid or not redir:
             return (
                 jsonify(
@@ -539,6 +539,9 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
     def _bc_write_error_response(exc: BcWriteError):
         body = {"error": exc.message, "entity": "buildingconnected_write"}
         body.update(exc.extra)
+        lowered = exc.message.lower()
+        if "reconnect" in lowered or "privilege" in lowered or "data:write" in lowered:
+            body["reconnect_url"] = "/api/v1/integrations/buildingconnected/oauth/start"
         return jsonify(body), exc.status
 
     @bp.post("/lead-estimates/bulk/buildingconnected")

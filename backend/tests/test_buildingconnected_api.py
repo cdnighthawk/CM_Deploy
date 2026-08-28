@@ -295,6 +295,11 @@ def test_bc_write_helpers_and_errors():
         external_id="abc", submission_state="SUBMITTED", is_archived=False
     )
     assert "data:write" in message_for_bc_http_error(403, {"detail": "insufficient scope data:write"})
+    privilege = message_for_bc_http_error(
+        403, {"detail": "Token does not have the privilege for this request."}
+    )
+    assert "Reconnect BC" in privilege
+    assert "data:write" in privilege
     assert "not found" in message_for_bc_http_error(404, {}).lower()
 
 

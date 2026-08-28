@@ -36,6 +36,32 @@
 		window.alert(message);
 	}
 
+	function oauthStartUrl() {
+		return apiBase() + "/api/v1/integrations/buildingconnected/oauth/start";
+	}
+
+	function isReconnectError(message) {
+		var text = String(message || "").toLowerCase();
+		return (
+			text.indexOf("privilege") >= 0 ||
+			text.indexOf("data:write") >= 0 ||
+			text.indexOf("reconnect") >= 0
+		);
+	}
+
+	function offerReconnect(message) {
+		notify("error", message);
+		if (isReconnectError(message) && window.confirm(message + "\n\nReconnect BuildingConnected now?")) {
+			window.location.assign(oauthStartUrl());
+		}
+	}
+
+	function wireReconnectLinks() {
+		document.querySelectorAll("[data-usis-bc-reconnect]").forEach(function (el) {
+			el.setAttribute("href", oauthStartUrl());
+		});
+	}
+
 	function ensureModal() {
 		if (document.getElementById("usis-bc-write-modal")) return;
 		var wrap = document.createElement("div");
@@ -161,12 +187,14 @@
 			state === "DECLINED" ? "Will Not Bid" : state === "WILL_SUBMIT" ? "Will Bid" : "Undecided";
 		if (failed.length) {
 			var first = failed[0].error || "update failed";
-			notify(
-				updated ? "warning" : "error",
-				updated
-					? "Updated " + updated + " to " + label + ". " + failed.length + " failed: " + first
-					: "BuildingConnected update failed: " + first,
-			);
+			var summary = updated
+				? "Updated " + updated + " to " + label + ". " + failed.length + " failed: " + first
+				: "BuildingConnected update failed: " + first;
+			if (!updated && isReconnectError(first)) {
+				offerReconnect(summary);
+				return;
+			}
+			notify(updated ? "warning" : "error", summary);
 			return;
 		}
 		notify(
@@ -228,7 +256,9 @@
 					reloadLists();
 				})
 				.catch(function (err) {
-					notify("error", err.message || "BuildingConnected update failed");
+					var msg = err.message || "BuildingConnected update failed";
+					if (isReconnectError(msg)) offerReconnect(msg);
+					else notify("error", msg);
 				})
 				.finally(function () {
 					confirmBtn.disabled = false;
@@ -282,8 +312,12 @@
 	}
 
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", watchTables);
+		document.addEventListener("DOMContentLoaded", function () {
+			wireReconnectLinks();
+			watchTables();
+		});
 	} else {
+		wireReconnectLinks();
 		watchTables();
 	}
 	document.addEventListener("usis-bc-write-done", function () {

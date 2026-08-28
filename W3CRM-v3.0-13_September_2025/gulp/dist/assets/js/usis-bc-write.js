@@ -36,6 +36,63 @@
 		window.alert(message);
 	}
 
+	function oauthStartUrl() {
+		return apiBase() + "/api/v1/integrations/buildingconnected/oauth/start";
+	}
+
+	function isReconnectError(message) {
+		var text = String(message || "").toLowerCase();
+		return (
+			text.indexOf("privilege") >= 0 ||
+			text.indexOf("data:write") >= 0 ||
+			text.indexOf("reconnect") >= 0
+		);
+	}
+
+	function openOauthPopup() {
+		var width = 520;
+		var height = 720;
+		var left = Math.max(0, Math.round((window.screenX || 0) + ((window.outerWidth || 900) - width) / 2));
+		var top = Math.max(0, Math.round((window.screenY || 0) + ((window.outerHeight || 700) - height) / 2));
+		var popup = window.open(
+			oauthStartUrl(),
+			"usisBcOauth",
+			"popup=yes,width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
+		);
+		if (!popup) {
+			notify("error", "Pop-up blocked. Allow pop-ups for this site, then click Reconnect BC again.");
+			return false;
+		}
+		try {
+			popup.focus();
+		} catch (e) {}
+		return true;
+	}
+
+	function offerReconnect(message) {
+		notify("error", message);
+		if (isReconnectError(message) && window.confirm(message + "\n\nReconnect BuildingConnected now?")) {
+			openOauthPopup();
+		}
+	}
+
+	function wireReconnectLinks() {
+		document.querySelectorAll("[data-usis-bc-reconnect]").forEach(function (el) {
+			el.setAttribute("href", oauthStartUrl());
+		});
+	}
+
+	window.addEventListener("message", function (event) {
+		if (event.origin !== window.location.origin) return;
+		var data = event.data;
+		if (!data || data.source !== "usis-bc-oauth") return;
+		if (data.ok) {
+			notify("success", "BuildingConnected reconnected. Try Will Bid again.");
+			return;
+		}
+		notify("error", data.error || "BuildingConnected reconnect failed.");
+	});
+
 	function ensureModal() {
 		if (document.getElementById("usis-bc-write-modal")) return;
 		var wrap = document.createElement("div");
@@ -161,12 +218,14 @@
 			state === "DECLINED" ? "Will Not Bid" : state === "WILL_SUBMIT" ? "Will Bid" : "Undecided";
 		if (failed.length) {
 			var first = failed[0].error || "update failed";
-			notify(
-				updated ? "warning" : "error",
-				updated
-					? "Updated " + updated + " to " + label + ". " + failed.length + " failed: " + first
-					: "BuildingConnected update failed: " + first,
-			);
+			var summary = updated
+				? "Updated " + updated + " to " + label + ". " + failed.length + " failed: " + first
+				: "BuildingConnected update failed: " + first;
+			if (!updated && isReconnectError(first)) {
+				offerReconnect(summary);
+				return;
+			}
+			notify(updated ? "warning" : "error", summary);
 			return;
 		}
 		notify(
@@ -228,7 +287,9 @@
 					reloadLists();
 				})
 				.catch(function (err) {
-					notify("error", err.message || "BuildingConnected update failed");
+					var msg = err.message || "BuildingConnected update failed";
+					if (isReconnectError(msg)) offerReconnect(msg);
+					else notify("error", msg);
 				})
 				.finally(function () {
 					confirmBtn.disabled = false;
@@ -250,6 +311,12 @@
 	};
 
 	document.addEventListener("click", function (e) {
+		var reconnect = e.target.closest("[data-usis-bc-reconnect]");
+		if (reconnect) {
+			e.preventDefault();
+			openOauthPopup();
+			return;
+		}
 		var bulkBtn = e.target.closest("[data-usis-bulk-bc]");
 		if (bulkBtn) {
 			e.preventDefault();
@@ -282,8 +349,12 @@
 	}
 
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", watchTables);
+		document.addEventListener("DOMContentLoaded", function () {
+			wireReconnectLinks();
+			watchTables();
+		});
 	} else {
+		wireReconnectLinks();
 		watchTables();
 	}
 	document.addEventListener("usis-bc-write-done", function () {

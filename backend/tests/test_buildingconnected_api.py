@@ -58,6 +58,8 @@ def test_bc_oauth_callback_rejects_bad_state(client, flask_app):
         follow_redirects=False,
     )
     assert r.status_code == 400
+    assert b"Back to Leads" in r.data
+    assert b"invalid or missing OAuth state/code" in r.data
 
 
 def test_bc_oauth_callback_persists_tokens(monkeypatch, client, flask_app):
@@ -85,7 +87,9 @@ def test_bc_oauth_callback_persists_tokens(monkeypatch, client, flask_app):
             follow_redirects=False,
         )
         assert r.status_code == 200
-        assert r.get_json() == {"ok": True, "entity": "buildingconnected_oauth"}
+        assert b"BuildingConnected is connected" in r.data
+        assert b"usis-bc-oauth" in r.data
+        assert b"Back to Leads" in r.data
         with flask_app.app_context():
             row = db.session.get(BuildingConnectedOAuthToken, "default")
             assert row is not None

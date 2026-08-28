@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import logging
 import os
 import secrets
@@ -11,7 +12,8 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 from cryptography.fernet import Fernet
-from flask import Blueprint, current_app, jsonify, redirect, request, session
+from flask import Blueprint, current_app, jsonify, make_response, redirect, request, session
+from markupsafe import escape
 
 from ..extensions import db
 from ..integrations.autodesk_oauth import (
@@ -175,6 +177,49 @@ def cron_secret_matches(req=None, app=None) -> bool:
     if not expected or not provided:
         return False
     return secrets.compare_digest(expected, provided)
+
+
+def _bc_oauth_browser_page(*, ok: bool, message: str, status: int = 200):
+    """HTML landing page after Autodesk redirects back (popup or full tab)."""
+    title = "BuildingConnected connected" if ok else "BuildingConnected reconnect failed"
+    leads_href = "/construction/leads.html"
+    payload = json.dumps(
+        {"source": "usis-bc-oauth", "ok": ok, "error": None if ok else message}
+    )
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{escape(title)}</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; margin: 2rem; color: #1b242c; }}
+    a {{ color: #1f4e5f; }}
+    .muted {{ color: #5c6b76; margin-top: 0.75rem; }}
+  </style>
+</head>
+<body>
+  <h1 style="font-size:1.25rem">{escape(title)}</h1>
+  <p>{escape(message)}</p>
+  <p><a href="{leads_href}">Back to Leads</a></p>
+  <p class="muted">You can close this window if it does not close on its own.</p>
+  <script>
+  (function () {{
+    var payload = {payload};
+    try {{
+      if (window.opener && !window.opener.closed) {{
+        window.opener.postMessage(payload, window.location.origin);
+      }}
+    }} catch (e) {{}}
+    window.setTimeout(function () {{ window.close(); }}, 80);
+  }})();
+  </script>
+</body>
+</html>
+"""
+    resp = make_response(html, status)
+    resp.headers["Content-Type"] = "text/html; charset=utf-8"
+    return resp
 
 
 def _fernet() -> Fernet:
@@ -403,17 +448,21 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
     def bc_oauth_callback():
         err = (request.args.get("error") or "").strip()
         if err:
-            return jsonify({"error": err, "entity": "buildingconnected_oauth"}), 400
+            return _bc_oauth_browser_page(ok=False, message=err, status=400)
         code = (request.args.get("code") or "").strip()
         state = (request.args.get("state") or "").strip()
         expected = session.pop(BC_OAUTH_STATE_KEY, None)
         if not code or not state or expected != state:
-            return jsonify({"error": "invalid or missing OAuth state/code", "entity": "buildingconnected_oauth"}), 400
+            return _bc_oauth_browser_page(
+                ok=False, message="invalid or missing OAuth state/code", status=400
+            )
         cid = current_app.config.get("AUTODESK_CLIENT_ID")
         sec = current_app.config.get("AUTODESK_CLIENT_SECRET")
         redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI")
         if not cid or not sec or not redir:
-            return jsonify({"error": "Autodesk client is not fully configured", "entity": "buildingconnected_oauth"}), 503
+            return _bc_oauth_browser_page(
+                ok=False, message="Autodesk client is not fully configured", status=503
+            )
         try:
             data = exchange_authorization_code(
                 client_id=cid, client_secret=sec, code=code, redirect_uri=redir
@@ -423,8 +472,10 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         except Exception as exc:
             db.session.rollback()
             log.warning("BuildingConnected OAuth callback failed: %s", exc)
-            return jsonify({"error": str(exc), "entity": "buildingconnected_oauth"}), 400
-        return jsonify({"ok": True, "entity": "buildingconnected_oauth"})
+            return _bc_oauth_browser_page(ok=False, message=str(exc), status=400)
+        return _bc_oauth_browser_page(
+            ok=True, message="BuildingConnected is connected. You can return to Leads."
+        )
 
     @bp.route("/integrations/buildingconnected/sync", methods=["GET", "POST"])
     def bc_sync():

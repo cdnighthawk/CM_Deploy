@@ -134,18 +134,26 @@
 			var checked = submittalCreateLines.some(function (line) {
 				return specLineId(line) === id;
 			});
-			var row = document.createElement("label");
+			var boxId = "usis-submittal-c-spec-cb-" + id;
+			var row = document.createElement("div");
 			row.className = "form-check d-flex align-items-start gap-2 py-1 mb-0";
 			row.innerHTML =
-				'<input class="form-check-input mt-1" type="checkbox" data-spec-id="' +
+				'<input class="form-check-input mt-1" type="checkbox" id="' +
+				esc(boxId) +
+				'" data-spec-id="' +
 				esc(id) +
 				'"' +
 				(checked ? " checked" : "") +
-				'><span class="form-check-label small">' +
+				'><label class="form-check-label small" for="' +
+				esc(boxId) +
+				'">' +
 				esc(spec.code || "—") +
 				(spec.title ? " — " + esc(spec.title) : "") +
-				"</span>";
+				"</label>";
 			var box = row.querySelector("input");
+			row.addEventListener("pointerdown", function (e) {
+				e.stopPropagation();
+			});
 			box.addEventListener("change", function () {
 				setSpecChecked(spec, box.checked);
 			});
@@ -674,6 +682,16 @@
 		var specSearch = document.getElementById("usis-submittal-c-spec-q");
 		if (specSearch) {
 			specSearch.addEventListener("input", renderSubmittalSpecPicker);
+		}
+		var specList = document.getElementById("usis-submittal-c-spec-list");
+		if (specList) {
+			specList.addEventListener("pointerdown", function () {
+				var modal = document.getElementById("usis-modal-submittal-create");
+				if (!modal) return;
+				modal.querySelectorAll('input[type="date"]').forEach(function (el) {
+					if (document.activeElement === el) el.blur();
+				});
+			});
 		}
 		var subModal = document.getElementById("usis-modal-submittal-create");
 		if (subModal) {

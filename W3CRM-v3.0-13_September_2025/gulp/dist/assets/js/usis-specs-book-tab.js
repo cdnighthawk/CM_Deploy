@@ -156,7 +156,7 @@
 			'<div class="p-2 border-bottom d-flex flex-wrap gap-2 align-items-center justify-content-between">' +
 			'<div class="usis-specs-head text-muted small">Select a section on the left.</div>' +
 			'<div class="d-flex flex-wrap gap-1">' +
-			'<button type="button" class="btn btn-sm btn-outline-danger usis-specs-delete d-none">Delete section</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-danger usis-specs-delete" disabled title="Select a section first">Delete section</button>' +
 			'<a class="btn btn-sm btn-outline-secondary usis-specs-openfull d-none" target="_blank" rel="noopener">Open PDF in new tab</a>' +
 			"</div>" +
 			"</div>" +
@@ -253,7 +253,10 @@
 				(row.is_active === false ? ' <span class="badge bg-warning text-dark">Inactive</span>' : "");
 			urlInput.value = row.pdf_url || "";
 			linkPanel.classList.remove("d-none");
-			if (deleteBtn) deleteBtn.classList.remove("d-none");
+			if (deleteBtn) {
+				deleteBtn.disabled = false;
+				deleteBtn.removeAttribute("title");
+			}
 			linkErr.classList.add("d-none");
 			linkErr.textContent = "";
 			showPdf(row.pdf_url || "");
@@ -649,7 +652,10 @@
 					})
 					.then(function () {
 						selectedId = null;
-						if (deleteBtn) deleteBtn.classList.add("d-none");
+						if (deleteBtn) {
+							deleteBtn.disabled = true;
+							deleteBtn.setAttribute("title", "Select a section first");
+						}
 						linkPanel.classList.add("d-none");
 						headEl.textContent = "Select a section on the left.";
 						showPdf("");

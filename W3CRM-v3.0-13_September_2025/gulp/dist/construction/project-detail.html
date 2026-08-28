@@ -703,7 +703,7 @@
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 								<div>
 									<h5 class="mb-0">Specifications</h5>
-									<p class="text-muted small mb-0">CSI spec book: pick sections from the MasterFormat catalog, import a spec-book PDF, or attach a PDF to a section. Delete a section when it does not belong on this job.</p>
+									<p class="text-muted small mb-0">CSI spec book: pick sections from the MasterFormat catalog, import a spec-book PDF, or attach a PDF to a section. Click a section on the left, then use <strong>Delete section</strong>.</p>
 								</div>
 								<a class="btn btn-sm btn-outline-secondary" id="usis-specs-open-fullpage" href="construction/specs-viewer.html" target="_blank" rel="noopener">Open full page</a>
 							</div>
@@ -1562,15 +1562,15 @@
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-due">Review due</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
+							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-due" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-submitby">Submit by</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
+							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-submitby" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-submittal-c-received">Received date</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
+							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-received" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom">Received from</label>
@@ -2153,7 +2153,15 @@
 		}
 		function mountSpecs() {
 			var root = document.getElementById("usis-proj-specs-root");
-			if (!root || !id || typeof window.USISSpecsBook === "undefined") return;
+			if (!root) return;
+			if (!id) {
+				root.innerHTML = '<div class="alert alert-warning mb-0">Open this page from the Projects table so a project id is in the URL.</div>';
+				return;
+			}
+			if (typeof window.USISSpecsBook === "undefined") {
+				root.innerHTML = '<div class="alert alert-danger mb-0">Spec book script failed to load.</div>';
+				return;
+			}
 			window.USISSpecsBook.mount(root, id);
 		}
 		if (document.readyState === "loading") {

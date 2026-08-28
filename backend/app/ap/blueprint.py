@@ -118,7 +118,8 @@ def ap_invoice_patch(invoice_id: uuid.UUID):
 
 @ap_bp.post("/invoices/<uuid:invoice_id>/submit")
 def ap_invoice_submit(invoice_id: uuid.UUID):
-    return _handle(lambda: jsonify({"entity": "vendor_invoice", "item": submit_invoice(current_user(), invoice_id)}))
+    data = request.get_json(silent=True) or {}
+    return _handle(lambda: jsonify({"entity": "vendor_invoice", "item": submit_invoice(current_user(), invoice_id, data)}))
 
 
 @ap_bp.post("/invoices/<uuid:invoice_id>/approve")

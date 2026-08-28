@@ -339,7 +339,7 @@ def update_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any])
     return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
-def submit_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
+def submit_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any] | None = None) -> dict[str, Any]:
     if not _can_write(cu):
         raise InvoiceError("forbidden", 403)
     invoice = _load(invoice_id)
@@ -347,6 +347,8 @@ def submit_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
         raise InvoiceError("invoice not found", 404)
     if invoice.status not in {STATUS_RECEIVED, STATUS_ROUTED, STATUS_REJECTED}:
         raise InvoiceError("invoice is not ready for approval")
+    if data:
+        _apply_fields(invoice, data, cu)
     if invoice.project_id is None:
         raise InvoiceError("route the invoice to a job before submitting")
     if invoice.amount is None:

@@ -125,6 +125,25 @@ def test_submit_requires_job_and_amount(client, flask_app):
     assert r2.status_code == 400
     assert "job" in (r2.get_json().get("error") or "").lower()
 
+    with flask_app.app_context():
+        project = Project(
+            name=f"ApSubmit-{uuid.uuid4().hex[:8]}",
+            number=f"AP-{uuid.uuid4().hex[:8]}",
+            status="active",
+            project_type="commercial",
+        )
+        db.session.add(project)
+        db.session.commit()
+        project_id = str(project.id)
+    r3 = client.post(
+        f"/api/v1/ap/invoices/{invoice_id}/submit",
+        json={"project_id": project_id, "amount": "12.50"},
+        headers=h,
+    )
+    assert r3.status_code == 200, r3.get_data(as_text=True)
+    assert r3.get_json()["item"]["status"] == "pending_approval"
+    assert r3.get_json()["item"]["project_id"] == project_id
+
 
 def test_reject_requires_reason(client, flask_app):
     with flask_app.app_context():

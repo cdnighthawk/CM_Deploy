@@ -212,13 +212,18 @@
 			});
 	}
 
-	function save() {
+	function savePayload() {
 		var id = invoiceId();
-		X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(id), {
+		return X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(id), {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload()),
-		})
+		});
+	}
+
+	function save() {
+		showErr("");
+		return savePayload()
 			.then(load)
 			.catch(function (err) {
 				showErr(err.message || String(err));
@@ -232,6 +237,32 @@
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(body || {}),
 		}).then(load);
+	}
+
+	function submitForApproval() {
+		showErr("");
+		var body = payload();
+		if (!body.project_id) {
+			showErr("Select a job, then click Submit for approval.");
+			return;
+		}
+		if (!body.amount) {
+			showErr("Enter an invoice amount, then click Submit for approval.");
+			return;
+		}
+		savePayload()
+			.then(function () {
+				return X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(invoiceId()) + "/submit", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(body),
+				});
+			})
+			.then(load)
+			.catch(function (err) {
+				showErr(err.message || String(err));
+				load();
+			});
 	}
 
 	function upload() {
@@ -271,7 +302,7 @@
 		var voidBtn = document.getElementById("usis-apd-void");
 		var uploadBtn = document.getElementById("usis-apd-upload");
 		if (saveBtn) saveBtn.addEventListener("click", save);
-		if (submitBtn) submitBtn.addEventListener("click", function () { post("/submit").catch(function (err) { showErr(err.message || String(err)); }); });
+		if (submitBtn) submitBtn.addEventListener("click", submitForApproval);
 		if (approveBtn) approveBtn.addEventListener("click", function () { post("/approve").catch(function (err) { showErr(err.message || String(err)); }); });
 		if (rejectBtn)
 			rejectBtn.addEventListener("click", function () {

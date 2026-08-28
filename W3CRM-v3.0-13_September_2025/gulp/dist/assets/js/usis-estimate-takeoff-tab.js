@@ -10,6 +10,8 @@
 	var mountedEstimateKey = null;
 	var activeProjectId = null;
 	var parentLeadKey = null;
+	var takeoffAf = null;
+	var lastTakeoffRows = [];
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") {
@@ -52,7 +54,7 @@
 
 	function buildColumns(projectId) {
 		return [
-			{ title: "Sort", field: "sort_order", width: 72, editor: "number", hozAlign: "right" },
+			{ title: "Sort", field: "sort_order", width: 72, editor: "number", hozAlign: "right", headerSort: true },
 			{ title: "Section", field: "section", width: 110, editor: "input" },
 			{ title: "Description", field: "description", minWidth: 140, widthGrow: 2, editor: "input" },
 			{
@@ -148,6 +150,7 @@
 				field: "id",
 				width: 64,
 				headerSort: false,
+				headerFilter: false,
 				hozAlign: "center",
 				editable: false,
 				formatter: function (cell) {
@@ -185,6 +188,117 @@
 		];
 	}
 
+	function takeoffAfColumns() {
+		return [
+			{ key: "sort_order", label: "Sort", type: "number", sortable: true, filterable: false },
+			{ key: "section", label: "Section", type: "text", sortable: true, filterable: true },
+			{ key: "description", label: "Description", type: "text", sortable: true, filterable: true },
+			{ key: "quantity", label: "Qty", type: "number", sortable: true, filterable: true },
+			{
+				key: "unit",
+				label: "Unit",
+				type: "singleSelect",
+				sortable: true,
+				filterable: true,
+				valueOptions: ["SF", "LF", "EA", "SQ", "GAL"],
+			},
+			{ key: "unit_cost", label: "Unit cost", type: "number", sortable: true, filterable: true },
+			{ key: "extended_total", label: "Ext.", type: "number", sortable: true, filterable: true },
+			{
+				key: "cost_type",
+				label: "Type",
+				type: "singleSelect",
+				sortable: true,
+				filterable: true,
+				valueOptions: ["L", "M", "E", "S", "O"],
+			},
+			{ key: "job_cost_code", label: "Cost code", type: "text", sortable: true, filterable: true },
+			{ key: "status", label: "Status", type: "singleSelect", sortable: true, filterable: true },
+			{ key: "notes", label: "Notes", type: "text", sortable: true, filterable: true },
+			{ key: "drawing_id", label: "Drawing", type: "text", sortable: true, filterable: true },
+		];
+	}
+
+	function applyTakeoffGridFilter() {
+		if (!takeoffTable || !takeoffAf) return;
+		takeoffTable.setFilter(function (data) {
+			return takeoffAf.matches(data);
+		});
+		var st = takeoffAf.getState().sort;
+		if (st && st.dir && st.key) takeoffTable.setSort(st.key, st.dir);
+		else if (typeof takeoffTable.clearSort === "function") takeoffTable.clearSort();
+		var status = document.getElementById("usis-est-takeoff-af-status");
+		var labels = takeoffAf.getActiveLabels();
+		var shown = takeoffAf.filter(lastTakeoffRows).length;
+		var total = lastTakeoffRows.length;
+		if (status) {
+			if (!labels.length && shown === total) {
+				status.textContent = "";
+				status.classList.add("d-none");
+			} else {
+				status.classList.remove("d-none");
+				status.innerHTML =
+					"Showing " +
+					shown +
+					" of " +
+					total +
+					" lines" +
+					(labels.length ? " · Filters on: " + labels.join(", ") : "") +
+					' <button type="button" class="btn btn-link btn-sm py-0 align-baseline" id="usis-est-takeoff-af-clear">Clear</button>';
+			}
+		}
+		decorateTakeoffHeaders();
+	}
+
+	function decorateTakeoffHeaders() {
+		var root = document.getElementById("usis-grid-est-takeoff");
+		if (!root || !takeoffAf) return;
+		var cols = root.querySelectorAll(".tabulator-col");
+		for (var i = 0; i < cols.length; i++) {
+			var colEl = cols[i];
+			var field = colEl.getAttribute("tabulator-field");
+			if (!field || field === "id" || field === "measurement_data") continue;
+			if (colEl.querySelector(".usis-af-btn")) continue;
+			var title = colEl.querySelector(".tabulator-col-title");
+			if (!title) continue;
+			var btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "usis-af-btn";
+			btn.setAttribute("data-af-key", field);
+			btn.setAttribute("aria-label", "Sort and filter " + field);
+			btn.innerHTML = '<i class="fa fa-filter usis-af-funnel" aria-hidden="true"></i>';
+			btn.addEventListener("click", function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				var key = e.currentTarget.getAttribute("data-af-key");
+				if (takeoffAf && takeoffAf.openColumn) takeoffAf.openColumn(key, e.currentTarget);
+			});
+			title.appendChild(btn);
+		}
+	}
+
+	function bindTakeoffAutoFilter(estimateKey) {
+		if (!window.USIS_TABLE_AUTOFILTER) return;
+		takeoffAf = window.USIS_TABLE_AUTOFILTER.bind({
+			table: null,
+			tableId: "estimating.takeoff-grid:" + estimateKey,
+			getRows: function () {
+				return lastTakeoffRows;
+			},
+			resetButton: "#usis-est-takeoff-reset-view",
+			mobileButton: "#usis-est-takeoff-sort-filter",
+			columns: takeoffAfColumns(),
+			onChange: applyTakeoffGridFilter,
+		});
+		var status = document.getElementById("usis-est-takeoff-af-status");
+		if (status && !status.getAttribute("data-af-wired")) {
+			status.setAttribute("data-af-wired", "1");
+			status.addEventListener("click", function (e) {
+				if (e.target && e.target.id === "usis-est-takeoff-af-clear" && takeoffAf) takeoffAf.reset();
+			});
+		}
+	}
+
 	function reloadTakeoff(estimateKey) {
 		return fetch(
 			apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/takeoff-lines",
@@ -198,7 +312,9 @@
 			})
 			.then(function (data) {
 				var rows = data.items || [];
+				lastTakeoffRows = rows;
 				if (takeoffTable) takeoffTable.setData(rows);
+				applyTakeoffGridFilter();
 				return rows;
 			})
 			.catch(function (e) {
@@ -225,8 +341,12 @@
 			"&from=estimate&return_url=" +
 			encodeURIComponent(window.location.href) +
 			'">Open drawing viewer</a>' +
+			'<button type="button" class="btn btn-sm btn-outline-secondary d-md-none" id="usis-est-takeoff-sort-filter">' +
+			'<i class="fa fa-filter me-1"></i> Sort &amp; Filter</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-est-takeoff-reset-view">Reset view</button>' +
 			'<button type="button" class="btn btn-sm btn-primary" id="usis-est-takeoff-add">Add line</button></div></div>' +
 			'<div id="usis-grid-est-takeoff" class="border rounded overflow-hidden bg-white mb-2"></div>' +
+			'<p class="small text-muted mb-2 d-none" id="usis-est-takeoff-af-status" aria-live="polite"></p>' +
 			'<p class="text-muted small mb-0">Writes require <code>TAKEOFF_API_WRITES_ENABLED=1</code> on the API. Use <strong>View</strong> when a line has a drawing to measure on the PDF.</p>';
 
 		var gridEl = document.getElementById("usis-grid-est-takeoff");
@@ -291,6 +411,13 @@
 			},
 		});
 
+		bindTakeoffAutoFilter(estimateKey);
+		if (takeoffTable && typeof takeoffTable.on === "function") {
+			takeoffTable.on("tableBuilt", decorateTakeoffHeaders);
+		} else {
+			setTimeout(decorateTakeoffHeaders, 0);
+		}
+
 		var btn = document.getElementById("usis-est-takeoff-add");
 		if (btn) {
 			btn.addEventListener("click", function () {
@@ -321,6 +448,8 @@
 					.then(function (j) {
 						if (!j || !j.item) return;
 						takeoffTable.addRow(j.item, true);
+						lastTakeoffRows = lastTakeoffRows.concat([j.item]);
+						applyTakeoffGridFilter();
 						if (window.USISNotify) window.USISNotify.success("Line added");
 					})
 					.catch(function (e) {

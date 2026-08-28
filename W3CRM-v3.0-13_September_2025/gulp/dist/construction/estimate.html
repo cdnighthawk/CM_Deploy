@@ -363,12 +363,6 @@
 						</a>
 					</li>
 					<li data-usis-module="projects">
-						<a href="construction/issues.html" aria-expanded="false">
-							<i class="icon feather icon-alert-triangle"></i>
-							<span class="nav-text" data-i18n="Issues">Issues</span>
-						</a>
-					</li>
-					<li data-usis-module="projects">
 						<a href="usis-calendar.html" aria-expanded="false">
 							<i class="icon feather icon-calendar"></i>
 							<span class="nav-text" data-i18n="Calendar">Calendar</span>
@@ -384,12 +378,6 @@
 						<a href="usis-crm-leads.html" aria-expanded="false">
 							<i class="icon feather icon-git-branch"></i>
 							<span class="nav-text" data-i18n="CRM pipeline">CRM pipeline</span>
-						</a>
-					</li>
-					<li data-usis-module="documents">
-						<a href="usis-documents-hub.html" aria-expanded="false">
-							<i class="icon feather icon-folder"></i>
-							<span class="nav-text" data-i18n="Documents">Documents</span>
 						</a>
 					</li>
 					<li data-usis-module="projects">
@@ -421,23 +409,6 @@
 							</li>
 						</ul>
 					</li>
-					<li data-usis-module="playbooks">
-						<a href="usis-playbooks.html" aria-expanded="false">
-							<i class="icon feather icon-check-square"></i>
-							<span class="nav-text" data-i18n="Playbooks">Playbooks</span>
-						</a>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-settings"></i>
-							<span class="nav-text" data-i18n="Admin">Admin</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="user_admin">
-								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
-							</li>
-						</ul>
-					</li>
 					<li data-usis-module="procurement">
 						<a href="usis-procurement.html" aria-expanded="false">
 							<i class="icon feather icon-shopping-cart"></i>
@@ -461,11 +432,28 @@
 							</li>
 						</ul>
 					</li>
-					<li data-usis-module="reports">
-						<a href="reports.html" aria-expanded="false">
-							<i class="icon feather icon-pie-chart"></i>
-							<span class="nav-text">Reports</span>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-settings"></i>
+							<span class="nav-text" data-i18n="Admin">Admin</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="user_admin">
+								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
+							</li>
+							<li data-usis-module="playbooks">
+								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+							</li>
+							<li data-usis-module="reports">
+								<a href="reports.html" data-i18n="Reports">Reports</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							</li>
+							<li data-usis-module="projects">
+								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
+							</li>
+						</ul>
 					</li>
 				</ul>
 			</div>
@@ -525,11 +513,17 @@
 								</div>
 							</div>
 							<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-est-filter-count" aria-live="polite"></span>
-							<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-est-col-filter-modal" id="usis-est-col-filter-open" title="Choose values to show per column (like Excel)">
-								<i class="fa fa-filter me-1"></i> Column filters <span class="badge bg-primary ms-1 align-middle" id="usis-est-col-filter-badge" style="display: none">0</span>
+							<button type="button" class="btn btn-outline-secondary btn-sm d-md-none" id="usis-est-sort-filter" title="Sort and filter columns">
+								<i class="fa fa-filter me-1"></i> Sort &amp; Filter
+							</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-est-reset-view" title="Clear header filters, sort, and hidden columns">
+								Reset view
 							</button>
 						</div>
 						<div class="d-flex flex-wrap gap-2">
+							<a href="/api/v1/integrations/buildingconnected/oauth/start" class="btn btn-outline-secondary w-xs-100" data-usis-bc-reconnect title="Grant BuildingConnected write access (data:write) and refresh the stored token">
+								<i class="icon feather icon-link me-1"></i> Reconnect BC
+							</a>
 							<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-estimate-sync-stub" title="Reload estimate list">
 								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
 							</button>
@@ -615,27 +609,6 @@
 	</div>
 	<!-- End - Main Wrapper -->
 
-	<!-- Column filters (Excel-style value lists per column) -->
-	<div class="modal fade" id="usis-est-col-filter-modal" tabindex="-1" aria-labelledby="usis-est-col-filter-title" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-scrollable">
-			<div class="modal-content">
-				<div class="modal-header py-2">
-					<h5 class="modal-title" id="usis-est-col-filter-title">Column filters</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<p class="text-muted small mb-2">Choose which values to include for each column (like Excel autofilter). Rows must match <strong>all</strong> active columns. The quick search box still applies afterward. <strong>Cancel</strong> discards changes since you opened this dialog.</p>
-					<div class="accordion" id="usis-est-col-filter-accordion"></div>
-				</div>
-				<div class="modal-footer py-2">
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-est-col-filter-resetall">Reset all columns</button>
-					<button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-est-col-filter-apply">Apply</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<div class="modal fade" id="usis-est-create-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-create-title">
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
@@ -711,6 +684,7 @@
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-sort.js"></script>
+	<script src="assets/js/usis-table-autofilter.js"></script>
 	<script src="assets/js/usis-list-bulk.js"></script>
 	<script src="assets/js/usis-bc-write.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
@@ -719,32 +693,15 @@
 	<script>
 	(function () {
 		var API = typeof window.usisApiBase === "function" ? window.usisApiBase() : "";
-		var COL_CFG = [
-			{ key: "number", label: "Project #" },
-			{ key: "name", label: "Lead" },
-			{ key: "trade_name", label: "Trade invited" },
-			{ key: "company_name", label: "Company" },
-			{ key: "city", label: "City" },
-			{ key: "state", label: "State" },
-			{ key: "due_at", label: "Bid due date" },
-		];
-		var BLANK = "\u0000__USIS_EMPTY__\u0000";
-
 		var tbody = document.getElementById("usis-estimate-tbody");
 		var filterInput = document.getElementById("usis-est-table-filter");
 		var filterBtn = document.getElementById("usis-est-table-filter-btn");
 		var filterCount = document.getElementById("usis-est-filter-count");
-		var colFilterModal = document.getElementById("usis-est-col-filter-modal");
-		var colFilterAccordion = document.getElementById("usis-est-col-filter-accordion");
-		var colFilterBadge = document.getElementById("usis-est-col-filter-badge");
-		var colFilterApply = document.getElementById("usis-est-col-filter-apply");
-		var colFilterResetAll = document.getElementById("usis-est-col-filter-resetall");
 
 		var allItems = [];
 		var isFetching = false;
 		var loadError = null;
-		var colAllowed = {};
-		var modalLists = {};
+		var autoFilter = null;
 
 		var emptyMessage =
 			'<tr><td colspan="10" class="text-muted">No matching <code>lead_estimates</code> (will submit a bid, not yet submitted, not archived). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>';
@@ -773,229 +730,6 @@
 			} catch (e) {
 				return esc(String(iso));
 			}
-		}
-
-		function cellToken(row, key) {
-			var v = row[key];
-			if (v == null || String(v).trim() === "") return BLANK;
-			if (key === "due_at") {
-				try {
-					var d = new Date(v);
-					if (!isNaN(d.getTime())) return d.toLocaleDateString();
-				} catch (e) {}
-			}
-			return String(v).trim();
-		}
-
-		function uniquesForColumn(key) {
-			var seen = Object.create(null);
-			for (var i = 0; i < allItems.length; i++) {
-				var t = cellToken(allItems[i], key);
-				seen[t] = true;
-			}
-			return Object.keys(seen).sort(function (a, b) {
-				if (a === BLANK) return -1;
-				if (b === BLANK) return 1;
-				return String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
-			});
-		}
-
-		function isTokenChecked(key, token) {
-			var allowed = colAllowed[key];
-			if (!allowed) return true;
-			return allowed.has(token);
-		}
-
-		function passesColumnFilters(row, uniqCache) {
-			for (var i = 0; i < COL_CFG.length; i++) {
-				var key = COL_CFG[i].key;
-				var allowed = colAllowed[key];
-				if (!allowed) continue;
-				if (allowed.size === 0) return false;
-				var full = uniqCache[key];
-				if (allowed.size >= full.length) continue;
-				if (!allowed.has(cellToken(row, key))) return false;
-			}
-			return true;
-		}
-
-		function activeColumnFilterCount() {
-			var n = 0;
-			for (var i = 0; i < COL_CFG.length; i++) {
-				var key = COL_CFG[i].key;
-				var allowed = colAllowed[key];
-				if (!allowed) continue;
-				var full = uniquesForColumn(key);
-				if (allowed.size < full.length) n++;
-			}
-			return n;
-		}
-
-		function updateColFilterBadge() {
-			if (!colFilterBadge) return;
-			var n = activeColumnFilterCount();
-			if (n > 0) {
-				colFilterBadge.textContent = String(n);
-				colFilterBadge.style.display = "";
-			} else {
-				colFilterBadge.style.display = "none";
-			}
-		}
-
-		function displayTokenLabel(token) {
-			if (token === BLANK) return "(Blanks)";
-			return esc(token);
-		}
-
-		function searchDataAttr(token) {
-			if (token === BLANK) return "blanks";
-			return String(token).toLowerCase();
-		}
-
-		function populateColumnFilterModal() {
-			if (!colFilterAccordion) return;
-			if (!allItems.length) {
-				colFilterAccordion.innerHTML = '<p class="text-muted mb-0">No rows loaded yet.</p>';
-				return;
-			}
-			modalLists = {};
-			var parts = [];
-			for (var idx = 0; idx < COL_CFG.length; idx++) {
-				var c = COL_CFG[idx];
-				var list = uniquesForColumn(c.key);
-				modalLists[c.key] = list;
-				var collapseId = "usis-est-cfac-" + c.key;
-				var headingId = "usis-est-cfah-" + c.key;
-				var bodyClass = "accordion-collapse collapse" + (idx === 0 ? " show" : "");
-				var btnClass = "accordion-button" + (idx === 0 ? "" : " collapsed");
-				var exp = idx === 0 ? "true" : "false";
-				var rows = [];
-				for (var ix = 0; ix < list.length; ix++) {
-					var token = list[ix];
-					var checked = isTokenChecked(c.key, token) ? " checked" : "";
-					rows.push(
-						'<label class="d-block small text-truncate mb-0 py-1 usis-est-fl-row" data-search="' +
-							escAttr(searchDataAttr(token)) +
-							'"><input type="checkbox" class="form-check-input me-1 usis-est-col-cb" data-col="' +
-							c.key +
-							'" data-ix="' +
-							ix +
-							'"' +
-							checked +
-							">" +
-							displayTokenLabel(token) +
-							"</label>"
-					);
-				}
-				parts.push(
-					'<div class="accordion-item">' +
-						'<h2 class="accordion-header" id="' +
-						headingId +
-						'">' +
-						'<button class="' +
-						btnClass +
-						'" type="button" data-bs-toggle="collapse" data-bs-target="#' +
-						collapseId +
-						'" aria-expanded="' +
-						exp +
-						'" aria-controls="' +
-						collapseId +
-						'">' +
-						esc(c.label) +
-						"</button></h2>" +
-						'<div id="' +
-						collapseId +
-						'" class="' +
-						bodyClass +
-						'" aria-labelledby="' +
-						headingId +
-						'" data-bs-parent="#usis-est-col-filter-accordion">' +
-						'<div class="accordion-body">' +
-						'<div class="btn-group btn-group-sm mb-2" role="group">' +
-						'<button type="button" class="btn btn-outline-secondary usis-est-col-selall" data-col="' +
-						c.key +
-						'">Select all</button>' +
-						'<button type="button" class="btn btn-outline-secondary usis-est-col-selnone" data-col="' +
-						c.key +
-						'">Clear all</button>' +
-						"</div>" +
-						'<input type="search" class="form-control form-control-sm mb-2 usis-est-col-listq" data-col="' +
-						c.key +
-						'" placeholder="Search values in this column…">' +
-						'<div class="usis-col-filter-scroll border rounded px-2 py-1 bg-white usis-est-col-list" data-col="' +
-						c.key +
-						'">' +
-						rows.join("") +
-						"</div></div></div></div>"
-				);
-			}
-			colFilterAccordion.innerHTML = parts.join("");
-		}
-
-		function applyColumnFilterChoicesFromModal() {
-			if (!colFilterAccordion) return;
-			for (var i = 0; i < COL_CFG.length; i++) {
-				var key = COL_CFG[i].key;
-				var list = modalLists[key];
-				if (!list) continue;
-				var panel = colFilterAccordion.querySelector('.usis-est-col-list[data-col="' + key + '"]');
-				if (!panel) continue;
-				var selected = new Set();
-				var cbs = panel.querySelectorAll(".usis-est-col-cb");
-				for (var j = 0; j < cbs.length; j++) {
-					var cb = cbs[j];
-					if (cb.checked) {
-						var ix = parseInt(cb.getAttribute("data-ix"), 10);
-						if (!isNaN(ix) && list[ix] !== undefined) selected.add(list[ix]);
-					}
-				}
-				if (selected.size === 0) colAllowed[key] = selected;
-				else if (selected.size >= list.length) delete colAllowed[key];
-				else colAllowed[key] = selected;
-			}
-			updateColFilterBadge();
-			applyTableFilter();
-		}
-
-		function resetAllColumnFiltersInModal() {
-			for (var i = 0; i < COL_CFG.length; i++) delete colAllowed[COL_CFG[i].key];
-			if (colFilterAccordion) {
-				colFilterAccordion.querySelectorAll(".usis-est-col-cb").forEach(function (cb) {
-					cb.checked = true;
-				});
-			}
-			updateColFilterBadge();
-			applyTableFilter();
-		}
-
-		function onAccordionClick(e) {
-			var t = e.target;
-			if (!colFilterAccordion) return;
-			if (t.classList.contains("usis-est-col-selall")) {
-				var key = t.getAttribute("data-col");
-				var panel = colFilterAccordion.querySelector('.usis-est-col-list[data-col="' + key + '"]');
-				if (panel) panel.querySelectorAll(".usis-est-col-cb").forEach(function (cb) { cb.checked = true; });
-				return;
-			}
-			if (t.classList.contains("usis-est-col-selnone")) {
-				var key2 = t.getAttribute("data-col");
-				var panel2 = colFilterAccordion.querySelector('.usis-est-col-list[data-col="' + key2 + '"]');
-				if (panel2) panel2.querySelectorAll(".usis-est-col-cb").forEach(function (cb) { cb.checked = false; });
-			}
-		}
-
-		function onAccordionInput(e) {
-			var t = e.target;
-			if (!t.classList || !t.classList.contains("usis-est-col-listq")) return;
-			if (!colFilterAccordion) return;
-			var key = t.getAttribute("data-col");
-			var q = String(t.value || "").trim().toLowerCase();
-			var panel = colFilterAccordion.querySelector('.usis-est-col-list[data-col="' + key + '"]');
-			if (!panel) return;
-			panel.querySelectorAll(".usis-est-fl-row").forEach(function (label) {
-				var s = label.getAttribute("data-search") || "";
-				label.style.display = !q || s.indexOf(q) !== -1 ? "" : "none";
-			});
 		}
 
 		function renderRow(row) {
@@ -1094,14 +828,10 @@
 				} else {
 					tbody.innerHTML = emptyMessage;
 				}
+				if (autoFilter) autoFilter.paint();
 				return;
 			}
-			var uniqCache = {};
-			for (var ci = 0; ci < COL_CFG.length; ci++) uniqCache[COL_CFG[ci].key] = uniquesForColumn(COL_CFG[ci].key);
-
-			var filtered = allItems.filter(function (row) {
-				return passesColumnFilters(row, uniqCache);
-			});
+			var filtered = autoFilter ? autoFilter.filter(allItems) : allItems.slice();
 			if (q) {
 				filtered = filtered.filter(function (row) {
 					return rowFilterText(row).indexOf(q) !== -1;
@@ -1109,21 +839,22 @@
 			}
 			if (!filtered.length) {
 				tbody.innerHTML =
-					'<tr><td colspan="10" class="text-muted">No rows match your column filters and/or search. Adjust <strong>Column filters</strong> or clear the search box.</td></tr>';
+					'<tr><td colspan="10" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
 			} else {
-				var rows = tableSort ? tableSort.apply(filtered) : filtered;
+				var rows = autoFilter ? autoFilter.sort(filtered) : filtered;
 				tbody.innerHTML = rows.map(renderRow).join("");
 				if (window.USISListBulk && window.USISListBulk.afterRender) window.USISListBulk.afterRender();
 			}
+			if (autoFilter) autoFilter.paint();
 			if (filterCount) {
-				var ac = activeColumnFilterCount();
+				var labels = autoFilter ? autoFilter.getActiveLabels() : [];
 				var parts = [];
-				if (filtered.length !== allItems.length || ac > 0 || q) {
+				if (filtered.length !== allItems.length || labels.length || q) {
 					parts.push("Showing " + filtered.length + " of " + allItems.length);
 				} else {
 					parts.push(allItems.length + " loaded");
 				}
-				if (ac > 0) parts.push(ac + " column filter" + (ac === 1 ? "" : "s"));
+				if (labels.length) parts.push("Filters on: " + labels.join(", "));
 				filterCount.textContent = parts.join(" · ");
 			}
 		}
@@ -1133,8 +864,6 @@
 			isFetching = true;
 			loadError = null;
 			allItems = [];
-			for (var ri = 0; ri < COL_CFG.length; ri++) delete colAllowed[COL_CFG[ri].key];
-			updateColFilterBadge();
 			if (filterCount) filterCount.textContent = "";
 			if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
 			tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Loading…</td></tr>';
@@ -1152,6 +881,9 @@
 						var b = String((x && x.workflow_bucket) || "").toUpperCase();
 						if (b.indexOf("CHILD") >= 0) return false;
 						if (x && x.is_parent === false && x.external_parent_id) return false;
+						if (!x.due_at || isNaN(new Date(x.due_at).getTime()) || new Date(x.due_at).getTime() < Date.now()) {
+							return false;
+						}
 						return true;
 					});
 					allItems = items;
@@ -1175,23 +907,30 @@
 				});
 		}
 
-		var tableSort = window.USIS_TABLE_SORT
-			? window.USIS_TABLE_SORT.bind({
+		autoFilter = window.USIS_TABLE_AUTOFILTER
+			? window.USIS_TABLE_AUTOFILTER.bind({
 					table: "#usis-estimate-table",
-					defaultKey: "due_at",
-					defaultDir: "asc",
-					storageKey: "usis-estimate-table-sort",
+					tableId: "estimating.list",
+					defaultSort: { key: "due_at", dir: "asc" },
+					getRows: function () {
+						return allItems;
+					},
+					resetButton: "#usis-est-reset-view",
+					mobileButton: "#usis-est-sort-filter",
 					columns: [
-						{ key: "number", type: "text" },
-						{ key: "name", type: "text" },
-						{ key: "trade_name", type: "text" },
-						{ key: "company_name", type: "text" },
-						{ key: "city", type: "text" },
-						{ key: "state", type: "text" },
-						{ key: "due_at", type: "date" },
+						{ key: "number", label: "Project #", type: "text", sortable: true, filterable: true },
+						{ key: "name", label: "Lead", type: "text", sortable: true, filterable: true },
+						{ key: "trade_name", label: "Trade invited", type: "singleSelect", sortable: true, filterable: true },
+						{ key: "company_name", label: "Company", type: "text", sortable: true, filterable: true },
+						{ key: "city", label: "City", type: "text", sortable: true, filterable: true },
+						{ key: "state", label: "State", type: "singleSelect", sortable: true, filterable: true },
+						{ key: "due_at", label: "Bid due date", type: "date", sortable: true, filterable: true },
 						{
 							key: "estimator",
-							type: "text",
+							label: "Estimator",
+							type: "singleSelect",
+							sortable: true,
+							filterable: true,
 							getValue: function (row) {
 								return row.estimator_name || row.estimator || "";
 							},
@@ -1215,6 +954,14 @@
 		document.addEventListener("DOMContentLoaded", loadEstimates);
 		var btn = document.getElementById("usis-estimate-sync-stub");
 		if (btn) btn.addEventListener("click", loadEstimates);
+		var pullBtn = document.getElementById("usis-est-bc-pull");
+		if (pullBtn) {
+			pullBtn.addEventListener("click", function () {
+				if (typeof window.usisPullBuildingConnected === "function") {
+					window.usisPullBuildingConnected({ button: pullBtn, onDone: loadEstimates });
+				}
+			});
+		}
 		if (filterInput) {
 			filterInput.addEventListener("input", applyTableFilter);
 			filterInput.addEventListener("keydown", function (e) {
@@ -1225,22 +972,6 @@
 			});
 		}
 		if (filterBtn) filterBtn.addEventListener("click", applyTableFilter);
-
-		if (colFilterModal) colFilterModal.addEventListener("show.bs.modal", populateColumnFilterModal);
-		if (colFilterAccordion) {
-			colFilterAccordion.addEventListener("click", onAccordionClick);
-			colFilterAccordion.addEventListener("input", onAccordionInput);
-		}
-		if (colFilterApply) {
-			colFilterApply.addEventListener("click", function () {
-				applyColumnFilterChoicesFromModal();
-				if (typeof bootstrap !== "undefined" && colFilterModal) {
-					var inst = bootstrap.Modal.getInstance(colFilterModal);
-					if (inst) inst.hide();
-				}
-			});
-		}
-		if (colFilterResetAll) colFilterResetAll.addEventListener("click", resetAllColumnFiltersInModal);
 
 		var addEst = document.getElementById("usis-est-add-estimate");
 		if (addEst) {

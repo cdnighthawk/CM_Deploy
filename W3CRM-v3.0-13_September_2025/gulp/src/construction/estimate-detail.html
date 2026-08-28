@@ -455,6 +455,12 @@
 											<button type="button" class="btn btn-sm btn-outline-secondary d-none" id="usis-est-compact-toggle" aria-pressed="false" title="Tighter row height on small screens">
 												Compact density
 											</button>
+											<button type="button" class="btn btn-sm btn-outline-secondary d-md-none" id="usis-est-sort-filter" title="Sort and filter columns">
+												<i class="fa fa-filter me-1"></i> Sort &amp; Filter
+											</button>
+											<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-est-reset-view" title="Clear header filters, sort, and hidden columns">
+												Reset view
+											</button>
 											</div>
 										</div>
 										<p class="text-muted small mb-2 d-xl-none" id="usis-est-scroll-hint" role="note">
@@ -464,14 +470,14 @@
 											<table class="table table-sm table-hover mb-0" id="usis-est-lines-table">
 												<thead class="table-light">
 													<tr>
-														<th>Section</th>
-														<th>Cost code</th>
-														<th>Description</th>
-														<th class="text-nowrap">Type</th>
-														<th class="text-end">Qty</th>
-														<th>UOM</th>
-														<th class="text-end">Unit cost</th>
-														<th class="text-end">Extended</th>
+														<th data-sort-key="section" data-filter-key="section">Section</th>
+														<th data-sort-key="job_cost_code" data-filter-key="job_cost_code">Cost code</th>
+														<th data-sort-key="description" data-filter-key="description">Description</th>
+														<th class="text-nowrap" data-sort-key="cost_type" data-filter-key="cost_type">Type</th>
+														<th class="text-end" data-sort-key="quantity" data-filter-key="quantity">Qty</th>
+														<th data-sort-key="unit" data-filter-key="unit">UOM</th>
+														<th class="text-end" data-sort-key="unit_cost" data-filter-key="unit_cost">Unit cost</th>
+														<th class="text-end" data-sort-key="extended_total" data-filter-key="extended_total">Extended</th>
 														<th class="text-center text-muted small" style="width:2.75rem" title="Save status">Save</th>
 														<th class="text-end"></th>
 													</tr>
@@ -479,6 +485,7 @@
 												<tbody id="usis-est-lines-tbody"></tbody>
 											</table>
 										</div>
+										<p class="small text-muted mt-2 mb-0 d-none" id="usis-est-lines-af-status" aria-live="polite"></p>
 										<p class="text-muted small mt-2 mb-0">Edits save when you leave a row (tab or click away). Set <code>TAKEOFF_API_WRITES_ENABLED=true</code> if POST/PATCH returns 403.</p>
 									</div>
 									<div class="col-xl-4">
@@ -648,6 +655,7 @@
 	<script src="assets/js/usis-project-doc-panels.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>
+	<script src="assets/js/usis-table-autofilter.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
 	<script src="assets/js/usis-estimate-detail.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>

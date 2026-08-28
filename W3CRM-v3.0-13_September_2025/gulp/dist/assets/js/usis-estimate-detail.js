@@ -15,6 +15,7 @@
 	var sessionMe = null;
 	var activeLineId = null;
 	var dirtyByLine = {};
+	var lineAutoFilter = null;
 
 	function parentLeadId(item) {
 		if (Api) return Api.leadIdFromItem(item);
@@ -497,9 +498,117 @@
 		dirtyByLine = {};
 		if (!lines || !lines.length) {
 			tb.innerHTML = '<tr><td colspan="10" class="text-muted">No lines yet. Click <strong>Add line</strong>.</td></tr>';
+			applyLineAutoFilter();
 			return;
 		}
 		tb.innerHTML = lines.map(rowHtml).join("");
+		applyLineAutoFilter();
+	}
+
+	function ensureLineAutoFilter() {
+		if (lineAutoFilter || !window.USIS_TABLE_AUTOFILTER) return lineAutoFilter;
+		var id = leadKey || new URLSearchParams(window.location.search).get("id") || "unknown";
+		lineAutoFilter = window.USIS_TABLE_AUTOFILTER.bind({
+			table: "#usis-est-lines-table",
+			tableId: "estimating.takeoff:" + id,
+			getRows: function () {
+				return (leadItem && leadItem.takeoff_lines) || [];
+			},
+			resetButton: "#usis-est-reset-view",
+			mobileButton: "#usis-est-sort-filter",
+			columns: [
+				{ key: "section", label: "Section", type: "text", sortable: true, filterable: true },
+				{ key: "job_cost_code", label: "Cost code", type: "text", sortable: true, filterable: true },
+				{ key: "description", label: "Description", type: "text", sortable: true, filterable: true },
+				{
+					key: "cost_type",
+					label: "Type",
+					type: "singleSelect",
+					sortable: true,
+					filterable: true,
+					valueOptions: ["L", "M", "E", "S", "O"],
+				},
+				{ key: "quantity", label: "Qty", type: "number", sortable: true, filterable: true },
+				{
+					key: "unit",
+					label: "UOM",
+					type: "singleSelect",
+					sortable: true,
+					filterable: true,
+					valueOptions: ["SF", "LF", "EA", "SQ", "GAL"],
+				},
+				{ key: "unit_cost", label: "Unit cost", type: "number", sortable: true, filterable: true },
+				{ key: "extended_total", label: "Extended", type: "number", sortable: true, filterable: true },
+			],
+			onChange: function () {
+				applyLineAutoFilter();
+			},
+		});
+		var status = document.getElementById("usis-est-lines-af-status");
+		if (status && !status.getAttribute("data-af-wired")) {
+			status.setAttribute("data-af-wired", "1");
+			status.addEventListener("click", function (e) {
+				if (e.target && e.target.id === "usis-est-af-clear" && lineAutoFilter) {
+					lineAutoFilter.reset();
+				}
+			});
+		}
+		return lineAutoFilter;
+	}
+
+	function applyLineAutoFilter() {
+		var af = ensureLineAutoFilter();
+		var tb = document.getElementById("usis-est-lines-tbody");
+		var status = document.getElementById("usis-est-lines-af-status");
+		if (!tb) return;
+		if (!af) {
+			if (status) {
+				status.textContent = "";
+				status.classList.add("d-none");
+			}
+			return;
+		}
+		var dataRows = tb.querySelectorAll("tr[data-line-id]");
+		if (!dataRows.length) {
+			if (status) {
+				status.textContent = "";
+				status.classList.add("d-none");
+			}
+			af.paint();
+			return;
+		}
+		var result = af.applyDomRows(tb, function (tr) {
+			var id = tr.getAttribute("data-line-id");
+			if (!id) return null;
+			var live = gatherRowPayload(tr);
+			var stored = {};
+			if (leadItem && leadItem.takeoff_lines) {
+				for (var i = 0; i < leadItem.takeoff_lines.length; i++) {
+					if (String(leadItem.takeoff_lines[i].id) === String(id)) {
+						stored = leadItem.takeoff_lines[i];
+						break;
+					}
+				}
+			}
+			return Object.assign({ id: id }, stored, live);
+		});
+		var labels = af.getActiveLabels();
+		if (status) {
+			if (!labels.length && result.shown === result.total) {
+				status.textContent = "";
+				status.classList.add("d-none");
+			} else {
+				status.classList.remove("d-none");
+				status.innerHTML =
+					"Showing " +
+					result.shown +
+					" of " +
+					result.total +
+					" lines" +
+					(labels.length ? " · Filters on: " + labels.join(", ") : "") +
+					' <button type="button" class="btn btn-link btn-sm py-0 align-baseline" id="usis-est-af-clear">Clear</button>';
+			}
+		}
 	}
 
 	function gatherRowPayload(tr) {

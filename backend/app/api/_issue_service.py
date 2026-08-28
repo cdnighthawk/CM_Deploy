@@ -74,9 +74,21 @@ def _map_rfi_status(raw: str | None) -> str:
     return "New"
 
 
+def github_issue_number(row: Issue) -> int | None:
+    raw = _text(row.linked_change_order_id)
+    if raw.lower().startswith("github:"):
+        try:
+            return int(raw.split(":", 1)[1])
+        except ValueError:
+            return None
+    return None
+
+
 def serialize_issue(row: Issue, *, include_events: bool = False) -> dict[str, Any]:
+    number = github_issue_number(row)
     payload: dict[str, Any] = {
         "id": str(row.id),
+        "number": number,
         "project_id": str(row.project_id) if row.project_id else None,
         "project_name": _project_name(row.project_id),
         "source_type": row.source_type,

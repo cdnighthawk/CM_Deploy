@@ -1,11 +1,19 @@
 """Status transition rules for the Issues board (no database)."""
-from app.api._issue_service import workflow_allows
+from types import SimpleNamespace
+
+from app.api._issue_service import github_issue_number, workflow_allows
 from app.services.feedback import (
     CONFIRMED_MARKER,
     NOTIFIED_MARKER,
     inferred_tracker_status,
     refresh_tracker_from_github,
 )
+
+
+def test_github_issue_number_from_link():
+    assert github_issue_number(SimpleNamespace(linked_change_order_id="github:14")) == 14
+    assert github_issue_number(SimpleNamespace(linked_change_order_id="pending:abc")) is None
+    assert github_issue_number(SimpleNamespace(linked_change_order_id=None)) is None
 
 
 def test_resolution_advances_open_cards_but_not_closed():

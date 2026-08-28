@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,6 +41,8 @@ class Company(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     postal_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True, default="US")
+    latitude: Mapped[Optional[float]] = mapped_column(Numeric(9, 6), nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Numeric(9, 6), nullable=True)
     dbe_certified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     prevailing_wage: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     portal_access_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

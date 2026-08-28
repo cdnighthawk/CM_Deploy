@@ -83,6 +83,15 @@ body,
 	--nav-headbg: var(--usis-paper);
 }
 
+body,
+body[data-headerbg],
+body[data-headerbg="color_12"],
+body[data-nav-headerbg],
+body[data-nav-headerbg="color_12"] {
+	--headerbg: var(--usis-paper);
+	--nav-headbg: var(--usis-paper);
+}
+
 [data-bs-theme="dark"] {
 	--usis-bg: #161d22;
 	--usis-paper: #1e272d;
@@ -155,28 +164,26 @@ html body,
 	background-color: var(--usis-bg);
 }
 
-html .header,
-.header,
-[data-headerbg] .header {
+html body .header,
+html body .nav-header,
+body[data-headerbg] .header,
+body[data-headerbg="color_12"] .header,
+body[data-nav-headerbg] .nav-header,
+body[data-nav-headerbg="color_12"] .nav-header {
 	background: var(--usis-paper);
+	background-color: var(--usis-paper);
 	border-bottom: 1px solid var(--usis-divider);
 	box-shadow: none;
 	height: 3.5rem;
+	min-height: 3.5rem;
 }
 
 .header .header-content {
 	height: 100%;
 }
 
-html .nav-header,
-.nav-header,
-[data-nav-headerbg] .nav-header,
-[data-nav-headerbg=color_12] .nav-header {
-	background-color: var(--usis-paper);
-	height: 3.5rem;
+html body .nav-header {
 	border-right: 1px solid var(--usis-divider);
-	border-bottom: 1px solid var(--usis-divider);
-	box-shadow: none;
 }
 
 .nav-header .brand-logo,
@@ -193,8 +200,52 @@ html .nav-header,
 }
 
 body .hamburger .line,
-.nav-header .hamburger .line {
+.nav-header .hamburger .line,
+body[data-headerbg="color_12"] .hamburger .line {
 	background: var(--usis-text);
+}
+
+.header .nav-link,
+.header .btn,
+.header .usis-report-problem-btn,
+.header-right .header-info h6,
+.header-right .header-info .h6,
+.header-right .header-info p,
+.header-right .header-info small,
+body[data-headerbg="color_12"] .header-right .header-info h6,
+body[data-headerbg="color_12"] .header-right .header-info .h6,
+body[data-headerbg="color_12"] .header-right .header-info p {
+	color: var(--usis-text);
+}
+
+.header .btn-outline-secondary {
+	color: var(--usis-secondary);
+	border-color: var(--usis-divider);
+	background-color: transparent;
+}
+
+.header .nav-link svg path,
+.header .nav-link svg circle,
+.header .notification_dropdown .nav-link svg path,
+.header .notification_dropdown .nav-link svg circle,
+body:not([data-headerbg="color_1"]) .header-right .notification_dropdown .nav-link svg path,
+body:not([data-headerbg="color_1"]) .header-right .notification_dropdown .nav-link svg circle,
+body[data-headerbg="color_12"] .header-right .notification_dropdown .nav-link svg path,
+body[data-headerbg="color_12"] .header-right .notification_dropdown .nav-link svg circle,
+body:not([data-headerbg="color_1"]) .header .header-search .input-group-text svg path,
+body:not([data-headerbg="color_1"]) .header .header-search .input-group-text svg circle {
+	stroke: var(--usis-text) !important;
+}
+
+.header .notification_dropdown .nav-link svg,
+.header .header-right .nav-link svg {
+	color: var(--usis-text);
+}
+
+.header .header-search .form-control,
+body:not([data-headerbg="color_1"]) .header .header-search .form-control {
+	color: var(--usis-text);
+	background-color: var(--usis-paper);
 }
 
 .deznav {

@@ -17,6 +17,13 @@
 		return SOURCE_LABELS[value] || value || "";
 	}
 
+	function issueNumber(issue) {
+		if (issue && issue.number) return "#" + issue.number;
+		var linked = issue && issue.linked_change_order_id ? String(issue.linked_change_order_id) : "";
+		var match = /^github:(\d+)$/i.exec(linked);
+		return match ? "#" + match[1] : "";
+	}
+
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") return window.usisApiBase();
 		if (typeof window.USIS_API_BASE === "string" && window.USIS_API_BASE.trim()) {
@@ -122,12 +129,12 @@
 			'<button type="button" class="usis-issue-card" data-id="' +
 			esc(issue.id) +
 			'">' +
-			'<div class="d-flex justify-content-between"><span class="badge usis-issue-sev-' +
+			'<div class="d-flex justify-content-between align-items-center"><span class="fw-semibold">' +
+			esc(issueNumber(issue) || "—") +
+			'</span><span class="badge usis-issue-sev-' +
 			esc(issue.severity) +
 			'">' +
 			esc(issue.severity) +
-			"</span><span class=\"small text-muted\">" +
-			esc(issue.sheet_number || "") +
 			"</span></div>" +
 			'<div class="fw-semibold mt-2">' +
 			esc(issue.title) +
@@ -176,7 +183,7 @@
 	function renderTable() {
 		var tb = document.getElementById("usis-issue-tbody");
 		if (!state.items.length) {
-			tb.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-4">No issues yet.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">No issues yet.</td></tr>';
 			return;
 		}
 		tb.innerHTML = state.items
@@ -185,6 +192,8 @@
 					"<tr data-id=\"" +
 					esc(issue.id) +
 					"\"><td>" +
+					esc(issueNumber(issue) || "—") +
+					"</td><td>" +
 					esc(issue.severity) +
 					"</td><td>" +
 					esc(issue.title) +
@@ -227,7 +236,8 @@
 			.then(function (data) {
 				state.selected = data.issue;
 				var issue = data.issue;
-				document.getElementById("usis-issue-drawer-title").textContent = issue.title;
+				document.getElementById("usis-issue-drawer-title").textContent =
+					(issueNumber(issue) ? issueNumber(issue) + " " : "") + issue.title;
 				var viewer = "";
 				if (issue.drawing_id) {
 					viewer =

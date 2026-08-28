@@ -727,7 +727,7 @@ let translations = {
 			"Leads": "Prospectos",
 			"Estimate": "Estimación",
 			"Safety": "Seguridad",
-				"HR": "RH",
+			"HR": "RH",
 			"Applications": "Solicitudes",
 			"HR suite": "Suite de RH",
 			"Expenses": "Gastos",
@@ -745,7 +745,13 @@ let translations = {
 			"Close": "Cerrar",
 			"Dashboard": "Inicio",
 			"Email": "Correo",
-			"Reports": "Reportes"
+			"Reports": "Reportes",
+			"Submittals": "Envíos",
+			"Issues": "Incidencias",
+			"Admin": "Administración",
+			"Finance": "Finanzas",
+			"HR dashboard": "Panel de RH",
+			"RFIs": "RFIs"
 		},
 	},
 	'ar_TN' : {

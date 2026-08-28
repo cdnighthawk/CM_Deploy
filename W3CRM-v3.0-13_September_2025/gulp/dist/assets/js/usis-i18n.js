@@ -7,11 +7,13 @@
 
 	var KEY = "usis.language";
 	var COOKIE = "language";
+	var applying = false;
 
 	var ES = {
 		USIS: "USIS",
 		Dashboard: "Inicio",
 		Leads: "Prospectos",
+		Lead: "Prospecto",
 		Estimate: "Estimación",
 		Projects: "Proyectos",
 		Calendar: "Calendario",
@@ -21,6 +23,7 @@
 		HR: "RH",
 		Applications: "Solicitudes",
 		"HR suite": "Suite de RH",
+		"HR dashboard": "Panel de RH",
 		Expenses: "Gastos",
 		Playbooks: "Guías",
 		"User admin": "Admin. de usuarios",
@@ -73,8 +76,8 @@
 		"Your name (optional)": "Su nombre (opcional)",
 		"Short summary": "Resumen corto",
 		"What happened, and what did you expect?": "¿Qué pasó y qué esperaba?",
-		"Tell us what broke or what to change. We'll email you when there is an update. You close the issue to confirm it's resolved.":
-			"Díganos qué falló o qué cambiar. Le enviaremos un correo cuando haya una actualización. Usted cierra el reporte para confirmar que quedó resuelto.",
+		"Tell us what broke or what to change. It will show on the Issues page.":
+			"Díganos qué falló o qué cambiar. Aparecerá en la página de Incidencias.",
 		"Something broke": "Algo falló",
 		"Recommend a change on this page": "Recomendar un cambio en esta página",
 		"General recommendation": "Recomendación general",
@@ -82,6 +85,372 @@
 		"Site-wide (not tied to a page).": "En todo el sitio (no ligado a una página).",
 		"So we know who to follow up with": "Para saber a quién contactar",
 		"Back to dashboard": "Volver al inicio",
+		Submittals: "Envíos",
+		Issues: "Incidencias",
+		Admin: "Administración",
+		Finance: "Finanzas",
+		RFIs: "RFIs",
+		RFI: "RFI",
+		Refresh: "Actualizar",
+		Filter: "Filtrar",
+		Apply: "Aplicar",
+		Clear: "Limpiar",
+		Reset: "Restablecer",
+		"Reset view": "Restablecer vista",
+		"Reset all": "Restablecer todo",
+		Saved: "Guardados",
+		Action: "Acción",
+		Name: "Nombre",
+		Status: "Estado",
+		Type: "Tipo",
+		City: "Ciudad",
+		State: "Estado",
+		Company: "Empresa",
+		View: "Ver",
+		"Loading…": "Cargando…",
+		Loading: "Cargando",
+		Yes: "Sí",
+		No: "No",
+		All: "Todos",
+		Prev: "Ant.",
+		Next: "Sig.",
+		Active: "Activo",
+		Complete: "Completado",
+		Archived: "Archivado",
+		Cancelled: "Cancelado",
+		"On hold": "En pausa",
+		Draft: "Borrador",
+		Open: "Abierta",
+		Closed: "Cerrada",
+		Submitted: "Enviado",
+		Overdue: "Vencido",
+		Description: "Descripción",
+		Number: "Número",
+		Subject: "Asunto",
+		Question: "Pregunta",
+		Location: "Ubicación",
+		Reference: "Referencia",
+		Attachments: "Adjuntos",
+		Assignees: "Asignados",
+		Distribution: "Distribución",
+		Private: "Privado",
+		Trade: "Oficio",
+		Vendor: "Proveedor",
+		Reviewer: "Revisor",
+		Severity: "Severidad",
+		Source: "Origen",
+		Assignee: "Asignado",
+		Project: "Proyecto",
+		"Project #": "Proyecto #",
+		"Project detail": "Detalle del proyecto",
+		"Back to Projects": "Volver a Proyectos",
+		"Job info": "Datos del trabajo",
+		Schedule: "Programa",
+		Tasks: "Tareas",
+		Drawings: "Planos",
+		Specs: "Especificaciones",
+		Takeoff: "Cuantificación",
+		Invoicing: "Facturación",
+		"Contract admin": "Admin. de contrato",
+		"Job costing": "Costos de obra",
+		"Construction schedule": "Programa de construcción",
+		"Installation dates": "Fechas de instalación",
+		Specifications: "Especificaciones",
+		Pricing: "Precios",
+		Kanban: "Kanban",
+		Table: "Tabla",
+		"New Issue": "Nueva incidencia",
+		"New issue": "Nueva incidencia",
+		Issue: "Incidencia",
+		"Search issues": "Buscar incidencias",
+		"All projects": "Todos los proyectos",
+		"All statuses": "Todos los estados",
+		"All severities": "Todas las severidades",
+		"All trades": "Todos los oficios",
+		"All sources": "Todos los orígenes",
+		New: "Nueva",
+		Triaged: "Clasificada",
+		"In Progress": "En progreso",
+		"Pending Review": "Pendiente de revisión",
+		Resolved: "Resuelta",
+		Critical: "Crítica",
+		Major: "Mayor",
+		Minor: "Menor",
+		Drywall: "Tablaroca",
+		Paint: "Pintura",
+		Flooring: "Pisos",
+		Acoustical: "Acústico",
+		"Doors & Hardware": "Puertas y herrajes",
+		Specialties: "Especialidades",
+		General: "General",
+		"AI Review": "Revisión IA",
+		Punch: "Punch",
+		Field: "Campo",
+		Manual: "Manual",
+		Website: "Sitio web",
+		Unassigned: "Sin asignar",
+		"No issues": "Sin incidencias",
+		"No issues yet.": "Aún no hay incidencias.",
+		"Could not load issues": "No se pudieron cargar las incidencias",
+		"{n} shown · {c} open critical": "{n} mostradas · {c} críticas abiertas",
+		"No description yet.": "Aún no hay descripción.",
+		History: "Historial",
+		"Create Change Order": "Crear orden de cambio",
+		"Create RFI": "Crear RFI",
+		"Open in DrawingViewer": "Abrir en visor de planos",
+		"Issue created": "Incidencia creada",
+		"RFI prefill ready": "RFI lista para completar",
+		"Change order prepared from this issue": "Orden de cambio preparada desde esta incidencia",
+		"AI review findings added to Issues": "Hallazgos de IA agregados a Incidencias",
+		"Status updates from GitHub: work or assign → In Progress, Resolution: comment → Pending Review, reporter confirms → Closed.":
+			"Actualizaciones desde GitHub: trabajar o asignar → En progreso, comentario Resolution: → Pendiente de revisión, el reportante confirma → Cerrada.",
+		"Construction — Projects": "Construcción — Proyectos",
+		"Construction — RFIS": "Construcción — RFIs",
+		"Construction — RFI Create": "Construcción — Crear RFI",
+		"Construction — Leads": "Construcción — Prospectos",
+		"Reload from API": "Recargar desde API",
+		"Filter by #, name, city, or state": "Filtrar por #, nombre, ciudad o estado",
+		"Set status": "Cambiar estado",
+		"0 selected": "0 seleccionados",
+		"{n} selected": "{n} seleccionados",
+		"Loading projects from API…": "Cargando proyectos desde la API…",
+		"No projects match this filter.": "Ningún proyecto coincide con este filtro.",
+		"No projects yet. Add projects in your system, then reload.":
+			"Aún no hay proyectos. Agréguelos al sistema y recargue.",
+		"No projects are assigned to your account. Ask an administrator to assign jobs in User admin.":
+			"No tiene proyectos asignados. Pida a un administrador que le asigne trabajos.",
+		"Showing only projects assigned to you. Contact an administrator if a job is missing.":
+			"Solo se muestran los proyectos asignados a usted. Contacte a un administrador si falta un trabajo.",
+		"Showing only projects assigned to you (including jobs still in planning). Contact an administrator if a job is missing.":
+			"Solo se muestran los proyectos asignados a usted (incluidos los que siguen en planeación). Contacte a un administrador si falta un trabajo.",
+		"Saved view": "Vista guardada",
+		"Default (all)": "Predeterminada (todas)",
+		"Recycle bin": "Papelera",
+		"Hide deleted": "Ocultar eliminadas",
+		"Show only deleted": "Mostrar solo eliminadas",
+		Columns: "Columnas",
+		"Save view": "Guardar vista",
+		"Subject, question, reference…": "Asunto, pregunta, referencia…",
+		"Loading projects…": "Cargando proyectos…",
+		"Loading RFIs from API…": "Cargando RFIs desde la API…",
+		"Loading RFIs…": "Cargando RFIs…",
+		"Closed-Draft": "Cerrada-borrador",
+		"Bulk edit…": "Edición masiva…",
+		Recycle: "Reciclar",
+		Restore: "Restaurar",
+		"← Prev": "← Ant.",
+		"Next →": "Sig. →",
+		"No RFIs match the current filters.": "Ninguna RFI coincide con los filtros.",
+		"Select a project to see its RFIs.": "Seleccione un proyecto para ver sus RFIs.",
+		"{from}–{to} of {total}": "{from}–{to} de {total}",
+		"0 of 0": "0 de 0",
+		"Ball in Court": "Pendiente de",
+		"RFI Manager": "Gerente de RFI",
+		"Received From": "Recibido de",
+		"Responsible Contractor": "Contratista responsable",
+		"Date Initiated": "Fecha de inicio",
+		"Due Date": "Fecha de vencimiento",
+		"Closed Date": "Fecha de cierre",
+		"Schedule Impact": "Impacto en programa",
+		"Cost Impact": "Impacto en costo",
+		"Cost $": "Costo $",
+		"Cost Code": "Código de costo",
+		"Spec Section": "Sección de especificación",
+		"Customize columns": "Personalizar columnas",
+		"Row height": "Alto de fila",
+		Compact: "Compacto",
+		Default: "Predeterminado",
+		Comfortable: "Cómodo",
+		"Reset to default": "Restablecer",
+		Scope: "Alcance",
+		"My views": "Mis vistas",
+		"Project (everyone on this project)": "Proyecto (todos en este proyecto)",
+		"Company (everyone)": "Empresa (todos)",
+		"Make this my default view": "Usar como mi vista predeterminada",
+		"Bulk edit RFIs": "Editar RFIs en lote",
+		"My open RFIs": "Mis RFIs abiertas",
+		"Create as Draft": "Crear como borrador",
+		"Create as Open": "Crear como abierta",
+		"Send for review": "Enviar a revisión",
+		"General Information": "Información general",
+		Prefix: "Prefijo",
+		Auto: "Auto",
+		Request: "Solicitud",
+		"Leave blank for next sequential.": "Déjelo en blanco para el siguiente consecutivo.",
+		"Short descriptive title": "Título descriptivo corto",
+		"Make response required": "Hacer respuesta obligatoria",
+		"Add assignee": "Agregar asignado",
+		"Add to distribution": "Agregar a distribución",
+		"Drawing Number": "Número de plano",
+		"Project Stage": "Etapa del proyecto",
+		"Sub Job": "Subtrabajo",
+		Amount: "Monto",
+		Days: "Días",
+		"Yes (Unknown)": "Sí (desconocido)",
+		TBD: "Por definir",
+		"N/A": "N/A",
+		"General information (background)": "Información general (contexto)",
+		"Context that helps interpret the question correctly": "Contexto para interpretar la pregunta",
+		"State the question clearly. Reference drawings / specs as needed.":
+			"Formule la pregunta con claridad. Cite planos o especificaciones.",
+		"Draft with AI (Beta)": "Borrador con IA (Beta)",
+		"Generates Subject + Question + Impact fields from a short prompt.":
+			"Genera asunto, pregunta e impacto a partir de un texto corto.",
+		"Drop files here or click to browse": "Suelte archivos aquí o haga clic para buscar",
+		"Attachments are uploaded after the RFI is saved.": "Los adjuntos se suben después de guardar la RFI.",
+		"Required to save as Open: Number, Subject, Assignees, Due Date, Question. As Standard you can save as Draft and send for review to your RFI Manager.":
+			"Para guardar como Abierta se requieren: Número, Asunto, Asignados, Fecha de vencimiento y Pregunta. En modo estándar puede guardarla como borrador y enviarla a revisión.",
+		"Draft RFI with AI": "Borrador de RFI con IA",
+		"Describe the field condition or ambiguity in your own words. AI will draft a Subject, Question, and Cost / Schedule Impact suggestion.":
+			"Describa la condición de campo o la duda. La IA redactará asunto, pregunta e impacto de costo o programa.",
+		"Generate draft": "Generar borrador",
+		"Select project…": "Seleccionar proyecto…",
+		"Select manager…": "Seleccionar gerente…",
+		"Select user…": "Seleccionar usuario…",
+		"Choose a project.": "Elija un proyecto.",
+		"Type / Status": "Tipo / Estado",
+		Address: "Dirección",
+		Owner: "Dueño",
+		Architect: "Arquitecto",
+		Contract: "Contrato",
+		Start: "Inicio",
+		"Create submittal": "Crear envío",
+		"+ Create submittal": "+ Crear envío",
+		"Log submittal": "Registrar envío",
+		"Submittal register": "Registro de envíos",
+		"Internal QC gate — no stamp, no buy / receive / install.":
+			"Control de calidad interno — sin sello, compra, recepción ni instalación.",
+		"Spec section": "Sección de especificación",
+		"Needed by": "Se necesita para",
+		"In review": "En revisión",
+		"Ball in court (name or email)": "Pendiente de (nombre o correo)",
+		"Reviewer email": "Correo del revisor",
+		"Responsible contractor": "Contratista responsable",
+		"Revision label": "Etiqueta de revisión",
+		"Review due": "Revisión para",
+		"Submit by": "Enviar antes de",
+		"Received date": "Fecha de recepción",
+		"Received from": "Recibido de",
+		"Shop Drawing": "Plano de taller",
+		"Product Information": "Información de producto",
+		"Product Manual": "Manual de producto",
+		Sample: "Muestra",
+		Document: "Documento",
+		Other: "Otro",
+		"Spec sections": "Secciones de especificación",
+		optional: "opcional",
+		"Title is enough to create. Check CSI sections only if you want line items.":
+			"Con el título basta para crear. Marque secciones CSI solo si quiere partidas.",
+		"Find CSI section…": "Buscar sección CSI…",
+		"No spec sections on this project yet. You can still create the submittal.":
+			"Aún no hay secciones de especificación en este proyecto. Aun así puede crear el envío.",
+		"Selected line items": "Partidas seleccionadas",
+		Spec: "Espec.",
+		Mfr: "Fab.",
+		Model: "Modelo",
+		"Product data submittals auto-link ASI / Bobrick technical data when manufacturer name matches.":
+			"Los envíos de datos de producto enlazan automáticamente fichas ASI / Bobrick si coincide el fabricante.",
+		"No submittals": "Sin envíos",
+		"No submittals.": "Sin envíos.",
+		"Create a package to start internal QC.": "Cree un paquete para iniciar el control de calidad.",
+		"Open RFI Log": "Abrir bitácora de RFIs",
+		"+ Create RFI": "+ Crear RFI",
+		"Subject, ball in court…": "Asunto, pendiente de…",
+		"Title, spec section, contractor…": "Título, sección, contratista…",
+		"Loading job information…": "Cargando datos del trabajo…",
+		"Open pricing workspace": "Abrir espacio de precios",
+		"Open full page": "Abrir página completa",
+		"+ Upload / add": "+ Subir / agregar",
+		Discipline: "Disciplina",
+		Set: "Juego",
+		"Sheet #, title, set, discipline…": "Hoja #, título, juego, disciplina…",
+		"All status": "Todos los estados",
+		"Not started": "No iniciado",
+		Ongoing: "En curso",
+		Completed: "Completado",
+		"Assigned contains": "Asignado contiene",
+		"Name, email, or crew": "Nombre, correo o cuadrilla",
+		Download: "Descargar",
+		"+ Add task": "+ Agregar tarea",
+		"+ Add window": "+ Agregar ventana",
+		"Area / scope": "Área / alcance",
+		End: "Fin",
+		Assigned: "Asignado",
+		"Crew (optional)": "Cuadrilla (opcional)",
+		"Purchase orders": "Órdenes de compra",
+		Subcontracts: "Subcontratos",
+		RFPs: "RFPs",
+		"Material orders": "Pedidos de material",
+		"New PO": "Nueva OC",
+		"+ New PO": "+ Nueva OC",
+		"+ New subcontract": "+ Nuevo subcontrato",
+		"New RFP draft": "Nuevo borrador de RFP",
+		"Full RFP workspace": "Espacio completo de RFP",
+		"Contract admin hub": "Centro de admin. de contrato",
+		Index: "Índice",
+		"Add lead": "Agregar prospecto",
+		"Sync BC": "Sincronizar BC",
+		"Reconnect BC": "Reconectar BC",
+		"Will Bid": "Va a cotizar",
+		"Will Not Bid": "No va a cotizar",
+		Undecided: "Indeciso",
+		"Trade invited": "Oficio invitado",
+		Dist: "Dist.",
+		"Bid due date": "Fecha de cotización",
+		"Lead (Building Connected)": "Prospecto (Building Connected)",
+		"Filter table (project #, lead, trade, company, city, state, bid due)":
+			"Filtrar tabla (#, prospecto, oficio, empresa, ciudad, estado, fecha)",
+		"Saved filters": "Filtros guardados",
+		"Save filter": "Guardar filtro",
+		"Filter name": "Nombre del filtro",
+		"Set as my default view": "Usar como mi vista predeterminada",
+		"No saved filters yet": "Aún no hay filtros guardados",
+		"No saved filters yet. Set criteria, then Save filter.":
+			"Aún no hay filtros guardados. Defina criterios y luego guarde el filtro.",
+		"Clear all": "Limpiar todo",
+		"Sort & Filter": "Ordenar y filtrar",
+		"Distance from office": "Distancia desde la oficina",
+		"Any distance": "Cualquier distancia",
+		"Within 25 miles": "Dentro de 25 millas",
+		"Within 50 miles": "Dentro de 50 millas",
+		"Within 100 miles": "Dentro de 100 millas",
+		"Within 150 miles": "Dentro de 150 millas",
+		"Within 250 miles": "Dentro de 250 millas",
+		"Custom miles…": "Millas personalizadas…",
+		"Work performed": "Trabajo realizado",
+		Companies: "Empresas",
+		Sector: "Sector",
+		Commercial: "Comercial",
+		Government: "Gobierno",
+		"Pipeline stage": "Etapa del embudo",
+		"New Lead": "Prospecto nuevo",
+		Invited: "Invitado",
+		Estimating: "Estimando",
+		Awarded: "Adjudicado",
+		Lost: "Perdido",
+		"Date filters": "Filtros de fecha",
+		"Expected start date": "Fecha de inicio prevista",
+		"View all date filters": "Ver todos los filtros de fecha",
+		"Last activity date": "Fecha de última actividad",
+		Value: "Valor",
+		"Owner / estimator": "Dueño / estimador",
+		"Save office": "Guardar oficina",
+		"job name, GC, city, bid #": "obra, GC, ciudad, # de cotización",
+		"Loading leads from API…": "Cargando prospectos desde la API…",
+		"No current Bid Board leads. The list matches Undecided parents/standalones that are assigned and still due.":
+			"No hay prospectos actuales en Bid Board. La lista muestra indecisos asignados que aún tienen fecha.",
+		"No rows match your filter. Clear the search box to see all loaded leads (or reload if the list is empty).":
+			"Ninguna fila coincide. Limpie la búsqueda para ver los prospectos cargados.",
+		"No criteria": "Sin criterios",
+		"Filter name is required": "Se requiere un nombre de filtro",
+		"Filter updated": "Filtro actualizado",
+		"Filter saved": "Filtro guardado",
+		Ceilings: "Cielos",
+		Trim: "Molduras",
+		Multi: "Múltiple",
+		"Rubber-stamp suspect": "Posible sello automático",
+		Rev: "Rev.",
+		"Project ID": "ID de proyecto",
 	};
 
 	function supported(code) {
@@ -133,12 +502,24 @@
 	}
 
 	function applyText(el, lang) {
-		// Never flatten wrappers: .auth-form p often contains <a href> links.
-		if (el.children && el.children.length) return;
-		var key = el.getAttribute("data-i18n") || remember(el, "", (el.textContent || "").trim());
+		var explicit = el.getAttribute("data-i18n");
+		// Never flatten unmarked wrappers: .auth-form p often contains <a href> links.
+		if (el.children && el.children.length && !explicit) return;
+		var key = explicit || remember(el, "", (el.textContent || "").trim());
 		if (!key) return;
 		remember(el, "", key);
-		el.textContent = tr(el.getAttribute("data-i18n-src") || key, lang);
+		var translated = tr(el.getAttribute("data-i18n-src") || key, lang);
+		if (el.children && el.children.length) {
+			for (var i = 0; i < el.childNodes.length; i++) {
+				var n = el.childNodes[i];
+				if (n.nodeType === 3 && n.textContent.trim()) {
+					n.textContent = n.textContent.replace(n.textContent.trim(), translated);
+					return;
+				}
+			}
+			return;
+		}
+		el.textContent = translated;
 	}
 
 	function applyPlaceholder(el, lang) {
@@ -160,46 +541,56 @@
 	}
 
 	function apply(lang) {
+		if (applying) return setLang(lang || getLang());
+		applying = true;
 		lang = setLang(lang || getLang());
-		document.querySelectorAll("[data-i18n]").forEach(function (el) {
-			applyText(el, lang);
-		});
-		document.querySelectorAll(".deznav .nav-text, .deznav .menu-title").forEach(function (el) {
-			applyText(el, lang);
-		});
-		document.querySelectorAll(".auth-form h3, .auth-form p, .auth-form label, .auth-form .btn, .auth-form .form-check-label, .auth-form a.btn-link, .auth-form span.small").forEach(function (el) {
-			if (el.children && el.children.length) return;
-			applyText(el, lang);
-		});
-		document.querySelectorAll("[data-i18n-placeholder], .header-search input[placeholder]").forEach(function (el) {
-			applyPlaceholder(el, lang);
-		});
-		document.querySelectorAll("[data-i18n-title], .usis-report-problem-btn[title]").forEach(function (el) {
-			applyTitle(el, lang);
-		});
-		document.querySelectorAll("[data-i18n-aria], .usis-report-problem-btn[aria-label]").forEach(function (el) {
-			applyAria(el, lang);
-		});
-		document.querySelectorAll(".header-profile-dropdown .dropdown-item span, #usis-report-problem-modal .modal-title, #usis-report-problem-modal .btn, #usis-report-problem-modal .form-label, #usis-report-problem-modal .text-muted, .notification_dropdown .text-muted, .notification_dropdown a.d-block").forEach(function (el) {
-			if (el.closest && el.closest("[data-i18n]")) return;
-			applyText(el, lang);
-		});
-		var switcher = document.getElementById("langSwitcher");
-		if (switcher && switcher.value !== lang) {
-			switcher.value = lang;
-			if (global.jQuery && global.jQuery.fn.selectpicker) {
-				global.jQuery(switcher).selectpicker("val", lang);
+		try {
+			document.querySelectorAll("[data-i18n]").forEach(function (el) {
+				applyText(el, lang);
+			});
+			document.querySelectorAll(".deznav .nav-text, .deznav .menu-title").forEach(function (el) {
+				applyText(el, lang);
+			});
+			document.querySelectorAll(".auth-form h3, .auth-form p, .auth-form label, .auth-form .btn, .auth-form .form-check-label, .auth-form a.btn-link, .auth-form span.small").forEach(function (el) {
+				if (el.children && el.children.length) return;
+				applyText(el, lang);
+			});
+			document.querySelectorAll("[data-i18n-placeholder], .header-search input[placeholder]").forEach(function (el) {
+				applyPlaceholder(el, lang);
+			});
+			document.querySelectorAll("[data-i18n-title], .usis-report-problem-btn[title]").forEach(function (el) {
+				applyTitle(el, lang);
+			});
+			document.querySelectorAll("[data-i18n-aria], .usis-report-problem-btn[aria-label]").forEach(function (el) {
+				applyAria(el, lang);
+			});
+			document.querySelectorAll(".header-profile-dropdown .dropdown-item span, #usis-report-problem-modal .modal-title, #usis-report-problem-modal .btn, #usis-report-problem-modal .form-label, #usis-report-problem-modal .text-muted, .notification_dropdown .text-muted, .notification_dropdown a.d-block").forEach(function (el) {
+				if (el.closest && el.closest("[data-i18n]")) return;
+				applyText(el, lang);
+			});
+			var switcher = document.getElementById("langSwitcher");
+			if (switcher && switcher.value !== lang) {
+				switcher.value = lang;
+				if (global.jQuery && global.jQuery.fn.selectpicker) {
+					global.jQuery(switcher).selectpicker("val", lang);
+				}
 			}
+			document.querySelectorAll("[data-usis-set-lang]").forEach(function (btn) {
+				var on = btn.getAttribute("data-usis-set-lang") === lang;
+				btn.classList.toggle("active", on);
+				btn.setAttribute("aria-pressed", on ? "true" : "false");
+				if (btn.classList.contains("btn")) {
+					btn.classList.toggle("btn-primary", on);
+					btn.classList.toggle("btn-outline-secondary", !on);
+				}
+			});
+		} finally {
+			applying = false;
 		}
-		document.querySelectorAll("[data-usis-set-lang]").forEach(function (btn) {
-			var on = btn.getAttribute("data-usis-set-lang") === lang;
-			btn.classList.toggle("active", on);
-			btn.setAttribute("aria-pressed", on ? "true" : "false");
-			if (btn.classList.contains("btn")) {
-				btn.classList.toggle("btn-primary", on);
-				btn.classList.toggle("btn-outline-secondary", !on);
-			}
-		});
+		try {
+			document.dispatchEvent(new CustomEvent("usis:languagechange", { detail: { lang: lang } }));
+		} catch (e) {}
+		return lang;
 	}
 
 	function profileMenuItem() {

@@ -5,6 +5,10 @@
 (function (global) {
 	"use strict";
 
+	function t(key) {
+		return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
+	}
+
 	var TABLE_KEY = "crm.leads";
 	var LS_KEY = "crm.leads.query";
 	var QUERY_KEYS = [
@@ -476,7 +480,7 @@
 					);
 				})
 				.join("") +
-			'<button type="button" class="btn btn-link btn-sm px-1" id="usis-leads-chips-clear">Clear all</button>';
+			'<button type="button" class="btn btn-link btn-sm px-1" id="usis-leads-chips-clear">' + t("Clear all") + "</button>";
 	}
 
 	function paintToolbar() {
@@ -714,12 +718,12 @@
 					(row.is_default ? ' <span class="badge text-bg-light border">Default</span>' : "") +
 					"</div>" +
 					'<div class="small text-muted">' +
-					esc(criteriaSummary(row.query_json) || "No criteria") +
+					esc(criteriaSummary(row.query_json) || t("No criteria")) +
 					"</div></div>" +
 					'<div class="d-flex align-items-center gap-1">' +
 					'<button type="button" class="btn btn-sm btn-outline-primary" data-saved-apply="' +
 					esc(row.id) +
-					'">Apply</button>' +
+					'">' + t("Apply") + "</button>" +
 					'<div class="dropdown">' +
 					'<button type="button" class="btn btn-sm btn-link" data-bs-toggle="dropdown" aria-label="Saved filter actions">⋯</button>' +
 					'<ul class="dropdown-menu dropdown-menu-end">' +
@@ -745,7 +749,7 @@
 		var menu = document.getElementById("usis-leads-saved-menu");
 		if (!menu) return;
 		if (!savedItems.length) {
-			menu.innerHTML = '<li><span class="dropdown-item-text text-muted">No saved filters yet</span></li>';
+			menu.innerHTML = '<li><span class="dropdown-item-text text-muted">' + t("No saved filters yet") + "</span></li>";
 			return;
 		}
 		menu.innerHTML = savedItems
@@ -796,7 +800,7 @@
 		var nameEl = document.getElementById("usis-leads-save-name");
 		var name = nameEl && nameEl.value ? nameEl.value.trim() : "";
 		if (!name) {
-			notify("warning", "Filter name is required");
+			notify("warning", t("Filter name is required"));
 			return;
 		}
 		var draft = queryHasCriteria(readDraft()) ? readDraft() : cloneQuery(applied);
@@ -814,7 +818,7 @@
 				hideSaveModal();
 				loadSaved().then(function () {
 					showTab("saved");
-					notify("success", overwrite ? "Filter updated" : "Filter saved");
+					notify("success", overwrite ? t("Filter updated") : t("Filter saved"));
 				});
 			})
 			.catch(function (err) {
@@ -992,7 +996,7 @@
 				body: { query_json: persistableQuery(draft) },
 			})
 			.then(function () {
-				notify("success", "Filter updated");
+				notify("success", t("Filter updated"));
 				return loadSaved();
 			})
 			.catch(function () {

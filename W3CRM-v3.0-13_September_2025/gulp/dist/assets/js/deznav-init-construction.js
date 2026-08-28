@@ -491,6 +491,7 @@ function getUrlParams(dParam){
 				i18n.translator.add(pack);
 			}
 			document.querySelectorAll('[data-i18n]').forEach(el => {
+				if (el.children && el.children.length) return;
 				const key = el.getAttribute('data-i18n');
 				if (typeof i18n !== 'undefined' && i18n) {
 					el.textContent = i18n(key);

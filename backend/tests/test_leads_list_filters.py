@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from app.extensions import db
 from app.models import Company, LeadEstimate, SavedListFilter, User
+from app.api._serializers import haversine_miles, location_coords
 
 
 def _future():
@@ -246,6 +247,136 @@ def test_saved_filters_crud_and_default(client, flask_app):
             if user:
                 db.session.delete(user)
         db.session.commit()
+
+
+def test_location_coords_and_haversine():
+    assert location_coords({"coords": {"lat": 38.5816, "lng": -121.4944}}) == (38.5816, -121.4944)
+    miles = haversine_miles((38.5816, -121.4944), (38.678, -121.176))
+    assert 15 < miles < 30
+
+
+def _office_self(flask_app, **kwargs):
+    with flask_app.app_context():
+        row = db.session.scalar(select(Company).where(Company.company_type == "self", Company.deleted_at.is_(None)))
+        created = False
+        if row is None:
+            row = Company(name="USIS Office Test", company_type="self", country="US")
+            db.session.add(row)
+            created = True
+        snapshot = {
+            "created": created,
+            "id": None,
+            "city": row.city,
+            "state": row.state,
+            "postal_code": row.postal_code,
+            "latitude": row.latitude,
+            "longitude": row.longitude,
+        }
+        for k, v in kwargs.items():
+            setattr(row, k, v)
+        db.session.commit()
+        snapshot["id"] = str(row.id)
+        return snapshot
+
+
+def _restore_office(flask_app, snapshot):
+    with flask_app.app_context():
+        row = db.session.get(Company, uuid.UUID(snapshot["id"]))
+        if row is None:
+            return
+        if snapshot["created"]:
+            db.session.delete(row)
+        else:
+            row.city = snapshot["city"]
+            row.state = snapshot["state"]
+            row.postal_code = snapshot["postal_code"]
+            row.latitude = snapshot["latitude"]
+            row.longitude = snapshot["longitude"]
+        db.session.commit()
+
+
+def test_lead_list_distance_from_office(client, flask_app):
+    snap = _office_self(
+        flask_app,
+        city="Sacramento",
+        state="CA",
+        postal_code="95814",
+        latitude=38.5816,
+        longitude=-121.4944,
+    )
+    with flask_app.app_context():
+        near = _open_lead(
+            name="Near office",
+            location={"city": "Folsom", "state": "CA", "coords": {"lat": 38.678, "lng": -121.176}},
+        )
+        far = _open_lead(
+            name="Far job",
+            location={"city": "Honolulu", "state": "HI", "coords": {"lat": 21.3074, "lng": -157.8613}},
+        )
+        no_geo = _open_lead(name="City only", location={"city": "Sacramento", "state": "CA"})
+        db.session.add_all([near, far, no_geo])
+        db.session.commit()
+        nid, fid, xid = str(near.id), str(far.id), str(no_geo.id)
+    try:
+        office = client.get("/api/v1/office-location")
+        assert office.status_code == 200
+        body = office.get_json()
+        assert body["configured"] is True
+        assert body["city"] == "Sacramento"
+
+        missing = client.get("/api/v1/lead-estimates?limit=200&submission_state=undecided&distance_miles=abc")
+        assert missing.status_code == 400
+
+        r = client.get("/api/v1/lead-estimates?limit=200&submission_state=undecided&distance_miles=50")
+        assert r.status_code == 200
+        payload = r.get_json()
+        ids = {x["id"] for x in payload["items"]}
+        assert nid in ids
+        assert fid not in ids
+        assert xid not in ids
+        near_row = next(x for x in payload["items"] if x["id"] == nid)
+        assert near_row["distance_miles"] is not None
+        assert near_row["distance_miles"] < 50
+        assert payload["office"]["latitude"] == 38.5816
+    finally:
+        with flask_app.app_context():
+            for eid in (nid, fid, xid):
+                row = db.session.get(LeadEstimate, uuid.UUID(eid))
+                if row:
+                    db.session.delete(row)
+            db.session.commit()
+        _restore_office(flask_app, snap)
+
+
+def test_lead_list_distance_requires_office(client, flask_app, monkeypatch):
+    snap = _office_self(flask_app, latitude=None, longitude=None, city=None, state=None, postal_code=None)
+    try:
+        r = client.get("/api/v1/lead-estimates?limit=200&submission_state=undecided&distance_miles=25")
+        assert r.status_code == 400
+        assert "office" in (r.get_json() or {}).get("error", "").lower()
+    finally:
+        _restore_office(flask_app, snap)
+
+
+def test_patch_office_location_uses_geocode(client, flask_app, monkeypatch):
+    monkeypatch.setattr(
+        "app.api._office_location.geocode_us_address",
+        lambda query: (33.1192, -117.0864),
+    )
+    snap = _office_self(flask_app, latitude=None, longitude=None, city=None, state=None, postal_code=None)
+    try:
+        r = client.patch(
+            "/api/v1/office-location",
+            json={"city": "Escondido", "state": "CA", "postal_code": "92025"},
+        )
+        assert r.status_code == 200, r.get_data(as_text=True)
+        body = r.get_json()
+        assert body["configured"] is True
+        assert body["city"] == "Escondido"
+        assert body["latitude"] == 33.1192
+        assert body["longitude"] == -117.0864
+    finally:
+        _restore_office(flask_app, snap)
 
 
 def test_saved_filters_reject_unknown_table(client, flask_app):

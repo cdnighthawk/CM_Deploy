@@ -8,6 +8,22 @@
 	var projectId = null;
 	var currentPayAppId = null;
 	var currentItemStatus = "draft";
+	var STATUS_LABELS = {
+		draft: "Draft",
+		submitted: "Submitted",
+		held: "Held",
+		certified: "Certified",
+		paid: "Paid",
+		rejected: "Rejected",
+	};
+	var STATUS_BADGE = {
+		draft: "bg-light text-dark border",
+		submitted: "bg-info-subtle text-info border",
+		held: "bg-warning-subtle text-warning-emphasis border",
+		certified: "bg-primary-subtle text-primary border",
+		paid: "bg-success-subtle text-success border",
+		rejected: "bg-danger-subtle text-danger border",
+	};
 
 	function fetchJson(method, path, body) {
 		var opts = { method: method || "GET" };
@@ -28,6 +44,35 @@
 		if (window.USISNotify && window.USISNotify.success) window.USISNotify.success(msg);
 	}
 
+	function setSovMissing(missing) {
+		var el = document.getElementById("usis-inv-sov-missing");
+		if (!el) return;
+		el.classList.toggle("d-none", !missing);
+	}
+
+	function showEditorSovTab() {
+		var btn = document.getElementById("usis-inv-subtab-sov");
+		if (!btn) return;
+		if (window.bootstrap && bootstrap.Tab) {
+			bootstrap.Tab.getOrCreateInstance(btn).show();
+			return;
+		}
+		btn.click();
+	}
+
+	function openPrimeSovEditor() {
+		var tab = document.getElementById("proj-tab-contract");
+		if (tab && window.bootstrap && bootstrap.Tab) {
+			bootstrap.Tab.getOrCreateInstance(tab).show();
+		} else if (tab) {
+			tab.click();
+		}
+		var modalEl = document.getElementById("usis-modal-prime-sov");
+		if (modalEl && window.bootstrap && bootstrap.Modal) {
+			bootstrap.Modal.getOrCreateInstance(modalEl).show();
+		}
+	}
+
 	function setRegisterErr(msg) {
 		var el = document.getElementById("usis-inv-register-error");
 		if (!el) return;
@@ -43,6 +88,38 @@
 	function moneyOrEmpty(v) {
 		if (v == null || v === "") return "";
 		return String(v);
+	}
+
+	function statusLabel(status) {
+		var key = String(status || "draft").toLowerCase();
+		return STATUS_LABELS[key] || status || "Draft";
+	}
+
+	function statusBadgeClass(status) {
+		var key = String(status || "draft").toLowerCase();
+		return STATUS_BADGE[key] || "bg-light text-dark border";
+	}
+
+	function isoToDateInput(iso) {
+		if (!iso) return "";
+		var s = String(iso);
+		return s.length >= 10 ? s.slice(0, 10) : "";
+	}
+
+	function todayIsoDate() {
+		var d = new Date();
+		var m = String(d.getMonth() + 1).padStart(2, "0");
+		var day = String(d.getDate()).padStart(2, "0");
+		return d.getFullYear() + "-" + m + "-" + day;
+	}
+
+	function applyEditorItem(item) {
+		if (!item) return;
+		currentItemStatus = item.status || "draft";
+		fillSummary(item);
+		setEditorInputsEnabled(currentItemStatus === "draft");
+		var title = document.getElementById("usis-inv-editor-title");
+		if (title) title.textContent = "Application #" + item.application_number + " (" + statusLabel(item.status) + ")";
 	}
 
 	function setTexturaSyncStatus(msg, isError) {
@@ -100,6 +177,8 @@
 			.then(function (data) {
 				var tb = document.getElementById("usis-inv-tbody-register");
 				if (!tb) return;
+				var prime = data.prime_sov || {};
+				setSovMissing(!(prime.line_count > 0));
 				var items = data.items || [];
 				tb.innerHTML = items
 					.map(function (row) {
@@ -110,10 +189,14 @@
 							row.application_number +
 							"</td><td>" +
 							escapeHtml(row.period_to || "—") +
-							"</td><td><span class=\"badge bg-light text-dark border\">" +
-							escapeHtml(row.status) +
+							"</td><td><span class=\"badge " +
+							statusBadgeClass(row.status) +
+							"\">" +
+							escapeHtml(statusLabel(row.status)) +
 							(row.textura_invoice_id ? " <span class=\"badge bg-info-subtle text-info border\" title=\"Synced from Textura\">Textura</span>" : "") +
-							"</span></td><td class=\"text-end font-monospace\">" +
+							"</span></td><td>" +
+							escapeHtml(isoToDateInput(row.paid_at) || "—") +
+							"</td><td class=\"text-end font-monospace\">" +
 							escapeHtml(row.current_payment_due || "—") +
 							"</td><td class=\"text-end font-monospace\">" +
 							escapeHtml(row.architect_certified_amount || "—") +
@@ -125,6 +208,7 @@
 					.join("");
 			})
 			.catch(function (err) {
+				setSovMissing(false);
 				setRegisterErr(err.message || String(err));
 			});
 	}
@@ -181,6 +265,21 @@
 		if (aa) aa.value = moneyOrEmpty(item.architect_certified_amount);
 		var at = document.getElementById("usis-inv-arch-at");
 		if (at) at.value = isoToDatetimeLocal(item.architect_certified_at);
+		var st = document.getElementById("usis-inv-status");
+		if (st) st.value = item.status || "draft";
+		var paid = document.getElementById("usis-inv-paid-on");
+		if (paid) paid.value = isoToDateInput(item.paid_at);
+		syncPaidOnEnabled();
+	}
+
+	function syncPaidOnEnabled() {
+		var st = document.getElementById("usis-inv-status");
+		var paid = document.getElementById("usis-inv-paid-on");
+		if (!paid) return;
+		var isPaid = st && st.value === "paid";
+		paid.disabled = !isPaid;
+		if (isPaid && !paid.value) paid.value = todayIsoDate();
+		if (!isPaid) paid.value = "";
 	}
 
 	function sovRowHtml(line) {
@@ -228,7 +327,7 @@
 		if (!tb) return;
 		if (!lines || !lines.length) {
 			tb.innerHTML =
-				"<tr><td colspan=\"11\" class=\"text-muted\">No lines yet — use <strong>+ Add line</strong> (draft only).</td></tr>";
+				"<tr><td colspan=\"11\" class=\"text-muted\">No schedule of values on this invoice. Add the prime SOV in Contract admin, or use <strong>+ Add line</strong> (draft only).</td></tr>";
 			return;
 		}
 		tb.innerHTML = lines.map(function (li) {
@@ -267,14 +366,11 @@
 			.then(function (data) {
 				var item = data.item;
 				var lines = data.lines || [];
-				currentItemStatus = item.status || "draft";
 				var ed = document.getElementById("usis-inv-editor");
 				if (ed) ed.classList.remove("d-none");
-				var title = document.getElementById("usis-inv-editor-title");
-				if (title) title.textContent = "Application #" + item.application_number + " (" + item.status + ")";
-				fillSummary(item);
+				applyEditorItem(item);
 				renderSovLines(lines);
-				setEditorInputsEnabled(currentItemStatus === "draft");
+				showEditorSovTab();
 			})
 			.catch(function (err) {
 				toastErr(err.message || String(err));
@@ -318,12 +414,8 @@
 		)
 			.then(function (data) {
 				toastOk("Saved.");
-				fillSummary(data.item);
+				applyEditorItem(data.item);
 				renderSovLines(data.lines || []);
-				currentItemStatus = data.item.status;
-				setEditorInputsEnabled(currentItemStatus === "draft");
-				var title = document.getElementById("usis-inv-editor-title");
-				if (title) title.textContent = "Application #" + data.item.application_number + " (" + data.item.status + ")";
 				loadRegister();
 			})
 			.catch(function (err) {
@@ -343,12 +435,39 @@
 		)
 			.then(function (data) {
 				toastOk("Marked submitted.");
-				currentItemStatus = data.item.status;
-				setEditorInputsEnabled(false);
-				var title = document.getElementById("usis-inv-editor-title");
-				if (title) title.textContent = "Application #" + data.item.application_number + " (" + data.item.status + ")";
-				fillSummary(data.item);
+				applyEditorItem(data.item);
 				renderSovLines(data.lines || []);
+				loadRegister();
+			})
+			.catch(function (err) {
+				toastErr(err.message || String(err));
+			});
+	}
+
+	function saveStatus() {
+		if (!projectId || !currentPayAppId) return;
+		var stEl = document.getElementById("usis-inv-status");
+		var paidEl = document.getElementById("usis-inv-paid-on");
+		var status = stEl ? stEl.value : "";
+		if (!status) return;
+		var body = { status: status };
+		if (status === "paid") {
+			body.paid_at = paidEl && paidEl.value ? paidEl.value : todayIsoDate();
+		} else {
+			body.paid_at = null;
+		}
+		return fetchJson(
+			"PATCH",
+			"/api/v1/projects/" +
+				encodeURIComponent(projectId) +
+				"/pay-applications/" +
+				encodeURIComponent(currentPayAppId),
+			body
+		)
+			.then(function (data) {
+				toastOk("Status updated.");
+				applyEditorItem(data.item);
+				if (data.lines) renderSovLines(data.lines);
 				loadRegister();
 			})
 			.catch(function (err) {
@@ -381,6 +500,8 @@
 		}
 		var ref = document.getElementById("usis-inv-refresh-register");
 		if (ref) ref.addEventListener("click", loadRegister);
+		var openSov = document.getElementById("usis-inv-open-prime-sov");
+		if (openSov) openSov.addEventListener("click", openPrimeSovEditor);
 		var nw = document.getElementById("usis-inv-new-app");
 		if (nw) nw.addEventListener("click", newApplication);
 		var cl = document.getElementById("usis-inv-close-editor");
@@ -391,6 +512,10 @@
 		if (sv) sv.addEventListener("click", saveDraft);
 		var sb = document.getElementById("usis-inv-submit-app");
 		if (sb) sb.addEventListener("click", submitApp);
+		var ss = document.getElementById("usis-inv-save-status");
+		if (ss) ss.addEventListener("click", saveStatus);
+		var stSel = document.getElementById("usis-inv-status");
+		if (stSel) stSel.addEventListener("change", syncPaidOnEnabled);
 		var add = document.getElementById("usis-inv-add-line");
 		if (add) {
 			add.addEventListener("click", function () {

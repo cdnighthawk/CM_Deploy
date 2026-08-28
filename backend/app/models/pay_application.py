@@ -19,8 +19,10 @@ if TYPE_CHECKING:
 pay_application_status_enum = ENUM(
     "draft",
     "submitted",
+    "held",
     "certified",
     "paid",
+    "rejected",
     name="pay_application_status",
     create_type=False,
 )
@@ -52,6 +54,7 @@ class PayApplication(UUIDPKMixin, TimestampMixin, db.Model):
 
     architect_certified_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     architect_certified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     textura_invoice_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
 

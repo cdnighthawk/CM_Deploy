@@ -10,11 +10,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import PayApplication, PayApplicationLine, Project
+from ..models import PayApplication, PayApplicationLine, PrimeContractSovLine, Project
 from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError, _parse_dt
 
-PAY_APP_STATUSES = frozenset({"draft", "submitted", "certified", "paid"})
+PAY_APP_STATUSES = frozenset({"draft", "submitted", "held", "certified", "paid", "rejected"})
+COUNTED_PAYMENT_STATUSES = frozenset({"submitted", "certified", "paid"})
 
 
 def _is_admin(cu: CurrentUser) -> bool:
@@ -102,6 +103,7 @@ def _serialize_header(pa: PayApplication, include_line_count: bool = False) -> d
         "balance_to_finish_including_retainage": _money_str(pa.balance_to_finish_including_retainage),
         "architect_certified_amount": _money_str(pa.architect_certified_amount),
         "architect_certified_at": _iso_dt(pa.architect_certified_at),
+        "paid_at": _iso_dt(pa.paid_at),
         "notes": pa.notes,
         "textura_invoice_id": pa.textura_invoice_id,
         "created_at": _iso_dt(pa.created_at),
@@ -116,7 +118,7 @@ def _prior_certified_payments_sum(project_id: uuid.UUID, before_application_numb
     stmt = select(func.coalesce(func.sum(PayApplication.current_payment_due), 0)).where(
         PayApplication.project_id == project_id,
         PayApplication.application_number < before_application_number,
-        PayApplication.status.in_(("submitted", "certified", "paid")),
+        PayApplication.status.in_(tuple(COUNTED_PAYMENT_STATUSES)),
     )
     val = db.session.scalar(stmt)
     if val is None:
@@ -183,6 +185,109 @@ def _load_pay_application(project_id: uuid.UUID, pay_id: uuid.UUID) -> PayApplic
     return db.session.scalars(stmt).first()
 
 
+def _line_match_key(phase_code: str | None, description: str | None) -> str:
+    return f"{(phase_code or '').strip().lower()}|{(description or '').strip().lower()}"
+
+
+def _completed_to_date(li: PayApplicationLine) -> Decimal:
+    return (
+        (li.work_from_previous or Decimal("0"))
+        + (li.work_this_period or Decimal("0"))
+        + (li.materials_stored or Decimal("0"))
+    ).quantize(Decimal("0.01"))
+
+
+def _prime_sov_rows(project_id: uuid.UUID) -> list[PrimeContractSovLine]:
+    return list(
+        db.session.scalars(
+            select(PrimeContractSovLine)
+            .where(PrimeContractSovLine.project_id == project_id)
+            .order_by(PrimeContractSovLine.sort_order, PrimeContractSovLine.id)
+        ).all()
+    )
+
+
+def _prime_sov_meta(project_id: uuid.UUID) -> dict[str, Any]:
+    rows = _prime_sov_rows(project_id)
+    total = Decimal("0")
+    for li in rows:
+        total += li.scheduled_value or Decimal("0")
+    return {
+        "line_count": len(rows),
+        "total_scheduled_value": _money_str(total.quantize(Decimal("0.01"))),
+    }
+
+
+def _prior_source_application(project_id: uuid.UUID, before_application_number: int) -> PayApplication | None:
+    stmt = (
+        select(PayApplication)
+        .where(
+            PayApplication.project_id == project_id,
+            PayApplication.application_number < before_application_number,
+            PayApplication.status != "rejected",
+        )
+        .options(selectinload(PayApplication.lines))
+        .order_by(PayApplication.application_number.desc())
+    )
+    rows = list(db.session.scalars(stmt).unique().all())
+    counted = [row for row in rows if row.status in COUNTED_PAYMENT_STATUSES and row.lines]
+    if counted:
+        return counted[0]
+    with_lines = [row for row in rows if row.lines]
+    return with_lines[0] if with_lines else None
+
+
+def _seed_lines_from_sov(
+    pa: PayApplication,
+    master_lines: list[PrimeContractSovLine],
+    prior: PayApplication | None,
+) -> None:
+    prior_by_key: dict[str, PayApplicationLine] = {}
+    if prior is not None:
+        for src in prior.lines:
+            prior_by_key[_line_match_key(src.phase_code, src.description)] = src
+
+    for idx, master in enumerate(master_lines):
+        prev = prior_by_key.get(_line_match_key(master.phase_code, master.description))
+        completed = _completed_to_date(prev) if prev is not None else Decimal("0")
+        db.session.add(
+            PayApplicationLine(
+                pay_application_id=pa.id,
+                parent_id=None,
+                sort_order=int(master.sort_order if master.sort_order is not None else idx),
+                phase_code=master.phase_code,
+                description=master.description or f"Line {idx + 1}",
+                scheduled_value=master.scheduled_value or Decimal("0"),
+                net_change_co=prev.net_change_co if prev is not None else Decimal("0"),
+                work_from_previous=completed,
+                work_this_period=Decimal("0"),
+                materials_stored=Decimal("0"),
+                retention_to_date=prev.retention_to_date if prev is not None else Decimal("0"),
+            )
+        )
+    db.session.flush()
+
+
+def _seed_lines_from_prior(pa: PayApplication, prior: PayApplication) -> None:
+    for idx, src in enumerate(sorted(prior.lines, key=lambda row: (row.sort_order, str(row.id)))):
+        db.session.add(
+            PayApplicationLine(
+                pay_application_id=pa.id,
+                parent_id=None,
+                sort_order=int(src.sort_order if src.sort_order is not None else idx),
+                phase_code=src.phase_code,
+                description=src.description or f"Line {idx + 1}",
+                scheduled_value=src.scheduled_value or Decimal("0"),
+                net_change_co=src.net_change_co or Decimal("0"),
+                work_from_previous=_completed_to_date(src),
+                work_this_period=Decimal("0"),
+                materials_stored=Decimal("0"),
+                retention_to_date=src.retention_to_date or Decimal("0"),
+            )
+        )
+    db.session.flush()
+
+
 def list_pay_applications(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     if not _can_view(cu):
         raise ApiError("forbidden", 403)
@@ -194,7 +299,7 @@ def list_pay_applications(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, A
     )
     rows = db.session.scalars(stmt).unique().all()
     items = [_serialize_header(pa, include_line_count=True) for pa in rows]
-    return {"items": items, "entity": "pay_applications"}
+    return {"items": items, "prime_sov": _prime_sov_meta(project_id), "entity": "pay_applications"}
 
 
 def get_pay_application_detail(project_id: uuid.UUID, pay_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
@@ -207,6 +312,7 @@ def get_pay_application_detail(project_id: uuid.UUID, pay_id: uuid.UUID, cu: Cur
     return {
         "item": _serialize_header(pa),
         "lines": [_serialize_line(li) for li in lines],
+        "prime_sov": _prime_sov_meta(project_id),
         "entity": "pay_application",
     }
 
@@ -245,6 +351,23 @@ def create_pay_application(project_id: uuid.UUID, cu: CurrentUser, data: Mapping
 
     if isinstance(data.get("lines"), list):
         _replace_lines(pa, data["lines"], cu)
+    else:
+        master_lines = _prime_sov_rows(project_id)
+        prior = _prior_source_application(project_id, pa.application_number)
+        if master_lines:
+            _seed_lines_from_sov(pa, master_lines, prior)
+        elif prior is not None:
+            _seed_lines_from_prior(pa, prior)
+        if pa.original_contract_sum is None:
+            seeded = list(
+                db.session.scalars(
+                    select(PayApplicationLine).where(PayApplicationLine.pay_application_id == pa.id)
+                ).all()
+            )
+            if seeded:
+                pa.original_contract_sum = sum(
+                    (li.scheduled_value or Decimal("0") for li in seeded), Decimal("0")
+                ).quantize(Decimal("0.01"))
 
     _recalculate_application(pa)
     db.session.commit()
@@ -297,10 +420,10 @@ def patch_pay_application(
 
     orig_status = pa.status
     if orig_status != "draft":
-        allowed = {"status", "architect_certified_amount", "architect_certified_at"}
+        allowed = {"status", "architect_certified_amount", "architect_certified_at", "paid_at"}
         bad = [k for k in data if k not in allowed]
         if bad:
-            raise ApiError("only status and architect certificate fields can change after submit", 400)
+            raise ApiError("only status, paid date, and architect certificate fields can change after submit", 400)
 
     if "status" in data and data["status"] is not None:
         st = str(data["status"]).strip().lower()
@@ -337,6 +460,20 @@ def patch_pay_application(
             pa.architect_certified_at = None
         else:
             pa.architect_certified_at = _parse_dt(at)
+
+    if "paid_at" in data:
+        paid_raw = data.get("paid_at")
+        if paid_raw is None or paid_raw == "":
+            pa.paid_at = None
+        else:
+            parsed = _parse_dt(paid_raw)
+            if parsed is None:
+                raise ApiError("invalid paid_at", 400)
+            pa.paid_at = parsed
+    if pa.status == "paid" and pa.paid_at is None:
+        pa.paid_at = datetime.now(tz=timezone.utc)
+    if pa.status != "paid" and "paid_at" not in data:
+        pa.paid_at = None
 
     _recalculate_application(pa)
     pa.updated_at = datetime.now(tz=timezone.utc)

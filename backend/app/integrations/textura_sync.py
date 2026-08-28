@@ -255,6 +255,11 @@ def _upsert_invoice_group(
         pa.architect_certified_at = _parse_textura_datetime(header.get("ApprovalDate"))
     if pa.current_payment_due is not None:
         pa.architect_certified_amount = pa.current_payment_due
+    paid_raw = header.get("PaymentDate") or header.get("PaidDate") or header.get("CheckDate")
+    if pa.status == "paid":
+        pa.paid_at = _parse_textura_datetime(paid_raw) or datetime.now(tz=timezone.utc)
+    else:
+        pa.paid_at = None
 
     for li in list(pa.lines):
         session.delete(li)
@@ -305,6 +310,10 @@ def _map_invoice_status(raw: Any) -> str:
         return "certified"
     if s in ("paid", "2"):
         return "paid"
+    if s in ("held", "hold", "on hold", "3"):
+        return "held"
+    if s in ("rejected", "unapproved", "declined", "void", "4"):
+        return "rejected"
     if s in ("submitted", "pending"):
         return "submitted"
     return "draft"

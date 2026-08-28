@@ -17,7 +17,12 @@ def _headers(user_id: str) -> dict[str, str]:
 
 def test_vendor_invoice_full_workflow(client, flask_app):
     with flask_app.app_context():
-        project = Project(name=f"ApJob-{uuid.uuid4().hex[:8]}", number="24-018", status="active", project_type="commercial")
+        project = Project(
+            name=f"ApJob-{uuid.uuid4().hex[:8]}",
+            number=f"AP-{uuid.uuid4().hex[:8]}",
+            status="active",
+            project_type="commercial",
+        )
         vendor = Company(name=f"ApVendor-{uuid.uuid4().hex[:6]}", company_type="vendor")
         accountant = User(
             email=f"ap_acct_{uuid.uuid4().hex[:8]}@usis.local",
@@ -74,6 +79,8 @@ def test_vendor_invoice_full_workflow(client, flask_app):
     r_sub = client.post(f"/api/v1/ap/invoices/{invoice_id}/submit", headers=h)
     assert r_sub.status_code == 200
     assert r_sub.get_json()["item"]["status"] == "pending_approval"
+    assert r_sub.get_json()["item"]["can_approve"] is True
+    assert r_sub.get_json()["item"]["can_reject"] is True
 
     r_queue = client.get("/api/v1/ap/invoices/approvals", headers=h)
     assert r_queue.status_code == 200

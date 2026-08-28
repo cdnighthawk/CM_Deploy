@@ -376,6 +376,12 @@
 							<span class="nav-text">Invoices</span>
 						</a>
 					</li>
+					<li data-usis-module="ap">
+						<a href="usis-invoice-approvals.html" aria-expanded="false">
+							<i class="icon feather icon-check-circle"></i>
+							<span class="nav-text">Invoice approvals</span>
+						</a>
+					</li>
 					<li data-usis-module="reports">
 						<a href="reports.html" aria-expanded="false">
 							<i class="icon feather icon-pie-chart"></i>
@@ -423,7 +429,12 @@
 				</div>
 				<div class="alert alert-danger d-none" id="usis-apd-err"></div>
 				<div class="alert alert-warning d-none" id="usis-apd-reject-note"></div>
-				<p class="small text-muted" id="usis-apd-hint"></p>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap gap-2 small mb-1" id="usis-apd-steps"></div>
+						<p class="small text-muted mb-0" id="usis-apd-hint"></p>
+					</div>
+				</div>
 
 				<div class="row">
 					<div class="col-lg-8">

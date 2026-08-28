@@ -50,13 +50,38 @@
 	function setHint(item) {
 		var el = document.getElementById("usis-apd-hint");
 		if (!el) return;
-		if (item.status === "received") el.textContent = "Assign this invoice to a job, then submit it for payment approval.";
-		else if (item.status === "routed") el.textContent = "Routed to a job. Review the amount and submit for payment approval.";
-		else if (item.status === "pending_approval") el.textContent = "Waiting for payment approval.";
+		if (item.status === "received") el.textContent = "Assign this invoice to a job, enter the amount, then click Submit for approval.";
+		else if (item.status === "routed") el.textContent = "Routed to a job. Review the amount and click Submit for approval.";
+		else if (item.status === "pending_approval") el.textContent = "Waiting for a project manager or accountant to approve payment.";
 		else if (item.status === "approved") el.textContent = "Approved for payment. Accounting can mark it paid.";
-		else if (item.status === "rejected") el.textContent = "Rejected — update the invoice and resubmit.";
+		else if (item.status === "rejected") el.textContent = "Rejected — update the invoice and submit it again.";
 		else if (item.status === "paid") el.textContent = "Paid" + (item.payment_ref ? " · " + item.payment_ref : "") + ".";
 		else el.textContent = "";
+	}
+
+	function setSteps(item) {
+		var wrap = document.getElementById("usis-apd-steps");
+		if (!wrap) return;
+		var order = ["received", "routed", "pending_approval", "approved", "paid"];
+		var labels = {
+			received: "Received",
+			routed: "Routed to job",
+			pending_approval: "Pending approval",
+			approved: "Approved",
+			paid: "Paid",
+		};
+		var current = item.status === "rejected" ? "pending_approval" : item.status;
+		var idx = order.indexOf(current);
+		wrap.innerHTML = order
+			.map(function (step, i) {
+				var cls = "badge ";
+				if (item.status === "rejected" && step === "pending_approval") cls += "bg-danger";
+				else if (i < idx) cls += "bg-success";
+				else if (i === idx) cls += step === "pending_approval" ? "bg-warning text-dark" : "bg-primary";
+				else cls += "bg-light text-muted border";
+				return '<span class="' + cls + '">' + X.esc(labels[step]) + "</span>";
+			})
+			.join('<span class="text-muted">→</span>');
 	}
 
 	function renderFiles(item) {
@@ -113,10 +138,10 @@
 		var reject = document.getElementById("usis-apd-reject");
 		var paid = document.getElementById("usis-apd-paid");
 		var voidBtn = document.getElementById("usis-apd-void");
-		if (submit) submit.classList.toggle("d-none", !(item.status === "received" || item.status === "routed" || item.status === "rejected"));
-		if (approve) approve.classList.toggle("d-none", item.status !== "pending_approval");
-		if (reject) reject.classList.toggle("d-none", item.status !== "pending_approval");
-		if (paid) paid.classList.toggle("d-none", item.status !== "approved");
+		if (submit) submit.classList.toggle("d-none", !item.can_submit);
+		if (approve) approve.classList.toggle("d-none", !item.can_approve);
+		if (reject) reject.classList.toggle("d-none", !item.can_reject);
+		if (paid) paid.classList.toggle("d-none", !item.can_mark_paid);
 		if (voidBtn) voidBtn.classList.toggle("d-none", item.status === "paid" || item.status === "void");
 	}
 
@@ -136,6 +161,7 @@
 		var preview = document.getElementById("usis-apd-preview");
 		if (preview) preview.textContent = item.body_preview || "—";
 		setHint(item);
+		setSteps(item);
 		setActions(item);
 		renderFiles(item);
 		renderEvents(item);

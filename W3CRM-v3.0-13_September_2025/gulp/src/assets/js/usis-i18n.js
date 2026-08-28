@@ -27,6 +27,7 @@
 		"User admin": "Admin. de usuarios",
 		Procurement: "Compras",
 		Invoices: "Facturas",
+		"Invoice approvals": "Aprobación de facturas",
 		Reports: "Reportes",
 		Search: "Buscar",
 		"Report a problem": "Reportar un problema",

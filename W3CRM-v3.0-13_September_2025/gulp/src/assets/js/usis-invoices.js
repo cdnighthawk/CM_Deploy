@@ -28,6 +28,16 @@
 			.catch(function () {});
 	}
 
+	function refreshPendingCount() {
+		X.apiFetch("/api/v1/ap/invoices/approvals")
+			.then(function (data) {
+				var n = (data.items || []).length;
+				var el = document.getElementById("usis-ap-pending-count");
+				if (el) el.textContent = String(n);
+			})
+			.catch(function () {});
+	}
+
 	function loadList() {
 		setStatus("Loading…");
 		var status = currentFilter();
@@ -45,6 +55,16 @@
 						.map(function (row) {
 							var vendor = row.vendor_name || row.from_name || row.from_email || "—";
 							var job = row.project_number || row.project_name || "Unassigned";
+							var actions =
+								'<a class="btn btn-sm btn-outline-primary py-0" href="usis-invoice-detail.html?id=' +
+								encodeURIComponent(row.id) +
+								'">Open</a>';
+							if (row.can_approve) {
+								actions +=
+									' <button type="button" class="btn btn-sm btn-success py-0 usis-ap-approve" data-invoice-id="' +
+									X.esc(row.id) +
+									'">Approve</button>';
+							}
 							return (
 								"<tr><td>" +
 								X.statusBadge(row.status) +
@@ -58,14 +78,34 @@
 								X.fmtMoney(row.amount, row.currency) +
 								"</td><td>" +
 								X.esc((row.received_at || row.created_at || "").slice(0, 10) || "—") +
-								'</td><td class="text-end"><a class="btn btn-sm btn-outline-primary py-0" href="usis-invoice-detail.html?id=' +
-								encodeURIComponent(row.id) +
-								'">Open</a></td></tr>'
+								'</td><td class="text-end">' +
+								actions +
+								"</td></tr>"
 							);
 						})
 						.join("");
+					tb.querySelectorAll(".usis-ap-approve").forEach(function (btn) {
+						btn.addEventListener("click", function () {
+							var id = btn.getAttribute("data-invoice-id");
+							if (!id) return;
+							btn.disabled = true;
+							X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(id) + "/approve", {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: "{}",
+							})
+								.then(function () {
+									loadList();
+								})
+								.catch(function (err) {
+									btn.disabled = false;
+									setStatus(err.message || String(err), true);
+								});
+						});
+					});
 				}
 				setStatus(items.length + " invoice(s).");
+				refreshPendingCount();
 			})
 			.catch(function (err) {
 				setStatus(err.message || String(err), true);

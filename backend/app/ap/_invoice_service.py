@@ -134,12 +134,13 @@ def _serialize_file(row: VendorInvoiceFile) -> dict[str, Any]:
     }
 
 
-def serialize_invoice(invoice: VendorInvoice, *, include_events: bool = False) -> dict[str, Any]:
+def serialize_invoice(invoice: VendorInvoice, cu: CurrentUser, *, include_events: bool = False) -> dict[str, Any]:
     vendor = db.session.get(Company, invoice.vendor_company_id) if invoice.vendor_company_id else None
     project = db.session.get(Project, invoice.project_id) if invoice.project_id else None
     commitment = db.session.get(Commitment, invoice.commitment_id) if invoice.commitment_id else None
     approver = db.session.get(User, invoice.approver_user_id) if invoice.approver_user_id else None
     files = list(invoice.files) if invoice.files is not None else []
+    can_approve = invoice.status == STATUS_PENDING and _can_approve(cu, invoice)
     out: dict[str, Any] = {
         "id": str(invoice.id),
         "status": invoice.status,
@@ -175,6 +176,10 @@ def serialize_invoice(invoice: VendorInvoice, *, include_events: bool = False) -
         "payment_ref": invoice.payment_ref,
         "files": [_serialize_file(f) for f in files],
         "created_at": invoice.created_at.isoformat() if invoice.created_at else None,
+        "can_submit": _can_write(cu) and invoice.status in EDITABLE_STATUSES,
+        "can_approve": can_approve,
+        "can_reject": can_approve,
+        "can_mark_paid": invoice.status == STATUS_APPROVED and _can_mark_paid(cu),
     }
     if include_events:
         events = sorted(invoice.events or [], key=lambda e: e.created_at or utc_now())
@@ -214,7 +219,7 @@ def list_invoices(cu: CurrentUser, *, status: str | None = None, project_id: uui
     if project_id is not None:
         stmt = stmt.where(VendorInvoice.project_id == project_id)
     rows = db.session.scalars(stmt.limit(300)).all()
-    return [serialize_invoice(r) for r in rows if _can_view(cu, r)]
+    return [serialize_invoice(r, cu) for r in rows if _can_view(cu, r)]
 
 
 def list_approvals(cu: CurrentUser) -> list[dict[str, Any]]:
@@ -231,7 +236,7 @@ def get_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
     invoice = _load(invoice_id)
     if invoice is None or not _can_view(cu, invoice):
         raise InvoiceError("invoice not found", 404)
-    return serialize_invoice(invoice, include_events=True)
+    return serialize_invoice(invoice, cu, include_events=True)
 
 
 def _apply_fields(invoice: VendorInvoice, data: dict[str, Any], cu: CurrentUser) -> dict[str, Any]:
@@ -317,7 +322,7 @@ def create_invoice(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
     db.session.flush()
     record_event(invoice, cu.id, "created", {"source": "manual"})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def update_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]:
@@ -331,7 +336,7 @@ def update_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any])
     changed = _apply_fields(invoice, data or {}, cu)
     record_event(invoice, cu.id, "updated", changed)
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def submit_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
@@ -354,7 +359,7 @@ def submit_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
     invoice.rejection_reason = None
     record_event(invoice, cu.id, "submitted", {"project_id": str(invoice.project_id)})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def approve_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
@@ -371,7 +376,7 @@ def approve_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
     invoice.rejection_reason = None
     record_event(invoice, cu.id, "approved", {})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def reject_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]:
@@ -391,7 +396,7 @@ def reject_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any])
     invoice.rejection_reason = reason[:2000]
     record_event(invoice, cu.id, "rejected", {"reason": invoice.rejection_reason})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def mark_paid(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]:
@@ -408,7 +413,7 @@ def mark_paid(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -> d
     invoice.payment_ref = (str((data or {}).get("payment_ref") or "").strip() or None)
     record_event(invoice, cu.id, "paid", {"payment_ref": invoice.payment_ref})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def void_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]:
@@ -424,7 +429,7 @@ def void_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -
     invoice.notes = "\n".join(p for p in (invoice.notes, f"Voided: {reason}" if reason else "Voided") if p)
     record_event(invoice, cu.id, "voided", {"reason": reason or None})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def sync_mailbox(cu: CurrentUser) -> dict[str, Any]:
@@ -478,7 +483,7 @@ def upload_file(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
     )
     record_event(invoice, cu.id, "file_added", {"filename": raw_name})
     db.session.commit()
-    return serialize_invoice(_load(invoice.id) or invoice, include_events=True)
+    return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
 def send_file(cu: CurrentUser, invoice_id: uuid.UUID, file_id: uuid.UUID):

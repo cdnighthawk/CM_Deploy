@@ -98,8 +98,9 @@
 		});
 	}
 
-	function load() {
-		document.getElementById("usis-issue-count").textContent = "Loading…";
+	function load(opts) {
+		var silent = opts && opts.silent;
+		if (!silent) document.getElementById("usis-issue-count").textContent = "Loading…";
 		return fetchJson("/api/v1/issues?" + queryString())
 			.then(function (data) {
 				state.items = data.items || [];
@@ -109,8 +110,10 @@
 				render();
 			})
 			.catch(function (err) {
-				document.getElementById("usis-issue-count").textContent = "Could not load issues";
-				notify("error", err.message);
+				if (!silent) {
+					document.getElementById("usis-issue-count").textContent = "Could not load issues";
+					notify("error", err.message);
+				}
 			});
 	}
 
@@ -167,22 +170,6 @@
 			btn.addEventListener("click", function () {
 				openIssue(btn.getAttribute("data-id"));
 			});
-			var startX = 0;
-			btn.addEventListener("touchstart", function (ev) {
-				startX = ev.changedTouches[0] ? ev.changedTouches[0].clientX : 0;
-			});
-			btn.addEventListener("touchend", function (ev) {
-				var endX = ev.changedTouches[0] ? ev.changedTouches[0].clientX : 0;
-				var delta = endX - startX;
-				if (Math.abs(delta) < 70) return;
-				var issue = state.items.find(function (item) {
-					return item.id === btn.getAttribute("data-id");
-				});
-				if (!issue) return;
-				var idx = STATUSES.indexOf(issue.status);
-				var next = STATUSES[idx + (delta < 0 ? 1 : -1)];
-				if (next) changeStatus(issue.id, next);
-			});
 		});
 	}
 
@@ -235,26 +222,6 @@
 		}
 	}
 
-	function changeStatus(id, status) {
-		return fetchJson("/api/v1/issues/" + encodeURIComponent(id) + "/status", {
-			method: "PATCH",
-			body: { status: status },
-		})
-			.then(function (data) {
-				notify("success", "Moved to " + status);
-				if (data.issue) {
-					state.items = state.items.map(function (item) {
-						return item.id === data.issue.id ? data.issue : item;
-					});
-				}
-				render();
-				if (state.selected && state.selected.id === id) openIssue(id);
-			})
-			.catch(function (err) {
-				notify("error", err.message);
-			});
-	}
-
 	function openIssue(id) {
 		fetchJson("/api/v1/issues/" + encodeURIComponent(id))
 			.then(function (data) {
@@ -283,18 +250,9 @@
 					'</span><span class="badge text-bg-light">' +
 					esc(sourceLabel(issue.source_type)) +
 					"</span></div>" +
-					'<label class="form-label small">Change status</label>' +
-					'<select class="form-select form-select-sm mb-3" id="usis-issue-status-change">' +
-					STATUSES.map(function (status) {
-						return (
-							'<option' +
-							(status === issue.status ? " selected" : "") +
-							">" +
-							esc(status) +
-							"</option>"
-						);
-					}).join("") +
-					"</select>" +
+					'<div class="mb-3"><span class="badge text-bg-primary">' +
+					esc(issue.status) +
+					"</span></div>" +
 					'<div class="d-flex flex-wrap gap-2 mb-3">' +
 					'<button type="button" class="btn btn-sm btn-primary" id="usis-issue-create-co">Create Change Order</button>' +
 					'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-issue-create-rfi">Create RFI</button>' +
@@ -323,9 +281,6 @@
 				} else {
 					canvas.classList.add("show");
 				}
-				document.getElementById("usis-issue-status-change").addEventListener("change", function (ev) {
-					changeStatus(issue.id, ev.target.value);
-				});
 				document.getElementById("usis-issue-create-rfi").addEventListener("click", function () {
 					fetchJson("/api/v1/issues/" + encodeURIComponent(issue.id) + "/create-rfi", { method: "POST" })
 						.then(function (result) {
@@ -421,5 +376,9 @@
 			if (window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modal).show();
 		}
 		loadProjects().finally(load);
+		setInterval(function () {
+			if (document.hidden) return;
+			load({ silent: true });
+		}, 12000);
 	});
 })();

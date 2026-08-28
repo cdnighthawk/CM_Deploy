@@ -135,8 +135,12 @@ def upsert_github_issue(item: dict[str, Any]) -> str:
         existing.title = title
         existing.description = description
         existing.severity = _severity(item)
-        existing.status = status
-        existing.resolved_at = resolved_at
+        if status == "Closed":
+            existing.status = "Closed"
+            existing.resolved_at = resolved_at or existing.resolved_at
+        elif existing.status == "Closed":
+            existing.status = "In Progress"
+            existing.resolved_at = None
         existing.project_id = _project_id_from_item(item) or existing.project_id
         existing.sheet_number = _sheet_number(item) or existing.sheet_number
         existing.linked_change_order_id = f"github:{number}"

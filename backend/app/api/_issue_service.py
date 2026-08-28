@@ -16,6 +16,7 @@ STATUSES = ("New", "Triaged", "In Progress", "Pending Review", "Resolved", "Clos
 SEVERITIES = ("Critical", "Major", "Minor")
 SOURCES = ("ai_review", "rfi", "punch", "field", "safety", "manual", "feedback")
 OPEN_STATUSES = ("New", "Triaged", "In Progress", "Pending Review")
+STATUS_RANK = {name: idx for idx, name in enumerate(STATUSES)}
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -253,6 +254,17 @@ def sync_sources(project_id: uuid.UUID | None = None) -> None:
     for rfi in rfis:
         upsert_from_rfi(rfi)
     db.session.flush()
+    try:
+        from flask import current_app, has_app_context
+
+        if has_app_context():
+            from ..services.feedback import refresh_tracker_from_github
+
+            refresh_tracker_from_github(current_app.config)
+    except Exception:
+        from flask import current_app
+
+        current_app.logger.exception("GitHub issue board sync failed")
 
 
 def list_issues(filters: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
@@ -395,8 +407,19 @@ def attach_github_issue(issue_id: uuid.UUID, number: int, html_url: str = "") ->
     row = db.session.get(Issue, issue_id)
     if row is None:
         return
+    source_id = github_source_id(int(number))
+    duplicate = db.session.scalar(
+        select(Issue).where(
+            Issue.source_type == "feedback",
+            Issue.source_id == source_id,
+            Issue.id != row.id,
+        )
+    )
+    if duplicate is not None:
+        db.session.delete(duplicate)
+        db.session.flush()
     row.linked_change_order_id = f"github:{int(number)}"
-    row.source_id = github_source_id(int(number))
+    row.source_id = source_id
     url = html_url.strip() or f"https://github.com/cdnighthawk/CM_Deploy/issues/{int(number)}"
     extra = f"GitHub: {url}"
     desc = row.description or ""
@@ -405,19 +428,96 @@ def attach_github_issue(issue_id: uuid.UUID, number: int, html_url: str = "") ->
     db.session.commit()
 
 
-def update_status(issue_id: uuid.UUID, status: str, cu: CurrentUser) -> dict[str, Any]:
-    if status not in STATUSES:
-        raise ValueError("Choose a valid status.")
-    row = db.session.get(Issue, issue_id)
-    if row is None:
-        raise KeyError("Issue not found.")
+def find_feedback_by_github_number(number: int) -> Issue | None:
+    from ..services.github_issue_import import github_source_id
+
+    source_id = github_source_id(int(number))
+    row = db.session.scalar(
+        select(Issue).where(Issue.source_type == "feedback", Issue.source_id == source_id)
+    )
+    if row is not None:
+        return row
+    return db.session.scalar(
+        select(Issue).where(Issue.linked_change_order_id == f"github:{int(number)}")
+    )
+
+
+def workflow_allows(current: str, target: str) -> bool:
+    """Keep a later board status when a noisier GitHub event arrives."""
+    if current == target:
+        return False
+    if target == "New":
+        return current not in STATUSES
+    if current == "Closed":
+        return target == "In Progress"
+    if target == "Closed":
+        return True
+    if target == "Pending Review":
+        return True
+    if target == "In Progress":
+        return True
+    if target == "Resolved":
+        return True
+    if target == "Triaged":
+        return current == "New"
+    return STATUS_RANK.get(target, 0) >= STATUS_RANK.get(current, 0)
+
+
+def _apply_status(row: Issue, status: str, cu: CurrentUser | None, detail: str, extra: dict | None = None) -> None:
     previous = row.status
     row.status = status
     if status in ("Resolved", "Closed"):
         row.resolved_at = row.resolved_at or datetime.now(timezone.utc)
     else:
         row.resolved_at = None
-    _add_event(row, cu, "status", f"{previous} → {status}", {"from": previous, "to": status})
+    payload = {"from": previous, "to": status}
+    if extra:
+        payload.update(extra)
+    _add_event(row, cu, "status", detail or f"{previous} → {status}", payload)
+
+
+def apply_github_workflow(
+    number: int,
+    status: str,
+    *,
+    detail: str = "",
+    github_item: Mapping[str, Any] | None = None,
+    cu: CurrentUser | None = None,
+) -> dict[str, Any] | None:
+    """Move the matching website-report card, creating it if GitHub is first."""
+    if status not in STATUSES:
+        raise ValueError("Choose a valid status.")
+    row = find_feedback_by_github_number(int(number))
+    if row is None and github_item:
+        from ..services.github_issue_import import upsert_github_issue
+
+        upsert_github_issue(dict(github_item))
+        db.session.flush()
+        row = find_feedback_by_github_number(int(number))
+    if row is None:
+        return None
+    if not workflow_allows(row.status, status):
+        return serialize_issue(row)
+    _apply_status(
+        row,
+        status,
+        cu,
+        detail or f"{row.status} → {status}",
+        {"source": "github", "github_number": int(number)},
+    )
+    db.session.commit()
+    return serialize_issue(row, include_events=True)
+
+
+def update_status(issue_id: uuid.UUID, status: str, cu: CurrentUser) -> dict[str, Any]:
+    if status not in STATUSES:
+        raise ValueError("Choose a valid status.")
+    row = db.session.get(Issue, issue_id)
+    if row is None:
+        raise KeyError("Issue not found.")
+    if row.status == status:
+        return serialize_issue(row, include_events=True)
+    _apply_status(row, status, cu, f"{row.status} → {status}")
     db.session.commit()
     return serialize_issue(row, include_events=True)
 
@@ -428,6 +528,8 @@ def assign_issue(issue_id: uuid.UUID, assignee_id: uuid.UUID | None, cu: Current
         raise KeyError("Issue not found.")
     row.assignee_id = assignee_id
     _add_event(row, cu, "assign", "Assignee updated" if assignee_id else "Assignee cleared", {"assignee_id": str(assignee_id) if assignee_id else None})
+    if assignee_id and row.status in ("New", "Triaged"):
+        _apply_status(row, "In Progress", cu, f"{row.status} → In Progress", {"source": "assign"})
     db.session.commit()
     return serialize_issue(row, include_events=True)
 

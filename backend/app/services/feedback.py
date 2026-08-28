@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable
 
 import httpx
+
+log = logging.getLogger(__name__)
 
 PLACEHOLDER_OWNER = "your-org"
 DEFAULT_OWNER = "cdnighthawk"
@@ -310,6 +313,54 @@ def issue_already_confirmed(comments: list[dict[str, Any]] | None, body: str | N
     return latest_reporter_signal(comments, body) == "confirmed"
 
 
+def _is_automation_comment(comment: dict[str, Any]) -> bool:
+    body = str(comment.get("body") or "")
+    if any(marker in body for marker in (NOTIFIED_MARKER, CONFIRMED_MARKER, REJECTED_MARKER)):
+        return True
+    user = comment.get("user") if isinstance(comment.get("user"), dict) else {}
+    login = str(user.get("login") or "")
+    return login.endswith("[bot]") or login == "github-actions[bot]"
+
+
+def has_resolution_comment(comments: list[dict[str, Any]] | None) -> bool:
+    for comment in comments or []:
+        if _is_automation_comment(comment):
+            continue
+        if RESOLUTION_RE.match(str(comment.get("body") or "")):
+            return True
+    return False
+
+
+def has_work_comment(comments: list[dict[str, Any]] | None) -> bool:
+    for comment in comments or []:
+        if _is_automation_comment(comment):
+            continue
+        if str(comment.get("body") or "").strip():
+            return True
+    return False
+
+
+def inferred_tracker_status(
+    issue: dict[str, Any], comments: list[dict[str, Any]] | None = None
+) -> tuple[str, str]:
+    """Map GitHub issue + comments onto the Issues board column."""
+    comments = comments or []
+    body = str(issue.get("body") or "")
+    signal = latest_reporter_signal(comments, body)
+    if signal == "confirmed":
+        return "Closed", "Reporter confirmed"
+    if signal == "rejected":
+        return "In Progress", "Reporter said this is still not fixed"
+    if signal == "notified" or has_resolution_comment(comments):
+        return "Pending Review", "Waiting for reporter confirmation"
+    assignees = issue.get("assignees") if isinstance(issue.get("assignees"), list) else []
+    if issue.get("assignee") or assignees:
+        return "In Progress", "Assigned on GitHub"
+    if has_work_comment(comments):
+        return "In Progress", "Work started on GitHub"
+    return "New", "Opened from GitHub"
+
+
 def extract_resolution(comments: list[dict[str, Any]] | None, state_reason: str | None) -> dict[str, str]:
     copy = STATUS_COPY.get((state_reason or "").strip().lower()) or {
         "headline": "Update on your USIS report",
@@ -522,6 +573,153 @@ def mark_issue_notified(
     )
 
 
+def fetch_repo_issue_comments(
+    *,
+    owner: str,
+    repo: str,
+    token: str,
+    client: httpx.Client | None = None,
+) -> list[dict[str, Any]]:
+    if not token:
+        return []
+    url = (
+        f"https://api.github.com/repos/{owner}/{repo}/issues/comments"
+        "?per_page=100&sort=created&direction=asc"
+    )
+    owns_client = client is None
+    http = client or httpx.Client(timeout=20.0)
+    try:
+        response = http.get(url, headers=_github_headers(token))
+        if not response.is_success:
+            return []
+        payload = response.json()
+        return payload if isinstance(payload, list) else []
+    except httpx.HTTPError:
+        return []
+    finally:
+        if owns_client:
+            http.close()
+
+
+def _issue_number_from_comment(comment: dict[str, Any]) -> int:
+    url = str(comment.get("issue_url") or comment.get("html_url") or "")
+    match = re.search(r"/issues/(\d+)", url)
+    try:
+        return int(match.group(1)) if match else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def fetch_repo_issues(
+    *,
+    owner: str,
+    repo: str,
+    token: str,
+    client: httpx.Client | None = None,
+    state: str = "all",
+) -> list[dict[str, Any]]:
+    if not token:
+        return []
+    url = (
+        f"https://api.github.com/repos/{owner}/{repo}/issues"
+        f"?state={state}&per_page=100&sort=updated&direction=desc"
+    )
+    owns_client = client is None
+    http = client or httpx.Client(timeout=20.0)
+    try:
+        response = http.get(url, headers=_github_headers(token))
+        if not response.is_success:
+            return []
+        payload = response.json()
+        if not isinstance(payload, list):
+            return []
+        return [row for row in payload if isinstance(row, dict) and not row.get("pull_request")]
+    except httpx.HTTPError:
+        return []
+    finally:
+        if owns_client:
+            http.close()
+
+
+def _normalize_github_issue(item: dict[str, Any]) -> dict[str, Any]:
+    labels = []
+    for label in item.get("labels") or []:
+        if isinstance(label, dict):
+            labels.append(str(label.get("name") or ""))
+        else:
+            labels.append(str(label))
+    out = dict(item)
+    out["labels"] = labels
+    return out
+
+
+_GITHUB_BOARD_SYNC_AT: datetime | None = None
+_GITHUB_BOARD_SYNC_TTL_SEC = 45
+
+
+def refresh_tracker_from_github(
+    config: Any,
+    *,
+    client: httpx.Client | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Pull hub issues/comments and move tracker cards to match."""
+    global _GITHUB_BOARD_SYNC_AT
+    now = datetime.now(timezone.utc)
+    if (
+        not force
+        and _GITHUB_BOARD_SYNC_AT is not None
+        and (now - _GITHUB_BOARD_SYNC_AT).total_seconds() < _GITHUB_BOARD_SYNC_TTL_SEC
+    ):
+        return {"ok": True, "status": "skipped", "reason": "recent"}
+    options = feedback_options(config)
+    if not options.get("configured"):
+        return {"ok": True, "status": "skipped", "reason": "not_configured"}
+    issues = fetch_repo_issues(
+        owner=options["owner"],
+        repo=options["repo"],
+        token=options["token"],
+        client=client,
+    )
+    comments_by_number: dict[int, list[dict[str, Any]]] = {}
+    for comment in fetch_repo_issue_comments(
+        owner=options["owner"],
+        repo=options["repo"],
+        token=options["token"],
+        client=client,
+    ):
+        if not isinstance(comment, dict):
+            continue
+        number = _issue_number_from_comment(comment)
+        if number:
+            comments_by_number.setdefault(number, []).append(comment)
+    moved = 0
+    for raw in issues:
+        item = _normalize_github_issue(raw)
+        number = int(item.get("number") or 0)
+        if not number:
+            continue
+        comments = comments_by_number.get(number, [])
+        status, detail = inferred_tracker_status(item, comments)
+        before = None
+        try:
+            from flask import has_app_context
+
+            if has_app_context():
+                from ..api import _issue_service as issue_svc
+
+                row = issue_svc.find_feedback_by_github_number(number)
+                before = row.status if row is not None else None
+                issue_svc.apply_github_workflow(number, status, detail=detail, github_item=item)
+                after = issue_svc.find_feedback_by_github_number(number)
+                if after is not None and after.status != before:
+                    moved += 1
+        except Exception:
+            log.exception("Could not refresh tracker issue #%s", number)
+    _GITHUB_BOARD_SYNC_AT = now
+    return {"ok": True, "status": "synced", "moved": moved, "total": len(issues)}
+
+
 def fetch_issue(
     *,
     owner: str,
@@ -600,8 +798,10 @@ def _request_reporter_confirmation(
 
     signal = latest_reporter_signal(comments, body)
     if signal == "confirmed":
+        sync_tracker_from_github(issue, "Closed", "Reporter already confirmed")
         return {"ok": True, "status": "already_confirmed", "reason": "marker"}
     if signal == "notified":
+        sync_tracker_from_github(issue, "Pending Review", "Waiting for reporter confirmation")
         return {"ok": True, "status": "already_notified", "reason": "marker"}
 
     number = int(issue.get("number") or 0)
@@ -636,7 +836,25 @@ def _request_reporter_confirmation(
         client=client,
     )
     status = "dry_run" if result.get("dry_run") else "sent"
+    sync_tracker_from_github(issue, "Pending Review", "Resolution sent to reporter")
     return {"ok": True, "status": status, "reason": email}
+
+
+def sync_tracker_from_github(issue: dict[str, Any], status: str, detail: str) -> None:
+    """Best-effort board update. Missing app context is a no-op (unit tests)."""
+    number = int(issue.get("number") or 0)
+    if not number:
+        return
+    try:
+        from flask import has_app_context
+
+        if not has_app_context():
+            return
+        from ..api import _issue_service as issue_svc
+
+        issue_svc.apply_github_workflow(number, status, detail=detail, github_item=issue)
+    except Exception:
+        log.exception("Could not sync tracker issue #%s to %s", number, status)
 
 
 def handle_github_feedback_event(
@@ -657,15 +875,37 @@ def handle_github_feedback_event(
     if issue.get("pull_request"):
         return {"ok": True, "status": "ignored", "reason": "pull_request"}
 
+    action = str(payload.get("action") or "")
+    if event == "issues" and action == "opened":
+        sync_tracker_from_github(issue, "New", "Opened from GitHub")
+        return {"ok": True, "status": "tracked", "reason": "opened"}
+    if event == "issues" and action == "assigned":
+        sync_tracker_from_github(issue, "In Progress", "Assigned on GitHub")
+        return {"ok": True, "status": "in_progress", "reason": "assigned"}
+    if event == "issues" and action == "reopened":
+        sync_tracker_from_github(issue, "In Progress", "Reopened on GitHub")
+        return {"ok": True, "status": "reopened", "reason": "reopened"}
+
     if event == "issue_comment":
-        if str(payload.get("action") or "") != "created":
-            return {"ok": True, "status": "ignored", "reason": str(payload.get("action") or "comment")}
+        if action != "created":
+            return {"ok": True, "status": "ignored", "reason": action or "comment"}
         comment = payload.get("comment") if isinstance(payload.get("comment"), dict) else {}
         if not RESOLUTION_RE.match(str(comment.get("body") or "")):
-            return {"ok": True, "status": "ignored", "reason": "not_resolution"}
+            comments = fetch_issue_comments(
+                owner=options["owner"],
+                repo=options["repo"],
+                issue_number=int(issue.get("number") or 0),
+                token=options["token"],
+                client=client,
+            )
+            if comment and comment not in comments:
+                comments = [comment, *comments]
+            status, detail = inferred_tracker_status(issue, comments)
+            sync_tracker_from_github(issue, status, detail)
+            return {"ok": True, "status": "synced", "reason": status}
     elif event == "issues":
-        if str(payload.get("action") or "") != "closed":
-            return {"ok": True, "status": "ignored", "reason": str(payload.get("action") or "not_closed")}
+        if action != "closed":
+            return {"ok": True, "status": "ignored", "reason": action or "not_closed"}
     else:
         return {"ok": True, "status": "ignored", "reason": event or "unknown_event"}
 
@@ -678,8 +918,9 @@ def handle_github_feedback_event(
         client=client,
     )
     body = str(issue.get("body") or "")
-    if event == "issues" and str(payload.get("action") or "") == "closed":
+    if event == "issues" and action == "closed":
         if issue_already_confirmed(comments, body):
+            sync_tracker_from_github(issue, "Closed", "Reporter confirmed")
             return {"ok": True, "status": "already_confirmed", "reason": "marker"}
         if parse_reporter_email(body):
             set_issue_state(
@@ -838,6 +1079,11 @@ def confirm_issue(
     extra = _reporter_note_block(note)
     if choice == "close":
         if preview["already_confirmed"]:
+            sync_tracker_from_github(
+                {"number": number, "title": preview.get("title"), "state": "closed", "body": ""},
+                "Closed",
+                "Reporter already confirmed",
+            )
             return {"ok": True, "status": "already_confirmed", "issue_number": number}
         post_issue_comment(
             owner=options["owner"],
@@ -859,6 +1105,11 @@ def confirm_issue(
             state_reason="completed",
             client=client,
         )
+        sync_tracker_from_github(
+            {"number": number, "title": preview.get("title"), "state": "closed", "body": ""},
+            "Closed",
+            "Reporter confirmed this is resolved",
+        )
         return {"ok": True, "status": "closed", "issue_number": number}
 
     post_issue_comment(
@@ -876,6 +1127,11 @@ def confirm_issue(
         token=options["token"],
         state="open",
         client=client,
+    )
+    sync_tracker_from_github(
+        {"number": number, "title": preview.get("title"), "state": "open", "body": ""},
+        "In Progress",
+        "Reporter said this is still not fixed",
     )
     return {"ok": True, "status": "rejected", "issue_number": number}
 

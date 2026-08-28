@@ -1,9 +1,12 @@
-"""GitHub issue webhooks — ask the reporter to confirm by closing.
+"""GitHub issue webhooks — keep the Issues board in step with GitHub.
 
 Configure the repo webhook (Issues + Issue comments) to POST
 ``https://www.usiscm.com/api/webhooks/github`` with ``GITHUB_WEBHOOK_SECRET``.
-Leave a ``Resolution:`` comment and keep the issue open. The employee closes it
-from the email link to confirm it is resolved.
+
+Opened / assigned / reopened / comment events create or move the tracker card.
+A work comment or assignee moves it to In Progress. A ``Resolution:`` comment
+emails the reporter and moves it to Pending Review. The employee’s confirm
+link closes the card; “Still not fixed” sends it back to In Progress.
 """
 from __future__ import annotations
 

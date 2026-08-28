@@ -83,6 +83,37 @@ def test_import_github_issue_is_idempotent(flask_app):
         assert row.linked_change_order_id == "github:9001"
 
 
+def test_reimport_keeps_in_progress_status(flask_app):
+    payload = [
+        {
+            "number": 9002,
+            "title": "[bug] Stay in progress",
+            "body": "### Details\nKeep this card where it is.",
+            "state": "open",
+            "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/9002",
+            "created_at": "2026-08-24T22:00:00Z",
+            "closed_at": None,
+            "labels": ["bug"],
+        }
+    ]
+    with flask_app.app_context():
+        import_github_issues(payload)
+        row = (
+            db.session.query(Issue)
+            .filter_by(source_type="feedback", source_id=github_source_id(9002))
+            .one()
+        )
+        row.status = "In Progress"
+        db.session.commit()
+        import_github_issues(payload)
+        again = (
+            db.session.query(Issue)
+            .filter_by(source_type="feedback", source_id=github_source_id(9002))
+            .one()
+        )
+        assert again.status == "In Progress"
+
+
 def test_bundled_github_snapshot_imports(flask_app):
     with flask_app.app_context():
         summary = import_bundled_github_issues()

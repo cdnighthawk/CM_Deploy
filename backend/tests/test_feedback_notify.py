@@ -66,6 +66,36 @@ def test_build_status_email_asks_employee_to_close():
     assert "usis-issue-confirm.html?token=abc" in message["body"]
 
 
+def test_work_comment_syncs_in_progress_without_email():
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET":
+            return httpx.Response(
+                200,
+                json=[{"body": "Looking into the sort bug.", "user": {"login": "cdnighthawk"}}],
+            )
+        return httpx.Response(201, json={"id": 1})
+
+    result = feedback_svc.handle_github_feedback_event(
+        event="issue_comment",
+        payload={
+            "action": "created",
+            "comment": {"body": "Looking into the sort bug.", "user": {"login": "cdnighthawk"}},
+            "issue": {
+                "number": 1,
+                "title": "[bug] sort",
+                "body": CLOSED_BODY,
+                "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/1",
+            },
+            "repository": {"full_name": "cdnighthawk/CM_Deploy"},
+        },
+        config=_config(),
+        send_email=lambda **_kwargs: {"sent": True},
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert result["status"] == "synced"
+    assert result["reason"] == "In Progress"
+
+
 def test_resolution_comment_emails_confirm_link():
     sent = {}
     methods = []

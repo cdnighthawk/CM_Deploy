@@ -1180,14 +1180,30 @@ def list_lead_estimates():
         q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
     q = q.offset(offset).limit(limit)
     rows = db.session.scalars(q).all()
+    origin = lead_q.resolve_office_origin()
+    items = []
+    for r in rows:
+        pub = _lead_estimate_public(r)
+        miles = ser.distance_miles_for_lead(r.location, origin)
+        if miles is not None:
+            pub["distance_miles"] = miles
+        items.append(pub)
 
     return _jsonify(
         {
-            "items": [_lead_estimate_public(r) for r in rows],
+            "items": items,
             "total": total,
             "limit": limit,
             "offset": offset,
             "entity": "lead_estimates",
+            "office": (
+                {
+                    "latitude": origin[0],
+                    "longitude": origin[1],
+                }
+                if origin
+                else None
+            ),
         }
     )
 
@@ -4655,6 +4671,9 @@ _playbooks_mod.register_playbook_routes(bp)
 from . import _saved_list_filters as _saved_filters_mod  # noqa: E402
 
 _saved_filters_mod.register_saved_filter_routes(bp)
+from . import _office_location as _office_location_mod  # noqa: E402
+
+_office_location_mod.register_office_location_routes(bp)
 _integration_bc.register_buildingconnected_routes(bp)
 _integration_textura.register_textura_routes(bp)
 from . import _auth_mobile  # noqa: E402

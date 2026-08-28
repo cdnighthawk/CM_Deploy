@@ -1,6 +1,7 @@
 """Shared JSON serializers for API and AI tools."""
 from __future__ import annotations
 
+import math
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
@@ -32,6 +33,68 @@ def location_bits(loc: Any) -> tuple[str | None, str | None]:
     c = loc.get("city")
     s = loc.get("state")
     return (str(c).strip() if c else None, str(s).strip() if s else None)
+
+
+def _first_number(*values: Any) -> float | None:
+    for raw in values:
+        if raw is None or raw == "":
+            continue
+        if isinstance(raw, Mapping):
+            continue
+        try:
+            n = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if n == n:
+            return n
+    return None
+
+
+def location_coords(loc: Any) -> tuple[float, float] | None:
+    """Read lat/lng from a BuildingConnected-style location blob."""
+    if not isinstance(loc, Mapping):
+        return None
+    coords = loc.get("coords")
+    nested = coords if isinstance(coords, Mapping) else {}
+    lat = _first_number(
+        nested.get("lat"),
+        nested.get("latitude"),
+        loc.get("lat"),
+        loc.get("latitude"),
+    )
+    lng = _first_number(
+        nested.get("lng"),
+        nested.get("longitude"),
+        loc.get("lng"),
+        loc.get("longitude"),
+    )
+    if lat is None or lng is None:
+        return None
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lng <= 180.0):
+        return None
+    return (lat, lng)
+
+
+def haversine_miles(origin: tuple[float, float], dest: tuple[float, float]) -> float:
+    lat1, lng1 = origin
+    lat2, lng2 = dest
+    radius = 3958.7613
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = (
+        math.sin(dlat / 2.0) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng / 2.0) ** 2
+    )
+    return 2.0 * radius * math.asin(min(1.0, math.sqrt(a)))
+
+
+def distance_miles_for_lead(loc: Any, origin: tuple[float, float] | None) -> float | None:
+    if origin is None:
+        return None
+    dest = location_coords(loc)
+    if dest is None:
+        return None
+    return round(haversine_miles(origin, dest), 1)
 
 
 def client_company_name(client: Any) -> str | None:

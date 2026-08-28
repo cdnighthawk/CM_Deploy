@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Mapping
 
-from sqlalchemy import String, and_, cast, func, literal, or_
+from sqlalchemy import Float, String, and_, cast, func, literal, or_
 
 from ..models import Company, LeadEstimate
 
@@ -83,6 +83,49 @@ def _location_city_sql():
 
 def _location_state_sql():
     return func.coalesce(LeadEstimate.location["state"].astext, literal(""))
+
+
+def _json_float_sql(*exprs):
+    pieces = [
+        func.cast(func.nullif(func.trim(func.coalesce(expr, literal(""))), literal("")), Float)
+        for expr in exprs
+    ]
+    return func.coalesce(*pieces) if len(pieces) > 1 else pieces[0]
+
+
+def _lead_lat_sql():
+    return _json_float_sql(
+        LeadEstimate.location["coords"]["lat"].astext,
+        LeadEstimate.location["lat"].astext,
+        LeadEstimate.location["latitude"].astext,
+    )
+
+
+def _lead_lng_sql():
+    return _json_float_sql(
+        LeadEstimate.location["coords"]["lng"].astext,
+        LeadEstimate.location["lng"].astext,
+        LeadEstimate.location["longitude"].astext,
+    )
+
+
+def _haversine_miles_sql(origin_lat: float, origin_lng: float):
+    lat = _lead_lat_sql()
+    lng = _lead_lng_sql()
+    dlat = func.radians(lat - origin_lat)
+    dlng = func.radians(lng - origin_lng)
+    a = func.pow(func.sin(dlat / 2.0), 2) + (
+        func.cos(func.radians(literal(origin_lat)))
+        * func.cos(func.radians(lat))
+        * func.pow(func.sin(dlng / 2.0), 2)
+    )
+    return literal(3958.7613) * 2.0 * func.asin(func.least(literal(1.0), func.sqrt(a)))
+
+
+def resolve_office_origin():
+    from ._office_location import resolve_office_origin as _origin
+
+    return _origin()
 
 
 def _job_value_sql():
@@ -294,6 +337,24 @@ def apply_lead_list_query_params(filt: Any, args: Mapping[str, Any]) -> Any:
         members_as_text = func.lower(func.coalesce(cast(LeadEstimate.members, String), literal("")))
         filt = and_(filt, or_(*[members_as_text.like(f"%{n.lower()}%") for n in needles if n]))
 
+    miles = _parse_number(args.get("distance_miles"), "distance_miles")
+    if miles is not None:
+        if miles <= 0:
+            raise ValueError("distance_miles must be greater than 0")
+        if miles > 5000:
+            raise ValueError("distance_miles is too large")
+        origin = resolve_office_origin()
+        if origin is None:
+            raise ValueError("office location is not set")
+        lat_sql = _lead_lat_sql()
+        lng_sql = _lead_lng_sql()
+        filt = and_(
+            filt,
+            lat_sql.is_not(None),
+            lng_sql.is_not(None),
+            _haversine_miles_sql(origin[0], origin[1]) <= miles,
+        )
+
     return filt
 
 
@@ -316,7 +377,11 @@ def lead_list_order_by(sort: str | None):
         "updated": LeadEstimate.bc_updated_at,
         "bc_updated_at": LeadEstimate.bc_updated_at,
     }
-    col = col_map.get(field, LeadEstimate.due_at)
+    if field in ("distance", "distance_miles"):
+        origin = resolve_office_origin()
+        col = _haversine_miles_sql(origin[0], origin[1]) if origin else LeadEstimate.due_at
+    else:
+        col = col_map.get(field, LeadEstimate.due_at)
     expr = col.desc().nullslast() if desc else col.asc().nullslast()
     return (expr, LeadEstimate.name.asc())
 

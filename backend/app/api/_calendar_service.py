@@ -7,9 +7,19 @@ from typing import Any
 
 from sqlalchemy import and_, select
 from sqlalchemy import false as sa_false
+from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Project, ProjectMaterialOrder, ProjectScheduleItem, Rfi, Rfp, Submittal
+from ..models import (
+    Project,
+    ProjectMaterialOrder,
+    ProjectScheduleItem,
+    Rfi,
+    RfiAssignee,
+    Rfp,
+    Submittal,
+    User,
+)
 from ..permissions.project_scope import assigned_project_ids, user_can_access_project
 from ._perms import CurrentUser
 
@@ -174,6 +184,25 @@ def _project_base_url(project_id: uuid.UUID) -> str:
     return f"construction/project-detail.html?id={project_id}"
 
 
+def _user_display_name(u: User | None) -> str | None:
+    if u is None:
+        return None
+    name = " ".join(p for p in (u.first_name, u.last_name) if p).strip()
+    return name or (u.email or None)
+
+
+def _parse_assignee_param(raw: str | None, cu: CurrentUser) -> uuid.UUID | None:
+    if not raw or not str(raw).strip():
+        return None
+    key = str(raw).strip().lower()
+    if key in {"me", "mine"}:
+        return cu.id
+    try:
+        return uuid.UUID(str(raw).strip())
+    except ValueError:
+        return None
+
+
 def list_calendar_events(
     cu: CurrentUser,
     *,
@@ -182,11 +211,19 @@ def list_calendar_events(
     range_start: date | None = None,
     range_end: date | None = None,
     project_statuses: frozenset[str] | None = None,
+    assignee_user_id: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     cats = categories or CALENDAR_CATEGORIES
     project_ids = _project_filter_ids(cu, project_id)
     if project_ids is not None and not project_ids:
         return {"items": [], "categories": sorted(cats), "entity": "calendar_events"}
+    if assignee_user_id is not None and cu.id is None:
+        return {
+            "items": [],
+            "categories": sorted(cats),
+            "entity": "calendar_events",
+            "assignee_user_id": None,
+        }
 
     events: list[dict[str, Any]] = []
 
@@ -195,6 +232,7 @@ def list_calendar_events(
         q = (
             select(ProjectScheduleItem, Project)
             .join(Project, Project.id == ProjectScheduleItem.project_id)
+            .options(selectinload(ProjectScheduleItem.assignee))
             .where(
                 _project_scope_filter(
                     cu,
@@ -205,12 +243,17 @@ def list_calendar_events(
             )
             .order_by(ProjectScheduleItem.start_date, ProjectScheduleItem.id)
         )
+        if assignee_user_id is not None:
+            q = q.where(ProjectScheduleItem.assignee_user_id == assignee_user_id)
         for row, proj in db.session.execute(q):
             if not _event_overlaps_range(row.start_date, row.end_date, range_start, range_end):
                 continue
             label = row.title
             if row.crew_label:
                 label = f"{label} · {row.crew_label}"
+            assignee_name = _user_display_name(row.assignee)
+            if assignee_name:
+                label = f"{label} · {assignee_name}"
             _append_event(
                 events,
                 event_id=f"schedule:{row.id}",
@@ -224,11 +267,15 @@ def list_calendar_events(
                 url=_project_base_url(proj.id),
                 source_type="schedule_item",
                 source_id=str(row.id),
-                meta={"crew_label": row.crew_label},
+                meta={
+                    "crew_label": row.crew_label,
+                    "assignee_user_id": str(row.assignee_user_id) if row.assignee_user_id else None,
+                    "assignee_name": assignee_name,
+                },
             )
 
-    # --- Procurement: material orders ---
-    if "procurement_order" in cats or "procurement_delivery" in cats:
+    # --- Procurement: material orders (no per-user assignee) ---
+    if assignee_user_id is None and ("procurement_order" in cats or "procurement_delivery" in cats):
         q = (
             select(ProjectMaterialOrder, Project)
             .join(Project, Project.id == ProjectMaterialOrder.project_id)
@@ -290,6 +337,7 @@ def list_calendar_events(
         q = (
             select(Rfi, Project)
             .join(Project, Project.id == Rfi.project_id)
+            .options(selectinload(Rfi.assignees).selectinload(RfiAssignee.user))
             .where(
                 _project_scope_filter(
                     cu,
@@ -302,6 +350,10 @@ def list_calendar_events(
             )
             .order_by(Rfi.due_at, Rfi.id)
         )
+        if assignee_user_id is not None:
+            q = q.where(
+                Rfi.id.in_(select(RfiAssignee.rfi_id).where(RfiAssignee.user_id == assignee_user_id))
+            )
         for rfi, proj in db.session.execute(q):
             due = _dt_to_date(rfi.due_at)
             if due is None:
@@ -309,6 +361,14 @@ def list_calendar_events(
             if not _event_overlaps_range(due, due, range_start, range_end):
                 continue
             num = f"RFI #{rfi.number}" if rfi.number is not None else "RFI"
+            assignee_names = [
+                name
+                for name in (_user_display_name(a.user) for a in (rfi.assignees or []))
+                if name
+            ]
+            title = f"{num}: {rfi.subject}"
+            if assignee_names:
+                title = f"{title} · {', '.join(assignee_names)}"
             _append_event(
                 events,
                 event_id=f"rfi:{rfi.id}",
@@ -316,13 +376,17 @@ def list_calendar_events(
                 project_id=proj.id,
                 project_name=proj.name,
                 project_number=proj.number,
-                title=f"{num}: {rfi.subject}",
+                title=title,
                 start=due,
                 end=due,
                 url=f"construction/rfi-detail.html?id={rfi.id}",
                 source_type="rfi",
                 source_id=str(rfi.id),
-                meta={"status": rfi.status},
+                meta={
+                    "status": rfi.status,
+                    "assignee_names": assignee_names,
+                    "assignee_name": ", ".join(assignee_names) or None,
+                },
             )
 
     # --- Submittals ---
@@ -330,6 +394,7 @@ def list_calendar_events(
         q = (
             select(Submittal, Project)
             .join(Project, Project.id == Submittal.project_id)
+            .options(selectinload(Submittal.assigned_reviewer))
             .where(
                 _project_scope_filter(
                     cu,
@@ -341,6 +406,8 @@ def list_calendar_events(
             )
             .order_by(Submittal.due_at, Submittal.id)
         )
+        if assignee_user_id is not None:
+            q = q.where(Submittal.assigned_reviewer_id == assignee_user_id)
         for sub, proj in db.session.execute(q):
             due = _dt_to_date(sub.due_at)
             if due is None:
@@ -348,6 +415,10 @@ def list_calendar_events(
             if not _event_overlaps_range(due, due, range_start, range_end):
                 continue
             num = f"Submittal #{sub.number}" if sub.number is not None else "Submittal"
+            reviewer_name = _user_display_name(sub.assigned_reviewer)
+            title = f"{num}: {sub.title}"
+            if reviewer_name:
+                title = f"{title} · {reviewer_name}"
             _append_event(
                 events,
                 event_id=f"submittal:{sub.id}",
@@ -355,17 +426,21 @@ def list_calendar_events(
                 project_id=proj.id,
                 project_name=proj.name,
                 project_number=proj.number,
-                title=f"{num}: {sub.title}",
+                title=title,
                 start=due,
                 end=due,
                 url=f"construction/submittal-detail.html?id={sub.id}&project_id={proj.id}",
                 source_type="submittal",
                 source_id=str(sub.id),
-                meta={"status": sub.status},
+                meta={
+                    "status": sub.status,
+                    "assignee_user_id": str(sub.assigned_reviewer_id) if sub.assigned_reviewer_id else None,
+                    "assignee_name": reviewer_name,
+                },
             )
 
-    # --- RFPs ---
-    if "rfp" in cats:
+    # --- RFPs (no per-user assignee) ---
+    if assignee_user_id is None and "rfp" in cats:
         q = (
             select(Rfp, Project)
             .join(Project, Project.id == Rfp.project_id)
@@ -403,8 +478,8 @@ def list_calendar_events(
                 meta={"status": rfp.status},
             )
 
-    # --- Project milestones ---
-    if "project_milestone" in cats:
+    # --- Project milestones (no per-user assignee) ---
+    if assignee_user_id is None and "project_milestone" in cats:
         q = select(Project).where(
             _project_scope_filter(
                 cu,
@@ -443,4 +518,5 @@ def list_calendar_events(
         "entity": "calendar_events",
         "project_id": str(project_id) if project_id else None,
         "project_statuses": sorted(project_statuses) if project_statuses else None,
+        "assignee_user_id": str(assignee_user_id) if assignee_user_id else None,
     }

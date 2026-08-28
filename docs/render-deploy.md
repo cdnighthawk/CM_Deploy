@@ -14,6 +14,7 @@ Single HTTPS web service: Gulp-built UI + Flask API + PostgreSQL. Session cookie
 3. Render reads [`render.yaml`](../render.yaml) at the repo root and creates:
    - PostgreSQL `usis-cm-db`
    - Web service `usis-cm` (Python 3.12)
+   - Cron job `usis-calendar-reminders` (daily 14:00 UTC; needs `BC_SYNC_CRON_SECRET`)
    - Persistent disk on `backend/instance` (uploads; optional if using B2 — see [backblaze-b2.md](backblaze-b2.md))
 
 ## 2. Secrets (Dashboard → usis-cm → Environment)

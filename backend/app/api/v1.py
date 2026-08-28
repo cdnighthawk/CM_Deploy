@@ -53,6 +53,7 @@ from . import _power_bi_service as power_bi_svc
 from . import _prime_contract_sov_service as prime_sov_svc
 from . import _project_contract_service as project_contract_svc
 from . import _calendar_service as calendar_svc
+from . import _issue_service as issue_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
 from . import _material_order_service as material_order_svc
@@ -332,7 +333,7 @@ def permissions_catalog():
 
 @bp.post("/feedback")
 def create_feedback():
-    """File a GitHub issue from the header Report a problem button. Includes the page URL."""
+    """Save a report on the Issues page, and file GitHub when that is configured."""
     cu = current_user()
     if cu.user is None:
         return _jsonify({"error": "authentication required"}), 401
@@ -344,25 +345,46 @@ def create_feedback():
     reporter_name = parsed["reporter_name"] or " ".join(
         part for part in (cu.user.first_name or "", cu.user.last_name or "") if part
     ).strip()
+    try:
+        tracker = issue_svc.create_from_feedback(parsed, cu, reporter_name=reporter_name)
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+
+    issue_number = None
+    body = feedback_svc.build_issue_body(
+        kind=parsed["kind"],
+        details=parsed["details"],
+        reporter_name=reporter_name,
+        reporter_email=cu.user.email or "",
+        page=parsed["page"],
+        page_url=parsed["page_url"],
+        page_title=parsed["page_title"],
+        user_agent=parsed["user_agent"],
+    )
     result = feedback_svc.submit_github_issue(
         title=parsed["title"],
-        body=feedback_svc.build_issue_body(
-            kind=parsed["kind"],
-            details=parsed["details"],
-            reporter_name=reporter_name,
-            reporter_email=cu.user.email or "",
-            page=parsed["page"],
-            page_url=parsed["page_url"],
-            page_title=parsed["page_title"],
-            user_agent=parsed["user_agent"],
-        ),
+        body=body,
         labels=feedback_svc.github_labels_for(parsed["kind"]),
         config=current_app.config,
     )
-    if not result.ok:
-        status = 503 if result.status == "not_configured" else 502
-        return _jsonify({"error": result.message}), status
-    return _jsonify({"message": result.message, "issueNumber": result.issue_number, "entity": "feedback"})
+    if result.ok and result.issue_number:
+        issue_number = result.issue_number
+        try:
+            issue_svc.attach_github_issue(uuid.UUID(tracker["id"]), result.issue_number)
+        except (TypeError, ValueError):
+            current_app.logger.exception("Could not attach GitHub number to tracker issue")
+
+    return (
+        _jsonify(
+            {
+                "message": "Report saved to the Issues page. We'll email you when there is an update.",
+                "issueId": tracker["id"],
+                "issueNumber": issue_number,
+                "entity": "feedback",
+            }
+        ),
+        201,
+    )
 
 
 def _confirm_viewer():

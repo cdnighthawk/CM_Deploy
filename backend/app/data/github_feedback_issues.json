@@ -143,5 +143,70 @@
       "from-hub",
       "site-wide"
     ]
+  },
+  {
+    "number": 12,
+    "title": "[idea] Invoicing need to have the SOV \u2014 project-detail.html",
+    "body": " \n\n## Recommend a change on this page\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** portega@gousis.com\n**Email:** portega@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-25T21:45:50.920723+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nwhen I try to make an invoice, I need to see the SOV to know the amount I have to bill per month\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/12",
+    "created_at": "2026-08-25T21:45:51Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 13,
+    "title": "[bug] invoicing sync to textura \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** portega@gousis.com\n**Email:** portega@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-25T21:48:02.161599+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nI want to link our textura account to invoicing so they are connected but it doesnt let me\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/13",
+    "created_at": "2026-08-25T21:48:02Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 14,
+    "title": "[idea] Address someone a task in the calendar \u2014 project-detail.html",
+    "body": " \n\n## Recommend a change on this page\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** portega@gousis.com\n**Email:** portega@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-25T21:51:59.490233+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nIt would be helpful to mention or assign someone in the calendar so they can see whether they need to receive any materials or submit any documents, and receive a notification as a reminder.\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/14",
+    "created_at": "2026-08-25T21:51:59Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 15,
+    "title": "[idea] Contracr admin \u2014 project-detail.html",
+    "body": " \n\n## Recommend a change on this page\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** portega@gousis.com\n**Email:** portega@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-25T21:53:07.493996+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nIn some projects we have more than 1 contract, what can we do to att a tab or a window to add additional contracts?\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/15",
+    "created_at": "2026-08-25T21:53:07Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 16,
+    "title": "[idea] invoicing : payment recieved \u2014 project-detail.html",
+    "body": " \n\n## Recommend a change on this page\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** portega@gousis.com\n**Email:** portega@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-25T21:55:19.049863+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nCan we add something to matk if an invoice has been hel, paid, rejected and the date we got paid?\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/16",
+    "created_at": "2026-08-25T21:55:20Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub"
+    ]
   }
 ]

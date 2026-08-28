@@ -111,8 +111,14 @@
 		return state.items.filter(function (it) {
 			if (st !== "all" && statusBucket(it) !== st) return false;
 			if (mem) {
-				var crew = (it.crew_label || "").toLowerCase();
-				if (crew.indexOf(mem) === -1) return false;
+				var hay = [
+					it.crew_label || "",
+					it.assignee_name || "",
+					it.assignee_email || "",
+				]
+					.join(" ")
+					.toLowerCase();
+				if (hay.indexOf(mem) === -1) return false;
 			}
 			return true;
 		});
@@ -166,7 +172,7 @@
 					"</td>" +
 					'<td class="text-center text-muted">—</td>' +
 					'<td class="text-center">' +
-					esc(it.crew_label || "—") +
+					esc(it.assignee_name || it.assignee_email || it.crew_label || "—") +
 					"</td>" +
 					'<td class="text-center"><span class="badge ' +
 					statusBadgeClass(bucket) +

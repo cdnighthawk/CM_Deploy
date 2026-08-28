@@ -65,6 +65,8 @@ services:
         sync: false
       - key: GITHUB_WEBHOOK_SECRET
         sync: false
+      - key: BC_SYNC_CRON_SECRET
+        sync: false
       # Autodesk Desktop Connector ingest agent (Bearer token for /api/projects etc.).
       - key: CM_API_KEY
         sync: false
@@ -80,3 +82,19 @@ services:
         sync: false
       - key: B2_PREFIX
         value: prod/usis-cm
+
+  - type: cron
+    name: usis-calendar-reminders
+    runtime: python
+    plan: starter
+    rootDir: backend
+    schedule: "0 14 * * *"
+    buildCommand: echo skip
+    startCommand: python scripts/trigger_daily_calendar_reminders.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: BC_SYNC_CRON_SECRET
+        sync: false
+      - key: CALENDAR_REMINDER_URL
+        value: https://www.usiscm.com/api/v1/integrations/calendar-reminders/run

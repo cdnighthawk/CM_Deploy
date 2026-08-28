@@ -7,6 +7,7 @@
 	var state = {
 		projectId: null,
 		items: [],
+		users: [],
 		calendar: null,
 		scheduleFetched: false,
 	};
@@ -72,11 +73,59 @@
 		return yy + "-" + mm + "-" + dd;
 	}
 
+	function assigneeLabel(it) {
+		if (!it) return "";
+		return it.assignee_name || it.assignee_email || "";
+	}
+
+	function fillAssigneeSelect(selectedId) {
+		var sel = document.getElementById("usis-sched-modal-assignee");
+		if (!sel) return;
+		var html = '<option value="">Unassigned</option>';
+		for (var i = 0; i < state.users.length; i++) {
+			var u = state.users[i];
+			var label = u.name || u.email || u.id;
+			html +=
+				'<option value="' +
+				escAttr(u.id) +
+				'">' +
+				esc(label) +
+				(u.email && u.name && u.email !== u.name ? " (" + esc(u.email) + ")" : "") +
+				"</option>";
+		}
+		sel.innerHTML = html;
+		if (selectedId) sel.value = selectedId;
+	}
+
+	function loadUsers() {
+		var url = apiBase() + "/api/v1/rfi-users?limit=200";
+		fetch(url, {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
+			.then(function (r) {
+				return r.json();
+			})
+			.then(function (data) {
+				state.users = Array.isArray(data.items) ? data.items : [];
+				var sel = document.getElementById("usis-sched-modal-assignee");
+				var keep = sel ? sel.value : "";
+				fillAssigneeSelect(keep);
+			})
+			.catch(function () {
+				state.users = [];
+			});
+	}
+
 	function buildFcEvents(items) {
 		return (items || []).map(function (it) {
 			var t = it.title;
 			if (it.crew_label) {
 				t += " · " + it.crew_label;
+			}
+			var who = assigneeLabel(it);
+			if (who) {
+				t += " · " + who;
 			}
 			return {
 				id: it.id,
@@ -136,7 +185,7 @@
 		if (!tb) return;
 		if (!state.items.length) {
 			tb.innerHTML =
-				'<tr><td colspan="5" class="text-muted small">No installation windows yet. Use <strong>+ Add window</strong> to add date ranges by area.</td></tr>';
+				'<tr><td colspan="6" class="text-muted small">No installation windows yet. Use <strong>+ Add window</strong> to add date ranges by area.</td></tr>';
 			return;
 		}
 		var rows = [];
@@ -152,6 +201,9 @@
 					"</td>" +
 					"<td>" +
 					esc(it.end_date) +
+					"</td>" +
+					"<td>" +
+					esc(assigneeLabel(it) || "—") +
 					"</td>" +
 					"<td>" +
 					esc(it.crew_label || "—") +
@@ -238,6 +290,7 @@
 		if (e) e.value = "";
 		var c = document.getElementById("usis-sched-modal-crew");
 		if (c) c.value = "";
+		fillAssigneeSelect("");
 		var m = scheduleModal();
 		if (m) m.show();
 	}
@@ -256,6 +309,7 @@
 		if (e) e.value = (it.end_date || "").slice(0, 10);
 		var c = document.getElementById("usis-sched-modal-crew");
 		if (c) c.value = it.crew_label || "";
+		fillAssigneeSelect(it.assignee_user_id || "");
 		var m = scheduleModal();
 		if (m) m.show();
 	}
@@ -267,6 +321,7 @@
 		var start = (document.getElementById("usis-sched-modal-start") || {}).value || "";
 		var end = (document.getElementById("usis-sched-modal-end") || {}).value || "";
 		var crew = (document.getElementById("usis-sched-modal-crew") || {}).value || "";
+		var assignee = (document.getElementById("usis-sched-modal-assignee") || {}).value || "";
 		if (!String(title).trim()) {
 			modalErr("Area / scope is required.");
 			return;
@@ -280,6 +335,7 @@
 			start_date: start,
 			end_date: end,
 			crew_label: String(crew).trim() || null,
+			assignee_user_id: String(assignee).trim() || null,
 		};
 		var method = id ? "PATCH" : "POST";
 		var url =
@@ -356,6 +412,7 @@
 	function wire() {
 		state.projectId = projectIdFromQuery();
 		if (!state.projectId) return;
+		loadUsers();
 
 		var tabSched = document.getElementById("proj-tab-schedule");
 		if (tabSched) {

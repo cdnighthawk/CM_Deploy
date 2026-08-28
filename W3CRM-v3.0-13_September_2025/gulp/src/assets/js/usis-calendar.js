@@ -81,6 +81,11 @@
 		return (el("usis-cal-project") || {}).value || qs("project_id") || "";
 	}
 
+	function assignedToMeChecked() {
+		var box = el("usis-cal-assigned-to-me");
+		return !!(box && box.checked);
+	}
+
 	function setLoading(on) {
 		var node = el("usis-cal-loading");
 		if (node) {
@@ -217,6 +222,9 @@
 		} else {
 			parts.push("All projects");
 		}
+		if (assignedToMeChecked()) {
+			parts.push("Assigned to me");
+		}
 		if (state.projectSearch.trim()) {
 			parts.push('Search: "' + state.projectSearch.trim() + '"');
 		}
@@ -243,6 +251,7 @@
 				project_id: item.project_id,
 				project_name: item.project_name,
 				url: item.url,
+				assignee_name: item.meta && (item.meta.assignee_name || (item.meta.assignee_names && item.meta.assignee_names.join(", "))),
 			},
 		};
 		if (item.start !== item.end) {
@@ -272,6 +281,9 @@
 		}
 		if (fetchInfo && fetchInfo.end) {
 			params.push("end=" + encodeURIComponent(fetchInfo.endStr.slice(0, 10)));
+		}
+		if (assignedToMeChecked()) {
+			params.push("assignee=me");
 		}
 		var url = apiBase() + "/api/v1/calendar-events?" + params.join("&");
 		fetch(url, { headers: Object.assign({ Accept: "application/json" }, actorHeaders()) })
@@ -345,8 +357,10 @@
 			eventDidMount: function (info) {
 				var cat = info.event.extendedProps && info.event.extendedProps.category_label;
 				var proj = info.event.extendedProps && info.event.extendedProps.project_name;
+				var who = info.event.extendedProps && info.event.extendedProps.assignee_name;
 				var tip = info.event.title;
 				if (cat) tip += " (" + cat + ")";
+				if (who) tip += " — " + who;
 				if (proj) tip += " — " + proj;
 				info.el.setAttribute("title", tip);
 			},
@@ -367,6 +381,8 @@
 		if (preset) preset.value = "all";
 		var active = el("usis-cal-active-only");
 		if (active) active.checked = true;
+		var mine = el("usis-cal-assigned-to-me");
+		if (mine) mine.checked = false;
 		var search = el("usis-cal-project-search");
 		if (search) search.value = "";
 		state.projectSearch = "";
@@ -395,9 +411,12 @@
 					el("usis-cal-preset").value = preset;
 					applyPresetToCheckboxes();
 				}
-				if (qs("active_only") === "0" && el("usis-cal-active-only")) {
-					el("usis-cal-active-only").checked = false;
-				}
+		if (qs("active_only") === "0" && el("usis-cal-active-only")) {
+			el("usis-cal-active-only").checked = false;
+		}
+		if ((qs("assignee") === "me" || qs("assigned_to_me") === "1") && el("usis-cal-assigned-to-me")) {
+			el("usis-cal-assigned-to-me").checked = true;
+		}
 				updateFilterSummary();
 				ensureCalendar();
 			})
@@ -420,6 +439,10 @@
 				renderProjectOptions();
 				updateFilterSummary();
 			});
+		}
+		var mine = el("usis-cal-assigned-to-me");
+		if (mine) {
+			mine.addEventListener("change", updateFilterSummary);
 		}
 		var search = el("usis-cal-project-search");
 		if (search) {

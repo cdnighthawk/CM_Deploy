@@ -38,7 +38,7 @@ def test_description_extracts_details_and_keeps_github_link():
 
 def test_bundled_snapshot_has_all_hub_reports():
     items = load_bundled_github_issues()
-    assert {item["number"] for item in items} == set(range(1, 12))
+    assert {item["number"] for item in items} == set(range(1, 17))
 
 
 def test_import_github_issue_is_idempotent(flask_app):
@@ -86,7 +86,13 @@ def test_import_github_issue_is_idempotent(flask_app):
 def test_bundled_github_snapshot_imports(flask_app):
     with flask_app.app_context():
         summary = import_bundled_github_issues()
-        assert summary["created"] + summary["updated"] >= 11
+        assert summary["created"] + summary["updated"] >= 16
+        calendar = (
+            db.session.query(Issue)
+            .filter_by(source_type="feedback", source_id=github_source_id(14))
+            .one()
+        )
+        assert "assign someone in the calendar" in (calendar.description or "").lower()
         closed = (
             db.session.query(Issue)
             .filter_by(source_type="feedback", source_id=github_source_id(10))

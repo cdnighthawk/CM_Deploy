@@ -191,7 +191,10 @@ def create_app(config_object: str | None = None) -> Flask:
         # Cursor debug: client logs to workspace NDJSON (dev only; see POST handler in api.v1).
         if path == "/api/v1/__debug/client-log" and client_debug_log_dev_open():
             return None
-        if path == "/api/v1/integrations/buildingconnected/sync":
+        if path in (
+            "/api/v1/integrations/buildingconnected/sync",
+            "/api/v1/integrations/calendar-reminders/run",
+        ):
             from .api._integration_bc import cron_secret_matches
 
             if cron_secret_matches(request, app):

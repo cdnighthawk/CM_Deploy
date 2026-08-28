@@ -388,6 +388,23 @@ def create_issue(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
     return serialize_issue(issue, include_events=True)
 
 
+def attach_github_issue(issue_id: uuid.UUID, number: int, html_url: str = "") -> None:
+    """Link a tracker row to the GitHub hub issue created from the same report."""
+    from ..services.github_issue_import import github_source_id
+
+    row = db.session.get(Issue, issue_id)
+    if row is None:
+        return
+    row.linked_change_order_id = f"github:{int(number)}"
+    row.source_id = github_source_id(int(number))
+    url = html_url.strip() or f"https://github.com/cdnighthawk/CM_Deploy/issues/{int(number)}"
+    extra = f"GitHub: {url}"
+    desc = row.description or ""
+    if extra not in desc:
+        row.description = (desc + ("\n" if desc else "") + extra).strip()
+    db.session.commit()
+
+
 def update_status(issue_id: uuid.UUID, status: str, cu: CurrentUser) -> dict[str, Any]:
     if status not in STATUSES:
         raise ValueError("Choose a valid status.")

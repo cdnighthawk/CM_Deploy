@@ -1127,35 +1127,34 @@ def list_lead_estimates():
 
     source = (request.args.get("source") or "").strip() or None
     crm_stage = (request.args.get("crm_stage") or "").strip() or None
-    due_before_raw = (request.args.get("due_before") or "").strip() or None
-    due_after_raw = (request.args.get("due_after") or "").strip() or None
+    include_closed, skip_open_due = lead_q.drawer_relaxes_open_board(request.args)
 
     try:
-        filt = lead_q.lead_estimates_ui_filter(submission_state)
+        if include_closed or skip_open_due:
+            filt = lead_q.lead_estimates_ui_filter_relaxed(
+                submission_state,
+                include_closed=include_closed,
+                skip_open_due=skip_open_due,
+            )
+        else:
+            filt = lead_q.lead_estimates_ui_filter(submission_state)
+        filt = lead_q.apply_lead_list_query_params(filt, request.args)
     except ValueError as exc:
         return _jsonify({"error": str(exc)}), 400
     if source:
         filt = and_(filt, LeadEstimate.source == source)
     if crm_stage:
         filt = and_(filt, LeadEstimate.crm_stage == crm_stage)
-    if due_before_raw:
-        try:
-            due_before = datetime.fromisoformat(due_before_raw.replace("Z", "+00:00"))
-        except ValueError:
-            return _jsonify({"error": "invalid due_before (use ISO-8601)"}), 400
-        filt = and_(filt, LeadEstimate.due_at.is_not(None), LeadEstimate.due_at <= due_before)
-    if due_after_raw:
-        try:
-            due_after = datetime.fromisoformat(due_after_raw.replace("Z", "+00:00"))
-        except ValueError:
-            return _jsonify({"error": "invalid due_after (use ISO-8601)"}), 400
-        filt = and_(filt, LeadEstimate.due_at.is_not(None), LeadEstimate.due_at >= due_after)
 
     stmt = select(func.count()).select_from(LeadEstimate).where(filt)
     total = db.session.scalar(stmt) or 0
 
     q = select(LeadEstimate).where(filt)
-    q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
+    sort = (request.args.get("sort") or "").strip()
+    if sort:
+        q = q.order_by(*lead_q.lead_list_order_by(sort))
+    else:
+        q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
     q = q.offset(offset).limit(limit)
     rows = db.session.scalars(q).all()
 
@@ -4543,6 +4542,9 @@ _hr_signed_forms.register_hr_signed_form_routes(bp)
 from . import _playbooks as _playbooks_mod  # noqa: E402
 
 _playbooks_mod.register_playbook_routes(bp)
+from . import _saved_list_filters as _saved_filters_mod  # noqa: E402
+
+_saved_filters_mod.register_saved_filter_routes(bp)
 _integration_bc.register_buildingconnected_routes(bp)
 _integration_textura.register_textura_routes(bp)
 from . import _auth_mobile  # noqa: E402

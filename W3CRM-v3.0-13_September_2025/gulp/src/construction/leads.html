@@ -115,6 +115,17 @@
 								</div>
 							</div>
 							<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-bc-filter-count" aria-live="polite"></span>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-leads-filter-btn" data-bs-toggle="offcanvas" data-bs-target="#usis-leads-filter-drawer" aria-controls="usis-leads-filter-drawer">
+								<i class="fa fa-filter me-1"></i> Filter <span class="badge text-bg-primary ms-1 d-none" id="usis-leads-filter-badge"></span>
+							</button>
+							<div class="dropdown">
+								<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" id="usis-leads-saved-btn" data-bs-toggle="dropdown" aria-expanded="false">
+									Saved
+								</button>
+								<ul class="dropdown-menu" id="usis-leads-saved-menu" aria-labelledby="usis-leads-saved-btn">
+									<li><span class="dropdown-item-text text-muted">No saved filters yet</span></li>
+								</ul>
+							</div>
 							<button type="button" class="btn btn-outline-secondary btn-sm d-md-none" id="usis-bc-sort-filter" title="Sort and filter columns">
 								<i class="fa fa-filter me-1"></i> Sort &amp; Filter
 							</button>
@@ -139,6 +150,8 @@
 					</div>
 				</div>
 				<!-- End - Filtering -->
+
+				<div class="d-none d-flex flex-wrap align-items-center gap-1 mb-2" id="usis-leads-filter-chips" aria-live="polite"></div>
 
 				<div class="alert alert-secondary py-2 mb-2 d-none" id="usis-bc-leads-bulk-bar" role="region" aria-live="polite">
 					<span id="usis-bc-leads-bulk-count" class="fw-semibold me-2">0 selected</span>
@@ -228,6 +241,8 @@
 		</div>
 	</div>
 
+	@@include("../elements/leads-filter-drawer.html")
+
 	<!-- Start - Page Scripts -->
 	@@include("../elements/script.html")
 		
@@ -246,6 +261,7 @@
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-sort.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
+	<script src="assets/js/usis-leads-filters.js"></script>
 	<script src="assets/js/usis-list-bulk.js"></script>
 	<script src="assets/js/usis-bc-write.js"></script>
 
@@ -425,14 +441,20 @@
 			if (autoFilter) autoFilter.paint();
 			if (filterCount) {
 				var labels = autoFilter ? autoFilter.getActiveLabels() : [];
-				var parts = [];
-				if (filtered.length !== allItems.length || labels.length || q) {
-					parts.push("Showing " + filtered.length + " of " + allItems.length);
+				var total = allItems.length;
+				var drawer = window.USISLeadsFilters;
+				if (drawer && typeof drawer.statusLine === "function" && drawer.criterionCount()) {
+					filterCount.textContent = drawer.statusLine(filtered.length, total) + (labels.length ? " · Columns: " + labels.join(", ") : "");
 				} else {
-					parts.push(allItems.length + " loaded");
+					var parts = [];
+					if (filtered.length !== total || labels.length || q) {
+						parts.push("Showing " + filtered.length + " of " + total + " leads");
+					} else {
+						parts.push(total + " loaded");
+					}
+					if (labels.length) parts.push("Filters on: " + labels.join(", "));
+					filterCount.textContent = parts.join(" · ");
 				}
-				if (labels.length) parts.push("Filters on: " + labels.join(", "));
-				filterCount.textContent = parts.join(" · ");
 			}
 		}
 
@@ -461,7 +483,11 @@
 			if (filterCount) filterCount.textContent = "";
 			if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
 			tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Loading…</td></tr>';
-			fetch(API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided", {
+			var listUrl = API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided";
+			if (window.USIS_API && window.USISLeadsFilters) {
+				listUrl = window.USIS_API.buildUrl("/api/v1/lead-estimates", window.USISLeadsFilters.listParams());
+			}
+			fetch(listUrl, {
 					credentials: "include",
 					headers: { Accept: "application/json" },
 				})
@@ -477,7 +503,10 @@
 					return r.json();
 				})
 				.then(function (data) {
-					var items = (data.items || []).filter(isOpenLead);
+					var items = data.items || [];
+					if (!(window.USISLeadsFilters && window.USISLeadsFilters.relaxesOpenBoard())) {
+						items = items.filter(isOpenLead);
+					}
 					allItems = items;
 					isFetching = false;
 					loadError = null;
@@ -498,6 +527,7 @@
 				});
 		}
 
+		// Drawer Apply is the list query; AutoFilter below is in-grid refinement only.
 		autoFilter = window.USIS_TABLE_AUTOFILTER
 			? window.USIS_TABLE_AUTOFILTER.bind({
 					table: "#usis-bc-leads-table",
@@ -545,7 +575,19 @@
 				clearId: "usis-bc-leads-bulk-clear",
 			});
 		}
-		document.addEventListener("DOMContentLoaded", loadLeads);
+		document.addEventListener("DOMContentLoaded", function () {
+			if (window.USISLeadsFilters) {
+				window.USISLeadsFilters.init({
+					getAutoFilter: function () {
+						return autoFilter;
+					},
+					onApply: loadLeads,
+					onReset: loadLeads,
+				}).then(loadLeads);
+			} else {
+				loadLeads();
+			}
+		});
 		var btn = document.getElementById("usis-bc-sync-stub");
 		if (btn) btn.addEventListener("click", loadLeads);
 		var pullBtn = document.getElementById("usis-bc-pull");

@@ -396,6 +396,13 @@
 			notify();
 		}
 
+		function clearFilters() {
+			filterState = {};
+			storageClear(persistKey(tableId, "filter"));
+			closePopup();
+			notify();
+		}
+
 		function reset() {
 			sortState = {
 				key: (opts.defaultSort && opts.defaultSort.key) || "",
@@ -887,6 +894,7 @@
 			getActiveLabels: activeLabels,
 			paint: paint,
 			reset: reset,
+			clearFilters: clearFilters,
 			setSort: setSort,
 			clearFilter: clearFilter,
 			applyDomRows: applyDomRows,

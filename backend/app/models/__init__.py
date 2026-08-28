@@ -53,6 +53,7 @@ from .hrms_core import (
     HrmsTimesheetPeriod,
 )
 from .lead_estimate import LeadEstimate
+from .saved_list_filter import SavedListFilter
 from .playbook import (
     ChecklistRun,
     ChecklistRunStep,
@@ -192,6 +193,7 @@ __all__ = [
     "Rfp",
     "RfpLineItem",
     "RfpVendorQuote",
+    "SavedListFilter",
     "SafetyTrainingRecord",
     "Rfi",
     "RfiAssignee",

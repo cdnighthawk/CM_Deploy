@@ -833,3 +833,86 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 .nav-pills .show > .nav-link {
 	background-color: var(--usis-primary);
 }
+
+/* Leads list-query drawer (Plan Room–style; company tokens only) */
+.usis-leads-filter-drawer {
+	--bs-offcanvas-width: 400px;
+	background: var(--usis-paper);
+}
+@media (max-width: 575.98px) {
+	.usis-leads-filter-drawer {
+		--bs-offcanvas-width: 100%;
+	}
+}
+.usis-leads-filter-drawer .offcanvas-header {
+	border-bottom: 1px solid var(--usis-divider);
+	background: var(--usis-paper);
+}
+.usis-leads-filter-tabs {
+	border-bottom: 1px solid var(--usis-divider);
+}
+.usis-leads-filter-tabs .nav-link {
+	border: 0;
+	border-bottom: 2px solid transparent;
+	color: var(--usis-text-secondary);
+	background: transparent;
+	border-radius: 0;
+	padding: 0.5rem 0.75rem;
+}
+.usis-leads-filter-tabs .nav-link.active {
+	color: var(--usis-primary);
+	border-bottom-color: var(--usis-primary);
+	background: transparent;
+}
+.usis-leads-filter-footer {
+	position: sticky;
+	bottom: 0;
+	background: var(--usis-paper);
+}
+#usis-leads-filter-btn.active {
+	border-color: var(--usis-primary);
+	color: var(--usis-primary);
+}
+.usis-leads-chip {
+	display: inline-flex;
+	align-items: center;
+	height: 1.5rem;
+	padding: 0 0.15rem 0 0.5rem;
+	border: 1px solid var(--usis-divider);
+	border-radius: 999px;
+	background: var(--usis-paper);
+	font-size: 0.75rem;
+	line-height: 1;
+	color: var(--usis-text);
+}
+.usis-leads-chip__x {
+	min-width: 24px;
+	min-height: 24px;
+	border: 0;
+	background: transparent;
+	color: var(--usis-text-secondary);
+	line-height: 1;
+}
+.usis-leads-typeahead {
+	position: absolute;
+	z-index: 5;
+	left: 0;
+	right: 0;
+	max-height: 220px;
+	overflow: auto;
+	margin-top: 2px;
+}
+.usis-leads-saved-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 0.75rem;
+	padding: 0.75rem 0;
+	border-bottom: 1px solid var(--usis-divider);
+}
+.usis-leads-saved-row--active {
+	background: #e8eef1;
+	margin: 0 -0.75rem;
+	padding-left: 0.75rem;
+	padding-right: 0.75rem;
+}

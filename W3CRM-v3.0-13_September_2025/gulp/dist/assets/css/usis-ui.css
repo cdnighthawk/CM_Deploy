@@ -80,6 +80,7 @@ body,
 	--bs-box-shadow-sm: none;
 	--bs-box-shadow-lg: none;
 	--headerbg: var(--usis-paper);
+	--nav-headbg: var(--usis-paper);
 }
 
 [data-bs-theme="dark"] {
@@ -101,6 +102,7 @@ body,
 	--bs-border-color: var(--usis-divider);
 	--bs-primary-bg-subtle: #1a2c33;
 	--headerbg: var(--usis-paper);
+	--nav-headbg: var(--usis-paper);
 }
 
 /* ——— Typography ——— */
@@ -164,6 +166,35 @@ html .header,
 
 .header .header-content {
 	height: 100%;
+}
+
+html .nav-header,
+.nav-header,
+[data-nav-headerbg] .nav-header,
+[data-nav-headerbg=color_12] .nav-header {
+	background-color: var(--usis-paper);
+	height: 3.5rem;
+	border-right: 1px solid var(--usis-divider);
+	border-bottom: 1px solid var(--usis-divider);
+	box-shadow: none;
+}
+
+.nav-header .brand-logo,
+.nav-header .usis-brand-logo {
+	color: var(--usis-text);
+}
+
+.nav-header .brand-title,
+.nav-header .usis-logo-title,
+.usis-brand-logo .usis-logo-title {
+	color: var(--usis-text) !important;
+	font-size: 1.0625rem !important;
+	font-weight: 650;
+}
+
+body .hamburger .line,
+.nav-header .hamburger .line {
+	background: var(--usis-text);
 }
 
 .deznav {
@@ -257,28 +288,10 @@ html .header,
 	margin-bottom: 0.25rem;
 }
 
-#usis-site-guide-root {
-	display: none;
-}
-
 #usis-site-guide-root .card {
 	border-color: var(--usis-divider);
 	background: transparent;
 	box-shadow: none;
-}
-
-.usis-hub-tile {
-	display: flex;
-	flex-direction: column;
-	min-height: 12.75rem;
-}
-
-.usis-hub-tile__actions {
-	margin-top: auto;
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.5rem;
 }
 
 #usis-site-guide-root h6 {

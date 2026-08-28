@@ -265,7 +265,18 @@ _FIELD_WRITE_ROLES = (
     "project_engineer",
 )
 
-_FIELD_READ_ROLES = _FIELD_WRITE_ROLES + ("read_only", "readonly", "field_readonly", "office_coordinator")
+_FIELD_READ_ROLES = _FIELD_WRITE_ROLES + (
+    "read_only",
+    "readonly",
+    "field_readonly",
+    "office_coordinator",
+    "website_reviewer",
+)
+COMPANY_READONLY_ROLE_CODES = ("read_only", "readonly", "website_reviewer")
+
+
+def is_company_readonly(cu: CurrentUser) -> bool:
+    return cu.has_role(*COMPANY_READONLY_ROLE_CODES)
 
 
 def _is_standard(cu: CurrentUser) -> bool:

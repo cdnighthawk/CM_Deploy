@@ -1,0 +1,147 @@
+[
+  {
+    "number": 1,
+    "title": "[idea] RFI PRoject # \u2014 rfi-create.html",
+    "body": "## Recommend a change on this page\n\n### Where it happened\n**Page:** /construction/rfi-create.html\n**Page URL:** https://www.usiscm.com/construction/rfi-create.html\n**Page title:** USIS\n\n### Reporter\n**From:** Charles Dossett\n**Email:** charles@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T21:18:44.704123+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0\n\n### Details\nWhen I am in a project, and I make an RFI it should autopopulate all project information",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/1",
+    "created_at": "2026-08-24T21:18:45Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 2,
+    "title": "[idea] Bilingual",
+    "body": "## General recommendation\n\n### Where it happened\n**Page:** Site-wide\n\n### Reporter\n**From:** Charles Dossett\n**Email:** charles@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T21:19:19.588453+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0\n\n### Details\nmake the website rad in spanish.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/2",
+    "created_at": "2026-08-24T21:19:19Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub",
+      "site-wide"
+    ]
+  },
+  {
+    "number": 3,
+    "title": "[bug] Access to the Projects section. \u2014 projects.html",
+    "body": "## Something broke\n\n### Where it happened\n**Page:** /construction/projects.html\n**Page URL:** https://www.usiscm.com/construction/projects.html\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T21:41:01.996031+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nI don't have access to the Projects section, so I can't view and/or work on the submittals or any other subsections of Projects.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/3",
+    "created_at": "2026-08-24T21:41:02Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 4,
+    "title": "[bug] Create submittal / Due (review) \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:37:52.159152+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nal momento de crear un submittal y querer seleccionar cualquier cosa casilla o a\u00f1adir las specs a partir de la casilla de due Review no te permite seleccionar, si lo haces te redirige a due (review).\n\n---\n\nWhen closing this issue, add a comment that starts with `Resolution:` explaining how it was fixed or why it was not. USIS emails that note to the reporter.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/4",
+    "created_at": "2026-08-24T22:37:52Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 5,
+    "title": "[bug] Create submittal / Due (review) \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:39:12.229394+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nWhen you create a submittal and try to select any checkbox or add the specs from the \"Due Review\" checkbox, the system won't let you select them; if you try, it redirects you to \"Due Review.\"\n\n---\n\nWhen closing this issue, add a comment that starts with `Resolution:` explaining how it was fixed or why it was not. USIS emails that note to the reporter.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/5",
+    "created_at": "2026-08-24T22:39:12Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 6,
+    "title": "[bug] Specifications CSI no data base \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:45:02.599681+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nThe CSI sections database is not available; please add it.\n\n---\n\nWhen closing this issue, add a comment that starts with `Resolution:` explaining how it was fixed or why it was not. USIS emails that note to the reporter.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/6",
+    "created_at": "2026-08-24T22:45:03Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 7,
+    "title": "[bug] Delete Specs \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:46:33.492909+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nThere is no option to delete specs.\n\n---\n\nWhen closing this issue, add a comment that starts with `Resolution:` explaining how it was fixed or why it was not. USIS emails that note to the reporter.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/7",
+    "created_at": "2026-08-24T22:46:33Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 8,
+    "title": "[bug] import specs \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:50:06.036739+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nThere isn't an option to import a PDF to add the specs.\n\n---\n\nWhen closing this issue, add a comment that starts with `Resolution:` explaining how it was fixed or why it was not. USIS emails that note to the reporter.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/8",
+    "created_at": "2026-08-24T22:50:06Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 9,
+    "title": "[bug] Create submittal \u2014 project-detail.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/project-detail.html\n**Page URL:** https://www.usiscm.com/construction/project-detail.html?id=1ff506fd-fe21-4455-9dae-72697f0bd344\n**Page title:** USIS\n\n### Reporter\n**From:** Marcos Ibarra\n**Email:** mibarra@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:56:17.384326+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0\n\n### Details\nIt doesn't allow you to create a submittal; the options it provides for creating a submittal aren't intuitive. It would be ideal if this could be improved.\n\n---\n\nWhen closing this issue, add a comment that starts with `Resolution:` explaining how it was fixed or why it was not. USIS emails that note to the reporter.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/9",
+    "created_at": "2026-08-24T22:56:18Z",
+    "closed_at": null,
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 10,
+    "title": "[bug] Test \u2014 leads.html",
+    "body": " \n\n## Something broke\n\n### Where it happened\n**Page:** /construction/leads.html\n**Page URL:** https://www.usiscm.com/construction/leads.html\n**Page title:** USIS\n\n### Reporter\n**From:** Charles Dossett\n**Email:** charles@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-24T22:59:15.129251+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0\n\n### Details\nTest\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "closed",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/10",
+    "created_at": "2026-08-24T22:59:15Z",
+    "closed_at": "2026-08-25T15:03:30Z",
+    "labels": [
+      "bug",
+      "from-hub"
+    ]
+  },
+  {
+    "number": 11,
+    "title": "[idea] Test",
+    "body": " \n\n## General recommendation\n\n### Where it happened\n**Page:** Site-wide\n\n### Reporter\n**From:** Charles Dossett\n**Email:** charles@gousis.com\n**App:** USIS CM\n**Time (UTC):** 2026-08-25T15:37:08.805593+00:00\n**Browser:** Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0\n\n### Details\nTest\n\n---\n\nLeave a comment that starts with `Resolution:` explaining how it was fixed or why it was not. Leave the issue open \u2014 the employee confirms it is resolved by closing it from the email link.",
+    "state": "open",
+    "html_url": "https://github.com/cdnighthawk/CM_Deploy/issues/11",
+    "created_at": "2026-08-25T15:37:09Z",
+    "closed_at": null,
+    "labels": [
+      "enhancement",
+      "from-hub",
+      "site-wide"
+    ]
+  }
+]

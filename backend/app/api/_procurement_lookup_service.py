@@ -15,7 +15,7 @@ from ..models import (
     Project,
     ProjectDirectoryCompany,
 )
-from ._perms import CurrentUser
+from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError, _parse_uuid
 
 PROCUREMENT_VENDOR_TYPES = frozenset({"vendor", "subcontractor", "gc", "other", "self"})
@@ -24,7 +24,7 @@ PROCUREMENT_VENDOR_TYPES = frozenset({"vendor", "subcontractor", "gc", "other", 
 def _can_view(cu: CurrentUser) -> bool:
     if cu.is_dev_admin or cu.has_role("admin", "superuser", "standard"):
         return True
-    return cu.has_role("read_only", "readonly")
+    return is_company_readonly(cu)
 
 
 def _can_mutate(cu: CurrentUser) -> bool:

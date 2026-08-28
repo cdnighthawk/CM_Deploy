@@ -114,6 +114,43 @@ def test_me_includes_capabilities(client, standard_role):
     assert body["capabilities"]["modules"]["user_admin"] == "none"
 
 
+def test_website_reviewer_defaults_are_read_only():
+    from app.permissions.defaults import DEFAULTS_BY_ROLE_CODE, WEBSITE_REVIEWER_ROLE_CODE
+
+    perms = DEFAULTS_BY_ROLE_CODE[WEBSITE_REVIEWER_ROLE_CODE]
+    assert perms["user_admin"] == "none"
+    assert perms["projects"] == "read"
+    assert perms["leads"] == "read"
+    assert all(level in ("read", "none") for level in perms.values())
+
+
+def test_website_reviewer_is_read_only(client, no_dev_admin):
+    from app.permissions.defaults import WEBSITE_REVIEWER_ROLE_CODE
+
+    with client.application.app_context():
+        role = db.session.scalar(select(Role).where(Role.code == WEBSITE_REVIEWER_ROLE_CODE))
+        if role is None:
+            role = Role(code=WEBSITE_REVIEWER_ROLE_CODE, name="Website Reviewer")
+            db.session.add(role)
+            db.session.flush()
+        u = User(email="reviewer_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        db.session.commit()
+        uid = str(u.id)
+
+    blocked = client.post(
+        "/api/v1/projects",
+        headers={"X-Usis-User-Id": uid},
+        json={"name": "Should not create", "status": "active"},
+    )
+    assert blocked.status_code == 403
+
+    admin = client.get("/api/v1/admin/users", headers={"X-Usis-User-Id": uid})
+    assert admin.status_code == 403
+
+
 def test_module_guard_blocks_admin_users(client, standard_role):
     with client.application.app_context():
         u = User(email="perm_blk_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)

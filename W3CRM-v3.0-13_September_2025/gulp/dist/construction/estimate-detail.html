@@ -14,18 +14,22 @@
 	<meta name="robots" content="index, follow">
 	<meta name="format-detection" content="telephone=no">
 	
-	<meta name="keywords" content="admin, admin dashboard, bootstrap, template, analytics, dark mode, modern, responsive admin dashboard, sass, ui kit">
-	<meta name="description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
+	<meta name="keywords" content="USIS, US Interior Specialties, construction management, projects, estimates, field operations">
+	<meta name="description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
 	
-	<meta property="og:title" content="W3CRM - Bootstrap Admin Dashboard Template">
-	<meta property="og:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
-	<meta property="og:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="USIS Construction Management">
+	<meta property="og:url" content="https://www.usiscm.com/">
+	<meta property="og:title" content="USIS Construction Management">
+	<meta property="og:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
+	<meta property="og:image:alt" content="US Interior Specialties">
 	
 	<!-- TWITTER META -->
-	<meta name="twitter:title" content="W3CRM - Bootstrap Admin Dashboard Template">
-	<meta name="twitter:description" content="Elevate your administrative efficiency and enhance productivity with the W3CRM Bootstrap Admin Dashboard Template. Designed to streamline your tasks, this powerful tool provides a user-friendly interface, robust features, and customizable options, making it the ideal choice for managing your data and operations with ease.">
-	<meta name="twitter:image" content="https://w3crm.dexignzone.com/xhtml/social-image.png">
-	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="USIS Construction Management">
+	<meta name="twitter:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
+	<meta name="twitter:card" content="summary">
 	
 	<!-- FAVICONS ICON -->
 	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
@@ -35,7 +39,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://w3crm.dexignzone.com/xhtml/estimate-detail.html">
+	<link rel="canonical" href="https://www.usiscm.com/estimate-detail.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -156,6 +160,17 @@
 		.usis-estd-group-due { color: var(--bs-danger); font-weight: 500; }
 		.usis-estd-child-nav a { text-decoration: none; }
 		.usis-estd-child-nav a.disabled { pointer-events: none; opacity: 0.45; }
+		.usis-estd-job-map-wrap {
+			position: relative;
+			height: 16rem;
+			background: var(--bs-light);
+		}
+		.usis-estd-job-map-wrap iframe {
+			display: block;
+			width: 100%;
+			height: 100%;
+			border: 0;
+		}
 	</style>
 
 </head>
@@ -482,6 +497,12 @@
 							<span class="nav-text">Procurement</span>
 						</a>
 					</li>
+					<li data-usis-module="ap">
+						<a href="usis-invoices.html" aria-expanded="false">
+							<i class="icon feather icon-file-text"></i>
+							<span class="nav-text">Invoices</span>
+						</a>
+					</li>
 					<li data-usis-module="reports">
 						<a href="reports.html" aria-expanded="false">
 							<i class="icon feather icon-pie-chart"></i>
@@ -628,6 +649,15 @@
 
 								<div class="row g-3">
 									<div class="col-xl-7">
+										<div class="card border-0 shadow-sm mb-3 d-none" id="usis-estd-job-map-card">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+												<span>Property location</span>
+												<a class="small text-decoration-none" id="usis-estd-job-map-open" href="#" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+											</div>
+											<div class="usis-estd-job-map-wrap">
+												<iframe id="usis-estd-job-map" title="Property location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+											</div>
+										</div>
 										<div class="card border-0 shadow-sm mb-3">
 											<div class="card-header bg-white py-2 fw-semibold border-bottom">Public project information</div>
 											<div class="card-body p-0">

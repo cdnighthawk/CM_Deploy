@@ -276,8 +276,10 @@
 		var keys = [
 			"formatted",
 			"formattedAddress",
+			"complete",
 			"address",
 			"address1",
+			"streetName",
 			"street",
 			"line1",
 			"city",
@@ -405,6 +407,58 @@
 		return !!(item && item.external_parent_id);
 	}
 
+	function firstNumber() {
+		for (var i = 0; i < arguments.length; i++) {
+			var n = Number(arguments[i]);
+			if (!isNaN(n) && isFinite(n)) return n;
+		}
+		return null;
+	}
+
+	function locationQuery(item) {
+		var loc = item && item.location;
+		var parent = groupParentOf(item);
+		if ((!loc || typeof loc !== "object") && parent && parent.location) {
+			loc = parent.location;
+		}
+		if (loc && typeof loc === "object") {
+			var coords = loc.coords && typeof loc.coords === "object" ? loc.coords : loc;
+			var lat = firstNumber(coords.lat, coords.latitude, loc.lat, loc.latitude);
+			var lng = firstNumber(coords.lng, coords.lon, coords.longitude, loc.lng, loc.lon, loc.longitude);
+			if (lat != null && lng != null) return lat + "," + lng;
+		}
+		var formatted = formatLocation(loc);
+		if (formatted) return formatted;
+		var city = (item && item.city) || (loc && loc.city) || (parent && parent.city);
+		var state = (item && item.state) || (loc && loc.state) || (parent && parent.state);
+		var bits = [city, state].filter(Boolean);
+		return bits.length ? bits.join(", ") : "";
+	}
+
+	function renderJobMap(item) {
+		var card = document.getElementById("usis-estd-job-map-card");
+		var frame = document.getElementById("usis-estd-job-map");
+		var open = document.getElementById("usis-estd-job-map-open");
+		if (!card || !frame) return;
+		var q = locationQuery(item);
+		if (!q) {
+			card.classList.add("d-none");
+			frame.removeAttribute("src");
+			if (open) {
+				open.removeAttribute("href");
+				open.classList.add("d-none");
+			}
+			return;
+		}
+		var encoded = encodeURIComponent(q);
+		frame.src = "https://maps.google.com/maps?q=" + encoded + "&z=16&output=embed";
+		if (open) {
+			open.href = "https://www.google.com/maps/search/?api=1&query=" + encoded;
+			open.classList.remove("d-none");
+		}
+		card.classList.remove("d-none");
+	}
+
 	function renderJobDetailed(item) {
 		var parent = groupParentOf(item);
 		var jobName = (parent && parent.name) || item.name || "Untitled opportunity";
@@ -433,6 +487,7 @@
 		}
 
 		setJobBadges(document.getElementById("usis-estd-job-badges"), item);
+		renderJobMap(item);
 
 		var cur = item.default_currency || "USD";
 		var pub = document.getElementById("usis-estd-job-public-tbody");

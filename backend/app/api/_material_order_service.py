@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from ..extensions import db
 from ..models import Commitment, Company, Project, ProjectMaterialOrder
-from ._perms import CurrentUser
+from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError, _parse_uuid
 
 MATERIAL_ORDER_STATUSES = frozenset({"draft", "ordered", "shipped", "delivered", "cancelled"})
@@ -45,7 +45,7 @@ def _is_writer(cu: CurrentUser) -> bool:
 
 
 def _can_view(cu: CurrentUser) -> bool:
-    return _is_admin(cu) or _is_writer(cu) or cu.has_role("read_only", "readonly")
+    return _is_admin(cu) or _is_writer(cu) or is_company_readonly(cu)
 
 
 def _can_mutate(cu: CurrentUser) -> bool:

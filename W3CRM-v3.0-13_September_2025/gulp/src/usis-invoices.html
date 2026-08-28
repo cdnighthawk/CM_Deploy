@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-invoices.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Vendor invoices" })
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h5 class="mb-1">Vendor invoices</h5>
+						<p class="text-muted small mb-0">Vendors email invoices to invoices@gousis.com. USIS logs them, routes them to jobs, then sends them for payment approval.</p>
+						<p class="small text-muted mb-0" id="usis-ap-mailbox"></p>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<a href="usis-invoice-approvals.html" class="btn btn-sm btn-outline-secondary">Approvals</a>
+						<button type="button" class="btn btn-sm btn-outline-primary" id="usis-ap-sync">Sync mailbox</button>
+						<button type="button" class="btn btn-sm btn-primary" id="usis-ap-new">Log invoice</button>
+					</div>
+				</div>
+				<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+					<label class="small mb-0" for="usis-ap-filter">Status</label>
+					<select class="form-select form-select-sm w-auto" id="usis-ap-filter">
+						<option value="">All</option>
+						<option value="received">Received</option>
+						<option value="routed">Routed</option>
+						<option value="pending_approval">Pending approval</option>
+						<option value="approved">Approved</option>
+						<option value="rejected">Rejected</option>
+						<option value="paid">Paid</option>
+						<option value="void">Void</option>
+					</select>
+					<p class="small text-muted mb-0" id="usis-ap-status">Loading…</p>
+				</div>
+				<div class="card border-0 shadow-sm">
+					<div class="table-responsive">
+						<table class="table table-sm table-striped mb-0">
+							<thead>
+								<tr>
+									<th>Status</th>
+									<th>Vendor</th>
+									<th>Invoice #</th>
+									<th>Job</th>
+									<th class="text-end">Amount</th>
+									<th>Received</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody id="usis-ap-body">
+								<tr><td colspan="7" class="text-muted small py-3">Loading…</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/usis-invoices-common.js"></script>
+	<script src="assets/js/usis-invoices.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+</body>
+</html>

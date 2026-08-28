@@ -21,7 +21,7 @@ from ..models.lead_estimate import LeadEstimate
 from ..models.takeoff_line_item import TakeoffLineItem
 from . import _commitment_service as commitment_svc
 from ..services import door_schedule as door_schedule_svc
-from ._perms import CurrentUser
+from ._perms import CurrentUser, is_company_readonly
 from ._quote_report_columns import resolve_visible_columns
 from ._rfi_service import ApiError
 
@@ -63,7 +63,7 @@ def _can_view_procurement(cu: CurrentUser) -> bool:
     return (
         cu.is_dev_admin
         or cu.has_role("admin", "superuser", "standard")
-        or cu.has_role("read_only", "readonly")
+        or is_company_readonly(cu)
     )
 
 

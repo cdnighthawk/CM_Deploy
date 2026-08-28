@@ -20,7 +20,7 @@ from ..models import (
     User,
 )
 from ._notifications import send_plain_notification_email
-from ._perms import CurrentUser, current_user
+from ._perms import CurrentUser, current_user, is_company_readonly
 from .v1 import _iso, _jsonify, _parse_uuid_param
 
 
@@ -38,7 +38,7 @@ def _can_start_run(cu: CurrentUser) -> bool:
         return True
     if cu.id is None:
         return False
-    if cu.has_role("read_only", "readonly"):
+    if is_company_readonly(cu):
         return False
     return True
 

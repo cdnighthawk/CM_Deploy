@@ -26,6 +26,7 @@
 		Playbooks: "Guías",
 		"User admin": "Admin. de usuarios",
 		Procurement: "Compras",
+		Invoices: "Facturas",
 		Reports: "Reportes",
 		Search: "Buscar",
 		"Report a problem": "Reportar un problema",
@@ -72,8 +73,8 @@
 		"Your name (optional)": "Su nombre (opcional)",
 		"Short summary": "Resumen corto",
 		"What happened, and what did you expect?": "¿Qué pasó y qué esperaba?",
-		"Tell us what broke or what to change. We'll email you when there is an update. You close the issue to confirm it's resolved.":
-			"Díganos qué falló o qué cambiar. Le enviaremos un correo cuando haya una actualización. Usted cierra el reporte para confirmar que quedó resuelto.",
+		"Tell us what broke or what to change. It will show on the Issues page.":
+			"Díganos qué falló o qué cambiar. Aparecerá en la página de Issues.",
 		"Something broke": "Algo falló",
 		"Recommend a change on this page": "Recomendar un cambio en esta página",
 		"General recommendation": "Recomendación general",

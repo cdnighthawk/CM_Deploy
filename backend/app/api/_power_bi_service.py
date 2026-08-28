@@ -19,7 +19,7 @@ from typing import Any
 
 import httpx
 
-from ._perms import CurrentUser
+from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError
 
 _POWERBI_SCOPE = "https://analysis.windows.net/powerbi/api/.default"
@@ -40,7 +40,7 @@ def is_configured() -> bool:
 
 
 def _can_view_embed(cu: CurrentUser) -> bool:
-    if cu.is_dev_admin or cu.has_role("admin", "superuser", "standard", "read_only", "readonly"):
+    if cu.is_dev_admin or cu.has_role("admin", "superuser", "standard") or is_company_readonly(cu):
         return True
     return False
 

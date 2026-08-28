@@ -140,6 +140,7 @@ def create_app(config_object: str | None = None) -> Flask:
     from .api import v1_bp
     from .api.github_webhooks import bp as github_webhooks_bp
     from .api.ingest import bp as ingest_bp
+    from .ap import ap_bp
     from .hrms import hrms_bp
     from .public_portal import public_bp
 
@@ -147,6 +148,7 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(ai_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(hrms_bp)
+    app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
     app.register_blueprint(ingest_bp)
     from .api._in_app_notifications import register_on_app

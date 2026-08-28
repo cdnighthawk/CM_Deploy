@@ -8,11 +8,12 @@ from sqlalchemy import false, select, true
 
 from ..extensions import db
 from ..models import Project, ProjectMember
+from .defaults import WEBSITE_REVIEWER_ROLE_CODE
 
 if TYPE_CHECKING:
     from ..api._perms import CurrentUser
 
-ALL_PROJECTS_ROLE_CODES = frozenset({"admin", "executive", "superuser"})
+ALL_PROJECTS_ROLE_CODES = frozenset({"admin", "executive", "superuser", WEBSITE_REVIEWER_ROLE_CODE})
 
 
 def can_see_all_projects_for(

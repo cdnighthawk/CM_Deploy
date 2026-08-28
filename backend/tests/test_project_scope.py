@@ -89,6 +89,21 @@ def test_list_projects_can_exclude_planning(client, no_dev_admin):
     assert planning_id not in ids
 
 
+def test_website_reviewer_sees_all_projects(client, no_dev_admin):
+    with client.application.app_context():
+        u, _ = _mk_user_with_role("website_reviewer")
+        _mk_project("Review A")
+        _mk_project("Review B")
+        db.session.commit()
+        uid = str(u.id)
+
+    r = client.get("/api/v1/projects?limit=2000", headers={"X-Usis-User-Id": uid})
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["project_scope"] == "all"
+    assert body["total"] >= 2
+
+
 def test_executive_sees_all_projects(client, no_dev_admin):
     with client.application.app_context():
         u, _ = _mk_user_with_role("executive")

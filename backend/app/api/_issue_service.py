@@ -14,7 +14,7 @@ from ._perms import CurrentUser
 
 STATUSES = ("New", "Triaged", "In Progress", "Pending Review", "Resolved", "Closed")
 SEVERITIES = ("Critical", "Major", "Minor")
-SOURCES = ("ai_review", "rfi", "punch", "field", "safety", "manual")
+SOURCES = ("ai_review", "rfi", "punch", "field", "safety", "manual", "feedback")
 OPEN_STATUSES = ("New", "Triaged", "In Progress", "Pending Review")
 
 
@@ -298,6 +298,56 @@ def get_issue(issue_id: uuid.UUID) -> dict[str, Any] | None:
     if row is None:
         return None
     return serialize_issue(row, include_events=True)
+
+
+def _page_filename(page: str) -> str:
+    return (page or "").rsplit("/", 1)[-1][:50]
+
+
+def _project_id_from_page_url(page_url: str) -> uuid.UUID | None:
+    from urllib.parse import parse_qs, urlparse
+
+    if not page_url:
+        return None
+    qs = parse_qs(urlparse(page_url).query)
+    raw = (qs.get("id") or qs.get("project_id") or qs.get("projectId") or [""])[0]
+    try:
+        pid = uuid.UUID(str(raw))
+    except (TypeError, ValueError):
+        return None
+    if db.session.get(Project, pid) is None:
+        return None
+    return pid
+
+
+def create_from_feedback(parsed: Mapping[str, Any], cu: CurrentUser, *, reporter_name: str = "") -> dict[str, Any]:
+    kind = parsed.get("kind") if isinstance(parsed.get("kind"), Mapping) else {}
+    severity = "Major" if str(kind.get("value") or "") == "bug" else "Minor"
+    lines = [_text(parsed.get("details"))]
+    page = _text(parsed.get("page"))
+    page_url = _text(parsed.get("page_url"))
+    if page:
+        lines.append(f"Page: {page}")
+    if page_url:
+        lines.append(f"Page URL: {page_url}")
+    if reporter_name:
+        lines.append(f"Reported by: {reporter_name}")
+    email = _text(getattr(getattr(cu, "user", None), "email", None))
+    if email:
+        lines.append(f"Email: {email}")
+    project_id = _project_id_from_page_url(page_url)
+    return create_issue(
+        {
+            "title": parsed.get("title"),
+            "description": "\n".join(line for line in lines if line),
+            "source_type": "feedback",
+            "severity": severity,
+            "trade": "General",
+            "project_id": str(project_id) if project_id else "",
+            "sheet_number": _page_filename(page),
+        },
+        cu,
+    )
 
 
 def create_issue(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:

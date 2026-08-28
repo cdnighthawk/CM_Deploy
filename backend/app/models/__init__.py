@@ -86,6 +86,7 @@ from .safety_training import SafetyTrainingRecord
 from .submittal import Submittal, SubmittalAudit, SubmittalLineItem, SubmittalPdfAnnotation
 from .textura_credential import TexturaCredential
 from .textura_sync_log import TexturaSyncLog
+from .vendor_invoice import VendorInvoice, VendorInvoiceEvent, VendorInvoiceFile
 from .sales_tax_rate import SalesTaxRate
 from .takeoff_line_item import TakeoffLineItem
 from .wage_rate import WageRate
@@ -192,5 +193,8 @@ __all__ = [
     "TakeoffLineItem",
     "User",
     "UserRole",
+    "VendorInvoice",
+    "VendorInvoiceEvent",
+    "VendorInvoiceFile",
     "WageRate",
 ]

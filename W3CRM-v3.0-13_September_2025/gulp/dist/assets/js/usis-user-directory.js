@@ -19,6 +19,7 @@
 		"safety_manager",
 		"office_coordinator",
 		"field_readonly",
+		"website_reviewer",
 	];
 	var state = {
 		users: [],

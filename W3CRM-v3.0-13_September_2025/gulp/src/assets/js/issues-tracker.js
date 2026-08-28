@@ -2,7 +2,20 @@
 	"use strict";
 
 	var STATUSES = ["New", "Triaged", "In Progress", "Pending Review", "Resolved", "Closed"];
+	var SOURCE_LABELS = {
+		ai_review: "AI Review",
+		rfi: "RFI",
+		punch: "Punch",
+		field: "Field",
+		safety: "Safety",
+		manual: "Manual",
+		feedback: "Website",
+	};
 	var state = { items: [], view: "kanban", selected: null };
+
+	function sourceLabel(value) {
+		return SOURCE_LABELS[value] || value || "";
+	}
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") return window.usisApiBase();
@@ -124,7 +137,7 @@
 			esc(issue.trade) +
 			"</span>" +
 			'<span class="badge text-bg-light">' +
-			esc(issue.source_type) +
+			esc(sourceLabel(issue.source_type)) +
 			"</span></div>" +
 			'<div class="small text-muted mt-2">' +
 			esc(issue.assignee_name || "Unassigned") +
@@ -193,7 +206,7 @@
 					"</td><td>" +
 					esc(issue.trade) +
 					"</td><td>" +
-					esc(issue.source_type) +
+					esc(sourceLabel(issue.source_type)) +
 					(issue.sheet_number ? " · " + esc(issue.sheet_number) : "") +
 					"</td><td>" +
 					esc(issue.assignee_name || "—") +
@@ -268,7 +281,7 @@
 					'</span><span class="badge text-bg-light">' +
 					esc(issue.trade) +
 					'</span><span class="badge text-bg-light">' +
-					esc(issue.source_type) +
+					esc(sourceLabel(issue.source_type)) +
 					"</span></div>" +
 					'<label class="form-label small">Change status</label>' +
 					'<select class="form-select form-select-sm mb-3" id="usis-issue-status-change">' +

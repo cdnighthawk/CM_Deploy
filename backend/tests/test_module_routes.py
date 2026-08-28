@@ -25,5 +25,6 @@ def test_desktop_estimate_queue_uses_leads_or_estimate():
     assert resolve_modules("/api/v1/estimate-queue") == ("leads", "estimate")
 
 
-def test_desktop_estimate_queue_uses_leads_or_estimate():
-    assert resolve_modules("/api/v1/estimate-queue") == ("leads", "estimate")
+def test_vendor_invoice_routes_use_ap_module():
+    assert resolve_modules("/api/v1/ap/invoices") == ("ap",)
+    assert resolve_modules("/api/v1/ap/mailbox/sync") == ("ap",)

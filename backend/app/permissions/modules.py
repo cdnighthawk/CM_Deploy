@@ -25,6 +25,7 @@ MODULE_CATALOG: list[ModuleDef] = [
     {"code": "playbooks", "name": "Playbooks", "description": "Checklist playbooks"},
     {"code": "user_admin", "name": "User admin", "description": "Users and roles directory"},
     {"code": "procurement", "name": "Procurement", "description": "Commitments and procurement"},
+    {"code": "ap", "name": "Vendor invoices", "description": "Vendor invoice intake, job routing, and payment approval"},
     {"code": "reports", "name": "Reports", "description": "Reports"},
     {"code": "ai", "name": "AI assistant", "description": "Grok chat and database tools"},
 ]

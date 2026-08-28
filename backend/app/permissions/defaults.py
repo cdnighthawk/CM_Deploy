@@ -18,6 +18,7 @@ _STANDARD: dict[str, str] = {
     "playbooks": "write",
     "user_admin": "none",
     "procurement": "write",
+    "ap": "write",
     "reports": "read",
     "ai": "read",
 }
@@ -35,6 +36,7 @@ _READ_ONLY: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "read",
+    "ap": "read",
     "reports": "read",
     "ai": "read",
 }
@@ -52,6 +54,7 @@ _HR_ADMIN: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "none",
     "reports": "read",
     "ai": "none",
 }
@@ -69,6 +72,7 @@ _HR_MANAGER: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "none",
     "reports": "none",
     "ai": "none",
 }
@@ -86,6 +90,7 @@ _HR_EMPLOYEE: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "none",
     "reports": "none",
     "ai": "none",
 }
@@ -97,6 +102,7 @@ _EXECUTIVE: dict[str, str] = {
     "hrms": "write",
     "reports": "admin",
     "ai": "read",
+    "ap": "write",
 }
 
 _PROJECT_MANAGER: dict[str, str] = {
@@ -112,6 +118,7 @@ _PROJECT_MANAGER: dict[str, str] = {
     "playbooks": "write",
     "user_admin": "none",
     "procurement": "write",
+    "ap": "write",
     "reports": "read",
     "ai": "read",
 }
@@ -129,6 +136,7 @@ _SUPERINTENDENT: dict[str, str] = {
     "playbooks": "write",
     "user_admin": "none",
     "procurement": "read",
+    "ap": "read",
     "reports": "read",
     "ai": "read",
 }
@@ -146,6 +154,7 @@ _PROJECT_ENGINEER: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "read",
+    "ap": "read",
     "reports": "read",
     "ai": "read",
 }
@@ -163,6 +172,7 @@ _ESTIMATOR: dict[str, str] = {
     "playbooks": "none",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "none",
     "reports": "read",
     "ai": "read",
 }
@@ -180,6 +190,7 @@ _PROJECT_ACCOUNTANT: dict[str, str] = {
     "playbooks": "none",
     "user_admin": "none",
     "procurement": "write",
+    "ap": "admin",
     "reports": "write",
     "ai": "read",
 }
@@ -197,6 +208,7 @@ _SAFETY_MANAGER: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "none",
     "reports": "read",
     "ai": "read",
 }
@@ -214,6 +226,7 @@ _OFFICE_COORDINATOR: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "write",
     "reports": "none",
     "ai": "read",
 }
@@ -231,9 +244,13 @@ _FIELD_READONLY: dict[str, str] = {
     "playbooks": "read",
     "user_admin": "none",
     "procurement": "none",
+    "ap": "none",
     "reports": "none",
     "ai": "read",
 }
+
+WEBSITE_REVIEWER_ROLE_CODE = "website_reviewer"
+_WEBSITE_REVIEWER = dict(_READ_ONLY)
 
 _APPLICANT: dict[str, str] = {code: "none" for code in MODULE_CODES}
 
@@ -253,6 +270,7 @@ DEFAULTS_BY_ROLE_CODE: dict[str, dict[str, str]] = {
     "safety_manager": _SAFETY_MANAGER,
     "office_coordinator": _OFFICE_COORDINATOR,
     "field_readonly": _FIELD_READONLY,
+    WEBSITE_REVIEWER_ROLE_CODE: _WEBSITE_REVIEWER,
     "applicant": _APPLICANT,
     # Legacy codes (backward compatibility)
     "standard": _STANDARD,
@@ -274,5 +292,10 @@ CM_ROLE_DEFINITIONS: list[tuple[str, str, str]] = [
     ("safety_manager", "Safety Manager", "Assigned projects; safety admin"),
     ("office_coordinator", "Office Coordinator", "Assigned projects; CRM and documents"),
     ("field_readonly", "Field (read-only)", "Assigned projects; read-only access"),
+    (
+        WEBSITE_REVIEWER_ROLE_CODE,
+        "Website Reviewer",
+        "Company-wide read-only access for site review; no user admin",
+    ),
     ("applicant", "Job applicant", "Self-service hire wizard only; no staff CM access"),
 ]

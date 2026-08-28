@@ -26,6 +26,7 @@
 		Playbooks: "Guías",
 		"User admin": "Admin. de usuarios",
 		Procurement: "Compras",
+		Invoices: "Facturas",
 		Reports: "Reportes",
 		Search: "Buscar",
 		"Report a problem": "Reportar un problema",

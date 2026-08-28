@@ -24,6 +24,7 @@ PROTECTED_DOMAIN_SUFFIXES = (
 
 TEST_LOCAL_PREFIXES = (
     "adm_",
+    "ap_",
     "adm2_",
     "att_",
     "badnext_",

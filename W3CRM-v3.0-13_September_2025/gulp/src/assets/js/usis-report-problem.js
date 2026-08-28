@@ -1,6 +1,6 @@
 /**
- * Header "Report a problem" — files a GitHub issue. Page-specific kinds include the URL;
- * a general recommendation stays site-wide.
+ * Header "Report a problem" — files an internal Issues-page report. Page-specific
+ * kinds include the URL; a general recommendation stays site-wide.
  */
 (function (global) {
 	"use strict";

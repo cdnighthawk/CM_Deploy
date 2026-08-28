@@ -1,11 +1,15 @@
-"""Employee report-a-problem intake, including the page the user was on."""
+"""Employee report-a-problem intake now saves to the internal issues tracker."""
 from __future__ import annotations
 
+import uuid
 from types import SimpleNamespace
 
 import httpx
 import pytest
 
+from app.extensions import db
+from app.models import User
+from app.models.issue import Issue
 from app.services import feedback as feedback_svc
 
 
@@ -80,31 +84,30 @@ def test_feedback_requires_session(client, no_dev_admin):
     assert r.status_code == 401
 
 
-def _signed_in(monkeypatch):
-    monkeypatch.setattr(
-        "app.api.v1.current_user",
-        lambda: SimpleNamespace(
-            user=SimpleNamespace(first_name="Sam", last_name="Lee", email="sam@t.com")
-        ),
+def _staff_headers(flask_app, email_prefix: str = "fb") -> dict[str, str]:
+    with flask_app.app_context():
+        user = User(
+            email=f"{email_prefix}_{uuid.uuid4().hex[:8]}@t.com",
+            first_name="Sam",
+            last_name="Lee",
+            is_active=True,
+        )
+        db.session.add(user)
+        db.session.commit()
+        return {"X-Usis-User-Id": str(user.id)}
+
+
+def test_feedback_requires_title_and_details(client, flask_app, no_dev_admin):
+    r = client.post(
+        "/api/v1/feedback",
+        json={"title": "", "details": ""},
+        headers=_staff_headers(flask_app, "need"),
     )
-
-
-def test_feedback_requires_title_and_details(client, monkeypatch):
-    _signed_in(monkeypatch)
-    r = client.post("/api/v1/feedback", json={"title": "", "details": ""})
     assert r.status_code == 400
 
 
-def test_feedback_posts_page_url_to_github(client, monkeypatch):
-    _signed_in(monkeypatch)
-    captured = {}
-
-    def fake_submit(**kwargs):
-        captured.update(kwargs)
-        return feedback_svc.SubmitResult(ok=True, status="created", message="Report sent.", issue_number=44)
-
-    monkeypatch.setattr(feedback_svc, "submit_github_issue", fake_submit)
-
+def test_feedback_saves_to_internal_tracker(client, flask_app, no_dev_admin):
+    hdr = _staff_headers(flask_app, "bug")
     r = client.post(
         "/api/v1/feedback",
         json={
@@ -112,26 +115,26 @@ def test_feedback_posts_page_url_to_github(client, monkeypatch):
             "title": "Save failed",
             "details": "The save button stays disabled.",
             "page": "/usis-dashboard-dark.html",
-            "pageUrl": "https://usis-cm.onrender.com/usis-dashboard-dark.html",
+            "pageUrl": "https://www.usiscm.com/usis-dashboard-dark.html",
             "pageTitle": "Dashboard",
         },
+        headers=hdr,
     )
-    assert r.status_code == 200
-    assert r.get_json()["issueNumber"] == 44
-    assert "**Page:** /usis-dashboard-dark.html" in captured["body"]
-    assert "**Page URL:** https://usis-cm.onrender.com/usis-dashboard-dark.html" in captured["body"]
+    assert r.status_code == 201, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["issueId"]
+    assert "Issues page" in body["message"]
+    with flask_app.app_context():
+        row = db.session.get(Issue, uuid.UUID(body["issueId"]))
+        assert row is not None
+        assert row.source_type == "feedback"
+        assert row.severity == "Major"
+        assert "The save button stays disabled." in (row.description or "")
+        assert "usis-dashboard-dark.html" in (row.description or "")
 
 
-def test_feedback_posts_general_without_page(client, monkeypatch):
-    _signed_in(monkeypatch)
-    captured = {}
-
-    def fake_submit(**kwargs):
-        captured.update(kwargs)
-        return feedback_svc.SubmitResult(ok=True, status="created", message="Report sent.", issue_number=51)
-
-    monkeypatch.setattr(feedback_svc, "submit_github_issue", fake_submit)
-
+def test_feedback_general_stays_sitewide(client, flask_app, no_dev_admin):
+    hdr = _staff_headers(flask_app, "idea")
     r = client.post(
         "/api/v1/feedback",
         json={
@@ -139,15 +142,19 @@ def test_feedback_posts_general_without_page(client, monkeypatch):
             "title": "Need a company-wide search",
             "details": "I want to find a contact from any screen.",
             "page": "/construction/leads.html",
-            "pageUrl": "https://usis-cm.onrender.com/construction/leads.html",
+            "pageUrl": "https://www.usiscm.com/construction/leads.html",
         },
+        headers=hdr,
     )
-    assert r.status_code == 200
-    assert r.get_json()["issueNumber"] == 51
-    assert captured["title"] == "[idea] Need a company-wide search"
-    assert captured["labels"] == ["enhancement", "site-wide", "from-hub"]
-    assert "**Page:** Site-wide" in captured["body"]
-    assert "leads.html" not in captured["body"]
+    assert r.status_code == 201, r.get_data(as_text=True)
+    issue_id = r.get_json()["issueId"]
+    with flask_app.app_context():
+        row = db.session.get(Issue, uuid.UUID(issue_id))
+        assert row is not None
+        assert row.source_type == "feedback"
+        assert row.severity == "Minor"
+        assert row.title == "[idea] Need a company-wide search"
+        assert "leads.html" not in (row.description or "")
 
 
 def test_submit_skips_github_when_token_missing():

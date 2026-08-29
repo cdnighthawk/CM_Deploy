@@ -114,12 +114,10 @@
 	}
 
 	function renderRow(row) {
-		var plan = esc(row.plan_number || "—");
 		var flags = [];
 		if (row.is_new) flags.push('<span class="badge text-bg-success">NEW</span>');
 		if (row.bid_date_changed) flags.push('<span class="badge text-bg-warning">Date change</span>');
 		var flagHtml = flags.length ? flags.join(" ") : '<span class="text-muted">—</span>';
-		var addenda = row.addenda_count ? esc(String(row.addenda_count)) : "0";
 		return (
 			"<tr>" +
 			fitCell(row) +
@@ -128,8 +126,6 @@
 			'<td class="text-nowrap">' + esc(row.bid_time || "—") + "</td>" +
 			"<td>" + esc(row.location || "—") + "</td>" +
 			'<td class="usis-gs-col-dist text-nowrap">' + formatDistanceMiles(row.distance_miles) + "</td>" +
-			'<td class="text-nowrap text-end">' + addenda + "</td>" +
-			'<td class="text-nowrap"><span class="fw-semibold">' + plan + "</span></td>" +
 			"<td>" + projectNameCell(row) + "</td>" +
 			'<td class="text-nowrap text-end">' + formatMoney(row.estimate_high) + "</td>" +
 			"</tr>"
@@ -169,10 +165,10 @@
 			if (filterCount) filterCount.textContent = "";
 			if (q) {
 				tbody.innerHTML =
-					'<tr><td colspan="10" class="text-muted">No rows match your filter. Clear the search box to see all loaded jobs (or reload if the list is empty).</td></tr>';
+					'<tr><td colspan="8" class="text-muted">No rows match your filter. Clear the search box to see all loaded jobs (or reload if the list is empty).</td></tr>';
 			} else {
 				tbody.innerHTML =
-					'<tr><td colspan="10" class="text-muted">No Golden State planroom jobs match this view.</td></tr>';
+					'<tr><td colspan="8" class="text-muted">No Golden State planroom jobs match this view.</td></tr>';
 			}
 			if (autoFilter) autoFilter.paint();
 			return;
@@ -185,7 +181,7 @@
 		}
 		if (!filtered.length) {
 			tbody.innerHTML =
-				'<tr><td colspan="10" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
+				'<tr><td colspan="8" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
 		} else {
 			var rows = autoFilter ? autoFilter.sort(filtered) : filtered;
 			tbody.innerHTML = rows.map(renderRow).join("");
@@ -214,7 +210,7 @@
 		if (!tbody) return;
 		isFetching = true;
 		loadError = null;
-		tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Loading…</td></tr>';
+		tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
 		var params = new URLSearchParams();
 		params.set("limit", "2000");
 		params.set("sort", "fit_score");
@@ -238,7 +234,7 @@
 				isFetching = false;
 				loadError = err.message;
 				tbody.innerHTML =
-					'<tr><td colspan="10" class="text-danger">Could not load planroom leads: ' +
+					'<tr><td colspan="8" class="text-danger">Could not load planroom leads: ' +
 					esc(err.message) +
 					".</td></tr>";
 			});
@@ -307,8 +303,6 @@
 					{ key: "bid_time", label: "Time", type: "text", sortable: true, filterable: true },
 					{ key: "location", label: "Location", type: "singleSelect", sortable: true, filterable: true },
 					{ key: "distance_miles", label: "Dist", type: "number", sortable: true, filterable: true },
-					{ key: "addenda_count", label: "Addenda", type: "number", sortable: true, filterable: true },
-					{ key: "plan_number", label: "Plan #", type: "text", sortable: true, filterable: true },
 					{ key: "name", label: "Project", type: "text", sortable: true, filterable: true },
 					{
 						key: "estimate_high",

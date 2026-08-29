@@ -56,6 +56,8 @@
 
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<style>
 		#usis-specs-viewer-root { min-height: calc(100vh - 12rem); }
@@ -410,7 +412,7 @@
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
 						<h5 class="mb-0">Project specifications</h5>
-						<p class="text-muted small mb-0" id="usis-specs-viewer-subtitle">CSI spec book — full page view.</p>
+						<p class="text-muted small mb-0" id="usis-specs-viewer-subtitle">CSI spec table — click a section to open the PDF viewer.</p>
 					</div>
 					<a class="btn btn-sm btn-outline-secondary" id="usis-specs-viewer-back" href="javascript:history.back()">Back</a>
 				</div>
@@ -469,10 +471,14 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
+	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="assets/js/usis-specs-book-tab.js"></script>
 	<script>
 	(function () {
-		var pid = new URLSearchParams(window.location.search).get("project_id");
+		var q = new URLSearchParams(window.location.search);
+		var pid = q.get("project_id");
+		var sid = q.get("spec_id");
 		var root = document.getElementById("usis-specs-viewer-root");
 		var noId = document.getElementById("usis-specs-viewer-no-id");
 		var sub = document.getElementById("usis-specs-viewer-subtitle");
@@ -483,7 +489,7 @@
 		}
 		if (sub) sub.textContent = "Project id: " + pid;
 		if (typeof window.USISSpecsBook !== "undefined" && root) {
-			window.USISSpecsBook.mount(root, pid.trim());
+			window.USISSpecsBook.mount(root, pid.trim(), { specId: sid && String(sid).trim() ? String(sid).trim() : null });
 		} else if (root) {
 			root.innerHTML = '<div class="alert alert-danger">Spec book script failed to load.</div>';
 		}

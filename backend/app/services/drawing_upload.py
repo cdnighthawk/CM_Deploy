@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import Drawing, Project
-from ..services.object_storage import UploadCategory, delete_stored, save_upload, stored_exists
+from ..services.object_storage import StorageError, UploadCategory, delete_stored, save_upload, stored_exists
 
 _SLUG_BAD = re.compile(r'[<>:"/\\|?*]+')
 _SLUG_SPACE = re.compile(r"[\s,]+")
@@ -155,6 +155,8 @@ def _create_drawing_row(
     obj_name = drawing_storage_relpath(d)
     try:
         sz = save_upload(UploadCategory.DRAWINGS, obj_name, io.BytesIO(pdf_bytes))
+    except StorageError as exc:
+        raise DrawingUploadError(exc.message, exc.status) from exc
     except OSError as exc:
         raise DrawingUploadError(f"could not save file: {exc}", 500) from exc
 

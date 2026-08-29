@@ -1,14 +1,8 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
 
-
-
 	<base href="../">
-
-
 
 	<!-- Title -->
 	<title>USIS</title>
@@ -27,13 +21,13 @@
 	<meta property="og:site_name" content="USIS Construction Management">
 	<meta property="og:url" content="https://www.usiscm.com/">
 	<meta property="og:title" content="USIS Construction Management">
-	<meta property="og:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta property="og:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
 	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
 	<meta property="og:image:alt" content="US Interior Specialties">
 	
 	<!-- TWITTER META -->
 	<meta name="twitter:title" content="USIS Construction Management">
-	<meta name="twitter:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta name="twitter:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
 	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
 	<meta name="twitter:card" content="summary">
 	
@@ -51,6 +45,7 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<!-- Flask API root for session login/logout + credentialed ``fetch``.
 	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
@@ -60,259 +55,90 @@
 	<script src="assets/js/usis-api-fetch.js"></script>
 	<script src="assets/js/usis-theme-boot.js"></script>
 
-
-
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
-
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<style>
-
 		/* Full-page viewer shell: hide normal CRM chrome on this page only. */
-
 		body.usis-drawing-viewer #main-wrapper {
-
 			display: none !important;
-
 		}
-
 		body.usis-drawing-viewer {
-
 			overflow: hidden;
-
 		}
-
 		#usis-dv-fullscreen {
-
 			position: fixed;
-
 			inset: 0;
-
 			z-index: 10050;
-
 			display: flex;
-
 			flex-direction: column;
-
-			background: var(--bs-body-bg, #fff);
-
+			background: var(--usis-bg, #f4f6f8);
 		}
-
-		.usis-dv-fs-top {
-
-			flex: 0 0 auto;
-
-		}
-
 		.usis-dv-fs-body {
-
 			flex: 1 1 auto;
-
 			min-height: 0;
-
 			display: flex;
-
 			flex-direction: row;
-
 		}
-
-		.usis-dv-rail {
-
-			width: min(17.5rem, 32vw);
-
-			flex: 0 0 min(17.5rem, 32vw);
-
-			min-width: 0;
-
-		}
-
 		.usis-dv-fs-center {
-
 			flex: 1 1 auto;
-
 			min-width: 0;
-
 			min-height: 0;
-
 			display: flex;
-
 			flex-direction: column;
-
 			background: #525659;
-
 		}
-
-		.usis-dv-toolbar {
-
-			background: var(--bs-body-bg, #fff);
-
-			border-bottom: 1px solid var(--bs-border-color, #dee2e6);
-
-		}
-
 		.usis-dv-canvas-wrap {
-
 			flex: 1 1 auto;
-
 			min-height: 0;
-
 			overflow: hidden;
-
 			position: relative;
-
 			overscroll-behavior: none;
-
 			touch-action: none;
-
 			background: #525659;
-
 		}
-
 		.usis-dv-canvas-wrap.usis-dv-nav-pan { cursor: grab; }
-
 		.usis-dv-canvas-wrap.is-panning { cursor: grabbing; }
-
 		.usis-dv-canvas-wrap.usis-dv-nav-zoom { cursor: zoom-in; }
-
 		.usis-dv-zoom-rect {
-
 			position: absolute;
-
 			border: 1px dashed #e0a106;
-
 			background: rgba(224, 161, 6, 0.16);
-
 			pointer-events: none;
-
 			z-index: 5;
-
 		}
-
 		#usis-dv-canvas {
-
 			display: block;
-
 			margin: 0;
-
 			box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.35);
-
 		}
-
-		.usis-dv-meta {
-
-			font-size: 0.8125rem;
-
-		}
-
 		#usis-dv-pdf-stack {
-
 			position: relative;
-
 			display: block;
-
 			text-align: center;
-
 			vertical-align: top;
-
 		}
-
 		.usis-dv-pdf-inner {
-
 			position: relative;
-
 			display: inline-block;
-
 			margin: 0.5rem auto;
-
 			vertical-align: top;
-
 		}
-
 		#usis-dv-overlay {
-
 			position: absolute;
-
 			left: 0;
-
 			top: 0;
-
 			touch-action: none;
-
 			cursor: crosshair;
-
 			margin: 0;
-
 		}
-
-		#usis-dv-picker {
-
-			max-width: 42rem;
-
-		}
-
-		#usis-dv-thumb-list {
-
-			max-height: 6rem;
-
-			overflow: auto;
-
-		}
-
-		a.usis-drawing-name-link {
-
-			color: #1f4e5f;
-
-			text-decoration: underline;
-
-			text-underline-offset: 0.12em;
-
-		}
-
-		a.usis-drawing-name-link:hover {
-
-			color: #163845;
-
-		}
-
-		.usis-dv-takeoff-row {
-
-			text-align: left;
-
-			border-radius: 0.25rem;
-
-		}
-
-		.usis-dv-takeoff-row.active {
-
-			outline: 2px solid var(--bs-primary);
-
-			background: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.08);
-
-		}
-
-		body.usis-drawing-viewer .modal {
-			z-index: 10060;
-		}
-
-		body.usis-drawing-viewer .modal-backdrop {
-			z-index: 10055;
-		}
-
-		.usis-dv-takeoff-sum-click {
-			cursor: pointer;
-		}
-
-		.usis-dv-takeoff-sum-click:hover {
-			text-decoration: underline;
-		}
-
+		body.usis-drawing-viewer .modal { z-index: 10060; }
+		body.usis-drawing-viewer .modal-backdrop { z-index: 10055; }
 	</style>
 
 </head>
-
 <body class="usis-drawing-viewer">
-
-
 
 	<!-- Start - Preloader -->
 	<div id="preloader">
@@ -323,12 +149,7 @@
 	</div>
 	<!-- End - Preloader -->
 
-
-
 	<div id="main-wrapper">
-
-
-
 		<!-- Start - Nav Header -->
 		<div class="nav-header">
 			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
@@ -345,55 +166,60 @@
 			</div>
 		</div>
 		<!-- End - Nav Header -->
-
-
-
 		<!-- Start - Sidebar Chat Box  -->
-		<div class="chatbox">
+		<div class="chatbox usis-ai-chatbox">
 			<div class="chatbox-close"></div>
-			<div class="clearfix">
-				<ul class="nav nav-underline">
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
-					</li>
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane fade" id="notes">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Project notes will appear here when messaging is enabled.</p>
-							</div>
-						</div>
+			<div class="usis-ai-chat" data-usis-ai-chat="1">
+				<div class="usis-ai-chat__header">
+					<div>
+						<span class="usis-overline mb-0">Assistant</span>
+						<div class="fw-semibold">USIS + Grok</div>
 					</div>
-					<div class="tab-pane fade" id="alerts">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">System alerts will appear here when configured.</p>
-							</div>
-						</div>
+					<div class="d-flex align-items-center gap-2">
+						<span class="usis-status-chip usis-status-chip--progress" data-usis-chat-mode>Assistant</span>
+						<span class="usis-seg" data-usis-chat-provider title="xAI Grok">
+							<span class="btn btn-sm active" aria-pressed="true">Grok</span>
+						</span>
 					</div>
-					<div class="tab-pane fade active show" id="chat">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Team chat is not enabled yet.</p>
-							</div>
+				</div>
+				<div class="usis-ai-chat__toolbar d-none" data-usis-chat-toolbar>
+					<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>
+					<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>
+				</div>
+				<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>
+				<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>
+				<div class="usis-ai-chat__composer">
+					<div class="usis-ai-chat__drop d-none" data-usis-chat-drop>Drop files here</div>
+					<div class="usis-ai-chat__chips" data-usis-chat-chips></div>
+					<form data-usis-chat-form>
+						<label class="visually-hidden" for="usis-ai-chat-input">Message</label>
+						<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok, or attach a file or link…"></textarea>
+						<div class="usis-ai-chat__linkrow d-none" data-usis-chat-linkrow>
+							<input type="url" class="form-control form-control-sm" data-usis-chat-link placeholder="https://…" autocomplete="off">
+							<button type="button" class="btn btn-sm btn-primary" data-usis-chat-link-add>Add link</button>
 						</div>
-					</div>
+						<div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+							<div class="d-flex align-items-center gap-1">
+								<div class="usis-ai-chat__pluswrap">
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ai-chat__plus" data-usis-chat-plus title="Attach a file or link" aria-label="Attach a file or link" aria-expanded="false">+</button>
+									<div class="usis-ai-chat__plusmenu d-none" data-usis-chat-plusmenu>
+										<button type="button" data-usis-chat-pickfile>From this computer</button>
+										<button type="button" data-usis-chat-picklink>Paste a link</button>
+									</div>
+								</div>
+								<input type="file" class="d-none" data-usis-chat-file multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,text/markdown,application/json,.txt,.csv,.md,.pdf">
+								<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>New</button>
+							</div>
+							<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>
 		<!-- End - Sidebar Chat Box  -->
 
-
-
-
-		<!-- Start - Header -->
+		<link href="assets/css/usis-ui.css" rel="stylesheet">
+<!-- Start - Header -->
 		<div class="header">
 			<div class="header-content">
 				<nav class="navbar navbar-expand">
@@ -409,20 +235,19 @@
 											</svg>
 										</button>
 									</span>
-									<input type="text" class="form-control" placeholder="Search">
+									<input type="text" class="form-control" placeholder="Search" data-i18n-placeholder="Search">
 								</div>
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
 							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
 								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
-									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
 									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
 										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
 											<i class="icon feather icon-mail"></i>
 											<span class="d-none d-lg-inline ms-1">Email</span>
 										</a>
-										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
+										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
 										</button>
@@ -430,10 +255,9 @@
 								</div>
 							</li>
 							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
-									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
-									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
-									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem" data-i18n-title="Report a problem" data-i18n-aria="Report a problem">
+									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
+									<span class="d-none d-lg-inline fs-6" data-i18n="Report a problem">Report a problem</span>
 								</button>
 							</li>
 							<li class="nav-item">
@@ -453,27 +277,17 @@
 								<div class="dropdown">
 									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
 										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
-											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
 										</svg>
 									</button>
 									<div class="dropdown-menu dropdown-menu-end py-0">
 										<div class="dz-scroll p-2" style="height: 380px;">
-								<p class="text-muted small text-center mb-0 py-5">No notifications.</p>
-							<a class="d-block text-center p-3 border-top" href="javascript:void(0);">See all notifications <i class="fa fa-arrow-right"></i></a>
+								<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
+							<a class="d-block text-center p-3 border-top" href="javascript:void(0);"><span data-i18n="See all notifications">See all notifications</span> <i class="fa fa-arrow-right"></i></a>
 									</div>
 								</div>
 							</li>
-							<li class="nav-item notification_dropdown d-none d-sm-flex">
-								<a class="nav-link dz-fullscreen" href="javascript:void(0);" aria-label="Fullscreen">
-									<svg id="icon-full" viewBox="0 0 24 24" width="20" height="20" stroke="var(--bs-body-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-									<svg id="icon-minimize" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bs-body-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minimize">
-										<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-								</a>
-							</li>	
 							<li class="nav-item header-profile-dropdown">
 								<div class="dropdown d-flex align-items-center">
 									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="usis-profile.html" title="My profile">
@@ -509,8 +323,26 @@
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
-											<span class="ms-2">My profile</span>
+											<span class="ms-2" data-i18n="My profile">My profile</span>
 										</a>
+									</li>
+									<li data-usis-profile-lang="1">
+										<div class="px-3 py-2">
+											<div class="small text-muted mb-1" data-i18n="Language">Language</div>
+											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Language">
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="en_GB">English</button>
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="es_ES">Español</button>
+											</div>
+										</div>
+									</li>
+									<li data-usis-profile-theme="1">
+										<div class="px-3 py-2">
+											<div class="small text-muted mb-1" data-i18n="Appearance">Appearance</div>
+											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Appearance">
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="light" data-i18n="Light">Light</button>
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="dark" data-i18n="Dark">Dark</button>
+											</div>
+										</div>
 									</li>
 									<li><hr class="dropdown-divider"></li>
 									<li>
@@ -520,7 +352,7 @@
 												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
 												<line x1="21" y1="12" x2="9" y2="12"></line>
 											</svg>
-											<span class="ms-2 text-danger">Logout </span>
+											<span class="ms-2 text-danger" data-i18n="Logout">Logout</span>
 										</a>
 									</li>
 								</ul>
@@ -531,10 +363,52 @@
 				</nav>
 			</div>
 		</div>
+		<div class="modal fade" id="usis-report-problem-modal" tabindex="-1" aria-labelledby="usis-report-problem-title" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<form>
+						<div class="modal-header">
+							<h5 class="modal-title" id="usis-report-problem-title" data-i18n="Report a problem">Report a problem</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-i18n-aria="Close"></button>
+						</div>
+						<div class="modal-body">
+							<p class="text-muted small mb-3" data-i18n="Tell us what broke or what to change. It will show on the Issues page.">Tell us what broke or what to change. It will show on the Issues page.</p>
+							<div class="alert d-none" data-usis-report-status role="status"></div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-kind" data-i18n="Kind">Kind</label>
+								<select class="form-select" id="usis-report-kind" name="kind">
+									<option value="bug" data-i18n="Something broke">Something broke</option>
+									<option value="enhancement" data-i18n="Recommend a change on this page">Recommend a change on this page</option>
+									<option value="general" data-i18n="General recommendation">General recommendation</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-title" data-i18n="Title">Title</label>
+								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary" data-i18n-placeholder="Short summary">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-name" data-i18n="Your name (optional)">Your name (optional)</label>
+								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with" data-i18n-placeholder="So we know who to follow up with">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-details" data-i18n="Details">Details</label>
+								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?" data-i18n-placeholder="What happened, and what did you expect?"></textarea>
+							</div>
+							<div class="mb-0" data-usis-report-page-block>
+								<label class="form-label text-muted" for="usis-report-diagnostics" data-i18n="Sent with this report">Sent with this report</label>
+								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
+							</div>
+							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide data-i18n="Site-wide (not tied to a page).">Site-wide (not tied to a page).</p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+							<button type="submit" class="btn btn-primary" data-i18n="Send">Send</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
 		<!-- End - Header -->
-
-
-
 		<!-- Start - Sidebar Navigation -->
 		<div class="deznav">
 			<div class="deznav-scroll">
@@ -560,6 +434,9 @@
 							</li>
 							<li data-usis-module="leads">
 								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
+							</li>
+							<li data-usis-module="leads">
+								<a href="construction/lead-goldenstate-planroom.html" data-i18n="Golden State Planroom">Golden State Planroom</a>
 							</li>
 						</ul>
 					</li>
@@ -594,7 +471,7 @@
 						</a>
 						<ul aria-expanded="false">
 							<li data-usis-module="hr">
-								<a href="usis-hr-dashboard.html" data-i18n="HR">HR dashboard</a>
+								<a href="usis-hr-dashboard.html" data-i18n="HR dashboard">HR dashboard</a>
 							</li>
 							<li data-usis-module="hr">
 								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
@@ -649,15 +526,9 @@
 		</div>
 		<!-- End - Sidebar Navigation -->
 
-
-
-
 		<main class="content-body d-none" aria-hidden="true"></main>
-
-
-
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
-<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
+<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
 		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
 		<span class="fs-11">Home</span>
@@ -674,6 +545,10 @@
 		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
 		<span class="fs-11">Estimate</span>
 	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
+		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
+		<span class="fs-11">Issues</span>
+	</a>
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
 		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
 		<span class="fs-11">Drawings</span>
@@ -687,269 +562,162 @@
 			</div>
 		</div>
 		<!-- End - Footer -->
-
-
-
 	</div>
 
-
-
 	<div id="usis-dv-fullscreen" class="usis-dv-fs">
-
-		<header class="usis-dv-fs-top border-bottom shadow-sm bg-body">
-
-			<div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2">
-
-				<a id="usis-dv-back" href="construction/project-detail.html" class="btn btn-outline-secondary btn-sm">&larr; Project</a>
-
-				<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fs-close" title="Leave drawing viewer">Close</button>
-
-				<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1" id="usis-dv-error" role="alert"></div>
-
-				<div class="alert alert-light border py-1 px-2 mb-0 small d-none" id="usis-dv-loading" role="status">
-
-					<span id="usis-dv-loading-text">Loading drawing…</span>
-
+		<header class="usis-dv-chrome">
+			<div class="usis-dv-chrome__titlebar">
+				<div class="usis-dv-chrome__nav">
+					<a id="usis-dv-back" href="construction/project-detail.html" class="btn btn-outline-secondary btn-sm">&larr; Project</a>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fs-close" title="Leave drawing viewer">Close</button>
 				</div>
-
-			</div>
-
-			<div class="px-2 pb-2 d-none" id="usis-dv-picker-wrap">
-
-				<div class="card border shadow-sm mb-0" id="usis-dv-picker">
-
-					<div class="card-body py-2 px-3">
-
-						<h6 class="mb-2 small">Choose a drawing</h6>
-
-						<p class="text-muted small mb-2">No <code>drawing_id</code> in the URL. Pick a sheet for this project.</p>
-
-						<div class="row g-2 align-items-end">
-
-							<div class="col-md-8">
-
-								<label class="form-label small mb-0" for="usis-dv-pick-drawing">Drawing</label>
-
-								<select class="form-select form-select-sm" id="usis-dv-pick-drawing"></select>
-
-							</div>
-
-							<div class="col-md-4">
-
-								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-dv-pick-open">Open selected</button>
-
-							</div>
-
-						</div>
-
+				<div class="usis-dv-chrome__sheet">
+					<div class="usis-dv-meta" id="usis-dv-sheetline"></div>
+				</div>
+				<div class="usis-dv-chrome__actions">
+					<div class="dropdown d-none" id="usis-dv-sheets-wrap">
+						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="usis-dv-thumb-list">Sheets</button>
+						<ul class="dropdown-menu dropdown-menu-end" id="usis-dv-thumb-list"></ul>
 					</div>
-
+					<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-dv-ann-add">Save note</button>
+					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub"><i class="icon feather icon-star me-1" aria-hidden="true"></i>Review with Local AI</button>
+					<div class="dropdown d-none" id="usis-dv-more-wrap">
+						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</button>
+						<ul class="dropdown-menu dropdown-menu-end">
+							<li><button type="button" class="dropdown-item" id="usis-dv-delete-revision" title="Delete the current revision only">Delete revision</button></li>
+							<li><button type="button" class="dropdown-item text-danger" id="usis-dv-delete-sheet" title="Delete all revisions for this sheet">Delete sheet</button></li>
+						</ul>
+					</div>
 				</div>
-
 			</div>
 
+			<div class="usis-dv-chrome__alerts">
+				<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1" id="usis-dv-error" role="alert"></div>
+				<div class="alert alert-light border py-1 px-2 mb-0 small d-none" id="usis-dv-loading" role="status">
+					<span id="usis-dv-loading-text">Loading drawing…</span>
+				</div>
+			</div>
+
+			<div class="usis-dv-chrome__picker d-none" id="usis-dv-picker-wrap">
+				<div class="card border shadow-sm mb-0" id="usis-dv-picker">
+					<div class="card-body py-2 px-3">
+						<h6 class="mb-2 small">Choose a drawing</h6>
+						<p class="text-muted small mb-2">No <code>drawing_id</code> in the URL. Pick a sheet for this project.</p>
+						<div class="row g-2 align-items-end">
+							<div class="col-md-8">
+								<label class="form-label small mb-0" for="usis-dv-pick-drawing">Drawing</label>
+								<select class="form-select form-select-sm" id="usis-dv-pick-drawing"></select>
+							</div>
+							<div class="col-md-4">
+								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-dv-pick-open">Open selected</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="usis-dv-toolbar" id="usis-dv-measure-toolbar">
+				<div class="usis-dv-toolgroup">
+					<span class="usis-overline">Set</span>
+					<div class="usis-dv-toolgroup__row">
+						<select class="form-select form-select-sm" id="usis-dv-revision" aria-label="Drawing set"></select>
+						<div class="usis-seg" role="group" aria-label="Revision">
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)">&larr;</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)">&rarr;</button>
+						</div>
+					</div>
+				</div>
+				<div class="usis-dv-toolgroup">
+					<span class="usis-overline">Navigate</span>
+					<div class="usis-seg" role="group" aria-label="View tools">
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Select (V)" aria-pressed="true">Select</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan without leaving the current tool." aria-pressed="false">Pan</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle" aria-pressed="false">Zoom</button>
+					</div>
+				</div>
+				<div class="usis-dv-toolgroup usis-dv-toolgroup--grow">
+					<span class="usis-overline">Measure</span>
+					<div class="usis-dv-toolgroup__row">
+						<div class="usis-seg" role="group" aria-label="Measure tools">
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF)" aria-pressed="false">Calibrate</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-line" title="Length (L or 2): click vertices; double-click, Enter, or right-click to finish" aria-pressed="false">Linear</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-poly" title="Area (3 or Shift+P): click corners; double-click, Enter, or right-click to close" aria-pressed="false">Area</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-rect" title="Rectangle (R): two diagonal clicks" aria-pressed="false">Rectangle</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-deduct" title="Inner rectangle subtracted from last gross rectangle (two clicks)" aria-pressed="false">Deduct</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-count" title="Count (1 or Shift+Alt+C): click to place markers" aria-pressed="false">Count</button>
+						</div>
+						<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-clear">Clear</button>
+					</div>
+				</div>
+				<div class="usis-dv-toolgroup">
+					<span class="usis-overline">View</span>
+					<div class="usis-dv-toolgroup__row">
+						<div class="usis-seg" role="group" aria-label="Zoom">
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)">−</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)">+</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-width" title="Fit width (Ctrl+0)">Width</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
+						</div>
+						<span class="usis-dv-zoom-label" id="usis-dv-zoom-label">100%</span>
+						<div class="usis-seg" role="group" aria-label="Page">
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page (PageUp or Ctrl+wheel)">−</button>
+							<span class="usis-dv-page-label" id="usis-dv-page-label">1 / 1</span>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page (PageDown or Ctrl+wheel)">+</button>
+						</div>
+					</div>
+				</div>
+				<div class="usis-dv-toolgroup usis-dv-toolgroup--status">
+					<span class="usis-overline">Status</span>
+					<div class="small text-muted" id="usis-dv-m-status">Calibration: none · Measured: —</div>
+				</div>
+			</div>
+
+			<div class="usis-dv-notes d-none" id="usis-dv-notes-wrap">
+				<span class="usis-overline">Annotations</span>
+				<ul class="usis-dv-notes__list" id="usis-dv-annotations-list"></ul>
+			</div>
 		</header>
 
-
-
 		<div class="usis-dv-fs-body">
-
-			<aside id="usis-dv-rail-left" class="usis-dv-rail border-end bg-light d-flex flex-column">
-
-				<div class="p-2 border-bottom small text-uppercase text-muted fw-semibold">Takeoffs (this job)</div>
-
-				<div id="usis-dv-takeoff-list" class="flex-grow-1 overflow-auto p-2 small">
-
-					<p class="text-muted mb-0" id="usis-dv-takeoff-list-placeholder">Load a project to list takeoffs.</p>
-
+			<aside id="usis-dv-rail-left" class="usis-dv-rail usis-dv-rail--left">
+				<div class="usis-dv-rail__head">
+					<span class="usis-overline mb-0">Takeoffs</span>
 				</div>
-
-				<div class="p-2 border-top">
-
+				<div id="usis-dv-takeoff-list" class="usis-dv-rail__body">
+					<p class="text-muted mb-0 small" id="usis-dv-takeoff-list-placeholder">Load a project to list takeoffs.</p>
+				</div>
+				<div class="usis-dv-rail__foot">
 					<button type="button" class="btn btn-primary btn-sm w-100" id="usis-dv-takeoff-new">New takeoff</button>
-
 				</div>
-
 			</aside>
 
-
-
 			<div class="usis-dv-fs-center">
-
-				<div class="card border-0 rounded-0 shadow-none mb-0 usis-dv-toolbar">
-
-					<div class="card-body py-2 px-3">
-
-						<div class="row g-2 align-items-center flex-wrap">
-
-							<div class="col-auto">
-
-								<strong class="small text-muted text-uppercase">Set</strong>
-
-								<select class="form-select form-select-sm mt-1" id="usis-dv-revision" style="min-width: 12rem" aria-label="Drawing set"></select>
-
-							</div>
-
-							<div class="col-auto d-flex gap-1 align-items-end">
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)">&larr; Newer</button>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)">Older &rarr;</button>
-
-								<button type="button" class="btn btn-outline-danger btn-sm d-none" id="usis-dv-delete-revision" title="Delete the current revision only">Delete revision</button>
-
-								<button type="button" class="btn btn-outline-danger btn-sm d-none" id="usis-dv-delete-sheet" title="Delete all revisions for this sheet">Delete sheet</button>
-
-							</div>
-
-							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)">−</button>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)">+</button>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-width" title="Fit width (Ctrl+0)">Width</button>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
-
-								<span class="small text-muted align-self-center ms-1" id="usis-dv-zoom-label">100%</span>
-
-							</div>
-
-							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page (PageUp or Ctrl+wheel)">Page −</button>
-
-								<span class="small text-muted align-self-center" id="usis-dv-page-label">1 / 1</span>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page (PageDown or Ctrl+wheel)">Page +</button>
-
-							</div>
-
-							<div class="col text-md-end usis-dv-meta text-muted" id="usis-dv-sheetline"></div>
-
-						</div>
-
-						<div class="row g-2 mt-2 pt-2 border-top align-items-center" id="usis-dv-measure-toolbar">
-
-							<div class="col-12">
-
-								<strong class="small text-muted text-uppercase">Measure (takeoff)</strong>
-
-							</div>
-
-							<div class="col-auto d-flex flex-wrap gap-1 align-items-center">
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Select (V)">Select</button>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan without leaving the current tool.">Pan</button>
-
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle">Zoom</button>
-
-								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF)">Calibrate</button>
-
-								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-line" title="Length (L or 2): click vertices; double-click, Enter, or right-click to finish">Linear</button>
-
-								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-poly" title="Area (3 or Shift+P): click corners; double-click, Enter, or right-click to close">Area</button>
-
-								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-rect" title="Rectangle (R): two diagonal clicks">Rectangle</button>
-
-								<button type="button" class="btn btn-outline-danger btn-sm" id="usis-dv-m-deduct" title="Inner rectangle subtracted from last gross rectangle (two clicks)">Deduction</button>
-
-								<button type="button" class="btn btn-outline-info btn-sm" id="usis-dv-m-count" title="Count (1 or Shift+Alt+C): click to place markers">Count</button>
-
-								<button type="button" class="btn btn-outline-danger btn-sm" id="usis-dv-m-clear">Clear measure</button>
-
-								<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done line</button>
-
-							</div>
-
-							<div class="col-auto small text-muted" id="usis-dv-m-status">Calibration: none · Measured: —</div>
-
-						</div>
-
-						<div class="row g-2 mt-2 pt-2 border-top align-items-center">
-
-							<div class="col-md-8">
-
-								<strong class="small text-muted text-uppercase">Annotations</strong>
-
-								<ul class="list-unstyled small mb-0 mt-1" id="usis-dv-annotations-list"></ul>
-
-							</div>
-
-							<div class="col-md-4 text-md-end">
-
-								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-dv-ann-add">Save note</button>
-
-								<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub">Review with Local AI</button>
-
-							</div>
-
-						</div>
-
-					</div>
-
-				</div>
-
-
-
-				<div class="px-2 py-1 d-none border-bottom bg-body" id="usis-dv-sheets-wrap">
-
-					<strong class="small text-muted text-uppercase">Sheets in series</strong>
-
-					<ul class="list-unstyled small mb-0 mt-1 border rounded p-2 bg-light" id="usis-dv-thumb-list"></ul>
-
-				</div>
-
-
-
 				<div class="usis-dv-canvas-wrap text-center">
-
 					<div id="usis-dv-pdf-stack">
-
 						<div class="usis-dv-pdf-inner">
-
 							<canvas id="usis-dv-canvas" width="0" height="0"></canvas>
-
 							<canvas id="usis-dv-overlay" width="0" height="0"></canvas>
-
 						</div>
-
 					</div>
-
 				</div>
-
-				<p class="small text-muted mb-0 px-2 py-1 bg-body border-top" id="usis-dv-hint">
-
-					<kbd>Wheel</kbd> zoom · <kbd>Ctrl+Wheel</kbd> page · hold <kbd>Space</kbd> or the mouse wheel to pan · <kbd>V</kbd> select · <kbd>Shift+V</kbd> pan · <kbd>Z</kbd> zoom · <kbd>Ctrl+0</kbd> width · <kbd>Ctrl+9</kbd> fit · <kbd>Ctrl+Shift+PageUp/Down</kbd> revision.
-
+				<p class="usis-dv-hint" id="usis-dv-hint">
+					<kbd>Wheel</kbd> zoom · <kbd>Ctrl+Wheel</kbd> page · hold <kbd>Space</kbd> or the mouse wheel to pan · <kbd>V</kbd> select · <kbd>Shift+V</kbd> pan · <kbd>Z</kbd> zoom · <kbd>Ctrl+0</kbd> width · <kbd>Ctrl+9</kbd> fit
 				</p>
-
 			</div>
 
-
-
-			<aside id="usis-dv-rail-right" class="usis-dv-rail border-start bg-body d-flex flex-column">
-
-				<div class="p-2 border-bottom small text-uppercase text-muted fw-semibold">Takeoff details</div>
-
-				<div class="flex-grow-1 overflow-auto p-2">
-
+			<aside id="usis-dv-rail-right" class="usis-dv-rail usis-dv-rail--right">
+				<div class="usis-dv-rail__head">
+					<span class="usis-overline mb-0">Takeoff details</span>
+				</div>
+				<div class="usis-dv-rail__body">
 					<p class="text-muted small mb-3" id="usis-dv-takeoff-empty">Select a takeoff on the left, or create <strong>New takeoff</strong>.</p>
-
 					<div class="d-none" id="usis-dv-takeoff-strip" role="region" aria-label="Takeoff line">
-
 						<div class="mb-2">
-
 							<div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-
 								<strong class="small text-muted text-uppercase mb-0">Summary</strong>
-
 								<button type="button" class="btn btn-link btn-sm p-0 small" id="usis-dv-takeoff-open-modal">Details…</button>
-
 							</div>
-
 							<div
 								class="small mt-1 usis-dv-takeoff-sum-click"
 								role="button"
@@ -957,45 +725,25 @@
 								id="usis-dv-takeoff-summary"
 								title="Edit label, location, and material catalog link"
 							>—</div>
-
 						</div>
-
 						<div class="mb-2">
-
 							<label class="form-label small mb-0 text-muted" for="usis-dv-takeoff-qty">Quantity</label>
-
 							<input type="number" class="form-control form-control-sm" id="usis-dv-takeoff-qty" step="0.0001" min="0" placeholder="—">
-
 						</div>
-
 						<div class="mb-3">
-
 							<label class="form-label small mb-0 text-muted" for="usis-dv-takeoff-unit">Unit</label>
-
 							<select class="form-select form-select-sm" id="usis-dv-takeoff-unit">
-
 								<option>LF</option>
-
 								<option>SF</option>
-
 								<option>EA</option>
-
 								<option>CY</option>
-
 							</select>
-
 						</div>
-
 						<button type="button" class="btn btn-sm btn-primary w-100" id="usis-dv-takeoff-save">Apply to line</button>
-
 					</div>
-
 				</div>
-
 			</aside>
-
 		</div>
-
 	</div>
 
 	<div class="modal fade" id="usis-dv-modal-takeoff-line" tabindex="-1" aria-hidden="true" aria-labelledby="usis-dv-modal-takeoff-line-title">
@@ -1035,41 +783,31 @@
 	</div>
 
 	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-i18n.js"></script>
+	<script src="assets/js/usis-report-problem.js"></script>
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 <script src="assets/js/usis-nav-access.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/js/usis-ui.js"></script>
+	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
-
 	<script src="assets/vendor/i18n/i18n.js"></script>
-
 	<script src="assets/js/translator.js"></script>
-
 	<script src="assets/js/aiReviewBus.js"></script>
-
 	<script src="assets/js/usis-notify.js"></script>
-
 	<script src="assets/js/usis-project-context.js"></script>
-
 	<script src="assets/js/usis-command-palette.js"></script>
-
 	<script src="assets/js/deznav-init-construction.js"></script>
-
 	<script src="assets/js/custom.js"></script>
-
 	<script src="assets/js/construction.js"></script>
-
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
-
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
-	<script src="assets/js/drawing-viewer.js?v=20260829d"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260829e"></script>
 
 </body>
-
 </html>
-

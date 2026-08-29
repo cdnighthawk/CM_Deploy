@@ -17,7 +17,7 @@ from ..api._lead_estimate_queries import _not_archived_or_declined, _not_grouped
 from ..extensions import db
 from ..models import Document, Drawing, LeadEstimate, Project
 from .drawing_upload import _create_drawing_row
-from .object_storage import UploadCategory, save_upload
+from .object_storage import StorageError, UploadCategory, save_upload
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
@@ -456,7 +456,10 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
     db.session.add(doc)
     db.session.flush()
     object_name = f"{doc.id}_{safe}"[:200]
-    save_upload(UploadCategory.DOCUMENTS, object_name, io.BytesIO(payload))
+    try:
+        save_upload(UploadCategory.DOCUMENTS, object_name, io.BytesIO(payload))
+    except StorageError as exc:
+        raise IngestError(exc.message, exc.status) from exc
     doc.file_url = f"/api/v1/documents/{doc.id}/file"
     tags = {**tags, "storage_object": object_name}
     doc.tags = tags

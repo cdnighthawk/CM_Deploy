@@ -154,24 +154,142 @@
 			});
 		}
 
-		function ensureDrawingGroupToolbar(gridEl) {
-			if (!gridEl || !gridEl.parentNode) return;
-			if (gridEl.previousElementSibling && gridEl.previousElementSibling.classList.contains("usis-draw-group-toolbar")) {
+		var drawingSelected = new Set();
+
+		function drawingRowId(data) {
+			return data && data.series_id ? String(data.series_id) : "";
+		}
+
+		function drawingDownloadBtn() {
+			var grid = el(ids.gridDrawings);
+			var bar = grid && grid.previousElementSibling;
+			return bar && bar.classList.contains("usis-draw-group-toolbar")
+				? bar.querySelector(".usis-draw-download")
+				: null;
+		}
+
+		function updateDrawingDownloadBtn() {
+			var btn = drawingDownloadBtn();
+			if (!btn) return;
+			var n = drawingSelected.size;
+			btn.classList.toggle("d-none", n === 0);
+			btn.disabled = n === 0;
+			btn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+		}
+
+		function drawingFileJob(sheet) {
+			var cr = (sheet && sheet.current_revision) || {};
+			var raw = cr.file_url || "";
+			var url = raw ? resolveAssetUrl(raw) : "";
+			if (!url && cr.id) {
+				url = apiBase() + "/api/v1/drawings/" + encodeURIComponent(cr.id) + "/file";
+			}
+			if (!url) return null;
+			var label = ((sheet.sheet_number || "drawing") + " " + (sheet.sheet_title || "")).trim();
+			var name = (global.USISUi && USISUi.safeFilename ? USISUi.safeFilename(label) : label) + ".pdf";
+			return { url: url, name: name };
+		}
+
+		function downloadSelectedDrawings() {
+			var jobs = (cache.drawingSheets || [])
+				.filter(function (s) {
+					return drawingSelected.has(drawingRowId(s));
+				})
+				.map(drawingFileJob)
+				.filter(Boolean);
+			if (global.USISUi && typeof USISUi.downloadFiles === "function") {
+				USISUi.downloadFiles(jobs, { emptyMsg: "Selected drawings have no file to download." });
 				return;
 			}
-			var bar = document.createElement("div");
-			bar.className = "usis-draw-group-toolbar d-flex flex-wrap align-items-center gap-2 mb-2";
-			bar.innerHTML =
-				'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-expand-all">Expand all</button>' +
-				'<span class="text-muted">·</span>' +
-				'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-collapse-all">Collapse all</button>';
-			gridEl.parentNode.insertBefore(bar, gridEl);
-			bar.querySelector(".usis-draw-expand-all").addEventListener("click", function () {
-				if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", true);
+			jobs.forEach(function (job) {
+				global.open(job.url, "_blank", "noopener");
 			});
-			bar.querySelector(".usis-draw-collapse-all").addEventListener("click", function () {
-				if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", false);
-			});
+		}
+
+		function drawingCheckboxColumn() {
+			return {
+				title: "",
+				field: "_sel",
+				cssClass: "usis-doc-check-col",
+				width: 44,
+				minWidth: 44,
+				hozAlign: "center",
+				headerHozAlign: "center",
+				headerSort: false,
+				resizable: false,
+				frozen: true,
+				titleFormatter: function () {
+					var cb = document.createElement("input");
+					cb.type = "checkbox";
+					cb.className = "form-check-input m-0";
+					cb.setAttribute("aria-label", "Select all drawings");
+					cb.addEventListener("click", function (e) {
+						e.stopPropagation();
+					});
+					cb.addEventListener("change", function () {
+						if (!drawingsTabulator) return;
+						drawingsTabulator.getRows().forEach(function (row) {
+							var id = drawingRowId(row.getData());
+							if (!id) return;
+							if (cb.checked) drawingSelected.add(id);
+							else drawingSelected.delete(id);
+							var cell = row.getCell("_sel");
+							var box = cell && cell.getElement() && cell.getElement().querySelector("input[type=checkbox]");
+							if (box) box.checked = cb.checked;
+						});
+						updateDrawingDownloadBtn();
+					});
+					return cb;
+				},
+				formatter: function (cell) {
+					var data = cell.getRow().getData();
+					var id = drawingRowId(data);
+					var cb = document.createElement("input");
+					cb.type = "checkbox";
+					cb.className = "form-check-input m-0";
+					cb.checked = !!(id && drawingSelected.has(id));
+					cb.setAttribute("aria-label", "Select drawing");
+					cb.addEventListener("click", function (e) {
+						e.stopPropagation();
+					});
+					cb.addEventListener("change", function () {
+						if (!id) return;
+						if (cb.checked) drawingSelected.add(id);
+						else drawingSelected.delete(id);
+						updateDrawingDownloadBtn();
+					});
+					return cb;
+				},
+			};
+		}
+
+		function ensureDrawingGroupToolbar(gridEl) {
+			if (!gridEl || !gridEl.parentNode) return;
+			var bar = gridEl.previousElementSibling;
+			if (!bar || !bar.classList.contains("usis-draw-group-toolbar")) {
+				bar = document.createElement("div");
+				bar.className = "usis-draw-group-toolbar d-flex flex-wrap align-items-center gap-2 mb-2";
+				bar.innerHTML =
+					'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-expand-all">Expand all</button>' +
+					'<span class="text-muted">·</span>' +
+					'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-collapse-all">Collapse all</button>';
+				gridEl.parentNode.insertBefore(bar, gridEl);
+				bar.querySelector(".usis-draw-expand-all").addEventListener("click", function () {
+					if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", true);
+				});
+				bar.querySelector(".usis-draw-collapse-all").addEventListener("click", function () {
+					if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", false);
+				});
+			}
+			if (!bar.querySelector(".usis-draw-download")) {
+				var dl = document.createElement("button");
+				dl.type = "button";
+				dl.className = "btn btn-sm btn-primary usis-draw-download d-none";
+				dl.textContent = "Download";
+				bar.appendChild(dl);
+				dl.addEventListener("click", downloadSelectedDrawings);
+			}
+			updateDrawingDownloadBtn();
 		}
 
 		function drawingNameLinkFormatter(field, pid) {
@@ -387,6 +505,7 @@
 			}
 			var pid = activeProjectId || "";
 			var cols = [
+				drawingCheckboxColumn(),
 				{
 					title: "Sheet #",
 					field: "sheet_number",
@@ -418,36 +537,6 @@
 						} catch (e) {
 							return esc(cr.updated_at);
 						}
-					},
-				},
-				{
-					title: "",
-					hozAlign: "right",
-					headerSort: false,
-					width: 150,
-					formatter: function (cell) {
-						var wrap = document.createElement("div");
-						wrap.className = "d-flex gap-1 flex-wrap justify-content-end";
-						var data = cell.getRow().getData();
-						var cr = data.current_revision;
-						if (cr && cr.id) {
-							var a = document.createElement("a");
-							a.href = viewerHref(pid, cr.id);
-							a.className = "btn btn-primary btn-sm py-0";
-							a.textContent = "View";
-							wrap.appendChild(a);
-						}
-						if (cr && cr.file_url) {
-							var p = document.createElement("a");
-							p.href = resolveAssetUrl(cr.file_url);
-							p.target = "_blank";
-							p.rel = "noopener noreferrer";
-							p.className = "btn btn-outline-secondary btn-sm py-0";
-							p.textContent = "PDF";
-							wrap.appendChild(p);
-						}
-						if (!wrap.childNodes.length) wrap.textContent = "—";
-						return wrap;
 					},
 				},
 			];

@@ -8,6 +8,7 @@ S3-compatible API (``boto3``).
 
 from __future__ import annotations
 
+import time
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -16,6 +17,18 @@ from flask import Response, current_app, send_file
 
 if TYPE_CHECKING:
     from werkzeug.datastructures import FileStorage
+
+
+class StorageError(Exception):
+    """B2/local persist failed. ``status`` is the HTTP code callers should return."""
+
+    def __init__(self, message: str, status: int = 500):
+        super().__init__(message)
+        self.message = message
+        self.status = status
+
+
+_PUT_ATTEMPTS = 4
 
 
 class UploadCategory(StrEnum):
@@ -167,7 +180,12 @@ def save_upload(category: UploadCategory, object_name: str, file) -> int:
         if hasattr(file, "mimetype"):
             content_type = (getattr(file, "mimetype", None) or "").strip() or None
         key = object_key(category, object_name)
-        _put_bytes(key, payload, content_type=content_type)
+        try:
+            _put_bytes(key, payload, content_type=content_type)
+        except StorageError:
+            raise
+        except Exception as exc:
+            raise StorageError(f"could not save file: {exc}", 500) from exc
         try:
             _mirror_to_nas(key, payload)
         except OSError:
@@ -251,6 +269,7 @@ def send_stored_file(
 
 def _s3_client():
     import boto3
+    from botocore.config import Config
 
     endpoint = (current_app.config.get("B2_ENDPOINT") or "").strip()
     return boto3.client(
@@ -259,7 +278,32 @@ def _s3_client():
         aws_access_key_id=current_app.config["B2_APPLICATION_KEY_ID"],
         aws_secret_access_key=current_app.config["B2_APPLICATION_KEY"],
         region_name="us-east-1",
+        config=Config(
+            signature_version="s3v4",
+            retries={"max_attempts": 4, "mode": "standard"},
+            connect_timeout=30,
+            read_timeout=180,
+        ),
     )
+
+
+def _is_ssl_drop(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return (
+        "eof occurred in violation" in text
+        or "ssl validation failed" in text
+        or type(exc).__name__ in {"SSLError", "SSLEOFError"}
+    )
+
+
+def _is_storage_cap(exc: BaseException) -> bool:
+    from botocore.exceptions import ClientError
+
+    if not isinstance(exc, ClientError):
+        return False
+    err = exc.response.get("Error") or {}
+    blob = f"{err.get('Code', '')} {err.get('Message', '')}".lower()
+    return "storage_cap" in blob or "cap exceeded" in blob or "cap_exceeded" in blob
 
 
 def _is_not_found(exc: BaseException) -> bool:
@@ -300,9 +344,33 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
     extra: dict = {}
     if content_type:
         extra["ContentType"] = content_type
-    _s3_client().put_object(
-        Bucket=current_app.config["B2_BUCKET_NAME"],
-        Key=key,
-        Body=payload,
-        **extra,
-    )
+    last: BaseException | None = None
+    for attempt in range(_PUT_ATTEMPTS):
+        try:
+            _s3_client().put_object(
+                Bucket=current_app.config["B2_BUCKET_NAME"],
+                Key=key,
+                Body=payload,
+                **extra,
+            )
+            return
+        except Exception as exc:
+            last = exc
+            if _is_storage_cap(exc):
+                raise StorageError(
+                    "Backblaze B2 storage cap exceeded. "
+                    "In B2, open Caps & Alerts and raise or remove the daily storage cap.",
+                    503,
+                ) from exc
+            if _is_ssl_drop(exc) and attempt + 1 < _PUT_ATTEMPTS:
+                time.sleep(1.5 * (2**attempt))
+                continue
+            if _is_ssl_drop(exc):
+                raise StorageError(
+                    "Backblaze B2 closed the upload connection (SSL EOF). "
+                    "Usually a full 10 GB free-tier cap or a dropped Render-to-B2 link.",
+                    503,
+                ) from exc
+            raise
+    if last is not None:
+        raise last

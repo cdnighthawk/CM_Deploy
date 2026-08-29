@@ -261,20 +261,28 @@
 		return r && r.id ? r.id : null;
 	}
 
+	function setNotesVisible(show) {
+		var wrap = document.getElementById("usis-dv-notes-wrap");
+		if (wrap) wrap.classList.toggle("d-none", !show);
+	}
+
 	function loadAnnotations() {
 		var ul = document.getElementById("usis-dv-annotations-list");
 		if (!ul) return;
 		var did = currentRevisionDrawingId();
 		if (!did) {
 			ul.innerHTML = "";
+			setNotesVisible(false);
 			return;
 		}
 		ul.innerHTML = '<li class="text-muted">Loading…</li>';
+		setNotesVisible(false);
 		fetchJson("/api/v1/drawings/" + encodeURIComponent(did) + "/annotations")
 			.then(function (data) {
 				var items = data.items || [];
 				if (!items.length) {
-					ul.innerHTML = '<li class="text-muted">No annotations yet.</li>';
+					ul.innerHTML = "";
+					setNotesVisible(false);
 					return;
 				}
 				ul.innerHTML = items
@@ -288,9 +296,11 @@
 						);
 					})
 					.join("");
+				setNotesVisible(true);
 			})
 			.catch(function () {
 				ul.innerHTML = '<li class="text-danger">Could not load annotations.</li>';
+				setNotesVisible(true);
 			});
 	}
 
@@ -423,8 +433,11 @@
 		ul.innerHTML = revisions
 			.map(function (r, i) {
 				var lab = (r.sheet_number || "?") + " — " + (r.sheet_title || r.id);
+				var current = i === revIndex ? " active" : "";
 				return (
-					'<li class="mb-1"><button type="button" class="btn btn-link btn-sm p-0 text-start usis-dv-jump-rev" data-rev-idx="' +
+					'<li><button type="button" class="dropdown-item usis-dv-jump-rev' +
+					current +
+					'" data-rev-idx="' +
 					i +
 					'">' +
 					esc(lab) +
@@ -809,8 +822,7 @@
 		takeoffListCache.forEach(function (line) {
 			var btn = document.createElement("button");
 			btn.type = "button";
-			btn.className =
-				"usis-dv-takeoff-row btn btn-light border w-100 mb-1 py-2 px-2 small text-start";
+			btn.className = "usis-dv-takeoff-row";
 			btn.setAttribute("data-takeoff-id", String(line.id));
 			if (takeoffLineId && String(line.id) === String(takeoffLineId)) {
 				btn.classList.add("active");
@@ -1410,7 +1422,9 @@
 		};
 		Object.keys(active).forEach(function (id) {
 			var el = document.getElementById(id);
-			if (el) el.classList.toggle("active", !!active[id]);
+			if (!el) return;
+			el.classList.toggle("active", !!active[id]);
+			el.setAttribute("aria-pressed", active[id] ? "true" : "false");
 		});
 	}
 
@@ -2408,6 +2422,8 @@
 	}
 
 	function setDeleteButtonsVisible(show) {
+		var wrap = document.getElementById("usis-dv-more-wrap");
+		if (wrap) wrap.classList.toggle("d-none", !show);
 		["usis-dv-delete-revision", "usis-dv-delete-sheet"].forEach(function (id) {
 			var el = document.getElementById(id);
 			if (el) el.classList.toggle("d-none", !show);

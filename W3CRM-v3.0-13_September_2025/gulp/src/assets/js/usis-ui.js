@@ -174,6 +174,81 @@
 		});
 	}
 
+	function notifyUi(kind, message) {
+		if (global.USISNotify && typeof global.USISNotify[kind] === "function") {
+			global.USISNotify[kind](message);
+			return;
+		}
+		if (kind === "error") window.alert(message);
+	}
+
+	function safeFilename(name) {
+		var s = String(name == null ? "" : name).replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-").trim();
+		return s || "file";
+	}
+
+	function filenameFromDisposition(header, fallback) {
+		if (!header) return fallback;
+		var star = /filename\*=UTF-8''([^;]+)/i.exec(header);
+		if (star && star[1]) {
+			try {
+				return safeFilename(decodeURIComponent(star[1]));
+			} catch (e) {}
+		}
+		var plain = /filename=\"?([^\";]+)\"?/i.exec(header);
+		if (plain && plain[1]) return safeFilename(plain[1]);
+		return fallback;
+	}
+
+	function downloadFiles(jobs, opts) {
+		opts = opts || {};
+		var list = (jobs || []).filter(function (j) {
+			return j && j.url;
+		});
+		if (!list.length) {
+			notifyUi("info", opts.emptyMsg || "No files to download.");
+			return Promise.resolve({ ok: 0, failed: 0 });
+		}
+		var failed = 0;
+		var ok = 0;
+		var chain = Promise.resolve();
+		list.forEach(function (job) {
+			chain = chain.then(function () {
+				return fetch(job.url, { credentials: "include" }).then(function (res) {
+					if (!res.ok) throw new Error("HTTP " + res.status);
+					var name = filenameFromDisposition(
+						res.headers.get("Content-Disposition"),
+						safeFilename(job.name || "download.pdf")
+					);
+					if (!/\.[a-z0-9]{2,5}$/i.test(name)) name += ".pdf";
+					return res.blob().then(function (blob) {
+						var a = document.createElement("a");
+						a.href = URL.createObjectURL(blob);
+						a.download = name;
+						document.body.appendChild(a);
+						a.click();
+						a.remove();
+						setTimeout(function () {
+							URL.revokeObjectURL(a.href);
+						}, 4000);
+						ok += 1;
+					});
+				}).catch(function () {
+					failed += 1;
+				}).then(function () {
+					return new Promise(function (resolve) {
+						setTimeout(resolve, 220);
+					});
+				});
+			});
+		});
+		return chain.then(function () {
+			if (failed) notifyUi("error", failed + " file" + (failed === 1 ? "" : "s") + " could not be downloaded.");
+			else if (opts.successMsg) notifyUi("success", opts.successMsg);
+			return { ok: ok, failed: failed };
+		});
+	}
+
 	global.USISUi = {
 		statusChip: statusChip,
 		severityChip: severityChip,
@@ -181,6 +256,8 @@
 		emptyState: emptyState,
 		familyOf: familyOf,
 		restyleAiButtons: restyleAiButtons,
+		safeFilename: safeFilename,
+		downloadFiles: downloadFiles,
 	};
 
 	if (global.document.readyState === "loading") {

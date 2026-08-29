@@ -131,14 +131,31 @@
 		function setDrawingGroupsOpen(table, pid, open) {
 			if (!table || typeof table.getGroups !== "function") return;
 			var map = {};
-			table.getGroups().forEach(function (g) {
-				if (open) g.show();
-				else {
-					g.hide();
-					map[g.getKey()] = 1;
+			var canBlock = typeof table.blockRedraw === "function" && typeof table.restoreRedraw === "function";
+			if (canBlock) table.blockRedraw();
+			try {
+				var n = (table.getGroups() || []).length;
+				for (var i = 0; i < n; i++) {
+					var g = (table.getGroups() || [])[i];
+					if (!g) continue;
+					var key = typeof g.getKey === "function" ? g.getKey() : "";
+					if (open) {
+						if (typeof g.show === "function") g.show();
+					} else {
+						if (key) map[key] = 1;
+						if (typeof g.hide === "function") g.hide();
+					}
 				}
-			});
+			} finally {
+				if (canBlock) table.restoreRedraw();
+			}
 			writeDrawingGroupCollapsed(pid, open ? {} : map);
+			var leftover = (table.getGroups() || []).some(function (g) {
+				return typeof g.isVisible === "function" && (open ? !g.isVisible() : g.isVisible());
+			});
+			if (leftover && typeof table.setGroupBy === "function" && table.options && table.options.groupBy) {
+				table.setGroupBy(table.options.groupBy);
+			}
 		}
 
 		function bindDrawingGroupPersistence(table) {
@@ -211,8 +228,8 @@
 				title: "",
 				field: "_sel",
 				cssClass: "usis-doc-check-col",
-				width: 44,
-				minWidth: 44,
+				width: 52,
+				minWidth: 52,
 				hozAlign: "center",
 				headerHozAlign: "center",
 				headerSort: false,

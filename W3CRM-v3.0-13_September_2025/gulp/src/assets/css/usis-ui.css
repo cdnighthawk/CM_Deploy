@@ -466,23 +466,84 @@ body:not([data-headerbg="color_1"]) .header .header-search .form-control {
 }
 
 .btn-success {
+	--bs-btn-color: #fff;
 	--bs-btn-bg: var(--usis-success);
 	--bs-btn-border-color: var(--usis-success);
+	--bs-btn-hover-color: #fff;
 	--bs-btn-hover-bg: #246640;
 	--bs-btn-hover-border-color: #246640;
+	--bs-btn-active-color: #fff;
+	--bs-btn-active-bg: #246640;
+	--bs-btn-active-border-color: #246640;
 }
 
-.btn-danger,
-.btn-outline-danger {
-	--bs-btn-color: var(--usis-error);
-	--bs-btn-border-color: var(--usis-error);
+.btn-outline-success {
+	--bs-btn-color: var(--usis-success);
+	--bs-btn-border-color: var(--usis-success);
+	--bs-btn-hover-color: #fff;
+	--bs-btn-hover-bg: var(--usis-success);
+	--bs-btn-hover-border-color: var(--usis-success);
+	--bs-btn-active-color: #fff;
+	--bs-btn-active-bg: var(--usis-success);
+	--bs-btn-active-border-color: var(--usis-success);
 }
 
 .btn-danger {
 	--bs-btn-color: #fff;
 	--bs-btn-bg: var(--usis-error);
+	--bs-btn-border-color: var(--usis-error);
+	--bs-btn-hover-color: #fff;
 	--bs-btn-hover-bg: #8f1c13;
 	--bs-btn-hover-border-color: #8f1c13;
+	--bs-btn-active-color: #fff;
+	--bs-btn-active-bg: #8f1c13;
+	--bs-btn-active-border-color: #8f1c13;
+}
+
+.btn-outline-danger {
+	--bs-btn-color: var(--usis-error);
+	--bs-btn-bg: transparent;
+	--bs-btn-border-color: var(--usis-error);
+	--bs-btn-hover-color: #fff;
+	--bs-btn-hover-bg: var(--usis-error);
+	--bs-btn-hover-border-color: var(--usis-error);
+	--bs-btn-active-color: #fff;
+	--bs-btn-active-bg: var(--usis-error);
+	--bs-btn-active-border-color: var(--usis-error);
+}
+
+.btn-sm,
+.btn-group-sm > .btn {
+	--bs-btn-padding-y: 0.28rem;
+	--bs-btn-padding-x: 0.75rem;
+	--bs-btn-font-size: var(--usis-fs-sm);
+	--bs-btn-border-radius: var(--usis-radius-btn);
+	min-height: var(--usis-control-h);
+	border-radius: var(--usis-radius-btn);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.usis-bulk-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.75rem;
+	margin-bottom: 0.5rem;
+	background: var(--usis-grid-header);
+	border: 1px solid var(--usis-divider);
+	border-radius: var(--usis-radius);
+	color: var(--usis-text);
+}
+
+.usis-bulk-bar .btn-link {
+	--bs-btn-color: var(--usis-primary);
+	--bs-btn-hover-color: var(--usis-primary-dark);
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+	text-decoration: none;
 }
 
 .btn-warning {
@@ -771,27 +832,44 @@ body .tabulator .tabulator-header {
 
 body .tabulator .tabulator-header .tabulator-col {
 	padding: 0.45rem 0.35rem 0.3rem;
+}
+
+/* Select-all sits in a two-row header (label + filter). Pin it to the
+   full header cell so the rounded overflow:hidden frame cannot clip it. */
+body .tabulator .tabulator-header .tabulator-col.usis-doc-check-col {
+	padding: 0;
+	overflow: visible;
+	position: relative;
+}
+
+body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-content {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 0.15rem 0 0.45rem;
 	overflow: visible;
 }
 
-body .tabulator .tabulator-header .tabulator-col.usis-doc-check-col,
-body .tabulator .tabulator-header .usis-doc-check-col {
-	overflow: visible;
-}
-
-body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-content,
+body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-title-holder,
 body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: auto;
 	overflow: visible;
-	line-height: 1;
-	padding-top: 0.15rem;
+	padding: 0;
+	line-height: 0;
 }
 
 body .tabulator .usis-doc-check-col .form-check-input {
 	width: 1rem;
 	height: 1rem;
 	margin: 0;
-	display: block;
+	flex: 0 0 auto;
 	position: relative;
+	box-shadow: none;
 }
 
 body .tabulator .tabulator-header .tabulator-col .tabulator-col-title {

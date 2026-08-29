@@ -10,6 +10,13 @@
 								<span data-i18n="Home">Home</span>
 							</a>
 						</li>
-						<li class="breadcrumb-item active" aria-current="page" data-i18n="@@fileName">@@fileName</li>
+						<li class="breadcrumb-item active" aria-current="page">
+@@if (context.fileHref) {
+							<a href="@@fileHref" data-i18n="@@fileName">@@fileName</a>
+}
+@@if (!context.fileHref) {
+							<span data-i18n="@@fileName">@@fileName</span>
+}
+						</li>
 					</ol>
 				</nav>

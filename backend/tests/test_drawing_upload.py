@@ -184,3 +184,38 @@ def test_drawing_upload_uses_human_readable_storage_name(client):
     file_r = client.get(f"/api/v1/drawings/{did}/file")
     assert file_r.status_code == 200
     assert b"%PDF" in file_r.data
+
+
+def test_pin_sheet_to_set_uses_matching_revision():
+    from app.api.v1 import _pin_sheet_to_set
+
+    sheet = {
+        "drawing_set": "BCK-4",
+        "sheet_title": "Plan BCK-4",
+        "current_revision": {
+            "id": "new",
+            "drawing_set": "BCK-4",
+            "revision": "4",
+            "sheet_title": "Plan BCK-4",
+        },
+        "revisions": [
+            {
+                "id": "new",
+                "drawing_set": "BCK-4",
+                "revision": "4",
+                "sheet_title": "Plan BCK-4",
+            },
+            {
+                "id": "old",
+                "drawing_set": "BCK-1",
+                "revision": "1",
+                "sheet_title": "Plan BCK-1",
+            },
+        ],
+    }
+    pinned = _pin_sheet_to_set(sheet, "BCK-1")
+    assert pinned is not None
+    assert pinned["drawing_set"] == "BCK-1"
+    assert pinned["sheet_title"] == "Plan BCK-1"
+    assert pinned["current_revision"]["id"] == "old"
+    assert _pin_sheet_to_set(sheet, "BCK-3") is None

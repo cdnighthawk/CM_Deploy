@@ -47,6 +47,7 @@
 	var revisions = [];
 	var revIndex = 0;
 	var projectId = null;
+	var drawingSetFilter = null;
 	var leadId = null;
 	var estimateId = null;
 	var fromPage = null;
@@ -2786,7 +2787,9 @@
 		if (wrap) wrap.classList.remove("d-none");
 		card.classList.remove("d-none");
 		sel.innerHTML = '<option value="">Loading…</option>';
-		fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/drawings?limit=500&offset=0")
+		var listUrl = "/api/v1/projects/" + encodeURIComponent(projectId) + "/drawings?limit=2000&offset=0";
+		if (drawingSetFilter) listUrl += "&drawing_set=" + encodeURIComponent(drawingSetFilter);
+		fetchJson(listUrl)
 			.then(function (data) {
 				var items = data.items || [];
 				sel.innerHTML = "";
@@ -2936,6 +2939,7 @@
 		estimateId = (q.get("estimate_id") || "").trim() || null;
 		fromPage = (q.get("from") || "").trim() || null;
 		activeDrawingId = q.get("drawing_id");
+		drawingSetFilter = (q.get("drawing_set") || "").trim() || null;
 		takeoffLineId = (q.get("takeoff_line") || "").trim() || null;
 		_usisDbg("E", "drawing-viewer.js:init", "init_query", {
 			projectId: projectId,

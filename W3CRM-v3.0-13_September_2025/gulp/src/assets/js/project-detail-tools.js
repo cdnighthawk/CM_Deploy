@@ -334,7 +334,7 @@
 	}
 
 	function downloadSelectedDrawings() {
-		var jobs = (cache.drawingSheets || [])
+		var jobs = filterDrawingSheetsClient(cache.drawingSheets)
 			.filter(function (s) {
 				return drawingSelected.has(drawingRowId(s));
 			})
@@ -437,12 +437,14 @@
 
 	function drawingViewerHref(pid, drawingRevId) {
 		if (!pid || !drawingRevId) return "";
-		return (
+		var href =
 			"construction/drawing-viewer.html?project_id=" +
 			encodeURIComponent(pid) +
 			"&drawing_id=" +
-			encodeURIComponent(drawingRevId)
-		);
+			encodeURIComponent(drawingRevId);
+		var setv = selectedDrawingSet();
+		if (setv) href += "&drawing_set=" + encodeURIComponent(setv);
+		return href;
 	}
 
 	function drawingNameLinkFormatter(field, pid) {
@@ -564,6 +566,73 @@
 		});
 	}
 
+	function ensureCurrentDrawingsButton(setSel) {
+		if (!setSel || !setSel.parentNode) return;
+		var host = setSel.parentNode;
+		var wrap = host.querySelector(".usis-drawing-set-row");
+		if (!wrap) {
+			wrap = document.createElement("div");
+			wrap.className = "d-flex flex-wrap align-items-center gap-1 usis-drawing-set-row";
+			host.insertBefore(wrap, setSel);
+			wrap.appendChild(setSel);
+		}
+		if (wrap.querySelector(".usis-drawing-set-current")) return;
+		var btn = document.createElement("button");
+		btn.type = "button";
+		btn.className = "btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap";
+		btn.textContent = "Current drawings";
+		btn.title = "Latest revision of each sheet";
+		wrap.appendChild(btn);
+		btn.addEventListener("click", function () {
+			setSel.value = "";
+			applyDrawingFilter();
+		});
+	}
+
+	function sheetSetNames(s) {
+		var out = {};
+		if (s && s.drawing_set) out[s.drawing_set] = 1;
+		(s && s.sets ? s.sets : []).forEach(function (name) {
+			if (name) out[name] = 1;
+		});
+		(s && s.revisions ? s.revisions : []).forEach(function (r) {
+			if (r && r.drawing_set) out[r.drawing_set] = 1;
+		});
+		return Object.keys(out);
+	}
+
+	function setNameKey(name) {
+		return String(name || "").trim().toLowerCase();
+	}
+
+	function revisionForSet(s, setv) {
+		var want = setNameKey(setv);
+		if (!want || !s) return null;
+		var revs = s.revisions || [];
+		for (var i = 0; i < revs.length; i++) {
+			if (setNameKey(revs[i] && revs[i].drawing_set) === want) return revs[i];
+		}
+		if (setNameKey(s.drawing_set) === want) return s.current_revision || null;
+		return null;
+	}
+
+	function pinSheetToSet(s, setv) {
+		var rev = revisionForSet(s, setv);
+		if (!rev) return null;
+		var pinned = Object.assign({}, s);
+		pinned.drawing_set = rev.drawing_set;
+		pinned.sheet_number = rev.sheet_number || s.sheet_number;
+		pinned.sheet_title = rev.sheet_title || rev.title || s.sheet_title;
+		pinned.discipline = rev.discipline || s.discipline;
+		pinned.current_revision = rev;
+		return pinned;
+	}
+
+	function selectedDrawingSet() {
+		var setSel = document.getElementById("usis-filter-drawing-set");
+		return setSel && setSel.value ? setSel.value : "";
+	}
+
 	function repopulateDrawingFacetSelects(items) {
 		var discSel = document.getElementById("usis-filter-drawing-discipline");
 		var setSel = document.getElementById("usis-filter-drawing-set");
@@ -571,7 +640,9 @@
 		var setSet = {};
 		(items || []).forEach(function (s) {
 			if (s.discipline) discSet[s.discipline] = 1;
-			if (s.drawing_set) setSet[s.drawing_set] = 1;
+			sheetSetNames(s).forEach(function (name) {
+				setSet[name] = 1;
+			});
 		});
 		if (discSel) {
 			var curD = discSel.value;
@@ -588,37 +659,40 @@
 				});
 			if (curD && discSet[curD]) discSel.value = curD;
 		}
-		if (setSel) {
-			var curS = setSel.value;
-			setSel.innerHTML = '<option value="">All sets</option>';
-			Object.keys(setSet)
-				.sort(function (a, b) {
-					return a.localeCompare(b);
-				})
-				.forEach(function (k) {
-					var o = document.createElement("option");
-					o.value = k;
-					o.textContent = k;
-					setSel.appendChild(o);
-				});
-			if (curS && setSet[curS]) setSel.value = curS;
-		}
+			if (setSel) {
+				var curS = setSel.value;
+				setSel.innerHTML = '<option value="">Current</option>';
+				Object.keys(setSet)
+					.sort(function (a, b) {
+						return a.localeCompare(b, undefined, { numeric: true });
+					})
+					.forEach(function (k) {
+						var o = document.createElement("option");
+						o.value = k;
+						o.textContent = k;
+						setSel.appendChild(o);
+					});
+				if (curS && setSet[curS]) setSel.value = curS;
+				else setSel.value = "";
+				ensureCurrentDrawingsButton(setSel);
+			}
 	}
 
 	function filterDrawingSheetsClient(items) {
 		var inp = document.getElementById("usis-search-drawings");
 		var discSel = document.getElementById("usis-filter-drawing-discipline");
-		var setSel = document.getElementById("usis-filter-drawing-set");
 		var q = (inp && inp.value) ? inp.value.trim().toLowerCase() : "";
 		var disc = discSel ? discSel.value : "";
-		var setv = setSel ? setSel.value : "";
-		return (items || []).filter(function (s) {
-			if (disc && (s.discipline || "") !== disc) return false;
-			if (setv && (s.drawing_set || "") !== setv) return false;
-			if (!q) return true;
-			var blob = JSON.stringify(s).toLowerCase();
-			return blob.indexOf(q) !== -1;
+		var setv = selectedDrawingSet();
+		var out = [];
+		(items || []).forEach(function (s) {
+			var row = setv ? pinSheetToSet(s, setv) : s;
+			if (!row) return;
+			if (disc && (row.discipline || "") !== disc) return;
+			if (q && JSON.stringify(row).toLowerCase().indexOf(q) === -1) return;
+			out.push(row);
 		});
+		return out;
 	}
 
 	function buildOrRefreshDrawingsTabulator() {

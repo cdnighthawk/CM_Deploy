@@ -616,6 +616,37 @@ def _revision_sort_key(d: Drawing) -> tuple:
     return (ts, d.version, d.id)
 
 
+def _norm_set_name(raw: Any) -> str:
+    return str(raw or "").strip().lower()
+
+
+def _revision_matching_set(sheet: dict[str, Any], set_f: str) -> dict[str, Any] | None:
+    """Newest revision whose drawing_set equals ``set_f`` (case-insensitive)."""
+    want = _norm_set_name(set_f)
+    if not want:
+        return None
+    for rev in sheet.get("revisions") or []:
+        if _norm_set_name(rev.get("drawing_set")) == want:
+            return rev
+    if _norm_set_name(sheet.get("drawing_set")) == want:
+        return sheet.get("current_revision")
+    return None
+
+
+def _pin_sheet_to_set(sheet: dict[str, Any], set_f: str) -> dict[str, Any] | None:
+    """View this sheet as it exists in ``set_f``, or None if that set has no revision."""
+    rev = _revision_matching_set(sheet, set_f)
+    if not rev:
+        return None
+    pinned = dict(sheet)
+    pinned["drawing_set"] = rev.get("drawing_set")
+    pinned["sheet_number"] = rev.get("sheet_number") or sheet.get("sheet_number")
+    pinned["sheet_title"] = rev.get("sheet_title") or rev.get("title") or sheet.get("sheet_title")
+    pinned["discipline"] = rev.get("discipline") or sheet.get("discipline")
+    pinned["current_revision"] = rev
+    return pinned
+
+
 def _group_drawings_into_sheets(rows: list[Drawing]) -> list[dict[str, Any]]:
     by_series: dict[uuid.UUID, list[Drawing]] = defaultdict(list)
     for d in rows:
@@ -626,6 +657,7 @@ def _group_drawings_into_sheets(rows: list[Drawing]) -> list[dict[str, Any]]:
         ordered_newest = sorted(group, key=_revision_sort_key, reverse=True)
         current = ordered_newest[0]
         cur_pub = _drawing_public(current)
+        sets = sorted({(r.drawing_set or "").strip() for r in group if (r.drawing_set or "").strip()})
         sheets.append(
             {
                 "series_id": str(series_id),
@@ -633,6 +665,7 @@ def _group_drawings_into_sheets(rows: list[Drawing]) -> list[dict[str, Any]]:
                 "sheet_title": current.sheet_title or current.title,
                 "discipline": current.discipline,
                 "drawing_set": current.drawing_set,
+                "sets": sets,
                 "revision_count": len(group),
                 "current_revision": cur_pub,
                 "revisions": [_drawing_public(r) for r in ordered_newest],
@@ -1503,11 +1536,7 @@ def list_project_drawings(project_id: str):
             if discipline_f in (s.get("discipline") or "").lower()
         ]
     if set_f:
-        sheets = [
-            s
-            for s in sheets
-            if set_f in (s.get("drawing_set") or "").lower()
-        ]
+        sheets = [pinned for s in sheets if (pinned := _pin_sheet_to_set(s, set_f)) is not None]
     if q_raw:
 
         def _sheet_matches(s: dict[str, Any]) -> bool:

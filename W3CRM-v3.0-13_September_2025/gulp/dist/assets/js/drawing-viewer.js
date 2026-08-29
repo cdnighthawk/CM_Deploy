@@ -1297,9 +1297,24 @@
 		wrap.scrollTop = pointY - anchor.wrapY;
 	}
 
+	function minZoomScale() {
+		var wrap = canvasWrap();
+		var canvas = document.getElementById("usis-dv-canvas");
+		if (!wrap || !canvas || !canvas.width || !scale) return MIN_SCALE;
+		var pad = 24;
+		var availW = Math.max(32, wrap.clientWidth - pad);
+		var naturalW = canvas.width / scale;
+		if (naturalW <= 0) return MIN_SCALE;
+		return clampScale(availW / naturalW);
+	}
+
 	function zoomBy(factor, clientX, clientY) {
 		var next = clampScale(scale * factor);
-		if (next === scale) {
+		if (factor < 1) {
+			var floor = minZoomScale();
+			if (next < floor) next = floor;
+		}
+		if (Math.abs(next - scale) < 0.0001) {
 			updateZoomLabel();
 			return;
 		}

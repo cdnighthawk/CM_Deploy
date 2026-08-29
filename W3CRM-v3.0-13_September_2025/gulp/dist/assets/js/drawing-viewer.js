@@ -1421,8 +1421,8 @@
 			pointerId: e.pointerId,
 		};
 		try {
-			if (e.target && e.target.setPointerCapture && e.pointerId != null) {
-				e.target.setPointerCapture(e.pointerId);
+			if (wrap.setPointerCapture && e.pointerId != null) {
+				wrap.setPointerCapture(e.pointerId);
 			}
 		} catch (err) {}
 		applyNavCursor();
@@ -1511,18 +1511,25 @@
 		zoomBy(ctrl ? 1 / ZOOM_STEP : ZOOM_STEP, e.clientX, e.clientY);
 	}
 
+	function isOverSheet(target) {
+		var wrap = canvasWrap();
+		return !!(wrap && target && (target === wrap || wrap.contains(target)));
+	}
+
 	function viewerWantsPan(e) {
 		if (e.button === 1) return true;
+		if ((e.buttons & 4) === 4) return true;
 		if (spaceHeld && e.button === 0) return true;
 		if (navMode === "pan" && e.button === 0) return true;
 		return false;
 	}
 
 	function onViewerPointerDown(e) {
+		if (!isOverSheet(e.target)) return;
 		if (viewerWantsPan(e)) {
 			e.preventDefault();
 			e.stopPropagation();
-			startPan(e, e.button === 1 ? "middle" : spaceHeld ? "space" : "pan");
+			startPan(e, e.button === 1 || (e.buttons & 4) === 4 ? "middle" : spaceHeld ? "space" : "pan");
 			return;
 		}
 		if (navMode === "zoom" && e.button === 0) {
@@ -1532,34 +1539,42 @@
 		}
 	}
 
-	function onViewerPointerMove(e) {
+	function onDocPointerMove(e) {
 		if (panState) {
-			e.preventDefault();
+			if (e.cancelable) e.preventDefault();
 			movePan(e);
 			return;
 		}
 		if (zoomDrag) {
-			e.preventDefault();
+			if (e.cancelable) e.preventDefault();
 			moveZoomDrag(e);
 		}
 	}
 
-	function onViewerPointerUp(e) {
+	function onDocPointerUp(e) {
 		if (panState) {
 			endPan();
-			e.preventDefault();
+			if (e.cancelable) e.preventDefault();
 			return;
 		}
 		if (zoomDrag) {
 			endZoomDrag(e);
-			e.preventDefault();
+			if (e.cancelable) e.preventDefault();
 		}
 	}
 
-	function onViewerWheel(e) {
-		if (!pdfDoc) return;
+	function onViewerMouseDown(e) {
+		if (e.button !== 1 || !isOverSheet(e.target)) return;
 		e.preventDefault();
 		e.stopPropagation();
+		startPan(e, "middle");
+	}
+
+	function onViewerWheel(e) {
+		if (!isOverSheet(e.target) && e.currentTarget !== canvasWrap()) return;
+		if (e.cancelable) e.preventDefault();
+		e.stopPropagation();
+		if (!pdfDoc) return;
 		if (e.ctrlKey || e.metaKey) {
 			if (e.deltaY < 0) goPrevPage();
 			else if (e.deltaY > 0) goNextPage();
@@ -1724,13 +1739,28 @@
 		var wrap = canvasWrap();
 		if (!wrap) return;
 		viewerNavWired = true;
-		wrap.addEventListener("wheel", onViewerWheel, { passive: false, capture: true });
+		var wheelOpts = { passive: false, capture: true };
+		wrap.addEventListener("wheel", onViewerWheel, wheelOpts);
+		document.addEventListener(
+			"wheel",
+			function (e) {
+				if (isOverSheet(e.target)) onViewerWheel(e);
+			},
+			wheelOpts
+		);
+		wrap.addEventListener("mousedown", onViewerMouseDown, true);
+		document.addEventListener("mousedown", onViewerMouseDown, true);
 		wrap.addEventListener("pointerdown", onViewerPointerDown, true);
-		wrap.addEventListener("pointermove", onViewerPointerMove);
-		wrap.addEventListener("pointerup", onViewerPointerUp);
-		wrap.addEventListener("pointercancel", onViewerPointerUp);
+		document.addEventListener("pointermove", onDocPointerMove, true);
+		document.addEventListener("mousemove", onDocPointerMove, true);
+		document.addEventListener("pointerup", onDocPointerUp, true);
+		document.addEventListener("mouseup", onDocPointerUp, true);
+		document.addEventListener("pointercancel", onDocPointerUp, true);
 		wrap.addEventListener("contextmenu", onViewerContextMenu);
 		wrap.addEventListener("auxclick", function (e) {
+			if (e.button === 1) e.preventDefault();
+		});
+		wrap.addEventListener("click", function (e) {
 			if (e.button === 1) e.preventDefault();
 		});
 		document.addEventListener("keyup", onKeyUp);

@@ -67,6 +67,15 @@
 	var rectPoints = [];
 	var deductPoints = [];
 	var measurePreviewRect = null;
+	var navMode = "select";
+	var spaceHeld = false;
+	var panState = null;
+	var zoomDrag = null;
+	var pendingViewAnchor = null;
+	var viewerNavWired = false;
+	var MIN_SCALE = 0.1;
+	var MAX_SCALE = 10;
+	var ZOOM_STEP = 1.25;
 
 	/** Resolve a path like ``assets/vendor/...`` using ``document.baseURI`` (includes ``<base href>``) so the worker URL matches ``pdf.min.js``. */
 	function resolveAgainstDocumentBase(relPath) {
@@ -336,6 +345,7 @@
 				}
 				updatePageLabel();
 				resizeFabricOverlay();
+				applyPendingViewAnchor();
 			})
 			.catch(function (e) {
 				pageRendering = false;
@@ -497,7 +507,7 @@
 				pdfDoc = doc;
 				pageNum = 1;
 				setLoading(false);
-				queueRenderPage();
+				fitWidth();
 				updatePageLabel();
 				updateZoomLabel();
 			})
@@ -542,25 +552,194 @@
 	}
 
 	function onKeyDown(e) {
-		if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA")) {
+		if (isTypingTarget(e.target)) return;
+		var key = e.key;
+		var ctrl = e.ctrlKey || e.metaKey;
+		var shift = e.shiftKey;
+		var alt = e.altKey;
+
+		if (key === " " && !e.repeat) {
+			e.preventDefault();
+			spaceHeld = true;
+			applyNavCursor();
 			return;
 		}
-		if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+
+		if (key === "Escape") {
 			e.preventDefault();
-			goOlder();
-		} else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+			handleEscape();
+			return;
+		}
+
+		if (key === "F11") {
 			e.preventDefault();
-			goNewer();
-		} else if (e.key === "+" || e.key === "=") {
+			toggleViewerFullscreen();
+			return;
+		}
+
+		if (key === "Enter") {
+			if (measureMode === "line" && linePoints.length >= 2) {
+				e.preventDefault();
+				finalizeLinear();
+			} else if (measureMode === "poly" && polyPoints.length >= 3) {
+				e.preventDefault();
+				finalizePolygon();
+			}
+			return;
+		}
+
+		if (key === "Backspace") {
+			if (dropLastMeasurePoint()) {
+				e.preventDefault();
+			}
+			return;
+		}
+
+		if (ctrl && shift && (key === "PageUp" || key === "PageDown")) {
 			e.preventDefault();
-			scale = Math.min(scale * 1.15, 4);
-			updateZoomLabel();
-			queueRenderPage();
-		} else if (e.key === "-" || e.key === "_") {
+			if (key === "PageUp") goNewer();
+			else goOlder();
+			return;
+		}
+
+		if (key === "PageUp") {
 			e.preventDefault();
-			scale = Math.max(scale / 1.15, 0.35);
-			updateZoomLabel();
-			queueRenderPage();
+			goPrevPage();
+			return;
+		}
+		if (key === "PageDown") {
+			e.preventDefault();
+			goNextPage();
+			return;
+		}
+
+		if (key === "ArrowLeft" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowDown") {
+			e.preventDefault();
+			nudgePan(key);
+			return;
+		}
+
+		if (ctrl && (key === "0" || key === "Numpad0")) {
+			e.preventDefault();
+			fitWidth();
+			return;
+		}
+		if (ctrl && (key === "9" || key === "Numpad9")) {
+			e.preventDefault();
+			fitPage();
+			return;
+		}
+		if (ctrl && (key === "+" || key === "=" || key === "Add")) {
+			e.preventDefault();
+			zoomBy(ZOOM_STEP);
+			return;
+		}
+		if (ctrl && (key === "-" || key === "_" || key === "Subtract")) {
+			e.preventDefault();
+			zoomBy(1 / ZOOM_STEP);
+			return;
+		}
+		if (!ctrl && !alt && (key === "+" || key === "=")) {
+			e.preventDefault();
+			zoomBy(ZOOM_STEP);
+			return;
+		}
+		if (!ctrl && !alt && (key === "-" || key === "_")) {
+			e.preventDefault();
+			zoomBy(1 / ZOOM_STEP);
+			return;
+		}
+
+		if (ctrl && (key === "s" || key === "S")) {
+			e.preventDefault();
+			applyTakeoffPatch();
+			return;
+		}
+
+		if (alt && !ctrl && (key === "u" || key === "U")) {
+			e.preventDefault();
+			startCalibrateTool();
+			return;
+		}
+
+		if (shift && alt && !ctrl) {
+			if (key === "l" || key === "L") {
+				e.preventDefault();
+				startLineTool();
+				return;
+			}
+			if (key === "a" || key === "A") {
+				e.preventDefault();
+				startPolyTool();
+				return;
+			}
+			if (key === "c" || key === "C") {
+				e.preventDefault();
+				startCountTool();
+				return;
+			}
+			if (key === "p" || key === "P") {
+				e.preventDefault();
+				startPolyTool();
+				return;
+			}
+		}
+
+		if (shift && !ctrl && !alt && (key === "V" || key === "v")) {
+			e.preventDefault();
+			setNavMode("pan");
+			return;
+		}
+		if (shift && !ctrl && !alt && (key === "P" || key === "p")) {
+			e.preventDefault();
+			startPolyTool();
+			return;
+		}
+
+		if (ctrl || alt || shift) return;
+
+		if (key === "V" || key === "v") {
+			e.preventDefault();
+			setNavMode("select");
+			return;
+		}
+		if (key === "Z" || key === "z") {
+			e.preventDefault();
+			setNavMode("zoom");
+			return;
+		}
+		if (key === "R" || key === "r") {
+			e.preventDefault();
+			startRectTool();
+			return;
+		}
+		if (key === "L" || key === "l") {
+			e.preventDefault();
+			startLineTool();
+			return;
+		}
+		if (key === "1") {
+			e.preventDefault();
+			startCountTool();
+			return;
+		}
+		if (key === "2") {
+			e.preventDefault();
+			startLineTool();
+			return;
+		}
+		if (key === "3") {
+			e.preventDefault();
+			startPolyTool();
+			return;
+		}
+	}
+
+	function onKeyUp(e) {
+		if (e.key === " ") {
+			spaceHeld = false;
+			if (panState && panState.via === "space") endPan();
+			applyNavCursor();
 		}
 	}
 
@@ -1064,8 +1243,499 @@
 	function setMeasureMode(mode) {
 		measureMode = mode || "none";
 		if (measureMode === "none") resetRectDraft();
+		if (measureMode !== "none") navMode = "select";
 		setOverlayPointerEvents(measureMode !== "none");
 		updateMeasureStatus();
+		applyNavCursor();
+		updateToolButtons();
+	}
+
+	function isTypingTarget(el) {
+		if (!el) return false;
+		var tag = (el.tagName || "").toUpperCase();
+		if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return true;
+		if (el.isContentEditable) return true;
+		return false;
+	}
+
+	function canvasWrap() {
+		return document.querySelector(".usis-dv-canvas-wrap");
+	}
+
+	function clampScale(v) {
+		if (v < MIN_SCALE) return MIN_SCALE;
+		if (v > MAX_SCALE) return MAX_SCALE;
+		return v;
+	}
+
+	function captureViewAnchor(clientX, clientY) {
+		var wrap = canvasWrap();
+		var canvas = document.getElementById("usis-dv-canvas");
+		if (!wrap || !canvas) return null;
+		var cRect = canvas.getBoundingClientRect();
+		var wRect = wrap.getBoundingClientRect();
+		return {
+			fracX: cRect.width ? (clientX - cRect.left) / cRect.width : 0.5,
+			fracY: cRect.height ? (clientY - cRect.top) / cRect.height : 0.5,
+			wrapX: clientX - wRect.left,
+			wrapY: clientY - wRect.top,
+		};
+	}
+
+	function applyPendingViewAnchor() {
+		var anchor = pendingViewAnchor;
+		pendingViewAnchor = null;
+		if (!anchor) return;
+		var wrap = canvasWrap();
+		var canvas = document.getElementById("usis-dv-canvas");
+		if (!wrap || !canvas) return;
+		var cRect = canvas.getBoundingClientRect();
+		var wRect = wrap.getBoundingClientRect();
+		var pointX = cRect.left - wRect.left + wrap.scrollLeft + canvas.offsetWidth * anchor.fracX;
+		var pointY = cRect.top - wRect.top + wrap.scrollTop + canvas.offsetHeight * anchor.fracY;
+		wrap.scrollLeft = pointX - anchor.wrapX;
+		wrap.scrollTop = pointY - anchor.wrapY;
+	}
+
+	function zoomBy(factor, clientX, clientY) {
+		var next = clampScale(scale * factor);
+		if (next === scale) {
+			updateZoomLabel();
+			return;
+		}
+		if (clientX != null && clientY != null) {
+			pendingViewAnchor = captureViewAnchor(clientX, clientY);
+		}
+		scale = next;
+		updateZoomLabel();
+		queueRenderPage();
+	}
+
+	function goNextPage() {
+		if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+		pageNum++;
+		clearMeasureGeometry();
+		queueRenderPage();
+	}
+
+	function goPrevPage() {
+		if (!pdfDoc || pageNum <= 1) return;
+		pageNum--;
+		clearMeasureGeometry();
+		queueRenderPage();
+	}
+
+	function fitToViewport(mode) {
+		if (!pdfDoc) return;
+		var wrap = canvasWrap();
+		if (!wrap) return;
+		pdfDoc.getPage(pageNum).then(function (page) {
+			var vp = page.getViewport({ scale: 1 });
+			var pad = 24;
+			var availW = Math.max(32, wrap.clientWidth - pad);
+			var availH = Math.max(32, wrap.clientHeight - pad);
+			var next;
+			if (mode === "page") {
+				next = Math.min(availW / vp.width, availH / vp.height);
+			} else {
+				next = availW / vp.width;
+			}
+			scale = clampScale(next);
+			updateZoomLabel();
+			queueRenderPage();
+		});
+	}
+
+	function fitWidth() {
+		fitToViewport("width");
+	}
+
+	function fitPage() {
+		fitToViewport("page");
+	}
+
+	function nudgePan(key) {
+		var wrap = canvasWrap();
+		if (!wrap) return;
+		var step = 64;
+		if (key === "ArrowLeft") wrap.scrollLeft -= step;
+		else if (key === "ArrowRight") wrap.scrollLeft += step;
+		else if (key === "ArrowUp") wrap.scrollTop -= step;
+		else if (key === "ArrowDown") wrap.scrollTop += step;
+	}
+
+	function applyNavCursor() {
+		var wrap = canvasWrap();
+		var ovl = document.getElementById("usis-dv-overlay");
+		var cur = "default";
+		if (panState) cur = "grabbing";
+		else if (spaceHeld || navMode === "pan") cur = "grab";
+		else if (navMode === "zoom") cur = "zoom-in";
+		else if (measureMode !== "none") cur = "crosshair";
+		if (wrap) {
+			wrap.style.cursor = cur;
+			wrap.classList.toggle("usis-dv-nav-pan", navMode === "pan" || spaceHeld || !!panState);
+			wrap.classList.toggle("is-panning", !!panState);
+			wrap.classList.toggle("usis-dv-nav-zoom", navMode === "zoom");
+		}
+		if (ovl) ovl.style.cursor = cur;
+	}
+
+	function updateToolButtons() {
+		var active = {
+			"usis-dv-m-none": navMode === "select" && measureMode === "none",
+			"usis-dv-m-pan": navMode === "pan",
+			"usis-dv-m-zoom": navMode === "zoom",
+			"usis-dv-m-cal": measureMode === "cal",
+			"usis-dv-m-line": measureMode === "line",
+			"usis-dv-m-poly": measureMode === "poly",
+			"usis-dv-m-rect": measureMode === "rect",
+			"usis-dv-m-deduct": measureMode === "deduct",
+			"usis-dv-m-count": measureMode === "count",
+		};
+		Object.keys(active).forEach(function (id) {
+			var el = document.getElementById(id);
+			if (el) el.classList.toggle("active", !!active[id]);
+		});
+	}
+
+	function setNavMode(mode) {
+		navMode = mode === "pan" || mode === "zoom" ? mode : "select";
+		measureMode = "none";
+		resetRectDraft();
+		setOverlayPointerEvents(false);
+		applyNavCursor();
+		updateToolButtons();
+		updateMeasureStatus();
+	}
+
+	function startPan(e, via) {
+		var wrap = canvasWrap();
+		if (!wrap) return;
+		panState = {
+			x: e.clientX,
+			y: e.clientY,
+			sl: wrap.scrollLeft,
+			st: wrap.scrollTop,
+			via: via || "drag",
+			pointerId: e.pointerId,
+		};
+		try {
+			if (e.target && e.target.setPointerCapture && e.pointerId != null) {
+				e.target.setPointerCapture(e.pointerId);
+			}
+		} catch (err) {}
+		applyNavCursor();
+	}
+
+	function movePan(e) {
+		if (!panState) return;
+		var wrap = canvasWrap();
+		if (!wrap) return;
+		wrap.scrollLeft = panState.sl - (e.clientX - panState.x);
+		wrap.scrollTop = panState.st - (e.clientY - panState.y);
+	}
+
+	function endPan() {
+		panState = null;
+		applyNavCursor();
+	}
+
+	function ensureZoomRect() {
+		var wrap = canvasWrap();
+		if (!wrap) return null;
+		var el = document.getElementById("usis-dv-zoom-rect");
+		if (!el) {
+			el = document.createElement("div");
+			el.id = "usis-dv-zoom-rect";
+			el.className = "usis-dv-zoom-rect d-none";
+			wrap.appendChild(el);
+		}
+		return el;
+	}
+
+	function startZoomDrag(e) {
+		var wrap = canvasWrap();
+		if (!wrap) return;
+		var wRect = wrap.getBoundingClientRect();
+		zoomDrag = {
+			x1: e.clientX,
+			y1: e.clientY,
+			ctrl: !!e.ctrlKey,
+			left: e.clientX - wRect.left + wrap.scrollLeft,
+			top: e.clientY - wRect.top + wrap.scrollTop,
+		};
+		var box = ensureZoomRect();
+		if (box) {
+			box.classList.remove("d-none");
+			box.style.left = zoomDrag.left + "px";
+			box.style.top = zoomDrag.top + "px";
+			box.style.width = "0px";
+			box.style.height = "0px";
+		}
+	}
+
+	function moveZoomDrag(e) {
+		if (!zoomDrag) return;
+		var wrap = canvasWrap();
+		var box = document.getElementById("usis-dv-zoom-rect");
+		if (!wrap || !box) return;
+		var wRect = wrap.getBoundingClientRect();
+		var x = e.clientX - wRect.left + wrap.scrollLeft;
+		var y = e.clientY - wRect.top + wrap.scrollTop;
+		var left = Math.min(zoomDrag.left, x);
+		var top = Math.min(zoomDrag.top, y);
+		box.style.left = left + "px";
+		box.style.top = top + "px";
+		box.style.width = Math.abs(x - zoomDrag.left) + "px";
+		box.style.height = Math.abs(y - zoomDrag.top) + "px";
+	}
+
+	function endZoomDrag(e) {
+		var box = document.getElementById("usis-dv-zoom-rect");
+		if (box) box.classList.add("d-none");
+		if (!zoomDrag) return;
+		var x1 = zoomDrag.x1;
+		var y1 = zoomDrag.y1;
+		var dx = Math.abs(e.clientX - x1);
+		var dy = Math.abs(e.clientY - y1);
+		var ctrl = zoomDrag.ctrl || e.ctrlKey;
+		zoomDrag = null;
+		if (dx >= 8 && dy >= 8) {
+			var wrap = canvasWrap();
+			if (!wrap) return;
+			var factor = Math.min(wrap.clientWidth / dx, wrap.clientHeight / dy) * 0.92;
+			zoomBy(ctrl ? 1 / Math.max(factor, 1.05) : factor, (x1 + e.clientX) / 2, (y1 + e.clientY) / 2);
+			return;
+		}
+		zoomBy(ctrl ? 1 / ZOOM_STEP : ZOOM_STEP, e.clientX, e.clientY);
+	}
+
+	function viewerWantsPan(e) {
+		if (e.button === 1) return true;
+		if (spaceHeld && e.button === 0) return true;
+		if (navMode === "pan" && e.button === 0) return true;
+		return false;
+	}
+
+	function onViewerPointerDown(e) {
+		if (viewerWantsPan(e)) {
+			e.preventDefault();
+			e.stopPropagation();
+			startPan(e, e.button === 1 ? "middle" : spaceHeld ? "space" : "pan");
+			return;
+		}
+		if (navMode === "zoom" && e.button === 0) {
+			e.preventDefault();
+			e.stopPropagation();
+			startZoomDrag(e);
+		}
+	}
+
+	function onViewerPointerMove(e) {
+		if (panState) {
+			e.preventDefault();
+			movePan(e);
+			return;
+		}
+		if (zoomDrag) {
+			e.preventDefault();
+			moveZoomDrag(e);
+		}
+	}
+
+	function onViewerPointerUp(e) {
+		if (panState) {
+			endPan();
+			e.preventDefault();
+			return;
+		}
+		if (zoomDrag) {
+			endZoomDrag(e);
+			e.preventDefault();
+		}
+	}
+
+	function onViewerWheel(e) {
+		if (!pdfDoc) return;
+		e.preventDefault();
+		e.stopPropagation();
+		if (e.ctrlKey || e.metaKey) {
+			if (e.deltaY < 0) goPrevPage();
+			else if (e.deltaY > 0) goNextPage();
+			return;
+		}
+		var factor = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+		zoomBy(factor, e.clientX, e.clientY);
+	}
+
+	function onViewerContextMenu(e) {
+		if (measureMode === "line" && linePoints.length >= 2) {
+			e.preventDefault();
+			finalizeLinear();
+			return;
+		}
+		if (measureMode === "poly" && polyPoints.length >= 3) {
+			e.preventDefault();
+			finalizePolygon();
+			return;
+		}
+		if (navMode === "zoom" || navMode === "pan" || spaceHeld) {
+			e.preventDefault();
+		}
+	}
+
+	function hasMeasureDraft() {
+		return (
+			calPoints.length > 0 ||
+			linePoints.length > 0 ||
+			polyPoints.length > 0 ||
+			rectPoints.length > 0 ||
+			deductPoints.length > 0
+		);
+	}
+
+	function cancelMeasureDraft() {
+		calPoints = [];
+		linePoints = [];
+		polyPoints = [];
+		resetRectDraft();
+		if (fab) {
+			try {
+				fab.requestRenderAll();
+			} catch (e) {}
+		}
+		updateMeasureStatus();
+	}
+
+	function dropLastMeasurePoint() {
+		if (measureMode === "line" && linePoints.length) {
+			linePoints.pop();
+			if (fab) {
+				var objs = fab.getObjects();
+				if (objs.length) fab.remove(objs[objs.length - 1]);
+				if (linePoints.length && objs.length > 1) fab.remove(objs[objs.length - 2]);
+			}
+			return true;
+		}
+		if (measureMode === "poly" && polyPoints.length) {
+			polyPoints.pop();
+			if (fab) {
+				var pObjs = fab.getObjects();
+				if (pObjs.length) fab.remove(pObjs[pObjs.length - 1]);
+				if (polyPoints.length && pObjs.length > 1) fab.remove(pObjs[pObjs.length - 2]);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	function handleEscape() {
+		if (zoomDrag) {
+			var box = document.getElementById("usis-dv-zoom-rect");
+			if (box) box.classList.add("d-none");
+			zoomDrag = null;
+			return;
+		}
+		if (hasMeasureDraft()) {
+			cancelMeasureDraft();
+			return;
+		}
+		if (measureMode !== "none" || navMode !== "select") {
+			setNavMode("select");
+			setMeasureMode("none");
+			return;
+		}
+		if (document.fullscreenElement) {
+			document.exitFullscreen();
+		}
+	}
+
+	function toggleViewerFullscreen() {
+		var root = document.getElementById("usis-dv-fullscreen") || document.documentElement;
+		if (!document.fullscreenElement) {
+			if (root.requestFullscreen) root.requestFullscreen();
+		} else if (document.exitFullscreen) {
+			document.exitFullscreen();
+		}
+	}
+
+	function startCalibrateTool() {
+		if (!fabricLib) {
+			if (window.USISNotify) window.USISNotify.error("Fabric.js not loaded.");
+			return;
+		}
+		resetRectDraft();
+		calPoints = [];
+		setMeasureMode("cal");
+		if (window.USISNotify) window.USISNotify.info("Calibration: click two points along a known length.");
+	}
+
+	function startLineTool() {
+		if (!fabricLib) return;
+		resetRectDraft();
+		linePoints = [];
+		polyPoints = [];
+		setMeasureMode("line");
+		if (window.USISNotify) window.USISNotify.info("Linear: click vertices; double-click, Enter, or right-click to finish.");
+	}
+
+	function startPolyTool() {
+		if (!fabricLib) return;
+		resetRectDraft();
+		polyPoints = [];
+		linePoints = [];
+		setMeasureMode("poly");
+		if (window.USISNotify)
+			window.USISNotify.info("Area: click corners; double-click, Enter, or right-click to close.");
+	}
+
+	function startRectTool() {
+		if (!fabricLib) return;
+		resetRectDraft();
+		linePoints = [];
+		polyPoints = [];
+		setMeasureMode("rect");
+		if (window.USISNotify)
+			window.USISNotify.info("Rectangle: first corner, then opposite diagonal (live preview while you move).");
+	}
+
+	function startDeductTool() {
+		if (!fabricLib) return;
+		if (lastGrossShapeIndex < 0) {
+			if (window.USISNotify) window.USISNotify.warning("Place a gross Rectangle first.");
+			return;
+		}
+		resetRectDraft();
+		setMeasureMode("deduct");
+		if (window.USISNotify)
+			window.USISNotify.info("Deduction: two clicks for inner rectangle (subtracted from last gross).");
+	}
+
+	function startCountTool() {
+		if (!fabricLib) return;
+		countMarkers = [];
+		if (fab) fab.clear();
+		setMeasureMode("count");
+	}
+
+	function wireViewerNav() {
+		if (viewerNavWired) return;
+		var wrap = canvasWrap();
+		if (!wrap) return;
+		viewerNavWired = true;
+		wrap.addEventListener("wheel", onViewerWheel, { passive: false, capture: true });
+		wrap.addEventListener("pointerdown", onViewerPointerDown, true);
+		wrap.addEventListener("pointermove", onViewerPointerMove);
+		wrap.addEventListener("pointerup", onViewerPointerUp);
+		wrap.addEventListener("pointercancel", onViewerPointerUp);
+		wrap.addEventListener("contextmenu", onViewerContextMenu);
+		wrap.addEventListener("auxclick", function (e) {
+			if (e.button === 1) e.preventDefault();
+		});
+		document.addEventListener("keyup", onKeyUp);
+		applyNavCursor();
+		updateToolButtons();
 	}
 
 	function resizeFabricOverlay() {
@@ -1346,6 +2016,13 @@
 
 	function onFabricMouseDown(opt) {
 		if (!fab || measureMode === "none") return;
+		var ev = opt && opt.e;
+		if (ev && (ev.button === 1 || spaceHeld || navMode === "pan" || navMode === "zoom")) return;
+		if (ev && ev.button === 2) {
+			if (measureMode === "line" && linePoints.length >= 2) finalizeLinear();
+			else if (measureMode === "poly" && polyPoints.length >= 3) finalizePolygon();
+			return;
+		}
 		var p = fab.getPointer(opt.e);
 
 		if (measureMode === "cal") {
@@ -1641,67 +2318,24 @@
 		var bDone = document.getElementById("usis-dv-m-done");
 		if (bNone)
 			bNone.addEventListener("click", function () {
-				setMeasureMode("none");
+				setNavMode("select");
 			});
-		if (bCal)
-			bCal.addEventListener("click", function () {
-				if (!fabricLib) {
-					if (window.USISNotify) window.USISNotify.error("Fabric.js not loaded.");
-					return;
-				}
-				resetRectDraft();
-				calPoints = [];
-				setMeasureMode("cal");
-				if (window.USISNotify) window.USISNotify.info("Calibration: click two points along a known length.");
+		var bPan = document.getElementById("usis-dv-m-pan");
+		var bZoom = document.getElementById("usis-dv-m-zoom");
+		if (bPan)
+			bPan.addEventListener("click", function () {
+				setNavMode("pan");
 			});
-		if (bLine)
-			bLine.addEventListener("click", function () {
-				if (!fabricLib) return;
-				resetRectDraft();
-				linePoints = [];
-				polyPoints = [];
-				setMeasureMode("line");
-				if (window.USISNotify) window.USISNotify.info("Linear: click vertices; double-click or Done to finish.");
+		if (bZoom)
+			bZoom.addEventListener("click", function () {
+				setNavMode("zoom");
 			});
-		if (bPoly)
-			bPoly.addEventListener("click", function () {
-				if (!fabricLib) return;
-				resetRectDraft();
-				polyPoints = [];
-				linePoints = [];
-				setMeasureMode("poly");
-				if (window.USISNotify)
-					window.USISNotify.info("Area: click corners; double-click, Done, or click near first point to close.");
-			});
-		if (bRect)
-			bRect.addEventListener("click", function () {
-				if (!fabricLib) return;
-				resetRectDraft();
-				linePoints = [];
-				polyPoints = [];
-				setMeasureMode("rect");
-				if (window.USISNotify)
-					window.USISNotify.info("Rectangle: first corner, then opposite diagonal (live preview while you move).");
-			});
-		if (bDeduct)
-			bDeduct.addEventListener("click", function () {
-				if (!fabricLib) return;
-				if (lastGrossShapeIndex < 0) {
-					if (window.USISNotify) window.USISNotify.warning("Place a gross Rectangle first.");
-					return;
-				}
-				resetRectDraft();
-				setMeasureMode("deduct");
-				if (window.USISNotify)
-					window.USISNotify.info("Deduction: two clicks for inner rectangle (subtracted from last gross).");
-			});
-		if (bCount)
-			bCount.addEventListener("click", function () {
-				if (!fabricLib) return;
-				countMarkers = [];
-				if (fab) fab.clear();
-				setMeasureMode("count");
-			});
+		if (bCal) bCal.addEventListener("click", startCalibrateTool);
+		if (bLine) bLine.addEventListener("click", startLineTool);
+		if (bPoly) bPoly.addEventListener("click", startPolyTool);
+		if (bRect) bRect.addEventListener("click", startRectTool);
+		if (bDeduct) bDeduct.addEventListener("click", startDeductTool);
+		if (bCount) bCount.addEventListener("click", startCountTool);
 		if (bClr)
 			bClr.addEventListener("click", function () {
 				linePoints = [];
@@ -1861,41 +2495,24 @@
 		}
 		var zIn = document.getElementById("usis-dv-zoom-in");
 		var zOut = document.getElementById("usis-dv-zoom-out");
+		var zFitW = document.getElementById("usis-dv-fit-width");
+		var zFitP = document.getElementById("usis-dv-fit-page");
 		if (zIn) {
 			zIn.addEventListener("click", function () {
-				scale = Math.min(scale * 1.15, 4);
-				updateZoomLabel();
-				queueRenderPage();
+				zoomBy(ZOOM_STEP);
 			});
 		}
 		if (zOut) {
 			zOut.addEventListener("click", function () {
-				scale = Math.max(scale / 1.15, 0.35);
-				updateZoomLabel();
-				queueRenderPage();
+				zoomBy(1 / ZOOM_STEP);
 			});
 		}
+		if (zFitW) zFitW.addEventListener("click", fitWidth);
+		if (zFitP) zFitP.addEventListener("click", fitPage);
 		var pn = document.getElementById("usis-dv-page-next");
 		var pp = document.getElementById("usis-dv-page-prev");
-		if (pn) {
-			pn.addEventListener("click", function () {
-				if (!pdfDoc) return;
-				if (pageNum < pdfDoc.numPages) {
-					pageNum++;
-					clearMeasureGeometry();
-					queueRenderPage();
-				}
-			});
-		}
-		if (pp) {
-			pp.addEventListener("click", function () {
-				if (pageNum > 1) {
-					pageNum--;
-					clearMeasureGeometry();
-					queueRenderPage();
-				}
-			});
-		}
+		if (pn) pn.addEventListener("click", goNextPage);
+		if (pp) pp.addEventListener("click", goPrevPage);
 		var annAdd = document.getElementById("usis-dv-ann-add");
 		if (annAdd) {
 			annAdd.addEventListener("click", function () {
@@ -1974,6 +2591,7 @@
 		}
 		document.addEventListener("keydown", onKeyDown);
 		wireMeasureToolbar();
+		wireViewerNav();
 	}
 
 	function buildMeasurementShapesForPatch() {

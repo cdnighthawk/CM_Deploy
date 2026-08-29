@@ -114,7 +114,31 @@
 
 			overflow: auto;
 
+			position: relative;
+
+			overscroll-behavior: contain;
+
 			background: #525659;
+
+		}
+
+		.usis-dv-canvas-wrap.usis-dv-nav-pan { cursor: grab; }
+
+		.usis-dv-canvas-wrap.is-panning { cursor: grabbing; }
+
+		.usis-dv-canvas-wrap.usis-dv-nav-zoom { cursor: zoom-in; }
+
+		.usis-dv-zoom-rect {
+
+			position: absolute;
+
+			border: 1px dashed #e0a106;
+
+			background: rgba(224, 161, 6, 0.16);
+
+			pointer-events: none;
+
+			z-index: 5;
 
 		}
 
@@ -378,9 +402,9 @@
 
 							<div class="col-auto d-flex gap-1 align-items-end">
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Arrow Right)">&larr; Newer</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)">&larr; Newer</button>
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Arrow Left)">Older &rarr;</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)">Older &rarr;</button>
 
 								<button type="button" class="btn btn-outline-danger btn-sm d-none" id="usis-dv-delete-revision" title="Delete the current revision only">Delete revision</button>
 
@@ -390,9 +414,13 @@
 
 							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out">−</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)">−</button>
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in">+</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)">+</button>
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-width" title="Fit width (Ctrl+0)">Width</button>
+
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
 
 								<span class="small text-muted align-self-center ms-1" id="usis-dv-zoom-label">100%</span>
 
@@ -400,11 +428,11 @@
 
 							<div class="col-auto border-start ps-3 ms-md-2 d-flex gap-1 align-items-end">
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page">Page −</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page (PageUp or Ctrl+wheel)">Page −</button>
 
 								<span class="small text-muted align-self-center" id="usis-dv-page-label">1 / 1</span>
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page">Page +</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page (PageDown or Ctrl+wheel)">Page +</button>
 
 							</div>
 
@@ -422,19 +450,23 @@
 
 							<div class="col-auto d-flex flex-wrap gap-1 align-items-center">
 
-								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Pan / no measure tool">Pan</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Select (V)">Select</button>
 
-								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-cal" title="Two clicks + known length (LF)">Calibrate</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan without leaving the current tool.">Pan</button>
 
-								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-line" title="Click vertices, double-click or Done to finish">Linear</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle">Zoom</button>
 
-								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-poly" title="Polygon — click corners; close near first point, double-click, or Done">Area</button>
+								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF)">Calibrate</button>
 
-								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-rect" title="Axis-aligned rectangle — two diagonal clicks (gross area)">Rectangle</button>
+								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-line" title="Length (L or 2): click vertices; double-click, Enter, or right-click to finish">Linear</button>
+
+								<button type="button" class="btn btn-outline-warning btn-sm" id="usis-dv-m-poly" title="Area (3 or Shift+P): click corners; double-click, Enter, or right-click to close">Area</button>
+
+								<button type="button" class="btn btn-outline-success btn-sm" id="usis-dv-m-rect" title="Rectangle (R): two diagonal clicks">Rectangle</button>
 
 								<button type="button" class="btn btn-outline-danger btn-sm" id="usis-dv-m-deduct" title="Inner rectangle subtracted from last gross rectangle (two clicks)">Deduction</button>
 
-								<button type="button" class="btn btn-outline-info btn-sm" id="usis-dv-m-count" title="Click to place count markers">Count</button>
+								<button type="button" class="btn btn-outline-info btn-sm" id="usis-dv-m-count" title="Count (1 or Shift+Alt+C): click to place markers">Count</button>
 
 								<button type="button" class="btn btn-outline-danger btn-sm" id="usis-dv-m-clear">Clear measure</button>
 
@@ -500,7 +532,7 @@
 
 				<p class="small text-muted mb-0 px-2 py-1 bg-body border-top" id="usis-dv-hint">
 
-					Shortcuts: <kbd>Arrow Left</kbd> / <kbd>Arrow Right</kbd> revisions; <kbd>+</kbd> / <kbd>-</kbd> zoom.
+					<kbd>Wheel</kbd> zoom · <kbd>Ctrl+Wheel</kbd> page · hold <kbd>Space</kbd> or the mouse wheel to pan · <kbd>V</kbd> select · <kbd>Shift+V</kbd> pan · <kbd>Z</kbd> zoom · <kbd>Ctrl+0</kbd> width · <kbd>Ctrl+9</kbd> fit · <kbd>Ctrl+Shift+PageUp/Down</kbd> revision.
 
 				</p>
 

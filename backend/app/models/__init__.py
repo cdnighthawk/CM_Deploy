@@ -13,6 +13,7 @@ from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
 from .estimate import Estimate, EstimateLineItem
+from .field_ops import DailyReport, FieldPhoto
 from .hr import (
     HrEmployeeDocument,
     HrEmployeePayScale,
@@ -129,6 +130,7 @@ __all__ = [
     "Contact",
     "CoreconTransaction",
     "CostCode",
+    "DailyReport",
     "Document",
     "DoorHardwareSet",
     "DoorHardwareSetItem",
@@ -138,6 +140,7 @@ __all__ = [
     "DrawingSet",
     "Estimate",
     "EstimateLineItem",
+    "FieldPhoto",
     "HrEmployeeDispatch",
     "InvoiceDeliveryMethod",
     "Issue",

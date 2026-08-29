@@ -4682,3 +4682,6 @@ _integration_textura.register_textura_routes(bp)
 from . import _auth_mobile  # noqa: E402
 
 _auth_mobile.register_mobile_auth_routes(bp)
+from . import _field_routes as _field_routes_mod  # noqa: E402
+
+_field_routes_mod.register_field_routes(bp)

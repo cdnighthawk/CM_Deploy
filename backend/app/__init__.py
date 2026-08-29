@@ -185,6 +185,7 @@ def create_app(config_object: str | None = None) -> Flask:
             "/api/v1/auth/password-reset/confirm",
             "/api/v1/auth/mobile/login",
             "/api/v1/auth/mobile/refresh",
+            "/api/v1/auth/mobile/logout",
             "/api/v1/feedback/issues/confirm",
         ):
             return None

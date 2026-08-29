@@ -39,6 +39,11 @@ annotation_type_enum = ENUM(
     "measurement",
     "user_note",
     "ai_review",
+    "cloud",
+    "arrow",
+    "highlight",
+    "text_note",
+    "photo_pin",
     name="annotation_type",
     create_type=True,
 )

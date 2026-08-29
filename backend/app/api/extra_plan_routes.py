@@ -345,7 +345,16 @@ def register_extra_routes(bp: Blueprint) -> None:
         if not isinstance(data, Mapping):
             return _jsonify({"error": "expected JSON object body"}), 400
         at = str(data.get("type") or "user_note").strip()
-        if at not in ("measurement", "user_note", "ai_review"):
+        if at not in (
+            "measurement",
+            "user_note",
+            "ai_review",
+            "cloud",
+            "arrow",
+            "highlight",
+            "text_note",
+            "photo_pin",
+        ):
             return _jsonify({"error": "invalid annotation type"}), 400
         sev_raw = data.get("severity")
         sev = str(sev_raw).strip() if sev_raw else None

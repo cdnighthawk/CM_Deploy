@@ -21,11 +21,9 @@ that matrix down to the few decisions actually consulted by the API:
 - ``can_restore_rfi``     — restore from recycle bin?
 
 The current ``backend.app.models.auth`` scaffolding stores roles by code
-on the ``roles`` table joined to users via ``user_roles``. Real auth
-(sessions / JWT) is *not yet wired into the API blueprint*, so this
-module also exposes a ``current_user`` helper that reads
-``X-Usis-User-Id`` / ``?as_user=<uuid>`` for local development and the
-forthcoming session middleware.
+on the ``roles`` table joined to users via ``user_roles``. ``current_user``
+resolves a signed-in session, mobile JWT, or (development only)
+``X-Usis-User-Id`` / ``?as_user=<uuid>``.
 
 Permission policy (mirrors Procore's published matrix):
 
@@ -88,17 +86,40 @@ class CurrentUser:
         return any(c in self.granular for c in codes)
 
 
+def _env_flag(name: str) -> bool | None:
+    raw = os.environ.get(name)
+    if raw is None:
+        return None
+    v = raw.strip().lower()
+    if v in ("1", "true", "yes", "on"):
+        return True
+    if v in ("0", "false", "no", "off", ""):
+        return False
+    return None
+
+
 def _dev_unrestricted() -> bool:
     """Anonymous admin-style API access for local tooling.
 
-    **Default is off:** callers must sign in (session or ``X-Usis-User-Id``) unless
-    ``USIS_API_DEV_ALLOW_ANY`` is set to a truthy value (``1``, ``true``, …).
+    **Default is off:** callers must sign in (session or an allowed actor override)
+    unless ``USIS_API_DEV_ALLOW_ANY`` is set to a truthy value (``1``, ``true``, …).
     """
 
-    raw = os.environ.get("USIS_API_DEV_ALLOW_ANY")
-    if raw is None:
-        return False
-    return raw.strip().lower() not in ("0", "false", "no", "off", "")
+    flag = _env_flag("USIS_API_DEV_ALLOW_ANY")
+    return bool(flag)
+
+
+def actor_override_allowed() -> bool:
+    """Whether ``X-Usis-User-Id``, ``?as_user=``, and ``USIS_DEV_ACTOR_USER_ID`` apply.
+
+    Off in production. On when ``FLASK_ENV=development``, or when
+    ``USIS_ALLOW_ACTOR_HEADER`` is explicitly truthy (local / emergency only).
+    """
+
+    forced = _env_flag("USIS_ALLOW_ACTOR_HEADER")
+    if forced is not None:
+        return forced
+    return (os.environ.get("FLASK_ENV") or "").strip().lower() == "development"
 
 
 def allow_dev_anonymous_access() -> bool:
@@ -148,10 +169,10 @@ def current_user() -> CurrentUser:
 
     1. ``flask.g.current_user`` set by an upstream auth middleware.
     2. ``Authorization: Bearer`` mobile access JWT.
-    3. Request header ``X-Usis-User-Id`` (UUID) — overrides session for dev / impersonation.
-    4. Query param ``?as_user=<uuid>`` (UUID).
+    3. Request header ``X-Usis-User-Id`` (UUID) — development / ``USIS_ALLOW_ACTOR_HEADER`` only.
+    4. Query param ``?as_user=<uuid>`` (UUID) — same gate as the header.
     5. Signed-in browser session ``session['user_id']`` (see ``/auth/login``).
-    6. ``USIS_DEV_ACTOR_USER_ID`` env var.
+    6. ``USIS_DEV_ACTOR_USER_ID`` env var — same gate as the header.
     7. ``USIS_API_DEV_ALLOW_ANY`` explicitly truthy (``1`` / ``true``) → synthetic admin for
        tooling; otherwise anonymous requests are unauthenticated.
     """
@@ -174,22 +195,23 @@ def current_user() -> CurrentUser:
             g.current_user = cu
             return cu
 
-        for source in (
-            request.headers.get("X-Usis-User-Id"),
-            request.args.get("as_user"),
-        ):
-            uid = _parse_uuid(source)
-            if uid is not None:
-                u = db.session.get(User, uid)
-                if u is not None:
-                    cu = CurrentUser(
-                        user=u,
-                        role_codes=_role_codes_for(u),
-                        granular=_granular_for(u),
-                        module_access=_module_access_for(u),
-                    )
-                    g.current_user = cu
-                    return cu
+        if actor_override_allowed():
+            for source in (
+                request.headers.get("X-Usis-User-Id"),
+                request.args.get("as_user"),
+            ):
+                uid = _parse_uuid(source)
+                if uid is not None:
+                    u = db.session.get(User, uid)
+                    if u is not None:
+                        cu = CurrentUser(
+                            user=u,
+                            role_codes=_role_codes_for(u),
+                            granular=_granular_for(u),
+                            module_access=_module_access_for(u),
+                        )
+                        g.current_user = cu
+                        return cu
 
         sess_raw = session.get("user_id")
         sess_uid = _parse_uuid(str(sess_raw).strip() if sess_raw is not None else None)
@@ -206,19 +228,20 @@ def current_user() -> CurrentUser:
                 return cu
             session.pop("user_id", None)
 
-    env_uid = _parse_uuid(os.environ.get("USIS_DEV_ACTOR_USER_ID"))
-    if env_uid is not None:
-        u = db.session.get(User, env_uid)
-        if u is not None:
-            cu = CurrentUser(
-                user=u,
-                role_codes=_role_codes_for(u),
-                granular=_granular_for(u),
-                module_access=_module_access_for(u),
-            )
-            if has_request_context():
-                g.current_user = cu
-            return cu
+    if actor_override_allowed():
+        env_uid = _parse_uuid(os.environ.get("USIS_DEV_ACTOR_USER_ID"))
+        if env_uid is not None:
+            u = db.session.get(User, env_uid)
+            if u is not None:
+                cu = CurrentUser(
+                    user=u,
+                    role_codes=_role_codes_for(u),
+                    granular=_granular_for(u),
+                    module_access=_module_access_for(u),
+                )
+                if has_request_context():
+                    g.current_user = cu
+                return cu
 
     if _dev_unrestricted():
         from ..permissions.access import all_admin_permissions

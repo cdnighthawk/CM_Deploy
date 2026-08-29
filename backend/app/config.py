@@ -275,6 +275,7 @@ class Config:
         os.environ.get("HR_UNION_DOCUMENT_UPLOAD_FOLDER") or ""
     ).strip() or None
     AP_INVOICE_UPLOAD_FOLDER: str | None = (os.environ.get("AP_INVOICE_UPLOAD_FOLDER") or "").strip() or None
+    FIELD_PHOTO_UPLOAD_FOLDER: str | None = (os.environ.get("FIELD_PHOTO_UPLOAD_FOLDER") or "").strip() or None
     INVOICE_MAILBOX: str = (os.environ.get("INVOICE_MAILBOX") or "invoices@gousis.com").strip()
 
     # Backblaze B2 (S3-compatible) for uploads when all four core vars are set.

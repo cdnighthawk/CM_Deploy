@@ -28,3 +28,9 @@ def test_desktop_estimate_queue_uses_leads_or_estimate():
 def test_vendor_invoice_routes_use_ap_module():
     assert resolve_modules("/api/v1/ap/invoices") == ("ap",)
     assert resolve_modules("/api/v1/ap/mailbox/sync") == ("ap",)
+
+
+def test_field_photo_and_daily_report_routes_use_projects_module():
+    assert resolve_modules("/api/v1/daily-reports/a1700000-0000-4000-8000-000000000001") == ("projects",)
+    assert resolve_modules("/api/v1/photos/a1700000-0000-4000-8000-000000000001/file") == ("projects",)
+    assert resolve_modules("/api/v1/photos/a1700000-0000-4000-8000-000000000001") == ("projects",)

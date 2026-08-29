@@ -15,7 +15,19 @@
 		return "";
 	}
 
+	function actorOverrideAllowed() {
+		try {
+			var host = (global.location && global.location.hostname) || "";
+			return host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+		} catch (e) {
+			return false;
+		}
+	}
+
 	function actorHeaders() {
+		if (!actorOverrideAllowed()) {
+			return {};
+		}
 		var id = null;
 		try {
 			id = global.localStorage.getItem("usisActorUserId");

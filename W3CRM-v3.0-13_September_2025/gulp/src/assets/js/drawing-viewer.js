@@ -349,11 +349,7 @@
 		revisions.forEach(function (r, i) {
 			var o = document.createElement("option");
 			o.value = String(i);
-			var label =
-				"Rev " +
-				(r.revision != null ? String(r.revision) : "?") +
-				" · v" +
-				(r.version != null ? String(r.version) : "?");
+			var label = (r.drawing_set && String(r.drawing_set).trim()) || (r.revision != null ? String(r.revision) : "Set");
 			if (r.updated_at) {
 				try {
 					label += " · " + new Date(r.updated_at).toLocaleDateString();

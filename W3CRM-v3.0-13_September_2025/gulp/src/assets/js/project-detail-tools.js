@@ -394,20 +394,8 @@
 			{ title: "Sheet #", field: "sheet_number", headerFilter: "input", minWidth: 100, widthGrow: 1 },
 			{ title: "Title", field: "sheet_title", headerFilter: "input", minWidth: 160, widthGrow: 2 },
 			{ title: "Discipline", field: "discipline", headerFilter: "input", minWidth: 100, widthGrow: 1 },
-			{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 90, widthGrow: 1 },
-			{
-				title: "Current rev",
-				field: "current_revision",
-				minWidth: 110,
-				formatter: function (cell) {
-					var cr = cell.getValue();
-					if (!cr) return "";
-					var r = cr.revision != null ? String(cr.revision) : "";
-					var v = cr.version != null ? String(cr.version) : "";
-					return esc(r) + (v ? " · v" + esc(v) : "");
-				},
-			},
-			{ title: "Revisions", field: "revision_count", hozAlign: "right", width: 100 },
+			{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 140, widthGrow: 1 },
+			{ title: "Issues", field: "revision_count", hozAlign: "right", width: 90 },
 			{
 				title: "Updated",
 				field: "current_revision",

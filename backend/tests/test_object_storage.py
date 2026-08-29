@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import uuid
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -95,6 +96,39 @@ def test_b2_enabled_when_all_vars_set(flask_app):
 
         assert b2_enabled()
         assert object_key(UploadCategory.DRAWINGS, "abc.pdf") == "drawings/abc.pdf"
+
+
+def test_mirror_root_serves_when_local_missing(flask_app, tmp_path):
+    """Local Flask with production DB should read drawings from the NAS mirror."""
+    rel = Path("24060") / "Architectural" / "Permit-Set" / "A1.pdf"
+    dest = tmp_path / "prod" / "usis-cm" / "drawings" / rel
+    dest.parent.mkdir(parents=True)
+    dest.write_bytes(b"%PDF-1.4 nas")
+    flask_app.config.update(
+        {
+            "DRAWING_UPLOAD_FOLDER": str(tmp_path / "empty-instance"),
+            "B2_APPLICATION_KEY_ID": None,
+            "B2_APPLICATION_KEY": None,
+            "B2_BUCKET_NAME": None,
+            "B2_ENDPOINT": None,
+            "B2_PREFIX": "prod/usis-cm",
+            "B2_MIRROR_ROOT": str(tmp_path),
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, send_stored_file, stored_exists
+
+        name = rel.as_posix()
+        assert stored_exists(UploadCategory.DRAWINGS, name)
+        with flask_app.test_request_context():
+            resp = send_stored_file(
+                UploadCategory.DRAWINGS,
+                name,
+                mimetype="application/pdf",
+                download_name="A1.pdf",
+            )
+            assert resp is not None
+            assert resp.status_code == 200
 
 
 def test_b2_prefix_in_object_key(flask_app):

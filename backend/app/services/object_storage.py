@@ -92,21 +92,43 @@ def object_key(category: UploadCategory, object_name: str) -> str:
     return "/".join(parts)
 
 
+def _mirror_file(category: UploadCategory, object_name: str) -> Path | None:
+    """NAS/local mirror of the B2 key when ``B2_MIRROR_ROOT`` is set."""
+    root = (current_app.config.get("B2_MIRROR_ROOT") or "").strip()
+    if not root:
+        return None
+    parts = [p for p in object_key(category, object_name).replace("\\", "/").split("/") if p and p not in (".", "..")]
+    path = Path(root).joinpath(*parts)
+    try:
+        return path if path.is_file() else None
+    except OSError:
+        return None
+
+
 def stored_exists(category: UploadCategory, object_name: str) -> bool:
-    if b2_enabled():
-        return _head_object(object_key(category, object_name)) is not None
-    return local_path(category, object_name).is_file()
+    if b2_enabled() and _head_object(object_key(category, object_name)) is not None:
+        return True
+    if local_path(category, object_name).is_file():
+        return True
+    return _mirror_file(category, object_name) is not None
 
 
 def stored_size(category: UploadCategory, object_name: str) -> int | None:
     if b2_enabled():
         meta = _head_object(object_key(category, object_name))
-        if meta is None:
-            return None
-        return int(meta.get("ContentLength") or 0)
+        if meta is not None:
+            return int(meta.get("ContentLength") or 0)
     path = local_path(category, object_name)
     try:
-        return path.stat().st_size if path.is_file() else None
+        if path.is_file():
+            return path.stat().st_size
+    except OSError:
+        pass
+    mirrored = _mirror_file(category, object_name)
+    if mirrored is None:
+        return None
+    try:
+        return mirrored.stat().st_size
     except OSError:
         return None
 
@@ -181,11 +203,16 @@ def delete_stored(category: UploadCategory, object_name: str) -> None:
 def read_stored_bytes(category: UploadCategory, object_name: str) -> bytes | None:
     """Load a stored object into memory, or ``None`` when missing."""
     if b2_enabled():
-        return _get_bytes(object_key(category, object_name))
+        data = _get_bytes(object_key(category, object_name))
+        if data is not None:
+            return data
     path = local_path(category, object_name)
-    if not path.is_file():
+    if path.is_file():
+        return path.read_bytes()
+    mirrored = _mirror_file(category, object_name)
+    if mirrored is None:
         return None
-    return path.read_bytes()
+    return mirrored.read_bytes()
 
 
 def send_stored_file(
@@ -197,21 +224,22 @@ def send_stored_file(
 ) -> Response | None:
     """Stream a stored object, or ``None`` when missing."""
     if b2_enabled():
-        data = read_stored_bytes(category, object_name)
-        if data is None:
-            return None
-        # Explicit body + Content-Length avoids proxy/browser mismatches with BytesIO send_file.
-        safe_name = download_name.replace('"', "")
-        return Response(
-            data,
-            mimetype=mimetype,
-            headers={
-                "Content-Length": str(len(data)),
-                "Content-Disposition": f'inline; filename="{safe_name}"',
-            },
-        )
+        data = _get_bytes(object_key(category, object_name))
+        if data is not None:
+            # Explicit body + Content-Length avoids proxy/browser mismatches with BytesIO send_file.
+            safe_name = download_name.replace('"', "")
+            return Response(
+                data,
+                mimetype=mimetype,
+                headers={
+                    "Content-Length": str(len(data)),
+                    "Content-Disposition": f'inline; filename="{safe_name}"',
+                },
+            )
     path = local_path(category, object_name)
     if not path.is_file():
+        path = _mirror_file(category, object_name)
+    if path is None or not path.is_file():
         return None
     return send_file(
         path,

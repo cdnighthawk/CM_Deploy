@@ -53,6 +53,7 @@
 	var activeDrawingId = null;
 	var takeoffLineId = null;
 	var takeoffListCache = [];
+	var currentTakeoffLine = null;
 	var fab = null;
 	var measureMode = "none";
 	var pixelsPerLf = null;
@@ -2180,6 +2181,8 @@
 	}
 
 	function startViewer() {
+		pdfjsLib = window.pdfjsLib || pdfjsLib;
+		fabricLib = window.fabric || fabricLib;
 		if (!pdfjsLib) {
 			_usisDbg("C", "drawing-viewer.js:init", "pdfjsLib_missing", {});
 			showErr("PDF.js failed to load from CDN.");
@@ -2190,26 +2193,33 @@
 				"assets/vendor/pdfjs-3.11/pdf.worker.min.js"
 			);
 		}
-		wireUi();
-		wirePickerOnce();
-		loadProjectTakeoffList();
-		refreshTakeoffStrip();
-		setMeasureMode("none");
+		try {
+			wireUi();
+			wirePickerOnce();
+			loadProjectTakeoffList();
+			refreshTakeoffStrip();
+			setMeasureMode("none");
 
-		if (!activeDrawingId) {
-			_usisDbg("E", "drawing-viewer.js:init", "no_drawing_id_branch", { hasProjectId: !!projectId });
-			if (projectId) {
-				showErr("");
-				showPicker();
-			} else {
-				showErr(
-					"Add drawing_id to the URL (from Project, Lead, or Estimate Drawings), or add project_id / lead_id to pick a sheet here."
-				);
+			if (!activeDrawingId) {
+				_usisDbg("E", "drawing-viewer.js:init", "no_drawing_id_branch", { hasProjectId: !!projectId });
+				if (projectId) {
+					showErr("");
+					showPicker();
+				} else {
+					showErr(
+						"Add drawing_id to the URL (from Project, Lead, or Estimate Drawings), or add project_id / lead_id to pick a sheet here."
+					);
+				}
+				return;
 			}
-			return;
+			_usisDbg("E", "drawing-viewer.js:init", "calling_loadRevisionsAndPdf", {});
+			loadRevisionsAndPdf();
+		} catch (e) {
+			_usisDbg("E", "drawing-viewer.js:startViewer", "start_throw", {
+				err: e && e.message ? e.message : String(e),
+			});
+			showErr(e && e.message ? e.message : String(e));
 		}
-		_usisDbg("E", "drawing-viewer.js:init", "calling_loadRevisionsAndPdf", {});
-		loadRevisionsAndPdf();
 	}
 
 	function resolveLeadProjectThenStart() {

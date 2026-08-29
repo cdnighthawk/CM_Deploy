@@ -1,47 +1,30 @@
 <!-- Start - Sidebar Chat Box  -->
-		<div class="chatbox">
+		<div class="chatbox usis-ai-chatbox">
 			<div class="chatbox-close"></div>
-			<div class="clearfix">
-				<div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-1">
+			<div class="usis-ai-chat" data-usis-ai-chat="1">
+				<div class="usis-ai-chat__header">
 					<div>
 						<span class="usis-overline mb-0">Assistant</span>
-						<div class="fw-semibold">Chat</div>
+						<div class="fw-semibold">USIS + Grok</div>
 					</div>
-					<span class="usis-status-chip usis-status-chip--progress" data-usis-chat-mode>Team</span>
+					<div class="d-flex align-items-center gap-2">
+						<span class="usis-status-chip usis-status-chip--progress" data-usis-chat-mode>Assistant</span>
+						<span class="usis-seg" data-usis-chat-provider title="xAI Grok">
+							<span class="btn btn-sm active" aria-pressed="true">Grok</span>
+						</span>
+					</div>
 				</div>
-				<ul class="nav nav-underline">
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
-					</li>
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane fade" id="notes">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Project notes will appear here when messaging is enabled.</p>
-							</div>
+				<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>
+				<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>
+				<div class="usis-ai-chat__composer">
+					<form data-usis-chat-form>
+						<label class="visually-hidden" for="usis-ai-chat-input">Message</label>
+						<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok about projects, leads, RFIs…"></textarea>
+						<div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+							<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>Clear</button>
+							<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>
 						</div>
-					</div>
-					<div class="tab-pane fade" id="alerts">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">System alerts will appear here when configured.</p>
-							</div>
-						</div>
-					</div>
-					<div class="tab-pane fade active show" id="chat">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Team chat is not enabled yet.</p>
-							</div>
-						</div>
-					</div>
+					</form>
 				</div>
 			</div>
 		</div>

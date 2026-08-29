@@ -662,3 +662,21 @@ jQuery(window).on('resize',function () {
 	
 });
 /*  Window Resize END */
+
+(function () {
+	if (document.querySelector("script[data-usis-ai-chat]")) return;
+	var scripts = document.getElementsByTagName("script");
+	var src = "assets/js/usis-ai-chat.js";
+	for (var i = 0; i < scripts.length; i++) {
+		var cur = scripts[i].getAttribute("src") || "";
+		if (/custom\.js(\?|$)/.test(cur)) {
+			src = cur.replace(/custom\.js(\?.*)?$/, "usis-ai-chat.js");
+			break;
+		}
+	}
+	var s = document.createElement("script");
+	s.src = src;
+	s.defer = true;
+	s.setAttribute("data-usis-ai-chat", "1");
+	(document.body || document.documentElement).appendChild(s);
+})();

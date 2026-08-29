@@ -193,7 +193,12 @@
 					},
 				})
 					.then(function (chat) {
-						var text = (chat && (chat.reply || chat.content || chat.message)) || JSON.stringify(chat || {});
+						var msg = chat && chat.message;
+						var text = "";
+						if (msg && typeof msg === "object") text = msg.content || "";
+						else if (typeof msg === "string") text = msg;
+						else text = (chat && (chat.reply || chat.content)) || "";
+						if (!text) text = JSON.stringify(chat || {});
 						var findings = [];
 						try {
 							var parsed = typeof text === "string" ? JSON.parse(text) : text;

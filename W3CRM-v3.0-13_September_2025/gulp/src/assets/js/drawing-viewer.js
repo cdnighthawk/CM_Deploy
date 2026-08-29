@@ -1915,11 +1915,17 @@
 						mode: "construction_review",
 						drawing_id: did,
 					});
-					window.aiReviewBus.emit("review-complete", {
-						drawing_id: did,
-					});
 				}
-				if (window.USISNotify) window.USISNotify.info("AI review requested (stub — Plan 12).");
+				if (window.USIS_AI_CHAT && typeof window.USIS_AI_CHAT.ask === "function") {
+					window.USIS_AI_CHAT.ask(
+						"Review the current drawing" +
+							(did ? " (drawing " + did + ")" : "") +
+							" for constructability, coordination, and code issues.",
+						{ mode: "construction_review", open: true }
+					);
+					return;
+				}
+				if (window.USISNotify) window.USISNotify.info("Open Chat in the header to review with Grok.");
 			});
 		}
 		var takeoffSave = document.getElementById("usis-dv-takeoff-save");

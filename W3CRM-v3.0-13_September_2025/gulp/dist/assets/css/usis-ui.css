@@ -1249,11 +1249,11 @@ a.usis-drawing-name-link:hover {
 	align-items: center;
 	gap: 0.5rem;
 	width: 100%;
-	padding: 0.42rem 0.65rem;
+	padding: 0.5rem 0.75rem;
 	border: 0;
 	background: var(--usis-grid-header);
 	font-weight: 650;
-	font-size: 0.75rem;
+	font-size: 0.9375rem;
 	line-height: 1.3;
 	color: var(--usis-text);
 	text-align: left;
@@ -1310,11 +1310,18 @@ body .tabulator .tabulator-row.tabulator-group {
 	border-bottom: 1px solid var(--usis-divider);
 	border-top: 1px solid var(--usis-divider);
 	font-weight: 650;
-	font-size: 0.75rem;
+	font-size: 0.9375rem;
 	color: var(--usis-text);
-	padding: 0.42rem 0.65rem;
-	min-height: 2rem;
+	padding: 0.5rem 0.75rem;
+	min-height: 2.4rem;
 	cursor: pointer;
+}
+body .tabulator .tabulator-row.tabulator-group .tabulator-cell {
+	font-size: 0.9375rem;
+	font-weight: 650;
+	height: auto;
+	min-height: 2.25rem;
+	line-height: 1.35;
 }
 body .tabulator .tabulator-row.tabulator-group:hover {
 	background: #e6ebf0;
@@ -1325,6 +1332,7 @@ body .tabulator .tabulator-row.tabulator-group .tabulator-arrow {
 }
 body .tabulator .tabulator-row.tabulator-group span {
 	margin-left: 0;
+	font-size: inherit;
 }
 
 /* Spec PDF viewer popup (drawing-viewer chrome without takeoff) */

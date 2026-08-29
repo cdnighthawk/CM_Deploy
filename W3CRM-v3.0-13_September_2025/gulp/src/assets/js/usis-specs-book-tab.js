@@ -360,6 +360,7 @@
 			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-expand-all">Expand all</button>' +
 			'<span class="text-muted">·</span>' +
 			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-collapse-all">Collapse all</button>' +
+			'<button type="button" class="btn btn-sm btn-primary usis-specs-download d-none">Download</button>' +
 			'<div class="usis-specs-book-msg small ms-2 d-none"></div>' +
 			"</div>" +
 			'<div class="usis-specs-grid border rounded overflow-hidden bg-white" style="min-height:22rem;"></div>' +
@@ -463,6 +464,8 @@
 		var customTitle = container.querySelector(".usis-specs-custom-title");
 		var expandAllBtn = container.querySelector(".usis-specs-expand-all");
 		var collapseAllBtn = container.querySelector(".usis-specs-collapse-all");
+		var downloadBtn = container.querySelector(".usis-specs-download");
+		var specSelected = new Set();
 
 		var closeBtn = overlay.querySelector(".usis-sv-close");
 		var titleEl = overlay.querySelector(".usis-sv-title");
@@ -683,6 +686,105 @@
 			showViewerErr("");
 		}
 
+		function specRowId(data) {
+			return data && data.id ? String(data.id) : "";
+		}
+
+		function updateSpecDownloadBtn() {
+			if (!downloadBtn) return;
+			var n = specSelected.size;
+			downloadBtn.classList.toggle("d-none", n === 0);
+			downloadBtn.disabled = n === 0;
+			downloadBtn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+		}
+
+		function specFileJob(row) {
+			var raw = row && row.pdf_url ? String(row.pdf_url).trim() : "";
+			if (!raw) return null;
+			var url = resolveUrl(raw);
+			if (!url) return null;
+			var label = ((row.code || "spec") + " " + (row.title || "")).trim();
+			var name = (global.USISUi && USISUi.safeFilename ? USISUi.safeFilename(label) : label) + ".pdf";
+			return { url: url, name: name };
+		}
+
+		function downloadSelectedSpecs() {
+			var jobs = sections
+				.filter(function (s) {
+					return specSelected.has(specRowId(s));
+				})
+				.map(specFileJob)
+				.filter(Boolean);
+			if (global.USISUi && typeof USISUi.downloadFiles === "function") {
+				USISUi.downloadFiles(jobs, { emptyMsg: "Selected specs have no PDF to download." });
+				return;
+			}
+			if (!jobs.length) {
+				setBookMsg("Selected specs have no PDF to download.", true);
+				return;
+			}
+			jobs.forEach(function (job) {
+				global.open(job.url, "_blank", "noopener");
+			});
+		}
+
+		function specCheckboxColumn() {
+			return {
+				title: "",
+				field: "_sel",
+				cssClass: "usis-doc-check-col",
+				width: 44,
+				minWidth: 44,
+				hozAlign: "center",
+				headerHozAlign: "center",
+				headerSort: false,
+				resizable: false,
+				frozen: true,
+				titleFormatter: function () {
+					var cb = document.createElement("input");
+					cb.type = "checkbox";
+					cb.className = "form-check-input m-0";
+					cb.setAttribute("aria-label", "Select all specs");
+					cb.addEventListener("click", function (e) {
+						e.stopPropagation();
+					});
+					cb.addEventListener("change", function () {
+						if (!table) return;
+						table.getRows().forEach(function (row) {
+							var id = specRowId(row.getData());
+							if (!id) return;
+							if (cb.checked) specSelected.add(id);
+							else specSelected.delete(id);
+							var cell = row.getCell("_sel");
+							var box = cell && cell.getElement() && cell.getElement().querySelector("input[type=checkbox]");
+							if (box) box.checked = cb.checked;
+						});
+						updateSpecDownloadBtn();
+					});
+					return cb;
+				},
+				formatter: function (cell) {
+					var data = cell.getRow().getData();
+					var id = specRowId(data);
+					var cb = document.createElement("input");
+					cb.type = "checkbox";
+					cb.className = "form-check-input m-0";
+					cb.checked = !!(id && specSelected.has(id));
+					cb.setAttribute("aria-label", "Select spec");
+					cb.addEventListener("click", function (e) {
+						e.stopPropagation();
+					});
+					cb.addEventListener("change", function () {
+						if (!id) return;
+						if (cb.checked) specSelected.add(id);
+						else specSelected.delete(id);
+						updateSpecDownloadBtn();
+					});
+					return cb;
+				},
+			};
+		}
+
 		function specNameLinkFormatter(field) {
 			return function (cell) {
 				var data = cell.getRow().getData();
@@ -754,8 +856,10 @@
 			}
 			if (table) {
 				table.setData(rows);
+				updateSpecDownloadBtn();
 				return;
 			}
+			updateSpecDownloadBtn();
 			table = new Tabulator(gridEl, {
 				data: rows,
 				layout: "fitColumns",
@@ -763,6 +867,7 @@
 				movableColumns: true,
 				placeholder: "No CSI sections on this project yet. Add them from the CSI catalog, or import a spec-book PDF.",
 				columns: [
+					specCheckboxColumn(),
 					{
 						title: "CSI code",
 						field: "code",
@@ -787,53 +892,6 @@
 						width: 80,
 						formatter: function (cell) {
 							return cell.getValue() ? "Yes" : "—";
-						},
-					},
-					{
-						title: "",
-						hozAlign: "right",
-						headerSort: false,
-						width: 220,
-						formatter: function (cell) {
-							var wrap = document.createElement("div");
-							wrap.className = "d-flex gap-1 flex-wrap justify-content-end";
-							var data = cell.getRow().getData();
-							var view = document.createElement("button");
-							view.type = "button";
-							view.className = "btn btn-primary btn-sm py-0";
-							view.textContent = "View";
-							view.addEventListener("click", function () {
-								openViewer(data);
-							});
-							wrap.appendChild(view);
-							if (data.pdf_url) {
-								var p = document.createElement("a");
-								p.href = resolveUrl(data.pdf_url);
-								p.target = "_blank";
-								p.rel = "noopener noreferrer";
-								p.className = "btn btn-outline-secondary btn-sm py-0";
-								p.textContent = "PDF";
-								wrap.appendChild(p);
-							} else {
-								var att = document.createElement("button");
-								att.type = "button";
-								att.className = "btn btn-outline-secondary btn-sm py-0";
-								att.textContent = "Attach";
-								att.addEventListener("click", function () {
-									pendingAttachId = data.id;
-									if (fileInput) fileInput.click();
-								});
-								wrap.appendChild(att);
-							}
-							var del = document.createElement("button");
-							del.type = "button";
-							del.className = "btn btn-outline-danger btn-sm py-0";
-							del.textContent = "Delete";
-							del.addEventListener("click", function () {
-								deleteSection(data);
-							});
-							wrap.appendChild(del);
-							return wrap;
 						},
 					},
 				],
@@ -1182,6 +1240,10 @@
 				setGroupsOpen(false);
 			});
 		}
+		if (downloadBtn) {
+			downloadBtn.addEventListener("click", downloadSelectedSpecs);
+		}
+		updateSpecDownloadBtn();
 		if (addBtn) addBtn.addEventListener("click", openModal);
 		Array.prototype.forEach.call(container.querySelectorAll(".usis-specs-modal-close"), function (btn) {
 			btn.addEventListener("click", closeModal);

@@ -1,11 +1,11 @@
 """AGC San Diego / Golden State Planroom weekly listing rows."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Optional
 
-from sqlalchemy import Boolean, Date, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,4 +37,6 @@ class GoldenStatePlanroomLead(UUIDPKMixin, TimestampMixin, db.Model):
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     project_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    detail: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+    details_fetched_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     raw_row: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)

@@ -111,6 +111,20 @@
 		#usis-bc-col-filter-modal .accordion-button { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
 		#usis-bc-leads-table th.usis-bulk-col,
 		#usis-bc-leads-table td.usis-bulk-col { width: 28px; max-width: 28px; }
+		#usis-gs-leads-table { font-size: 0.875rem; }
+		#usis-gs-leads-table thead th,
+		#usis-gs-leads-table tbody td {
+			padding: 0.2rem 0.45rem;
+			vertical-align: middle;
+			line-height: 1.25;
+		}
+		#usis-gs-leads-table thead th { font-weight: 600; }
+		#usis-gs-leads-table th.usis-gs-col-dist,
+		#usis-gs-leads-table td.usis-gs-col-dist {
+			width: 4.5rem;
+			max-width: 4.5rem;
+			text-align: right;
+		}
 	</style>
 
 </head>
@@ -493,12 +507,6 @@
 							<option value="Los Angeles">Los Angeles</option>
 							<option value="Sacramento">Sacramento</option>
 						</select>
-						<select class="form-select form-select-sm w-auto" id="usis-gs-sort" aria-label="Sort">
-							<option value="fit_score" selected>Best fit</option>
-							<option value="bid_date">Bid date</option>
-							<option value="-estimate_high">Estimate (high–low)</option>
-							<option value="name">Project name</option>
-						</select>
 						<div class="form-check mb-0">
 							<input class="form-check-input" type="checkbox" id="usis-gs-new-only">
 							<label class="form-check-label small" for="usis-gs-new-only">NEW only</label>
@@ -507,7 +515,13 @@
 							<input class="form-check-input" type="checkbox" id="usis-gs-strong-only">
 							<label class="form-check-label small" for="usis-gs-strong-only">Strong fit only</label>
 						</div>
-						<span class="small text-muted" id="usis-gs-filter-count" aria-live="polite"></span>
+						<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-gs-filter-count" aria-live="polite"></span>
+						<button type="button" class="btn btn-outline-secondary btn-sm d-md-none" id="usis-gs-sort-filter" title="Sort and filter columns">
+							<i class="fa fa-filter me-1"></i> Sort &amp; Filter
+						</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-gs-reset-view" title="Clear header filters, sort, and hidden columns">
+							Reset view
+						</button>
 					</div>
 					<div class="d-flex flex-wrap gap-2">
 						<input type="file" id="usis-gs-import-file" accept=".html,.htm,.csv,text/html,text/csv" class="d-none">
@@ -519,19 +533,20 @@
 					<table class="table table-sm m-0" id="usis-gs-leads-table">
 						<thead>
 							<tr>
-								<th>Fit</th>
-								<th>Flags</th>
-								<th>Bid date</th>
-								<th>Time</th>
-								<th>Location</th>
-								<th class="text-end">Addenda</th>
-								<th>Plan #</th>
-								<th>Project</th>
-								<th class="text-end">Estimate high</th>
+								<th class="text-nowrap" data-sort-key="fit">Fit</th>
+								<th class="text-nowrap" data-sort-key="flags">Flags</th>
+								<th class="text-nowrap" data-sort-key="bid_date">Bid date</th>
+								<th class="text-nowrap" data-sort-key="bid_time">Time</th>
+								<th class="text-nowrap" data-sort-key="location">Location</th>
+								<th class="usis-gs-col-dist text-nowrap" data-sort-key="distance_miles" title="Distance from office">Dist</th>
+								<th class="text-end text-nowrap" data-sort-key="addenda_count">Addenda</th>
+								<th class="text-nowrap" data-sort-key="plan_number">Plan #</th>
+								<th data-sort-key="name">Project</th>
+								<th class="text-end text-nowrap" data-sort-key="estimate_high">Estimate high</th>
 							</tr>
 						</thead>
 						<tbody id="usis-gs-leads-tbody">
-							<tr><td colspan="9" class="text-muted">Loading Golden State planroom…</td></tr>
+							<tr><td colspan="10" class="text-muted">Loading Golden State planroom…</td></tr>
 						</tbody>
 					</table>
 				</div>
@@ -558,6 +573,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-table-autofilter.js"></script>
 	<script src="assets/js/usis-gs-planroom.js"></script>
 </body>
 </html>

@@ -1,10 +1,12 @@
 """Golden State planroom weekly CSV parse + list/import API."""
 from __future__ import annotations
 
+import uuid
 from datetime import date
 from io import BytesIO
+from types import SimpleNamespace
 
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 from app.extensions import db
 from app.golden_state_planroom_csv import (
@@ -13,7 +15,10 @@ from app.golden_state_planroom_csv import (
     parse_agcs_weekly_listing,
     upsert_planroom_rows,
 )
+from app.golden_state_planroom_detail import parse_ops_detail_html
+from app.golden_state_planroom_geo import coords_for_place, coords_for_planroom_row
 from app.golden_state_planroom_score import classify_building, score_planroom_lead
+from app.models.company import Company
 from app.models.golden_state_planroom_lead import GoldenStatePlanroomLead
 
 _SAMPLE_PLANS = ("99-00001", "99-00002", "99-00003")
@@ -168,6 +173,23 @@ def test_listing_dispatch_uses_html_when_filename_says_so():
     assert rows and rows[0]["project_url"]
 
 
+def test_parse_ops_detail_html():
+    html = """
+    <html><body>
+    <div class="project-caption">Status:</div><div class="col-sm-3">Bidding</div>
+    <div class="project-caption">Project Type:</div><div class="col-sm-3">Public Works</div>
+    <div class="project-caption">City:</div><div class="col-sm-3">San Diego</div>
+    <div class="project-caption">Description:</div><div class="description">Interior specialties package.</div>
+    </body></html>
+    """
+    detail = parse_ops_detail_html(html)
+    assert detail["status"] == "Bidding"
+    assert detail["project_type"] == "Public Works"
+    assert detail["city"] == "San Diego"
+    assert "specialties" in detail["description"]
+    assert parse_ops_detail_html("<html><title>Plan Room Login</title></html>") is None
+
+
 def test_score_planroom_lead_matches_bid_profile():
     school = score_planroom_lead(
         name="Lincoln High School Modernization",
@@ -247,3 +269,75 @@ NEW, ,,9/10/2026,,2:00 PM   ,San Diego,,0,99-00001,,Lincoln High School Moderniz
     strong_items = [x for x in strong.get_json()["items"] if x["plan_number"] in _SAMPLE_PLANS]
     assert [x["plan_number"] for x in strong_items] == ["99-00001"]
     _clear_sample(flask_app)
+
+
+def test_coords_for_place_and_office_distance():
+    assert coords_for_place("San Diego County") == coords_for_place("San Diego")
+    assert coords_for_place("escondido") is not None
+    near = SimpleNamespace(location="San Diego", detail={"city": "Escondido"})
+    far = SimpleNamespace(location="Sacramento", detail=None)
+    unknown = SimpleNamespace(location="Atlantis", detail=None)
+    assert coords_for_planroom_row(near) == coords_for_place("Escondido")
+    assert coords_for_planroom_row(far) == coords_for_place("Sacramento")
+    assert coords_for_planroom_row(unknown) is None
+
+
+def _office_self(flask_app, **kwargs):
+    with flask_app.app_context():
+        row = db.session.scalar(select(Company).where(Company.company_type == "self", Company.deleted_at.is_(None)))
+        created = False
+        if row is None:
+            row = Company(name="USIS Office Test", company_type="self", country="US")
+            db.session.add(row)
+            created = True
+        snapshot = {
+            "created": created,
+            "city": row.city,
+            "state": row.state,
+            "postal_code": row.postal_code,
+            "latitude": row.latitude,
+            "longitude": row.longitude,
+        }
+        for k, v in kwargs.items():
+            setattr(row, k, v)
+        db.session.commit()
+        snapshot["id"] = str(row.id)
+        return snapshot
+
+
+def _restore_office(flask_app, snapshot):
+    with flask_app.app_context():
+        row = db.session.get(Company, uuid.UUID(snapshot["id"]))
+        if row is None:
+            return
+        if snapshot["created"]:
+            db.session.delete(row)
+        else:
+            row.city = snapshot["city"]
+            row.state = snapshot["state"]
+            row.postal_code = snapshot["postal_code"]
+            row.latitude = snapshot["latitude"]
+            row.longitude = snapshot["longitude"]
+        db.session.commit()
+
+
+def test_list_api_includes_distance_from_office(client, flask_app):
+    _clear_sample(flask_app)
+    snap = _office_self(flask_app, latitude=33.1192, longitude=-117.0864, city="Escondido", state="CA")
+    try:
+        uploaded = client.post(
+            "/api/v1/golden-state-planroom/import",
+            data={"file": (BytesIO(_SAMPLE.encode("utf-8")), "AGCS_CAProjects.csv")},
+            content_type="multipart/form-data",
+        )
+        assert uploaded.status_code == 200, uploaded.get_data(as_text=True)
+        listed = client.get("/api/v1/golden-state-planroom/leads?q=99-000")
+        assert listed.status_code == 200
+        by_plan = {x["plan_number"]: x for x in listed.get_json()["items"] if x["plan_number"] in _SAMPLE_PLANS}
+        assert by_plan["99-00001"]["distance_miles"] is not None
+        assert by_plan["99-00003"]["distance_miles"] is not None
+        assert by_plan["99-00001"]["distance_miles"] < 50
+        assert by_plan["99-00003"]["distance_miles"] > 350
+    finally:
+        _restore_office(flask_app, snap)
+        _clear_sample(flask_app)

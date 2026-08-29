@@ -10,11 +10,24 @@ from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..golden_state_planroom_csv import parse_agcs_weekly_listing, upsert_planroom_rows
+from ..golden_state_planroom_detail import apply_detail_updates
+from ..golden_state_planroom_geo import coords_for_planroom_row
 from ..golden_state_planroom_score import score_planroom_lead, sort_key_fit
 from ..models.golden_state_planroom_lead import GoldenStatePlanroomLead
+from ._office_location import resolve_office_origin
+from ._serializers import haversine_miles
 from .v1 import _jsonify
 
 _MAX_LIST = 5000
+
+
+def _distance_miles(row: GoldenStatePlanroomLead, origin: tuple[float, float] | None) -> float | None:
+    if origin is None:
+        return None
+    dest = coords_for_planroom_row(row)
+    if dest is None:
+        return None
+    return round(haversine_miles(origin, dest), 1)
 
 
 def _parse_query_date(raw: str | None, label: str) -> date | None:
@@ -27,7 +40,7 @@ def _parse_query_date(raw: str | None, label: str) -> date | None:
         raise ValueError(f"invalid {label} (use YYYY-MM-DD)") from exc
 
 
-def _row_public(row: GoldenStatePlanroomLead) -> dict[str, Any]:
+def _row_public(row: GoldenStatePlanroomLead, origin: tuple[float, float] | None = None) -> dict[str, Any]:
     return {
         "id": str(row.id),
         "plan_number": row.plan_number,
@@ -43,9 +56,12 @@ def _row_public(row: GoldenStatePlanroomLead) -> dict[str, Any]:
         "source": row.source,
         "source_file": row.source_file,
         "project_url": row.project_url,
+        "detail": row.detail,
+        "details_fetched_at": row.details_fetched_at.isoformat() if row.details_fetched_at else None,
         "crm_stage": row.crm_stage,
         "notes": row.notes,
         "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        "distance_miles": _distance_miles(row, origin),
         "fit": score_planroom_lead(
             name=row.name,
             location=row.location,
@@ -154,7 +170,8 @@ def register_golden_state_planroom_routes(bp: Blueprint) -> None:
             .order_by(*_order_by(request.args.get("sort")))
             .limit(_MAX_LIST)
         ).all()
-        items = [_row_public(r) for r in rows]
+        origin = resolve_office_origin()
+        items = [_row_public(r, origin) for r in rows]
         strong_only = (request.args.get("strong_only") or "").strip().lower() in {"1", "true", "yes"}
         if strong_only:
             items = [row for row in items if (row.get("fit") or {}).get("band") == "strong"]
@@ -192,6 +209,21 @@ def register_golden_state_planroom_routes(bp: Blueprint) -> None:
                 "parsed": len(rows),
                 "listing_week": listing_week.isoformat() if listing_week else None,
                 "source_file": filename,
+                "entity": "golden_state_planroom_leads",
+            }
+        )
+
+    @bp.post("/golden-state-planroom/details")
+    def upsert_golden_state_planroom_details():
+        body = request.get_json(silent=True) or {}
+        items = body.get("items")
+        if not isinstance(items, list) or not items:
+            return _jsonify({"error": "items is required"}), 400
+        updated, skipped = apply_detail_updates(db.session, items)
+        return _jsonify(
+            {
+                "updated": updated,
+                "skipped": skipped,
                 "entity": "golden_state_planroom_leads",
             }
         )

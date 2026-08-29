@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import select, text
 
+from app.ai.attachments import AttachmentError, merge_user_content, process_attachments
 from app.ai.grok_client import ChatCompletionResult, ToolCall
 from app.ai.tools.executor import run_tool
 from app.api._perms import CurrentUser
@@ -92,6 +93,68 @@ def test_ai_chat_tool_loop(client, ai_enabled):
     assert len(body["tool_calls_made"]) == 1
     assert body["tool_calls_made"][0]["name"] == "list_projects"
     assert body["tool_calls_made"][0]["result"]["ok"] is True
+
+
+def test_process_attachments_text_file():
+    import base64
+
+    data = base64.b64encode(b"Door schedule: 12 units").decode("ascii")
+    text, images, summaries = process_attachments(
+        [{"kind": "file", "name": "doors.txt", "mime": "text/plain", "data": data}]
+    )
+    assert "Door schedule" in text
+    assert images == []
+    assert summaries[0]["name"] == "doors.txt"
+
+
+def test_process_attachments_blocks_private_url():
+    try:
+        process_attachments([{"kind": "url", "url": "http://127.0.0.1/secret"}])
+        assert False, "expected AttachmentError"
+    except AttachmentError as exc:
+        assert "not allowed" in exc.message
+
+
+def test_merge_user_content_images():
+    merged = merge_user_content(
+        "What is this?",
+        "",
+        [{"type": "image_url", "image_url": {"url": "https://example.com/a.png"}}],
+    )
+    assert isinstance(merged, list)
+    assert merged[0]["text"] == "What is this?"
+    assert merged[1]["type"] == "image_url"
+
+
+def test_ai_chat_with_attachment(client, ai_enabled):
+    import base64
+
+    calls = [ChatCompletionResult(content="Saw the door count.", tool_calls=[])]
+
+    def fake_chat(**kwargs):
+        msgs = kwargs.get("messages") or []
+        last = msgs[-1]["content"]
+        assert isinstance(last, str)
+        assert "12 units" in last
+        return calls.pop(0)
+
+    with patch("app.ai.agent.chat_completion", side_effect=fake_chat):
+        r = client.post(
+            "/api/ai/chat",
+            json={
+                "messages": [{"role": "user", "content": "Summarize this"}],
+                "attachments": [
+                    {
+                        "kind": "file",
+                        "name": "doors.txt",
+                        "mime": "text/plain",
+                        "data": base64.b64encode(b"Door schedule: 12 units").decode("ascii"),
+                    }
+                ],
+            },
+        )
+    assert r.status_code == 200
+    assert "Saw the door count" in r.get_json()["message"]["content"]
 
 
 def test_tool_denied_without_module(flask_app):

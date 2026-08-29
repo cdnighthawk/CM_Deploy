@@ -910,6 +910,7 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 }
 
 .usis-ai-chat__composer {
+	position: relative;
 	border-top: 1px solid var(--usis-divider);
 	padding: 0.75rem 1rem 1rem;
 	background: var(--usis-paper);
@@ -917,6 +918,98 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 
 .usis-ai-chat__composer textarea {
 	resize: none;
+}
+
+.usis-ai-chat__drop {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(31, 78, 95, 0.88);
+	color: #fff;
+	font-weight: 650;
+	font-size: 0.875rem;
+	border-radius: 8px;
+	pointer-events: none;
+}
+
+.usis-ai-chat__chips,
+.usis-ai-chat__attached {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-bottom: 0.5rem;
+}
+
+.usis-ai-chat__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	max-width: 100%;
+	padding: 0.15rem 0.45rem;
+	border: 1px solid var(--usis-divider);
+	border-radius: 8px;
+	background: var(--usis-paper);
+	font-size: 0.75rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.usis-ai-chat__chip-x {
+	border: 0;
+	background: transparent;
+	color: var(--usis-text-secondary);
+	line-height: 1;
+	padding: 0 0.1rem;
+}
+
+.usis-ai-chat__pluswrap {
+	position: relative;
+}
+
+.usis-ai-chat__plus {
+	width: 2rem;
+	min-width: 2rem;
+	padding: 0;
+	font-size: 1.15rem;
+	font-weight: 650;
+	line-height: 1;
+}
+
+.usis-ai-chat__plusmenu {
+	position: absolute;
+	left: 0;
+	bottom: calc(100% + 0.25rem);
+	z-index: 3;
+	min-width: 11rem;
+	padding: 0.25rem;
+	background: var(--usis-paper);
+	border: 1px solid var(--usis-divider);
+	border-radius: 8px;
+}
+
+.usis-ai-chat__plusmenu button {
+	display: block;
+	width: 100%;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	padding: 0.4rem 0.55rem;
+	font-size: 0.8125rem;
+	border-radius: 6px;
+}
+
+.usis-ai-chat__plusmenu button:hover {
+	background: rgba(31, 78, 95, 0.08);
+}
+
+.usis-ai-chat__linkrow {
+	display: flex;
+	gap: 0.4rem;
+	margin-top: 0.5rem;
 }
 
 .usis-chat-bubble--user {

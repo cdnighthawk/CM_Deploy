@@ -8,6 +8,7 @@ from flask import current_app
 
 from ..api._perms import CurrentUser
 from . import config
+from .attachments import AttachmentError, merge_user_content, process_attachments
 from .grok_client import ChatCompletionResult, GrokClientError, ToolCall, chat_completion
 from .prompts import build_system_prompt
 from .tools import run_tool, tool_schemas_for_grok
@@ -29,12 +30,15 @@ def _normalize_messages(messages: list[Any]) -> list[dict[str, Any]]:
         if role not in ("user", "assistant", "system"):
             continue
         content = m.get("content")
+        if role == "system":
+            continue
+        if isinstance(content, list):
+            out.append({"role": role, "content": content})
+            continue
         if content is None:
             content = ""
         if not isinstance(content, str):
             content = str(content)
-        if role == "system":
-            continue
         out.append({"role": role, "content": content})
     return out
 
@@ -61,6 +65,7 @@ def run_chat(
     messages: list[Any],
     mode: str | None,
     cu: CurrentUser,
+    attachments: list[Any] | None = None,
 ) -> dict[str, Any]:
     if not config.is_configured():
         raise AgentError("AI is not configured (set USIS_AI_ENABLED=1 and USIS_XAI_API_KEY)", status=503)
@@ -69,6 +74,16 @@ def run_chat(
         {"role": "system", "content": build_system_prompt(mode)},
         *_normalize_messages(messages),
     ]
+    attached: list[dict[str, str]] = []
+    if attachments:
+        try:
+            extra_text, image_parts, attached = process_attachments(attachments)
+        except AttachmentError as exc:
+            raise AgentError(exc.message, status=exc.status) from exc
+        if conv and conv[-1].get("role") == "user":
+            conv[-1]["content"] = merge_user_content(conv[-1].get("content"), extra_text, image_parts)
+        elif extra_text or image_parts:
+            conv.append({"role": "user", "content": merge_user_content("", extra_text, image_parts)})
     tools = tool_schemas_for_grok()
     tool_log: list[dict[str, Any]] = []
     max_rounds = config.max_tool_rounds()
@@ -86,6 +101,7 @@ def run_chat(
                     "content": result.content or "",
                 },
                 "tool_calls_made": tool_log,
+                "attachments": attached,
                 "rounds": round_idx + 1,
                 "provider": "xai",
                 "model": config.xai_model(),

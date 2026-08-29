@@ -25,8 +25,13 @@
 		submittal_review: "Submittals",
 	};
 
+	var MAX_ATTACH = 4;
+	var MAX_FILE_BYTES = 6 * 1024 * 1024;
+	var FILE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,text/markdown,application/json,.txt,.csv,.md,.pdf";
+
 	var state = {
 		messages: loadMessages(),
+		pending: [],
 		sending: false,
 		mode: inferMode(),
 		status: { enabled: false, model: null, provider: "xai" },
@@ -98,8 +103,92 @@
 	function persist() {
 		try {
 			if (!global.sessionStorage) return;
-			sessionStorage.setItem(STORE_KEY, JSON.stringify(state.messages.slice(-MAX_STORED)));
+			var slim = state.messages.slice(-MAX_STORED).map(function (m) {
+				var row = { role: m.role, content: m.content };
+				if (m.attachments && m.attachments.length) {
+					row.attachments = m.attachments.map(function (a) {
+						return { kind: a.kind, name: a.name, url: a.url };
+					});
+				}
+				return row;
+			});
+			sessionStorage.setItem(STORE_KEY, JSON.stringify(slim));
 		} catch (e) {}
+	}
+
+	function closePlusMenu() {
+		if (state.els.plusMenu) state.els.plusMenu.classList.add("d-none");
+		if (state.els.plus) state.els.plus.setAttribute("aria-expanded", "false");
+	}
+
+	function renderPending() {
+		var el = state.els.chips;
+		if (!el) return;
+		el.innerHTML = "";
+		state.pending.forEach(function (a, idx) {
+			var chip = document.createElement("span");
+			chip.className = "usis-ai-chat__chip";
+			chip.textContent = a.url ? a.url : a.name || "file";
+			var rm = document.createElement("button");
+			rm.type = "button";
+			rm.className = "usis-ai-chat__chip-x";
+			rm.setAttribute("aria-label", "Remove " + (a.name || "attachment"));
+			rm.textContent = "×";
+			rm.addEventListener("click", function () {
+				state.pending.splice(idx, 1);
+				renderPending();
+			});
+			chip.appendChild(rm);
+			el.appendChild(chip);
+		});
+	}
+
+	function addFiles(fileList) {
+		if (!fileList || !fileList.length) return;
+		Array.prototype.forEach.call(fileList, function (file) {
+			if (state.pending.length >= MAX_ATTACH) {
+				setStatus("You can attach up to " + MAX_ATTACH + " items.", "error");
+				return;
+			}
+			if (file.size > MAX_FILE_BYTES) {
+				setStatus(file.name + " is larger than 6 MB.", "error");
+				return;
+			}
+			var reader = new FileReader();
+			reader.onload = function () {
+				var result = String(reader.result || "");
+				var b64 = result.indexOf(",") >= 0 ? result.split(",")[1] : result;
+				state.pending.push({ kind: "file", name: file.name, mime: file.type || "", data: b64 });
+				renderPending();
+				setStatus("Attached " + file.name, "ok");
+			};
+			reader.onerror = function () {
+				setStatus("Could not read " + file.name, "error");
+			};
+			reader.readAsDataURL(file);
+		});
+	}
+
+	function addLink(raw) {
+		var url = String(raw || "").trim();
+		if (!url) return;
+		if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+		try {
+			var parsed = new URL(url);
+			if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("bad");
+		} catch (e) {
+			setStatus("Enter a full http or https link.", "error");
+			return;
+		}
+		if (state.pending.length >= MAX_ATTACH) {
+			setStatus("You can attach up to " + MAX_ATTACH + " items.", "error");
+			return;
+		}
+		state.pending.push({ kind: "url", name: url, url: url });
+		renderPending();
+		if (state.els.link) state.els.link.value = "";
+		if (state.els.linkRow) state.els.linkRow.classList.add("d-none");
+		setStatus("Added link", "ok");
 	}
 
 	function escapeHtml(s) {
@@ -163,11 +252,29 @@
 				'<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>' +
 				'<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>' +
 				'<div class="usis-ai-chat__composer">' +
+				'<div class="usis-ai-chat__drop d-none" data-usis-chat-drop>Drop files here</div>' +
+				'<div class="usis-ai-chat__chips" data-usis-chat-chips></div>' +
 				'<form data-usis-chat-form>' +
 				'<label class="visually-hidden" for="usis-ai-chat-input">Message</label>' +
-				'<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok about projects, leads, RFIs…"></textarea>' +
+				'<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok, or attach a file or link…"></textarea>' +
+				'<div class="usis-ai-chat__linkrow d-none" data-usis-chat-linkrow>' +
+				'<input type="url" class="form-control form-control-sm" data-usis-chat-link placeholder="https://…" autocomplete="off">' +
+				'<button type="button" class="btn btn-sm btn-primary" data-usis-chat-link-add>Add link</button>' +
+				"</div>" +
 				'<div class="d-flex align-items-center justify-content-between gap-2 mt-2">' +
+				'<div class="d-flex align-items-center gap-1">' +
+				'<div class="usis-ai-chat__pluswrap">' +
+				'<button type="button" class="btn btn-sm btn-outline-secondary usis-ai-chat__plus" data-usis-chat-plus title="Attach a file or link" aria-label="Attach a file or link" aria-expanded="false">+</button>' +
+				'<div class="usis-ai-chat__plusmenu d-none" data-usis-chat-plusmenu>' +
+				'<button type="button" data-usis-chat-pickfile>From this computer</button>' +
+				'<button type="button" data-usis-chat-picklink>Paste a link</button>' +
+				"</div>" +
+				"</div>" +
+				'<input type="file" class="d-none" data-usis-chat-file multiple accept="' +
+				FILE_ACCEPT +
+				'">' +
 				'<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>Clear</button>' +
+				"</div>" +
 				'<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>' +
 				"</div>" +
 				"</form>" +
@@ -183,7 +290,51 @@
 		state.els.clear = panel.querySelector("[data-usis-chat-clear]");
 		state.els.status = panel.querySelector("[data-usis-chat-status]");
 		state.els.mode = panel.querySelector("[data-usis-chat-mode]");
+		ensureAttachUi(panel);
 		if (state.els.mode) state.els.mode.textContent = modeLabel(state.mode);
+	}
+
+	function ensureAttachUi(panel) {
+		if (!panel) return;
+		var composer = panel.querySelector(".usis-ai-chat__composer");
+		if (!composer) return;
+		if (!composer.querySelector("[data-usis-chat-plus]")) {
+			var form = composer.querySelector("form") || composer;
+			var bar = form.querySelector(".d-flex.align-items-center.justify-content-between") || form;
+			var plusWrap = document.createElement("div");
+			plusWrap.innerHTML =
+				'<div class="usis-ai-chat__drop d-none" data-usis-chat-drop>Drop files here</div>' +
+				'<div class="usis-ai-chat__chips" data-usis-chat-chips></div>' +
+				'<div class="usis-ai-chat__linkrow d-none" data-usis-chat-linkrow>' +
+				'<input type="url" class="form-control form-control-sm" data-usis-chat-link placeholder="https://…" autocomplete="off">' +
+				'<button type="button" class="btn btn-sm btn-primary" data-usis-chat-link-add>Add link</button>' +
+				"</div>" +
+				'<div class="usis-ai-chat__pluswrap">' +
+				'<button type="button" class="btn btn-sm btn-outline-secondary usis-ai-chat__plus" data-usis-chat-plus title="Attach a file or link" aria-label="Attach a file or link">+</button>' +
+				'<div class="usis-ai-chat__plusmenu d-none" data-usis-chat-plusmenu>' +
+				'<button type="button" data-usis-chat-pickfile>From this computer</button>' +
+				'<button type="button" data-usis-chat-picklink>Paste a link</button>' +
+				"</div></div>" +
+				'<input type="file" class="d-none" data-usis-chat-file multiple accept="' +
+				FILE_ACCEPT +
+				'">';
+			form.insertBefore(plusWrap, form.firstChild);
+			if (bar && !bar.querySelector("[data-usis-chat-plus]")) {
+				var first = bar.firstChild;
+				var plusBtn = plusWrap.querySelector(".usis-ai-chat__pluswrap");
+				if (plusBtn && first) bar.insertBefore(plusBtn, first);
+			}
+		}
+		state.els.drop = panel.querySelector("[data-usis-chat-drop]");
+		state.els.chips = panel.querySelector("[data-usis-chat-chips]");
+		state.els.plus = panel.querySelector("[data-usis-chat-plus]");
+		state.els.plusMenu = panel.querySelector("[data-usis-chat-plusmenu]");
+		state.els.file = panel.querySelector("[data-usis-chat-file]");
+		state.els.linkRow = panel.querySelector("[data-usis-chat-linkrow]");
+		state.els.link = panel.querySelector("[data-usis-chat-link]");
+		state.els.linkAdd = panel.querySelector("[data-usis-chat-link-add]");
+		state.els.pickFile = panel.querySelector("[data-usis-chat-pickfile]");
+		state.els.pickLink = panel.querySelector("[data-usis-chat-picklink]");
 	}
 
 	function setStatus(text, kind) {
@@ -201,7 +352,7 @@
 			var empty = document.createElement("div");
 			empty.className = "text-muted small";
 			empty.textContent =
-				"Ask Grok about projects, leads, RFIs, estimates, or what is on this page. It can look up live USIS records you are allowed to see.";
+				"Ask Grok about projects, leads, RFIs, or this page. Use + to attach a file from your computer, drop a file here, or paste a link.";
 			log.appendChild(empty);
 			return;
 		}
@@ -215,6 +366,17 @@
 			body.innerHTML = formatText(m.content);
 			wrap.appendChild(who);
 			wrap.appendChild(body);
+			if (m.attachments && m.attachments.length) {
+				var att = document.createElement("div");
+				att.className = "usis-ai-chat__attached";
+				m.attachments.forEach(function (a) {
+					var chip = document.createElement("span");
+					chip.className = "usis-ai-chat__chip";
+					chip.textContent = a.url ? a.url : a.name || "file";
+					att.appendChild(chip);
+				});
+				wrap.appendChild(att);
+			}
 			if (m.tools && m.tools.length) {
 				var tools = document.createElement("div");
 				tools.className = "usis-ai-chat__tools";
@@ -247,6 +409,7 @@
 		state.sending = !!on;
 		if (state.els.send) state.els.send.disabled = state.sending;
 		if (state.els.input) state.els.input.disabled = state.sending;
+		if (state.els.plus) state.els.plus.disabled = state.sending;
 	}
 
 	function extractReply(data) {
@@ -282,13 +445,25 @@
 	function send(text, opts) {
 		var o = opts || {};
 		var content = String(text || "").trim();
-		if (!content || state.sending) return Promise.resolve();
+		var pending = (o.attachments || state.pending || []).slice();
+		if ((!content && !pending.length) || state.sending) return Promise.resolve();
+		if (!content) {
+			content = pending.length === 1 ? "Please review this attachment." : "Please review these attachments.";
+		}
 		if (o.mode) {
 			state.mode = o.mode;
 			if (state.els.mode) state.els.mode.textContent = modeLabel(state.mode);
 		}
 		if (o.open !== false) openBox();
-		state.messages.push({ role: "user", content: content });
+		state.messages.push({
+			role: "user",
+			content: content,
+			attachments: pending.map(function (a) {
+				return { kind: a.kind, name: a.name, url: a.url };
+			}),
+		});
+		state.pending = [];
+		renderPending();
 		persist();
 		render();
 		setSending(true);
@@ -298,6 +473,12 @@
 				return { role: m.role, content: m.content };
 			}),
 		};
+		if (pending.length) {
+			payload.attachments = pending.map(function (a) {
+				if (a.kind === "url") return { kind: "url", url: a.url, name: a.name };
+				return { kind: "file", name: a.name, mime: a.mime || "", data: a.data };
+			});
+		}
 		if (state.mode) payload.mode = state.mode;
 		return fetchJson("/api/ai/chat", { method: "POST", body: payload })
 			.then(function (data) {
@@ -377,11 +558,84 @@
 		if (state.els.clear) {
 			state.els.clear.addEventListener("click", function () {
 				state.messages = [];
+				state.pending = [];
 				persist();
 				render();
+				renderPending();
 				setStatus("Conversation cleared.", "");
 			});
 		}
+
+		if (state.els.plus) {
+			state.els.plus.addEventListener("click", function (ev) {
+				ev.preventDefault();
+				if (!state.els.plusMenu) return;
+				var open = state.els.plusMenu.classList.contains("d-none");
+				state.els.plusMenu.classList.toggle("d-none", !open);
+				state.els.plus.setAttribute("aria-expanded", open ? "true" : "false");
+			});
+		}
+		if (state.els.pickFile) {
+			state.els.pickFile.addEventListener("click", function () {
+				closePlusMenu();
+				if (state.els.file) state.els.file.click();
+			});
+		}
+		if (state.els.pickLink) {
+			state.els.pickLink.addEventListener("click", function () {
+				closePlusMenu();
+				if (state.els.linkRow) state.els.linkRow.classList.toggle("d-none");
+				if (state.els.link) state.els.link.focus();
+			});
+		}
+		if (state.els.file) {
+			state.els.file.addEventListener("change", function () {
+				addFiles(state.els.file.files);
+				state.els.file.value = "";
+			});
+		}
+		if (state.els.linkAdd) {
+			state.els.linkAdd.addEventListener("click", function () {
+				addLink(state.els.link ? state.els.link.value : "");
+			});
+		}
+		if (state.els.link) {
+			state.els.link.addEventListener("keydown", function (ev) {
+				if (ev.key === "Enter") {
+					ev.preventDefault();
+					addLink(state.els.link.value);
+				}
+			});
+		}
+
+		var dropRoot = state.els.panel || state.els.box;
+		if (dropRoot) {
+			["dragenter", "dragover"].forEach(function (evt) {
+				dropRoot.addEventListener(evt, function (ev) {
+					var types = ev.dataTransfer && ev.dataTransfer.types;
+					var hasFiles = types && (types.contains ? types.contains("Files") : Array.prototype.indexOf.call(types, "Files") !== -1);
+					if (!hasFiles) {
+						return;
+					}
+					ev.preventDefault();
+					if (state.els.drop) state.els.drop.classList.remove("d-none");
+				});
+			});
+			["dragleave", "drop"].forEach(function (evt) {
+				dropRoot.addEventListener(evt, function (ev) {
+					if (evt === "drop") {
+						ev.preventDefault();
+						addFiles(ev.dataTransfer && ev.dataTransfer.files);
+					}
+					if (state.els.drop) state.els.drop.classList.add("d-none");
+				});
+			});
+		}
+		document.addEventListener("click", function (ev) {
+			if (state.els.plus && state.els.plusMenu && !state.els.plus.contains(ev.target) && !state.els.plusMenu.contains(ev.target)) {
+				closePlusMenu();
+			}
+		});
 
 		if (global.aiReviewBus && typeof global.aiReviewBus.on === "function") {
 			function onReview(payload) {

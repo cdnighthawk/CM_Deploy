@@ -109,6 +109,18 @@
 		);
 	}
 
+	function apiErrorText(res, bodyText) {
+		var raw = (bodyText || "").trim();
+		if (raw) {
+			try {
+				var parsed = JSON.parse(raw);
+				if (parsed && parsed.error) return String(parsed.error);
+				if (parsed && parsed.message) return String(parsed.message);
+			} catch (e) {}
+		}
+		return raw || res.statusText || String(res.status);
+	}
+
 	function resolveUrl(u) {
 		if (!u) return "";
 		var s = String(u).trim();
@@ -646,7 +658,7 @@
 				)
 					.then(function (res) {
 						if (!res.ok) return res.text().then(function (t) {
-							throw new Error(res.status + " " + (t || res.statusText));
+							throw new Error(apiErrorText(res, t));
 						});
 						return res.json();
 					})
@@ -663,8 +675,10 @@
 						load();
 					})
 					.catch(function (e) {
-						linkErr.textContent = e.message || String(e);
+						var msg = e.message || String(e);
+						linkErr.textContent = msg;
 						linkErr.classList.remove("d-none");
+						setBookMsg(msg, true);
 					});
 			});
 		}

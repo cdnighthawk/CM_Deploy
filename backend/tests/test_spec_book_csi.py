@@ -116,6 +116,77 @@ def test_add_from_catalog_and_delete(client):
     assert listed2.get_json()["items"][0]["code"] == "10 44 16"
 
 
+def test_project_writer_can_delete_spec_section(client, monkeypatch):
+    """#17: Delete section must work for projects write, not only admin."""
+    from app.models import ProjectMember, Role, RoleModulePermission, User, UserRole
+
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    with client.application.app_context():
+        p = Project(name="SpecDel-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        role = Role(code="spec_writer_" + uuid.uuid4().hex[:6], name="Spec Writer")
+        db.session.add(role)
+        db.session.flush()
+        db.session.add(RoleModulePermission(role_id=role.id, module_code="projects", access_level="write"))
+        u = User(email="specdel_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        db.session.add(ProjectMember(user_id=u.id, project_id=p.id))
+        db.session.commit()
+        pid = str(p.id)
+        uid = str(u.id)
+
+    hdr = {"X-Usis-User-Id": uid}
+    added = client.post(
+        f"/api/v1/projects/{pid}/spec-sections/from-catalog",
+        json={"codes": ["08 71 00"]},
+        headers=hdr,
+    )
+    assert added.status_code == 201, added.get_data(as_text=True)
+    sid = added.get_json()["items"][0]["id"]
+
+    gone = client.delete(
+        f"/api/v1/projects/{pid}/rfi-lookups/spec_sections/{sid}",
+        headers=hdr,
+    )
+    assert gone.status_code == 200, gone.get_data(as_text=True)
+    listed = client.get(f"/api/v1/projects/{pid}/rfi-lookups/spec_sections", headers=hdr)
+    assert listed.get_json()["items"] == []
+
+
+def test_project_reader_cannot_delete_spec_section(client, monkeypatch):
+    from app.models import ProjectMember, Role, RoleModulePermission, User, UserRole
+
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    with client.application.app_context():
+        p = Project(name="SpecRead-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        role = Role(code="spec_reader_" + uuid.uuid4().hex[:6], name="Spec Reader")
+        db.session.add(role)
+        db.session.flush()
+        db.session.add(RoleModulePermission(role_id=role.id, module_code="projects", access_level="read"))
+        u = User(email="specread_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        db.session.add(ProjectMember(user_id=u.id, project_id=p.id))
+        row = SpecSection(project_id=p.id, code="08 71 00", title="Door Hardware", is_active=True)
+        db.session.add(row)
+        db.session.commit()
+        pid = str(p.id)
+        uid = str(u.id)
+        sid = str(row.id)
+
+    blocked = client.delete(
+        f"/api/v1/projects/{pid}/rfi-lookups/spec_sections/{sid}",
+        headers={"X-Usis-User-Id": uid},
+    )
+    assert blocked.status_code == 403
+
+
 def test_import_spec_book_pdf(client):
     with client.application.app_context():
         p = Project(name="SpecImp-" + uuid.uuid4().hex[:8])

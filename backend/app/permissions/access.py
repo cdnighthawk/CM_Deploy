@@ -1,6 +1,7 @@
 """Resolve effective module access for users and roles."""
 from __future__ import annotations
 
+import re
 import uuid
 from typing import TYPE_CHECKING, Any
 
@@ -41,11 +42,22 @@ def max_level(a: str, b: str) -> str:
     return a if level_rank(a) >= level_rank(b) else b
 
 
-def http_method_min_level(method: str) -> str:
+# Project lookup rows (CSI spec sections, locations, …) can be added with write.
+# DELETE is admin elsewhere so contracts/RFIs stay protected.
+_WRITE_LEVEL_DELETE_RE = re.compile(
+    r"^/api/v1/projects/[^/]+/rfi-lookups/[^/]+/[^/]+/?$",
+    re.IGNORECASE,
+)
+
+
+def http_method_min_level(method: str, path: str = "") -> str:
     m = (method or "GET").upper()
     if m in ("GET", "HEAD", "OPTIONS"):
         return "read"
     if m == "DELETE":
+        p = (path or "").split("?", 1)[0].rstrip("/")
+        if p and _WRITE_LEVEL_DELETE_RE.match(p):
+            return "write"
         return "admin"
     if m in ("POST", "PUT", "PATCH"):
         return "write"
@@ -137,8 +149,10 @@ def require_module(cu: "CurrentUser", module_code: str, min_level: str = "read")
         )
 
 
-def require_module_for_request(cu: "CurrentUser", module_code: str, method: str) -> None:
-    require_module(cu, module_code, http_method_min_level(method))
+def require_module_for_request(
+    cu: "CurrentUser", module_code: str, method: str, path: str = ""
+) -> None:
+    require_module(cu, module_code, http_method_min_level(method, path))
 
 
 def load_user_with_roles(user_id: uuid.UUID) -> User | None:

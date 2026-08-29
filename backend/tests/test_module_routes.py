@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.api._module_routes import resolve_modules
+from app.permissions.access import http_method_min_level
 
 
 def test_feedback_route_not_module_gated():
@@ -34,3 +35,11 @@ def test_field_photo_and_daily_report_routes_use_projects_module():
     assert resolve_modules("/api/v1/daily-reports/a1700000-0000-4000-8000-000000000001") == ("projects",)
     assert resolve_modules("/api/v1/photos/a1700000-0000-4000-8000-000000000001/file") == ("projects",)
     assert resolve_modules("/api/v1/photos/a1700000-0000-4000-8000-000000000001") == ("projects",)
+
+
+def test_spec_section_delete_is_write_not_admin():
+    path = "/api/v1/projects/1ff506fd-fe21-4455-9dae-72697f0bd344/rfi-lookups/spec_sections/9814519d-6bec-48cc-bb38-3e1e28e21bc8"
+    assert http_method_min_level("DELETE", path) == "write"
+    assert http_method_min_level("POST", path) == "write"
+    assert http_method_min_level("DELETE", "/api/v1/rfis/1ff506fd-fe21-4455-9dae-72697f0bd344") == "admin"
+    assert http_method_min_level("DELETE") == "admin"

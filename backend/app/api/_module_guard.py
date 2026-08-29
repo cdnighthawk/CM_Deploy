@@ -31,9 +31,11 @@ def require_modules_for_request(
     cu: CurrentUser,
     module_codes: tuple[str, ...],
     method: str | None = None,
+    path: str | None = None,
 ) -> None:
     m = method or request.method
-    min_level = http_method_min_level(m)
+    p = path if path is not None else request.path
+    min_level = http_method_min_level(m, p)
     if cu.is_dev_admin:
         return
     if cu.user is None:
@@ -54,7 +56,7 @@ def enforce_module_access_for_path(path: str, method: str, cu: CurrentUser | Non
         return None
     cu = cu or current_user()
     try:
-        require_modules_for_request(cu, modules, method)
+        require_modules_for_request(cu, modules, method, path)
     except ModuleAccessError as exc:
         return _jsonify_err(exc.message, exc.status)
     return None
@@ -63,7 +65,7 @@ def enforce_module_access_for_path(path: str, method: str, cu: CurrentUser | Non
 def check_module(module_code: str, cu: CurrentUser | None = None):
     cu = cu or current_user()
     try:
-        require_module(cu, module_code, http_method_min_level(request.method))
+        require_module(cu, module_code, http_method_min_level(request.method, request.path))
     except ModuleAccessError as exc:
         return _jsonify_err(exc.message, exc.status)
     return None

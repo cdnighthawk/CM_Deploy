@@ -134,6 +134,33 @@ def test_lead_list_lost_stage_relaxes_default_hide(client, flask_app):
             db.session.commit()
 
 
+def test_submitted_list_includes_past_due(client, flask_app):
+    marker = "SubList-" + uuid.uuid4().hex[:8]
+    with flask_app.app_context():
+        current = _open_lead(name=f"{marker} current", submission_state="SUBMITTED")
+        past = _open_lead(name=f"{marker} past", submission_state="SUBMITTED", due_at=_past())
+        will = _open_lead(name=f"{marker} estimating", submission_state="WILL_SUBMIT")
+        db.session.add_all([current, past, will])
+        db.session.commit()
+        cid, pid, wid = str(current.id), str(past.id), str(will.id)
+    try:
+        r = client.get(
+            f"/api/v1/lead-estimates?limit=200&submission_state=submitted&q={marker}"
+        )
+        assert r.status_code == 200
+        ids = {x["id"] for x in r.get_json()["items"]}
+        assert cid in ids
+        assert pid in ids
+        assert wid not in ids
+    finally:
+        with flask_app.app_context():
+            for eid in (cid, pid, wid):
+                row = db.session.get(LeadEstimate, uuid.UUID(eid))
+                if row:
+                    db.session.delete(row)
+            db.session.commit()
+
+
 def test_lead_list_company_id_matches_client_name(client, flask_app):
     with flask_app.app_context():
         co = Company(name="UniqueFilterGC XYZ", company_type="gc")

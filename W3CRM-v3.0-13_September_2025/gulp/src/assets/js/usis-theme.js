@@ -51,8 +51,26 @@
 		}
 	}
 
+	function syncSetThemeButtons(theme) {
+		var buttons = global.document.querySelectorAll("[data-usis-set-theme]");
+		var i;
+		var btn;
+		var on;
+		for (i = 0; i < buttons.length; i++) {
+			btn = buttons[i];
+			on = btn.getAttribute("data-usis-set-theme") === theme;
+			btn.classList.toggle("active", on);
+			btn.setAttribute("aria-pressed", on ? "true" : "false");
+			if (btn.classList.contains("btn")) {
+				btn.classList.toggle("btn-primary", on);
+				btn.classList.toggle("btn-outline-secondary", !on);
+			}
+		}
+	}
+
 	function syncToggleButton(theme) {
 		var btn = global.document.getElementById("usis-theme-toggle");
+		syncSetThemeButtons(theme);
 		if (!btn) {
 			return;
 		}
@@ -73,6 +91,56 @@
 		}
 		if (sun) {
 			sun.classList.toggle("d-none", !isDark);
+		}
+	}
+
+	function ensureDropdownTheme() {
+		if (global.document.querySelector("[data-usis-profile-theme]")) {
+			return;
+		}
+		var menu = global.document.querySelector(".header-profile-dropdown .dropdown-menu");
+		if (!menu) {
+			return;
+		}
+		var li = global.document.createElement("li");
+		li.setAttribute("data-usis-profile-theme", "1");
+		li.innerHTML =
+			'<div class="px-3 py-2">' +
+			'<div class="small text-muted mb-1" data-i18n="Appearance">Appearance</div>' +
+			'<div class="btn-group btn-group-sm w-100" role="group" aria-label="Appearance">' +
+			'<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="light" data-i18n="Light">Light</button>' +
+			'<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="dark" data-i18n="Dark">Dark</button>' +
+			"</div></div>";
+		var lang = menu.querySelector("[data-usis-profile-lang]");
+		if (lang && lang.parentNode) {
+			if (lang.nextSibling) {
+				lang.parentNode.insertBefore(li, lang.nextSibling);
+			} else {
+				lang.parentNode.appendChild(li);
+			}
+			return;
+		}
+		var logout = menu.querySelector(".usis-logout-link");
+		var logoutLi = logout ? logout.closest("li") : null;
+		if (logoutLi && logoutLi.parentNode) {
+			logoutLi.parentNode.insertBefore(li, logoutLi);
+			return;
+		}
+		menu.appendChild(li);
+	}
+
+	function bindSetThemeButtons() {
+		var buttons = global.document.querySelectorAll("[data-usis-set-theme]");
+		var i;
+		for (i = 0; i < buttons.length; i++) {
+			if (buttons[i].getAttribute("data-usis-theme-bound") === "1") {
+				continue;
+			}
+			buttons[i].setAttribute("data-usis-theme-bound", "1");
+			buttons[i].addEventListener("click", function (ev) {
+				ev.preventDefault();
+				set(this.getAttribute("data-usis-set-theme"));
+			});
 		}
 	}
 
@@ -151,8 +219,15 @@
 		applyDom(theme);
 		syncDeznav(theme);
 		ensureAuthToggle();
+		ensureDropdownTheme();
 		syncToggleButton(theme);
 		bindToggle();
+		bindSetThemeButtons();
+		if (global.USISI18n && typeof global.USISI18n.apply === "function") {
+			try {
+				global.USISI18n.apply(global.USISI18n.getLang());
+			} catch (e) { /* ignore */ }
+		}
 		ensureUiJs();
 		if (boot && typeof boot.apply === "function") {
 			/* usis-theme-boot already applied theme; re-pin UI CSS last. */

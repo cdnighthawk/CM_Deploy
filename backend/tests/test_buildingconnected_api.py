@@ -569,6 +569,21 @@ def test_estimate_ui_filter_excludes_grouped_children():
     assert queue_sql == sql
 
 
+def test_submitted_ui_filter_keeps_past_due():
+    from sqlalchemy.dialects import postgresql
+
+    from app.api._lead_estimate_queries import lead_estimates_ui_filter
+
+    sql = str(
+        lead_estimates_ui_filter("submitted").compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert "submitted" in sql
+    assert "due_at" not in sql or sql.count("due_at") == 0
+
+
 def test_desktop_queue_filter_requires_open_due_date():
     from sqlalchemy.dialects import postgresql
 

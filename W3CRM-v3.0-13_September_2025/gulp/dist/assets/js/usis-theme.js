@@ -129,6 +129,19 @@
 		menu.appendChild(li);
 	}
 
+	function hideStandaloneHeaderToggle() {
+		if (!global.document.querySelector("[data-usis-profile-theme]")) {
+			return;
+		}
+		var btn = global.document.getElementById("usis-theme-toggle");
+		if (!btn || btn.closest(".header-profile-dropdown") || btn.closest(".auth-wrapper")) {
+			return;
+		}
+		var item = btn.closest("li.nav-item") || btn;
+		item.classList.add("d-none");
+		item.setAttribute("hidden", "");
+	}
+
 	function bindSetThemeButtons() {
 		var buttons = global.document.querySelectorAll("[data-usis-set-theme]");
 		var i;
@@ -220,6 +233,7 @@
 		syncDeznav(theme);
 		ensureAuthToggle();
 		ensureDropdownTheme();
+		hideStandaloneHeaderToggle();
 		syncToggleButton(theme);
 		bindToggle();
 		bindSetThemeButtons();

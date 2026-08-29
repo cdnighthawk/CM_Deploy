@@ -114,12 +114,22 @@
 		.usis-estd-group-due { color: var(--bs-danger); font-weight: 500; }
 		.usis-estd-child-nav a { text-decoration: none; }
 		.usis-estd-child-nav a.disabled { pointer-events: none; opacity: 0.45; }
+		/* Theme cards use height:100%, which stretches the map card and leaves a huge empty gap. */
+		#estd-pane-job .card {
+			height: auto;
+		}
 		.usis-estd-job-map-wrap {
 			position: relative;
-			height: 16rem;
+			width: 100%;
+			aspect-ratio: 16 / 9;
+			min-height: 22rem;
+			max-height: 32rem;
+			overflow: hidden;
 			background: var(--bs-light);
 		}
 		.usis-estd-job-map-wrap iframe {
+			position: absolute;
+			inset: 0;
 			display: block;
 			width: 100%;
 			height: 100%;
@@ -262,7 +272,7 @@
 									</div>
 								</div>
 
-								<div class="row g-3">
+								<div class="row g-3 align-items-start">
 									<div class="col-xl-7">
 										<div class="card border-0 shadow-sm mb-3 d-none" id="usis-estd-job-map-card">
 											<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">

@@ -14,7 +14,7 @@ from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
 from .estimate import Estimate, EstimateLineItem
-from .field_ops import DailyReport, FieldPhoto
+from .field_ops import DailyReport, FieldPhoto, TimeEntry, TimePunch
 from .hr import (
     HrEmployeeDocument,
     HrEmployeePayScale,
@@ -238,6 +238,8 @@ __all__ = [
     "TexturaSyncLog",
     "SalesTaxRate",
     "TakeoffLineItem",
+    "TimeEntry",
+    "TimePunch",
     "User",
     "UserRole",
     "VendorInvoice",

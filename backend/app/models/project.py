@@ -5,7 +5,7 @@ import uuid
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -61,6 +61,9 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     postal_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True, default="US")
+    latitude: Mapped[Optional[float]] = mapped_column(Numeric(9, 6), nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Numeric(9, 6), nullable=True)
+    geofence_radius_m: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=250)
 
     contract_value: Mapped[Optional[float]] = mapped_column(Numeric(15, 2), nullable=True)
     contract_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)

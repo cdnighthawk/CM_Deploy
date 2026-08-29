@@ -56,7 +56,10 @@ There is **no** FCM / device-token endpoint. Android stubs registration.
       "state": "AZ",
       "status": "active",
       "project_type": "commercial",
-      "updated_at": "<iso>"
+      "updated_at": "<iso>",
+      "latitude": 33.44,
+      "longitude": -112.07,
+      "geofence_radius_m": 250
     }
   ],
   "total": 1,
@@ -197,6 +200,46 @@ Server merges **top-level section keys** (last write wins per key). `status: com
 ```
 
 Compress on device before upload (max edge 2560px, JPEG ~0.72). Retry with WorkManager; never block the shutter on network.
+
+---
+
+## Time clock (field)
+
+Self clock-in/out with GPS, optional punch photo, breaks, and mid-day job/cost-code switch. One open entry per user. `client_id` is a device-generated UUID; replaying it returns the existing row.
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/time-clock/me` |
+| POST | `/api/v1/time-clock/clock-in` |
+| POST | `/api/v1/time-clock/clock-out` |
+| POST | `/api/v1/time-clock/break-start` |
+| POST | `/api/v1/time-clock/break-end` |
+| POST | `/api/v1/time-clock/switch` |
+| GET | `/api/v1/projects/:id/cost-codes` |
+
+Clock-in / clock-out / switch body:
+
+```json
+{
+  "project_id": "<uuid>",
+  "entry_id": "<uuid or client_id>",
+  "cost_code_id": "<uuid or null>",
+  "occurred_at": "<iso>",
+  "lat": 33.44,
+  "lon": -112.07,
+  "accuracy_m": 12.5,
+  "note": "",
+  "client_id": "<uuid>",
+  "new_entry_client_id": "<uuid>",
+  "photo_id": "<uuid or null>",
+  "override_geofence": false
+}
+```
+
+`cost_code_id` is required when the project has any active cost codes.
+If the project has `latitude`/`longitude` and the punch is outside `geofence_radius_m`, the server returns **409** unless `override_geofence` is true (`geofence_ok` is then stored as false).
+
+`GET /time-clock/me` → `{open, today[], items[]}` for the last 7 days. Each entry includes `punches[]` and `paid_seconds` (shift length minus breaks).
 
 ---
 

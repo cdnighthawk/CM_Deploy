@@ -15,6 +15,15 @@ from ._field_service import (
     update_field_photo,
 )
 from ._perms import current_user
+from ._time_clock_service import (
+    break_end,
+    break_start,
+    clock_in,
+    clock_out,
+    list_cost_codes,
+    list_me,
+    switch_job,
+)
 
 
 def _parse_uuid_param(raw: str | None):
@@ -115,5 +124,80 @@ def register_field_routes(bp: Blueprint) -> None:
             return jsonify({"error": "invalid photo id"}), 400
         try:
             return send_field_photo_file(pid, current_user())
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.get("/projects/<project_id>/cost-codes")
+    def get_project_cost_codes(project_id: str):
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        try:
+            return jsonify(list_cost_codes(pid, current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.get("/time-clock/me")
+    def get_time_clock_me():
+        try:
+            return jsonify(list_me(current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+    def _json_body():
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return None
+        return data
+
+    @bp.post("/time-clock/clock-in")
+    def post_time_clock_in():
+        data = _json_body()
+        if data is None:
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            return jsonify(clock_in(data, current_user())), 201
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.post("/time-clock/clock-out")
+    def post_time_clock_out():
+        data = _json_body()
+        if data is None:
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            return jsonify(clock_out(data, current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.post("/time-clock/break-start")
+    def post_time_clock_break_start():
+        data = _json_body()
+        if data is None:
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            return jsonify(break_start(data, current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.post("/time-clock/break-end")
+    def post_time_clock_break_end():
+        data = _json_body()
+        if data is None:
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            return jsonify(break_end(data, current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.post("/time-clock/switch")
+    def post_time_clock_switch():
+        data = _json_body()
+        if data is None:
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            return jsonify(switch_job(data, current_user()))
         except FieldApiError as exc:
             return _err(exc)

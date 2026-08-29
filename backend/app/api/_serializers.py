@@ -221,6 +221,9 @@ def project_public(p: Project, *, primary_lead_detail_id: str | None = None) -> 
         "status": p.status,
         "project_type": p.project_type,
         "updated_at": iso(p.updated_at),
+        "latitude": float(p.latitude) if p.latitude is not None else None,
+        "longitude": float(p.longitude) if p.longitude is not None else None,
+        "geofence_radius_m": int(p.geofence_radius_m) if p.geofence_radius_m is not None else 250,
     }
     if primary_lead_detail_id:
         d["primary_lead_detail_id"] = primary_lead_detail_id

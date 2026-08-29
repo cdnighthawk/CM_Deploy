@@ -284,7 +284,9 @@ def register_extra_routes(bp: Blueprint) -> None:
         if row is None:
             return _jsonify({"error": "document not found"}), 404
         if isinstance(row, Drawing) or row.document_type == "drawing":
-            name = f"{row.id}.pdf"
+            from ..services.drawing_upload import resolve_drawing_object_name
+
+            name = resolve_drawing_object_name(row) or f"{row.id}.pdf"
             dl = (row.original_filename or "drawing.pdf").replace('"', "")
             if not dl.lower().endswith(".pdf"):
                 dl = dl + ".pdf"

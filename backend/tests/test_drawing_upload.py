@@ -141,3 +141,46 @@ def test_drawing_delete_revision_and_series(client):
     with client.application.app_context():
         rows = db.session.query(Drawing).filter_by(project_id=uuid.UUID(pid)).all()
         assert len(rows) == 0
+
+
+def test_drawing_upload_uses_human_readable_storage_name(client):
+    from app.services.object_storage import UploadCategory, stored_exists
+
+    with client.application.app_context():
+        pnum = "N" + uuid.uuid4().hex[:8]
+        p = Project(name="DrawName-" + uuid.uuid4().hex[:8], number=pnum)
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    data = {
+        "file": (io.BytesIO(payload), "A7.31_SITE_Rev-00_Permit-Set.pdf"),
+        "sheet_number": "A7.31",
+        "discipline": "Architectural",
+        "drawing_set": "Permit Set",
+    }
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data=data,
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    did = r.get_json()["item"]["id"]
+
+    with client.application.app_context():
+        d = db.session.get(Drawing, uuid.UUID(did))
+        assert d is not None
+        key = (d.tags or {}).get("storage_object")
+        assert key == f"{pnum}/Architectural/Permit-Set/A7.31_SITE_Rev-00_Permit-Set.pdf"
+        assert stored_exists(UploadCategory.DRAWINGS, key)
+
+    file_r = client.get(f"/api/v1/drawings/{did}/file")
+    assert file_r.status_code == 200
+    assert b"%PDF" in file_r.data

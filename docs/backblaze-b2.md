@@ -96,3 +96,32 @@ aws s3 sync ./instance/drawing_uploads s3://USIS-construction-docs/prod/usis-cm/
 Repeat per subdirectory (`spec_section_uploads`, `rfi_attachment_uploads`, `hr_*_document_uploads`), matching the key layout in the table above.
 
 See also [render-deploy.md](render-deploy.md).
+
+## 7. NAS / local mirror
+
+B2 is the live store for production. To keep a second copy on an office NAS (or a local disk), run [`backend/scripts/mirror_b2.py`](../backend/scripts/mirror_b2.py) **on a PC that can see the share**. Render cannot mount your NAS, and its 1 GB disk cannot hold project drawings.
+
+Set `B2_MIRROR_ROOT` in **local** `backend/.env` only — **do not add it on Render**.
+
+```bash
+# from backend/
+python scripts/mirror_b2.py
+python scripts/mirror_b2.py --dry-run
+python scripts/mirror_b2.py --root "\\\\Usisserver\\usiscm"
+```
+
+The script lists the bucket prefix (`B2_PREFIX`) and writes missing objects to `{B2_MIRROR_ROOT}/{key}` using the **same key as B2**. New drawings use a human-readable path:
+
+`{prefix}/drawings/{project_number}/{discipline}/{set}/{original_filename}.pdf`
+
+Example: `prod/usis-cm/drawings/24060/Architectural/Permit-Set/A7.31_…_Permit-Set.pdf`
+
+Older drawings may still be stored as `{uuid}.pdf`; the app falls back to that name when serving. Files that already exist with the same size are skipped. Deletes on B2 are not removed from the NAS.
+
+To copy a human-readable folder you already have (no B2 download):
+
+```bash
+python scripts/mirror_b2.py --skip-b2 --copy-source "C:\\Users\\CharlesDossett\\Downloads\\UCMMEB\\A-G-Revisions"
+```
+
+That lands at `{B2_MIRROR_ROOT}/UCMEB/A-G-Revisions`.

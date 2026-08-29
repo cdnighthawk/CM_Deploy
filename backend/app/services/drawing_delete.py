@@ -7,7 +7,7 @@ from sqlalchemy import select, update
 
 from ..extensions import db
 from ..models import Drawing, TakeoffLineItem
-from .object_storage import UploadCategory, delete_stored
+from .drawing_upload import delete_drawing_objects
 
 
 def _clear_takeoff_refs(drawing_ids: list[uuid.UUID]) -> None:
@@ -20,8 +20,8 @@ def _clear_takeoff_refs(drawing_ids: list[uuid.UUID]) -> None:
     )
 
 
-def _delete_pdf(drawing_id: uuid.UUID) -> None:
-    delete_stored(UploadCategory.DRAWINGS, f"{drawing_id}.pdf")
+def _delete_pdf(row: Drawing) -> None:
+    delete_drawing_objects(row)
 
 
 def delete_drawing_revision(drawing_id: uuid.UUID) -> bool:
@@ -29,7 +29,7 @@ def delete_drawing_revision(drawing_id: uuid.UUID) -> bool:
     row = db.session.get(Drawing, drawing_id)
     if row is None:
         return False
-    _delete_pdf(row.id)
+    _delete_pdf(row)
     _clear_takeoff_refs([row.id])
     db.session.delete(row)
     return True
@@ -48,8 +48,8 @@ def delete_drawing_series(
     if not rows:
         return 0
     ids = [r.id for r in rows]
-    for rid in ids:
-        _delete_pdf(rid)
+    for row in rows:
+        _delete_pdf(row)
     _clear_takeoff_refs(ids)
     for row in rows:
         db.session.delete(row)

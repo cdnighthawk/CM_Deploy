@@ -284,6 +284,8 @@ class Config:
     B2_BUCKET_NAME: str | None = (os.environ.get("B2_BUCKET_NAME") or "").strip() or None
     B2_ENDPOINT: str | None = (os.environ.get("B2_ENDPOINT") or "").strip() or None
     B2_PREFIX: str | None = (os.environ.get("B2_PREFIX") or "").strip() or None
+    # Local/NAS archive only. Used by scripts/mirror_b2.py — do not set on Render.
+    B2_MIRROR_ROOT: str | None = (os.environ.get("B2_MIRROR_ROOT") or "").strip() or None
 
     # --- Microsoft Entra ID (Azure AD) SSO for ``/auth/microsoft/*`` ---
     # Register a single-page / web app in Entra, add redirect URI = MS_ENTRA_REDIRECT_URI

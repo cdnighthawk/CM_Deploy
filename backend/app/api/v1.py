@@ -1563,8 +1563,10 @@ def list_drawing_revisions(drawing_id: str):
     )
 
 
-def _drawing_object_name(drawing_id: uuid.UUID) -> str:
-    return f"{drawing_id}.pdf"
+def _drawing_object_name(d: Drawing) -> str:
+    from ..services.drawing_upload import resolve_drawing_object_name
+
+    return resolve_drawing_object_name(d) or f"{d.id}.pdf"
 
 
 def _drawing_resolved_file_url(d: Drawing) -> str | None:
@@ -1572,7 +1574,9 @@ def _drawing_resolved_file_url(d: Drawing) -> str | None:
     raw = d.file_url
     if raw is not None and str(raw).strip():
         return str(raw).strip()
-    if stored_exists(UploadCategory.DRAWINGS, _drawing_object_name(d.id)):
+    from ..services.drawing_upload import resolve_drawing_object_name
+
+    if resolve_drawing_object_name(d):
         return f"/api/v1/drawings/{d.id}/file"
     return None
 
@@ -1586,7 +1590,7 @@ def get_drawing_pdf_file(drawing_id: str):
     row = db.session.get(Drawing, did)
     if row is None:
         return _jsonify({"error": "drawing not found"}), 404
-    name = _drawing_object_name(did)
+    name = _drawing_object_name(row)
     dl = (row.original_filename or "drawing.pdf").replace('"', "")
     if not dl.lower().endswith(".pdf"):
         dl = dl + ".pdf"

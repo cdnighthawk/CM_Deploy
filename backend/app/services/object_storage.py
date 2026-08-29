@@ -126,6 +126,17 @@ def _read_binary_payload(file) -> bytes:
     return payload or b""
 
 
+def _mirror_to_nas(key: str, payload: bytes) -> None:
+    """Write the same B2 key onto B2_MIRROR_ROOT when that path is mounted locally."""
+    root = (current_app.config.get("B2_MIRROR_ROOT") or "").strip()
+    if not root or not payload:
+        return
+    parts = [p for p in key.replace("\\", "/").split("/") if p and p not in (".", "..")]
+    dest = Path(root).joinpath(*parts)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(payload)
+
+
 def save_upload(category: UploadCategory, object_name: str, file) -> int:
     """Persist a multipart upload or in-memory PDF bytes; return byte size."""
     if b2_enabled():
@@ -133,7 +144,13 @@ def save_upload(category: UploadCategory, object_name: str, file) -> int:
         content_type = None
         if hasattr(file, "mimetype"):
             content_type = (getattr(file, "mimetype", None) or "").strip() or None
-        _put_bytes(object_key(category, object_name), payload, content_type=content_type)
+        key = object_key(category, object_name)
+        _put_bytes(key, payload, content_type=content_type)
+        try:
+            _mirror_to_nas(key, payload)
+        except OSError:
+            # NAS is optional; B2 write already succeeded.
+            pass
         return len(payload)
     path = local_path(category, object_name)
     path.parent.mkdir(parents=True, exist_ok=True)

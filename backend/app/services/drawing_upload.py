@@ -2,16 +2,81 @@
 from __future__ import annotations
 
 import io
+import re
 import uuid
+from pathlib import Path
 from typing import Any
 
 from pypdf import PdfReader, PdfWriter
+from sqlalchemy import select
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Drawing
-from ..services.object_storage import UploadCategory, delete_stored, save_upload
+from ..models import Drawing, Project
+from ..services.object_storage import UploadCategory, delete_stored, save_upload, stored_exists
+
+_SLUG_BAD = re.compile(r'[<>:"/\\|?*]+')
+_SLUG_SPACE = re.compile(r"[\s,]+")
+
+
+def _slug_part(raw: str, fallback: str) -> str:
+    s = _SLUG_BAD.sub("-", (raw or "").strip())
+    s = _SLUG_SPACE.sub("-", s)
+    s = re.sub(r"-{2,}", "-", s).strip("-")
+    return (s[:80] or fallback)
+
+
+def _safe_filename(raw: str) -> str:
+    name = Path(raw or "").name.strip() or "drawing.pdf"
+    name = _SLUG_BAD.sub("-", name)
+    if not name.lower().endswith(".pdf"):
+        name += ".pdf"
+    return name[:200]
+
+
+def _project_label(project_id: uuid.UUID | None) -> str:
+    if project_id is None:
+        return "unassigned"
+    number = db.session.scalar(select(Project.number).where(Project.id == project_id))
+    label = (number or "").strip()
+    return _slug_part(label, str(project_id))
+
+
+def drawing_storage_relpath(d: Drawing, *, project_label: str | None = None) -> str:
+    """Human-readable B2/NAS key under the drawings/ prefix."""
+    fname = _safe_filename(d.original_filename or "") or f"{d.id}.pdf"
+    proj = project_label or _project_label(d.project_id)
+    disc = _slug_part(d.discipline or "", "Drawings")
+    dset = _slug_part(d.drawing_set or "", "Set")
+    return f"{proj}/{disc}/{dset}/{fname}"
+
+
+def drawing_object_candidates(d: Drawing) -> list[str]:
+    names: list[str] = []
+    tags = d.tags if isinstance(d.tags, dict) else {}
+    stored = str(tags.get("storage_object") or "").strip()
+    if stored:
+        names.append(stored)
+    human = drawing_storage_relpath(d)
+    if human not in names:
+        names.append(human)
+    legacy = f"{d.id}.pdf"
+    if legacy not in names:
+        names.append(legacy)
+    return names
+
+
+def resolve_drawing_object_name(d: Drawing) -> str | None:
+    for name in drawing_object_candidates(d):
+        if stored_exists(UploadCategory.DRAWINGS, name):
+            return name
+    return None
+
+
+def delete_drawing_objects(d: Drawing) -> None:
+    for name in drawing_object_candidates(d):
+        delete_stored(UploadCategory.DRAWINGS, name)
 
 
 class DrawingUploadError(Exception):
@@ -35,6 +100,19 @@ def _base_name(raw_filename: str) -> str:
     return name[:200] or "drawing"
 
 
+def _existing_series_id(project_id: uuid.UUID | None, sheet_number: str | None) -> uuid.UUID | None:
+    """Reuse the series for later revisions of the same sheet on a project."""
+    sn = (sheet_number or "").strip()
+    if project_id is None or not sn:
+        return None
+    row = db.session.scalar(
+        select(Drawing)
+        .where(Drawing.project_id == project_id, Drawing.sheet_number == sn)
+        .order_by(Drawing.created_at.asc(), Drawing.id.asc())
+    )
+    return row.drawing_series_id if row is not None else None
+
+
 def _create_drawing_row(
     *,
     project_id: uuid.UUID | None,
@@ -56,8 +134,9 @@ def _create_drawing_row(
     else:
         title = sheet_title or base
         sn = sheet_number
-        orig = secure_filename(raw_name) or "upload.pdf"
+        orig = _safe_filename(raw_name)
 
+    series_id = _existing_series_id(project_id, sn)
     d = Drawing(
         project_id=project_id,
         title=title[:500],
@@ -68,11 +147,12 @@ def _create_drawing_row(
         revision=revision[:50],
         mime_type="application/pdf",
         original_filename=orig[:500],
+        drawing_series_id=series_id,
     )
     db.session.add(d)
     db.session.flush()
 
-    obj_name = f"{d.id}.pdf"
+    obj_name = drawing_storage_relpath(d)
     try:
         sz = save_upload(UploadCategory.DRAWINGS, obj_name, io.BytesIO(pdf_bytes))
     except OSError as exc:
@@ -82,6 +162,9 @@ def _create_drawing_row(
         delete_stored(UploadCategory.DRAWINGS, obj_name)
         raise DrawingUploadError("empty upload", 400)
 
+    tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+    tags["storage_object"] = obj_name
+    d.tags = tags
     d.file_url = f"/api/v1/drawings/{d.id}/file"
     d.file_size_bytes = int(sz)
     return d
@@ -111,16 +194,18 @@ def upload_project_drawing_pdf(
     if len(payload) > max_bytes:
         raise DrawingUploadError("file too large (max 50MB)", 400)
 
-    try:
-        reader = PdfReader(io.BytesIO(payload))
-        page_count = len(reader.pages)
-    except Exception as exc:
-        raise DrawingUploadError(f"invalid or unreadable PDF: {exc}", 400) from exc
+    page_count = 1
+    reader = None
+    if split_pages:
+        try:
+            reader = PdfReader(io.BytesIO(payload))
+            page_count = len(reader.pages)
+        except Exception as exc:
+            raise DrawingUploadError(f"invalid or unreadable PDF: {exc}", 400) from exc
+        if page_count < 1:
+            raise DrawingUploadError("PDF has no pages", 400)
 
-    if page_count < 1:
-        raise DrawingUploadError("PDF has no pages", 400)
-
-    do_split = split_pages and page_count > 1
+    do_split = bool(split_pages and reader is not None and page_count > 1)
     created: list[Drawing] = []
 
     if do_split:

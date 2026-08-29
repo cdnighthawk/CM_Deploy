@@ -374,18 +374,21 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
     if kind == "drawing":
         split_raw = metadata.get("split_pages")
         split_pages = str(split_raw).strip().lower() in ("1", "true", "yes", "on") if split_raw is not None else False
-        try:
-            from pypdf import PdfReader
-
-            reader = PdfReader(io.BytesIO(payload))
-            page_count = len(reader.pages)
-        except Exception as exc:
-            raise IngestError(f"invalid or unreadable PDF: {exc}") from exc
-        if page_count < 1:
-            raise IngestError("PDF has no pages.")
-
         created: list[Drawing] = []
-        do_split = split_pages and page_count > 1
+        do_split = False
+        reader = None
+        page_count = 1
+        if split_pages:
+            try:
+                from pypdf import PdfReader
+
+                reader = PdfReader(io.BytesIO(payload))
+                page_count = len(reader.pages)
+            except Exception as exc:
+                raise IngestError(f"invalid or unreadable PDF: {exc}") from exc
+            if page_count < 1:
+                raise IngestError("PDF has no pages.")
+            do_split = page_count > 1
         if do_split:
             from .drawing_upload import _page_pdf_bytes
 

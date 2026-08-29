@@ -51,6 +51,7 @@ Set all four **required** variables to store drawings, spec PDFs, RFI attachment
 | `B2_BUCKET_NAME` | `USIS-construction-docs` |
 | `B2_ENDPOINT` | Copy **S3 Endpoint** from B2 → bucket **USIS-construction-docs** → Bucket Settings (e.g. `https://s3.us-west-004.backblazeb2.com`) |
 | `B2_PREFIX` | Optional, e.g. `prod/usis-cm` |
+| `B2_MIRROR_ROOT` | **Do not set on Render.** Local/NAS only; see [backblaze-b2.md](backblaze-b2.md) §7 |
 
 After saving env vars, trigger **Manual Deploy** (or push to `main`) so the service restarts with B2 enabled. New uploads use B2; existing files on the Render disk are not migrated automatically ([backblaze-b2.md](backblaze-b2.md) §6).
 

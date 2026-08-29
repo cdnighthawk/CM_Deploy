@@ -53,6 +53,7 @@ from .hrms_core import (
     HrmsTimesheetEntry,
     HrmsTimesheetPeriod,
 )
+from .golden_state_planroom_lead import GoldenStatePlanroomLead
 from .lead_estimate import LeadEstimate
 from .saved_list_filter import SavedListFilter
 from .playbook import (
@@ -175,6 +176,7 @@ __all__ = [
     "HrmsShiftSwap",
     "HrmsTimesheetEntry",
     "HrmsTimesheetPeriod",
+    "GoldenStatePlanroomLead",
     "LeadEstimate",
     "Location",
     "ManufacturerProductData",

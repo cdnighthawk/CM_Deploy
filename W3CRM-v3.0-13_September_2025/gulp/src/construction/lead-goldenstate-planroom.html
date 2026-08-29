@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	@@include("../elements/meta.html", {
+		"fileName": "lead-goldenstate-planroom.html",
+	})
+	
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		#usis-gs-leads-table { font-size: 0.8125rem; }
+		#usis-gs-leads-table thead th,
+		#usis-gs-leads-table tbody td {
+			padding: 0.2rem 0.45rem;
+			vertical-align: middle;
+			line-height: 1.25;
+		}
+		#usis-gs-leads-table thead th { font-weight: 600; }
+	</style>
+
+</head>
+<body>
+		
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+        <main class="content-body">
+			
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Leads — Golden State Planroom",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Leads — Golden State Planroom</h6>
+								<p class="mb-0 small text-muted">AGC San Diego weekly listing. Import <code>AGCS_CAProjects.csv</code> to refresh.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="construction/leads.html">Leads</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+					<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
+						<div class="input-group message-search-area width200 w-xs-100">
+							<input type="text" class="form-control border-end-0" id="usis-gs-table-filter" placeholder="Filter (plan #, name, county)" autocomplete="off">
+							<div class="input-group-append">
+								<span class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></span>
+							</div>
+						</div>
+						<select class="form-select form-select-sm w-auto" id="usis-gs-location" aria-label="County">
+							<option value="">All counties</option>
+							<option value="San Diego">San Diego</option>
+							<option value="Riverside">Riverside</option>
+							<option value="Orange">Orange</option>
+							<option value="San Bernardino">San Bernardino</option>
+							<option value="Imperial">Imperial</option>
+							<option value="Los Angeles">Los Angeles</option>
+							<option value="Sacramento">Sacramento</option>
+						</select>
+						<div class="form-check mb-0">
+							<input class="form-check-input" type="checkbox" id="usis-gs-new-only">
+							<label class="form-check-label small" for="usis-gs-new-only">NEW only</label>
+						</div>
+						<span class="small text-muted" id="usis-gs-filter-count" aria-live="polite"></span>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<input type="file" id="usis-gs-import-file" accept=".csv,text/csv" class="d-none">
+						<button type="button" class="btn btn-outline-secondary" id="usis-gs-reload">
+							<i class="icon feather icon-refresh-cw me-1"></i> Reload
+						</button>
+						<button type="button" class="btn btn-primary" id="usis-gs-import-btn">
+							<i class="icon feather icon-upload me-1"></i> Import weekly CSV
+						</button>
+					</div>
+				</div>
+
+				<div class="card m-0 table-hover overflow-auto">
+					<table class="table table-sm m-0" id="usis-gs-leads-table">
+						<thead>
+							<tr>
+								<th>Flags</th>
+								<th>Bid date</th>
+								<th>Time</th>
+								<th>Location</th>
+								<th class="text-end">Addenda</th>
+								<th>Plan #</th>
+								<th>Project</th>
+								<th class="text-end">Estimate high</th>
+								<th class="text-end">Action</th>
+							</tr>
+						</thead>
+						<tbody id="usis-gs-leads-tbody">
+							<tr>
+								<td colspan="9" class="text-muted">Loading Golden State planroom…</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</main>
+		@@include("../elements/footer.html")
+
+	</div>
+
+	@@include("../elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+    <script src="assets/js/translator.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+    <script src="assets/js/deznav-init-construction.js"></script>
+    <script src="assets/js/custom.js"></script>
+    <script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-gs-planroom.js"></script>
+	
+</body>
+</html>

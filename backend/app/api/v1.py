@@ -4651,10 +4651,12 @@ from . import _integration_textura  # noqa: E402
 from .extra_plan_routes import register_extra_routes  # noqa: E402
 from ._independent_estimate_routes import register_independent_estimate_routes  # noqa: E402
 from ._issue_routes import register_issue_routes  # noqa: E402
+from ._golden_state_planroom import register_golden_state_planroom_routes  # noqa: E402
 
 register_extra_routes(bp)
 register_independent_estimate_routes(bp)
 register_issue_routes(bp)
+register_golden_state_planroom_routes(bp)
 _hr_dashboard.register_hr_routes(bp)
 from . import _hr_hire_wizard  # noqa: E402
 

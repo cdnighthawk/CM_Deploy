@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+	
+	<!-- Title -->
+	<title>USIS</title>
+	
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="USIS">
+	<meta name="robots" content="index, follow">
+	<meta name="format-detection" content="telephone=no">
+	
+	<meta name="keywords" content="USIS, US Interior Specialties, construction management, projects, estimates, field operations">
+	<meta name="description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="USIS Construction Management">
+	<meta property="og:url" content="https://www.usiscm.com/">
+	<meta property="og:title" content="USIS Construction Management">
+	<meta property="og:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
+	<meta property="og:image:alt" content="US Interior Specialties">
+	
+	<!-- TWITTER META -->
+	<meta name="twitter:title" content="USIS Construction Management">
+	<meta name="twitter:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
+	<meta name="twitter:card" content="summary">
+	
+	<!-- FAVICONS ICON -->
+	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	<link rel="shortcut icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
+	
+	<!-- MOBILE SPECIFIC -->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<!-- Canonical URL -->
+	<link rel="canonical" href="https://www.usiscm.com/construction/lead-goldenstate-planroom.html">
+	
+	<!-- Plugins Stylesheet -->
+	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
+	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+
+	<!-- Flask API root for session login/logout + credentialed ``fetch``.
+	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
+	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
+	<script src="assets/js/usis-api-base-default.js"></script>
+	<script src="assets/js/usis-api-base.js"></script>
+	<script src="assets/js/usis-api-fetch.js"></script>
+	<script src="assets/js/usis-theme-boot.js"></script>
+	
+	<!-- Start - Style CSS -->
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<!-- End - Style CSS -->
+	<style>
+		#usis-bc-leads-table { font-size: 0.8125rem; table-layout: fixed; }
+		#usis-bc-leads-table thead th,
+		#usis-bc-leads-table tbody td {
+			padding: 0.2rem 0.45rem;
+			vertical-align: middle;
+			line-height: 1.25;
+		}
+		#usis-bc-leads-table thead th { font-weight: 600; }
+		#usis-bc-leads-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
+		#usis-bc-leads-table th.usis-bc-col-lead,
+		#usis-bc-leads-table td.usis-bc-col-lead {
+			width: 22%;
+			max-width: 22%;
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: break-word;
+		}
+		#usis-bc-leads-table th.usis-bc-col-trade,
+		#usis-bc-leads-table td.usis-bc-col-trade {
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: break-word;
+		}
+		#usis-bc-leads-table th.usis-bc-col-company,
+		#usis-bc-leads-table td.usis-bc-col-company,
+		#usis-bc-leads-table th.usis-bc-col-city,
+		#usis-bc-leads-table td.usis-bc-col-city {
+			white-space: normal;
+			word-break: break-word;
+			overflow-wrap: break-word;
+			overflow: hidden;
+		}
+		#usis-bc-leads-table th.usis-bc-col-company,
+		#usis-bc-leads-table td.usis-bc-col-company {
+			width: 14%;
+			max-width: 14%;
+		}
+		#usis-bc-leads-table th.usis-bc-col-city,
+		#usis-bc-leads-table td.usis-bc-col-city {
+			width: 10%;
+			max-width: 10%;
+		}
+		#usis-bc-leads-table th.usis-bc-col-dist,
+		#usis-bc-leads-table td.usis-bc-col-dist {
+			width: 4.5rem;
+			max-width: 4.5rem;
+			text-align: right;
+		}
+		.usis-col-filter-scroll { max-height: 14rem; overflow-y: auto; font-size: 0.8125rem; }
+		#usis-bc-col-filter-modal .accordion-button { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+		#usis-bc-leads-table th.usis-bulk-col,
+		#usis-bc-leads-table td.usis-bulk-col { width: 28px; max-width: 28px; }
+	</style>
+
+</head>
+<body>
+		
+	<!-- Start - Preloader -->
+	<div id="preloader">
+		<div class="lds-ripple">
+			<div></div>
+			<div></div>
+		</div>
+	</div>
+	<!-- End - Preloader -->
+
+	<!-- Start - Main Wrapper -->
+	<div id="main-wrapper">
+
+		<!-- Start - Nav Header -->
+		<div class="nav-header">
+			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
+	<img class="logo-abbr usis-logo-mark" src="assets/images/branding/usis-eagle-logo.png" alt="" width="36" height="36">
+	<span class="brand-title usis-logo-title">USIS CM</span>
+</a>
+
+			<div class="nav-control">
+				<div class="hamburger">
+					<span class="line"></span>
+					<span class="line"></span>
+					<span class="line"></span>
+				</div>
+			</div>
+		</div>
+		<!-- End - Nav Header -->
+
+		<!-- Start - Sidebar Chat Box  -->
+		<div class="chatbox">
+			<div class="chatbox-close"></div>
+			<div class="clearfix">
+				<ul class="nav nav-underline">
+					<li class="nav-item">
+						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div class="tab-pane fade" id="notes">
+						<div class="card mb-0">
+							<div class="card-body py-4 text-center text-muted small">
+								<p class="mb-0">Project notes will appear here when messaging is enabled.</p>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="alerts">
+						<div class="card mb-0">
+							<div class="card-body py-4 text-center text-muted small">
+								<p class="mb-0">System alerts will appear here when configured.</p>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade active show" id="chat">
+						<div class="card mb-0">
+							<div class="card-body py-4 text-center text-muted small">
+								<p class="mb-0">Team chat is not enabled yet.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- End - Sidebar Chat Box  -->
+
+
+		<!-- Start - Header -->
+		<div class="header">
+			<div class="header-content">
+				<nav class="navbar navbar-expand">
+					<div class="collapse navbar-collapse justify-content-between">
+						<div class="header-left">
+							<form>
+								<div class="header-search input-group">
+									<span class="input-group-text">
+										<button class="bg-transparent border-0" aria-label="Header Search">
+											<svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<circle cx="8.78605" cy="8.78605" r="8.23951" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+												<path d="M14.5168 14.9447L17.7471 18.1667" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+										</button>
+									</span>
+									<input type="text" class="form-control" placeholder="Search">
+								</div>
+							</form>	
+						</div>
+						<ul class="navbar-nav header-right">
+							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
+								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
+									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
+									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
+										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
+											<i class="icon feather icon-mail"></i>
+											<span class="d-none d-lg-inline ms-1">Email</span>
+										</a>
+										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
+											<i class="icon feather icon-message-square"></i>
+											<span class="d-none d-lg-inline ms-1">Chat</span>
+										</button>
+									</div>
+								</div>
+							</li>
+							<li class="nav-item align-self-center">
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
+									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
+									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								</button>
+							</li>
+							<li class="nav-item">
+								<select class="selectpicker form-select i18n-select" id="langSwitcher">
+									<option value="en_GB" title="English" data-content="<img src='assets/images/flags/gb-eng.svg' alt=''> English">English</option>
+									<option value="pt_BR" title="Portuguese" data-content="<img src='assets/images/flags/pt.svg' alt=''> Português">Português</option>
+									<option value="fr_FR" title="French" data-content="<img src='assets/images/flags/fr.svg' alt=''> Français">Français</option>
+									<option value="de_DE" title="German" data-content="<img src='assets/images/flags/de.svg' alt=''> Deutsch">Deutsch</option>
+									<option value="it_IT" title="Italian" data-content="<img src='assets/images/flags/it.svg' alt=''> Italiano">Italiano</option>
+									<option value="jp_JP" title="Japanese" data-content="<img src='assets/images/flags/jp.svg' alt=''> 日本語">日本語</option>
+									<option value="es_ES" title="Spanish" data-content="<img src='assets/images/flags/es.svg' alt=''> Español">Español</option>
+									<option value="ar_TN" title="Arabic" data-content="<img src='assets/images/flags/arab.svg' alt=''> العربية">العربية</option>
+									<option value="tr_TR" title="Turkish" data-content="<img src='assets/images/flags/tr.svg' alt=''> Türkçe">Türkçe</option>
+								</select>
+							</li>
+							<li class="nav-item dropdown notification_dropdown">
+								<div class="dropdown">
+									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
+										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+										</svg>
+									</button>
+									<div class="dropdown-menu dropdown-menu-end py-0">
+										<div class="dz-scroll p-2" style="height: 380px;">
+								<p class="text-muted small text-center mb-0 py-5">No notifications.</p>
+							<a class="d-block text-center p-3 border-top" href="javascript:void(0);">See all notifications <i class="fa fa-arrow-right"></i></a>
+									</div>
+								</div>
+							</li>
+							<li class="nav-item notification_dropdown d-none d-sm-flex">
+								<a class="nav-link dz-fullscreen" href="javascript:void(0);" aria-label="Fullscreen">
+									<svg id="icon-full" viewBox="0 0 24 24" width="20" height="20" stroke="var(--bs-body-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
+									</svg>
+									<svg id="icon-minimize" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bs-body-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minimize">
+										<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
+									</svg>
+								</a>
+							</li>	
+							<li class="nav-item header-profile-dropdown">
+								<div class="dropdown d-flex align-items-center">
+									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="usis-profile.html" title="My profile">
+										<div class="profile-head mb-0">
+											<div class="profile-media usis-header-avatar rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width:2.5rem;height:2.5rem;font-size:0.75rem;" aria-hidden="true">
+												<span class="usis-header-avatar-initials">—</span>
+											</div>
+											<div class="header-info">
+												<h6 class="author-name mb-0 usis-header-session-name">—</h6>
+												<small class="text-truncate d-block usis-header-session-email" style="max-width:10rem;">—</small>
+											</div>
+										</div>
+									</a>
+									<a class="nav-link py-0 ps-0 pe-2 text-body d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Account menu">
+										<i class="fa fa-angle-down" aria-hidden="true"></i>
+									</a>
+									<ul class="dropdown-menu dropdown-menu-end">
+									<li>
+										<div class="py-2 d-flex px-3 align-items-center">
+											<div class="avatar avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center usis-header-avatar flex-shrink-0" aria-hidden="true">
+												<span class="usis-header-avatar-initials small fw-semibold">—</span>
+											</div>
+											<div class="ms-2 overflow-hidden">
+												<h6 class="mb-0 text-truncate usis-header-session-name">—</h6>
+												<small class="text-muted text-truncate d-block usis-header-session-email">—</small>
+											</div>	
+										</div>
+									</li>
+									<li><hr class="dropdown-divider"></li>
+									<li>
+										<a class="dropdown-item" href="usis-profile.html">
+											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+											<span class="ms-2">My profile</span>
+										</a>
+									</li>
+									<li><hr class="dropdown-divider"></li>
+									<li>
+										<a href="#" class="dropdown-item usis-logout-link">
+											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bs-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<path stroke="var(--bs-danger)" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
+												<line x1="21" y1="12" x2="9" y2="12"></line>
+											</svg>
+											<span class="ms-2 text-danger">Logout </span>
+										</a>
+									</li>
+								</ul>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</nav>
+			</div>
+		</div>
+		<!-- End - Header -->
+
+		<!-- Start - Sidebar Navigation -->
+		<div class="deznav">
+			<div class="deznav-scroll">
+				<ul class="metismenu" id="menu">
+					<li class="menu-title" data-i18n="USIS">USIS</li>
+					<li data-usis-module="dashboard">
+						<a href="usis-dashboard-dark.html" aria-expanded="false">
+							<i class="icon feather icon-home"></i>
+							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
+						</a>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-file-text"></i>
+							<span class="nav-text" data-i18n="Estimate">Estimate</span>
+						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="estimate">
+								<a href="construction/estimate.html" data-i18n="Estimate">Estimate</a>
+							</li>
+							<li data-usis-module="estimate">
+								<a href="construction/estimate.html?tab=submitted" data-i18n="Submitted">Submitted</a>
+							</li>
+							<li data-usis-module="leads">
+								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
+							</li>
+							<li data-usis-module="leads">
+								<a href="construction/lead-goldenstate-planroom.html" data-i18n="Golden State Planroom">Golden State Planroom</a>
+							</li>
+						</ul>
+					</li>
+					<li data-usis-module="projects">
+						<a href="construction/projects.html" aria-expanded="false">
+							<i class="icon feather icon-layers"></i>
+							<span class="nav-text" data-i18n="Projects">Projects</span>
+						</a>
+					</li>
+					<li data-usis-module="projects">
+						<a href="usis-calendar.html" aria-expanded="false">
+							<i class="icon feather icon-calendar"></i>
+							<span class="nav-text" data-i18n="Calendar">Calendar</span>
+						</a>
+					</li>
+					<li data-usis-module="safety">
+						<a href="usis-safety.html" aria-expanded="false">
+							<i class="icon feather icon-shield"></i>
+							<span class="nav-text" data-i18n="Safety">Safety</span>
+						</a>
+					</li>
+					<li>
+						<a href="usis-email.html" aria-expanded="false">
+							<i class="icon feather icon-mail"></i>
+							<span class="nav-text" data-i18n="Email">Email</span>
+						</a>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-user-check"></i>
+							<span class="nav-text" data-i18n="HR">HR</span>
+						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="hr">
+								<a href="usis-hr-dashboard.html" data-i18n="HR">HR dashboard</a>
+							</li>
+							<li data-usis-module="hr">
+								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
+							</li>
+							<li data-usis-module="hrms">
+								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
+							</li>
+						</ul>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-dollar-sign"></i>
+							<span class="nav-text" data-i18n="Finance">Finance</span>
+						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="ap">
+								<a href="usis-invoices.html" data-i18n="Invoices">Invoices</a>
+							</li>
+							<li data-usis-module="ap">
+								<a href="usis-invoice-approvals.html" data-i18n="Invoice approvals">Invoice approvals</a>
+							</li>
+							<li data-usis-module="hrms">
+								<a href="usis-hrms-expenses.html" data-i18n="Expenses">Expenses</a>
+							</li>
+						</ul>
+					</li>
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-settings"></i>
+							<span class="nav-text" data-i18n="Admin">Admin</span>
+						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="user_admin">
+								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
+							</li>
+							<li data-usis-module="playbooks">
+								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+							</li>
+							<li data-usis-module="reports">
+								<a href="reports.html" data-i18n="Reports">Reports</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							</li>
+							<li data-usis-module="projects">
+								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<!-- End - Sidebar Navigation -->
+
+
+		
+		<!-- Start - Content Body -->
+        <main class="content-body">
+			<div class="page-title">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li><h1>Leads — Golden State Planroom</h1></li>
+						<li class="breadcrumb-item"><a href="usis-dashboard-dark.html">Home</a></li>
+						<li class="breadcrumb-item"><a href="construction/leads.html">Leads</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Golden State Planroom</li>
+					</ol>
+				</nav>
+			</div>
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Leads — Golden State Planroom</h6>
+								<p class="mb-0 small text-muted">AGC San Diego weekly listing. Import AGCS_CAProjects.csv to refresh.</p>
+							</div>
+							<div class="text-nowrap small">
+								<a href="construction/leads.html">Leads</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+					<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
+						<div class="input-group message-search-area width200 w-xs-100">
+							<input type="text" class="form-control border-end-0" id="usis-gs-table-filter" placeholder="Filter (plan #, name, county)" autocomplete="off">
+							<div class="input-group-append">
+								<span class="input-group-text rounded-0 rounded-end border-start-0"><i class="flaticon-381-search-2"></i></span>
+							</div>
+						</div>
+						<select class="form-select form-select-sm w-auto" id="usis-gs-location" aria-label="County">
+							<option value="">All counties</option>
+							<option value="San Diego">San Diego</option>
+							<option value="Riverside">Riverside</option>
+							<option value="Orange">Orange</option>
+							<option value="San Bernardino">San Bernardino</option>
+							<option value="Imperial">Imperial</option>
+							<option value="Los Angeles">Los Angeles</option>
+							<option value="Sacramento">Sacramento</option>
+						</select>
+						<div class="form-check mb-0">
+							<input class="form-check-input" type="checkbox" id="usis-gs-new-only">
+							<label class="form-check-label small" for="usis-gs-new-only">NEW only</label>
+						</div>
+						<span class="small text-muted" id="usis-gs-filter-count" aria-live="polite"></span>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<input type="file" id="usis-gs-import-file" accept=".csv,text/csv" class="d-none">
+						<button type="button" class="btn btn-outline-secondary" id="usis-gs-reload"><i class="icon feather icon-refresh-cw me-1"></i> Reload</button>
+						<button type="button" class="btn btn-primary" id="usis-gs-import-btn"><i class="icon feather icon-upload me-1"></i> Import weekly CSV</button>
+					</div>
+				</div>
+				<div class="card m-0 table-hover overflow-auto">
+					<table class="table table-sm m-0" id="usis-gs-leads-table">
+						<thead>
+							<tr>
+								<th>Flags</th>
+								<th>Bid date</th>
+								<th>Time</th>
+								<th>Location</th>
+								<th class="text-end">Addenda</th>
+								<th>Plan #</th>
+								<th>Project</th>
+								<th class="text-end">Estimate high</th>
+								<th class="text-end">Action</th>
+							</tr>
+						</thead>
+						<tbody id="usis-gs-leads-tbody">
+							<tr><td colspan="9" class="text-muted">Loading Golden State planroom…</td></tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</main>
+		<div class="footer">
+			<div class="copyright text-center">
+			   <p class="mb-0">Copyright © <span class="current-year">2026</span> USIS</p>
+			</div>
+		</div>
+	</div>
+	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-applicant-guard.js"></script>
+	<script src="assets/js/usis-require-auth.js"></script>
+	<script src="assets/js/usis-nav-access.js"></script>
+	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
+	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-gs-planroom.js"></script>
+</body>
+</html>

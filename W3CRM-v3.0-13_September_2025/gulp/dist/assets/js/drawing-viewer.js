@@ -371,9 +371,30 @@
 			el.innerHTML = "";
 			return;
 		}
+		var name = [];
+		if (r.sheet_number) name.push("<span class='fw-semibold'>" + esc(r.sheet_number) + "</span>");
+		if (r.sheet_title) name.push(esc(r.sheet_title));
+		var nameHtml = name.join(" ");
+		var pdfHref = "";
+		if (r.file_url) {
+			var raw = String(r.file_url).trim();
+			if (/^https?:\/\//i.test(raw)) pdfHref = raw;
+			else pdfHref = apiBase() + (raw.charAt(0) === "/" ? raw : "/" + raw);
+		} else if (r.id) {
+			pdfHref = apiBase() + "/api/v1/drawings/" + encodeURIComponent(r.id) + "/file";
+		}
 		var parts = [];
-		if (r.sheet_number) parts.push("<span class='fw-semibold'>" + esc(r.sheet_number) + "</span>");
-		if (r.sheet_title) parts.push(esc(r.sheet_title));
+		if (nameHtml && pdfHref) {
+			parts.push(
+				"<a class='usis-drawing-name-link' href='" +
+					esc(pdfHref) +
+					"' target='_blank' rel='noopener noreferrer'>" +
+					nameHtml +
+					"</a>"
+			);
+		} else if (nameHtml) {
+			parts.push(nameHtml);
+		}
 		if (r.discipline) parts.push(esc(r.discipline));
 		if (r.drawing_set) parts.push("Set " + esc(r.drawing_set));
 		el.innerHTML = parts.join(" · ");

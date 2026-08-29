@@ -1227,3 +1227,11 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 	padding-left: 0.75rem;
 	padding-right: 0.75rem;
 }
+a.usis-drawing-name-link {
+	color: var(--usis-primary, #1f4e5f);
+	text-decoration: underline;
+	text-underline-offset: 0.12em;
+}
+a.usis-drawing-name-link:hover {
+	color: var(--usis-primary-dark, #163845);
+}

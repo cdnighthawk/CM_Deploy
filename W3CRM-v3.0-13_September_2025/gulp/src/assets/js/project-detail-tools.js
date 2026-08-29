@@ -221,6 +221,33 @@
 		return d.innerHTML;
 	}
 
+	function drawingViewerHref(pid, drawingRevId) {
+		if (!pid || !drawingRevId) return "";
+		return (
+			"construction/drawing-viewer.html?project_id=" +
+			encodeURIComponent(pid) +
+			"&drawing_id=" +
+			encodeURIComponent(drawingRevId)
+		);
+	}
+
+	function drawingNameLinkFormatter(field, pid) {
+		return function (cell) {
+			var data = cell.getRow().getData();
+			var text = data[field];
+			if (text == null || String(text).trim() === "") text = "—";
+			else text = String(text);
+			var cr = data.current_revision;
+			var href = cr && cr.id ? drawingViewerHref(pid, cr.id) : "";
+			if (!href) return text;
+			var a = document.createElement("a");
+			a.href = href;
+			a.className = "usis-drawing-name-link";
+			a.textContent = text;
+			return a;
+		};
+	}
+
 	function fetchJson(path) {
 		var base = apiBase();
 		var url = base + path;
@@ -391,8 +418,22 @@
 		}
 		var pid = activeProjectId || "";
 		var cols = [
-			{ title: "Sheet #", field: "sheet_number", headerFilter: "input", minWidth: 100, widthGrow: 1 },
-			{ title: "Title", field: "sheet_title", headerFilter: "input", minWidth: 160, widthGrow: 2 },
+			{
+				title: "Sheet #",
+				field: "sheet_number",
+				headerFilter: "input",
+				minWidth: 100,
+				widthGrow: 1,
+				formatter: drawingNameLinkFormatter("sheet_number", pid),
+			},
+			{
+				title: "Title",
+				field: "sheet_title",
+				headerFilter: "input",
+				minWidth: 160,
+				widthGrow: 2,
+				formatter: drawingNameLinkFormatter("sheet_title", pid),
+			},
 			{ title: "Discipline", field: "discipline", headerFilter: "input", minWidth: 100, widthGrow: 1 },
 			{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 140, widthGrow: 1 },
 			{ title: "Issues", field: "revision_count", hozAlign: "right", width: 90 },

@@ -90,6 +90,30 @@
 		return d.innerHTML;
 	}
 
+	function drawingDisciplineGroup(data) {
+		var d = data && data.discipline != null ? String(data.discipline).trim() : "";
+		return d || "Unassigned";
+	}
+
+	function drawingGroupStorageKey(pid) {
+		return "usis-draw-groups-collapsed:" + String(pid || "");
+	}
+
+	function readDrawingGroupCollapsed(pid) {
+		try {
+			var raw = sessionStorage.getItem(drawingGroupStorageKey(pid));
+			return raw ? JSON.parse(raw) : {};
+		} catch (e) {
+			return {};
+		}
+	}
+
+	function writeDrawingGroupCollapsed(pid, map) {
+		try {
+			sessionStorage.setItem(drawingGroupStorageKey(pid), JSON.stringify(map || {}));
+		} catch (e) {}
+	}
+
 	function el(id) {
 		return id ? document.getElementById(id) : null;
 	}
@@ -103,6 +127,52 @@
 		var drawingsTabulator = null;
 		var activeProjectId = null;
 		var activeLeadId = null;
+
+		function setDrawingGroupsOpen(table, pid, open) {
+			if (!table || typeof table.getGroups !== "function") return;
+			var map = {};
+			table.getGroups().forEach(function (g) {
+				if (open) g.show();
+				else {
+					g.hide();
+					map[g.getKey()] = 1;
+				}
+			});
+			writeDrawingGroupCollapsed(pid, open ? {} : map);
+		}
+
+		function bindDrawingGroupPersistence(table) {
+			if (!table || table._usisGroupBound) return;
+			table._usisGroupBound = true;
+			table.on("groupVisibilityChanged", function (group, visible) {
+				var pid = activeProjectId || "";
+				var map = readDrawingGroupCollapsed(pid);
+				var key = group.getKey();
+				if (visible) delete map[key];
+				else map[key] = 1;
+				writeDrawingGroupCollapsed(pid, map);
+			});
+		}
+
+		function ensureDrawingGroupToolbar(gridEl) {
+			if (!gridEl || !gridEl.parentNode) return;
+			if (gridEl.previousElementSibling && gridEl.previousElementSibling.classList.contains("usis-draw-group-toolbar")) {
+				return;
+			}
+			var bar = document.createElement("div");
+			bar.className = "usis-draw-group-toolbar d-flex flex-wrap align-items-center gap-2 mb-2";
+			bar.innerHTML =
+				'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-expand-all">Expand all</button>' +
+				'<span class="text-muted">·</span>' +
+				'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-collapse-all">Collapse all</button>';
+			gridEl.parentNode.insertBefore(bar, gridEl);
+			bar.querySelector(".usis-draw-expand-all").addEventListener("click", function () {
+				if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", true);
+			});
+			bar.querySelector(".usis-draw-collapse-all").addEventListener("click", function () {
+				if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", false);
+			});
+		}
 
 		function drawingNameLinkFormatter(field, pid) {
 			return function (cell) {
@@ -333,7 +403,7 @@
 					widthGrow: 2,
 					formatter: drawingNameLinkFormatter("sheet_title", pid),
 				},
-				{ title: "Discipline", field: "discipline", headerFilter: "input", minWidth: 100, widthGrow: 1 },
+				{ title: "Discipline", field: "discipline", visible: false },
 				{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 140, widthGrow: 1 },
 				{ title: "Issues", field: "revision_count", hozAlign: "right", width: 90 },
 				{
@@ -381,6 +451,15 @@
 					},
 				},
 			];
+			rows.sort(function (a, b) {
+				var da = drawingDisciplineGroup(a).toLowerCase();
+				var db = drawingDisciplineGroup(b).toLowerCase();
+				if (da !== db) return da.localeCompare(db);
+				return String(a.sheet_number || "").localeCompare(String(b.sheet_number || ""), undefined, {
+					numeric: true,
+				});
+			});
+			ensureDrawingGroupToolbar(grid);
 			if (drawingsTabulator) {
 				drawingsTabulator.setData(rows);
 				return;
@@ -388,13 +467,26 @@
 			drawingsTabulator = new Tabulator(grid, {
 				data: rows,
 				layout: "fitColumns",
-				pagination: "local",
-				paginationSize: 25,
-				paginationSizeSelector: [10, 25, 50, 100],
+				pagination: false,
 				movableColumns: true,
 				placeholder: "No drawings for this project yet.",
 				columns: cols,
+				groupBy: drawingDisciplineGroup,
+				groupToggleElement: "header",
+				groupStartOpen: function (value) {
+					return !readDrawingGroupCollapsed(activeProjectId || "")[value];
+				},
+				groupHeader: function (value, count) {
+					return (
+						'<span class="usis-doc-group-label">' +
+						esc(value || "Unassigned") +
+						'</span> <span class="usis-doc-group-count">(' +
+						count +
+						")</span>"
+					);
+				},
 			});
+			bindDrawingGroupPersistence(drawingsTabulator);
 		}
 
 		function applyDrawingFilter() {

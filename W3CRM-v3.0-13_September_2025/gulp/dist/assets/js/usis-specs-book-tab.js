@@ -1,6 +1,7 @@
 /**
- * Procore-style specs book: division tree (CSI codes), PDF pane, link PDF URL per section.
- * Mount with USISSpecsBook.mount(containerElement, projectId).
+ * Specs book as a drawing-style table. Click a section to open a PDF viewer
+ * popup (zoom / pan / pages only — no takeoff tools).
+ * Mount with USISSpecsBook.mount(containerElement, projectId, options?).
  */
 (function (global) {
 	"use strict";
@@ -130,6 +131,16 @@
 		return b + (s.charAt(0) === "/" ? s : "/" + s);
 	}
 
+	function resolveAgainstDocumentBase(relPath) {
+		var rp = relPath == null ? "" : String(relPath).trim();
+		if (!rp) return rp;
+		try {
+			return new URL(rp, document.baseURI).href;
+		} catch (e) {
+			return rp;
+		}
+	}
+
 	function esc(s) {
 		if (s == null) return "";
 		var d = document.createElement("div");
@@ -137,58 +148,221 @@
 		return d.innerHTML;
 	}
 
-	function csiDivision(code) {
+	var CSI_DIVISION_NAMES = {
+		"00": "Procurement and Contracting Requirements",
+		"01": "General Requirements",
+		"02": "Existing Conditions",
+		"03": "Concrete",
+		"04": "Masonry",
+		"05": "Metals",
+		"06": "Wood, Plastics, and Composites",
+		"07": "Thermal and Moisture Protection",
+		"08": "Openings",
+		"09": "Finishes",
+		"10": "Specialties",
+		"11": "Equipment",
+		"12": "Furnishings",
+		"13": "Special Construction",
+		"14": "Conveying Equipment",
+		"15": "Reserved for Future Expansion",
+		"16": "Reserved for Future Expansion",
+		"17": "Reserved for Future Expansion",
+		"18": "Reserved for Future Expansion",
+		"19": "Reserved for Future Expansion",
+		"20": "Reserved for Future Expansion",
+		"21": "Fire Suppression",
+		"22": "Plumbing",
+		"23": "Heating, Ventilating, and Air Conditioning (HVAC)",
+		"24": "Reserved for Future Expansion",
+		"25": "Integrated Automation",
+		"26": "Electrical",
+		"27": "Communications",
+		"28": "Electronic Safety and Security",
+		"29": "Reserved for Future Expansion",
+		"30": "Reserved for Future Expansion",
+		"31": "Earthwork",
+		"32": "Exterior Improvements",
+		"33": "Utilities",
+		"34": "Transportation",
+		"35": "Waterway and Marine Construction",
+		"36": "Reserved for Future Expansion",
+		"37": "Reserved for Future Expansion",
+		"38": "Reserved for Future Expansion",
+		"39": "Reserved for Future Expansion",
+		"40": "Process Interconnections",
+		"41": "Material Processing and Handling Equipment",
+		"42": "Process Heating, Cooling, and Drying Equipment",
+		"43": "Process Gas and Liquid Handling, Purification and Storage Equipment",
+		"44": "Pollution and Waste Control Equipment",
+		"45": "Industry-Specific Manufacturing Equipment",
+		"46": "Water and Wastewater Equipment",
+		"47": "Reserved for Future Expansion",
+		"48": "Electrical Power Generation",
+		"49": "Reserved for Future Expansion",
+	};
+
+	function csiDivisionMeta(code) {
 		var c = String(code || "").trim();
-		if (!c) return "Other";
 		var m = c.match(/^(\d{2})/);
-		return m ? "Division " + m[1] : "Other";
+		if (!m) return { key: "other", num: "", name: "Other" };
+		return {
+			key: m[1],
+			num: m[1],
+			name: CSI_DIVISION_NAMES[m[1]] || "Division " + m[1],
+		};
 	}
 
-	function mount(container, projectId) {
+	function divisionBoxLabel(meta, count) {
+		var name = meta.name || "Other";
+		if (meta.num) return meta.num + " - " + name + " (" + count + ")";
+		return name + " (" + count + ")";
+	}
+
+	function sortDivisionKeys(keys) {
+		return keys.slice().sort(function (a, b) {
+			if (a === "other") return 1;
+			if (b === "other") return -1;
+			return String(a).localeCompare(String(b));
+		});
+	}
+
+	function decorateSection(row) {
+		var meta = csiDivisionMeta(row && row.code);
+		var pdf = row && row.pdf_url ? String(row.pdf_url).trim() : "";
+		return Object.assign({}, row, {
+			division_key: meta.key,
+			division_label: meta.num ? meta.num + " - " + meta.name : meta.name,
+			has_pdf: !!pdf,
+		});
+	}
+
+	function specDivisionGroup(data) {
+		return (data && data.division_label) || "Other";
+	}
+
+	function pdfDocumentOptions(pdfSrc) {
+		var opts = {
+			url: pdfSrc,
+			withCredentials: false,
+			disableRange: true,
+			disableStream: true,
+		};
+		try {
+			var pageOrigin = global.location.origin;
+			var docOrigin = new URL(pdfSrc, pageOrigin).origin;
+			var b = apiBase();
+			if (/\/api\/v1\/(spec-sections|documents|drawings)\//i.test(pdfSrc)) {
+				opts.withCredentials = true;
+			} else if (b) {
+				var apiOrigin = new URL(b, pageOrigin).origin;
+				if (docOrigin === apiOrigin || docOrigin === pageOrigin) opts.withCredentials = true;
+			} else if (docOrigin === pageOrigin) {
+				opts.withCredentials = true;
+			}
+		} catch (e) {
+			if (/\/api\/v1\//i.test(String(pdfSrc))) opts.withCredentials = true;
+		}
+		return opts;
+	}
+
+	function ensurePdfJs() {
+		return new Promise(function (resolve, reject) {
+			if (global.pdfjsLib) {
+				if (global.pdfjsLib.GlobalWorkerOptions) {
+					global.pdfjsLib.GlobalWorkerOptions.workerSrc = resolveAgainstDocumentBase(
+						"assets/vendor/pdfjs-3.11/pdf.worker.min.js"
+					);
+				}
+				resolve(global.pdfjsLib);
+				return;
+			}
+			var s = document.createElement("script");
+			s.src = resolveAgainstDocumentBase("assets/vendor/pdfjs-3.11/pdf.min.js");
+			s.onload = function () {
+				if (!global.pdfjsLib) {
+					reject(new Error("PDF.js failed to load."));
+					return;
+				}
+				if (global.pdfjsLib.GlobalWorkerOptions) {
+					global.pdfjsLib.GlobalWorkerOptions.workerSrc = resolveAgainstDocumentBase(
+						"assets/vendor/pdfjs-3.11/pdf.worker.min.js"
+					);
+				}
+				resolve(global.pdfjsLib);
+			};
+			s.onerror = function () {
+				reject(new Error("PDF.js failed to load from assets/vendor/pdfjs-3.11."));
+			};
+			document.head.appendChild(s);
+		});
+	}
+
+	function collapsedStoreKey(projectId) {
+		return "usis-specs-div-collapsed:" + String(projectId || "");
+	}
+
+	function readCollapsedMap(projectId) {
+		try {
+			var raw = sessionStorage.getItem(collapsedStoreKey(projectId));
+			return raw ? JSON.parse(raw) : {};
+		} catch (e) {
+			return {};
+		}
+	}
+
+	function writeCollapsedMap(projectId, map) {
+		try {
+			sessionStorage.setItem(collapsedStoreKey(projectId), JSON.stringify(map || {}));
+		} catch (e) {}
+	}
+
+	function viewerHref(projectId, specId) {
+		var parts = ["project_id=" + encodeURIComponent(projectId || "")];
+		if (specId) parts.push("spec_id=" + encodeURIComponent(specId));
+		return "construction/specs-viewer.html?" + parts.join("&");
+	}
+
+	function mount(container, projectId, options) {
 		if (!container || !projectId) return;
+		var opts = options || {};
 		var selectedId = null;
 		var sections = [];
+		var pendingAttachId = null;
+		var table = null;
+		var catalogItems = [];
+		var catalogTimer = null;
+		var autoSpecId = opts.specId || null;
+		if (!autoSpecId) {
+			try {
+				autoSpecId = new URLSearchParams(global.location.search).get("spec_id");
+			} catch (e) {
+				autoSpecId = null;
+			}
+		}
+
+		var overlayId = "usis-sv-overlay";
+		var oldOverlay = document.getElementById(overlayId);
+		if (oldOverlay && oldOverlay.parentNode) oldOverlay.parentNode.removeChild(oldOverlay);
 
 		container.innerHTML =
-			'<div class="usis-specs-book row g-0 border rounded overflow-hidden bg-white" style="min-height:420px;">' +
-			'<div class="col-12 col-md-4 col-lg-3 border-end bg-light d-flex flex-column" style="max-height:72vh;">' +
-			'<div class="p-2 border-bottom bg-white">' +
-			'<div class="d-flex flex-wrap gap-1 align-items-center mb-2">' +
+			'<div class="usis-specs-book">' +
+			'<div class="d-flex flex-wrap align-items-end gap-2 mb-2">' +
 			'<button type="button" class="btn btn-sm btn-primary usis-specs-add">Add from CSI catalog</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-primary usis-specs-import-book">Import spec book PDF</button>' +
 			'<input type="file" class="d-none usis-specs-book-file" accept="application/pdf,.pdf">' +
-			"</div>" +
-			'<label class="form-label small text-muted mb-1">Find on this project</label>' +
-			'<input type="search" class="form-control form-control-sm usis-specs-q" placeholder="CSI code or title…" autocomplete="off">' +
-			'<div class="usis-specs-book-msg small mt-1 d-none"></div>' +
-			"</div>" +
-			'<div class="usis-specs-tree flex-grow-1 overflow-auto small p-2"></div>' +
-			"</div>" +
-			'<div class="col-12 col-md-8 col-lg-9 d-flex flex-column" style="max-height:72vh;">' +
-			'<div class="p-2 border-bottom d-flex flex-wrap gap-2 align-items-center justify-content-between">' +
-			'<div class="usis-specs-head text-muted small">Select a section on the left.</div>' +
-			'<div class="d-flex flex-wrap gap-1">' +
-			'<button type="button" class="btn btn-sm btn-outline-danger usis-specs-delete" disabled title="Select a section first">Delete section</button>' +
-			'<a class="btn btn-sm btn-outline-secondary usis-specs-openfull d-none" target="_blank" rel="noopener">Open PDF in new tab</a>' +
-			"</div>" +
-			"</div>" +
-			'<div class="usis-specs-pdf flex-grow-1 bg-secondary bg-opacity-10 position-relative">' +
-			'<div class="usis-specs-empty p-4 text-muted">No section selected.</div>' +
-			'<iframe class="usis-specs-iframe w-100 h-100 border-0 d-none" title="Specification PDF"></iframe>' +
-			"</div>" +
-			'<div class="p-2 border-top bg-white usis-specs-linkpanel d-none">' +
-			'<label class="form-label small mb-0">PDF for this section (optional)</label>' +
-			'<div class="input-group input-group-sm">' +
-			'<input type="url" class="form-control usis-specs-pdfurl" placeholder="https://… or /api/v1/…">' +
-			'<button type="button" class="btn btn-primary usis-specs-saveurl">Save URL</button>' +
-			"</div>" +
-			'<div class="d-flex flex-wrap gap-2 align-items-center mt-2">' +
 			'<input type="file" class="d-none usis-specs-file" accept="application/pdf,.pdf">' +
-			'<button type="button" class="btn btn-sm btn-outline-secondary usis-specs-import">Attach PDF to this section</button>' +
+			'<div class="flex-grow-1" style="min-width:12rem;max-width:22rem;">' +
+			'<label class="form-label small text-muted mb-0">Search</label>' +
+			'<input type="search" class="form-control form-control-sm usis-specs-q" placeholder="CSI code or title…" autocomplete="off">' +
 			"</div>" +
-			'<div class="usis-specs-link-err text-danger small mt-1 d-none"></div>' +
 			"</div>" +
+			'<div class="usis-draw-group-toolbar d-flex flex-wrap align-items-center gap-2 mb-2">' +
+			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-expand-all">Expand all</button>' +
+			'<span class="text-muted">·</span>' +
+			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-collapse-all">Collapse all</button>' +
+			'<div class="usis-specs-book-msg small ms-2 d-none"></div>' +
 			"</div>" +
+			'<div class="usis-specs-grid border rounded overflow-hidden bg-white" style="min-height:22rem;"></div>' +
 			"</div>" +
 			'<div class="usis-specs-modal d-none" style="position:fixed;inset:0;z-index:1080;background:rgba(15,23,42,.45);">' +
 			'<div class="bg-white rounded shadow-lg m-3 mx-auto p-3" style="max-width:720px;max-height:calc(100vh - 2rem);display:flex;flex-direction:column;">' +
@@ -212,22 +386,57 @@
 			'<div class="usis-specs-cat-err text-danger small mt-2 d-none"></div>' +
 			"</div></div>";
 
-		var treeEl = container.querySelector(".usis-specs-tree");
+		var overlay = document.createElement("div");
+		overlay.id = overlayId;
+		overlay.className = "usis-sv-overlay d-none";
+		overlay.setAttribute("role", "dialog");
+		overlay.setAttribute("aria-modal", "true");
+		overlay.setAttribute("aria-label", "Specification viewer");
+		overlay.innerHTML =
+			'<header class="usis-sv-top">' +
+			'<div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2">' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-close">Close</button>' +
+			'<div class="usis-sv-title fw-semibold small text-truncate" style="min-width:8rem;max-width:36rem;">Specification</div>' +
+			'<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1 usis-sv-err" role="alert"></div>' +
+			'<div class="alert alert-light border py-1 px-2 mb-0 small d-none usis-sv-loading" role="status">Loading PDF…</div>' +
+			"</div>" +
+			'<div class="usis-sv-toolbar px-2 pb-2">' +
+			'<div class="d-flex flex-wrap align-items-center gap-2">' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-zoom-out" title="Zoom out">−</button>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-zoom-in" title="Zoom in">+</button>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-fit-width">Width</button>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-fit-page">Fit</button>' +
+			'<span class="small text-muted usis-sv-zoom-label">100%</span>' +
+			'<span class="border-start ps-2 ms-1 d-flex align-items-center gap-1">' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-prev">Page −</button>' +
+			'<span class="small text-muted usis-sv-page-label">1 / 1</span>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-next">Page +</button>' +
+			"</span>" +
+			'<a class="btn btn-outline-secondary btn-sm usis-sv-openfull d-none" target="_blank" rel="noopener">Open PDF</a>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-attach">Attach PDF</button>' +
+			'<button type="button" class="btn btn-outline-danger btn-sm usis-sv-delete">Delete section</button>' +
+			"</div>" +
+			'<div class="input-group input-group-sm mt-2" style="max-width:36rem;">' +
+			'<input type="url" class="form-control usis-sv-pdfurl" placeholder="https://… or /api/v1/…">' +
+			'<button type="button" class="btn btn-primary usis-sv-saveurl">Save URL</button>' +
+			"</div>" +
+			"</div>" +
+			"</header>" +
+			'<div class="usis-sv-canvas-wrap">' +
+			'<div class="usis-sv-empty text-muted">No PDF attached to this section.</div>' +
+			'<canvas class="usis-sv-canvas" width="0" height="0"></canvas>' +
+			"</div>" +
+			'<p class="small text-muted mb-0 px-2 py-1 bg-body border-top usis-sv-hint">' +
+			"<kbd>Wheel</kbd> zoom · drag to pan · <kbd>Esc</kbd> close" +
+			"</p>";
+		document.body.appendChild(overlay);
+
+		var gridEl = container.querySelector(".usis-specs-grid");
 		var qEl = container.querySelector(".usis-specs-q");
-		var headEl = container.querySelector(".usis-specs-head");
-		var openFull = container.querySelector(".usis-specs-openfull");
-		var deleteBtn = container.querySelector(".usis-specs-delete");
-		var emptyEl = container.querySelector(".usis-specs-empty");
-		var iframe = container.querySelector(".usis-specs-iframe");
-		var linkPanel = container.querySelector(".usis-specs-linkpanel");
-		var urlInput = container.querySelector(".usis-specs-pdfurl");
-		var saveBtn = container.querySelector(".usis-specs-saveurl");
-		var importBtn = container.querySelector(".usis-specs-import");
-		var fileInput = container.querySelector(".usis-specs-file");
-		var linkErr = container.querySelector(".usis-specs-link-err");
 		var addBtn = container.querySelector(".usis-specs-add");
 		var importBookBtn = container.querySelector(".usis-specs-import-book");
 		var bookFileInput = container.querySelector(".usis-specs-book-file");
+		var fileInput = container.querySelector(".usis-specs-file");
 		var bookMsg = container.querySelector(".usis-specs-book-msg");
 		var modalEl = container.querySelector(".usis-specs-modal");
 		var catList = container.querySelector(".usis-specs-cat-list");
@@ -236,235 +445,48 @@
 		var catErr = container.querySelector(".usis-specs-cat-err");
 		var customCode = container.querySelector(".usis-specs-custom-code");
 		var customTitle = container.querySelector(".usis-specs-custom-title");
-		var catalogItems = [];
-		var catalogTimer = null;
+		var expandAllBtn = container.querySelector(".usis-specs-expand-all");
+		var collapseAllBtn = container.querySelector(".usis-specs-collapse-all");
 
-		function showPdf(url) {
-			var full = resolveUrl(url);
-			if (!full) {
-				emptyEl.classList.remove("d-none");
-				iframe.classList.add("d-none");
-				iframe.removeAttribute("src");
-				openFull.classList.add("d-none");
-				return;
-			}
-			emptyEl.classList.add("d-none");
-			iframe.classList.remove("d-none");
-			iframe.setAttribute("src", full);
-			openFull.href = full;
-			openFull.classList.remove("d-none");
-		}
+		var closeBtn = overlay.querySelector(".usis-sv-close");
+		var titleEl = overlay.querySelector(".usis-sv-title");
+		var errEl = overlay.querySelector(".usis-sv-err");
+		var loadingEl = overlay.querySelector(".usis-sv-loading");
+		var canvas = overlay.querySelector(".usis-sv-canvas");
+		var canvasWrap = overlay.querySelector(".usis-sv-canvas-wrap");
+		var emptyEl = overlay.querySelector(".usis-sv-empty");
+		var openFull = overlay.querySelector(".usis-sv-openfull");
+		var attachBtn = overlay.querySelector(".usis-sv-attach");
+		var deleteBtn = overlay.querySelector(".usis-sv-delete");
+		var urlInput = overlay.querySelector(".usis-sv-pdfurl");
+		var saveBtn = overlay.querySelector(".usis-sv-saveurl");
+		var zoomInBtn = overlay.querySelector(".usis-sv-zoom-in");
+		var zoomOutBtn = overlay.querySelector(".usis-sv-zoom-out");
+		var fitWidthBtn = overlay.querySelector(".usis-sv-fit-width");
+		var fitPageBtn = overlay.querySelector(".usis-sv-fit-page");
+		var zoomLabel = overlay.querySelector(".usis-sv-zoom-label");
+		var pagePrevBtn = overlay.querySelector(".usis-sv-page-prev");
+		var pageNextBtn = overlay.querySelector(".usis-sv-page-next");
+		var pageLabel = overlay.querySelector(".usis-sv-page-label");
 
-		function selectSection(row) {
-			selectedId = row.id;
-			headEl.innerHTML =
-				"<strong>" +
-				esc(row.code) +
-				"</strong> · " +
-				esc(row.title) +
-				(row.is_active === false ? ' <span class="badge bg-warning text-dark">Inactive</span>' : "");
-			urlInput.value = row.pdf_url || "";
-			linkPanel.classList.remove("d-none");
-			if (deleteBtn) {
-				deleteBtn.disabled = false;
-				deleteBtn.removeAttribute("title");
-			}
-			linkErr.classList.add("d-none");
-			linkErr.textContent = "";
-			showPdf(row.pdf_url || "");
-			Array.prototype.forEach.call(treeEl.querySelectorAll(".list-group-item"), function (n) {
-				n.classList.toggle("active", n.getAttribute("data-id") === String(row.id));
-			});
-		}
-
-		function renderTree(items, q) {
-			sections = items || [];
-			var qq = (q || "").trim().toLowerCase();
-			var filtered = sections.filter(function (r) {
-				if (!qq) return true;
-				var blob = (r.code || "") + " " + (r.title || "");
-				return blob.toLowerCase().indexOf(qq) !== -1;
-			});
-			var byDiv = {};
-			filtered.forEach(function (r) {
-				var d = csiDivision(r.code);
-				if (!byDiv[d]) byDiv[d] = [];
-				byDiv[d].push(r);
-			});
-			var divKeys = Object.keys(byDiv).sort();
-			var html = "";
-			divKeys.forEach(function (dk) {
-				html += '<div class="fw-semibold text-uppercase text-muted mt-2 mb-1 px-1" style="font-size:0.7rem;">' + esc(dk) + "</div>";
-				html += '<div class="list-group list-group-flush">';
-				byDiv[dk]
-					.sort(function (a, b) {
-						return String(a.code).localeCompare(String(b.code));
-					})
-					.forEach(function (r) {
-						html +=
-							'<button type="button" class="list-group-item list-group-item-action py-2 px-2 border-0 rounded mb-1' +
-							(String(r.id) === String(selectedId) ? " active" : "") +
-							'" data-id="' +
-							esc(String(r.id)) +
-							'">' +
-							'<span class="fw-medium">' +
-							esc(r.code) +
-							"</span>" +
-							'<div class="text-muted text-truncate" style="max-width:100%;">' +
-							esc(r.title) +
-							"</div>" +
-							"</button>";
-					});
-				html += "</div>";
-			});
-			if (!html) {
-				html =
-					'<p class="text-muted px-2 py-3 mb-0">' +
-					(sections.length
-						? "No sections match your search."
-						: "No CSI sections on this project yet. Add them from the CSI catalog, or import a spec-book PDF.") +
-					"</p>";
-			}
-			treeEl.innerHTML = html;
-			Array.prototype.forEach.call(treeEl.querySelectorAll("button[data-id]"), function (btn) {
-				btn.addEventListener("click", function () {
-					var id = btn.getAttribute("data-id");
-					var row = sections.find(function (x) {
-						return String(x.id) === id;
-					});
-					if (row) selectSection(row);
-				});
-			});
-		}
-
-		function load() {
-			var base = apiBase();
-			fetch(base + "/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/spec_sections", {
-				credentials: "include",
-				headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
-			})
-				.then(function (res) {
-					if (!res.ok) return res.text().then(function (t) {
-						throw new Error(res.status + " " + (t || res.statusText));
-					});
-					return res.json();
-				})
-				.then(function (data) {
-					renderTree(data.items || [], qEl ? qEl.value : "");
-				})
-				.catch(function (e) {
-					treeEl.innerHTML =
-						'<p class="text-danger small px-2">' + esc(e.message || String(e)) + "</p>";
-				});
-		}
-
-		if (qEl) {
-			qEl.addEventListener("input", function () {
-				renderTree(sections, qEl.value);
-			});
-		}
-
-		if (saveBtn && urlInput) {
-			saveBtn.addEventListener("click", function () {
-				if (!selectedId) return;
-				linkErr.classList.add("d-none");
-				var body = { pdf_url: urlInput.value.trim() || null };
-				var base = apiBase();
-				fetch(
-					base +
-						"/api/v1/projects/" +
-						encodeURIComponent(projectId) +
-						"/rfi-lookups/spec_sections/" +
-						encodeURIComponent(selectedId),
-					{
-						method: "PATCH",
-						credentials: "include",
-						headers: jsonFetchHeaders(),
-						body: JSON.stringify(body),
-					}
-				)
-					.then(function (res) {
-						if (!res.ok) return res.text().then(function (t) {
-							throw new Error(res.status + " " + (t || res.statusText));
-						});
-						return res.json();
-					})
-					.then(function (data) {
-						var it = data.item;
-						if (it) {
-							var idx = sections.findIndex(function (x) {
-								return String(x.id) === String(it.id);
-							});
-							if (idx >= 0) sections[idx] = it;
-							selectSection(it);
-						}
-					})
-					.catch(function (e) {
-						linkErr.textContent = e.message || String(e);
-						linkErr.classList.remove("d-none");
-					});
-			});
-		}
-
-		if (importBtn && fileInput) {
-			importBtn.addEventListener("click", function () {
-				if (!selectedId) return;
-				fileInput.click();
-			});
-			fileInput.addEventListener("change", function () {
-				if (!selectedId) return;
-				var f = fileInput.files && fileInput.files[0];
-				fileInput.value = "";
-				if (!f) return;
-				linkErr.classList.add("d-none");
-				var base = apiBase();
-				var fd = new FormData();
-				fd.append("file", f, f.name || "spec.pdf");
-				fetch(
-					base +
-						"/api/v1/projects/" +
-						encodeURIComponent(projectId) +
-						"/rfi-lookups/spec_sections/" +
-						encodeURIComponent(selectedId) +
-						"/file",
-					{
-						method: "POST",
-						credentials: "include",
-						headers: Object.assign({}, actorHeaders()),
-						body: fd,
-					}
-				)
-					.then(function (res) {
-						if (!res.ok) return res.text().then(function (t) {
-							throw new Error(res.status + " " + (t || res.statusText));
-						});
-						return res.json();
-					})
-					.then(function (data) {
-						var it = data.item;
-						if (it) {
-							var idx = sections.findIndex(function (x) {
-								return String(x.id) === String(it.id);
-							});
-							if (idx >= 0) sections[idx] = it;
-							selectSection(it);
-						}
-					})
-					.catch(function (e) {
-						linkErr.textContent = e.message || String(e);
-						linkErr.classList.remove("d-none");
-					});
-			});
-		}
+		var pdfDoc = null;
+		var pageNum = 1;
+		var pageRendering = false;
+		var pagePending = null;
+		var scale = 1.25;
+		var MIN_SCALE = 0.1;
+		var MAX_SCALE = 10;
+		var ZOOM_STEP = 1.25;
+		var panState = null;
 
 		function setBookMsg(text, isError) {
 			if (!bookMsg) return;
 			if (!text) {
-				bookMsg.className = "usis-specs-book-msg small mt-1 d-none";
+				bookMsg.className = "usis-specs-book-msg small ms-2 d-none";
 				bookMsg.textContent = "";
 				return;
 			}
-			bookMsg.className = "usis-specs-book-msg small mt-1 " + (isError ? "text-danger" : "text-success");
+			bookMsg.className = "usis-specs-book-msg small ms-2 " + (isError ? "text-danger" : "text-success");
 			bookMsg.textContent = text;
 		}
 
@@ -477,6 +499,384 @@
 			}
 			catErr.textContent = text;
 			catErr.classList.remove("d-none");
+		}
+
+		function showViewerErr(msg) {
+			if (!errEl) return;
+			if (!msg) {
+				errEl.classList.add("d-none");
+				errEl.textContent = "";
+				return;
+			}
+			errEl.textContent = msg;
+			errEl.classList.remove("d-none");
+		}
+
+		function setViewerLoading(on) {
+			if (loadingEl) loadingEl.classList.toggle("d-none", !on);
+		}
+
+		function updateZoomLabel() {
+			if (zoomLabel) zoomLabel.textContent = Math.round(scale * 100) + "%";
+		}
+
+		function updatePageLabel() {
+			var total = pdfDoc && pdfDoc.numPages ? pdfDoc.numPages : 1;
+			if (pageLabel) pageLabel.textContent = pageNum + " / " + total;
+		}
+
+		function clampScale(n) {
+			if (n < MIN_SCALE) return MIN_SCALE;
+			if (n > MAX_SCALE) return MAX_SCALE;
+			return n;
+		}
+
+		function queueRenderPage() {
+			if (pageRendering) pagePending = pageNum;
+			else renderPage(pageNum);
+		}
+
+		function renderPage(num) {
+			if (!canvas || !pdfDoc) return;
+			pageRendering = true;
+			var ctx = canvas.getContext("2d");
+			pdfDoc
+				.getPage(num)
+				.then(function (page) {
+					var viewport = page.getViewport({ scale: scale });
+					canvas.height = viewport.height;
+					canvas.width = viewport.width;
+					return page.render({ canvasContext: ctx, viewport: viewport }).promise;
+				})
+				.then(function () {
+					pageRendering = false;
+					if (pagePending !== null) {
+						var pending = pagePending;
+						pagePending = null;
+						renderPage(pending);
+					}
+					updatePageLabel();
+				})
+				.catch(function (e) {
+					pageRendering = false;
+					showViewerErr(e && e.message ? e.message : String(e));
+				});
+		}
+
+		function fitToViewport(mode) {
+			if (!pdfDoc || !canvasWrap) return;
+			pdfDoc.getPage(pageNum).then(function (page) {
+				var vp = page.getViewport({ scale: 1 });
+				var pad = 24;
+				var availW = Math.max(32, canvasWrap.clientWidth - pad);
+				var availH = Math.max(32, canvasWrap.clientHeight - pad);
+				scale = clampScale(mode === "page" ? Math.min(availW / vp.width, availH / vp.height) : availW / vp.width);
+				updateZoomLabel();
+				queueRenderPage();
+			});
+		}
+
+		function clearPdf() {
+			pdfDoc = null;
+			pageNum = 1;
+			if (canvas) {
+				canvas.width = 0;
+				canvas.height = 0;
+			}
+			if (emptyEl) emptyEl.classList.remove("d-none");
+			if (openFull) {
+				openFull.classList.add("d-none");
+				openFull.removeAttribute("href");
+			}
+			updatePageLabel();
+		}
+
+		function loadPdf(url) {
+			var full = resolveUrl(url);
+			if (!full) {
+				clearPdf();
+				setViewerLoading(false);
+				showViewerErr("");
+				return;
+			}
+			if (emptyEl) emptyEl.classList.add("d-none");
+			if (openFull) {
+				openFull.href = full;
+				openFull.classList.remove("d-none");
+			}
+			setViewerLoading(true);
+			showViewerErr("");
+			ensurePdfJs()
+				.then(function (lib) {
+					return lib.getDocument(pdfDocumentOptions(full)).promise;
+				})
+				.then(function (doc) {
+					pdfDoc = doc;
+					pageNum = 1;
+					setViewerLoading(false);
+					fitToViewport("width");
+					updatePageLabel();
+					updateZoomLabel();
+				})
+				.catch(function (e) {
+					setViewerLoading(false);
+					clearPdf();
+					showViewerErr(e && e.message ? e.message : String(e));
+				});
+		}
+
+		function findSection(id) {
+			return sections.find(function (x) {
+				return String(x.id) === String(id);
+			});
+		}
+
+		function upsertSection(item) {
+			if (!item || !item.id) return;
+			var next = decorateSection(item);
+			var idx = sections.findIndex(function (x) {
+				return String(x.id) === String(item.id);
+			});
+			if (idx >= 0) sections[idx] = next;
+			else sections.push(next);
+			refreshTable();
+			return next;
+		}
+
+		function applySectionToViewer(row) {
+			if (!row) return;
+			selectedId = row.id;
+			if (titleEl) {
+				titleEl.textContent = (row.code || "") + (row.title ? " — " + row.title : "");
+			}
+			if (urlInput) urlInput.value = row.pdf_url || "";
+			loadPdf(row.pdf_url || "");
+		}
+
+		function openViewer(row) {
+			if (!row) return;
+			overlay.classList.remove("d-none");
+			document.body.classList.add("usis-sv-open");
+			applySectionToViewer(row);
+		}
+
+		function closeViewer() {
+			overlay.classList.add("d-none");
+			document.body.classList.remove("usis-sv-open");
+			clearPdf();
+			showViewerErr("");
+		}
+
+		function specNameLinkFormatter(field) {
+			return function (cell) {
+				var data = cell.getRow().getData();
+				var text = data[field];
+				if (text == null || String(text).trim() === "") text = "—";
+				else text = String(text);
+				var a = document.createElement("a");
+				a.href = viewerHref(projectId, data.id);
+				a.className = "usis-drawing-name-link usis-spec-name-link";
+				a.textContent = text;
+				a.addEventListener("click", function (ev) {
+					if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button) return;
+					ev.preventDefault();
+					openViewer(data);
+				});
+				return a;
+			};
+		}
+
+		function filteredRows() {
+			var qq = qEl && qEl.value ? qEl.value.trim().toLowerCase() : "";
+			return sections.filter(function (r) {
+				if (!qq) return true;
+				var blob = (r.code || "") + " " + (r.title || "") + " " + (r.division_label || "");
+				return blob.toLowerCase().indexOf(qq) !== -1;
+			});
+		}
+
+		function setGroupsOpen(open) {
+			if (!table || typeof table.getGroups !== "function") return;
+			var map = {};
+			table.getGroups().forEach(function (g) {
+				if (open) g.show();
+				else {
+					g.hide();
+					map[g.getKey()] = 1;
+				}
+			});
+			writeCollapsedMap(projectId, open ? {} : map);
+		}
+
+		function bindGroupPersistence() {
+			if (!table || table._usisGroupBound) return;
+			table._usisGroupBound = true;
+			table.on("groupVisibilityChanged", function (group, visible) {
+				var map = readCollapsedMap(projectId);
+				var key = group.getKey();
+				if (visible) delete map[key];
+				else map[key] = 1;
+				writeCollapsedMap(projectId, map);
+			});
+		}
+
+		function refreshTable() {
+			var rows = filteredRows().slice().sort(function (a, b) {
+				var da = String(a.division_key || "");
+				var db = String(b.division_key || "");
+				if (da === "other") return 1;
+				if (db === "other") return -1;
+				if (da !== db) return da.localeCompare(db);
+				return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true });
+			});
+			if (typeof Tabulator === "undefined") {
+				if (gridEl) {
+					gridEl.innerHTML =
+						'<div class="alert alert-warning mb-0">Spec grid requires Tabulator (CDN). Check your network or CSP.</div>';
+				}
+				return;
+			}
+			if (table) {
+				table.setData(rows);
+				return;
+			}
+			table = new Tabulator(gridEl, {
+				data: rows,
+				layout: "fitColumns",
+				pagination: false,
+				movableColumns: true,
+				placeholder: "No CSI sections on this project yet. Add them from the CSI catalog, or import a spec-book PDF.",
+				columns: [
+					{
+						title: "CSI code",
+						field: "code",
+						headerFilter: "input",
+						minWidth: 110,
+						widthGrow: 1,
+						formatter: specNameLinkFormatter("code"),
+					},
+					{
+						title: "Title",
+						field: "title",
+						headerFilter: "input",
+						minWidth: 180,
+						widthGrow: 3,
+						formatter: specNameLinkFormatter("title"),
+					},
+					{ title: "Division", field: "division_label", visible: false },
+					{
+						title: "PDF",
+						field: "has_pdf",
+						hozAlign: "center",
+						width: 80,
+						formatter: function (cell) {
+							return cell.getValue() ? "Yes" : "—";
+						},
+					},
+					{
+						title: "",
+						hozAlign: "right",
+						headerSort: false,
+						width: 220,
+						formatter: function (cell) {
+							var wrap = document.createElement("div");
+							wrap.className = "d-flex gap-1 flex-wrap justify-content-end";
+							var data = cell.getRow().getData();
+							var view = document.createElement("button");
+							view.type = "button";
+							view.className = "btn btn-primary btn-sm py-0";
+							view.textContent = "View";
+							view.addEventListener("click", function () {
+								openViewer(data);
+							});
+							wrap.appendChild(view);
+							if (data.pdf_url) {
+								var p = document.createElement("a");
+								p.href = resolveUrl(data.pdf_url);
+								p.target = "_blank";
+								p.rel = "noopener noreferrer";
+								p.className = "btn btn-outline-secondary btn-sm py-0";
+								p.textContent = "PDF";
+								wrap.appendChild(p);
+							} else {
+								var att = document.createElement("button");
+								att.type = "button";
+								att.className = "btn btn-outline-secondary btn-sm py-0";
+								att.textContent = "Attach";
+								att.addEventListener("click", function () {
+									pendingAttachId = data.id;
+									if (fileInput) fileInput.click();
+								});
+								wrap.appendChild(att);
+							}
+							var del = document.createElement("button");
+							del.type = "button";
+							del.className = "btn btn-outline-danger btn-sm py-0";
+							del.textContent = "Delete";
+							del.addEventListener("click", function () {
+								deleteSection(data);
+							});
+							wrap.appendChild(del);
+							return wrap;
+						},
+					},
+				],
+				groupBy: specDivisionGroup,
+				groupToggleElement: "header",
+				groupStartOpen: function (value) {
+					return !readCollapsedMap(projectId)[value];
+				},
+				groupHeader: function (value, count) {
+					return (
+						'<span class="usis-doc-group-label">' +
+						esc(value || "Other") +
+						'</span> <span class="usis-doc-group-count">(' +
+						count +
+						")</span>"
+					);
+				},
+			});
+			bindGroupPersistence();
+		}
+
+		function load() {
+			var base = apiBase();
+			fetch(base + "/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/spec_sections", {
+				credentials: "include",
+				headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+			})
+				.then(function (res) {
+					if (!res.ok) {
+						return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+					}
+					return res.json();
+				})
+				.then(function (data) {
+					sections = (data.items || []).map(decorateSection);
+					refreshTable();
+					if (autoSpecId) {
+						var row = findSection(autoSpecId);
+						autoSpecId = null;
+						if (row) openViewer(row);
+					} else if (selectedId && !overlay.classList.contains("d-none")) {
+						var cur = findSection(selectedId);
+						if (cur) applySectionToViewer(cur);
+					}
+				})
+				.catch(function (e) {
+					if (gridEl) {
+						gridEl.innerHTML = '<p class="text-danger small px-3 py-3 mb-0">' + esc(e.message || String(e)) + "</p>";
+					}
+				});
+		}
+
+		function applyGroupCollapsed(box, collapsed) {
+			if (!box) return;
+			box.classList.toggle("is-collapsed", !!collapsed);
+			var btn = box.querySelector(".usis-doc-group-toggle");
+			if (btn) btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
 		}
 
 		function renderCatalog(items, total) {
@@ -494,41 +894,55 @@
 			}
 			var groups = {};
 			catalogItems.forEach(function (item) {
-				var key = item.division || "??";
+				var key = item.division || "other";
 				if (!groups[key]) groups[key] = { name: item.division_name || "", items: [] };
 				groups[key].items.push(item);
 			});
+			var searching = !!(catQ && catQ.value && catQ.value.trim());
 			var html = "";
-			Object.keys(groups)
-				.sort()
-				.forEach(function (div) {
-					var g = groups[div];
+			sortDivisionKeys(Object.keys(groups)).forEach(function (div) {
+				var g = groups[div];
+				var meta = { key: div, num: div === "other" ? "" : div, name: g.name || "Other" };
+				var collapsed = searching ? false : true;
+				html +=
+					'<div class="usis-doc-group' +
+					(collapsed ? " is-collapsed" : "") +
+					'" data-div="' +
+					esc(div) +
+					'">' +
+					'<button type="button" class="usis-doc-group-toggle" aria-expanded="' +
+					(collapsed ? "false" : "true") +
+					'">' +
+					'<span class="usis-doc-group-chevron" aria-hidden="true"></span>' +
+					'<span class="usis-doc-group-label">' +
+					esc(divisionBoxLabel(meta, g.items.length)) +
+					"</span>" +
+					"</button>" +
+					'<div class="usis-doc-group-body"><div class="list-group list-group-flush">';
+				g.items.forEach(function (item) {
 					html +=
-						'<div class="px-2 py-1 bg-light border-bottom fw-semibold sticky-top">Division ' +
-						esc(div) +
+						'<label class="list-group-item list-group-item-action py-2 px-2 d-flex gap-2 align-items-start rounded-0">' +
+						'<input type="checkbox" class="form-check-input mt-1 usis-specs-cat-check" value="' +
+						esc(item.code) +
+						'" data-title="' +
+						esc(item.title) +
+						'">' +
+						'<div class="fw-medium">' +
+						esc(item.code) +
 						" · " +
-						esc(g.name) +
-						" (" +
-						g.items.length +
-						")</div>";
-					html += '<div class="list-group list-group-flush">';
-					g.items.forEach(function (item) {
-						html +=
-							'<label class="list-group-item list-group-item-action py-2 px-2 d-flex gap-2 align-items-start">' +
-							'<input type="checkbox" class="form-check-input mt-1 usis-specs-cat-check" value="' +
-							esc(item.code) +
-							'" data-title="' +
-							esc(item.title) +
-							'">' +
-							'<div class="fw-medium">' +
-							esc(item.code) +
-							" · " +
-							esc(item.title) +
-							"</div></label>";
-					});
-					html += "</div>";
+						esc(item.title) +
+						"</div></label>";
 				});
+				html += "</div></div></div>";
+			});
 			catList.innerHTML = html;
+			Array.prototype.forEach.call(catList.querySelectorAll(".usis-doc-group-toggle"), function (btn) {
+				btn.addEventListener("click", function () {
+					var box = btn.closest(".usis-doc-group");
+					if (!box) return;
+					applyGroupCollapsed(box, !box.classList.contains("is-collapsed"));
+				});
+			});
 		}
 
 		function loadCatalog(q) {
@@ -542,17 +956,18 @@
 				headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
 			})
 				.then(function (res) {
-					if (!res.ok) return res.text().then(function (t) {
-						throw new Error(res.status + " " + (t || res.statusText));
-					});
+					if (!res.ok) {
+						return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+					}
 					return res.json();
 				})
 				.then(function (data) {
 					renderCatalog(data.items || [], data.total);
 				})
 				.catch(function (e) {
-					catList.innerHTML =
-						'<p class="text-danger small px-2">' + esc(e.message || String(e)) + "</p>";
+					catList.innerHTML = '<p class="text-danger small px-2">' + esc(e.message || String(e)) + "</p>";
 				});
 		}
 
@@ -595,16 +1010,18 @@
 				body: JSON.stringify({ items: items }),
 			})
 				.then(function (res) {
-					if (!res.ok) return res.text().then(function (t) {
-						throw new Error(res.status + " " + (t || res.statusText));
-					});
+					if (!res.ok) {
+						return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+					}
 					return res.json();
 				})
 				.then(function (data) {
 					closeModal();
 					load();
 					var created = data.items || [];
-					if (created.length) selectSection(created[0]);
+					if (created.length) openViewer(decorateSection(created[0]));
 					setBookMsg(
 						created.length
 							? "Added " + created.length + " CSI section" + (created.length === 1 ? "" : "s") + "."
@@ -616,6 +1033,139 @@
 				});
 		}
 
+		function savePdfUrl() {
+			if (!selectedId) return;
+			var body = { pdf_url: urlInput && urlInput.value.trim() ? urlInput.value.trim() : null };
+			var base = apiBase();
+			fetch(
+				base +
+					"/api/v1/projects/" +
+					encodeURIComponent(projectId) +
+					"/rfi-lookups/spec_sections/" +
+					encodeURIComponent(selectedId),
+				{
+					method: "PATCH",
+					credentials: "include",
+					headers: jsonFetchHeaders(),
+					body: JSON.stringify(body),
+				}
+			)
+				.then(function (res) {
+					if (!res.ok) {
+						return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+					}
+					return res.json();
+				})
+				.then(function (data) {
+					var it = upsertSection(data.item);
+					if (it) applySectionToViewer(it);
+				})
+				.catch(function (e) {
+					showViewerErr(e.message || String(e));
+				});
+		}
+
+		function attachPdfTo(sectionId, file) {
+			if (!sectionId || !file) return;
+			var base = apiBase();
+			var fd = new FormData();
+			fd.append("file", file, file.name || "spec.pdf");
+			setViewerLoading(true);
+			showViewerErr("");
+			fetch(
+				base +
+					"/api/v1/projects/" +
+					encodeURIComponent(projectId) +
+					"/rfi-lookups/spec_sections/" +
+					encodeURIComponent(sectionId) +
+					"/file",
+				{
+					method: "POST",
+					credentials: "include",
+					headers: Object.assign({}, actorHeaders()),
+					body: fd,
+				}
+			)
+				.then(function (res) {
+					if (!res.ok) {
+						return res.text().then(function (t) {
+							throw new Error(res.status + " " + (t || res.statusText));
+						});
+					}
+					return res.json();
+				})
+				.then(function (data) {
+					var it = upsertSection(data.item);
+					if (it) {
+						if (overlay.classList.contains("d-none")) openViewer(it);
+						else applySectionToViewer(it);
+					}
+					setBookMsg("PDF attached.");
+				})
+				.catch(function (e) {
+					setViewerLoading(false);
+					showViewerErr(e.message || String(e));
+					setBookMsg(e.message || String(e), true);
+				});
+		}
+
+		function deleteSection(row) {
+			if (!row || !row.id) return;
+			var label = (row.code || "") + " " + (row.title || "this section");
+			if (!window.confirm("Delete " + label.trim() + " from this project?")) return;
+			var base = apiBase();
+			fetch(
+				base +
+					"/api/v1/projects/" +
+					encodeURIComponent(projectId) +
+					"/rfi-lookups/spec_sections/" +
+					encodeURIComponent(row.id),
+				{
+					method: "DELETE",
+					credentials: "include",
+					headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+				}
+			)
+				.then(function (res) {
+					if (!res.ok) {
+						return res.text().then(function (t) {
+							throw new Error(apiErrorText(res, t));
+						});
+					}
+					return res.json();
+				})
+				.then(function () {
+					if (String(selectedId) === String(row.id)) {
+						selectedId = null;
+						closeViewer();
+					}
+					setBookMsg("Section deleted.");
+					load();
+				})
+				.catch(function (e) {
+					var msg = e.message || String(e);
+					showViewerErr(msg);
+					setBookMsg(msg, true);
+				});
+		}
+
+		if (qEl) {
+			qEl.addEventListener("input", function () {
+				refreshTable();
+			});
+		}
+		if (expandAllBtn) {
+			expandAllBtn.addEventListener("click", function () {
+				setGroupsOpen(true);
+			});
+		}
+		if (collapseAllBtn) {
+			collapseAllBtn.addEventListener("click", function () {
+				setGroupsOpen(false);
+			});
+		}
 		if (addBtn) addBtn.addEventListener("click", openModal);
 		Array.prototype.forEach.call(container.querySelectorAll(".usis-specs-modal-close"), function (btn) {
 			btn.addEventListener("click", closeModal);
@@ -634,54 +1184,95 @@
 				}, 220);
 			});
 		}
-
-		if (deleteBtn) {
-			deleteBtn.addEventListener("click", function () {
+		if (saveBtn) saveBtn.addEventListener("click", savePdfUrl);
+		if (attachBtn && fileInput) {
+			attachBtn.addEventListener("click", function () {
 				if (!selectedId) return;
-				var row = sections.find(function (x) {
-					return String(x.id) === String(selectedId);
-				});
-				var label = row ? row.code + " " + row.title : "this section";
-				if (!window.confirm("Delete " + label + " from this project?")) return;
-				var base = apiBase();
-				fetch(
-					base +
-						"/api/v1/projects/" +
-						encodeURIComponent(projectId) +
-						"/rfi-lookups/spec_sections/" +
-						encodeURIComponent(selectedId),
-					{
-						method: "DELETE",
-						credentials: "include",
-						headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
-					}
-				)
-					.then(function (res) {
-						if (!res.ok) return res.text().then(function (t) {
-							throw new Error(apiErrorText(res, t));
-						});
-						return res.json();
-					})
-					.then(function () {
-						selectedId = null;
-						if (deleteBtn) {
-							deleteBtn.disabled = true;
-							deleteBtn.setAttribute("title", "Select a section first");
-						}
-						linkPanel.classList.add("d-none");
-						headEl.textContent = "Select a section on the left.";
-						showPdf("");
-						setBookMsg("Section deleted.");
-						load();
-					})
-					.catch(function (e) {
-						var msg = e.message || String(e);
-						linkErr.textContent = msg;
-						linkErr.classList.remove("d-none");
-						setBookMsg(msg, true);
-					});
+				pendingAttachId = selectedId;
+				fileInput.click();
 			});
 		}
+		if (fileInput) {
+			fileInput.addEventListener("change", function () {
+				var f = fileInput.files && fileInput.files[0];
+				var id = pendingAttachId || selectedId;
+				fileInput.value = "";
+				pendingAttachId = null;
+				if (f && id) attachPdfTo(id, f);
+			});
+		}
+		if (deleteBtn) {
+			deleteBtn.addEventListener("click", function () {
+				var row = findSection(selectedId);
+				if (row) deleteSection(row);
+			});
+		}
+		if (closeBtn) closeBtn.addEventListener("click", closeViewer);
+		if (zoomInBtn) {
+			zoomInBtn.addEventListener("click", function () {
+				scale = clampScale(scale * ZOOM_STEP);
+				updateZoomLabel();
+				queueRenderPage();
+			});
+		}
+		if (zoomOutBtn) {
+			zoomOutBtn.addEventListener("click", function () {
+				scale = clampScale(scale / ZOOM_STEP);
+				updateZoomLabel();
+				queueRenderPage();
+			});
+		}
+		if (fitWidthBtn) fitWidthBtn.addEventListener("click", function () { fitToViewport("width"); });
+		if (fitPageBtn) fitPageBtn.addEventListener("click", function () { fitToViewport("page"); });
+		if (pagePrevBtn) {
+			pagePrevBtn.addEventListener("click", function () {
+				if (!pdfDoc || pageNum <= 1) return;
+				pageNum--;
+				queueRenderPage();
+			});
+		}
+		if (pageNextBtn) {
+			pageNextBtn.addEventListener("click", function () {
+				if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+				pageNum++;
+				queueRenderPage();
+			});
+		}
+		if (canvasWrap) {
+			canvasWrap.addEventListener(
+				"wheel",
+				function (ev) {
+					if (overlay.classList.contains("d-none") || !pdfDoc) return;
+					ev.preventDefault();
+					var factor = ev.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+					scale = clampScale(scale * factor);
+					updateZoomLabel();
+					queueRenderPage();
+				},
+				{ passive: false }
+			);
+			canvasWrap.addEventListener("mousedown", function (ev) {
+				if (ev.button !== 0) return;
+				panState = { x: ev.clientX, y: ev.clientY, sl: canvasWrap.scrollLeft, st: canvasWrap.scrollTop };
+				canvasWrap.classList.add("is-panning");
+			});
+			canvasWrap.addEventListener("mousemove", function (ev) {
+				if (!panState) return;
+				canvasWrap.scrollLeft = panState.sl - (ev.clientX - panState.x);
+				canvasWrap.scrollTop = panState.st - (ev.clientY - panState.y);
+			});
+			function endPan() {
+				panState = null;
+				canvasWrap.classList.remove("is-panning");
+			}
+			canvasWrap.addEventListener("mouseup", endPan);
+			canvasWrap.addEventListener("mouseleave", endPan);
+		}
+		document.addEventListener("keydown", function onEsc(ev) {
+			if (ev.key === "Escape" && overlay && !overlay.classList.contains("d-none")) {
+				closeViewer();
+			}
+		});
 
 		if (importBookBtn && bookFileInput) {
 			importBookBtn.addEventListener("click", function () {
@@ -702,15 +1293,17 @@
 					body: fd,
 				})
 					.then(function (res) {
-						if (!res.ok) return res.text().then(function (t) {
-							throw new Error(res.status + " " + (t || res.statusText));
-						});
+						if (!res.ok) {
+							return res.text().then(function (t) {
+								throw new Error(res.status + " " + (t || res.statusText));
+							});
+						}
 						return res.json();
 					})
 					.then(function (data) {
 						load();
 						var created = data.items || [];
-						if (created.length) selectSection(created[0]);
+						if (created.length) openViewer(decorateSection(created[0]));
 						setBookMsg(
 							"Found " +
 								(data.found || 0) +

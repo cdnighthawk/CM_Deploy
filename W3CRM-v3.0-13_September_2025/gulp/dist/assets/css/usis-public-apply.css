@@ -6,7 +6,7 @@
 }
 
 .usis-public-brand-title {
-	font-size: 1.05rem;
+	font-size: 1.25rem;
 	font-weight: 600;
 	color: var(--bs-heading-color, #1f2937);
 	line-height: 1.2;
@@ -45,7 +45,7 @@
 	border-radius: 50%;
 	background: var(--bs-primary);
 	color: #fff;
-	font-size: 0.8rem;
+	font-size: 1rem;
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
@@ -88,7 +88,7 @@
 
 .usis-apply-form .form-label,
 .usis-apply-form legend.form-label {
-	font-size: 0.9rem;
+	font-size: 1.0625rem;
 	font-weight: 500;
 	margin-bottom: 0.35rem;
 }
@@ -132,7 +132,7 @@
 }
 
 .usis-hire-review-tabs .nav-link {
-	font-size: 0.9rem;
+	font-size: 1rem;
 }
 
 #usis-hire-review-sign-modal .modal-body {

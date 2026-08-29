@@ -1,4 +1,4 @@
-"""Load AGC San Diego weekly listing CSV into golden_state_planroom_leads."""
+"""Load AGC San Diego weekly listing CSV or HTML into golden_state_planroom_leads."""
 from __future__ import annotations
 
 import argparse
@@ -23,28 +23,31 @@ from app.extensions import db  # noqa: E402
 from app.golden_state_planroom_csv import load_agcs_weekly_csv  # noqa: E402
 
 
-def _default_csv_path() -> str:
-    env = (os.environ.get("AGCS_PROJECTS_CSV") or "").strip()
+def _default_listing_path() -> str:
+    env = (os.environ.get("AGCS_PROJECTS_CSV") or os.environ.get("AGCS_PROJECTS_HTML") or "").strip()
     if env and Path(env).is_file():
         return env
-    downloads = Path.home() / "Downloads" / "AGCS_CAProjects.csv"
-    if downloads.is_file():
-        return str(downloads)
+    downloads = Path.home() / "Downloads"
+    for name in ("AGCS_CAProjects.html", "AGCS_CAProjects.htm", "AGCS_CAProjects.csv"):
+        candidate = downloads / name
+        if candidate.is_file():
+            return str(candidate)
     d = database_files_dir()
-    matches = sorted(d.glob("AGCS_*.csv"))
+    matches = sorted(list(d.glob("AGCS_*.html")) + list(d.glob("AGCS_*.csv")))
     if matches:
         return str(matches[-1])
-    return str(d / "AGCS_CAProjects.csv")
+    return str(d / "AGCS_CAProjects.html")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Load Golden State / AGC weekly planroom CSV.")
-    parser.add_argument("--csv", default=_default_csv_path(), help="Path to AGCS_CAProjects.csv")
+    parser = argparse.ArgumentParser(description="Load Golden State / AGC weekly planroom listing.")
+    parser.add_argument("--csv", dest="listing", default=_default_listing_path(), help="Path to AGCS_CAProjects.html or .csv")
+    parser.add_argument("--html", dest="listing", help="Path to AGCS_CAProjects.html")
     args = parser.parse_args()
 
     app = create_app()
     with app.app_context():
-        loaded, skipped, listing_week = load_agcs_weekly_csv(db.session, args.csv)
+        loaded, skipped, listing_week = load_agcs_weekly_csv(db.session, args.listing)
 
     week = listing_week.isoformat() if listing_week else "unknown"
     print(f"Loaded {loaded} Golden State planroom rows (skipped {skipped}, listing week {week})")

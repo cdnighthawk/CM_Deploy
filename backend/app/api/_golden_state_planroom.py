@@ -5,13 +5,16 @@ from datetime import date
 from typing import Any
 
 from flask import Blueprint, request
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, or_, select
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..golden_state_planroom_csv import parse_agcs_weekly_csv, upsert_planroom_rows
+from ..golden_state_planroom_csv import parse_agcs_weekly_listing, upsert_planroom_rows
+from ..golden_state_planroom_score import score_planroom_lead, sort_key_fit
 from ..models.golden_state_planroom_lead import GoldenStatePlanroomLead
 from .v1 import _jsonify
+
+_MAX_LIST = 5000
 
 
 def _parse_query_date(raw: str | None, label: str) -> date | None:
@@ -39,9 +42,15 @@ def _row_public(row: GoldenStatePlanroomLead) -> dict[str, Any]:
         "listing_week": row.listing_week.isoformat() if row.listing_week else None,
         "source": row.source,
         "source_file": row.source_file,
+        "project_url": row.project_url,
         "crm_stage": row.crm_stage,
         "notes": row.notes,
         "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        "fit": score_planroom_lead(
+            name=row.name,
+            location=row.location,
+            estimate_high=row.estimate_high,
+        ),
     }
 
 
@@ -75,11 +84,18 @@ def _apply_list_filters(filt, args):
     return filt
 
 
-def _order_by(sort: str):
-    key = (sort or "bid_date").strip().lower()
+def _sort_spec(sort: str | None) -> tuple[str, bool]:
+    key = (sort or "fit_score").strip().lower()
     desc = key.startswith("-")
     if desc:
         key = key[1:]
+    if key in {"fit", "score"}:
+        key = "fit_score"
+    return key, desc
+
+
+def _order_by(sort: str | None):
+    key, desc = _sort_spec(sort)
     col_map = {
         "bid_date": GoldenStatePlanroomLead.bid_date,
         "name": GoldenStatePlanroomLead.name,
@@ -90,8 +106,34 @@ def _order_by(sort: str):
         "is_new": GoldenStatePlanroomLead.is_new,
     }
     col = col_map.get(key, GoldenStatePlanroomLead.bid_date)
+    if key not in col_map:
+        desc = False
     primary = col.desc().nullslast() if desc else col.asc().nullslast()
     return primary, GoldenStatePlanroomLead.name.asc()
+
+
+def _sort_items(items: list[dict[str, Any]], sort: str | None) -> list[dict[str, Any]]:
+    key, desc = _sort_spec(sort)
+    if key == "fit_score":
+        return sorted(items, key=sort_key_fit)
+    if key == "bid_date":
+        items = sorted(items, key=lambda r: (r.get("bid_date") or "9999-99-99", r.get("name") or ""))
+        return list(reversed(items)) if desc else items
+    if key == "estimate_high":
+
+        def est(row: dict[str, Any]) -> float:
+            raw = row.get("estimate_high")
+            try:
+                return float(raw) if raw is not None else -1.0
+            except (TypeError, ValueError):
+                return -1.0
+
+        items = sorted(items, key=lambda r: (est(r), r.get("name") or ""))
+        return list(reversed(items)) if desc else items
+    if key == "name":
+        items = sorted(items, key=lambda r: (r.get("name") or "").lower())
+        return list(reversed(items)) if desc else items
+    return items
 
 
 def register_golden_state_planroom_routes(bp: Blueprint) -> None:
@@ -106,17 +148,22 @@ def register_golden_state_planroom_routes(bp: Blueprint) -> None:
             filt = _apply_list_filters(GoldenStatePlanroomLead.id.isnot(None), request.args)
         except ValueError as exc:
             return _jsonify({"error": str(exc)}), 400
-        total = db.session.scalar(select(func.count()).select_from(GoldenStatePlanroomLead).where(filt)) or 0
         rows = db.session.scalars(
             select(GoldenStatePlanroomLead)
             .where(filt)
-            .order_by(*_order_by(request.args.get("sort") or "bid_date"))
-            .offset(offset)
-            .limit(limit)
+            .order_by(*_order_by(request.args.get("sort")))
+            .limit(_MAX_LIST)
         ).all()
+        items = [_row_public(r) for r in rows]
+        strong_only = (request.args.get("strong_only") or "").strip().lower() in {"1", "true", "yes"}
+        if strong_only:
+            items = [row for row in items if (row.get("fit") or {}).get("band") == "strong"]
+        items = _sort_items(items, request.args.get("sort"))
+        total = len(items)
+        page = items[offset : offset + limit]
         return _jsonify(
             {
-                "items": [_row_public(r) for r in rows],
+                "items": page,
                 "total": total,
                 "limit": limit,
                 "offset": offset,
@@ -129,14 +176,14 @@ def register_golden_state_planroom_routes(bp: Blueprint) -> None:
         upload = request.files.get("file")
         if upload is None or not upload.filename:
             return _jsonify({"error": "file is required"}), 400
-        filename = secure_filename(upload.filename) or "AGCS_CAProjects.csv"
+        filename = secure_filename(upload.filename) or "AGCS_CAProjects.html"
         raw = upload.read()
         if not raw:
             return _jsonify({"error": "empty file"}), 400
         text = raw.decode("utf-8-sig", errors="replace")
-        rows, listing_week = parse_agcs_weekly_csv(text)
+        rows, listing_week = parse_agcs_weekly_listing(text, filename=filename)
         if not rows:
-            return _jsonify({"error": "no project rows found in CSV"}), 400
+            return _jsonify({"error": "no project rows found in listing"}), 400
         loaded, skipped = upsert_planroom_rows(db.session, rows, source_file=filename)
         return _jsonify(
             {

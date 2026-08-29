@@ -36,4 +36,5 @@ class GoldenStatePlanroomLead(UUIDPKMixin, TimestampMixin, db.Model):
         String(80), nullable=False, default="New Lead", server_default="New Lead", index=True
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    project_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     raw_row: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)

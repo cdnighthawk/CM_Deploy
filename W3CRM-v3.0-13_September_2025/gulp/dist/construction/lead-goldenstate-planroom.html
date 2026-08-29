@@ -465,7 +465,7 @@
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
 								<h6 class="mb-1">Leads — Golden State Planroom</h6>
-								<p class="mb-0 small text-muted">AGC San Diego weekly listing. Import AGCS_CAProjects.csv to refresh.</p>
+								<p class="mb-0 small text-muted">AGC San Diego weekly listing, ranked by how well each job matches USIS submitted-bid history (schools, civic, healthcare, warehouse / depot in CA). Import AGCS_CAProjects.html to keep project links. Fit uses name, county, and advertised estimate — not trade or GC.</p>
 							</div>
 							<div class="text-nowrap small">
 								<a href="construction/leads.html">Leads</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a>
@@ -493,22 +493,33 @@
 							<option value="Los Angeles">Los Angeles</option>
 							<option value="Sacramento">Sacramento</option>
 						</select>
+						<select class="form-select form-select-sm w-auto" id="usis-gs-sort" aria-label="Sort">
+							<option value="fit_score" selected>Best fit</option>
+							<option value="bid_date">Bid date</option>
+							<option value="-estimate_high">Estimate (high–low)</option>
+							<option value="name">Project name</option>
+						</select>
 						<div class="form-check mb-0">
 							<input class="form-check-input" type="checkbox" id="usis-gs-new-only">
 							<label class="form-check-label small" for="usis-gs-new-only">NEW only</label>
 						</div>
+						<div class="form-check mb-0">
+							<input class="form-check-input" type="checkbox" id="usis-gs-strong-only">
+							<label class="form-check-label small" for="usis-gs-strong-only">Strong fit only</label>
+						</div>
 						<span class="small text-muted" id="usis-gs-filter-count" aria-live="polite"></span>
 					</div>
 					<div class="d-flex flex-wrap gap-2">
-						<input type="file" id="usis-gs-import-file" accept=".csv,text/csv" class="d-none">
+						<input type="file" id="usis-gs-import-file" accept=".html,.htm,.csv,text/html,text/csv" class="d-none">
 						<button type="button" class="btn btn-outline-secondary" id="usis-gs-reload"><i class="icon feather icon-refresh-cw me-1"></i> Reload</button>
-						<button type="button" class="btn btn-primary" id="usis-gs-import-btn"><i class="icon feather icon-upload me-1"></i> Import weekly CSV</button>
+						<button type="button" class="btn btn-primary" id="usis-gs-import-btn"><i class="icon feather icon-upload me-1"></i> Import weekly listing</button>
 					</div>
 				</div>
 				<div class="card m-0 table-hover overflow-auto">
 					<table class="table table-sm m-0" id="usis-gs-leads-table">
 						<thead>
 							<tr>
+								<th>Fit</th>
 								<th>Flags</th>
 								<th>Bid date</th>
 								<th>Time</th>
@@ -517,7 +528,6 @@
 								<th>Plan #</th>
 								<th>Project</th>
 								<th class="text-end">Estimate high</th>
-								<th class="text-end">Action</th>
 							</tr>
 						</thead>
 						<tbody id="usis-gs-leads-tbody">

@@ -1,5 +1,5 @@
 /**
- * Golden State / AGC San Diego weekly planroom lead list + CSV import.
+ * Golden State / AGC San Diego weekly planroom lead list + HTML/CSV import.
  */
 (function () {
 	var API = typeof window.usisApiBase === "function" ? window.usisApiBase() : "";
@@ -7,7 +7,9 @@
 	var filterInput = document.getElementById("usis-gs-table-filter");
 	var filterCount = document.getElementById("usis-gs-filter-count");
 	var locationSel = document.getElementById("usis-gs-location");
+	var sortSel = document.getElementById("usis-gs-sort");
 	var newOnly = document.getElementById("usis-gs-new-only");
+	var strongOnly = document.getElementById("usis-gs-strong-only");
 	var importInput = document.getElementById("usis-gs-import-file");
 	var importBtn = document.getElementById("usis-gs-import-btn");
 	var reloadBtn = document.getElementById("usis-gs-reload");
@@ -36,8 +38,40 @@
 		return esc(parts[1] + "/" + parts[2] + "/" + parts[0]);
 	}
 
-	function opsHref(plan) {
-		return "https://login.onlineplanservice.com/projectgrid.aspx?mode=biddingprojects";
+	function projectNameCell(row) {
+		var name = esc(row.name || "—");
+		var url = row.project_url ? String(row.project_url) : "";
+		if (/^https:\/\/login\.onlineplanservice\.com\//i.test(url)) {
+			return (
+				'<a href="' +
+				esc(url) +
+				'" target="_blank" rel="noopener noreferrer">' +
+				name +
+				"</a>"
+			);
+		}
+		return name;
+	}
+
+	function fitCell(row) {
+		var fit = row.fit || {};
+		var band = fit.band || "weak";
+		var score = fit.score == null ? "—" : String(fit.score);
+		var label = band === "strong" ? "Strong" : band === "possible" ? "Possible" : "Low";
+		var cls = band === "strong" ? "text-bg-success" : band === "possible" ? "text-bg-info" : "text-bg-secondary";
+		var reasons = (fit.reasons || []).join(" · ");
+		return (
+			'<td class="text-nowrap">' +
+			'<span class="badge ' +
+			cls +
+			'" title="' +
+			esc(reasons) +
+			'">' +
+			esc(label) +
+			" " +
+			esc(score) +
+			"</span></td>"
+		);
 	}
 
 	function renderRow(row) {
@@ -47,27 +81,24 @@
 		if (row.bid_date_changed) flags.push('<span class="badge text-bg-warning">Date change</span>');
 		var flagHtml = flags.length ? flags.join(" ") : '<span class="text-muted">—</span>';
 		var addenda = row.addenda_count ? esc(String(row.addenda_count)) : "0";
-		var actions =
-			'<a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" href="' +
-			opsHref(row.plan_number) +
-			'">Planroom</a>';
 		return (
 			"<tr>" +
+			fitCell(row) +
 			'<td class="text-nowrap">' + flagHtml + "</td>" +
 			'<td class="text-nowrap">' + formatDate(row.bid_date) + "</td>" +
 			'<td class="text-nowrap">' + esc(row.bid_time || "—") + "</td>" +
 			"<td>" + esc(row.location || "—") + "</td>" +
 			'<td class="text-nowrap text-end">' + addenda + "</td>" +
 			'<td class="text-nowrap"><span class="fw-semibold">' + plan + "</span></td>" +
-			"<td>" + esc(row.name || "—") + "</td>" +
+			"<td>" + projectNameCell(row) + "</td>" +
 			'<td class="text-nowrap text-end">' + formatMoney(row.estimate_high) + "</td>" +
-			'<td class="text-end text-nowrap">' + actions + "</td>" +
 			"</tr>"
 		);
 	}
 
 	function rowText(row) {
-		return [row.plan_number, row.name, row.location, row.bid_date, row.bid_time]
+		var fit = row.fit || {};
+		return [row.plan_number, row.name, row.location, row.bid_date, row.bid_time, fit.building, fit.band]
 			.filter(Boolean)
 			.join(" ")
 			.toLowerCase();
@@ -107,9 +138,10 @@
 		tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Loading…</td></tr>';
 		var params = new URLSearchParams();
 		params.set("limit", "2000");
-		params.set("sort", "bid_date");
+		params.set("sort", sortSel && sortSel.value ? sortSel.value : "fit_score");
 		if (locationSel && locationSel.value) params.set("location", locationSel.value);
 		if (newOnly && newOnly.checked) params.set("new_only", "1");
+		if (strongOnly && strongOnly.checked) params.set("strong_only", "1");
 		var url = (API || "").replace(/\/$/, "") + "/api/v1/golden-state-planroom/leads?" + params.toString();
 		fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) {
@@ -148,7 +180,7 @@
 				});
 			})
 			.then(function (data) {
-				notify("success", "Imported " + data.loaded + " jobs from " + (data.source_file || "CSV") + ".");
+				notify("success", "Imported " + data.loaded + " jobs from " + (data.source_file || "listing") + ".");
 				loadLeads();
 			})
 			.catch(function (err) {
@@ -162,7 +194,9 @@
 
 	if (filterInput) filterInput.addEventListener("input", applyLocalFilter);
 	if (locationSel) locationSel.addEventListener("change", loadLeads);
+	if (sortSel) sortSel.addEventListener("change", loadLeads);
 	if (newOnly) newOnly.addEventListener("change", loadLeads);
+	if (strongOnly) strongOnly.addEventListener("change", loadLeads);
 	if (reloadBtn) reloadBtn.addEventListener("click", loadLeads);
 	if (importBtn && importInput) {
 		importBtn.addEventListener("click", function () {

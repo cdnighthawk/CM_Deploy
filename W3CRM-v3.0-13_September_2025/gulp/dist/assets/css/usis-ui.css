@@ -242,6 +242,43 @@ body:not([data-headerbg="color_1"]) .header .header-search .input-group-text svg
 	color: var(--usis-text);
 }
 
+/* Bell menu: Bootstrap .dropdown-item is nowrap, so long titles stretch the
+   panel under the sidebar (deznav z-index sits above .header). */
+.notification_dropdown .dropdown-menu {
+	width: 22rem;
+	max-width: min(22rem, calc(100vw - 5.5rem));
+	right: 0;
+	left: auto;
+	overflow: hidden;
+}
+
+.notification_dropdown .dropdown-item,
+.notification_dropdown .usis-header-notif-item {
+	white-space: normal;
+	align-items: flex-start;
+}
+
+.notification_dropdown .usis-header-notif-item > .ms-2,
+.notification_dropdown .dropdown-item > .ms-2 {
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow-wrap: anywhere;
+}
+
+.notification_dropdown .usis-header-notif-item h6,
+.notification_dropdown .usis-header-notif-item .small {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+html body .header:has(.notification_dropdown .dropdown-menu.show) {
+	z-index: 20;
+}
+
+html body:has(.notification_dropdown .dropdown-menu.show) .nav-header {
+	z-index: 21;
+}
+
 .header .header-search .form-control,
 body:not([data-headerbg="color_1"]) .header .header-search .form-control {
 	color: var(--usis-text);

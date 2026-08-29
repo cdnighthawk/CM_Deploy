@@ -393,42 +393,58 @@
 		overlay.setAttribute("aria-modal", "true");
 		overlay.setAttribute("aria-label", "Specification viewer");
 		overlay.innerHTML =
-			'<header class="usis-sv-top">' +
-			'<div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2">' +
+			'<div class="usis-sv-dialog">' +
+			'<header class="usis-dv-chrome">' +
+			'<div class="usis-dv-chrome__titlebar">' +
+			'<div class="usis-dv-chrome__nav">' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-close">Close</button>' +
-			'<div class="usis-sv-title fw-semibold small text-truncate" style="min-width:8rem;max-width:36rem;">Specification</div>' +
+			"</div>" +
+			'<div class="usis-dv-chrome__sheet">' +
+			'<div class="usis-sv-title usis-dv-meta">Specification</div>' +
+			"</div>" +
+			'<div class="usis-dv-chrome__actions">' +
+			'<a class="btn btn-outline-secondary btn-sm usis-sv-openfull d-none" target="_blank" rel="noopener">Open PDF</a>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-attach">Attach PDF</button>' +
+			'<button type="button" class="btn btn-outline-danger btn-sm usis-sv-delete">Delete</button>' +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-dv-chrome__alerts">' +
 			'<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1 usis-sv-err" role="alert"></div>' +
 			'<div class="alert alert-light border py-1 px-2 mb-0 small d-none usis-sv-loading" role="status">Loading PDF…</div>' +
 			"</div>" +
-			'<div class="usis-sv-toolbar px-2 pb-2">' +
-			'<div class="d-flex flex-wrap align-items-center gap-2">' +
+			'<div class="usis-dv-toolbar">' +
+			'<div class="usis-dv-toolgroup">' +
+			'<span class="usis-overline">View</span>' +
+			'<div class="usis-dv-toolgroup__row">' +
+			'<div class="usis-seg" role="group" aria-label="Zoom">' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-zoom-out" title="Zoom out">−</button>' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-zoom-in" title="Zoom in">+</button>' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-fit-width">Width</button>' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-fit-page">Fit</button>' +
-			'<span class="small text-muted usis-sv-zoom-label">100%</span>' +
-			'<span class="border-start ps-2 ms-1 d-flex align-items-center gap-1">' +
-			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-prev">Page −</button>' +
-			'<span class="small text-muted usis-sv-page-label">1 / 1</span>' +
-			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-next">Page +</button>' +
-			"</span>" +
-			'<a class="btn btn-outline-secondary btn-sm usis-sv-openfull d-none" target="_blank" rel="noopener">Open PDF</a>' +
-			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-attach">Attach PDF</button>' +
-			'<button type="button" class="btn btn-outline-danger btn-sm usis-sv-delete">Delete section</button>' +
 			"</div>" +
-			'<div class="input-group input-group-sm mt-2" style="max-width:36rem;">' +
+			'<span class="usis-dv-zoom-label usis-sv-zoom-label">100%</span>' +
+			'<div class="usis-seg" role="group" aria-label="Page">' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-prev">−</button>' +
+			'<span class="usis-dv-page-label usis-sv-page-label">1 / 1</span>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-next">+</button>' +
+			"</div>" +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-dv-toolgroup usis-dv-toolgroup--grow">' +
+			'<span class="usis-overline">PDF URL</span>' +
+			'<div class="input-group input-group-sm" style="max-width:28rem;">' +
 			'<input type="url" class="form-control usis-sv-pdfurl" placeholder="https://… or /api/v1/…">' +
 			'<button type="button" class="btn btn-primary usis-sv-saveurl">Save URL</button>' +
 			"</div>" +
 			"</div>" +
+			"</div>" +
 			"</header>" +
 			'<div class="usis-sv-canvas-wrap">' +
-			'<div class="usis-sv-empty text-muted">No PDF attached to this section.</div>' +
+			'<div class="usis-sv-empty">No PDF attached to this section.</div>' +
 			'<canvas class="usis-sv-canvas" width="0" height="0"></canvas>' +
 			"</div>" +
-			'<p class="small text-muted mb-0 px-2 py-1 bg-body border-top usis-sv-hint">' +
-			"<kbd>Wheel</kbd> zoom · drag to pan · <kbd>Esc</kbd> close" +
-			"</p>";
+			'<p class="usis-dv-hint usis-sv-hint"><kbd>Wheel</kbd> zoom · drag to pan · <kbd>Esc</kbd> close</p>' +
+			"</div>";
 		document.body.appendChild(overlay);
 
 		var gridEl = container.querySelector(".usis-specs-grid");

@@ -360,7 +360,6 @@
 			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-expand-all">Expand all</button>' +
 			'<span class="text-muted">·</span>' +
 			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-collapse-all">Collapse all</button>' +
-			'<button type="button" class="btn btn-sm btn-primary usis-specs-download d-none">Download</button>' +
 			'<div class="usis-specs-book-msg small ms-2 d-none"></div>' +
 			"</div>" +
 			'<div class="usis-specs-grid border rounded overflow-hidden bg-white" style="min-height:22rem;"></div>' +
@@ -394,42 +393,58 @@
 		overlay.setAttribute("aria-modal", "true");
 		overlay.setAttribute("aria-label", "Specification viewer");
 		overlay.innerHTML =
-			'<header class="usis-sv-top">' +
-			'<div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2">' +
+			'<div class="usis-sv-dialog">' +
+			'<header class="usis-dv-chrome">' +
+			'<div class="usis-dv-chrome__titlebar">' +
+			'<div class="usis-dv-chrome__nav">' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-close">Close</button>' +
-			'<div class="usis-sv-title fw-semibold small text-truncate" style="min-width:8rem;max-width:36rem;">Specification</div>' +
+			"</div>" +
+			'<div class="usis-dv-chrome__sheet">' +
+			'<div class="usis-sv-title usis-dv-meta">Specification</div>' +
+			"</div>" +
+			'<div class="usis-dv-chrome__actions">' +
+			'<a class="btn btn-outline-secondary btn-sm usis-sv-openfull d-none" target="_blank" rel="noopener">Open PDF</a>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-attach">Attach PDF</button>' +
+			'<button type="button" class="btn btn-outline-danger btn-sm usis-sv-delete">Delete</button>' +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-dv-chrome__alerts">' +
 			'<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1 usis-sv-err" role="alert"></div>' +
 			'<div class="alert alert-light border py-1 px-2 mb-0 small d-none usis-sv-loading" role="status">Loading PDF…</div>' +
 			"</div>" +
-			'<div class="usis-sv-toolbar px-2 pb-2">' +
-			'<div class="d-flex flex-wrap align-items-center gap-2">' +
+			'<div class="usis-dv-toolbar">' +
+			'<div class="usis-dv-toolgroup">' +
+			'<span class="usis-overline">View</span>' +
+			'<div class="usis-dv-toolgroup__row">' +
+			'<div class="usis-seg" role="group" aria-label="Zoom">' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-zoom-out" title="Zoom out">−</button>' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-zoom-in" title="Zoom in">+</button>' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-fit-width">Width</button>' +
 			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-fit-page">Fit</button>' +
-			'<span class="small text-muted usis-sv-zoom-label">100%</span>' +
-			'<span class="border-start ps-2 ms-1 d-flex align-items-center gap-1">' +
-			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-prev">Page −</button>' +
-			'<span class="small text-muted usis-sv-page-label">1 / 1</span>' +
-			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-next">Page +</button>' +
-			"</span>" +
-			'<a class="btn btn-outline-secondary btn-sm usis-sv-openfull d-none" target="_blank" rel="noopener">Open PDF</a>' +
-			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-attach">Attach PDF</button>' +
-			'<button type="button" class="btn btn-outline-danger btn-sm usis-sv-delete">Delete section</button>' +
 			"</div>" +
-			'<div class="input-group input-group-sm mt-2" style="max-width:36rem;">' +
+			'<span class="usis-dv-zoom-label usis-sv-zoom-label">100%</span>' +
+			'<div class="usis-seg" role="group" aria-label="Page">' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-prev">−</button>' +
+			'<span class="usis-dv-page-label usis-sv-page-label">1 / 1</span>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm usis-sv-page-next">+</button>' +
+			"</div>" +
+			"</div>" +
+			"</div>" +
+			'<div class="usis-dv-toolgroup usis-dv-toolgroup--grow">' +
+			'<span class="usis-overline">PDF URL</span>' +
+			'<div class="input-group input-group-sm" style="max-width:28rem;">' +
 			'<input type="url" class="form-control usis-sv-pdfurl" placeholder="https://… or /api/v1/…">' +
 			'<button type="button" class="btn btn-primary usis-sv-saveurl">Save URL</button>' +
 			"</div>" +
 			"</div>" +
+			"</div>" +
 			"</header>" +
 			'<div class="usis-sv-canvas-wrap">' +
-			'<div class="usis-sv-empty text-muted">No PDF attached to this section.</div>' +
+			'<div class="usis-sv-empty">No PDF attached to this section.</div>' +
 			'<canvas class="usis-sv-canvas" width="0" height="0"></canvas>' +
 			"</div>" +
-			'<p class="small text-muted mb-0 px-2 py-1 bg-body border-top usis-sv-hint">' +
-			"<kbd>Wheel</kbd> zoom · drag to pan · <kbd>Esc</kbd> close" +
-			"</p>";
+			'<p class="usis-dv-hint usis-sv-hint"><kbd>Wheel</kbd> zoom · drag to pan · <kbd>Esc</kbd> close</p>' +
+			"</div>";
 		document.body.appendChild(overlay);
 
 		var gridEl = container.querySelector(".usis-specs-grid");
@@ -448,104 +463,6 @@
 		var customTitle = container.querySelector(".usis-specs-custom-title");
 		var expandAllBtn = container.querySelector(".usis-specs-expand-all");
 		var collapseAllBtn = container.querySelector(".usis-specs-collapse-all");
-		var downloadBtn = container.querySelector(".usis-specs-download");
-		var specSelected = new Set();
-
-		function specRowId(data) {
-			return data && data.id != null ? String(data.id) : "";
-		}
-
-		function updateSpecDownloadBtn() {
-			if (!downloadBtn) return;
-			var n = specSelected.size;
-			downloadBtn.classList.toggle("d-none", n === 0);
-			downloadBtn.disabled = n === 0;
-			downloadBtn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
-		}
-
-		function specFileJob(row) {
-			if (!row || !(row.has_pdf || row.pdf_url)) return null;
-			var url = row.pdf_url
-				? resolveUrl(row.pdf_url)
-				: apiBase() + "/api/v1/spec-sections/" + encodeURIComponent(row.id) + "/file";
-			if (!url) return null;
-			var label = ((row.code || "spec") + " " + (row.title || "")).trim();
-			var name = (global.USISUi && USISUi.safeFilename ? USISUi.safeFilename(label) : label) + ".pdf";
-			return { url: url, name: name };
-		}
-
-		function downloadSelectedSpecs() {
-			var jobs = sections
-				.filter(function (r) {
-					return specSelected.has(specRowId(r));
-				})
-				.map(specFileJob)
-				.filter(Boolean);
-			if (global.USISUi && typeof USISUi.downloadFiles === "function") {
-				USISUi.downloadFiles(jobs, { emptyMsg: "Selected sections have no PDF to download." });
-				return;
-			}
-			jobs.forEach(function (job) {
-				global.open(job.url, "_blank", "noopener");
-			});
-		}
-
-		function specCheckboxColumn() {
-			return {
-				title: "",
-				field: "_sel",
-				cssClass: "usis-doc-check-col",
-				width: 44,
-				minWidth: 44,
-				hozAlign: "center",
-				headerHozAlign: "center",
-				headerSort: false,
-				resizable: false,
-				frozen: true,
-				titleFormatter: function () {
-					var cb = document.createElement("input");
-					cb.type = "checkbox";
-					cb.className = "form-check-input m-0";
-					cb.setAttribute("aria-label", "Select all sections");
-					cb.addEventListener("click", function (e) {
-						e.stopPropagation();
-					});
-					cb.addEventListener("change", function () {
-						if (!table) return;
-						table.getRows().forEach(function (row) {
-							var id = specRowId(row.getData());
-							if (!id) return;
-							if (cb.checked) specSelected.add(id);
-							else specSelected.delete(id);
-							var cell = row.getCell("_sel");
-							var box = cell && cell.getElement() && cell.getElement().querySelector("input[type=checkbox]");
-							if (box) box.checked = cb.checked;
-						});
-						updateSpecDownloadBtn();
-					});
-					return cb;
-				},
-				formatter: function (cell) {
-					var data = cell.getRow().getData();
-					var id = specRowId(data);
-					var cb = document.createElement("input");
-					cb.type = "checkbox";
-					cb.className = "form-check-input m-0";
-					cb.checked = !!(id && specSelected.has(id));
-					cb.setAttribute("aria-label", "Select section");
-					cb.addEventListener("click", function (e) {
-						e.stopPropagation();
-					});
-					cb.addEventListener("change", function () {
-						if (!id) return;
-						if (cb.checked) specSelected.add(id);
-						else specSelected.delete(id);
-						updateSpecDownloadBtn();
-					});
-					return cb;
-				},
-			};
-		}
 
 		var closeBtn = overlay.querySelector(".usis-sv-close");
 		var titleEl = overlay.querySelector(".usis-sv-title");
@@ -846,7 +763,6 @@
 				movableColumns: true,
 				placeholder: "No CSI sections on this project yet. Add them from the CSI catalog, or import a spec-book PDF.",
 				columns: [
-					specCheckboxColumn(),
 					{
 						title: "CSI code",
 						field: "code",
@@ -871,6 +787,53 @@
 						width: 80,
 						formatter: function (cell) {
 							return cell.getValue() ? "Yes" : "—";
+						},
+					},
+					{
+						title: "",
+						hozAlign: "right",
+						headerSort: false,
+						width: 220,
+						formatter: function (cell) {
+							var wrap = document.createElement("div");
+							wrap.className = "d-flex gap-1 flex-wrap justify-content-end";
+							var data = cell.getRow().getData();
+							var view = document.createElement("button");
+							view.type = "button";
+							view.className = "btn btn-primary btn-sm py-0";
+							view.textContent = "View";
+							view.addEventListener("click", function () {
+								openViewer(data);
+							});
+							wrap.appendChild(view);
+							if (data.pdf_url) {
+								var p = document.createElement("a");
+								p.href = resolveUrl(data.pdf_url);
+								p.target = "_blank";
+								p.rel = "noopener noreferrer";
+								p.className = "btn btn-outline-secondary btn-sm py-0";
+								p.textContent = "PDF";
+								wrap.appendChild(p);
+							} else {
+								var att = document.createElement("button");
+								att.type = "button";
+								att.className = "btn btn-outline-secondary btn-sm py-0";
+								att.textContent = "Attach";
+								att.addEventListener("click", function () {
+									pendingAttachId = data.id;
+									if (fileInput) fileInput.click();
+								});
+								wrap.appendChild(att);
+							}
+							var del = document.createElement("button");
+							del.type = "button";
+							del.className = "btn btn-outline-danger btn-sm py-0";
+							del.textContent = "Delete";
+							del.addEventListener("click", function () {
+								deleteSection(data);
+							});
+							wrap.appendChild(del);
+							return wrap;
 						},
 					},
 				],
@@ -1219,7 +1182,6 @@
 				setGroupsOpen(false);
 			});
 		}
-		if (downloadBtn) downloadBtn.addEventListener("click", downloadSelectedSpecs);
 		if (addBtn) addBtn.addEventListener("click", openModal);
 		Array.prototype.forEach.call(container.querySelectorAll(".usis-specs-modal-close"), function (btn) {
 			btn.addEventListener("click", closeModal);

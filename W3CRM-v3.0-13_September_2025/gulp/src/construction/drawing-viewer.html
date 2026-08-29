@@ -13,21 +13,6 @@
 	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<style>
-		/* Full-page viewer shell: hide normal CRM chrome on this page only. */
-		body.usis-drawing-viewer #main-wrapper {
-			display: none !important;
-		}
-		body.usis-drawing-viewer {
-			overflow: hidden;
-		}
-		#usis-dv-fullscreen {
-			position: fixed;
-			inset: 0;
-			z-index: 10050;
-			display: flex;
-			flex-direction: column;
-			background: var(--usis-bg, #f4f6f8);
-		}
 		.usis-dv-fs-body {
 			flex: 1 1 auto;
 			min-height: 0;
@@ -100,11 +85,14 @@
 		@@include("../elements/chatbox-construction.html")
 		@@include("../elements/header-construction.html")
 		@@include("../elements/deznav-construction.html")
-		<main class="content-body d-none" aria-hidden="true"></main>
-		@@include("../elements/footer.html")
-	</div>
-
-	<div id="usis-dv-fullscreen" class="usis-dv-fs">
+		<main class="content-body usis-dv-page">
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Drawing viewer",
+				})
+			</div>
+			<div class="container-fluid usis-dv-page__body">
+				<div id="usis-dv-fullscreen" class="usis-dv-workspace">
 		<header class="usis-dv-chrome">
 			<div class="usis-dv-chrome__titlebar">
 				<div class="usis-dv-chrome__nav">
@@ -284,6 +272,10 @@
 				</div>
 			</aside>
 		</div>
+				</div>
+			</div>
+		</main>
+		@@include("../elements/footer.html")
 	</div>
 
 	<div class="modal fade" id="usis-dv-modal-takeoff-line" tabindex="-1" aria-hidden="true" aria-labelledby="usis-dv-modal-takeoff-line-title">
@@ -334,7 +326,7 @@
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260829e"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260829f"></script>
 
 </body>
 </html>

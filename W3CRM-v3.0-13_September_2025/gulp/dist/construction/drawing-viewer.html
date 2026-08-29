@@ -60,21 +60,6 @@
 	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<style>
-		/* Full-page viewer shell: hide normal CRM chrome on this page only. */
-		body.usis-drawing-viewer #main-wrapper {
-			display: none !important;
-		}
-		body.usis-drawing-viewer {
-			overflow: hidden;
-		}
-		#usis-dv-fullscreen {
-			position: fixed;
-			inset: 0;
-			z-index: 10050;
-			display: flex;
-			flex-direction: column;
-			background: var(--usis-bg, #f4f6f8);
-		}
 		.usis-dv-fs-body {
 			flex: 1 1 auto;
 			min-height: 0;
@@ -526,45 +511,20 @@
 		</div>
 		<!-- End - Sidebar Navigation -->
 
-		<main class="content-body d-none" aria-hidden="true"></main>
-		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
-<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
-		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
-		<span class="fs-11">Home</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/leads.html">
-		<i class="icon feather icon-users d-block fs-5 mb-0"></i>
-		<span class="fs-11">Leads</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
-		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
-		<span class="fs-11">Projects</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
-		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
-		<span class="fs-11">Estimate</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
-		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
-		<span class="fs-11">Issues</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
-		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
-		<span class="fs-11">Drawings</span>
-	</a>
-</nav>
-
-<!-- Start - Footer -->
-		<div class="footer">
-			<div class="copyright text-center">
-			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
+		<main class="content-body usis-dv-page">
+			<div class="page-title">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li><h1>Drawing viewer</h1></li>
+						<li class="breadcrumb-item">
+							<a href="usis-dashboard-dark.html">Home</a>
+						</li>
+						<li class="breadcrumb-item active" aria-current="page">Drawing viewer</li>
+					</ol>
+				</nav>
 			</div>
-		</div>
-		<!-- End - Footer -->
-	</div>
-
-	<div id="usis-dv-fullscreen" class="usis-dv-fs">
+			<div class="container-fluid usis-dv-page__body">
+				<div id="usis-dv-fullscreen" class="usis-dv-workspace">
 		<header class="usis-dv-chrome">
 			<div class="usis-dv-chrome__titlebar">
 				<div class="usis-dv-chrome__nav">
@@ -744,6 +704,14 @@
 				</div>
 			</aside>
 		</div>
+				</div>
+			</div>
+		</main>
+		<div class="footer">
+			<div class="copyright text-center">
+			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
+			</div>
+		</div>
 	</div>
 
 	<div class="modal fade" id="usis-dv-modal-takeoff-line" tabindex="-1" aria-hidden="true" aria-labelledby="usis-dv-modal-takeoff-line-title">
@@ -807,7 +775,7 @@
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260829e"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260829f"></script>
 
 </body>
 </html>

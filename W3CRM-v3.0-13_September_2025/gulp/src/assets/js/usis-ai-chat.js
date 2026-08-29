@@ -12,6 +12,7 @@
 	}
 
 	var STORE_KEY = "usis.ai.chat.v1";
+	var SESSION_KEY = "usis.ai.chat.session.v1";
 	var MAX_STORED = 40;
 	var SEND_WINDOW = 20;
 	var MODE_LABELS = {
@@ -31,6 +32,10 @@
 
 	var state = {
 		messages: loadMessages(),
+		sessionId: loadSessionId(),
+		sessions: [],
+		persisted: false,
+		historyLoaded: false,
 		pending: [],
 		sending: false,
 		mode: inferMode(),
@@ -87,6 +92,14 @@
 		return MODE_LABELS[mode] || "Assistant";
 	}
 
+	function loadSessionId() {
+		try {
+			return (global.sessionStorage && sessionStorage.getItem(SESSION_KEY)) || "";
+		} catch (e) {
+			return "";
+		}
+	}
+
 	function loadMessages() {
 		try {
 			var raw = global.sessionStorage && sessionStorage.getItem(STORE_KEY);
@@ -113,6 +126,8 @@
 				return row;
 			});
 			sessionStorage.setItem(STORE_KEY, JSON.stringify(slim));
+			if (state.sessionId) sessionStorage.setItem(SESSION_KEY, state.sessionId);
+			else sessionStorage.removeItem(SESSION_KEY);
 		} catch (e) {}
 	}
 
@@ -249,6 +264,10 @@
 				"</span>" +
 				"</div>" +
 				"</div>" +
+				'<div class="usis-ai-chat__toolbar d-none" data-usis-chat-toolbar>' +
+				'<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>' +
+				'<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>' +
+				"</div>" +
 				'<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>' +
 				'<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>' +
 				'<div class="usis-ai-chat__composer">' +
@@ -273,7 +292,7 @@
 				'<input type="file" class="d-none" data-usis-chat-file multiple accept="' +
 				FILE_ACCEPT +
 				'">' +
-				'<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>Clear</button>' +
+				'<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>New</button>' +
 				"</div>" +
 				'<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>' +
 				"</div>" +
@@ -291,7 +310,25 @@
 		state.els.status = panel.querySelector("[data-usis-chat-status]");
 		state.els.mode = panel.querySelector("[data-usis-chat-mode]");
 		ensureAttachUi(panel);
+		ensureHistoryUi(panel);
 		if (state.els.mode) state.els.mode.textContent = modeLabel(state.mode);
+	}
+
+	function ensureHistoryUi(panel) {
+		if (!panel) return;
+		if (!panel.querySelector("[data-usis-chat-history]")) {
+			var status = panel.querySelector("[data-usis-chat-status]");
+			var bar = document.createElement("div");
+			bar.className = "usis-ai-chat__toolbar d-none";
+			bar.setAttribute("data-usis-chat-toolbar", "1");
+			bar.innerHTML =
+				'<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>' +
+				'<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>';
+			if (status && status.parentNode) status.parentNode.insertBefore(bar, status);
+			else panel.insertBefore(bar, panel.firstChild);
+		}
+		state.els.toolbar = panel.querySelector("[data-usis-chat-toolbar]");
+		state.els.history = panel.querySelector("[data-usis-chat-history]");
 	}
 
 	function ensureAttachUi(panel) {
@@ -351,8 +388,9 @@
 		if (!state.messages.length) {
 			var empty = document.createElement("div");
 			empty.className = "text-muted small";
-			empty.textContent =
-				"Ask Grok about projects, leads, RFIs, or this page. Use + to attach a file from your computer, drop a file here, or paste a link.";
+			empty.textContent = state.persisted
+				? "Ask Grok about projects, leads, RFIs, or this page. Chats are saved to your account."
+				: "Ask Grok about projects, leads, RFIs, or this page. Use + to attach a file from your computer, drop a file here, or paste a link.";
 			log.appendChild(empty);
 			return;
 		}
@@ -394,10 +432,142 @@
 		log.scrollTop = log.scrollHeight;
 	}
 
+	function renderHistory() {
+		var sel = state.els.history;
+		var bar = state.els.toolbar;
+		if (!sel) return;
+		if (!state.persisted) {
+			if (bar) bar.classList.add("d-none");
+			if (state.els.clear) {
+				state.els.clear.textContent = "Clear";
+				state.els.clear.removeAttribute("title");
+			}
+			return;
+		}
+		if (bar) bar.classList.remove("d-none");
+		if (state.els.clear) {
+			state.els.clear.textContent = "New";
+			state.els.clear.title = "Start a new chat. Previous chats stay in your account.";
+		}
+		var current = state.sessionId || "";
+		var known = state.sessions.some(function (s) {
+			return s.id === current;
+		});
+		var html = "";
+		if (!current || !known) html += '<option value="">New chat</option>';
+		state.sessions.forEach(function (s) {
+			html +=
+				'<option value="' +
+				escapeHtml(s.id) +
+				'"' +
+				(s.id === current ? " selected" : "") +
+				">" +
+				escapeHtml(s.title || "Chat") +
+				"</option>";
+		});
+		sel.innerHTML = html;
+		if (current && known) sel.value = current;
+	}
+
+	function applySession(data) {
+		if (!data) return;
+		state.sessionId = data.id || "";
+		state.messages = (data.messages || []).filter(function (m) {
+			return m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string";
+		});
+		persist();
+		render();
+		renderHistory();
+	}
+
+	function loadSession(id) {
+		if (!id) return Promise.resolve();
+		return fetchJson("/api/ai/sessions/" + encodeURIComponent(id))
+			.then(applySession)
+			.catch(function () {});
+	}
+
+	function refreshSessionList() {
+		return fetchJson("/api/ai/sessions")
+			.then(function (data) {
+				state.persisted = !!(data && data.persisted);
+				state.sessions = (data && data.items) || [];
+				renderHistory();
+				return data;
+			})
+			.catch(function () {
+				state.persisted = false;
+				state.sessions = [];
+				renderHistory();
+				return null;
+			});
+	}
+
+	function slimStoredMessages() {
+		return state.messages.map(function (m) {
+			var row = { role: m.role, content: m.content };
+			if (m.attachments && m.attachments.length) row.attachments = m.attachments;
+			return row;
+		});
+	}
+
+	function loadPersisted() {
+		return refreshSessionList().then(function (data) {
+			if (!data || !data.persisted) return;
+			if (state.sessionId) return loadSession(state.sessionId);
+			if (data.items && data.items[0]) return loadSession(data.items[0].id);
+			if (state.messages.length) {
+				return fetchJson("/api/ai/sessions", {
+					method: "POST",
+					body: { mode: state.mode || "", messages: slimStoredMessages() },
+				}).then(function (created) {
+					state.sessionId = created && created.id ? created.id : "";
+					persist();
+					return refreshSessionList();
+				});
+			}
+		});
+	}
+
+	function newChat() {
+		state.messages = [];
+		state.pending = [];
+		renderPending();
+		if (!state.persisted) {
+			state.sessionId = "";
+			persist();
+			render();
+			setStatus("Conversation cleared.", "");
+			return Promise.resolve();
+		}
+		return fetchJson("/api/ai/sessions", { method: "POST", body: { mode: state.mode || "" } })
+			.then(function (created) {
+				state.sessionId = created && created.id ? created.id : "";
+				persist();
+				render();
+				return refreshSessionList();
+			})
+			.then(function () {
+				setStatus("New chat — saved to your account.", "ok");
+			})
+			.catch(function () {
+				state.sessionId = "";
+				persist();
+				render();
+				setStatus("Started a new chat.", "");
+			});
+	}
+
 	function openBox() {
 		ensureChatbox();
 		if (state.els.box) state.els.box.classList.add("active");
 		refreshStatus();
+		if (!state.historyLoaded) {
+			state.historyLoaded = true;
+			loadPersisted();
+		} else if (state.persisted) {
+			refreshSessionList();
+		}
 		if (state.els.input) state.els.input.focus();
 	}
 
@@ -480,6 +650,7 @@
 			});
 		}
 		if (state.mode) payload.mode = state.mode;
+		if (state.sessionId) payload.session_id = state.sessionId;
 		return fetchJson("/api/ai/chat", { method: "POST", body: payload })
 			.then(function (data) {
 				var reply = extractReply(data) || "(No reply)";
@@ -489,10 +660,13 @@
 					content: reply,
 					tools: tools,
 				});
+				if (data && data.session_id) state.sessionId = data.session_id;
+				if (data && data.persisted) state.persisted = true;
 				persist();
 				render();
+				if (state.persisted) refreshSessionList();
 				var model = (data && data.model) || state.status.model || "Grok";
-				setStatus("Grok · " + model, "ok");
+				setStatus((state.persisted ? "Saved · " : "Grok · ") + model, "ok");
 			})
 			.catch(function (err) {
 				var msg = errorMessage(err);
@@ -511,11 +685,16 @@
 			.then(function (data) {
 				state.status = data || state.status;
 				state.statusLoaded = true;
+				if (data && data.persisted) state.persisted = true;
 				if (data && data.enabled) {
-					setStatus("Grok ready" + (data.model ? " · " + data.model : ""), "ok");
+					setStatus(
+						(state.persisted ? "Saved to your account" : "Grok ready") + (data.model ? " · " + data.model : ""),
+						"ok"
+					);
 				} else {
 					setStatus("Grok is not configured on this server yet.", "error");
 				}
+				renderHistory();
 			})
 			.catch(function (err) {
 				state.statusLoaded = true;
@@ -557,12 +736,14 @@
 		}
 		if (state.els.clear) {
 			state.els.clear.addEventListener("click", function () {
-				state.messages = [];
-				state.pending = [];
-				persist();
-				render();
-				renderPending();
-				setStatus("Conversation cleared.", "");
+				newChat();
+			});
+		}
+		if (state.els.history) {
+			state.els.history.addEventListener("change", function () {
+				var id = state.els.history.value;
+				if (!id) return;
+				loadSession(id);
 			});
 		}
 
@@ -651,6 +832,10 @@
 		}
 
 		refreshStatus();
+		if (!state.historyLoaded) {
+			state.historyLoaded = true;
+			loadPersisted();
+		}
 	}
 
 	var api = {

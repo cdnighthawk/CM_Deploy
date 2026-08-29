@@ -14,6 +14,10 @@
 						</span>
 					</div>
 				</div>
+				<div class="usis-ai-chat__toolbar d-none" data-usis-chat-toolbar>
+					<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>
+					<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>
+				</div>
 				<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>
 				<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>
 				<div class="usis-ai-chat__composer">
@@ -36,7 +40,7 @@
 									</div>
 								</div>
 								<input type="file" class="d-none" data-usis-chat-file multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,text/markdown,application/json,.txt,.csv,.md,.pdf">
-								<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>Clear</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>New</button>
 							</div>
 							<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>
 						</div>

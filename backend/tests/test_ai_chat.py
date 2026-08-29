@@ -5,14 +5,14 @@ import uuid
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy import select, text
+from sqlalchemy import inspect, select, text
 
 from app.ai.attachments import AttachmentError, merge_user_content, process_attachments
 from app.ai.grok_client import ChatCompletionResult, ToolCall
 from app.ai.tools.executor import run_tool
 from app.api._perms import CurrentUser
 from app.extensions import db
-from app.models import LeadEstimate
+from app.models import LeadEstimate, User
 
 
 def _db_ok(flask_app) -> bool:
@@ -215,3 +215,92 @@ def test_update_lead_locked_integration(flask_app, ai_enabled):
         if row:
             db.session.delete(row)
             db.session.commit()
+
+
+def _ai_tables_ok(flask_app) -> bool:
+    if not _db_ok(flask_app):
+        return False
+    try:
+        with flask_app.app_context():
+            insp = inspect(db.engine)
+            return insp.has_table("ai_chat_sessions") and insp.has_table("ai_chat_messages")
+    except Exception:
+        return False
+
+
+def _make_chat_user(flask_app) -> str:
+    email = "ai.chat." + uuid.uuid4().hex[:8] + "@t.com"
+    with flask_app.app_context():
+        u = User(
+            email=email,
+            first_name="Ada",
+            last_name="Chat",
+            is_active=True,
+            is_superuser=False,
+        )
+        db.session.add(u)
+        db.session.commit()
+        return str(u.id)
+
+
+def test_sessions_anonymous_not_persisted(client):
+    r = client.get("/api/ai/sessions")
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["persisted"] is False
+    assert data["items"] == []
+
+
+def test_chat_persists_by_user(client, flask_app, ai_enabled):
+    if not _ai_tables_ok(flask_app):
+        pytest.skip("ai_chat tables not migrated")
+    uid = _make_chat_user(flask_app)
+    other = _make_chat_user(flask_app)
+    headers = {"X-Usis-User-Id": uid}
+
+    with patch("app.ai.agent.chat_completion", return_value=ChatCompletionResult(content="Hello from Grok.", tool_calls=[])):
+        r = client.post(
+            "/api/ai/chat",
+            json={"messages": [{"role": "user", "content": "Remember this later"}]},
+            headers=headers,
+        )
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["persisted"] is True
+    sid = body["session_id"]
+    assert sid
+
+    listed = client.get("/api/ai/sessions", headers=headers)
+    assert listed.status_code == 200
+    items = listed.get_json()["items"]
+    assert any(i["id"] == sid for i in items)
+    assert items[0]["title"].startswith("Remember this later")
+
+    got = client.get(f"/api/ai/sessions/{sid}", headers=headers)
+    assert got.status_code == 200
+    msgs = got.get_json()["messages"]
+    assert [m["role"] for m in msgs] == ["user", "assistant"]
+    assert msgs[0]["content"] == "Remember this later"
+    assert "Hello from Grok" in msgs[1]["content"]
+
+    hidden = client.get(f"/api/ai/sessions/{sid}", headers={"X-Usis-User-Id": other})
+    assert hidden.status_code == 404
+    others = client.get("/api/ai/sessions", headers={"X-Usis-User-Id": other})
+    assert others.get_json()["items"] == []
+
+
+def test_create_and_delete_own_session(client, flask_app):
+    if not _ai_tables_ok(flask_app):
+        pytest.skip("ai_chat tables not migrated")
+    uid = _make_chat_user(flask_app)
+    headers = {"X-Usis-User-Id": uid}
+    created = client.post(
+        "/api/ai/sessions",
+        json={"messages": [{"role": "user", "content": "Imported local chat"}]},
+        headers=headers,
+    )
+    assert created.status_code == 201
+    sid = created.get_json()["id"]
+    gone = client.delete(f"/api/ai/sessions/{sid}", headers=headers)
+    assert gone.status_code == 200
+    assert client.get(f"/api/ai/sessions/{sid}", headers=headers).status_code == 404

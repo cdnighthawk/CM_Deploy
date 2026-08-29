@@ -2,6 +2,7 @@
 
 Append new models here as future migrations land.
 """
+from .ai_chat import AiChatMessage, AiChatSession
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
@@ -118,6 +119,8 @@ from .takeoff_line_item import TakeoffLineItem
 from .wage_rate import WageRate
 
 __all__ = [
+    "AiChatMessage",
+    "AiChatSession",
     "AuditLog",
     "BuildingConnectedOAuthToken",
     "ChecklistRun",

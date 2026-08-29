@@ -770,7 +770,28 @@ body .tabulator .tabulator-header {
 }
 
 body .tabulator .tabulator-header .tabulator-col {
-	padding: 0.2rem 0.35rem 0.25rem;
+	padding: 0.45rem 0.35rem 0.3rem;
+	overflow: visible;
+}
+
+body .tabulator .tabulator-header .tabulator-col.usis-doc-check-col,
+body .tabulator .tabulator-header .usis-doc-check-col {
+	overflow: visible;
+}
+
+body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-content,
+body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-title {
+	overflow: visible;
+	line-height: 1;
+	padding-top: 0.15rem;
+}
+
+body .tabulator .usis-doc-check-col .form-check-input {
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	display: block;
+	position: relative;
 }
 
 body .tabulator .tabulator-header .tabulator-col .tabulator-col-title {

@@ -24,6 +24,9 @@ from ._rfi_service import ApiError, _parse_uuid
 
 PROCESS_SUBMITTAL_QC = "submittal_qc"
 PROCESS_PURCHASE_ORDER = "purchase_order"
+PROCESS_DRAWING_REVIEW = "drawing_review"
+PROCESS_TAKEOFF = "takeoff"
+PROCESS_ESTIMATOR_SCOPE = "estimator_scope"
 
 DEFAULT_QUEUES = (
     ("intake", "Intake / completeness"),
@@ -163,16 +166,282 @@ DEFAULT_SUBMITTAL_QC_STEPS: list[dict[str, Any]] = [
     },
 ]
 
+DEFAULT_AI_QUEUES = (
+    ("estimator", "Estimator first pass"),
+    ("reviewer", "Estimator review / leftovers"),
+)
+
+DEFAULT_DRAWING_REVIEW_STEPS: list[dict[str, Any]] = [
+    {
+        "step_key": "capture_sheet",
+        "label": "Capture current sheet",
+        "sort_order": 1,
+        "queue_key": "estimator",
+        "required_actions": ["capture_canvas"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "capture_canvas",
+            "auto_complete": True,
+        },
+    },
+    {
+        "step_key": "scope_scan",
+        "label": "First-pass scope scan",
+        "sort_order": 2,
+        "queue_key": "estimator",
+        "required_actions": ["run_ai_review"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "run_ai_review",
+            "mode": "construction_review",
+            "provider": "local",
+            "auto_complete": True,
+            "prompt": (
+                "First-pass drawing review for a finish-work estimator (drywall, paint, flooring, "
+                "ceilings, trim, Division 10). List visible finish scopes, missing dimensions or "
+                "notes, finish-schedule vs plan mismatches, and anything the estimator should "
+                "confirm. Return structured findings: severity (Critical/Major/Minor/Info), title, "
+                "detail, drawing_ref."
+            ),
+            "system_hint": (
+                "This is an automated first pass. Be concrete and sheet-specific. Do not invent "
+                "room names or quantities that are not on the sheet. Prefer a short findings list "
+                "over a narrative."
+            ),
+        },
+    },
+    {
+        "step_key": "constructability_review",
+        "label": "Constructability / coordination",
+        "sort_order": 3,
+        "queue_key": "estimator",
+        "required_actions": ["run_ai_review"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "run_ai_review",
+            "mode": "construction_review",
+            "provider": "local",
+            "auto_complete": True,
+            "prompt": (
+                "Continue first-pass review: coordination conflicts (ceiling vs walls, doors vs "
+                "finishes), fire-rated / ADA / Title 24 notes if present, and field-coordination "
+                "risks. Same structured findings format. Skip items already covered."
+            ),
+            "system_hint": (
+                "Estimator first pass only. Flag leftovers for a human; do not claim the sheet is "
+                "complete."
+            ),
+        },
+    },
+    {
+        "step_key": "persist_findings",
+        "label": "Save AI findings on the sheet",
+        "sort_order": 4,
+        "queue_key": "estimator",
+        "required_actions": ["persist_ai_annotations"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"action": "persist_findings", "auto_complete": True},
+    },
+    {
+        "step_key": "human_accept",
+        "label": "Estimator leftover review",
+        "sort_order": 5,
+        "queue_key": "reviewer",
+        "required_actions": ["accept_findings"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": True,
+        "automation": {"action": "human_accept", "auto_complete": False},
+    },
+]
+
+DEFAULT_TAKEOFF_STEPS: list[dict[str, Any]] = [
+    {
+        "step_key": "propose_assemblies",
+        "label": "Propose takeoff assemblies",
+        "sort_order": 1,
+        "queue_key": "estimator",
+        "required_actions": ["run_ai_review"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "run_ai_review",
+            "mode": "estimating_review",
+            "provider": "local",
+            "auto_complete": True,
+            "prompt": (
+                "First-pass takeoff for USIS finish work. Propose takeoff lines the estimator "
+                "would otherwise type by hand: description, unit (LF/SF/EA/CY), location, and a "
+                "quantity only when the sheet states it. Return JSON: "
+                '{"lines":[{"description":"","unit":"","qty":null,"location":"","notes":""}],'
+                '"exclusions":[],"assumptions":[]}. Do not invent catalog SKUs.'
+            ),
+            "system_hint": (
+                "Automated estimator first pass. Prefer fewer honest lines over a complete but "
+                "guessed takeoff. Quantities may be null."
+            ),
+        },
+    },
+    {
+        "step_key": "suggest_quantities",
+        "label": "Suggest quantities / units",
+        "sort_order": 2,
+        "queue_key": "estimator",
+        "required_actions": ["run_ai_review"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "run_ai_review",
+            "mode": "estimating_review",
+            "provider": "local",
+            "auto_complete": True,
+            "prompt": (
+                "Using the assemblies just proposed and any measurements on this sheet, refine "
+                "quantities and units. Call out where the estimator must measure on the canvas. "
+                "Return the same JSON shape. Do not apply lines to the estimate."
+            ),
+            "system_hint": "Still first pass. Leave qty null when the sheet is silent.",
+        },
+    },
+    {
+        "step_key": "persist_notes",
+        "label": "Save proposed takeoff notes",
+        "sort_order": 3,
+        "queue_key": "estimator",
+        "required_actions": ["persist_ai_annotations"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": True,
+        "automation": {"action": "persist_findings", "auto_complete": True},
+    },
+    {
+        "step_key": "human_apply",
+        "label": "Estimator applies / measures leftovers",
+        "sort_order": 4,
+        "queue_key": "reviewer",
+        "required_actions": ["apply_to_line"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": True,
+        "automation": {"action": "human_accept", "auto_complete": False},
+    },
+]
+
+DEFAULT_ESTIMATOR_SCOPE_STEPS: list[dict[str, Any]] = [
+    {
+        "step_key": "choose_source",
+        "label": "Standard specs vs GC bid package",
+        "sort_order": 1,
+        "queue_key": "estimator",
+        "required_actions": ["run_ai_review"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "run_ai_review",
+            "mode": "estimating_review",
+            "auto_complete": True,
+            "prompt": (
+                "Overall estimating pass for USIS (finish-work sub). Decide the bid-set source. "
+                "Default is our standard specs (gypsum, paint, flooring, ceilings, trim, doors/"
+                "hardware, Div 10). If the GC issued a bid package that lists sections we must "
+                "price, use that package instead. Return JSON: "
+                '{"source":"standard"|"bid_package","bid_package_label":null,"reason":""}.'
+            ),
+            "system_hint": (
+                "Do not invent a bid package. If the invitation / spec book does not list a "
+                "package, source=standard."
+            ),
+        },
+    },
+    {
+        "step_key": "propose_specs",
+        "label": "Propose specs to bid",
+        "sort_order": 2,
+        "queue_key": "estimator",
+        "required_actions": ["run_ai_review"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {
+            "action": "run_ai_review",
+            "mode": "estimating_review",
+            "auto_complete": True,
+            "prompt": (
+                "List the spec sections we should bid. If source is standard, start from the USIS "
+                "standard set and drop sections that are clearly not on this job. If source is "
+                "bid_package, include every section in that package. Return JSON: "
+                '{"source":"standard"|"bid_package","items":[{"spec_code":"09 29 00",'
+                '"spec_title":"Gypsum Board","included":true}]}.'
+            ),
+            "system_hint": "Prefer CSI six-digit codes. Mark included=false only with a reason in notes.",
+        },
+    },
+    {
+        "step_key": "human_confirm",
+        "label": "Estimator confirms bid set",
+        "sort_order": 3,
+        "queue_key": "reviewer",
+        "required_actions": ["confirm_bid_set"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"action": "human_accept", "auto_complete": False},
+    },
+    {
+        "step_key": "enqueue_spec_scripts",
+        "label": "Queue spec-specific scripts",
+        "sort_order": 4,
+        "queue_key": "estimator",
+        "required_actions": ["enqueue_spec_scripts"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"action": "enqueue_spec_scripts", "auto_complete": True},
+    },
+]
+
+
 PROCESS_SEEDS: dict[str, dict[str, Any]] = {
     PROCESS_SUBMITTAL_QC: {
         "name": "Submittal QC (default)",
+        "description": "Internal QC before GC/AE and before PO issue.",
         "queues": DEFAULT_QUEUES,
         "steps": DEFAULT_SUBMITTAL_QC_STEPS,
     },
     PROCESS_PURCHASE_ORDER: {
         "name": "Purchase order (default)",
+        "description": "Issue → ship dates → tracking → receive → 3-way match.",
         "queues": DEFAULT_PO_QUEUES,
         "steps": DEFAULT_PO_STEPS,
+    },
+    PROCESS_DRAWING_REVIEW: {
+        "name": "Drawing review first pass",
+        "description": "Automated estimator first pass on a sheet. Edit steps/prompts here; in-flight reviews keep their snapshot.",
+        "queues": DEFAULT_AI_QUEUES,
+        "steps": DEFAULT_DRAWING_REVIEW_STEPS,
+    },
+    PROCESS_TAKEOFF: {
+        "name": "Takeoff first pass",
+        "description": "Automated estimator first pass: propose assemblies and quantities. Human applies leftovers.",
+        "queues": DEFAULT_AI_QUEUES,
+        "steps": DEFAULT_TAKEOFF_STEPS,
+    },
+    PROCESS_ESTIMATOR_SCOPE: {
+        "name": "Overall bid-scope pass",
+        "description": "Decide which specs we bid (USIS standard set, or every spec in a GC bid package), then queue spec scripts.",
+        "queues": DEFAULT_AI_QUEUES,
+        "steps": DEFAULT_ESTIMATOR_SCOPE_STEPS,
     },
 }
 
@@ -217,6 +486,11 @@ def _audit(
     )
 
 
+def _automation_of(step: WorkflowDefinitionStep | Mapping[str, Any]) -> dict[str, Any]:
+    raw = step.get("automation") if isinstance(step, Mapping) else getattr(step, "automation", None)
+    return dict(raw) if isinstance(raw, dict) else {}
+
+
 def _step_snapshot(step: WorkflowDefinitionStep | Mapping[str, Any]) -> dict[str, Any]:
     if isinstance(step, Mapping):
         return {
@@ -228,6 +502,7 @@ def _step_snapshot(step: WorkflowDefinitionStep | Mapping[str, Any]) -> dict[str
             "on_approve_status": step.get("on_approve_status"),
             "entry_condition": step.get("entry_condition"),
             "skippable": bool(step.get("skippable")),
+            "automation": _automation_of(step),
         }
     return {
         "step_key": step.step_key,
@@ -238,11 +513,29 @@ def _step_snapshot(step: WorkflowDefinitionStep | Mapping[str, Any]) -> dict[str
         "on_approve_status": step.on_approve_status,
         "entry_condition": step.entry_condition,
         "skippable": bool(step.skippable),
+        "automation": _automation_of(step),
     }
 
 
 def _seed_for(process_key: str) -> dict[str, Any]:
-    return PROCESS_SEEDS.get(process_key) or PROCESS_SEEDS[PROCESS_SUBMITTAL_QC]
+    seed = PROCESS_SEEDS.get(process_key)
+    if seed is not None:
+        return seed
+    from . import _estimator_scripts as scripts
+
+    scripts.ensure_script_catalog()
+    row = scripts.get_script(process_key)
+    if row is None:
+        raise ApiError(f"unknown process_key: {process_key}", 400)
+    steps = scripts.seed_steps_for_script(row)
+    if not steps:
+        raise ApiError(f"no default steps for {process_key}", 400)
+    return {
+        "name": row.name,
+        "description": row.description or "",
+        "queues": DEFAULT_AI_QUEUES,
+        "steps": steps,
+    }
 
 
 def ensure_default_queues(process_key: str = PROCESS_SUBMITTAL_QC) -> None:
@@ -301,6 +594,7 @@ def ensure_default_definition(
                 on_approve_status=row["on_approve_status"],
                 entry_condition=row["entry_condition"],
                 skippable=row["skippable"],
+                automation=row.get("automation") or {},
             )
         )
     db.session.flush()
@@ -373,6 +667,7 @@ def start_instance(
                 on_approve_status=row["on_approve_status"],
                 entry_condition=row["entry_condition"],
                 skippable=bool(row.get("skippable")),
+                automation=row.get("automation") or {},
                 status="ready" if i == 0 else "pending",
             )
         )
@@ -567,6 +862,7 @@ def instance_public(instance: WorkflowInstance) -> dict[str, Any]:
                 "onApproveStatus": s.on_approve_status,
                 "entryCondition": s.entry_condition,
                 "skippable": s.skippable,
+                "automation": dict(s.automation or {}),
                 "status": s.status,
                 "assigneeUserId": str(s.assignee_user_id) if s.assignee_user_id else None,
                 "assigneeName": _user_name(assignee),
@@ -642,6 +938,11 @@ def publish_definition(data: Mapping[str, Any], cu: CurrentUser) -> WorkflowDefi
                     str(row.get("entry_condition") or row.get("entryCondition") or "").strip() or None
                 ),
                 skippable=bool(row.get("skippable")),
+                automation=(
+                    dict(row.get("automation") or {})
+                    if isinstance(row.get("automation"), Mapping)
+                    else {}
+                ),
             )
         )
     _audit(
@@ -727,3 +1028,79 @@ def list_queues(process_key: str) -> dict[str, Any]:
     ensure_default_queues(process_key)
     rows = db.session.scalars(select(WorkflowQueue).where(WorkflowQueue.process_key == process_key)).all()
     return {"entity": "workflow_queues", "items": [queue_public(q) for q in rows]}
+
+
+def ensure_all_default_definitions() -> None:
+    keys = set(PROCESS_SEEDS)
+    try:
+        from ..models.estimator_script import EstimatorScript
+        from . import _estimator_scripts as scripts
+
+        scripts.ensure_script_catalog()
+        for row in db.session.scalars(select(EstimatorScript)).all():
+            keys.add(row.script_key)
+    except Exception:
+        db.session.rollback()
+    for key in keys:
+        ensure_default_definition(process_key=key, project_id=None)
+
+
+def list_processes() -> dict[str, Any]:
+    ensure_all_default_definitions()
+    db.session.commit()
+    items = []
+    seen: set[str] = set()
+    for key, seed in PROCESS_SEEDS.items():
+        seen.add(key)
+        published = published_definition(key, None)
+        items.append(
+            {
+                "processKey": key,
+                "name": seed.get("name") or key,
+                "description": seed.get("description") or "",
+                "kind": "overall" if key == PROCESS_ESTIMATOR_SCOPE else "office",
+                "seedStepCount": len(seed.get("steps") or []),
+                "publishedVersion": published.version,
+                "publishedName": published.name,
+            }
+        )
+    try:
+        from . import _estimator_scripts as scripts
+
+        for row in scripts.list_scripts(active_only=False)["items"]:
+            key = row["scriptKey"]
+            if key in seen:
+                if key == PROCESS_ESTIMATOR_SCOPE:
+                    items[next(i for i, x in enumerate(items) if x["processKey"] == key)]["kind"] = "overall"
+                elif key.startswith("spec."):
+                    for x in items:
+                        if x["processKey"] == key:
+                            x["kind"] = "spec"
+                continue
+            published = published_definition(key, None)
+            items.append(
+                {
+                    "processKey": key,
+                    "name": row["name"],
+                    "description": row.get("description") or "",
+                    "kind": row.get("kind") or "spec",
+                    "seedStepCount": 0,
+                    "publishedVersion": published.version,
+                    "publishedName": published.name,
+                }
+            )
+    except Exception:
+        db.session.rollback()
+    return {"entity": "workflow_processes", "items": items}
+
+
+def seed_steps_public(process_key: str) -> dict[str, Any]:
+    seed = _seed_for(process_key)
+    return {
+        "entity": "workflow_seed",
+        "processKey": process_key,
+        "name": seed.get("name"),
+        "description": seed.get("description") or "",
+        "queues": [{"queueKey": k, "name": n} for k, n in seed["queues"]],
+        "steps": [_step_snapshot(s) for s in seed["steps"]],
+    }

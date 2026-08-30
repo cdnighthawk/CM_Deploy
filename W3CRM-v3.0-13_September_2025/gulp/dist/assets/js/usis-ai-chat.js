@@ -650,6 +650,7 @@
 			});
 		}
 		if (state.mode) payload.mode = state.mode;
+		if (o.system_hint || o.systemHint) payload.system_hint = o.system_hint || o.systemHint;
 		if (state.sessionId) payload.session_id = state.sessionId;
 		return fetchJson("/api/ai/chat", { method: "POST", body: payload })
 			.then(function (data) {
@@ -667,6 +668,7 @@
 				if (state.persisted) refreshSessionList();
 				var model = (data && data.model) || state.status.model || "Grok";
 				setStatus((state.persisted ? "Saved · " : "Grok · ") + model, "ok");
+				return data;
 			})
 			.catch(function (err) {
 				var msg = errorMessage(err);
@@ -674,9 +676,14 @@
 				persist();
 				render();
 				setStatus(msg, "error");
+				throw err;
 			})
-			.then(function () {
+			.then(function (data) {
 				setSending(false);
+				return data;
+			}, function (err) {
+				setSending(false);
+				throw err;
 			});
 	}
 

@@ -68,6 +68,7 @@ class WorkflowDefinitionStep(UUIDPKMixin, TimestampMixin, db.Model):
     on_approve_status: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     entry_condition: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     skippable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    automation: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
 
     definition: Mapped["WorkflowDefinition"] = relationship(back_populates="steps")
 
@@ -148,6 +149,7 @@ class WorkflowInstanceStep(UUIDPKMixin, TimestampMixin, db.Model):
     on_approve_status: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     entry_condition: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     skippable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    automation: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="pending", index=True)
     assignee_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True

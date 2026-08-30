@@ -103,6 +103,7 @@ def ai_chat():
         return _jsonify({"error": "messages array is required"}), 400
 
     mode = body.get("mode")
+    system_hint = body.get("system_hint") or body.get("systemHint")
     attachments = body.get("attachments")
     if attachments is not None and not isinstance(attachments, list):
         return _jsonify({"error": "attachments must be an array"}), 400
@@ -117,6 +118,7 @@ def ai_chat():
             mode=str(mode) if mode else None,
             cu=cu,
             attachments=attachments,
+            system_hint=str(system_hint) if system_hint else None,
         )
     except AgentError as exc:
         return _jsonify({"error": exc.message}), exc.status

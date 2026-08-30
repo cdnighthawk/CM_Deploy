@@ -35,6 +35,14 @@
 		return new URLSearchParams(window.location.search).get("id");
 	}
 
+	function esc(s) {
+		return String(s == null ? "" : s)
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;");
+	}
+
 	function notifyErr(msg) {
 		if (window.USISNotify) window.USISNotify.error(String(msg));
 		else alert(String(msg));
@@ -324,9 +332,225 @@
 			});
 	}
 
+	function renderBidScope(scope) {
+		var src = document.getElementById("usis-est-scope-source");
+		var pkg = document.getElementById("usis-est-scope-pkg");
+		var tb = document.getElementById("usis-est-scope-rows");
+		if (src && scope) src.value = scope.source || "standard";
+		if (pkg && scope) pkg.value = scope.bidPackageLabel || "";
+		if (!tb) return;
+		tb.innerHTML = (scope && scope.items ? scope.items : [])
+			.map(function (it) {
+				return (
+					"<tr data-id=\"" +
+					esc(it.id) +
+					"\"><td><input type=\"checkbox\" class=\"form-check-input usis-scope-inc\"" +
+					(it.included ? " checked" : "") +
+					"></td><td><input class=\"form-control form-control-sm usis-scope-code\" value=\"" +
+					esc(it.specCode) +
+					"\"></td><td><input class=\"form-control form-control-sm usis-scope-title\" value=\"" +
+					esc(it.specTitle) +
+					"\"></td><td><code>" +
+					esc(it.scriptKey || "—") +
+					"</code></td><td>" +
+					esc(it.status || "") +
+					"</td><td>" +
+					(it.scriptKey
+						? '<button type="button" class="btn btn-link btn-sm p-0 usis-scope-run" data-script="' +
+						  esc(it.scriptKey) +
+						  '">Run</button>'
+						: "") +
+					"</td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function collectBidScope() {
+		var src = document.getElementById("usis-est-scope-source");
+		var pkg = document.getElementById("usis-est-scope-pkg");
+		var rows = document.querySelectorAll("#usis-est-scope-rows tr");
+		var items = Array.prototype.map.call(rows, function (tr, i) {
+			return {
+				spec_code: (tr.querySelector(".usis-scope-code") || {}).value || "",
+				spec_title: (tr.querySelector(".usis-scope-title") || {}).value || "",
+				included: !!(tr.querySelector(".usis-scope-inc") && tr.querySelector(".usis-scope-inc").checked),
+				sort_order: i + 1,
+			};
+		});
+		return {
+			source: src ? src.value : "standard",
+			bid_package_label: pkg ? pkg.value : "",
+			items: items,
+		};
+	}
+
+	function loadBidScope(estimateKey) {
+		return fetch(apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/bid-scope", {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					if (!res.ok) throw new Error(j.error || res.status);
+					return j.item;
+				});
+			})
+			.then(function (item) {
+				renderBidScope(item);
+				return item;
+			})
+			.catch(function () {
+				renderBidScope({ source: "standard", items: [] });
+			});
+	}
+
+	function bindBidScope(estimateKey, projectId) {
+		loadBidScope(estimateKey);
+		if (window.USIS_AI_WORKFLOW) {
+			window.USIS_AI_WORKFLOW.ensure({
+				processKey: "estimator_scope",
+				subjectType: "estimate",
+				subjectId: estimateKey,
+				projectId: projectId,
+			})
+				.then(function (inst) {
+					window.USIS_AI_WORKFLOW.renderStepper(document.getElementById("usis-est-scope-stepper"), inst);
+				})
+				.catch(function () {});
+		}
+		var run = document.getElementById("usis-est-scope-run");
+		if (run)
+			run.addEventListener("click", function () {
+				if (!window.USIS_AI_WORKFLOW) return;
+				run.disabled = true;
+				window.USIS_AI_WORKFLOW.runUntilHuman({
+					processKey: "estimator_scope",
+					subjectType: "estimate",
+					subjectId: estimateKey,
+					projectId: projectId,
+					estimateId: estimateKey,
+					stepperEl: document.getElementById("usis-est-scope-stepper"),
+					subjectNote: "estimate_id=" + estimateKey,
+					mode: "estimating_review",
+				})
+					.then(function () {
+						if (window.USISNotify) window.USISNotify.success("Overall pass paused for bid-set confirm.");
+						return loadBidScope(estimateKey);
+					})
+					.catch(function (e) {
+						notifyErr(e.message || e);
+					})
+					.then(function () {
+						run.disabled = false;
+					});
+			});
+		var save = document.getElementById("usis-est-scope-save");
+		if (save)
+			save.addEventListener("click", function () {
+				fetch(apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/bid-scope", {
+					method: "PUT",
+					credentials: "include",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					body: JSON.stringify(collectBidScope()),
+				})
+					.then(function (res) {
+						return res.json().then(function (j) {
+							if (!res.ok) throw new Error(j.error || res.status);
+							return j.item;
+						});
+					})
+					.then(function (item) {
+						renderBidScope(item);
+						if (window.USISNotify) window.USISNotify.success("Bid set saved.");
+					})
+					.catch(function (e) {
+						notifyErr(e.message || e);
+					});
+			});
+		var confirm = document.getElementById("usis-est-scope-confirm");
+		if (confirm)
+			confirm.addEventListener("click", function () {
+				fetch(apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/bid-scope", {
+					method: "PUT",
+					credentials: "include",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					body: JSON.stringify(collectBidScope()),
+				})
+					.then(function () {
+						return fetch(apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/bid-scope/enqueue", {
+							method: "POST",
+							credentials: "include",
+							headers: { "Content-Type": "application/json", Accept: "application/json" },
+							body: "{}",
+						});
+					})
+					.then(function (res) {
+						return res.json().then(function (j) {
+							if (!res.ok) throw new Error(j.error || res.status);
+							return j.item;
+						});
+					})
+					.then(function (item) {
+						renderBidScope(item);
+						if (window.USISNotify) window.USISNotify.success("Spec scripts queued.");
+					})
+					.catch(function (e) {
+						notifyErr(e.message || e);
+					});
+			});
+		var host = document.getElementById("usis-est-scope-rows");
+		if (host)
+			host.addEventListener("click", function (ev) {
+				var btn = ev.target.closest && ev.target.closest(".usis-scope-run");
+				if (!btn || !window.USIS_AI_WORKFLOW) return;
+				var key = btn.getAttribute("data-script");
+				btn.disabled = true;
+				window.USIS_AI_WORKFLOW.runUntilHuman({
+					processKey: key,
+					subjectType: "estimate",
+					subjectId: estimateKey,
+					projectId: projectId,
+					estimateId: estimateKey,
+					subjectNote: "estimate_id=" + estimateKey + " script=" + key,
+					mode: "estimating_review",
+				})
+					.then(function () {
+						if (window.USISNotify) window.USISNotify.success("Spec script reached leftovers.");
+						return loadBidScope(estimateKey);
+					})
+					.catch(function (e) {
+						notifyErr(e.message || e);
+					})
+					.then(function () {
+						btn.disabled = false;
+					});
+			});
+	}
+
 	function mountGrid(root, estimateKey, projectId, leadKey) {
 		var doorId = leadKey || estimateKey;
 		root.innerHTML =
+			'<div class="border rounded p-2 mb-3 bg-light">' +
+			'<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">' +
+			'<strong class="small mb-0">Bid scope</strong>' +
+			'<div class="d-flex flex-wrap gap-2">' +
+			'<button type="button" class="btn btn-sm usis-ai-review" id="usis-est-scope-run">Run overall pass</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-est-scope-confirm">Confirm &amp; queue spec scripts</button>' +
+			"</div></div>" +
+			'<p class="small text-muted mb-2">Overall pass picks specs from USIS standards, or from a GC bid package. Then each included spec runs its own script.</p>' +
+			'<p class="small mb-2" id="usis-est-scope-stepper"></p>' +
+			'<div class="row g-2 align-items-end mb-2">' +
+			'<div class="col-md-3"><label class="form-label small mb-0">Source</label>' +
+			'<select class="form-select form-select-sm" id="usis-est-scope-source"><option value="standard">USIS standard specs</option>' +
+			'<option value="bid_package">GC bid package (bid all listed)</option><option value="mixed">Mixed</option></select></div>' +
+			'<div class="col-md-4"><label class="form-label small mb-0">Package name</label>' +
+			'<input class="form-control form-control-sm" id="usis-est-scope-pkg" placeholder="e.g. Bid Package 3 — Interiors"></div>' +
+			'<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="usis-est-scope-save">Save bid set</button></div>' +
+			"</div>" +
+			'<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>' +
+			"<th></th><th>Spec</th><th>Title</th><th>Script</th><th>Status</th><th></th></tr></thead>" +
+			'<tbody id="usis-est-scope-rows"></tbody></table></div></div>' +
 			'<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">' +
 			'<h5 class="mb-0">Takeoff</h5>' +
 			'<div class="d-flex flex-wrap gap-2 align-items-center">' +
@@ -344,7 +568,9 @@
 			'<button type="button" class="btn btn-sm btn-outline-secondary d-md-none" id="usis-est-takeoff-sort-filter">' +
 			'<i class="fa fa-filter me-1"></i> Sort &amp; Filter</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-est-takeoff-reset-view">Reset view</button>' +
+			'<button type="button" class="btn btn-sm usis-ai-review" id="usis-est-takeoff-firstpass">Run first-pass takeoff</button>' +
 			'<button type="button" class="btn btn-sm btn-primary" id="usis-est-takeoff-add">Add line</button></div></div>' +
+			'<p class="small mb-2" id="usis-est-takeoff-stepper"></p>' +
 			'<div id="usis-grid-est-takeoff" class="border rounded overflow-hidden bg-white mb-2"></div>' +
 			'<p class="small text-muted mb-2 d-none" id="usis-est-takeoff-af-status" aria-live="polite"></p>' +
 			'<p class="text-muted small mb-0">Writes require <code>TAKEOFF_API_WRITES_ENABLED=1</code> on the API. Use <strong>View</strong> when a line has a drawing to measure on the PDF.</p>';
@@ -416,6 +642,43 @@
 			takeoffTable.on("tableBuilt", decorateTakeoffHeaders);
 		} else {
 			setTimeout(decorateTakeoffHeaders, 0);
+		}
+
+		bindBidScope(estimateKey, projectId);
+
+		var firstPass = document.getElementById("usis-est-takeoff-firstpass");
+		if (firstPass && window.USIS_AI_WORKFLOW) {
+			window.USIS_AI_WORKFLOW.ensure({
+				processKey: "takeoff",
+				subjectType: "estimate",
+				subjectId: estimateKey,
+				projectId: projectId,
+			})
+				.then(function (inst) {
+					window.USIS_AI_WORKFLOW.renderStepper(document.getElementById("usis-est-takeoff-stepper"), inst);
+				})
+				.catch(function () {});
+			firstPass.addEventListener("click", function () {
+				firstPass.disabled = true;
+				window.USIS_AI_WORKFLOW.runUntilHuman({
+					processKey: "takeoff",
+					subjectType: "estimate",
+					subjectId: estimateKey,
+					projectId: projectId,
+					stepperEl: document.getElementById("usis-est-takeoff-stepper"),
+					subjectNote: "estimate_id=" + estimateKey + (projectId ? " project_id=" + projectId : ""),
+					mode: "estimating_review",
+				})
+					.then(function () {
+						if (window.USISNotify) window.USISNotify.success("First-pass takeoff ready — apply leftovers.");
+					})
+					.catch(function (e) {
+						notifyErr(e.message || e);
+					})
+					.then(function () {
+						firstPass.disabled = false;
+					});
+			});
 		}
 
 		var btn = document.getElementById("usis-est-takeoff-add");

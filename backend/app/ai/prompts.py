@@ -31,9 +31,12 @@ _MODE_HINTS: dict[str, str] = {
 }
 
 
-def build_system_prompt(mode: str | None = None) -> str:
+def build_system_prompt(mode: str | None = None, system_hint: str | None = None) -> str:
     parts = [_BASE]
     key = (mode or "").strip().lower()
     if key and key in _MODE_HINTS:
         parts.append(f"\nMode: {key}\n{_MODE_HINTS[key]}")
+    extra = (system_hint or "").strip()
+    if extra:
+        parts.append(f"\nWorkflow hint (amendable):\n{extra}")
     return "\n".join(parts)

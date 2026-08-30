@@ -15,6 +15,12 @@ from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
 from .estimate import Estimate, EstimateLineItem
+from .estimator_script import (
+    EstimateBidScope,
+    EstimateBidScopeItem,
+    EstimatorScript,
+    EstimatorStandardSpec,
+)
 from .field_ops import DailyReport, FieldPhoto, TimeEntry, TimePunch
 from .hr import (
     HrEmployeeDocument,
@@ -150,7 +156,11 @@ __all__ = [
     "DrawingAnnotation",
     "DrawingSet",
     "Estimate",
+    "EstimateBidScope",
+    "EstimateBidScopeItem",
     "EstimateLineItem",
+    "EstimatorScript",
+    "EstimatorStandardSpec",
     "FieldPhoto",
     "HrEmployeeDispatch",
     "InvoiceDeliveryMethod",

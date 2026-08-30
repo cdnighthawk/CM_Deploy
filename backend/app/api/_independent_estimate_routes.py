@@ -9,7 +9,9 @@ from ..extensions import db
 from ..models import AuditLog, Estimate
 from . import _document_render_service as document_render_svc
 from . import _estimate_service as est_svc
+from . import _estimator_scripts as scripts
 from . import _rfi_service as rfi_svc
+from ._rfi_service import ApiError
 from ._perms import current_user
 from . import v1 as v1_mod
 from .v1 import (
@@ -158,6 +160,55 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         if est is None:
             return _jsonify({"error": "estimate not found"}), 404
         return _jsonify({"item": _estimate_detail_item(est), "entity": "estimate"})
+
+    @bp.get("/estimates/<estimate_id>/bid-scope")
+    def get_estimate_bid_scope(estimate_id: str):
+        eid = _parse_uuid_param(estimate_id)
+        if eid is None:
+            return _jsonify({"error": "invalid estimate id"}), 400
+        try:
+            scope = scripts.get_scope(eid) or scripts.ensure_scope_from_standard(eid)
+            db.session.commit()
+            return _jsonify({"item": scripts.scope_public(scope), "entity": "estimate_bid_scope"})
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.put("/estimates/<estimate_id>/bid-scope")
+    def put_estimate_bid_scope(estimate_id: str):
+        eid = _parse_uuid_param(estimate_id)
+        if eid is None:
+            return _jsonify({"error": "invalid estimate id"}), 400
+        data = request.get_json(silent=True) or {}
+        try:
+            scope = scripts.replace_scope(eid, data)
+            db.session.commit()
+            return _jsonify({"item": scripts.scope_public(scope), "entity": "estimate_bid_scope"})
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.post("/estimates/<estimate_id>/bid-scope/confirm")
+    def confirm_estimate_bid_scope(estimate_id: str):
+        eid = _parse_uuid_param(estimate_id)
+        if eid is None:
+            return _jsonify({"error": "invalid estimate id"}), 400
+        try:
+            scope = scripts.confirm_scope(eid)
+            db.session.commit()
+            return _jsonify({"item": scripts.scope_public(scope), "entity": "estimate_bid_scope"})
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.post("/estimates/<estimate_id>/bid-scope/enqueue")
+    def enqueue_estimate_spec_scripts(estimate_id: str):
+        eid = _parse_uuid_param(estimate_id)
+        if eid is None:
+            return _jsonify({"error": "invalid estimate id"}), 400
+        try:
+            out = scripts.enqueue_spec_scripts(eid, current_user())
+            db.session.commit()
+            return _jsonify(out)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
 
     @bp.delete("/estimates/<estimate_id>")
     def delete_job_estimate(estimate_id: str):

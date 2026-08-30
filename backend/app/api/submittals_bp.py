@@ -8,6 +8,7 @@ from flask import Blueprint, Response, request
 
 from ._perms import current_user
 from ._rfi_service import ApiError, _parse_uuid
+from . import _estimator_scripts as scripts
 from . import _submittal_qc as qc
 from . import _workflow_service as wf
 from ..submittals.checklist_templates import list_templates
@@ -219,5 +220,130 @@ def assign_instance(instance_id: str):
     try:
         inst = wf.assign_instance_step(_sid(instance_id), data, current_user())
         return _jsonify(wf.instance_public(inst))
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.get("/processes")
+def list_processes():
+    try:
+        return _jsonify(wf.list_processes())
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.get("/scripts")
+def list_scripts():
+    try:
+        kind = request.args.get("kind")
+        active = (request.args.get("active_only") or "1") != "0"
+        return _jsonify(scripts.list_scripts(kind=kind, active_only=active))
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.post("/scripts")
+def upsert_script():
+    data = request.get_json(silent=True) or {}
+    try:
+        row = scripts.upsert_script(data, current_user())
+        return _jsonify(scripts.script_public(row)), 201
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.get("/standard-specs")
+def list_standard_specs():
+    try:
+        return _jsonify(scripts.list_standard_specs())
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.put("/standard-specs")
+def put_standard_specs():
+    data = request.get_json(silent=True) or {}
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        return _jsonify({"error": "items array is required"}), 400
+    try:
+        return _jsonify(scripts.replace_standard_specs(items, current_user()))
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.get("/seeds/<process_key>")
+def get_seed(process_key: str):
+    try:
+        return _jsonify(wf.seed_steps_public(process_key))
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.get("/instances")
+def get_instance_for_subject():
+    process_key = (request.args.get("process_key") or "").strip()
+    subject_type = (request.args.get("subject_type") or "").strip()
+    subject_id = _parse_uuid(request.args.get("subject_id"))
+    if not process_key or not subject_type or subject_id is None:
+        return _jsonify({"error": "process_key, subject_type, and subject_id are required"}), 400
+    inst = wf.instance_for_subject(process_key, subject_type, subject_id)
+    if inst is None:
+        return _jsonify({"item": None, "entity": "workflow_instance"}), 200
+    return _jsonify({"item": wf.instance_public(inst), "entity": "workflow_instance"})
+
+
+@workflows_bp.post("/instances")
+def ensure_instance():
+    data = request.get_json(silent=True) or {}
+    process_key = str(data.get("process_key") or data.get("processKey") or "").strip()
+    subject_type = str(data.get("subject_type") or data.get("subjectType") or "").strip()
+    subject_id = _parse_uuid(data.get("subject_id") or data.get("subjectId"))
+    project_id = _parse_uuid(data.get("project_id") or data.get("projectId"))
+    if not process_key or not subject_type or subject_id is None:
+        return _jsonify({"error": "process_key, subject_type, and subject_id are required"}), 400
+    try:
+        inst = wf.ensure_instance(
+            process_key=process_key,
+            subject_type=subject_type,
+            subject_id=subject_id,
+            project_id=project_id,
+            cu=current_user(),
+        )
+        from ..extensions import db
+
+        db.session.commit()
+        return _jsonify({"item": wf.instance_public(inst), "entity": "workflow_instance"})
+    except ApiError as exc:
+        return _err(exc)
+
+
+@workflows_bp.get("/instances/<instance_id>")
+def get_instance(instance_id: str):
+    try:
+        inst = wf.get_instance(_sid(instance_id))
+    except ApiError as exc:
+        return _err(exc)
+    if inst is None:
+        return _jsonify({"error": "workflow instance not found"}), 404
+    return _jsonify({"item": wf.instance_public(inst), "entity": "workflow_instance"})
+
+
+@workflows_bp.post("/instances/<instance_id>/complete")
+def complete_instance_step(instance_id: str):
+    data = request.get_json(silent=True) or {}
+    try:
+        inst = wf.get_instance(_sid(instance_id))
+        if inst is None:
+            raise ApiError("workflow instance not found", 404)
+        step_key = str(data.get("step_key") or data.get("stepKey") or inst.current_step_key or "").strip()
+        if not step_key:
+            raise ApiError("step_key is required", 400)
+        wf.complete_step(inst, step_key, cu=current_user(), skip=bool(data.get("skip")))
+        from ..extensions import db
+
+        db.session.commit()
+        inst = wf.get_instance(inst.id)
+        return _jsonify({"item": wf.instance_public(inst) if inst else None, "entity": "workflow_instance"})
     except ApiError as exc:
         return _err(exc)

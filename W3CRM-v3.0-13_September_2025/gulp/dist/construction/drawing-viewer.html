@@ -556,7 +556,7 @@
 						<ul class="dropdown-menu dropdown-menu-end" id="usis-dv-thumb-list"></ul>
 					</div>
 					<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-dv-ann-add">Save note</button>
-					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub"><i class="icon feather icon-star me-1" aria-hidden="true"></i>Review with Local AI</button>
+					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub"><i class="icon feather icon-star me-1" aria-hidden="true"></i>Run first-pass review</button>
 					<div class="dropdown d-none" id="usis-dv-more-wrap">
 						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</button>
 						<ul class="dropdown-menu dropdown-menu-end">
@@ -573,6 +573,16 @@
 				<div class="alert alert-danger d-none py-1 px-2 mb-0 small flex-grow-1" id="usis-dv-error" role="alert"></div>
 				<div class="alert alert-light border py-1 px-2 mb-0 small d-none" id="usis-dv-loading" role="status">
 					<span id="usis-dv-loading-text">Loading drawing…</span>
+				</div>
+				<div class="small py-1 px-2 d-flex flex-wrap align-items-center gap-2">
+					<span class="text-muted">Review</span>
+					<span id="usis-dv-review-stepper"></span>
+					<button type="button" class="btn btn-link btn-sm p-0" id="usis-dv-review-done">Mark leftover done</button>
+				</div>
+				<div class="small py-1 px-2 d-flex flex-wrap align-items-center gap-2">
+					<span class="text-muted">Takeoff</span>
+					<span id="usis-dv-takeoff-stepper"></span>
+					<button type="button" class="btn btn-link btn-sm p-0" id="usis-dv-takeoff-done">Mark leftover done</button>
 				</div>
 			</div>
 
@@ -654,6 +664,7 @@
 				</div>
 				<div class="usis-dv-toolgroup usis-dv-toolgroup--takeoff">
 					<span class="usis-overline">Takeoff</span>
+					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-takeoff-firstpass">Run first-pass takeoff</button>
 					<div class="usis-dv-toolgroup__row">
 						<div class="usis-seg" role="group" aria-label="Takeoff tools">
 							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-line" title="Takeoff length (Shift+Alt+L). Writes quantity to the selected takeoff line." aria-pressed="false">Linear</button>
@@ -836,7 +847,8 @@
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260830b"></script>
+	<script src="assets/js/usis-ai-workflow.js"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260830c"></script>
 
 </body>
 </html>

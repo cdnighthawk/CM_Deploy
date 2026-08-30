@@ -66,12 +66,13 @@ def run_chat(
     mode: str | None,
     cu: CurrentUser,
     attachments: list[Any] | None = None,
+    system_hint: str | None = None,
 ) -> dict[str, Any]:
     if not config.is_configured():
         raise AgentError("AI is not configured (set USIS_AI_ENABLED=1 and USIS_XAI_API_KEY)", status=503)
 
     conv: list[dict[str, Any]] = [
-        {"role": "system", "content": build_system_prompt(mode)},
+        {"role": "system", "content": build_system_prompt(mode, system_hint)},
         *_normalize_messages(messages),
     ]
     attached: list[dict[str, str]] = []

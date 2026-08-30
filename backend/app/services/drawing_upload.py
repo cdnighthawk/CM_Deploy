@@ -1,6 +1,7 @@
 """Split multi-page drawing PDFs into one stored sheet per page."""
 from __future__ import annotations
 
+import hashlib
 import io
 import re
 import uuid
@@ -77,6 +78,29 @@ def resolve_drawing_object_name(d: Drawing) -> str | None:
 def delete_drawing_objects(d: Drawing) -> None:
     for name in drawing_object_candidates(d):
         delete_stored(UploadCategory.DRAWINGS, name)
+
+
+def replace_drawing_file(d: Drawing, pdf_bytes: bytes) -> int:
+    """Overwrite the stored PDF for an existing drawing row. Returns byte size."""
+    if not pdf_bytes:
+        raise DrawingUploadError("empty upload", 400)
+    tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+    obj_name = str(tags.get("storage_object") or "").strip() or drawing_storage_relpath(d)
+    try:
+        sz = save_upload(UploadCategory.DRAWINGS, obj_name, io.BytesIO(pdf_bytes))
+    except StorageError as exc:
+        raise DrawingUploadError(exc.message, exc.status) from exc
+    except OSError as exc:
+        raise DrawingUploadError(f"could not save file: {exc}", 500) from exc
+    if sz == 0:
+        raise DrawingUploadError("empty upload", 400)
+    tags["storage_object"] = obj_name
+    tags["content_hash"] = hashlib.sha256(pdf_bytes).hexdigest()
+    d.tags = tags
+    d.file_url = f"/api/v1/drawings/{d.id}/file"
+    d.file_size_bytes = int(sz)
+    d.mime_type = "application/pdf"
+    return sz
 
 
 class DrawingUploadError(Exception):

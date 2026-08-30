@@ -3,6 +3,7 @@
 GET  /api/projects
 POST /api/documents
 POST /api/drawings
+POST /api/drawings/<drawing_id>/file
 """
 from __future__ import annotations
 
@@ -12,7 +13,16 @@ from collections.abc import Iterable
 from flask import Blueprint, current_app, jsonify, request
 
 from ..extensions import db
-from ..services.ingest import IngestError, handle_ingest_upload, list_ingest_projects, parse_ingest_metadata
+from ..models import Drawing
+from ..services.drawing_upload import DrawingUploadError, replace_drawing_file
+from ..services.ingest import (
+    IngestError,
+    as_uuid,
+    handle_ingest_upload,
+    list_ingest_projects,
+    parse_ingest_metadata,
+    serialize_ingest_doc,
+)
 
 bp = Blueprint("api_ingest", __name__)
 
@@ -80,6 +90,38 @@ def ingest_upload_document():
 @bp.post("/api/drawings")
 def ingest_upload_drawing():
     return _ingest_upload("drawing")
+
+
+@bp.post("/api/drawings/<drawing_id>/file")
+def ingest_replace_drawing_file(drawing_id: str):
+    """Replace the stored PDF for an existing drawing (B2 backfill / re-upload)."""
+    denied = _require_ingest_auth()
+    if denied is not None:
+        return denied
+    did = as_uuid(drawing_id)
+    if did is None:
+        return jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return jsonify({"error": "drawing not found"}), 404
+    upload = request.files.get("file")
+    if upload is None or not getattr(upload, "filename", None):
+        return jsonify({"error": 'multipart uploads require a non-empty file field "file".'}), 400
+    payload = upload.read()
+    if not payload:
+        return jsonify({"error": "multipart uploads require a non-empty file field."}), 400
+    try:
+        replace_drawing_file(row, payload)
+        db.session.commit()
+    except DrawingUploadError as exc:
+        db.session.rollback()
+        return jsonify({"error": exc.message}), exc.status
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("ingest drawing file replace failed")
+        return jsonify({"error": "drawing file replace failed"}), 500
+    item = serialize_ingest_doc(row, kind="drawing", project=None)
+    return jsonify({"drawing": item, "replaced": True}), 200
 
 
 def _ingest_upload(kind: str):

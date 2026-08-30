@@ -205,6 +205,58 @@ def test_ingest_document_and_drawing_upload(client, flask_app):
     assert file_r.data == spec
 
 
+def test_ingest_replace_drawing_file(client, flask_app):
+    headers = _auth(flask_app)
+    first = _pdf_bytes()
+    replacement = _pdf_bytes() + b"\n%replaced\n"
+    with flask_app.app_context():
+        p = Project(name="IngestRep-" + uuid.uuid4().hex[:8], number="259998")
+        db.session.add(p)
+        db.session.commit()
+        pid = str(p.id)
+
+    created = client.post(
+        "/api/drawings",
+        headers=headers,
+        data={
+            "file": (io.BytesIO(first), "A200.pdf"),
+            "metadata": json.dumps(
+                {
+                    "source": "autodesk_desktop_connector",
+                    "project_id": pid,
+                    "sheet_number": "A200",
+                }
+            ),
+        },
+        content_type="multipart/form-data",
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    did = created.get_json()["drawing"]["drawing_id"]
+
+    missing = client.post(
+        f"/api/drawings/{did}/file",
+        headers=headers,
+        data={"file": (io.BytesIO(b""), "empty.pdf")},
+        content_type="multipart/form-data",
+    )
+    assert missing.status_code == 400
+
+    replaced = client.post(
+        f"/api/drawings/{did}/file",
+        headers=headers,
+        data={"file": (io.BytesIO(replacement), "A200.pdf")},
+        content_type="multipart/form-data",
+    )
+    assert replaced.status_code == 200, replaced.get_data(as_text=True)
+    body = replaced.get_json()
+    assert body["replaced"] is True
+    assert body["drawing"]["drawing_id"] == did
+
+    file_r = client.get(f"/api/v1/drawings/{did}/file")
+    assert file_r.status_code == 200
+    assert file_r.data == replacement
+
+
 def test_ingest_unassigned_upload_when_project_unknown(client, flask_app):
     headers = _auth(flask_app)
     payload = b"unassigned-spec"

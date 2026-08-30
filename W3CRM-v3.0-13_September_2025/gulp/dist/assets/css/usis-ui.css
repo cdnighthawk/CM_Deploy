@@ -1236,8 +1236,7 @@ body.usis-drawing-viewer .content-body.usis-dv-page {
 	padding-bottom: 0 !important;
 }
 body.usis-drawing-viewer .usis-dv-page .page-title {
-	flex: 0 0 auto;
-	margin-bottom: 0.5rem;
+	display: none;
 }
 .page-title .breadcrumb #usis-project-crumb-link,
 .page-title .breadcrumb #usis-dv-project-crumb-link {
@@ -1253,7 +1252,7 @@ body.usis-drawing-viewer .usis-dv-page__body {
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
-	padding-bottom: 0.75rem;
+	padding-bottom: 0;
 }
 .usis-dv-workspace {
 	flex: 1 1 auto;
@@ -1379,55 +1378,37 @@ a.usis-drawing-name-link:hover {
 	background: var(--usis-paper);
 	border-bottom: 0;
 	box-shadow: none;
-	align-items: flex-end;
-	padding-top: 0.35rem;
-	padding-bottom: 0.5rem;
+	align-items: center;
+	padding-top: 0.28rem;
+	padding-bottom: 0.28rem;
+	gap: 0.4rem 0.55rem;
 }
 
 .usis-dv-toolbar .btn {
-	min-height: 32px;
+	min-height: 30px;
 }
 
-.usis-dv-toolbar .usis-overline,
-.usis-dv-toolbar strong.small,
-.usis-dv-chrome .usis-overline {
-	font-size: 0.75rem;
-	font-weight: 650;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--usis-text-secondary);
-	margin-bottom: 0.2rem;
+.usis-dv-toolbar__rule {
+	width: 1px;
+	align-self: stretch;
+	min-height: 1.6rem;
+	background: var(--usis-divider);
+	flex: 0 0 1px;
 }
 
-.usis-dv-toolgroup {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 0.15rem;
-	min-width: 0;
-}
-
-.usis-dv-toolgroup--grow {
-	flex: 1 1 auto;
-}
-
-.usis-dv-toolbar--draw {
-	border-top: 1px solid var(--usis-divider);
-	padding-top: 0.4rem;
-}
-
-.usis-dv-toolgroup--takeoff {
-	padding-left: 0.75rem;
-	border-left: 1px solid var(--usis-divider);
-}
-
-.usis-dv-toolbar .usis-dv-toolgroup--takeoff .usis-overline {
-	color: var(--usis-primary);
-}
-
-.usis-dv-toolgroup--status {
+.usis-dv-status {
 	margin-left: auto;
+	font-size: 0.75rem;
+	color: var(--usis-text-muted, #6c757d);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 	max-width: 16rem;
+}
+
+.usis-dv-toolbar.is-takeoff #usis-dv-intent-takeoff {
+	border-color: var(--usis-primary);
+	color: var(--usis-primary);
 }
 
 .usis-dv-toolbar #usis-dv-revision {
@@ -1559,32 +1540,17 @@ a.usis-drawing-name-link:hover {
 }
 
 .usis-dv-hint {
-	flex: 0 0 auto;
-	margin: 0;
-	padding: 0.28rem 0.75rem;
-	font-size: 0.6875rem;
-	color: #c5ced4;
-	background: #3f4448;
-	border-top: 1px solid #2f3336;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.usis-dv-hint kbd {
-	background: #2f3336;
-	color: #e8eef2;
-	border: 1px solid #555c61;
-	box-shadow: none;
-	font-size: 0.625rem;
-	padding: 0.05rem 0.28rem;
+	display: none;
 }
 
 @media (max-width: 1100px) {
-	.usis-dv-toolgroup--status {
+	.usis-dv-status {
 		margin-left: 0;
 		max-width: none;
 		flex: 1 1 100%;
+	}
+	.usis-dv-toolbar__rule {
+		display: none;
 	}
 }
 

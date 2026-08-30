@@ -264,12 +264,168 @@
 		return r && r.id ? r.id : null;
 	}
 
+	function captureSheetDataUrl() {
+		try {
+			if (fab && typeof fab.toDataURL === "function") {
+				return fab.toDataURL({ format: "png", quality: 0.72, multiplier: 0.4 });
+			}
+		} catch (e) {}
+		return null;
+	}
+
+	function persistDrawingFindings(text) {
+		var did = currentRevisionDrawingId();
+		if (!did || !String(text || "").trim()) return Promise.resolve();
+		return fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(did) + "/annotations", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			credentials: "include",
+			body: JSON.stringify({
+				type: "ai_review",
+				data: { text: String(text).slice(0, 8000), source: "first_pass" },
+			}),
+		}).then(function (res) {
+			return res.json().then(function (j) {
+				if (!res.ok) throw new Error(j.error || res.status);
+				return j;
+			});
+		});
+	}
+
+	function firstPassSubjectNote() {
+		var parts = [];
+		var did = currentRevisionDrawingId();
+		if (did) parts.push("drawing_id=" + did);
+		if (projectId) parts.push("project_id=" + projectId);
+		if (estimateId) parts.push("estimate_id=" + estimateId);
+		return parts.length ? "Context: " + parts.join(" ") : "";
+	}
+
+	function refreshAiWorkflows() {
+		if (!window.USIS_AI_WORKFLOW) return;
+		var did = currentRevisionDrawingId();
+		if (did) {
+			window.USIS_AI_WORKFLOW.ensure({
+				processKey: "drawing_review",
+				subjectType: "drawing",
+				subjectId: did,
+				projectId: projectId,
+			})
+				.then(function (inst) {
+					window.USIS_AI_WORKFLOW.renderStepper(document.getElementById("usis-dv-review-stepper"), inst);
+				})
+				.catch(function () {});
+		}
+		var takeoffSubject = estimateId || did;
+		if (takeoffSubject) {
+			window.USIS_AI_WORKFLOW.ensure({
+				processKey: "takeoff",
+				subjectType: estimateId ? "estimate" : "drawing",
+				subjectId: takeoffSubject,
+				projectId: projectId,
+			})
+				.then(function (inst) {
+					window.USIS_AI_WORKFLOW.renderStepper(document.getElementById("usis-dv-takeoff-stepper"), inst);
+				})
+				.catch(function () {});
+		}
+	}
+
+	function completeHumanStep(processKey, subjectType, subjectId, stepperId) {
+		if (!window.USIS_AI_WORKFLOW || !subjectId) return;
+		window.USIS_AI_WORKFLOW.ensure({
+			processKey: processKey,
+			subjectType: subjectType,
+			subjectId: subjectId,
+			projectId: projectId,
+		})
+			.then(function (inst) {
+				var step = window.USIS_AI_WORKFLOW.currentStep(inst);
+				if (!step) return inst;
+				return window.USIS_AI_WORKFLOW.complete(inst.id, step.stepKey || step.step_key, false);
+			})
+			.then(function (inst) {
+				window.USIS_AI_WORKFLOW.renderStepper(document.getElementById(stepperId), inst);
+			})
+			.catch(function (e) {
+				if (window.USISNotify) window.USISNotify.error(String(e.message || e));
+			});
+	}
+
+	function runDrawingFirstPass() {
+		var did = currentRevisionDrawingId();
+		if (!did) {
+			if (window.USISNotify) window.USISNotify.info("Open a drawing first.");
+			return;
+		}
+		if (!window.USIS_AI_WORKFLOW) {
+			if (window.USISNotify) window.USISNotify.info("Workflow runner is not loaded.");
+			return;
+		}
+		var btn = document.getElementById("usis-dv-ai-stub");
+		if (btn) btn.disabled = true;
+		window.USIS_AI_WORKFLOW.runUntilHuman({
+			processKey: "drawing_review",
+			subjectType: "drawing",
+			subjectId: did,
+			projectId: projectId,
+			stepperEl: document.getElementById("usis-dv-review-stepper"),
+			subjectNote: firstPassSubjectNote(),
+			mode: "construction_review",
+			captureCanvas: captureSheetDataUrl,
+			persistFindings: persistDrawingFindings,
+		})
+			.then(function () {
+				if (window.USISNotify) window.USISNotify.success("First-pass review reached leftover review.");
+				loadAnnotations();
+			})
+			.catch(function (e) {
+				if (window.USISNotify) window.USISNotify.error(String(e.message || e));
+			})
+			.then(function () {
+				if (btn) btn.disabled = false;
+			});
+	}
+
+	function runTakeoffFirstPass() {
+		var did = currentRevisionDrawingId();
+		var subjectId = estimateId || did;
+		if (!subjectId) {
+			if (window.USISNotify) window.USISNotify.info("Open a drawing or estimate first.");
+			return;
+		}
+		if (!window.USIS_AI_WORKFLOW) return;
+		var btn = document.getElementById("usis-dv-takeoff-firstpass");
+		if (btn) btn.disabled = true;
+		window.USIS_AI_WORKFLOW.runUntilHuman({
+			processKey: "takeoff",
+			subjectType: estimateId ? "estimate" : "drawing",
+			subjectId: subjectId,
+			projectId: projectId,
+			stepperEl: document.getElementById("usis-dv-takeoff-stepper"),
+			subjectNote: firstPassSubjectNote(),
+			mode: "estimating_review",
+			captureCanvas: captureSheetDataUrl,
+			persistFindings: persistDrawingFindings,
+		})
+			.then(function () {
+				if (window.USISNotify) window.USISNotify.success("First-pass takeoff ready — apply leftovers.");
+			})
+			.catch(function (e) {
+				if (window.USISNotify) window.USISNotify.error(String(e.message || e));
+			})
+			.then(function () {
+				if (btn) btn.disabled = false;
+			});
+	}
+
 	function setNotesVisible(show) {
 		var wrap = document.getElementById("usis-dv-notes-wrap");
 		if (wrap) wrap.classList.toggle("d-none", !show);
 	}
 
 	function loadAnnotations() {
+		refreshAiWorkflows();
 		var ul = document.getElementById("usis-dv-annotations-list");
 		if (!ul) return;
 		var did = currentRevisionDrawingId();
@@ -710,7 +866,7 @@
 		}
 		if (shift && !ctrl && !alt && (key === "P" || key === "p")) {
 			e.preventDefault();
-			startPolyTool("measure");
+			startPolyTool(activeIntent());
 			return;
 		}
 
@@ -728,27 +884,27 @@
 		}
 		if (key === "R" || key === "r") {
 			e.preventDefault();
-			startRectTool("measure");
+			startRectTool(activeIntent());
 			return;
 		}
 		if (key === "L" || key === "l") {
 			e.preventDefault();
-			startLineTool("measure");
+			startLineTool(activeIntent());
 			return;
 		}
 		if (key === "1") {
 			e.preventDefault();
-			startCountTool("measure");
+			startCountTool(activeIntent());
 			return;
 		}
 		if (key === "2") {
 			e.preventDefault();
-			startLineTool("measure");
+			startLineTool(activeIntent());
 			return;
 		}
 		if (key === "3") {
 			e.preventDefault();
-			startPolyTool("measure");
+			startPolyTool(activeIntent());
 			return;
 		}
 	}
@@ -764,6 +920,8 @@
 	function refreshTakeoffStrip() {
 		var strip = document.getElementById("usis-dv-takeoff-strip");
 		var empty = document.getElementById("usis-dv-takeoff-empty");
+		var rail = document.getElementById("usis-dv-rail-right");
+		if (rail) rail.classList.toggle("d-none", !takeoffLineId);
 		if (!strip) return;
 		if (takeoffLineId) {
 			strip.classList.remove("d-none");
@@ -771,7 +929,7 @@
 			loadTakeoffLineSummary();
 		} else {
 			strip.classList.add("d-none");
-			if (empty) empty.classList.remove("d-none");
+			if (empty) empty.classList.add("d-none");
 			currentTakeoffLine = null;
 		}
 	}
@@ -790,13 +948,17 @@
 	function selectTakeoffLine(id, opts) {
 		opts = opts || {};
 		takeoffLineId = id ? String(id).trim() : "";
-		if (!takeoffLineId) takeoffLineId = null;
+		if (!takeoffLineId) {
+			takeoffLineId = null;
+			if (drawIntent === "takeoff") drawIntent = "measure";
+		}
 		if (opts.prefetchLine && takeoffLineId && String(opts.prefetchLine.id) === String(takeoffLineId)) {
 			currentTakeoffLine = opts.prefetchLine;
 		}
 		syncTakeoffLineInUrl();
 		renderTakeoffList();
 		refreshTakeoffStrip();
+		updateToolButtons();
 		if (opts.openModal) {
 			openTakeoffLineModal();
 		}
@@ -1067,6 +1229,7 @@
 		var noCat = document.getElementById("usis-dv-takeoff-modal-no-catalog");
 		var wrap = document.getElementById("usis-dv-takeoff-modal-mat-wrap");
 		setTakeoffModalErr("");
+		if (window.USISDrawingCache) window.USISDrawingCache.refresh();
 		return fetch(apiBase() + "/api/v1/material-prices?limit=300", {
 			credentials: "include",
 			headers: { Accept: "application/json" },
@@ -1308,12 +1471,13 @@
 		var cal =
 			pixelsPerLf != null && pixelsPerLf > 0
 				? "1 LF ≈ " + pixelsPerLf.toFixed(2) + " px"
-				: "none";
-		var lm = lastMeasurement
-			? lastMeasurement.tool + " · " + (lastMeasurement.summary || "")
-			: "—";
-		var kind = lastMeasurement && lastMeasurement.intent === "takeoff" ? "Takeoff" : "Measured";
-		el.textContent = "Calibration: " + cal + " · " + kind + ": " + lm;
+				: "Scale off";
+		if (!lastMeasurement) {
+			el.textContent = cal;
+			return;
+		}
+		var kind = lastMeasurement.intent === "takeoff" ? "Takeoff" : "Check";
+		el.textContent = cal + " · " + kind + " " + (lastMeasurement.summary || lastMeasurement.tool || "");
 	}
 
 	function setMeasureMode(mode) {
@@ -1472,24 +1636,40 @@
 		if (ovl) ovl.style.cursor = cur;
 	}
 
+	function activeIntent() {
+		return drawIntent === "takeoff" ? "takeoff" : "measure";
+	}
+
+	function setDrawIntentMode(intent) {
+		intent = normalizeIntent(intent);
+		if (intent === "takeoff" && !ensureDrawIntent("takeoff")) {
+			updateToolButtons();
+			return;
+		}
+		drawIntent = intent;
+		if (measureMode !== "none") {
+			setMeasureMode("none");
+			return;
+		}
+		updateToolButtons();
+	}
+
 	function updateToolButtons() {
-		var m = drawIntent === "measure";
 		var t = drawIntent === "takeoff";
+		var tb = document.getElementById("usis-dv-measure-toolbar");
+		if (tb) tb.classList.toggle("is-takeoff", t);
 		var active = {
+			"usis-dv-intent-measure": !t,
+			"usis-dv-intent-takeoff": t,
 			"usis-dv-m-none": navMode === "select" && measureMode === "none",
 			"usis-dv-m-pan": navMode === "pan",
 			"usis-dv-m-zoom": navMode === "zoom",
 			"usis-dv-m-cal": measureMode === "cal",
-			"usis-dv-m-line": m && measureMode === "line",
-			"usis-dv-m-poly": m && measureMode === "poly",
-			"usis-dv-m-rect": m && measureMode === "rect",
-			"usis-dv-m-deduct": m && measureMode === "deduct",
-			"usis-dv-m-count": m && measureMode === "count",
-			"usis-dv-t-line": t && measureMode === "line",
-			"usis-dv-t-poly": t && measureMode === "poly",
-			"usis-dv-t-rect": t && measureMode === "rect",
-			"usis-dv-t-deduct": t && measureMode === "deduct",
-			"usis-dv-t-count": t && measureMode === "count",
+			"usis-dv-m-line": measureMode === "line",
+			"usis-dv-m-poly": measureMode === "poly",
+			"usis-dv-m-rect": measureMode === "rect",
+			"usis-dv-m-deduct": measureMode === "deduct",
+			"usis-dv-m-count": measureMode === "count",
 		};
 		Object.keys(active).forEach(function (id) {
 			var el = document.getElementById(id);
@@ -2529,48 +2709,33 @@
 		if (bCal) bCal.addEventListener("click", startCalibrateTool);
 		if (bLine)
 			bLine.addEventListener("click", function () {
-				startLineTool("measure");
+				startLineTool(activeIntent());
 			});
 		if (bPoly)
 			bPoly.addEventListener("click", function () {
-				startPolyTool("measure");
+				startPolyTool(activeIntent());
 			});
 		if (bRect)
 			bRect.addEventListener("click", function () {
-				startRectTool("measure");
+				startRectTool(activeIntent());
 			});
 		if (bDeduct)
 			bDeduct.addEventListener("click", function () {
-				startDeductTool("measure");
+				startDeductTool(activeIntent());
 			});
 		if (bCount)
 			bCount.addEventListener("click", function () {
-				startCountTool("measure");
+				startCountTool(activeIntent());
 			});
-		var tLine = document.getElementById("usis-dv-t-line");
-		var tPoly = document.getElementById("usis-dv-t-poly");
-		var tRect = document.getElementById("usis-dv-t-rect");
-		var tDeduct = document.getElementById("usis-dv-t-deduct");
-		var tCount = document.getElementById("usis-dv-t-count");
-		if (tLine)
-			tLine.addEventListener("click", function () {
-				startLineTool("takeoff");
+		var intentM = document.getElementById("usis-dv-intent-measure");
+		var intentT = document.getElementById("usis-dv-intent-takeoff");
+		if (intentM)
+			intentM.addEventListener("click", function () {
+				setDrawIntentMode("measure");
 			});
-		if (tPoly)
-			tPoly.addEventListener("click", function () {
-				startPolyTool("takeoff");
-			});
-		if (tRect)
-			tRect.addEventListener("click", function () {
-				startRectTool("takeoff");
-			});
-		if (tDeduct)
-			tDeduct.addEventListener("click", function () {
-				startDeductTool("takeoff");
-			});
-		if (tCount)
-			tCount.addEventListener("click", function () {
-				startCountTool("takeoff");
+		if (intentT)
+			intentT.addEventListener("click", function () {
+				setDrawIntentMode("takeoff");
 			});
 		if (bClr)
 			bClr.addEventListener("click", function () {
@@ -2599,17 +2764,18 @@
 	}
 
 	function setDeleteButtonsVisible(show) {
-		var wrap = document.getElementById("usis-dv-more-wrap");
-		if (wrap) wrap.classList.toggle("d-none", !show);
+		document.querySelectorAll(".usis-dv-more-admin").forEach(function (el) {
+			el.classList.toggle("d-none", !show);
+		});
 		["usis-dv-delete-revision", "usis-dv-delete-sheet", "usis-dv-rename-more"].forEach(function (id) {
 			var el = document.getElementById(id);
 			if (el) el.classList.toggle("d-none", !show);
 		});
 	}
 
-	function setRenameButtonVisible(show) {
+	function setRenameButtonVisible() {
 		var el = document.getElementById("usis-dv-rename");
-		if (el) el.classList.toggle("d-none", !show);
+		if (el) el.classList.add("d-none");
 	}
 
 	function renameModalEl() {
@@ -2924,24 +3090,28 @@
 		}
 		var aiStub = document.getElementById("usis-dv-ai-stub");
 		if (aiStub) {
-			aiStub.addEventListener("click", function () {
+			aiStub.addEventListener("click", runDrawingFirstPass);
+		}
+		var takeoffFirst = document.getElementById("usis-dv-takeoff-firstpass");
+		if (takeoffFirst) {
+			takeoffFirst.addEventListener("click", runTakeoffFirstPass);
+		}
+		var reviewDone = document.getElementById("usis-dv-review-done");
+		if (reviewDone) {
+			reviewDone.addEventListener("click", function () {
 				var did = currentRevisionDrawingId();
-				if (window.aiReviewBus && did) {
-					window.aiReviewBus.emit("review_requested", {
-						mode: "construction_review",
-						drawing_id: did,
-					});
-				}
-				if (window.USIS_AI_CHAT && typeof window.USIS_AI_CHAT.ask === "function") {
-					window.USIS_AI_CHAT.ask(
-						"Review the current drawing" +
-							(did ? " (drawing " + did + ")" : "") +
-							" for constructability, coordination, and code issues.",
-						{ mode: "construction_review", open: true }
-					);
-					return;
-				}
-				if (window.USISNotify) window.USISNotify.info("Open Chat in the header to review with Grok.");
+				completeHumanStep("drawing_review", "drawing", did, "usis-dv-review-stepper");
+			});
+		}
+		var takeoffDone = document.getElementById("usis-dv-takeoff-done");
+		if (takeoffDone) {
+			takeoffDone.addEventListener("click", function () {
+				completeHumanStep(
+					"takeoff",
+					estimateId ? "estimate" : "drawing",
+					estimateId || currentRevisionDrawingId(),
+					"usis-dv-takeoff-stepper"
+				);
 			});
 		}
 		var takeoffSave = document.getElementById("usis-dv-takeoff-save");
@@ -3091,6 +3261,7 @@
 				loadPdfFromRevision();
 				loadAnnotations();
 				loadProjectTakeoffList();
+				if (window.USISDrawingCache) window.USISDrawingCache.prefetchSheets(revisions);
 			})
 			.catch(function (err) {
 				_usisDbg("A", "drawing-viewer.js:loadRevisionsAndPdf", "revisions_fetch_fail", {

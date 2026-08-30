@@ -866,7 +866,7 @@
 		}
 		if (shift && !ctrl && !alt && (key === "P" || key === "p")) {
 			e.preventDefault();
-			startPolyTool("measure");
+			startPolyTool(activeIntent());
 			return;
 		}
 
@@ -884,27 +884,27 @@
 		}
 		if (key === "R" || key === "r") {
 			e.preventDefault();
-			startRectTool("measure");
+			startRectTool(activeIntent());
 			return;
 		}
 		if (key === "L" || key === "l") {
 			e.preventDefault();
-			startLineTool("measure");
+			startLineTool(activeIntent());
 			return;
 		}
 		if (key === "1") {
 			e.preventDefault();
-			startCountTool("measure");
+			startCountTool(activeIntent());
 			return;
 		}
 		if (key === "2") {
 			e.preventDefault();
-			startLineTool("measure");
+			startLineTool(activeIntent());
 			return;
 		}
 		if (key === "3") {
 			e.preventDefault();
-			startPolyTool("measure");
+			startPolyTool(activeIntent());
 			return;
 		}
 	}
@@ -920,6 +920,8 @@
 	function refreshTakeoffStrip() {
 		var strip = document.getElementById("usis-dv-takeoff-strip");
 		var empty = document.getElementById("usis-dv-takeoff-empty");
+		var rail = document.getElementById("usis-dv-rail-right");
+		if (rail) rail.classList.toggle("d-none", !takeoffLineId);
 		if (!strip) return;
 		if (takeoffLineId) {
 			strip.classList.remove("d-none");
@@ -927,7 +929,7 @@
 			loadTakeoffLineSummary();
 		} else {
 			strip.classList.add("d-none");
-			if (empty) empty.classList.remove("d-none");
+			if (empty) empty.classList.add("d-none");
 			currentTakeoffLine = null;
 		}
 	}
@@ -946,13 +948,17 @@
 	function selectTakeoffLine(id, opts) {
 		opts = opts || {};
 		takeoffLineId = id ? String(id).trim() : "";
-		if (!takeoffLineId) takeoffLineId = null;
+		if (!takeoffLineId) {
+			takeoffLineId = null;
+			if (drawIntent === "takeoff") drawIntent = "measure";
+		}
 		if (opts.prefetchLine && takeoffLineId && String(opts.prefetchLine.id) === String(takeoffLineId)) {
 			currentTakeoffLine = opts.prefetchLine;
 		}
 		syncTakeoffLineInUrl();
 		renderTakeoffList();
 		refreshTakeoffStrip();
+		updateToolButtons();
 		if (opts.openModal) {
 			openTakeoffLineModal();
 		}
@@ -1465,12 +1471,13 @@
 		var cal =
 			pixelsPerLf != null && pixelsPerLf > 0
 				? "1 LF ≈ " + pixelsPerLf.toFixed(2) + " px"
-				: "none";
-		var lm = lastMeasurement
-			? lastMeasurement.tool + " · " + (lastMeasurement.summary || "")
-			: "—";
-		var kind = lastMeasurement && lastMeasurement.intent === "takeoff" ? "Takeoff" : "Measured";
-		el.textContent = "Calibration: " + cal + " · " + kind + ": " + lm;
+				: "Scale off";
+		if (!lastMeasurement) {
+			el.textContent = cal;
+			return;
+		}
+		var kind = lastMeasurement.intent === "takeoff" ? "Takeoff" : "Check";
+		el.textContent = cal + " · " + kind + " " + (lastMeasurement.summary || lastMeasurement.tool || "");
 	}
 
 	function setMeasureMode(mode) {
@@ -1629,24 +1636,40 @@
 		if (ovl) ovl.style.cursor = cur;
 	}
 
+	function activeIntent() {
+		return drawIntent === "takeoff" ? "takeoff" : "measure";
+	}
+
+	function setDrawIntentMode(intent) {
+		intent = normalizeIntent(intent);
+		if (intent === "takeoff" && !ensureDrawIntent("takeoff")) {
+			updateToolButtons();
+			return;
+		}
+		drawIntent = intent;
+		if (measureMode !== "none") {
+			setMeasureMode("none");
+			return;
+		}
+		updateToolButtons();
+	}
+
 	function updateToolButtons() {
-		var m = drawIntent === "measure";
 		var t = drawIntent === "takeoff";
+		var tb = document.getElementById("usis-dv-measure-toolbar");
+		if (tb) tb.classList.toggle("is-takeoff", t);
 		var active = {
+			"usis-dv-intent-measure": !t,
+			"usis-dv-intent-takeoff": t,
 			"usis-dv-m-none": navMode === "select" && measureMode === "none",
 			"usis-dv-m-pan": navMode === "pan",
 			"usis-dv-m-zoom": navMode === "zoom",
 			"usis-dv-m-cal": measureMode === "cal",
-			"usis-dv-m-line": m && measureMode === "line",
-			"usis-dv-m-poly": m && measureMode === "poly",
-			"usis-dv-m-rect": m && measureMode === "rect",
-			"usis-dv-m-deduct": m && measureMode === "deduct",
-			"usis-dv-m-count": m && measureMode === "count",
-			"usis-dv-t-line": t && measureMode === "line",
-			"usis-dv-t-poly": t && measureMode === "poly",
-			"usis-dv-t-rect": t && measureMode === "rect",
-			"usis-dv-t-deduct": t && measureMode === "deduct",
-			"usis-dv-t-count": t && measureMode === "count",
+			"usis-dv-m-line": measureMode === "line",
+			"usis-dv-m-poly": measureMode === "poly",
+			"usis-dv-m-rect": measureMode === "rect",
+			"usis-dv-m-deduct": measureMode === "deduct",
+			"usis-dv-m-count": measureMode === "count",
 		};
 		Object.keys(active).forEach(function (id) {
 			var el = document.getElementById(id);
@@ -2686,48 +2709,33 @@
 		if (bCal) bCal.addEventListener("click", startCalibrateTool);
 		if (bLine)
 			bLine.addEventListener("click", function () {
-				startLineTool("measure");
+				startLineTool(activeIntent());
 			});
 		if (bPoly)
 			bPoly.addEventListener("click", function () {
-				startPolyTool("measure");
+				startPolyTool(activeIntent());
 			});
 		if (bRect)
 			bRect.addEventListener("click", function () {
-				startRectTool("measure");
+				startRectTool(activeIntent());
 			});
 		if (bDeduct)
 			bDeduct.addEventListener("click", function () {
-				startDeductTool("measure");
+				startDeductTool(activeIntent());
 			});
 		if (bCount)
 			bCount.addEventListener("click", function () {
-				startCountTool("measure");
+				startCountTool(activeIntent());
 			});
-		var tLine = document.getElementById("usis-dv-t-line");
-		var tPoly = document.getElementById("usis-dv-t-poly");
-		var tRect = document.getElementById("usis-dv-t-rect");
-		var tDeduct = document.getElementById("usis-dv-t-deduct");
-		var tCount = document.getElementById("usis-dv-t-count");
-		if (tLine)
-			tLine.addEventListener("click", function () {
-				startLineTool("takeoff");
+		var intentM = document.getElementById("usis-dv-intent-measure");
+		var intentT = document.getElementById("usis-dv-intent-takeoff");
+		if (intentM)
+			intentM.addEventListener("click", function () {
+				setDrawIntentMode("measure");
 			});
-		if (tPoly)
-			tPoly.addEventListener("click", function () {
-				startPolyTool("takeoff");
-			});
-		if (tRect)
-			tRect.addEventListener("click", function () {
-				startRectTool("takeoff");
-			});
-		if (tDeduct)
-			tDeduct.addEventListener("click", function () {
-				startDeductTool("takeoff");
-			});
-		if (tCount)
-			tCount.addEventListener("click", function () {
-				startCountTool("takeoff");
+		if (intentT)
+			intentT.addEventListener("click", function () {
+				setDrawIntentMode("takeoff");
 			});
 		if (bClr)
 			bClr.addEventListener("click", function () {
@@ -2756,17 +2764,18 @@
 	}
 
 	function setDeleteButtonsVisible(show) {
-		var wrap = document.getElementById("usis-dv-more-wrap");
-		if (wrap) wrap.classList.toggle("d-none", !show);
+		document.querySelectorAll(".usis-dv-more-admin").forEach(function (el) {
+			el.classList.toggle("d-none", !show);
+		});
 		["usis-dv-delete-revision", "usis-dv-delete-sheet", "usis-dv-rename-more"].forEach(function (id) {
 			var el = document.getElementById(id);
 			if (el) el.classList.toggle("d-none", !show);
 		});
 	}
 
-	function setRenameButtonVisible(show) {
+	function setRenameButtonVisible() {
 		var el = document.getElementById("usis-dv-rename");
-		if (el) el.classList.toggle("d-none", !show);
+		if (el) el.classList.add("d-none");
 	}
 
 	function renameModalEl() {

@@ -117,7 +117,6 @@
 			<div class="usis-dv-chrome__titlebar">
 				<div class="usis-dv-chrome__nav">
 					<a id="usis-dv-back" href="construction/project-detail.html" class="btn btn-outline-secondary btn-sm">&larr; Project</a>
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fs-close" title="Leave drawing viewer">Close</button>
 				</div>
 				<div class="usis-dv-chrome__sheet">
 					<div class="usis-dv-meta" id="usis-dv-sheetline"></div>
@@ -128,15 +127,18 @@
 						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="usis-dv-thumb-list">Sheets</button>
 						<ul class="dropdown-menu dropdown-menu-end" id="usis-dv-thumb-list"></ul>
 					</div>
-					<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-dv-ann-add">Save note</button>
-					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub"><i class="icon feather icon-star me-1" aria-hidden="true"></i>Run first-pass review</button>
-					<div class="dropdown d-none" id="usis-dv-more-wrap">
+					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub"><i class="icon feather icon-star me-1" aria-hidden="true"></i>Review</button>
+					<div class="dropdown" id="usis-dv-more-wrap">
 						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</button>
 						<ul class="dropdown-menu dropdown-menu-end">
-							<li><button type="button" class="dropdown-item" id="usis-dv-rename-more" title="Change drawing # and name">Rename sheet…</button></li>
-							<li><hr class="dropdown-divider"></li>
-							<li><button type="button" class="dropdown-item" id="usis-dv-delete-revision" title="Delete the current revision only">Delete revision</button></li>
-							<li><button type="button" class="dropdown-item text-danger" id="usis-dv-delete-sheet" title="Delete all revisions for this sheet">Delete sheet</button></li>
+							<li><button type="button" class="dropdown-item" id="usis-dv-ann-add">Save note</button></li>
+							<li><button type="button" class="dropdown-item" id="usis-dv-takeoff-firstpass">Run first-pass takeoff</button></li>
+							<li><button type="button" class="dropdown-item" id="usis-dv-review-done">Mark review leftover done</button></li>
+							<li><button type="button" class="dropdown-item" id="usis-dv-takeoff-done">Mark takeoff leftover done</button></li>
+							<li class="usis-dv-more-admin"><hr class="dropdown-divider"></li>
+							<li class="usis-dv-more-admin"><button type="button" class="dropdown-item" id="usis-dv-rename-more" title="Change drawing # and name">Rename sheet…</button></li>
+							<li class="usis-dv-more-admin"><button type="button" class="dropdown-item" id="usis-dv-delete-revision" title="Delete the current revision only">Delete revision</button></li>
+							<li class="usis-dv-more-admin"><button type="button" class="dropdown-item text-danger" id="usis-dv-delete-sheet" title="Delete all revisions for this sheet">Delete sheet</button></li>
 						</ul>
 					</div>
 				</div>
@@ -147,16 +149,10 @@
 				<div class="alert alert-light border py-1 px-2 mb-0 small d-none" id="usis-dv-loading" role="status">
 					<span id="usis-dv-loading-text">Loading drawing…</span>
 				</div>
-				<div class="small py-1 px-2 d-flex flex-wrap align-items-center gap-2">
-					<span class="text-muted">Review</span>
-					<span id="usis-dv-review-stepper"></span>
-					<button type="button" class="btn btn-link btn-sm p-0" id="usis-dv-review-done">Mark leftover done</button>
-				</div>
-				<div class="small py-1 px-2 d-flex flex-wrap align-items-center gap-2">
-					<span class="text-muted">Takeoff</span>
-					<span id="usis-dv-takeoff-stepper"></span>
-					<button type="button" class="btn btn-link btn-sm p-0" id="usis-dv-takeoff-done">Mark leftover done</button>
-				</div>
+			</div>
+			<div class="d-none" aria-hidden="true">
+				<span id="usis-dv-review-stepper"></span>
+				<span id="usis-dv-takeoff-stepper"></span>
 			</div>
 
 			<div class="usis-dv-chrome__picker d-none" id="usis-dv-picker-wrap">
@@ -178,80 +174,48 @@
 			</div>
 
 			<div class="usis-dv-toolbar" id="usis-dv-measure-toolbar">
-				<div class="usis-dv-toolgroup">
-					<span class="usis-overline">Set</span>
-					<div class="usis-dv-toolgroup__row">
-						<select class="form-select form-select-sm" id="usis-dv-revision" aria-label="Drawing set"></select>
-						<div class="usis-seg" role="group" aria-label="Revision">
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)">&larr;</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)">&rarr;</button>
-						</div>
-					</div>
+				<select class="form-select form-select-sm" id="usis-dv-revision" aria-label="Drawing set"></select>
+				<div class="usis-seg" role="group" aria-label="Revision">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)">&larr;</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)">&rarr;</button>
 				</div>
-				<div class="usis-dv-toolgroup">
-					<span class="usis-overline">Navigate</span>
-					<div class="usis-seg" role="group" aria-label="View tools">
-						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Select (V)" aria-pressed="true">Select</button>
-						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan without leaving the current tool." aria-pressed="false">Pan</button>
-						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle" aria-pressed="false">Zoom</button>
-					</div>
+				<span class="usis-dv-toolbar__rule" aria-hidden="true"></span>
+				<div class="usis-seg" role="group" aria-label="View tools">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Select (V)" aria-pressed="true">Select</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan without leaving the current tool." aria-pressed="false">Pan</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle" aria-pressed="false">Zoom</button>
 				</div>
-				<div class="usis-dv-toolgroup">
-					<span class="usis-overline">View</span>
-					<div class="usis-dv-toolgroup__row">
-						<div class="usis-seg" role="group" aria-label="Zoom">
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)">−</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)">+</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-width" title="Fit width (Ctrl+0)">Width</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
-						</div>
-						<span class="usis-dv-zoom-label" id="usis-dv-zoom-label">100%</span>
-						<div class="usis-seg" role="group" aria-label="Page">
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page (PageUp or Ctrl+wheel)">−</button>
-							<span class="usis-dv-page-label" id="usis-dv-page-label">1 / 1</span>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page (PageDown or Ctrl+wheel)">+</button>
-						</div>
-					</div>
+				<div class="usis-seg" role="group" aria-label="Zoom">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)">−</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)">+</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-width" title="Fit width (Ctrl+0)">Width</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
 				</div>
-				<div class="usis-dv-toolgroup usis-dv-toolgroup--status">
-					<span class="usis-overline">Status</span>
-					<div class="small text-muted" id="usis-dv-m-status">Calibration: none · Measured: —</div>
+				<span class="usis-dv-zoom-label" id="usis-dv-zoom-label">100%</span>
+				<div class="usis-seg" role="group" aria-label="Page">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page (PageUp or Ctrl+wheel)">−</button>
+					<span class="usis-dv-page-label" id="usis-dv-page-label">1 / 1</span>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page (PageDown or Ctrl+wheel)">+</button>
 				</div>
-			</div>
-
-			<div class="usis-dv-toolbar usis-dv-toolbar--draw" id="usis-dv-draw-toolbar">
-				<div class="usis-dv-toolgroup">
-					<span class="usis-overline">Measure</span>
-					<div class="usis-dv-toolgroup__row">
-						<div class="usis-seg" role="group" aria-label="Measure tools">
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF). Does not write to takeoff." aria-pressed="false">Calibrate</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-line" title="Measure length (L or 2). Check only — does not write to takeoff." aria-pressed="false">Linear</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-poly" title="Measure area (3 or Shift+P). Check only — does not write to takeoff." aria-pressed="false">Area</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-rect" title="Measure rectangle (R). Check only — does not write to takeoff." aria-pressed="false">Rectangle</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-deduct" title="Measure deduction from last measure rectangle. Check only." aria-pressed="false">Deduct</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-count" title="Measure count (1). Check only — does not write to takeoff." aria-pressed="false">Count</button>
-						</div>
-						<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done</button>
-						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-clear">Clear</button>
-					</div>
+				<span class="usis-dv-toolbar__rule" aria-hidden="true"></span>
+				<div class="usis-seg" role="group" aria-label="Draw destination">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-intent-measure" title="Check length, area, or count. Does not write a quantity." aria-pressed="true">Check</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-intent-takeoff" title="Write the measurement to the selected takeoff line." aria-pressed="false">Takeoff</button>
 				</div>
-				<div class="usis-dv-toolgroup usis-dv-toolgroup--takeoff">
-					<span class="usis-overline">Takeoff</span>
-					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-takeoff-firstpass">Run first-pass takeoff</button>
-					<div class="usis-dv-toolgroup__row">
-						<div class="usis-seg" role="group" aria-label="Takeoff tools">
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-line" title="Takeoff length (Shift+Alt+L). Writes quantity to the selected takeoff line." aria-pressed="false">Linear</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-poly" title="Takeoff area (Shift+Alt+A). Writes quantity to the selected takeoff line." aria-pressed="false">Area</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-rect" title="Takeoff rectangle (Shift+Alt+R). Writes quantity to the selected takeoff line." aria-pressed="false">Rectangle</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-deduct" title="Takeoff deduction from last takeoff rectangle (two clicks)" aria-pressed="false">Deduct</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-count" title="Takeoff count (Shift+Alt+C). Writes quantity to the selected takeoff line." aria-pressed="false">Count</button>
-						</div>
-					</div>
+				<div class="usis-seg" role="group" aria-label="Draw tools">
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF)." aria-pressed="false">Calibrate</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-line" title="Length (L or 2)" aria-pressed="false">Linear</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-poly" title="Area (3 or Shift+P)" aria-pressed="false">Area</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-rect" title="Rectangle (R)" aria-pressed="false">Rectangle</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-deduct" title="Deduct from last rectangle" aria-pressed="false">Deduct</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-count" title="Count (1)" aria-pressed="false">Count</button>
 				</div>
+				<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done</button>
+				<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-clear">Clear</button>
+				<span class="usis-dv-status" id="usis-dv-m-status">Scale off</span>
 			</div>
 
 			<div class="usis-dv-notes d-none" id="usis-dv-notes-wrap">
-				<span class="usis-overline">Annotations</span>
 				<ul class="usis-dv-notes__list" id="usis-dv-annotations-list"></ul>
 			</div>
 		</header>
@@ -278,17 +242,15 @@
 						</div>
 					</div>
 				</div>
-				<p class="usis-dv-hint" id="usis-dv-hint">
-					<kbd>Wheel</kbd> zoom · <kbd>Ctrl+Wheel</kbd> page · hold <kbd>Space</kbd> or the mouse wheel to pan · <kbd>V</kbd> select · <kbd>Shift+V</kbd> pan · <kbd>Z</kbd> zoom · Measure <kbd>L</kbd> <kbd>3</kbd> <kbd>R</kbd> <kbd>1</kbd> · Takeoff <kbd>Shift+Alt+L</kbd> <kbd>A</kbd> <kbd>R</kbd> <kbd>C</kbd>
-				</p>
+				<p class="usis-dv-hint d-none" id="usis-dv-hint"></p>
 			</div>
 
-			<aside id="usis-dv-rail-right" class="usis-dv-rail usis-dv-rail--right">
+			<aside id="usis-dv-rail-right" class="usis-dv-rail usis-dv-rail--right d-none">
 				<div class="usis-dv-rail__head">
-					<span class="usis-overline mb-0">Takeoff details</span>
+					<span class="usis-overline mb-0">Takeoff</span>
 				</div>
 				<div class="usis-dv-rail__body">
-					<p class="text-muted small mb-3" id="usis-dv-takeoff-empty">Select a takeoff on the left, or create <strong>New takeoff</strong>. Then use the Takeoff tools — Measure tools do not write quantities.</p>
+					<p class="text-muted small mb-3 d-none" id="usis-dv-takeoff-empty"></p>
 					<div class="d-none" id="usis-dv-takeoff-strip" role="region" aria-label="Takeoff line">
 						<div class="mb-2">
 							<div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
@@ -403,7 +365,7 @@
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260830c"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260830d"></script>
 
 </body>
 </html>

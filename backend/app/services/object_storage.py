@@ -126,6 +126,18 @@ def stored_exists(category: UploadCategory, object_name: str) -> bool:
     return _mirror_file(category, object_name) is not None
 
 
+def read_first_stored(category: UploadCategory, object_names: list[str]) -> tuple[str, bytes] | None:
+    """Return ``(object_name, bytes)`` for the first name that exists (old or new key)."""
+    for name in object_names:
+        n = (name or "").strip()
+        if not n:
+            continue
+        data = read_stored_bytes(category, n)
+        if data:
+            return n, data
+    return None
+
+
 def stored_size(category: UploadCategory, object_name: str) -> int | None:
     if b2_enabled():
         meta = _head_object(object_key(category, object_name))
@@ -324,7 +336,8 @@ def _head_object(key: str) -> dict | None:
     except Exception as exc:
         if _is_not_found(exc):
             return None
-        raise
+        current_app.logger.warning("b2 head failed key=%s err=%s", key, exc)
+        return None
 
 
 def _get_bytes(key: str) -> bytes | None:
@@ -337,7 +350,8 @@ def _get_bytes(key: str) -> bytes | None:
     except Exception as exc:
         if _is_not_found(exc):
             return None
-        raise
+        current_app.logger.warning("b2 get failed key=%s err=%s", key, exc)
+        return None
 
 
 def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:

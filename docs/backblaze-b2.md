@@ -8,8 +8,9 @@ Local development without B2 vars continues to use `backend/instance/` (same as 
 
 | Category | API examples | Object key pattern |
 |----------|--------------|-------------------|
-| Drawings | `POST /api/v1/projects/<id>/drawings` | `{prefix}/drawings/<uuid>.pdf` |
-| Spec sections | `POST .../spec_sections/<id>/file` | `{prefix}/spec_sections/<uuid>.pdf` |
+| Drawings | `POST /api/v1/projects/<id>/drawings` | `{prefix}/drawings/{job}/{discipline}/{set}/{filename}.pdf` (legacy `{uuid}.pdf` still served) |
+| Project documents | `POST /api/documents` | `{prefix}/documents/{job}/{type}/{filename}` (legacy `{uuid}_{filename}` still served) |
+| Spec sections | `POST .../spec_sections/<id>/file` | `{prefix}/spec_sections/{job}/specifications/{code}_{filename}.pdf` (legacy `{uuid}.pdf` still served) |
 | RFI attachments | `POST /api/v1/rfis/<id>/attachments/upload` | `{prefix}/rfi_attachments/<uuid><ext>` |
 | HR I-9 photos | `POST /api/v1/hr/me/i9-section1/documents` | `{prefix}/hr_i9/<uuid><ext>` |
 | HR W-4 photos | `POST /api/v1/hr/me/w4/documents` | `{prefix}/hr_w4/<uuid><ext>` |

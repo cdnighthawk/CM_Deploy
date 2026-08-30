@@ -517,7 +517,10 @@ def delete_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID) -> dict[s
     if row is None or getattr(row, "project_id", None) != project_id:
         raise ApiError("lookup row not found", 404)
     if isinstance(row, SpecSection):
-        delete_stored(UploadCategory.SPEC_SECTIONS, f"{row.id}.pdf")
+        from ..services.project_file_keys import spec_object_candidates
+
+        for name in spec_object_candidates(row):
+            delete_stored(UploadCategory.SPEC_SECTIONS, name)
     db.session.delete(row)
     db.session.commit()
     return {"ok": True, "id": str(row_id), "entity": kind}

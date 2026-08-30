@@ -204,6 +204,12 @@ def test_ingest_document_and_drawing_upload(client, flask_app):
     assert file_r.status_code == 200
     assert file_r.data == spec
 
+    with flask_app.app_context():
+        saved = db.session.get(Document, uuid.UUID(doc_body["document"]["id"]))
+        assert saved is not None
+        key = (saved.tags or {}).get("storage_object")
+        assert key == f"259999/specification/addendum.pdf"
+
 
 def test_ingest_replace_drawing_file(client, flask_app):
     headers = _auth(flask_app)

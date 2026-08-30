@@ -281,7 +281,7 @@ def register_extra_routes(bp: Blueprint) -> None:
     @bp.get("/documents/<document_id>/file")
     def get_document_file(document_id: str):
         """Stream a stored project document (ingest uploads and similar)."""
-        from ..services.object_storage import UploadCategory, send_stored_file
+        from ..services.object_storage import UploadCategory, send_stored_file, stored_exists
 
         did = _parse_uuid_param(document_id)
         if not did:
@@ -290,14 +290,19 @@ def register_extra_routes(bp: Blueprint) -> None:
         if row is None:
             return _jsonify({"error": "document not found"}), 404
         if isinstance(row, Drawing) or row.document_type == "drawing":
-            from ..services.drawing_upload import resolve_drawing_object_name
             from ..services.employee_pc_cache import respond_drawing_pdf
+            from ..services.project_file_keys import preferred_drawing_object_name
 
-            name = resolve_drawing_object_name(row) or f"{row.id}.pdf"
+            name = preferred_drawing_object_name(row)
             resp = respond_drawing_pdf(row, name)
         else:
-            tags = row.tags if isinstance(row.tags, dict) else {}
-            name = str(tags.get("storage_object") or "").strip() or f"{row.id}"
+            from ..services.project_file_keys import document_object_candidates
+
+            name = f"{row.id}"
+            for cand in document_object_candidates(row):
+                if stored_exists(UploadCategory.DOCUMENTS, cand):
+                    name = cand
+                    break
             dl = (row.original_filename or row.title or "document").replace('"', "")[:200]
             mime = (row.mime_type or "application/octet-stream").strip() or "application/octet-stream"
             resp = send_stored_file(

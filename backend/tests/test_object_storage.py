@@ -277,3 +277,35 @@ def test_b2_save_upload_mirrors_to_nas(mock_client_factory, flask_app, tmp_path)
         assert sz == 9
         dest = tmp_path / "prod" / "usis-cm" / "drawings" / "24060" / "Architectural" / "Permit-Set" / "A1.pdf"
         assert dest.read_bytes() == b"mirror-me"
+
+
+@patch("app.services.object_storage._s3_client")
+def test_b2_head_error_falls_through_to_nas(mock_client_factory, flask_app, tmp_path):
+    mock_s3 = MagicMock()
+    mock_s3.head_object.side_effect = Exception("SSL validation failed EOF")
+    mock_s3.get_object.side_effect = Exception("SSL validation failed EOF")
+    mock_client_factory.return_value = mock_s3
+    rel = Path("24060") / "Architectural" / "Permit-Set" / "A1.pdf"
+    dest = tmp_path / "prod" / "usis-cm" / "drawings" / rel
+    dest.parent.mkdir(parents=True)
+    dest.write_bytes(b"%PDF-1.4 nas")
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "B2_PREFIX": "prod/usis-cm",
+            "B2_MIRROR_ROOT": str(tmp_path),
+            "DRAWING_UPLOAD_FOLDER": str(tmp_path / "empty-instance"),
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, read_first_stored, stored_exists
+
+        name = rel.as_posix()
+        assert stored_exists(UploadCategory.DRAWINGS, name)
+        hit = read_first_stored(UploadCategory.DRAWINGS, ["missing.pdf", name])
+        assert hit is not None
+        assert hit[0] == name
+        assert hit[1] == b"%PDF-1.4 nas"

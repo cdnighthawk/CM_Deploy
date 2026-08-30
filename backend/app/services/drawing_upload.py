@@ -3,9 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import io
-import re
 import uuid
-from pathlib import Path
 from typing import Any
 
 from pypdf import PdfReader, PdfWriter
@@ -14,61 +12,22 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Drawing, Project
+from ..models import Drawing
 from ..services.object_storage import StorageError, UploadCategory, delete_stored, save_upload, stored_exists
-
-_SLUG_BAD = re.compile(r'[<>:"/\\|?*]+')
-_SLUG_SPACE = re.compile(r"[\s,]+")
-
-
-def _slug_part(raw: str, fallback: str) -> str:
-    s = _SLUG_BAD.sub("-", (raw or "").strip())
-    s = _SLUG_SPACE.sub("-", s)
-    s = re.sub(r"-{2,}", "-", s).strip("-")
-    return (s[:80] or fallback)
-
-
-def _safe_filename(raw: str) -> str:
-    name = Path(raw or "").name.strip() or "drawing.pdf"
-    name = _SLUG_BAD.sub("-", name)
-    if not name.lower().endswith(".pdf"):
-        name += ".pdf"
-    return name[:200]
-
-
-def _project_label(project_id: uuid.UUID | None) -> str:
-    if project_id is None:
-        return "unassigned"
-    number = db.session.scalar(select(Project.number).where(Project.id == project_id))
-    label = (number or "").strip()
-    return _slug_part(label, str(project_id))
-
-
-def drawing_storage_relpath(d: Drawing, *, project_label: str | None = None) -> str:
-    """Human-readable B2/NAS key under the drawings/ prefix."""
-    fname = _safe_filename(d.original_filename or "") or f"{d.id}.pdf"
-    proj = project_label or _project_label(d.project_id)
-    disc = _slug_part(d.discipline or "", "Drawings")
-    dset = _slug_part(d.drawing_set or "", "Set")
-    return f"{proj}/{disc}/{dset}/{fname}"
-
-
-def drawing_object_candidates(d: Drawing) -> list[str]:
-    names: list[str] = []
-    tags = d.tags if isinstance(d.tags, dict) else {}
-    stored = str(tags.get("storage_object") or "").strip()
-    if stored:
-        names.append(stored)
-    human = drawing_storage_relpath(d)
-    if human not in names:
-        names.append(human)
-    legacy = f"{d.id}.pdf"
-    if legacy not in names:
-        names.append(legacy)
-    return names
+from ..services.project_file_keys import (
+    drawing_object_candidates,
+    drawing_storage_relpath,
+    preferred_drawing_object_name,
+    safe_filename,
+)
 
 
 def resolve_drawing_object_name(d: Drawing) -> str | None:
+    """Probe storage for an old UUID key or a new human-readable key.
+
+    Use only when serving a file. Do not call this while listing drawings —
+    each probe can HEAD B2.
+    """
     for name in drawing_object_candidates(d):
         if stored_exists(UploadCategory.DRAWINGS, name):
             return name
@@ -85,7 +44,7 @@ def replace_drawing_file(d: Drawing, pdf_bytes: bytes) -> int:
     if not pdf_bytes:
         raise DrawingUploadError("empty upload", 400)
     tags = dict(d.tags) if isinstance(d.tags, dict) else {}
-    obj_name = str(tags.get("storage_object") or "").strip() or drawing_storage_relpath(d)
+    obj_name = preferred_drawing_object_name(d)
     try:
         sz = save_upload(UploadCategory.DRAWINGS, obj_name, io.BytesIO(pdf_bytes))
     except StorageError as exc:
@@ -158,7 +117,9 @@ def _create_drawing_row(
     else:
         title = sheet_title or base
         sn = sheet_number
-        orig = _safe_filename(raw_name)
+        orig = safe_filename(raw_name, default="drawing.pdf")
+        if not orig.lower().endswith(".pdf"):
+            orig += ".pdf"
 
     series_id = _existing_series_id(project_id, sn)
     d = Drawing(

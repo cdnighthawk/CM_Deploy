@@ -143,6 +143,94 @@ def test_drawing_delete_revision_and_series(client):
         assert len(rows) == 0
 
 
+def test_drawing_list_file_url_does_not_probe_storage(client, monkeypatch):
+    """Listing must not HEAD B2 for old vs new keys."""
+    from app.services import drawing_upload as du
+
+    calls = {"n": 0}
+
+    def boom(*_args, **_kwargs):
+        calls["n"] += 1
+        raise AssertionError("listing must not probe storage")
+
+    monkeypatch.setattr(du, "stored_exists", boom)
+    monkeypatch.setattr(du, "resolve_drawing_object_name", boom)
+
+    with client.application.app_context():
+        p = Project(name="DrawList-" + uuid.uuid4().hex[:8], number="N" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data={"file": (io.BytesIO(payload), "A1.pdf"), "sheet_number": "A1"},
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    listed = client.get(f"/api/v1/projects/{pid}/drawings")
+    assert listed.status_code == 200
+    items = listed.get_json()["items"]
+    assert items
+    assert items[0]["current_revision"]["file_url"].endswith("/file")
+    assert calls["n"] == 0
+
+
+def test_drawing_file_serves_legacy_uuid_key(client):
+    """Old ``{uuid}.pdf`` objects still open after the human-readable rename."""
+    from app.services.object_storage import UploadCategory, local_path, save_upload
+
+    with client.application.app_context():
+        p = Project(name="DrawLegacy-" + uuid.uuid4().hex[:8], number="L" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data={
+            "file": (io.BytesIO(payload), "A2.pdf"),
+            "sheet_number": "A2",
+            "discipline": "Architectural",
+            "drawing_set": "Permit Set",
+        },
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    did = r.get_json()["item"]["id"]
+
+    with client.application.app_context():
+        d = db.session.get(Drawing, uuid.UUID(did))
+        assert d is not None
+        human = (d.tags or {}).get("storage_object")
+        assert human
+        old = f"{d.id}.pdf"
+        save_upload(UploadCategory.DRAWINGS, old, io.BytesIO(payload))
+        human_path = local_path(UploadCategory.DRAWINGS, human)
+        if human_path.is_file():
+            human_path.unlink()
+        d.tags = {**(d.tags or {}), "storage_object": "missing/new/path.pdf"}
+        db.session.commit()
+
+    file_r = client.get(f"/api/v1/drawings/{did}/file")
+    assert file_r.status_code == 200
+    assert b"%PDF" in file_r.data
+
+
 def test_drawing_upload_uses_human_readable_storage_name(client):
     from app.services.object_storage import UploadCategory, stored_exists
 

@@ -322,6 +322,15 @@ def respond_drawing_pdf(row, object_name: str) -> Response | None:
 
     data = read_stored_bytes(UploadCategory.DRAWINGS, object_name)
     if data is None:
+        from .project_file_keys import drawing_object_candidates
+
+        for cand in drawing_object_candidates(row):
+            if cand == object_name:
+                continue
+            data = read_stored_bytes(UploadCategory.DRAWINGS, cand)
+            if data is not None:
+                break
+    if data is None:
         return None
     written = write_cached(row.id, dl, data, project_id)
     if written is not None:

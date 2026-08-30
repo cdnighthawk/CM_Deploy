@@ -19,6 +19,7 @@ from ..models import Document, Drawing, LeadEstimate, Project
 from .drawing_upload import _create_drawing_row
 from .lead_workspace import attach_lead_and_estimates, ensure_lead_workspace_project
 from .object_storage import StorageError, UploadCategory, save_upload
+from .project_file_keys import preferred_document_object_name
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
@@ -584,7 +585,7 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
     )
     db.session.add(doc)
     db.session.flush()
-    object_name = f"{doc.id}_{safe}"[:200]
+    object_name = preferred_document_object_name(doc)
     try:
         save_upload(UploadCategory.DOCUMENTS, object_name, io.BytesIO(payload))
     except StorageError as exc:

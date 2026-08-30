@@ -1595,21 +1595,17 @@ def list_drawing_revisions(drawing_id: str):
 
 
 def _drawing_object_name(d: Drawing) -> str:
-    from ..services.drawing_upload import resolve_drawing_object_name
+    from ..services.project_file_keys import preferred_drawing_object_name
 
-    return resolve_drawing_object_name(d) or f"{d.id}.pdf"
+    return preferred_drawing_object_name(d)
 
 
 def _drawing_resolved_file_url(d: Drawing) -> str | None:
-    """DB ``file_url`` or, when missing, the standard upload path if a PDF exists on disk."""
+    """API file route. Do not probe B2 here — listing a job would HEAD every sheet."""
     raw = d.file_url
     if raw is not None and str(raw).strip():
         return str(raw).strip()
-    from ..services.drawing_upload import resolve_drawing_object_name
-
-    if resolve_drawing_object_name(d):
-        return f"/api/v1/drawings/{d.id}/file"
-    return None
+    return f"/api/v1/drawings/{d.id}/file"
 
 
 @bp.get("/drawings/<drawing_id>/file")
@@ -1817,7 +1813,13 @@ def get_spec_section_pdf_file(spec_section_id: str):
     row = db.session.get(SpecSection, sid)
     if row is None:
         return _jsonify({"error": "spec section not found"}), 404
+    from ..services.project_file_keys import spec_object_candidates
+
     name = f"{sid}.pdf"
+    for cand in spec_object_candidates(row):
+        if stored_exists(UploadCategory.SPEC_SECTIONS, cand):
+            name = cand
+            break
     base = secure_filename(f"{row.code} {row.title}".strip()) or "spec"
     dl = (base + ".pdf")[:200].replace('"', "")
     resp = send_stored_file(
@@ -2601,7 +2603,9 @@ def upload_spec_section_pdf(project_id: str, row_id: str):
     if cl is not None and cl > max_bytes:
         return _jsonify({"error": "file too large (max 50MB)"}), 400
 
-    obj_name = f"{row.id}.pdf"
+    from ..services.project_file_keys import spec_storage_relpath
+
+    obj_name = spec_storage_relpath(row, original_filename=raw_name)
     try:
         sz = save_upload(UploadCategory.SPEC_SECTIONS, obj_name, f)
     except OSError as exc:

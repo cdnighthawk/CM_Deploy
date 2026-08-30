@@ -33,6 +33,31 @@
 			position: relative;
 			z-index: 1;
 		}
+		.usis-bc-job-hero {
+			border-bottom: 1px solid var(--bs-border-color);
+		}
+		.usis-bc-job-hero #usis-proj-job-title { letter-spacing: -0.02em; }
+		/* Theme cards use height:100%, which stretches the map card and leaves a huge empty gap. */
+		#proj-pane-job .card {
+			height: auto;
+		}
+		.usis-proj-job-map-wrap {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 16 / 9;
+			min-height: 22rem;
+			max-height: 32rem;
+			overflow: hidden;
+			background: var(--bs-light);
+		}
+		.usis-proj-job-map-wrap iframe {
+			position: absolute;
+			inset: 0;
+			display: block;
+			width: 100%;
+			height: 100%;
+			border: 0;
+		}
 	</style>
 
 </head>
@@ -82,7 +107,7 @@
 					<div class="usis-detail-toolbar-row">
 						<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar mb-0" role="tablist">
 						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true" data-i18n="Job info">Job info</button>
+							<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true" data-i18n="Job information">Job information</button>
 						</li>
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="proj-tab-schedule" data-bs-toggle="pill" data-bs-target="#proj-pane-schedule" type="button" role="tab" aria-controls="proj-pane-schedule" aria-selected="false" data-i18n="Schedule">Schedule</button>
@@ -137,42 +162,76 @@
 							<div class="alert alert-light border py-2 mb-2" data-usis-loading data-i18n="Loading job information…">Loading job information…</div>
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
 							<div id="usis-project-job-root" class="d-none">
-								<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-									<div>
-										<h4 class="mb-1 fw-semibold" id="usis-proj-job-title">—</h4>
-										<p class="text-muted small mb-0" id="usis-proj-job-subtitle"></p>
-									</div>
-									<div class="d-flex flex-wrap gap-1">
-										<span class="badge bg-light text-dark border" id="usis-proj-job-status"></span>
-										<span class="badge bg-light text-muted border" id="usis-proj-job-type"></span>
-									</div>
-								</div>
-								<div class="row g-3">
-									<div class="col-xl-7">
-										<div class="card border-0 shadow-sm mb-3">
-											<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex justify-content-between align-items-center">
-												<span>Project details</span>
-												<button type="button" class="btn btn-sm btn-outline-primary py-0" id="usis-proj-edit-btn" data-i18n="Edit">Edit</button>
-											</div>
-											<div class="card-body p-0">
-												<table class="table table-sm mb-0">
-													<tbody id="usis-proj-job-tbody"></tbody>
-												</table>
+								<div class="usis-bc-job-hero mb-4 pb-3">
+									<div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+										<div class="flex-grow-1" style="min-width: 12rem;">
+											<h4 class="mb-1 fw-semibold" id="usis-proj-job-title">—</h4>
+											<div class="text-muted small" id="usis-proj-job-subtitle"></div>
+										</div>
+										<div class="text-md-end">
+											<div class="small fw-medium" id="usis-proj-job-badge-due"></div>
+											<div class="small text-muted" id="usis-proj-job-status"></div>
+											<div class="mt-2 d-flex flex-wrap justify-content-md-end gap-1">
+												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-proj-edit-btn" data-i18n="Edit">Edit</button>
 											</div>
 										</div>
-										<div class="card border-0 shadow-sm mb-0">
+									</div>
+								</div>
+
+								<div class="row g-3 align-items-start">
+									<div class="col-xl-7">
+										<div class="card border-0 shadow-sm mb-3 d-none" id="usis-proj-job-map-card">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+												<span>Property location</span>
+												<a class="small text-decoration-none" id="usis-proj-job-map-open" href="#" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+											</div>
+											<div class="usis-proj-job-map-wrap">
+												<iframe id="usis-proj-job-map" title="Property location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+											</div>
+										</div>
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Public project information</div>
+											<div class="card-body p-0">
+												<p class="text-muted small px-3 pt-3 mb-2">Mirrors Building Connected’s left column: number, name, key dates, location, size, design team, then narrative fields.</p>
+												<table class="table table-sm mb-0">
+													<tbody id="usis-proj-job-public-tbody"></tbody>
+												</table>
+											</div>
+											<div class="card-footer bg-white border-top small text-muted">
+												Location in BC is powered by Google Maps; imported CSV rows may only include city/state or a partial address.
+											</div>
+										</div>
+										<div class="card border-0 shadow-sm mb-3">
 											<div class="card-header bg-white py-2 fw-semibold border-bottom">Description</div>
-											<div class="card-body small text-muted" id="usis-proj-job-description">—</div>
+											<div class="card-body" id="usis-proj-job-description"></div>
+										</div>
+										<div class="card border-0 shadow-sm mb-0">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Trade-specific instructions</div>
+											<div class="card-body small" id="usis-proj-job-trade"></div>
 										</div>
 									</div>
 									<div class="col-xl-5">
 										<div class="card border-0 shadow-sm mb-3">
-											<div class="card-header bg-white py-2 fw-semibold border-bottom">Notes</div>
-											<div class="card-body small text-muted" id="usis-proj-job-notes">—</div>
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Advanced options</div>
+											<div class="card-body small" id="usis-proj-job-advanced"></div>
 										</div>
-										<p class="text-muted small mb-0" id="usis-proj-job-leadlink-wrap"></p>
+										<div class="card border-0 shadow-sm mb-3">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Private information</div>
+											<div class="card-body p-0">
+												<p class="text-muted small px-3 pt-3 mb-2">Internal / imported fields (in BC, private fields are visible only to your company on the Information tab).</p>
+												<table class="table table-sm mb-0">
+													<tbody id="usis-proj-job-private-tbody"></tbody>
+												</table>
+											</div>
+										</div>
+										<div class="card border-0 shadow-sm mb-0">
+											<div class="card-header bg-white py-2 fw-semibold border-bottom">Invitees / team</div>
+											<div class="card-body small" id="usis-proj-job-members"></div>
+										</div>
 									</div>
 								</div>
+
+								<p class="text-muted small mt-4 mb-0 border-top pt-3" id="usis-proj-job-footer"></p>
 							</div>
 						</div>
 
@@ -1118,7 +1177,29 @@
 				</div>
 				<div class="modal-body">
 					<div class="alert alert-danger py-2 d-none" id="usis-drawing-upload-err" role="alert"></div>
-					<p class="text-muted small mb-2">Choose a PDF drawing set. Each page becomes its own sheet (Page 1, Page 2, …). Edit sheet details later from the drawings list.</p>
+					<p class="text-muted small mb-2">Name each PDF <code>{Sheet}_{Title}.pdf</code> (example <code>A1-001_ENTRY-PLAN.pdf</code>). Sheet #, title, and discipline are read from the filename. A multi-page PDF still splits into one row per page.</p>
+					<div class="row g-2 mb-2">
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-drawing-discipline">Discipline</label>
+							<select class="form-select form-select-sm" id="usis-drawing-discipline">
+								<option value="">From filename</option>
+								<option>Architectural</option>
+								<option>Structural</option>
+								<option>Mechanical</option>
+								<option>Electrical</option>
+								<option>Plumbing</option>
+								<option>Civil</option>
+								<option>Landscape</option>
+								<option>Fire Protection</option>
+								<option>General</option>
+								<option>Interiors</option>
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-drawing-set">Set</label>
+							<input class="form-control form-control-sm" type="text" id="usis-drawing-set" placeholder="Permit-Set, Bulletin-15, Current" maxlength="120">
+						</div>
+					</div>
 					<div class="mb-0">
 						<label class="form-label small mb-0" for="usis-drawing-file">PDF file <span class="text-danger">*</span></label>
 						<input class="form-control form-control-sm" type="file" id="usis-drawing-file" accept=".pdf,application/pdf">
@@ -1812,7 +1893,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
-	<script src="assets/js/project-detail-job.js"></script>
+	<script src="assets/js/project-detail-job.js?v=20260830b"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>

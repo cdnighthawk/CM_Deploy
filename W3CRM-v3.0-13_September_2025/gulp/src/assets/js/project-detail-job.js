@@ -6,6 +6,7 @@
 
 	var lastProjectId = null;
 	var lastProjectItem = null;
+	var lastLeadItem = null;
 	var lastSageProjectIdStr = "";
 	var lastContractItems = [];
 	var lastPrimeContractValueNum = null;
@@ -1007,14 +1008,226 @@
 		}
 	}
 
-	function tr(label, innerHtml) {
-		return (
-			"<tr><th class=\"text-muted small fw-normal\" style=\"width:42%\">" +
+	function firstNumber() {
+		for (var i = 0; i < arguments.length; i++) {
+			var n = Number(arguments[i]);
+			if (!isNaN(n) && isFinite(n)) return n;
+		}
+		return null;
+	}
+
+	function formatIsoDateTime(iso) {
+		if (!iso) return null;
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return String(iso);
+			try {
+				return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+			} catch (e2) {
+				return d.toLocaleString();
+			}
+		} catch (e) {
+			return String(iso);
+		}
+	}
+
+	function formatJobDate(iso) {
+		if (!iso) return null;
+		var raw = String(iso).trim();
+		if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+			try {
+				var d = new Date(raw + "T12:00:00");
+				if (!isNaN(d.getTime())) return d.toLocaleDateString();
+			} catch (e) { /* fall through */ }
+			return raw;
+		}
+		return formatIsoDateTime(iso);
+	}
+
+	function formatMoneyCur(n, currency) {
+		if (n == null || n === "") return null;
+		var cur = (currency || "USD").toString().trim() || "USD";
+		try {
+			return new Intl.NumberFormat(undefined, { style: "currency", currency: cur }).format(Number(n));
+		} catch (e) {
+			return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " " + cur;
+		}
+	}
+
+	function formatPercent(p) {
+		if (p == null || p === "") return null;
+		var x = Number(p);
+		if (isNaN(x)) return null;
+		if (x >= 0 && x <= 1) x = x * 100;
+		return x.toFixed(1).replace(/\.0$/, "") + "%";
+	}
+
+	function formatLocation(loc) {
+		if (!loc || typeof loc !== "object") return null;
+		var keys = [
+			"formatted",
+			"formattedAddress",
+			"complete",
+			"address",
+			"address1",
+			"streetName",
+			"street",
+			"line1",
+			"city",
+			"state",
+			"region",
+			"postalCode",
+			"zip",
+			"country",
+		];
+		var parts = [];
+		var seen = {};
+		for (var i = 0; i < keys.length; i++) {
+			var v = loc[keys[i]];
+			if (v == null || String(v).trim() === "") continue;
+			var text = String(v).trim();
+			if (seen[text.toLowerCase()]) continue;
+			seen[text.toLowerCase()] = 1;
+			parts.push(text);
+		}
+		return parts.length ? parts.join(", ") : null;
+	}
+
+	function projectLocation(item) {
+		if (!item) return null;
+		var has =
+			item.address_line1 ||
+			item.address_line2 ||
+			item.city ||
+			item.state ||
+			item.postal_code ||
+			item.country;
+		if (!has) return null;
+		return {
+			address: [item.address_line1, item.address_line2].filter(Boolean).join(", "),
+			city: item.city,
+			state: item.state,
+			postalCode: item.postal_code,
+			country: item.country && item.country !== "US" ? item.country : null,
+		};
+	}
+
+	function locationQuery(item) {
+		var lat = firstNumber(item && item.latitude, item && item.lat);
+		var lng = firstNumber(item && item.longitude, item && item.lng, item && item.lon);
+		if (lat != null && lng != null) return lat + "," + lng;
+		var loc = item && item.location;
+		if (loc && typeof loc === "object") {
+			var coords = loc.coords && typeof loc.coords === "object" ? loc.coords : loc;
+			lat = firstNumber(coords.lat, coords.latitude, loc.lat, loc.latitude);
+			lng = firstNumber(coords.lng, coords.lon, coords.longitude, loc.lng, loc.lon, loc.longitude);
+			if (lat != null && lng != null) return lat + "," + lng;
+		}
+		var formatted = formatLocation(loc) || formatLocation(projectLocation(item));
+		if (formatted) return formatted;
+		var bits = [item && item.city, item && item.state].filter(Boolean);
+		return bits.length ? bits.join(", ") : "";
+	}
+
+	function dueClass(iso) {
+		if (!iso) return "text-muted";
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return "text-muted";
+			if (d.getTime() - Date.now() <= 7 * 86400000) return "text-danger";
+		} catch (e) { /* keep muted */ }
+		return "";
+	}
+
+	function yn(v) {
+		if (v === true) return "Yes";
+		if (v === false) return "No";
+		return "—";
+	}
+
+	function humanizeToken(s) {
+		var raw = String(s || "").trim();
+		if (!raw) return "";
+		return raw.replace(/_/g, " ").replace(/\b\w/g, function (ch) {
+			return ch.toUpperCase();
+		});
+	}
+
+	function appendFieldRow(tbody, label, htmlValue) {
+		if (!tbody) return;
+		var row = document.createElement("tr");
+		row.innerHTML =
+			'<th class="text-muted fw-normal ps-3 py-2" scope="row" style="width:42%">' +
 			esc(label) +
-			"</th><td>" +
-			innerHtml +
-			"</td></tr>"
-		);
+			'</th><td class="py-2 pe-3">' +
+			htmlValue +
+			"</td>";
+		tbody.appendChild(row);
+	}
+
+	function appendDateRow(tbody, label, iso) {
+		appendFieldRow(tbody, label, iso ? fmtDash(formatJobDate(iso)) : '<span class="text-muted">—</span>');
+	}
+
+	function renderMembers(container, members) {
+		if (!container) return;
+		container.innerHTML = "";
+		if (!members) {
+			container.innerHTML = '<p class="text-muted mb-0 small">No team list in import.</p>';
+			return;
+		}
+		if (Array.isArray(members) && members.length) {
+			var ul = document.createElement("ul");
+			ul.className = "list-unstyled mb-0";
+			members.forEach(function (m) {
+				if (!m || typeof m !== "object") return;
+				var li = document.createElement("li");
+				li.className = "mb-2 pb-2 border-bottom";
+				var name =
+					m.name ||
+					[m.firstName, m.lastName].filter(Boolean).join(" ") ||
+					m.displayName ||
+					m.email ||
+					"Member";
+				var role = m.role || m.title || m.tradeName || "";
+				var co = (m.company && m.company.name) || m.companyName || "";
+				li.innerHTML =
+					'<div class="fw-medium">' +
+					esc(name) +
+					"</div>" +
+					(role ? '<div class="text-muted">' + esc(role) + "</div>" : "") +
+					(co ? '<div class="text-muted">' + esc(co) + "</div>" : "");
+				ul.appendChild(li);
+			});
+			container.appendChild(ul);
+			return;
+		}
+		container.innerHTML = '<p class="text-muted mb-0 small">No team list in import.</p>';
+	}
+
+	function pick(project, lead, key) {
+		if (project && project[key] != null && project[key] !== "") return project[key];
+		if (lead && lead[key] != null && lead[key] !== "") return lead[key];
+		return project ? project[key] : null;
+	}
+
+	function fetchLinkedLead(item) {
+		var lid = item && item.primary_lead_detail_id;
+		if (!lid) return Promise.resolve(null);
+		return fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(lid), {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
+			.then(function (res) {
+				if (!res.ok) return null;
+				return res.json();
+			})
+			.then(function (data) {
+				return (data && data.item) || null;
+			})
+			.catch(function () {
+				return null;
+			});
 	}
 
 	function setJobPaneLoading(show) {
@@ -1265,90 +1478,247 @@
 		if (methodSel) methodSel.addEventListener("change", onInvoiceMethodChange);
 	}
 
-	function render(item) {
-		lastProjectItem = item;
-		var title = document.getElementById("usis-proj-job-title");
-		var sub = document.getElementById("usis-proj-job-subtitle");
-		var st = document.getElementById("usis-proj-job-status");
-		var ty = document.getElementById("usis-proj-job-type");
-		var tbody = document.getElementById("usis-proj-job-tbody");
-		var desc = document.getElementById("usis-proj-job-description");
-		var notes = document.getElementById("usis-proj-job-notes");
-		var leadWrap = document.getElementById("usis-proj-job-leadlink-wrap");
-		var root = document.getElementById("usis-project-job-root");
+	function renderJobMap(merged) {
+		var card = document.getElementById("usis-proj-job-map-card");
+		var frame = document.getElementById("usis-proj-job-map");
+		var open = document.getElementById("usis-proj-job-map-open");
+		if (!card || !frame) return;
+		var q = locationQuery(merged);
+		if (!q) {
+			card.classList.add("d-none");
+			frame.removeAttribute("src");
+			if (open) {
+				open.removeAttribute("href");
+				open.classList.add("d-none");
+			}
+			return;
+		}
+		var encoded = encodeURIComponent(q);
+		frame.src = "https://maps.google.com/maps?q=" + encoded + "&z=16&output=embed";
+		if (open) {
+			open.href = "https://www.google.com/maps/search/?api=1&query=" + encoded;
+			open.classList.remove("d-none");
+		}
+		card.classList.remove("d-none");
+	}
 
-		if (title) title.textContent = item.name || "—";
+	function render(item, lead) {
+		lastProjectItem = item;
+		if (lead !== undefined) lastLeadItem = lead;
+		else lead = lastLeadItem;
+		lead = lead || {};
+
+		var jobName = item.name || lead.name || "Untitled project";
+		var jobNumber = item.number || lead.number;
+		var title = document.getElementById("usis-proj-job-title");
+		if (title) title.textContent = jobNumber ? jobNumber + " | " + jobName : jobName;
+
+		var sub = document.getElementById("usis-proj-job-subtitle");
 		if (sub) {
 			var bits = [];
-			if (item.number) bits.push("#" + item.number);
-			if (item.city || item.state) bits.push([item.city, item.state].filter(Boolean).join(", "));
-			sub.textContent = bits.join(" · ") || "";
+			if (lead.trade_name) bits.push(lead.trade_name);
+			else if (item.project_type) bits.push(humanizeToken(item.project_type));
+			var cityState = [pick(item, lead, "city"), pick(item, lead, "state")].filter(Boolean).join(", ");
+			if (cityState) bits.push(cityState);
+			sub.textContent = bits.join(" · ") || "Project details";
 		}
+
+		var dueBadge = document.getElementById("usis-proj-job-badge-due");
+		if (dueBadge) {
+			if (lead.due_at) {
+				dueBadge.className = "small fw-medium " + dueClass(lead.due_at);
+				var dueStr = formatJobDate(lead.due_at);
+				dueBadge.textContent = dueStr ? "Due " + dueStr : "";
+			} else {
+				dueBadge.className = "small text-muted";
+				dueBadge.textContent = "";
+			}
+		}
+
+		var st = document.getElementById("usis-proj-job-status");
 		if (st) {
-			st.textContent = item.status || "—";
-			st.className = "badge bg-light text-dark border";
-		}
-		if (ty) {
-			ty.textContent = item.project_type ? String(item.project_type).replace(/_/g, " ") : "—";
-			ty.className = "badge bg-light text-muted border text-capitalize";
+			var statusBits = [];
+			if (item.status) statusBits.push(humanizeToken(item.status));
+			if (item.project_type) statusBits.push(humanizeToken(item.project_type));
+			st.textContent = statusBits.join(" · ");
+			st.className = "small text-muted";
 		}
 
-		var addr = [item.address_line1, item.address_line2].filter(Boolean).join(", ");
-		var cityLine = [item.city, item.state, item.postal_code].filter(Boolean).join(" ");
-		if (item.country && item.country !== "US") cityLine = (cityLine ? cityLine + ", " : "") + item.country;
+		var loc = projectLocation(item) || lead.location;
+		var merged = {
+			latitude: item.latitude,
+			longitude: item.longitude,
+			city: pick(item, lead, "city"),
+			state: pick(item, lead, "state"),
+			location: loc,
+		};
+		renderJobMap(merged);
 
-		var rows = [
-			tr("Project id", fmtDash(item.id)),
-			tr("Number", fmtDash(item.number)),
-			tr("Address", fmtDash(addr || null)),
-			tr("City / ZIP", fmtDash(cityLine || null)),
-			tr("Contract value", fmtMoney(item.contract_value)),
-			tr("Contract date", fmtDate(item.contract_date)),
-			tr("Start date", fmtDate(item.start_date)),
-			tr("Substantial completion", fmtDate(item.substantial_completion_date)),
-			tr("Closeout", fmtDate(item.closeout_date)),
-			tr("Retention %", item.retention_percentage != null ? esc(String(item.retention_percentage)) : "—"),
-			tr("Prevailing wage", esc(fmtBool(!!item.prevailing_wage))),
-			tr("DBE required", esc(fmtBool(!!item.dbe_required))),
-			tr("GC", fmtDash(item.gc_company_name)),
-			tr("Owner", fmtDash(item.owner_company_name)),
-			tr("Architect", fmtDash(item.architect_company_name)),
-			tr("Sage project id", fmtDash(item.sage_project_id)),
-			tr("Textura project id", fmtDash(item.textura_project_id)),
-			tr("Invoice method", fmtDash(item.invoice_method_label || item.invoice_method)),
-			tr("Invoice due date", fmtDate(item.invoice_due_date)),
-			tr(
+		var cur = lead.default_currency || "USD";
+		var pub = document.getElementById("usis-proj-job-public-tbody");
+		if (pub) {
+			pub.innerHTML = "";
+			appendFieldRow(pub, "Project #", fmtDash(jobNumber));
+			appendFieldRow(pub, "Project name", fmtDash(jobName));
+			appendDateRow(pub, "Bid due", lead.due_at);
+			var locStr = formatLocation(loc);
+			if (locStr) {
+				appendFieldRow(pub, "Location", '<div class="small" style="white-space:pre-wrap;">' + esc(locStr) + "</div>");
+			} else if (merged.city || merged.state) {
+				appendFieldRow(pub, "Location", fmtDash([merged.city, merged.state].filter(Boolean).join(", ")));
+			} else {
+				appendFieldRow(pub, "Location", '<span class="text-muted">No location on file.</span>');
+			}
+			appendDateRow(pub, "Job walk", lead.job_walk_at);
+			appendDateRow(pub, "RFIs due", lead.rfis_due_at);
+			appendDateRow(pub, "Expected start", item.start_date || lead.expected_start_at);
+			appendDateRow(pub, "Expected finish", item.substantial_completion_date || lead.expected_finish_at);
+			appendFieldRow(
+				pub,
+				"Project size",
+				fmtDash(formatMoneyCur(lead.project_size != null ? lead.project_size : item.contract_value, cur))
+			);
+			appendFieldRow(pub, "Architect", fmtDash(lead.architect || item.architect_company_name));
+			appendFieldRow(pub, "Engineer", fmtDash(lead.engineer));
+			appendFieldRow(pub, "Property owner", fmtDash(lead.property_owner || item.owner_company_name));
+			appendFieldRow(pub, "Tenant", fmtDash(lead.property_tenant));
+			appendDateRow(pub, "Invite received", lead.invited_at);
+			appendDateRow(pub, "Contract start", item.contract_date || lead.contract_start_at || lead.contract_date);
+			appendDateRow(pub, "Closeout", item.closeout_date);
+			appendDateRow(pub, "Created (BC)", lead.bc_created_at);
+			appendDateRow(pub, "Last updated (BC)", lead.bc_updated_at);
+		}
+
+		var desc = document.getElementById("usis-proj-job-description");
+		if (desc) {
+			var narrative = lead.project_information || item.description || item.notes;
+			if (narrative && String(narrative).trim()) {
+				desc.innerHTML = '<div class="small" style="white-space:pre-wrap;">' + esc(narrative) + "</div>";
+			} else {
+				desc.innerHTML =
+					'<p class="text-muted small mb-0">No project description was provided in Building Connected for this opportunity.</p>';
+			}
+		}
+
+		var trade = document.getElementById("usis-proj-job-trade");
+		if (trade) {
+			if (lead.trade_specific_instructions && String(lead.trade_specific_instructions).trim()) {
+				trade.innerHTML =
+					'<div style="white-space:pre-wrap;">' + esc(lead.trade_specific_instructions) + "</div>";
+			} else {
+				trade.innerHTML = '<p class="text-muted small mb-0">No trade-specific instructions.</p>';
+			}
+		}
+
+		var adv = document.getElementById("usis-proj-job-advanced");
+		if (adv) {
+			var abits = [];
+			abits.push("<div><strong>NDA required:</strong> " + yn(lead.is_nda_required) + "</div>");
+			abits.push("<div><strong>Sealed bidding:</strong> " + yn(lead.is_sealed_bidding) + "</div>");
+			abits.push("<div><strong>Discoverable / public project:</strong> " + yn(lead.project_is_public) + "</div>");
+			abits.push("<div><strong>Archived:</strong> " + yn(lead.is_archived != null ? lead.is_archived : item.status === "archived") + "</div>");
+			if (lead.is_parent != null) {
+				abits.push("<div><strong>Parent invite (BC):</strong> " + yn(lead.is_parent) + "</div>");
+			}
+			adv.innerHTML = abits.join("");
+		}
+
+		var priv = document.getElementById("usis-proj-job-private-tbody");
+		if (priv) {
+			priv.innerHTML = "";
+			appendFieldRow(priv, "Request type / budgeting", fmtDash(lead.request_type || item.project_type));
+			appendFieldRow(priv, "Client (company)", fmtDash(lead.company_name || lead.gc_company_name || item.gc_company_name));
+			appendFieldRow(priv, "Primary contact", fmtDash(lead.client_contact));
+			appendFieldRow(priv, "Fee %", fmtDash(formatPercent(lead.fee_percentage)));
+			appendFieldRow(priv, "Profit margin", fmtDash(formatPercent(lead.profit_margin)));
+			appendFieldRow(priv, "Market sector", fmtDash(lead.market_sector));
+			appendFieldRow(priv, "Owning office (id)", fmtDash(lead.owning_office_id));
+			appendFieldRow(priv, "Workflow bucket", fmtDash(lead.workflow_bucket));
+			appendFieldRow(priv, "ROM", fmtDash(formatMoneyCur(lead.rom, cur)));
+			appendFieldRow(
+				priv,
+				"Project value / final",
+				fmtDash(
+					formatMoneyCur(
+						lead.final_value != null
+							? lead.final_value
+							: item.contract_value != null
+								? item.contract_value
+								: lead.contract_value,
+						cur
+					)
+				)
+			);
+			appendFieldRow(priv, "CRM stage", fmtDash(lead.crm_stage));
+			appendFieldRow(priv, "Win probability", fmtDash(formatPercent(lead.win_probability)));
+			appendFieldRow(priv, "Estimating hours", fmtDash(lead.estimating_hours));
+			appendFieldRow(priv, "Contract duration (days)", fmtDash(lead.contract_duration));
+			appendFieldRow(priv, "Avg. crew size", fmtDash(lead.average_crew_size));
+			if (lead.takeoff_line_count != null) {
+				appendFieldRow(priv, "Takeoff lines", '<span class="fw-medium">' + esc(String(lead.takeoff_line_count)) + "</span>");
+			}
+			appendFieldRow(priv, "Priority", fmtDash(lead.priority));
+			appendDateRow(priv, "Follow-up", lead.follow_up_at);
+			appendFieldRow(
+				priv,
+				"Retention %",
+				item.retention_percentage != null ? esc(String(item.retention_percentage)) : '<span class="text-muted">—</span>'
+			);
+			appendFieldRow(priv, "Prevailing wage", esc(fmtBool(!!item.prevailing_wage)));
+			appendFieldRow(priv, "DBE required", esc(fmtBool(!!item.dbe_required)));
+			appendFieldRow(priv, "Sage project id", fmtDash(item.sage_project_id));
+			appendFieldRow(priv, "Textura project id", fmtDash(item.textura_project_id));
+			appendFieldRow(priv, "Invoice method", fmtDash(item.invoice_method_label || item.invoice_method));
+			appendDateRow(priv, "Invoice due date", item.invoice_due_date);
+			appendFieldRow(
+				priv,
 				"Invoice emails",
 				item.invoice_method === "email"
 					? fmtDash(item.invoice_recipient_emails)
 					: '<span class="text-muted">—</span>'
-			),
-			tr("Updated", fmtDate(item.updated_at)),
-			tr("Created", fmtDate(item.created_at)),
-		];
-		if (tbody) tbody.innerHTML = rows.join("");
-
-		if (desc) {
-			desc.innerHTML = item.description
-				? "<div class=\"text-body\">" + esc(item.description).replace(/\n/g, "<br>") + "</div>"
-				: '<span class="text-muted">—</span>';
-		}
-		if (notes) {
-			notes.innerHTML = item.notes
-				? "<div class=\"text-body\">" + esc(item.notes).replace(/\n/g, "<br>") + "</div>"
-				: '<span class="text-muted">—</span>';
-		}
-		if (leadWrap) {
-			if (item.primary_lead_detail_id) {
-				var href = "construction/lead-detail.html?id=" + encodeURIComponent(item.primary_lead_detail_id);
-				leadWrap.innerHTML =
-					'<a class="link-primary" href="' +
-					href +
-					'">Open linked lead / opportunity</a> <span class="text-muted">(Building Connected)</span>';
-			} else {
-				leadWrap.innerHTML = '<span class="text-muted">No linked lead on file for this project.</span>';
+			);
+			if (item.notes && String(item.notes).trim() && item.notes !== (lead.project_information || item.description)) {
+				appendFieldRow(
+					priv,
+					"Notes",
+					'<div class="small" style="white-space:pre-wrap;">' + esc(item.notes) + "</div>"
+				);
 			}
 		}
+
+		renderMembers(document.getElementById("usis-proj-job-members"), lead.members);
+
+		var foot = document.getElementById("usis-proj-job-footer");
+		if (foot) {
+			var extras = [];
+			extras.push("Project id <code>" + esc(item.id || "—") + "</code>");
+			if (lead.external_id || lead.id) {
+				extras.push(
+					" · Building Connected ref <code>" +
+						esc(lead.external_id || "—") +
+						"</code> · Internal id <code>" +
+						esc(lead.id || "—") +
+						"</code>"
+				);
+			}
+			if (item.primary_lead_detail_id) {
+				extras.push(
+					' · <a class="link-primary" href="construction/lead-detail.html?id=' +
+						encodeURIComponent(item.primary_lead_detail_id) +
+						'">Open lead</a>'
+				);
+				extras.push(
+					' · <a class="link-secondary" href="construction/estimate-detail.html?id=' +
+						encodeURIComponent(item.primary_lead_detail_id) +
+						'">Open estimate</a>'
+				);
+			} else {
+				extras.push(' · <span class="text-muted">No linked lead on file for this project.</span>');
+			}
+			foot.innerHTML = extras.join("");
+		}
+
+		var root = document.getElementById("usis-project-job-root");
 		if (root) root.classList.remove("d-none");
 	}
 
@@ -1410,7 +1780,6 @@
 				return res.json();
 			})
 			.then(function (data) {
-				setJobPaneLoading(false);
 				var item = data.item;
 				if (!item) throw new Error("Missing item in response");
 				lastProjectId = pid;
@@ -1420,13 +1789,17 @@
 				}
 				wireContractAdminToolsOnce();
 				wireProjectEditOnce();
-				render(item);
 				fillContractAdminFromProject(item);
 				loadContractAdminCommitmentSummary(pid);
 				refreshPrimeSovSummary(pid);
 				wireProjectRfpLinks(pid);
 				wireContractAdminHubLink(pid);
 				wireProcurementTabProjectScope(item, pid);
+				return fetchLinkedLead(item).then(function (lead) {
+					lastLeadItem = lead;
+					render(item, lead);
+					setJobPaneLoading(false);
+				});
 			})
 			.catch(function (err) {
 				setJobPaneLoading(false);

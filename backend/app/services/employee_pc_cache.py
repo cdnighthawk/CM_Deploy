@@ -27,7 +27,7 @@ from typing import Any, Iterable
 
 from flask import Response, send_file
 
-from .object_storage import UploadCategory, read_stored_bytes
+from .object_storage import UploadCategory, b2_enabled, read_stored_bytes
 
 COMPANY_FOLDER = "USISCM"
 LEGACY_APP_FOLDER = "USISPdfApp"
@@ -308,17 +308,22 @@ def download_name_for(row) -> str:
 
 
 def respond_drawing_pdf(row, object_name: str) -> Response | None:
-    """Serve from the employee-PC cache when present; otherwise storage, then cache."""
+    """Serve the drawing PDF from B2 when configured; otherwise the employee-PC cache.
+
+    The website on Render always uses Backblaze. A local Flask process without B2
+    keys may still reuse ``%LOCALAPPDATA%\\USISCM`` before falling back to disk/NAS.
+    """
     dl = download_name_for(row)
     project_id = getattr(row, "project_id", None)
-    cached = find_cached(row.id, dl, project_id)
-    if cached is not None:
-        return send_file(
-            cached,
-            mimetype="application/pdf",
-            as_attachment=False,
-            download_name=dl,
-        )
+    if not b2_enabled():
+        cached = find_cached(row.id, dl, project_id)
+        if cached is not None:
+            return send_file(
+                cached,
+                mimetype="application/pdf",
+                as_attachment=False,
+                download_name=dl,
+            )
 
     data = read_stored_bytes(UploadCategory.DRAWINGS, object_name)
     if data is None:

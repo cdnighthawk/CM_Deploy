@@ -23,6 +23,11 @@ def _normalize_database_url(url: str) -> str:
 
 
 def _env_database_url() -> str:
+    """Local Flask uses LOCAL_DATABASE_URL so it does not follow a dead Render host."""
+    env = (os.environ.get("FLASK_ENV") or "").strip().lower()
+    local = (os.environ.get("LOCAL_DATABASE_URL") or "").strip()
+    if env == "development" and local:
+        return _normalize_database_url(local)
     return _normalize_database_url(
         os.environ.get(
             "DATABASE_URL",

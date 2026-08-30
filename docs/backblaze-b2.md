@@ -2,7 +2,7 @@
 
 Production on Render can store **project PDFs** (drawings, spec sections, RFI attachments) and **HR hire-wizard photos** (I-9, W-4, union documents) in [Backblaze B2](https://www.backblaze.com/b2/cloud-storage.html) instead of the Render persistent disk. The Flask app uses B2’s **S3-compatible API** via `boto3` when all required environment variables are set.
 
-Local development without B2 vars continues to use `backend/instance/` (same as before).
+The website and API **read drawings from B2**, not from the office NAS. Local development without B2 vars continues to use `backend/instance/` (same as before).
 
 ## What is stored in B2
 
@@ -100,9 +100,9 @@ See also [render-deploy.md](render-deploy.md).
 
 ## 7. NAS / local mirror
 
-B2 is the live store for production. To keep a second copy on an office NAS (or a local disk), run [`backend/scripts/mirror_b2.py`](../backend/scripts/mirror_b2.py) **on a PC that can see the share**. Render cannot mount your NAS, and its 1 GB disk cannot hold project drawings.
+B2 is the live store. The website never reads the NAS when B2 credentials are set. To keep a second copy on an office NAS (or a local disk), run [`backend/scripts/mirror_b2.py`](../backend/scripts/mirror_b2.py) **on a PC that can see the share**. New uploads may also write-through to `B2_MIRROR_ROOT` when that path is mounted. Render cannot mount your NAS, and its 1 GB disk cannot hold project drawings.
 
-Set `B2_MIRROR_ROOT` in **local** `backend/.env` only — **do not add it on Render**.
+Set `B2_MIRROR_ROOT` in **local** `backend/.env` only — **do not add it on Render**. Do not point `DRAWING_UPLOAD_FOLDER` at the NAS on the website.
 
 ```bash
 # from backend/

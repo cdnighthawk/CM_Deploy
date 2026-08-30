@@ -836,6 +836,10 @@
 					var fd = new FormData();
 					fd.append("file", fileEl.files[0]);
 					fd.append("split_pages", "true");
+					var discEl = el(ids.drawingDiscipline);
+					var setEl = el(ids.drawingSet);
+					if (discEl && discEl.value) fd.append("discipline", discEl.value);
+					if (setEl && setEl.value) fd.append("drawing_set", setEl.value.trim());
 					var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
 					fetch(url, {
 						method: "POST",

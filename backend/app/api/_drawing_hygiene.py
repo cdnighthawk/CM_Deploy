@@ -34,19 +34,12 @@ SHEET_FUNCTIONS = (
     "unknown",
 )
 
-# Letter + optional separator + digits, optional decimal/suffix. A-100, A2.01, I-201, ID-101.
-_SHEET_NUM_RE = re.compile(
-    r"^[A-Z]{1,3}[-\s.]?\d{1,4}(?:[.-]\d{1,2})?[A-Z]?$",
-    re.IGNORECASE,
-)
-_PAGE_RE = re.compile(r"^(page|sheet|pg|p)\s*\d+", re.IGNORECASE)
+from ..services.drawing_label import is_sheet_number, parse_filename
+
+_PAGE_RE = re.compile(r"^(?:page|sheet|pg)[\s._-]*\d+$", re.IGNORECASE)
 _IMG_RE = re.compile(r"^(img|image|dsc|scan)[_-]?\d+", re.IGNORECASE)
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-    re.IGNORECASE,
-)
-_FROM_FILENAME_RE = re.compile(
-    r"\b([A-Z]{1,3}[-\s.]?\d{1,4}(?:[.-]\d{1,2})?[A-Z]?)\b",
     re.IGNORECASE,
 )
 
@@ -79,18 +72,13 @@ def _norm(raw: str | None) -> str:
 
 
 def extract_sheet_number_from_filename(filename: str | None) -> str | None:
-    name = str(filename or "").rsplit(".", 1)[0]
-    name = name.replace("_", " ").replace("—", " ")
-    hits = _FROM_FILENAME_RE.findall(name)
-    if not hits:
-        return None
-    return str(hits[0]).upper().replace(" ", "")
+    return parse_filename(filename).get("sheet_number")
 
 
 def classify_label(sheet_number: str | None, filename: str | None = None) -> dict[str, Any]:
     raw = (sheet_number or "").strip()
     from_file = extract_sheet_number_from_filename(filename)
-    if raw and _SHEET_NUM_RE.match(raw) and not _PAGE_RE.match(raw):
+    if raw and is_sheet_number(raw) and not _PAGE_RE.match(raw):
         conflict = bool(from_file) and _digits(raw) != _digits(from_file)
         if conflict:
             return {
@@ -105,7 +93,7 @@ def classify_label(sheet_number: str | None, filename: str | None = None) -> dic
             "label_reason": "stored drawing # looks like a page, image, or id — not A-100 style",
             "filename_guess": from_file,
         }
-    if from_file and _SHEET_NUM_RE.match(from_file):
+    if from_file and is_sheet_number(from_file):
         return {
             "label_status": LABEL_NEEDS_AI,
             "label_reason": "stored drawing # is missing or nonstandard; filename looks like a sheet id",

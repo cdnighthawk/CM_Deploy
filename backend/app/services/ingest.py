@@ -502,6 +502,22 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
         tags["project_id"] = str(job_id)
 
     if kind == "drawing":
+        from .drawing_label import label_drawing, parse_folder_path
+
+        rel = (
+            text(metadata.get("relative_path") or metadata.get("relativePath") or metadata.get("source_path"))
+            or filename
+        )
+        folder_labels = parse_folder_path(rel)
+        labeled = label_drawing(
+            filename=filename,
+            folder_path=rel,
+            sheet_number=text(metadata.get("sheet_number")) or None,
+            sheet_title=text(metadata.get("sheet_title")) or None,
+            discipline=text(metadata.get("discipline")) or folder_labels.get("discipline"),
+            drawing_set=text(metadata.get("drawing_set")) or folder_labels.get("drawing_set"),
+            revision=text(metadata.get("revision")) or None,
+        )
         split_raw = metadata.get("split_pages")
         split_pages = str(split_raw).strip().lower() in ("1", "true", "yes", "on") if split_raw is not None else False
         created: list[Drawing] = []
@@ -532,10 +548,10 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
                         page_index=i,
                         page_count=page_count,
                         sheet_number=text(metadata.get("sheet_number")) or None,
-                        sheet_title=text(metadata.get("sheet_title")) or None,
-                        discipline=text(metadata.get("discipline")) or None,
-                        drawing_set=text(metadata.get("drawing_set")) or None,
-                        revision=text(metadata.get("revision")) or "0",
+                        sheet_title=labeled["sheet_title"],
+                        discipline=labeled["discipline"],
+                        drawing_set=labeled["drawing_set"],
+                        revision=labeled["revision"] or "0",
                     )
                 )
         else:
@@ -546,11 +562,11 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
                     raw_name=filename,
                     page_index=None,
                     page_count=1,
-                    sheet_number=text(metadata.get("sheet_number")) or None,
-                    sheet_title=text(metadata.get("sheet_title")) or None,
-                    discipline=text(metadata.get("discipline")) or None,
-                    drawing_set=text(metadata.get("drawing_set")) or None,
-                    revision=text(metadata.get("revision")) or "0",
+                    sheet_number=labeled["sheet_number"],
+                    sheet_title=labeled["sheet_title"],
+                    discipline=labeled["discipline"],
+                    drawing_set=labeled["drawing_set"],
+                    revision=labeled["revision"] or "0",
                 )
             )
         for row in created:

@@ -1483,10 +1483,19 @@ def run_calendar_reminders():
 
 @bp.post("/drawings/relink")
 def relink_unassigned_drawings():
-    """Attach B2 drawings/docs with no project_id to a matched lead, estimate, or job."""
+    """Attach B2 drawings/docs with no project_id to a matched lead, estimate, or job.
+
+    Pass ``from_b2=1`` to also create Drawing rows for job-path objects already
+    in Backblaze (no re-upload).
+    """
+    from ..services.b2_project_link import register_b2_job_files
     from ..services.ingest import relink_unassigned_documents
 
-    payload = relink_unassigned_documents()
+    unassigned = relink_unassigned_documents()
+    from_b2 = (request.args.get("from_b2") or "").strip().lower() in {"1", "true", "yes"}
+    payload = dict(unassigned)
+    if from_b2:
+        payload["b2Register"] = register_b2_job_files()
     db.session.commit()
     return _jsonify(payload)
 
@@ -1658,9 +1667,9 @@ def _drawing_resolved_file_url(d: Drawing) -> str | None:
 def get_drawing_pdf_file(drawing_id: str):
     """Stream an uploaded drawing PDF (same-origin for PDF.js).
 
-    On an employee Windows PC, reuse ``%LOCALAPPDATA%\\USISCM\\{projectId}\\{drawingId}``
-    (and legacy USISPdfApp / flat USISCM\\drawings folders) so the website and
-    desktop app share one cache.
+    Production reads Backblaze B2. On an employee PC without B2 credentials,
+    Flask may reuse ``%LOCALAPPDATA%\\USISCM\\{projectId}\\{drawingId}`` (and
+    legacy USISPdfApp / flat USISCM\\drawings folders).
     """
     from ..services.employee_pc_cache import respond_drawing_pdf
 

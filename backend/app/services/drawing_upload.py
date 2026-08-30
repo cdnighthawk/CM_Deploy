@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from ..extensions import db
 from ..models import Drawing
 from ..services.object_storage import StorageError, UploadCategory, delete_stored, save_upload, stored_exists
+from ..services.drawing_label import label_drawing
 from ..services.project_file_keys import (
     drawing_object_candidates,
     drawing_storage_relpath,
@@ -110,13 +111,22 @@ def _create_drawing_row(
     revision: str,
 ) -> Drawing:
     base = _base_name(raw_name)
+    labels = label_drawing(
+        filename=raw_name,
+        sheet_number=sheet_number,
+        sheet_title=sheet_title,
+        discipline=discipline,
+        drawing_set=drawing_set,
+        revision=revision,
+        allow_filename_sheet=not (page_count > 1 and page_index is not None and not sheet_number),
+    )
     if page_count > 1 and page_index is not None:
-        title = sheet_title or f"{base} — page {page_index + 1}"
+        title = labels["sheet_title"] or sheet_title or f"{base} — page {page_index + 1}"
         sn = sheet_number or f"Page {page_index + 1}"
         orig = f"{base}_p{page_index + 1}.pdf"
     else:
-        title = sheet_title or base
-        sn = sheet_number
+        title = labels["sheet_title"] or sheet_title or base
+        sn = labels["sheet_number"]
         orig = safe_filename(raw_name, default="drawing.pdf")
         if not orig.lower().endswith(".pdf"):
             orig += ".pdf"
@@ -127,9 +137,9 @@ def _create_drawing_row(
         title=title[:500],
         sheet_number=(sn[:50] if sn else None),
         sheet_title=title[:500],
-        discipline=(discipline[:50] if discipline else None),
-        drawing_set=(drawing_set[:120] if drawing_set else None),
-        revision=revision[:50],
+        discipline=(labels["discipline"][:50] if labels["discipline"] else None),
+        drawing_set=(labels["drawing_set"][:120] if labels["drawing_set"] else None),
+        revision=(labels["revision"] or revision or "0")[:50],
         mime_type="application/pdf",
         original_filename=orig[:500],
         drawing_series_id=series_id,
@@ -154,6 +164,9 @@ def _create_drawing_row(
     d.tags = tags
     d.file_url = f"/api/v1/drawings/{d.id}/file"
     d.file_size_bytes = int(sz)
+    from ..api._drawing_hygiene import apply_hygiene
+
+    apply_hygiene(d)
     return d
 
 

@@ -1011,6 +1011,10 @@
 				var fd = new FormData();
 				fd.append("file", fileEl.files[0]);
 				fd.append("split_pages", "true");
+				var discEl = document.getElementById("usis-drawing-discipline");
+				var setEl = document.getElementById("usis-drawing-set");
+				if (discEl && discEl.value) fd.append("discipline", discEl.value);
+				if (setEl && setEl.value) fd.append("drawing_set", setEl.value.trim());
 				var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
 				fetch(url, {
 					method: "POST",

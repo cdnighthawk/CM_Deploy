@@ -118,6 +118,9 @@ def create_app(config_object: str | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=False)
 
     app.config.from_object(config_object or "app.config.Config")
+    from .config import _env_database_url
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = _env_database_url()
 
     db.init_app(app)
     migrate.init_app(app, db, directory=os.path.join(os.path.dirname(__file__), "..", "migrations"))

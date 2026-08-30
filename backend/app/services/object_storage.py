@@ -1,9 +1,13 @@
 """Binary storage for project PDFs and HR document photos.
 
-Uses the local filesystem under Flask ``instance/`` (or per-category env folders)
-when Backblaze B2 is not configured. When ``B2_APPLICATION_KEY_ID``, ``B2_APPLICATION_KEY``,
-``B2_BUCKET_NAME``, and ``B2_ENDPOINT`` are all set, objects are stored in B2 via the
-S3-compatible API (``boto3``).
+When ``B2_APPLICATION_KEY_ID``, ``B2_APPLICATION_KEY``, ``B2_BUCKET_NAME``, and
+``B2_ENDPOINT`` are all set, the website and API read and write Backblaze B2
+only (S3-compatible ``boto3``). Local ``instance/`` and ``B2_MIRROR_ROOT`` (NAS)
+are not used as a read fallback in that mode.
+
+Without those four vars, objects live under Flask ``instance/`` (or per-category
+env folders). ``B2_MIRROR_ROOT`` is then an optional local/NAS read path for
+office PCs that do not have B2 credentials.
 """
 
 from __future__ import annotations
@@ -119,8 +123,8 @@ def _mirror_file(category: UploadCategory, object_name: str) -> Path | None:
 
 
 def stored_exists(category: UploadCategory, object_name: str) -> bool:
-    if b2_enabled() and _head_object(object_key(category, object_name)) is not None:
-        return True
+    if b2_enabled():
+        return _head_object(object_key(category, object_name)) is not None
     if local_path(category, object_name).is_file():
         return True
     return _mirror_file(category, object_name) is not None
@@ -141,8 +145,9 @@ def read_first_stored(category: UploadCategory, object_names: list[str]) -> tupl
 def stored_size(category: UploadCategory, object_name: str) -> int | None:
     if b2_enabled():
         meta = _head_object(object_key(category, object_name))
-        if meta is not None:
-            return int(meta.get("ContentLength") or 0)
+        if meta is None:
+            return None
+        return int(meta.get("ContentLength") or 0)
     path = local_path(category, object_name)
     try:
         if path.is_file():
@@ -233,9 +238,7 @@ def delete_stored(category: UploadCategory, object_name: str) -> None:
 def read_stored_bytes(category: UploadCategory, object_name: str) -> bytes | None:
     """Load a stored object into memory, or ``None`` when missing."""
     if b2_enabled():
-        data = _get_bytes(object_key(category, object_name))
-        if data is not None:
-            return data
+        return _get_bytes(object_key(category, object_name))
     path = local_path(category, object_name)
     if path.is_file():
         return path.read_bytes()
@@ -255,17 +258,18 @@ def send_stored_file(
     """Stream a stored object, or ``None`` when missing."""
     if b2_enabled():
         data = _get_bytes(object_key(category, object_name))
-        if data is not None:
-            # Explicit body + Content-Length avoids proxy/browser mismatches with BytesIO send_file.
-            safe_name = download_name.replace('"', "")
-            return Response(
-                data,
-                mimetype=mimetype,
-                headers={
-                    "Content-Length": str(len(data)),
-                    "Content-Disposition": f'inline; filename="{safe_name}"',
-                },
-            )
+        if data is None:
+            return None
+        # Explicit body + Content-Length avoids proxy/browser mismatches with BytesIO send_file.
+        safe_name = download_name.replace('"', "")
+        return Response(
+            data,
+            mimetype=mimetype,
+            headers={
+                "Content-Length": str(len(data)),
+                "Content-Disposition": f'inline; filename="{safe_name}"',
+            },
+        )
     path = local_path(category, object_name)
     if not path.is_file():
         path = _mirror_file(category, object_name)

@@ -99,7 +99,7 @@ def test_b2_enabled_when_all_vars_set(flask_app):
 
 
 def test_mirror_root_serves_when_local_missing(flask_app, tmp_path):
-    """Local Flask with production DB should read drawings from the NAS mirror."""
+    """Without B2 credentials, local Flask may still read the NAS mirror."""
     rel = Path("24060") / "Architectural" / "Permit-Set" / "A1.pdf"
     dest = tmp_path / "prod" / "usis-cm" / "drawings" / rel
     dest.parent.mkdir(parents=True)
@@ -280,7 +280,8 @@ def test_b2_save_upload_mirrors_to_nas(mock_client_factory, flask_app, tmp_path)
 
 
 @patch("app.services.object_storage._s3_client")
-def test_b2_head_error_falls_through_to_nas(mock_client_factory, flask_app, tmp_path):
+def test_b2_enabled_does_not_read_nas(mock_client_factory, flask_app, tmp_path):
+    """Website/API must not fall through to the NAS when B2 is configured."""
     mock_s3 = MagicMock()
     mock_s3.head_object.side_effect = Exception("SSL validation failed EOF")
     mock_s3.get_object.side_effect = Exception("SSL validation failed EOF")
@@ -301,11 +302,24 @@ def test_b2_head_error_falls_through_to_nas(mock_client_factory, flask_app, tmp_
         }
     )
     with flask_app.app_context():
-        from app.services.object_storage import UploadCategory, read_first_stored, stored_exists
+        from app.services.object_storage import (
+            UploadCategory,
+            read_first_stored,
+            read_stored_bytes,
+            send_stored_file,
+            stored_exists,
+            stored_size,
+        )
 
         name = rel.as_posix()
-        assert stored_exists(UploadCategory.DRAWINGS, name)
-        hit = read_first_stored(UploadCategory.DRAWINGS, ["missing.pdf", name])
-        assert hit is not None
-        assert hit[0] == name
-        assert hit[1] == b"%PDF-1.4 nas"
+        assert not stored_exists(UploadCategory.DRAWINGS, name)
+        assert stored_size(UploadCategory.DRAWINGS, name) is None
+        assert read_stored_bytes(UploadCategory.DRAWINGS, name) is None
+        assert read_first_stored(UploadCategory.DRAWINGS, ["missing.pdf", name]) is None
+        with flask_app.test_request_context():
+            assert send_stored_file(
+                UploadCategory.DRAWINGS,
+                name,
+                mimetype="application/pdf",
+                download_name="A1.pdf",
+            ) is None

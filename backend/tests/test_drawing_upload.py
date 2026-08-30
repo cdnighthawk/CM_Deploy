@@ -56,6 +56,37 @@ def test_drawing_upload_splits_multi_page_pdf(client):
         assert b"%PDF" in r2.data
 
 
+def test_drawing_upload_labels_from_filename(client):
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawLbl-" + uuid.uuid4().hex[:8], number="N" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data={
+            "file": (io.BytesIO(payload), "A1-001_ENTRY-PLAN_Rev-02.pdf"),
+            "split_pages": "false",
+            "drawing_set": "Permit-Set",
+        },
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    item = r.get_json()["item"]
+    assert item["sheet_number"] == "A1-001"
+    assert item.get("discipline") == "Architectural"
+    assert item.get("drawing_set") == "Permit-Set"
+    assert item.get("label_status") == "ok"
+
+
 def test_drawing_upload_single_page_no_split_entity(client):
     with client.application.app_context():
         p = Project(name="Draw1-" + uuid.uuid4().hex[:8])

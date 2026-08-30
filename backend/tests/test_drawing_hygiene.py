@@ -12,7 +12,18 @@ from app.models import Drawing, Estimate, Project
 
 
 def test_label_ok_common_sheet_numbers():
-    for num in ("A-100", "A2.01", "I-201", "S-101", "ID-101", "A-100.1", "A-100A"):
+    for num in (
+        "A-100",
+        "A2.01",
+        "I-201",
+        "S-101",
+        "ID-101",
+        "A-100.1",
+        "A-100A",
+        "A1-001",
+        "G0.1.01",
+        "A10.02.1",
+    ):
         assert classify_label(num)["label_status"] == "ok", num
 
 

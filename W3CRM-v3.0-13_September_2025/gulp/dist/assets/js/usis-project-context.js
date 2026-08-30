@@ -1,6 +1,8 @@
 /**
  * Sets data-project-id on body from URL (?project_id=) or sessionStorage (Plan 1).
- * Also stamps Home / Active projects / [number — name] into the page breadcrumb.
+ * Stamps Home / Active projects / [number — name] only on pages that are actually
+ * about that job. Company-wide lists (Projects, Estimate, Leads, dashboard) keep
+ * the last job in session for defaults, but do not show it in the breadcrumb.
  */
 (function (global) {
   "use strict";
@@ -85,6 +87,20 @@
     return document.querySelector(".page-title .breadcrumb");
   }
 
+  function isCompanyWideListPage() {
+    var path = (global.location.pathname || "").toLowerCase();
+    return /(^|\/)(projects|estimate|leads|lead-goldenstate-planroom|usis-dashboard(-dark)?|usis-all-pages-index)\.html$/.test(
+      path
+    );
+  }
+
+  function setProjectsCrumbVisible(on) {
+    var li = document.getElementById("usis-projects-crumb");
+    if (!li) return;
+    if (on) li.classList.remove("d-none");
+    else li.classList.add("d-none");
+  }
+
   function ensureCrumbs() {
     var ol = breadcrumbList();
     if (!ol) return null;
@@ -94,7 +110,7 @@
     if (!projectsLi) {
       projectsLi = document.createElement("li");
       projectsLi.id = "usis-projects-crumb";
-      projectsLi.className = "breadcrumb-item";
+      projectsLi.className = "breadcrumb-item d-none";
       var projectsLink = document.createElement("a");
       projectsLink.setAttribute("href", "construction/projects.html");
       projectsLink.setAttribute("data-i18n", "Active projects");
@@ -139,12 +155,14 @@
       link.removeAttribute("title");
       link.setAttribute("href", "construction/projects.html");
       li.classList.add("d-none");
+      setProjectsCrumbVisible(false);
       return;
     }
     link.textContent = label;
     link.setAttribute("title", label);
     link.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(projectId));
     li.classList.remove("d-none");
+    setProjectsCrumbVisible(true);
   }
 
   function fetchProject(projectId) {
@@ -194,8 +212,10 @@
       });
   }
 
-  function apply(id) {
+  function apply(id, opts) {
     if (!id) return;
+    opts = opts || {};
+    var showCrumb = opts.showCrumb !== false && !isCompanyWideListPage();
     if (crumbState.projectId && crumbState.projectId !== id) {
       crumbState.item = null;
       crumbState.inflight = null;
@@ -210,7 +230,11 @@
       issuesLink.setAttribute("href", "construction/issues.html?project_id=" + encodeURIComponent(id));
       issuesLink.classList.remove("d-none");
     }
-    fetchProject(id);
+    if (showCrumb) {
+      fetchProject(id);
+    } else {
+      applyCrumb(null, null);
+    }
   }
 
   function clear() {
@@ -231,13 +255,13 @@
     ensureCrumbs();
     var fromQuery = readQuery();
     if (fromQuery) {
-      apply(fromQuery);
+      apply(fromQuery, { showCrumb: !isCompanyWideListPage() });
       return;
     }
     try {
       var stored = global.sessionStorage.getItem(KEY);
       if (stored) {
-        apply(stored);
+        apply(stored, { showCrumb: false });
       } else {
         applyCrumb(null, null);
       }

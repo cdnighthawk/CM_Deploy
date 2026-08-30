@@ -61,6 +61,7 @@
 			lead.id ||
 			lead.external_id ||
 			item.external_id ||
+			item.id ||
 			null
 		);
 	}

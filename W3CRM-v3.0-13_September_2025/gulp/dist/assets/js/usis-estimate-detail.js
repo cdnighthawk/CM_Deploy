@@ -21,7 +21,7 @@
 		if (Api) return Api.leadIdFromItem(item);
 		if (!item) return null;
 		var lead = item.lead || {};
-		return item.lead_id || item.lead_estimate_id || lead.id || item.external_id || null;
+		return item.lead_id || item.lead_estimate_id || lead.id || item.external_id || item.id || null;
 	}
 
 	function jobProjectId(item) {
@@ -38,17 +38,28 @@
 		return (stage === "awarded" || estStatus === "awarded") && !!jobProjectId(item);
 	}
 
+	function awardLeadId(item) {
+		return parentLeadId(item) || (item && (item.id || item.external_id)) || leadKey;
+	}
+
+	function isEstimateRecord(item) {
+		if (!item) return false;
+		if (item.entity === "lead_estimate") return false;
+		if (item.entity === "estimate") return true;
+		return !!(item.lead_estimate_id && item.id && item.id !== item.lead_estimate_id);
+	}
+
 	function syncConvertJobButtons(item) {
-		var convertBtn = document.getElementById("usis-estd-convert-job");
-		var openBtn = document.getElementById("usis-estd-open-job");
+		var awardBtns = document.querySelectorAll(".usis-estd-award-job");
+		var openBtns = document.querySelectorAll(".usis-estd-open-job");
 		var pid = jobProjectId(item);
 		var awarded = isAwardedJob(item);
-		var canConvert = !!(item && parentLeadId(item) && !awarded);
-		if (convertBtn) {
-			convertBtn.classList.toggle("d-none", !canConvert);
-			convertBtn.disabled = false;
-		}
-		if (openBtn) {
+		var canAward = !awarded;
+		awardBtns.forEach(function (btn) {
+			btn.classList.toggle("d-none", !canAward);
+			btn.disabled = false;
+		});
+		openBtns.forEach(function (openBtn) {
 			if (pid && awarded) {
 				openBtn.classList.remove("d-none");
 				openBtn.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(pid));
@@ -56,26 +67,28 @@
 				openBtn.classList.add("d-none");
 				openBtn.removeAttribute("href");
 			}
-		}
+		});
 	}
 
 	function convertEstimateToJob() {
-		var leadId = parentLeadId(leadItem);
+		var leadId = awardLeadId(leadItem);
 		if (!leadId) {
-			flashErr("This estimate is not attached to a lead, so it cannot become a job.");
+			flashErr("Open this page from a lead or estimate, then award the job.");
 			return;
 		}
 		if (isAwardedJob(leadItem)) {
 			flashOk("This estimate is already a job.");
 			return;
 		}
-		if (!window.confirm("Turn this estimate into an active job? The lead will be marked Awarded.")) {
+		if (!window.confirm("Award this estimate and create an active job?")) {
 			return;
 		}
-		var convertBtn = document.getElementById("usis-estd-convert-job");
-		if (convertBtn) convertBtn.disabled = true;
+		var awardBtns = document.querySelectorAll(".usis-estd-award-job");
+		awardBtns.forEach(function (btn) {
+			btn.disabled = true;
+		});
 		var body = {};
-		if (leadItem && leadItem.id) body.estimate_id = leadItem.id;
+		if (isEstimateRecord(leadItem)) body.estimate_id = leadItem.id;
 		var req = Api
 			? Api.awardLead(leadId, body)
 			: fetch(apiBaseTrimmed() + "/api/v1/lead-estimates/" + encodeURIComponent(leadId) + "/award", {
@@ -97,22 +110,25 @@
 				});
 		req
 			.then(function (data) {
-				flashOk("Job created.");
+				flashOk("Job awarded.");
 				var pid = (data && data.project_id) || (data && data.item && data.item.project_id) || null;
+				if (data && data.item) leadItem = Object.assign(leadItem || {}, data.item);
+				syncConvertJobButtons(leadItem);
 				return loadDetail().then(function () {
 					if (!pid) return;
-					var openBtn = document.getElementById("usis-estd-open-job");
-					if (openBtn) {
+					document.querySelectorAll(".usis-estd-open-job").forEach(function (openBtn) {
 						openBtn.classList.remove("d-none");
 						openBtn.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(pid));
-					}
+					});
 				});
 			})
 			.catch(function (e) {
 				flashErr(e.message || String(e));
 			})
 			.finally(function () {
-				if (convertBtn) convertBtn.disabled = false;
+				awardBtns.forEach(function (btn) {
+					btn.disabled = false;
+				});
 			});
 	}
 
@@ -865,7 +881,7 @@
 		if (wrap) wrap.classList.add("d-none");
 		var rev = document.getElementById("usis-estd-revision");
 		if (rev) rev.classList.add("d-none");
-		syncConvertJobButtons(null);
+		syncConvertJobButtons(lead);
 		showErr("");
 		fireEstimateLoaded(lead, null, { missingEstimate: true });
 	}
@@ -953,6 +969,7 @@
 						'This estimate could not be opened. <a href="construction/estimate.html">Back to Estimates</a> or <a href="construction/leads.html">Leads</a>.';
 					noId.classList.remove("d-none");
 				}
+				syncConvertJobButtons(leadItem || { id: leadKey });
 				fireEstimateLoaded(null, msg);
 			});
 	}
@@ -1131,8 +1148,9 @@
 				compactBtn.textContent = on ? "Comfortable density" : "Compact density";
 			});
 		}
-		var convertJob = document.getElementById("usis-estd-convert-job");
-		if (convertJob) convertJob.addEventListener("click", convertEstimateToJob);
+		document.querySelectorAll(".usis-estd-award-job").forEach(function (btn) {
+			btn.addEventListener("click", convertEstimateToJob);
+		});
 		var newEst = document.getElementById("usis-estd-new-estimate");
 		if (newEst) newEst.addEventListener("click", function () {
 			openCreateEstimate({});

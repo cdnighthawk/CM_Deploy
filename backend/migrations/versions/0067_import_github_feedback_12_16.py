@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import Sequence, Union
 
+from alembic import op
+
 revision: str = "0067_import_github_feedback_12_16"
 down_revision: Union[str, Sequence[str], None] = "0066_schedule_item_assignee"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -14,15 +16,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from sqlalchemy.orm import Session
+
     from app.services.github_issue_import import import_bundled_github_issues
 
-    import_bundled_github_issues()
+    session = Session(bind=op.get_bind())
+    import_bundled_github_issues(session, commit=False)
 
 
 def downgrade() -> None:
     from sqlalchemy import text
-
-    from alembic import op
 
     op.get_bind().execute(
         text(

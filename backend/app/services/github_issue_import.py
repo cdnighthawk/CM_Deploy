@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from ..extensions import db
 from ..models import Project, User
@@ -74,7 +75,11 @@ def description_from_github(item: dict[str, Any]) -> str:
     return "\n".join(lines).strip()
 
 
-def _project_id_from_item(item: dict[str, Any]) -> uuid.UUID | None:
+def _orm_session(session: Session | None = None) -> Session:
+    return session if session is not None else db.session
+
+
+def _project_id_from_item(item: dict[str, Any], session: Session | None = None) -> uuid.UUID | None:
     body = item.get("body") or ""
     page_url = _first_match(_PAGE_URL_RE, body)
     if not page_url:
@@ -85,18 +90,18 @@ def _project_id_from_item(item: dict[str, Any]) -> uuid.UUID | None:
         pid = uuid.UUID(str(raw))
     except (TypeError, ValueError):
         return None
-    if db.session.get(Project, pid) is None:
+    if _orm_session(session).get(Project, pid) is None:
         return None
     return pid
 
 
-def _user_id_from_item(item: dict[str, Any]) -> uuid.UUID | None:
+def _user_id_from_item(item: dict[str, Any], session: Session | None = None) -> uuid.UUID | None:
     from sqlalchemy import func
 
     email = _first_match(_EMAIL_RE, item.get("body") or "").lower()
     if not email or "@" not in email:
         return None
-    user = db.session.scalar(select(User).where(func.lower(User.email) == email))
+    user = _orm_session(session).scalar(select(User).where(func.lower(User.email) == email))
     return user.id if user else None
 
 
@@ -120,10 +125,11 @@ def _sheet_number(item: dict[str, Any]) -> str | None:
     return name[:50] or None
 
 
-def upsert_github_issue(item: dict[str, Any]) -> str:
+def upsert_github_issue(item: dict[str, Any], session: Session | None = None) -> str:
+    sess = _orm_session(session)
     number = int(item["number"])
     source_id = github_source_id(number)
-    existing = db.session.scalar(
+    existing = sess.scalar(
         select(Issue).where(Issue.source_type == "feedback", Issue.source_id == source_id)
     )
     title = (item.get("title") or f"GitHub #{number}").strip()[:500]
@@ -141,13 +147,13 @@ def upsert_github_issue(item: dict[str, Any]) -> str:
         elif existing.status == "Closed":
             existing.status = "In Progress"
             existing.resolved_at = None
-        existing.project_id = _project_id_from_item(item) or existing.project_id
+        existing.project_id = _project_id_from_item(item, sess) or existing.project_id
         existing.sheet_number = _sheet_number(item) or existing.sheet_number
         existing.linked_change_order_id = f"github:{number}"
         return "updated"
 
     issue = Issue(
-        project_id=_project_id_from_item(item),
+        project_id=_project_id_from_item(item, sess),
         source_type="feedback",
         source_id=source_id,
         severity=_severity(item),
@@ -155,7 +161,7 @@ def upsert_github_issue(item: dict[str, Any]) -> str:
         trade="General",
         title=title,
         description=description or None,
-        created_by_id=_user_id_from_item(item),
+        created_by_id=_user_id_from_item(item, sess),
         sheet_number=_sheet_number(item),
         linked_change_order_id=f"github:{number}",
         resolved_at=resolved_at,
@@ -163,9 +169,9 @@ def upsert_github_issue(item: dict[str, Any]) -> str:
     if created_at is not None:
         issue.created_at = created_at
         issue.updated_at = created_at
-    db.session.add(issue)
-    db.session.flush()
-    db.session.add(
+    sess.add(issue)
+    sess.flush()
+    sess.add(
         IssueEvent(
             issue_id=issue.id,
             action="imported",
@@ -176,18 +182,27 @@ def upsert_github_issue(item: dict[str, Any]) -> str:
     return "created"
 
 
-def import_github_issues(items: list[dict[str, Any]]) -> dict[str, int]:
+def import_github_issues(
+    items: list[dict[str, Any]],
+    session: Session | None = None,
+    *,
+    commit: bool = True,
+) -> dict[str, int]:
+    sess = _orm_session(session)
     created = updated = skipped = 0
     for item in items:
         if not item or item.get("pull_request") or not item.get("number"):
             skipped += 1
             continue
-        result = upsert_github_issue(item)
+        result = upsert_github_issue(item, sess)
         if result == "created":
             created += 1
         else:
             updated += 1
-    db.session.commit()
+    if commit:
+        sess.commit()
+    else:
+        sess.flush()
     return {"created": created, "updated": updated, "skipped": skipped, "total": len(items)}
 
 
@@ -198,5 +213,9 @@ def load_bundled_github_issues() -> list[dict[str, Any]]:
     return [row for row in payload if isinstance(row, dict)]
 
 
-def import_bundled_github_issues() -> dict[str, int]:
-    return import_github_issues(load_bundled_github_issues())
+def import_bundled_github_issues(
+    session: Session | None = None,
+    *,
+    commit: bool = True,
+) -> dict[str, int]:
+    return import_github_issues(load_bundled_github_issues(), session, commit=commit)

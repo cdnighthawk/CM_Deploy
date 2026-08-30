@@ -18,9 +18,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    from sqlalchemy.orm import Session
+
     from app.services.github_issue_import import import_bundled_github_issues
 
-    import_bundled_github_issues()
+    session = Session(bind=op.get_bind())
+    import_bundled_github_issues(session, commit=False)
 
 
 def downgrade() -> None:

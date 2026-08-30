@@ -304,6 +304,13 @@ def _apply_fields(invoice: VendorInvoice, data: dict[str, Any], cu: CurrentUser)
         invoice.from_name = (str(data.get("from_name") or "").strip() or None)
     if "subject" in data:
         invoice.subject = (str(data.get("subject") or "").strip() or None)[:500] or None
+    if invoice.commitment_id:
+        from ..api import _purchase_order_fulfillment as po_ful
+
+        cmt = db.session.get(Commitment, invoice.commitment_id)
+        if cmt is not None and cmt.commitment_kind == "purchase_order":
+            match = po_ful.compute_three_way_match(cmt)
+            changed["match_status"] = match.get("matchStatus")
     return changed
 
 

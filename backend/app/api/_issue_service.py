@@ -14,7 +14,7 @@ from ._perms import CurrentUser
 
 STATUSES = ("New", "Triaged", "In Progress", "Pending Review", "Resolved", "Closed")
 SEVERITIES = ("Critical", "Major", "Minor")
-SOURCES = ("ai_review", "rfi", "punch", "field", "safety", "manual", "feedback")
+SOURCES = ("ai_review", "rfi", "punch", "crew_punch", "inspection", "field", "safety", "manual", "feedback")
 OPEN_STATUSES = ("New", "Triaged", "In Progress", "Pending Review")
 STATUS_RANK = {name: idx for idx, name in enumerate(STATUSES)}
 
@@ -109,6 +109,8 @@ def serialize_issue(row: Issue, *, include_events: bool = False) -> dict[str, An
         "created_by_name": _user_name(row.created_by_id),
         "drawing_id": str(row.drawing_id) if row.drawing_id else None,
         "sheet_number": row.sheet_number or "",
+        "room": row.sheet_number or "",
+        "photo_id": str(row.source_id) if row.source_type == "crew_punch" and row.source_id else None,
         "linked_rfi_id": str(row.linked_rfi_id) if row.linked_rfi_id else None,
         "linked_change_order_id": row.linked_change_order_id,
         "created_at": _iso(row.created_at),
@@ -389,8 +391,16 @@ def create_issue(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
         status = default_status(source_type=source_type, severity=severity)
     project_raw = _text(data.get("project_id"))
     project_id = uuid.UUID(project_raw) if project_raw else None
-    source_raw = _text(data.get("source_id"))
+    source_raw = _text(data.get("source_id") or data.get("photo_id"))
     source_id = uuid.UUID(source_raw) if source_raw else None
+    room = _text(data.get("room") or data.get("sheet_number")) or None
+    due_raw = _text(data.get("due_date") or data.get("scheduled_date"))
+    due_date = None
+    if due_raw:
+        try:
+            due_date = datetime.fromisoformat(due_raw.replace("Z", "+00:00"))
+        except ValueError:
+            due_date = None
     issue = Issue(
         project_id=project_id,
         source_type=source_type,
@@ -403,7 +413,8 @@ def create_issue(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
         cbc_citation=_text(data.get("cbc_citation")) or None,
         created_by_id=cu.id,
         drawing_id=uuid.UUID(_text(data.get("drawing_id"))) if _text(data.get("drawing_id")) else None,
-        sheet_number=_text(data.get("sheet_number")) or None,
+        sheet_number=room,
+        due_date=due_date,
     )
     db.session.add(issue)
     db.session.flush()

@@ -35,6 +35,12 @@ export default function ProjectDetailScreen() {
               <Text style={styles.cardSub}>View and cache drawing sets for offline use</Text>
             </Pressable>
           </Link>
+          <Link href={`/(app)/projects/${id}/pretask`} asChild>
+            <Pressable style={styles.card}>
+              <Text style={styles.cardTitle}>Daily pretask</Text>
+              <Text style={styles.cardSub}>Appendix E plan before work starts — see SAFETY.md</Text>
+            </Pressable>
+          </Link>
           <View style={[styles.card, styles.cardDisabled]}>
             <Text style={styles.cardTitle}>Schedule</Text>
             <Text style={styles.cardSub}>Coming soon</Text>

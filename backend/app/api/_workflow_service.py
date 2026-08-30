@@ -23,12 +23,82 @@ from ._perms import CurrentUser
 from ._rfi_service import ApiError, _parse_uuid
 
 PROCESS_SUBMITTAL_QC = "submittal_qc"
+PROCESS_PURCHASE_ORDER = "purchase_order"
 
 DEFAULT_QUEUES = (
     ("intake", "Intake / completeness"),
     ("trade_qc", "Trade QC"),
     ("pm", "Project management"),
 )
+
+DEFAULT_PO_QUEUES = (
+    ("procurement", "Procurement"),
+    ("receiving", "Receiving"),
+    ("ap", "Accounts payable"),
+)
+
+DEFAULT_PO_STEPS: list[dict[str, Any]] = [
+    {
+        "step_key": "issue",
+        "label": "Issue / place order",
+        "sort_order": 1,
+        "queue_key": "procurement",
+        "required_actions": ["issue"],
+        "on_approve_status": "approved",
+        "entry_condition": None,
+        "skippable": False,
+    },
+    {
+        "step_key": "ship_schedule",
+        "label": "Record ship dates",
+        "sort_order": 2,
+        "queue_key": "procurement",
+        "required_actions": ["record_ship_dates"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+    },
+    {
+        "step_key": "tracking",
+        "label": "Record tracking",
+        "sort_order": 3,
+        "queue_key": "procurement",
+        "required_actions": ["record_tracking"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+    },
+    {
+        "step_key": "receive",
+        "label": "Receive material",
+        "sort_order": 4,
+        "queue_key": "receiving",
+        "required_actions": ["receive"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+    },
+    {
+        "step_key": "three_way_match",
+        "label": "3-way match",
+        "sort_order": 5,
+        "queue_key": "ap",
+        "required_actions": ["match"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+    },
+    {
+        "step_key": "payment_approve",
+        "label": "Payment approve",
+        "sort_order": 6,
+        "queue_key": "ap",
+        "required_actions": ["payment_approve"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": True,
+    },
+]
 
 DEFAULT_SUBMITTAL_QC_STEPS: list[dict[str, Any]] = [
     {
@@ -92,6 +162,19 @@ DEFAULT_SUBMITTAL_QC_STEPS: list[dict[str, Any]] = [
         "skippable": False,
     },
 ]
+
+PROCESS_SEEDS: dict[str, dict[str, Any]] = {
+    PROCESS_SUBMITTAL_QC: {
+        "name": "Submittal QC (default)",
+        "queues": DEFAULT_QUEUES,
+        "steps": DEFAULT_SUBMITTAL_QC_STEPS,
+    },
+    PROCESS_PURCHASE_ORDER: {
+        "name": "Purchase order (default)",
+        "queues": DEFAULT_PO_QUEUES,
+        "steps": DEFAULT_PO_STEPS,
+    },
+}
 
 
 def _utcnow() -> datetime:
@@ -158,12 +241,17 @@ def _step_snapshot(step: WorkflowDefinitionStep | Mapping[str, Any]) -> dict[str
     }
 
 
+def _seed_for(process_key: str) -> dict[str, Any]:
+    return PROCESS_SEEDS.get(process_key) or PROCESS_SEEDS[PROCESS_SUBMITTAL_QC]
+
+
 def ensure_default_queues(process_key: str = PROCESS_SUBMITTAL_QC) -> None:
+    seed = _seed_for(process_key)
     existing = {
         q.queue_key
         for q in db.session.scalars(select(WorkflowQueue).where(WorkflowQueue.process_key == process_key)).all()
     }
-    for key, name in DEFAULT_QUEUES:
+    for key, name in seed["queues"]:
         if key not in existing:
             db.session.add(WorkflowQueue(process_key=process_key, queue_key=key, name=name))
 
@@ -173,6 +261,7 @@ def ensure_default_definition(
     process_key: str = PROCESS_SUBMITTAL_QC,
     project_id: uuid.UUID | None = None,
 ) -> WorkflowDefinition:
+    seed = _seed_for(process_key)
     ensure_default_queues(process_key)
     stmt = select(WorkflowDefinition).where(
         WorkflowDefinition.process_key == process_key,
@@ -192,7 +281,7 @@ def ensure_default_definition(
     definition = WorkflowDefinition(
         process_key=process_key,
         version=version,
-        name="Submittal QC (default)",
+        name=str(seed["name"]),
         project_id=project_id,
         is_published=True,
         published_at=_utcnow(),
@@ -200,7 +289,7 @@ def ensure_default_definition(
     )
     db.session.add(definition)
     db.session.flush()
-    for row in DEFAULT_SUBMITTAL_QC_STEPS:
+    for row in seed["steps"]:
         db.session.add(
             WorkflowDefinitionStep(
                 definition_id=definition.id,
@@ -305,6 +394,60 @@ def get_instance(instance_id: uuid.UUID) -> WorkflowInstance | None:
         .where(WorkflowInstance.id == instance_id)
         .options(selectinload(WorkflowInstance.steps))
     ).first()
+
+
+def instance_for_subject(
+    process_key: str, subject_type: str, subject_id: uuid.UUID
+) -> WorkflowInstance | None:
+    return db.session.scalars(
+        select(WorkflowInstance)
+        .where(
+            WorkflowInstance.process_key == process_key,
+            WorkflowInstance.subject_type == subject_type,
+            WorkflowInstance.subject_id == subject_id,
+        )
+        .options(selectinload(WorkflowInstance.steps))
+        .order_by(WorkflowInstance.created_at.desc())
+    ).first()
+
+
+def ensure_instance(
+    *,
+    process_key: str,
+    subject_type: str,
+    subject_id: uuid.UUID,
+    project_id: uuid.UUID | None = None,
+    cu: CurrentUser | None = None,
+) -> WorkflowInstance:
+    existing = instance_for_subject(process_key, subject_type, subject_id)
+    if existing is not None:
+        return existing
+    return start_instance(
+        process_key=process_key,
+        subject_type=subject_type,
+        subject_id=subject_id,
+        project_id=project_id,
+        cu=cu,
+    )
+
+
+def complete_subject_step(
+    *,
+    process_key: str,
+    subject_type: str,
+    subject_id: uuid.UUID,
+    step_key: str,
+    cu: CurrentUser | None = None,
+    skip: bool = False,
+) -> WorkflowInstance | None:
+    instance = instance_for_subject(process_key, subject_type, subject_id)
+    if instance is None or instance.status == "complete":
+        return instance
+    step = next((s for s in (instance.steps or []) if s.step_key == step_key), None)
+    if step is None or step.status in ("complete", "skipped"):
+        return instance
+    complete_step(instance, step_key, cu=cu, skip=skip)
+    return instance
 
 
 def current_ready_step(instance: WorkflowInstance) -> WorkflowInstanceStep | None:

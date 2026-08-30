@@ -517,11 +517,28 @@
 		var rows = (items || []).filter(function (row) {
 			return (row.commitment_kind || "") === kindFilter;
 		});
+		var isPo = kindFilter === "purchase_order";
 		if (!rows.length) {
-			tb.innerHTML = '<tr><td colspan="7" class="text-muted small">No items yet.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="' + (isPo ? 9 : 7) + '" class="text-muted small">No items yet.</td></tr>';
 			return;
 		}
 		rows.forEach(function (row) {
+			var chip = window.USISUi && window.USISUi.statusChip
+				? window.USISUi.statusChip(row.status)
+				: '<span class="badge bg-light text-dark border">' + esc(row.status) + "</span>";
+			var fulfill = "";
+			if (isPo) {
+				var late = row.missed_ship_date ? ' <span class="text-danger small">late</span>' : "";
+				fulfill =
+					"<td>" +
+					(window.USISUi && window.USISUi.statusChip
+						? window.USISUi.statusChip(row.fulfillment_status || "open")
+						: esc(row.fulfillment_status || "open")) +
+					"</td><td>" +
+					esc(row.ship_date || "—") +
+					late +
+					"</td>";
+			}
 			var tr = document.createElement("tr");
 			tr.innerHTML =
 				"<td>" +
@@ -532,9 +549,11 @@
 				esc(row.vendor_name || "") +
 				"</td><td>" +
 				linkedRfpCell(row) +
-				"</td><td><span class=\"badge bg-light text-dark border\">" +
-				esc(row.status) +
-				"</span></td><td class=\"text-end\">" +
+				"</td><td>" +
+				chip +
+				"</td>" +
+				fulfill +
+				'<td class="text-end">' +
 				esc(row.total_amount != null ? row.total_amount : "—") +
 				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-c-open" data-id="' +
 				esc(row.id) +
@@ -842,6 +861,22 @@
 		document.getElementById("usis-c-edit-vendor-address").value = item.vendor_address_snapshot || "";
 		document.getElementById("usis-c-edit-issued-address").value = item.issued_by_address_snapshot || "";
 		document.getElementById("usis-c-edit-ship-to").value = item.ship_to_address || "";
+		var ps = document.getElementById("usis-c-edit-promised-ship");
+		var rs = document.getElementById("usis-c-edit-revised-ship");
+		var as = document.getElementById("usis-c-edit-actual-ship");
+		var ns = document.getElementById("usis-c-edit-needed-on-site");
+		if (ps) ps.value = isoDateOnly(item.promised_ship_date);
+		if (rs) rs.value = isoDateOnly(item.revised_ship_date);
+		if (as) as.value = isoDateOnly(item.actual_ship_date);
+		if (ns) ns.value = isoDateOnly(item.needed_on_site_date);
+		var meta = document.getElementById("usis-c-fulfillment-meta");
+		if (meta) {
+			meta.textContent =
+				"Fulfillment: " +
+				(item.fulfillment_status || "open") +
+				(item.missed_ship_date ? " · late vs promised" : "") +
+				(item.late_vs_job ? " · late vs job" : "");
+		}
 		document.getElementById("usis-c-edit-issued-by-id").value = item.issued_by_user_id || "";
 		document.getElementById("usis-c-edit-authorized-by-id").value = item.authorized_by_user_id || "";
 		document.getElementById("usis-c-edit-issued-by-q").value = item.issued_by_name || "";
@@ -879,6 +914,8 @@
 				}
 				renderLinesTable(data.line_items || []);
 				renderBillsTable(data.bill_allocations || []);
+				renderShipmentsTable(data.shipments || []);
+				window.__usisPoLines = data.line_items || [];
 				return Promise.all([
 					loadCostCodes(),
 					loadTaxCodes(),
@@ -945,6 +982,44 @@
 				)
 					.then(function () {
 						toastOk("Line removed.");
+						return openEditModal(cid);
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
+		});
+	}
+	function renderShipmentsTable(shipments) {
+		var tb = document.getElementById("usis-c-ship-tbody");
+		if (!tb) return;
+		tb.innerHTML = "";
+		(shipments || []).forEach(function (s) {
+			var track = s.trackingUrl
+				? '<a href="' + esc(s.trackingUrl) + '" target="_blank" rel="noopener">' + esc(s.trackingNumber || "link") + "</a>"
+				: esc(s.trackingNumber || "—");
+			var tr = document.createElement("tr");
+			tr.innerHTML =
+				"<td>" +
+				esc(s.carrier || "—") +
+				"</td><td>" +
+				track +
+				"</td><td>" +
+				esc(s.shipmentStatus || "") +
+				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm text-danger p-0 usis-c-ship-del" data-id="' +
+				esc(s.id) +
+				'">Remove</button></td>';
+			tb.appendChild(tr);
+		});
+		tb.querySelectorAll(".usis-c-ship-del").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var cid = document.getElementById("usis-c-edit-id").value;
+				fetchEmpty(
+					"DELETE",
+					"/api/purchase-orders/" + encodeURIComponent(cid) + "/shipments/" + encodeURIComponent(btn.getAttribute("data-id"))
+				)
+					.then(function () {
+						toastOk("Shipment removed.");
 						return openEditModal(cid);
 					})
 					.catch(function (e) {
@@ -1145,6 +1220,10 @@
 					vendor_address_snapshot: document.getElementById("usis-c-edit-vendor-address").value.trim() || null,
 					ship_to_address: document.getElementById("usis-c-edit-ship-to").value.trim() || null,
 					issued_by_address_snapshot: document.getElementById("usis-c-edit-issued-address").value.trim() || null,
+					promised_ship_date: (document.getElementById("usis-c-edit-promised-ship") || {}).value || null,
+					revised_ship_date: (document.getElementById("usis-c-edit-revised-ship") || {}).value || null,
+					actual_ship_date: (document.getElementById("usis-c-edit-actual-ship") || {}).value || null,
+					needed_on_site_date: (document.getElementById("usis-c-edit-needed-on-site") || {}).value || null,
 				};
 				var sd = document.getElementById("usis-c-edit-status-date").value;
 				if (sd) payload.status_effective_date = sd;
@@ -1243,6 +1322,95 @@
 						document.getElementById("usis-c-bill-amt").value = "";
 						document.getElementById("usis-c-bill-date").value = "";
 						toastOk("Bill allocation added.");
+						return openEditModal(cid);
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
+		}
+		var issuePo = document.getElementById("usis-c-issue-po");
+		if (issuePo) {
+			issuePo.addEventListener("click", function () {
+				var cid = document.getElementById("usis-c-edit-id").value;
+				if (!cid) return;
+				fetchJsonBody("POST", "/api/purchase-orders/" + encodeURIComponent(cid) + "/issue", {})
+					.then(function () {
+						toastOk("PO issued.");
+						return openEditModal(cid);
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
+		}
+		var matchPo = document.getElementById("usis-c-match-po");
+		if (matchPo) {
+			matchPo.addEventListener("click", function () {
+				var cid = document.getElementById("usis-c-edit-id").value;
+				if (!cid) return;
+				fetchJsonBody("POST", "/api/purchase-orders/" + encodeURIComponent(cid) + "/three-way-match", {})
+					.then(function (body) {
+						toastOk("Match: " + (body.matchStatus || "done"));
+						return openEditModal(cid);
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
+		}
+		var addShip = document.getElementById("usis-c-ship-add");
+		if (addShip) {
+			addShip.addEventListener("click", function () {
+				var cid = document.getElementById("usis-c-edit-id").value;
+				if (!cid) return;
+				var lines = (window.__usisPoLines || []).map(function (li, idx) {
+					return { commitment_line_item_id: li.id, quantity: li.quantity, sort_order: idx };
+				});
+				fetchJsonBody("POST", "/api/purchase-orders/" + encodeURIComponent(cid) + "/shipments", {
+					carrier: document.getElementById("usis-c-ship-carrier").value.trim() || null,
+					tracking_number: document.getElementById("usis-c-ship-track").value.trim() || null,
+					tracking_url: document.getElementById("usis-c-ship-url").value.trim() || null,
+					shipment_status: document.getElementById("usis-c-ship-status").value,
+					lines: lines,
+				})
+					.then(function () {
+						document.getElementById("usis-c-ship-carrier").value = "";
+						document.getElementById("usis-c-ship-track").value = "";
+						document.getElementById("usis-c-ship-url").value = "";
+						toastOk("Shipment added.");
+						return openEditModal(cid);
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
+		}
+		var recvPost = document.getElementById("usis-c-recv-post");
+		if (recvPost) {
+			recvPost.addEventListener("click", function () {
+				var cid = document.getElementById("usis-c-edit-id").value;
+				if (!cid) return;
+				var lines = (window.__usisPoLines || []).map(function (li, idx) {
+					var ordered = Number(li.quantity || 0);
+					var already = Number(li.qty_received || 0);
+					var remain = Math.max(0, ordered - already);
+					return { commitment_line_item_id: li.id, quantity: String(remain), sort_order: idx };
+				}).filter(function (ln) {
+					return Number(ln.quantity) > 0;
+				});
+				if (!lines.length) {
+					toastErr("Nothing remaining to receive.");
+					return;
+				}
+				var body = { lines: lines };
+				var rd = document.getElementById("usis-c-recv-date").value;
+				if (rd) body.received_on = rd;
+				var slip = document.getElementById("usis-c-recv-slip").value.trim();
+				if (slip) body.packing_slip_ref = slip;
+				fetchJsonBody("POST", "/api/purchase-orders/" + encodeURIComponent(cid) + "/receipts", body)
+					.then(function () {
+						toastOk("Receipt posted.");
 						return openEditModal(cid);
 					})
 					.catch(function (e) {

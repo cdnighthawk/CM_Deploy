@@ -2,7 +2,7 @@
  * Full-page PDF drawing viewer with revision navigation (Procore-style).
  * Query: ?project_id=&drawing_id=  (drawing_id = any revision in the series)
  * Optional: &takeoff_line=<takeoff_line_items.id> — persist quantity / measurement via PATCH.
- * Measure: Fabric overlay — calibrate (2 pts + known LF), linear polyline, polygon area, axis-aligned rectangle + deductions, count markers.
+ * Measure tools check length/area/count on the sheet only. Takeoff tools write qty to the selected line.
  */
 (function () {
 	"use strict";
@@ -57,6 +57,8 @@
 	var currentTakeoffLine = null;
 	var fab = null;
 	var measureMode = "none";
+	var drawIntent = "measure";
+	var countIntent = "measure";
 	var pixelsPerLf = null;
 	var calPoints = [];
 	var linePoints = [];
@@ -391,6 +393,7 @@
 		var r = revisions[revIndex];
 		if (!r) {
 			el.innerHTML = "";
+			setRenameButtonVisible(false);
 			return;
 		}
 		var name = [];
@@ -414,12 +417,13 @@
 					nameHtml +
 					"</a>"
 			);
-		} else if (nameHtml) {
+		} else 		if (nameHtml) {
 			parts.push(nameHtml);
 		}
 		if (r.discipline) parts.push(esc(r.discipline));
 		if (r.drawing_set) parts.push("Set " + esc(r.drawing_set));
 		el.innerHTML = parts.join(" · ");
+		setRenameButtonVisible(true);
 	}
 
 	function renderSheetsList() {
@@ -679,22 +683,22 @@
 		if (shift && alt && !ctrl) {
 			if (key === "l" || key === "L") {
 				e.preventDefault();
-				startLineTool();
+				startLineTool("takeoff");
 				return;
 			}
-			if (key === "a" || key === "A") {
+			if (key === "a" || key === "A" || key === "p" || key === "P") {
 				e.preventDefault();
-				startPolyTool();
+				startPolyTool("takeoff");
+				return;
+			}
+			if (key === "r" || key === "R") {
+				e.preventDefault();
+				startRectTool("takeoff");
 				return;
 			}
 			if (key === "c" || key === "C") {
 				e.preventDefault();
-				startCountTool();
-				return;
-			}
-			if (key === "p" || key === "P") {
-				e.preventDefault();
-				startPolyTool();
+				startCountTool("takeoff");
 				return;
 			}
 		}
@@ -706,7 +710,7 @@
 		}
 		if (shift && !ctrl && !alt && (key === "P" || key === "p")) {
 			e.preventDefault();
-			startPolyTool();
+			startPolyTool("measure");
 			return;
 		}
 
@@ -724,27 +728,27 @@
 		}
 		if (key === "R" || key === "r") {
 			e.preventDefault();
-			startRectTool();
+			startRectTool("measure");
 			return;
 		}
 		if (key === "L" || key === "l") {
 			e.preventDefault();
-			startLineTool();
+			startLineTool("measure");
 			return;
 		}
 		if (key === "1") {
 			e.preventDefault();
-			startCountTool();
+			startCountTool("measure");
 			return;
 		}
 		if (key === "2") {
 			e.preventDefault();
-			startLineTool();
+			startLineTool("measure");
 			return;
 		}
 		if (key === "3") {
 			e.preventDefault();
-			startPolyTool();
+			startPolyTool("measure");
 			return;
 		}
 	}
@@ -1240,6 +1244,64 @@
 		updateMeasureStatus();
 	}
 
+	function normalizeIntent(intent) {
+		return intent === "takeoff" ? "takeoff" : "measure";
+	}
+
+	function ensureDrawIntent(intent) {
+		if (normalizeIntent(intent) === "takeoff" && !takeoffLineId) {
+			if (window.USISNotify)
+				window.USISNotify.info("Select a takeoff in the left list, or click New takeoff.");
+			return false;
+		}
+		return true;
+	}
+
+	function toolColors() {
+		if (drawIntent === "takeoff") {
+			return {
+				line: "#6f42c1",
+				poly: "#6f42c1",
+				rect: "#0d6efd",
+				deduct: "#dc3545",
+				countFill: "rgba(13,110,253,0.35)",
+				countStroke: "#0d6efd",
+				rectFill: "rgba(13,110,253,0.22)",
+				polyFill: "rgba(111,66,193,0.15)",
+			};
+		}
+		return {
+			line: "#20c997",
+			poly: "#fd7e14",
+			rect: "#198754",
+			deduct: "#dc3545",
+			countFill: "rgba(32,201,151,0.35)",
+			countStroke: "#20c997",
+			rectFill: "rgba(25,135,84,0.22)",
+			polyFill: "rgba(253,126,20,0.15)",
+		};
+	}
+
+	function pushMeasurementShape(shape) {
+		shape.intent = drawIntent;
+		measurementShapes.push(shape);
+	}
+
+	function applyFinishedMeasurement(opts) {
+		opts = opts || {};
+		if (lastMeasurement) lastMeasurement.intent = drawIntent;
+		updateMeasureStatus();
+		if (drawIntent !== "takeoff") {
+			if (window.USISNotify && opts.notifyMeasure) window.USISNotify.info(opts.notifyMeasure);
+			return;
+		}
+		var qIn = document.getElementById("usis-dv-takeoff-qty");
+		var uIn = document.getElementById("usis-dv-takeoff-unit");
+		if (qIn && opts.qty != null && !isNaN(opts.qty)) qIn.value = String(opts.qty);
+		if (uIn && opts.unit) uIn.value = opts.unit;
+		if (window.USISNotify && opts.notifyTakeoff) window.USISNotify.info(opts.notifyTakeoff);
+	}
+
 	function updateMeasureStatus() {
 		var el = document.getElementById("usis-dv-m-status");
 		if (!el) return;
@@ -1250,7 +1312,8 @@
 		var lm = lastMeasurement
 			? lastMeasurement.tool + " · " + (lastMeasurement.summary || "")
 			: "—";
-		el.textContent = "Calibration: " + cal + " · Measured: " + lm;
+		var kind = lastMeasurement && lastMeasurement.intent === "takeoff" ? "Takeoff" : "Measured";
+		el.textContent = "Calibration: " + cal + " · " + kind + ": " + lm;
 	}
 
 	function setMeasureMode(mode) {
@@ -1410,16 +1473,23 @@
 	}
 
 	function updateToolButtons() {
+		var m = drawIntent === "measure";
+		var t = drawIntent === "takeoff";
 		var active = {
 			"usis-dv-m-none": navMode === "select" && measureMode === "none",
 			"usis-dv-m-pan": navMode === "pan",
 			"usis-dv-m-zoom": navMode === "zoom",
 			"usis-dv-m-cal": measureMode === "cal",
-			"usis-dv-m-line": measureMode === "line",
-			"usis-dv-m-poly": measureMode === "poly",
-			"usis-dv-m-rect": measureMode === "rect",
-			"usis-dv-m-deduct": measureMode === "deduct",
-			"usis-dv-m-count": measureMode === "count",
+			"usis-dv-m-line": m && measureMode === "line",
+			"usis-dv-m-poly": m && measureMode === "poly",
+			"usis-dv-m-rect": m && measureMode === "rect",
+			"usis-dv-m-deduct": m && measureMode === "deduct",
+			"usis-dv-m-count": m && measureMode === "count",
+			"usis-dv-t-line": t && measureMode === "line",
+			"usis-dv-t-poly": t && measureMode === "poly",
+			"usis-dv-t-rect": t && measureMode === "rect",
+			"usis-dv-t-deduct": t && measureMode === "deduct",
+			"usis-dv-t-count": t && measureMode === "count",
 		};
 		Object.keys(active).forEach(function (id) {
 			var el = document.getElementById(id);
@@ -1710,58 +1780,97 @@
 			if (window.USISNotify) window.USISNotify.error("Fabric.js not loaded.");
 			return;
 		}
+		drawIntent = "measure";
 		resetRectDraft();
 		calPoints = [];
 		setMeasureMode("cal");
 		if (window.USISNotify) window.USISNotify.info("Calibration: click two points along a known length.");
 	}
 
-	function startLineTool() {
-		if (!fabricLib) return;
+	function startLineTool(intent) {
+		intent = normalizeIntent(intent);
+		if (!fabricLib || !ensureDrawIntent(intent)) return;
+		drawIntent = intent;
 		resetRectDraft();
 		linePoints = [];
 		polyPoints = [];
 		setMeasureMode("line");
-		if (window.USISNotify) window.USISNotify.info("Linear: click vertices; double-click, Enter, or right-click to finish.");
+		if (window.USISNotify)
+			window.USISNotify.info(
+				(intent === "takeoff" ? "Takeoff length" : "Measure length") +
+					": click vertices; double-click, Enter, or right-click to finish."
+			);
 	}
 
-	function startPolyTool() {
-		if (!fabricLib) return;
+	function startPolyTool(intent) {
+		intent = normalizeIntent(intent);
+		if (!fabricLib || !ensureDrawIntent(intent)) return;
+		drawIntent = intent;
 		resetRectDraft();
 		polyPoints = [];
 		linePoints = [];
 		setMeasureMode("poly");
 		if (window.USISNotify)
-			window.USISNotify.info("Area: click corners; double-click, Enter, or right-click to close.");
+			window.USISNotify.info(
+				(intent === "takeoff" ? "Takeoff area" : "Measure area") +
+					": click corners; double-click, Enter, or right-click to close."
+			);
 	}
 
-	function startRectTool() {
-		if (!fabricLib) return;
+	function startRectTool(intent) {
+		intent = normalizeIntent(intent);
+		if (!fabricLib || !ensureDrawIntent(intent)) return;
+		drawIntent = intent;
 		resetRectDraft();
 		linePoints = [];
 		polyPoints = [];
 		setMeasureMode("rect");
 		if (window.USISNotify)
-			window.USISNotify.info("Rectangle: first corner, then opposite diagonal (live preview while you move).");
+			window.USISNotify.info(
+				(intent === "takeoff" ? "Takeoff rectangle" : "Measure rectangle") +
+					": first corner, then opposite diagonal (live preview while you move)."
+			);
 	}
 
-	function startDeductTool() {
-		if (!fabricLib) return;
+	function startDeductTool(intent) {
+		intent = normalizeIntent(intent);
+		if (!fabricLib || !ensureDrawIntent(intent)) return;
 		if (lastGrossShapeIndex < 0) {
-			if (window.USISNotify) window.USISNotify.warning("Place a gross Rectangle first.");
+			if (window.USISNotify)
+				window.USISNotify.warning(
+					intent === "takeoff" ? "Place a takeoff Rectangle first." : "Place a measure Rectangle first."
+				);
 			return;
 		}
+		var lastGross = measurementShapes[lastGrossShapeIndex];
+		if (lastGross && lastGross.intent && lastGross.intent !== intent) {
+			if (window.USISNotify)
+				window.USISNotify.warning(
+					intent === "takeoff"
+						? "Deduct applies to the last takeoff rectangle. Draw one with Takeoff → Rectangle."
+						: "Deduct applies to the last measure rectangle. Draw one with Measure → Rectangle."
+				);
+			return;
+		}
+		drawIntent = intent;
 		resetRectDraft();
 		setMeasureMode("deduct");
 		if (window.USISNotify)
 			window.USISNotify.info("Deduction: two clicks for inner rectangle (subtracted from last gross).");
 	}
 
-	function startCountTool() {
-		if (!fabricLib) return;
+	function startCountTool(intent) {
+		intent = normalizeIntent(intent);
+		if (!fabricLib || !ensureDrawIntent(intent)) return;
+		drawIntent = intent;
+		countIntent = intent;
 		countMarkers = [];
 		if (fab) fab.clear();
 		setMeasureMode("count");
+		if (window.USISNotify)
+			window.USISNotify.info(
+				intent === "takeoff" ? "Takeoff count: click to place markers." : "Measure count: click to place markers."
+			);
 	}
 
 	function wireViewerNav() {
@@ -1910,8 +2019,9 @@
 		var w = bounds.maxX - bounds.minX;
 		var h = bounds.maxY - bounds.minY;
 		if (w < 1 || h < 1) return;
-		var stroke = isDeduct ? "#dc3545" : "#198754";
-		var fill = isDeduct ? "rgba(220,53,69,0.12)" : "rgba(25,135,84,0.12)";
+		var pal = toolColors();
+		var stroke = isDeduct ? pal.deduct : pal.rect;
+		var fill = isDeduct ? "rgba(220,53,69,0.12)" : pal.rectFill.replace("0.22", "0.12");
 		if (!measurePreviewRect) {
 			measurePreviewRect = new fabricLib.Rect({
 				left: bounds.minX,
@@ -1978,6 +2088,7 @@
 		}
 		lastMeasurement = {
 			tool: "rect_area",
+			intent: g.intent || drawIntent,
 			gross: g.bounds,
 			deductions: dlist,
 			grossSf: grossSf,
@@ -1988,31 +2099,34 @@
 			page: pageNum,
 			viewer_scale: scale,
 		};
-		updateMeasureStatus();
-		var qIn = document.getElementById("usis-dv-takeoff-qty");
-		var uIn = document.getElementById("usis-dv-takeoff-unit");
-		if (qIn && netSf != null) qIn.value = String(netSf.toFixed(4));
-		if (uIn && netSf != null) uIn.value = "SF";
+		var qtyStr = netSf != null ? netSf.toFixed(4) : null;
+		applyFinishedMeasurement({
+			qty: qtyStr,
+			unit: "SF",
+			notifyMeasure: null,
+			notifyTakeoff: null,
+		});
 	}
 
 	function finalizeRectGross(bounds) {
 		var areaPx = rectAreaPx(bounds);
 		var sf = pxToSf(areaPx);
 		if (fab && fabricLib) {
+			var pal = toolColors();
 			var gr = new fabricLib.Rect({
 				left: bounds.minX,
 				top: bounds.minY,
 				width: bounds.maxX - bounds.minX,
 				height: bounds.maxY - bounds.minY,
-				fill: "rgba(25,135,84,0.22)",
-				stroke: "#198754",
+				fill: pal.rectFill,
+				stroke: pal.rect,
 				strokeWidth: 2,
 				selectable: false,
 				evented: false,
 			});
 			fab.add(gr);
 		}
-		measurementShapes.push({
+		pushMeasurementShape({
 			type: "rect",
 			bounds: bounds,
 			areaPx: areaPx,
@@ -2023,7 +2137,12 @@
 		lastGrossShapeIndex = measurementShapes.length - 1;
 		rectPoints = [];
 		recomputeRectAreaSummary();
-		if (window.USISNotify) window.USISNotify.info("Gross rectangle set — use Deduction for openings, then Apply to line.");
+		if (window.USISNotify)
+			window.USISNotify.info(
+				drawIntent === "takeoff"
+					? "Gross rectangle set — use Takeoff → Deduct for openings, then Apply to line."
+					: "Gross rectangle measured — use Measure → Deduct for openings."
+			);
 		setMeasureMode("none");
 	}
 
@@ -2047,7 +2166,7 @@
 			});
 			fab.add(dr);
 		}
-		measurementShapes.push({
+		pushMeasurementShape({
 			type: "deduction",
 			bounds: bounds,
 			grossShapeIndex: lastGrossShapeIndex,
@@ -2132,13 +2251,14 @@
 
 		if (measureMode === "line") {
 			linePoints.push({ x: p.x, y: p.y });
+			var linePal = toolColors();
 			var dot = new fabricLib.Circle({
 				radius: 3,
 				left: p.x,
 				top: p.y,
 				originX: "center",
 				originY: "center",
-				fill: "#20c997",
+				fill: linePal.line,
 				selectable: false,
 				evented: false,
 			});
@@ -2146,7 +2266,12 @@
 			if (linePoints.length >= 2) {
 				var a = linePoints[linePoints.length - 2];
 				var b = linePoints[linePoints.length - 1];
-				var seg = new fabricLib.Line([a.x, a.y, b.x, b.y], { stroke: "#20c997", strokeWidth: 2, selectable: false, evented: false });
+				var seg = new fabricLib.Line([a.x, a.y, b.x, b.y], {
+					stroke: linePal.line,
+					strokeWidth: 2,
+					selectable: false,
+					evented: false,
+				});
 				fab.add(seg);
 			}
 			return;
@@ -2162,13 +2287,14 @@
 				}
 			}
 			polyPoints.push({ x: p.x, y: p.y });
+			var polyPal = toolColors();
 			var dotp = new fabricLib.Circle({
 				radius: 3,
 				left: p.x,
 				top: p.y,
 				originX: "center",
 				originY: "center",
-				fill: "#fd7e14",
+				fill: polyPal.poly,
 				selectable: false,
 				evented: false,
 			});
@@ -2177,7 +2303,7 @@
 				var ap = polyPoints[polyPoints.length - 2];
 				var bp = polyPoints[polyPoints.length - 1];
 				var segp = new fabricLib.Line([ap.x, ap.y, bp.x, bp.y], {
-					stroke: "#fd7e14",
+					stroke: polyPal.poly,
 					strokeWidth: 2,
 					selectable: false,
 					evented: false,
@@ -2190,13 +2316,14 @@
 		if (measureMode === "rect") {
 			if (rectPoints.length === 0) {
 				rectPoints.push({ x: p.x, y: p.y });
+				var rectPal = toolColors();
 				var cr0 = new fabricLib.Circle({
 					radius: 4,
 					left: p.x,
 					top: p.y,
 					originX: "center",
 					originY: "center",
-					fill: "#198754",
+					fill: rectPal.rect,
 					selectable: false,
 					evented: false,
 				});
@@ -2253,14 +2380,15 @@
 		}
 
 		if (measureMode === "count") {
+			var countPal = toolColors();
 			var m = new fabricLib.Circle({
 				radius: 6,
 				left: p.x,
 				top: p.y,
 				originX: "center",
 				originY: "center",
-				fill: "rgba(13,110,253,0.35)",
-				stroke: "#0d6efd",
+				fill: countPal.countFill,
+				stroke: countPal.countStroke,
 				strokeWidth: 2,
 				selectable: false,
 				evented: false,
@@ -2268,7 +2396,12 @@
 			fab.add(m);
 			countMarkers.push({ x: p.x, y: p.y });
 			lastMeasurement = { tool: "count", summary: countMarkers.length + " EA", count: countMarkers.length };
-			updateMeasureStatus();
+			applyFinishedMeasurement({
+				qty: countMarkers.length,
+				unit: "EA",
+				notifyMeasure: null,
+				notifyTakeoff: null,
+			});
 		}
 	}
 
@@ -2295,7 +2428,7 @@
 			page: pageNum,
 			scale: scale,
 		};
-		measurementShapes.push({
+		pushMeasurementShape({
 			type: "line",
 			points: linePoints.slice(),
 			lengthPx: lenPx,
@@ -2303,10 +2436,12 @@
 			page: pageNum,
 			viewer_scale: scale,
 		});
-		updateMeasureStatus();
-		var qIn = document.getElementById("usis-dv-takeoff-qty");
-		if (qIn && lf != null) qIn.value = String(lf.toFixed(4));
-		if (window.USISNotify) window.USISNotify.info("Linear path finished — review qty/unit, then Apply to line.");
+		applyFinishedMeasurement({
+			qty: lf != null ? lf.toFixed(4) : null,
+			unit: "LF",
+			notifyMeasure: "Linear path measured — " + lastMeasurement.summary,
+			notifyTakeoff: "Linear takeoff finished — review qty/unit, then Apply to line.",
+		});
 		setMeasureMode("none");
 	}
 
@@ -2328,11 +2463,12 @@
 			var rel = closed.map(function (pt) {
 				return { x: pt.x - minX, y: pt.y - minY };
 			});
+			var areaPal = toolColors();
 			var polyShape = new fabricLib.Polygon(rel, {
 				left: minX,
 				top: minY,
-				fill: "rgba(253,126,20,0.15)",
-				stroke: "#fd7e14",
+				fill: areaPal.polyFill,
+				stroke: areaPal.poly,
 				strokeWidth: 2,
 				selectable: false,
 				evented: false,
@@ -2348,7 +2484,7 @@
 			page: pageNum,
 			scale: scale,
 		};
-		measurementShapes.push({
+		pushMeasurementShape({
 			type: "poly",
 			polygon: closed.slice(),
 			areaPx: areaPx,
@@ -2356,12 +2492,12 @@
 			page: pageNum,
 			viewer_scale: scale,
 		});
-		updateMeasureStatus();
-		var qIn = document.getElementById("usis-dv-takeoff-qty");
-		if (qIn && sf != null) qIn.value = String(sf.toFixed(4));
-		var uIn = document.getElementById("usis-dv-takeoff-unit");
-		if (uIn && sf != null) uIn.value = "SF";
-		if (window.USISNotify) window.USISNotify.info("Area closed — review qty/unit, then Apply to line.");
+		applyFinishedMeasurement({
+			qty: sf != null ? sf.toFixed(4) : null,
+			unit: "SF",
+			notifyMeasure: "Area measured — " + lastMeasurement.summary,
+			notifyTakeoff: "Area takeoff closed — review qty/unit, then Apply to line.",
+		});
 		polyPoints = [];
 		setMeasureMode("none");
 	}
@@ -2391,11 +2527,51 @@
 				setNavMode("zoom");
 			});
 		if (bCal) bCal.addEventListener("click", startCalibrateTool);
-		if (bLine) bLine.addEventListener("click", startLineTool);
-		if (bPoly) bPoly.addEventListener("click", startPolyTool);
-		if (bRect) bRect.addEventListener("click", startRectTool);
-		if (bDeduct) bDeduct.addEventListener("click", startDeductTool);
-		if (bCount) bCount.addEventListener("click", startCountTool);
+		if (bLine)
+			bLine.addEventListener("click", function () {
+				startLineTool("measure");
+			});
+		if (bPoly)
+			bPoly.addEventListener("click", function () {
+				startPolyTool("measure");
+			});
+		if (bRect)
+			bRect.addEventListener("click", function () {
+				startRectTool("measure");
+			});
+		if (bDeduct)
+			bDeduct.addEventListener("click", function () {
+				startDeductTool("measure");
+			});
+		if (bCount)
+			bCount.addEventListener("click", function () {
+				startCountTool("measure");
+			});
+		var tLine = document.getElementById("usis-dv-t-line");
+		var tPoly = document.getElementById("usis-dv-t-poly");
+		var tRect = document.getElementById("usis-dv-t-rect");
+		var tDeduct = document.getElementById("usis-dv-t-deduct");
+		var tCount = document.getElementById("usis-dv-t-count");
+		if (tLine)
+			tLine.addEventListener("click", function () {
+				startLineTool("takeoff");
+			});
+		if (tPoly)
+			tPoly.addEventListener("click", function () {
+				startPolyTool("takeoff");
+			});
+		if (tRect)
+			tRect.addEventListener("click", function () {
+				startRectTool("takeoff");
+			});
+		if (tDeduct)
+			tDeduct.addEventListener("click", function () {
+				startDeductTool("takeoff");
+			});
+		if (tCount)
+			tCount.addEventListener("click", function () {
+				startCountTool("takeoff");
+			});
 		if (bClr)
 			bClr.addEventListener("click", function () {
 				linePoints = [];
@@ -2425,10 +2601,132 @@
 	function setDeleteButtonsVisible(show) {
 		var wrap = document.getElementById("usis-dv-more-wrap");
 		if (wrap) wrap.classList.toggle("d-none", !show);
-		["usis-dv-delete-revision", "usis-dv-delete-sheet"].forEach(function (id) {
+		["usis-dv-delete-revision", "usis-dv-delete-sheet", "usis-dv-rename-more"].forEach(function (id) {
 			var el = document.getElementById(id);
 			if (el) el.classList.toggle("d-none", !show);
 		});
+	}
+
+	function setRenameButtonVisible(show) {
+		var el = document.getElementById("usis-dv-rename");
+		if (el) el.classList.toggle("d-none", !show);
+	}
+
+	function renameModalEl() {
+		return document.getElementById("usis-dv-modal-rename");
+	}
+
+	function setRenameError(msg) {
+		var err = document.getElementById("usis-dv-rename-err");
+		if (!err) return;
+		if (msg) {
+			err.textContent = msg;
+			err.classList.remove("d-none");
+		} else {
+			err.textContent = "";
+			err.classList.add("d-none");
+		}
+	}
+
+	function openRenameModal() {
+		var r = revisions[revIndex];
+		if (!r) {
+			if (window.USISNotify) window.USISNotify.error("No drawing loaded.");
+			return;
+		}
+		var num = document.getElementById("usis-dv-rename-number");
+		var title = document.getElementById("usis-dv-rename-title");
+		if (num) num.value = r.sheet_number || "";
+		if (title) title.value = r.sheet_title || r.title || "";
+		setRenameError("");
+		var modalEl = renameModalEl();
+		if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+			window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+			setTimeout(function () {
+				if (num) num.focus();
+			}, 150);
+			return;
+		}
+		var nextNumber = window.prompt("Drawing #", r.sheet_number || "");
+		if (nextNumber == null) return;
+		var nextTitle = window.prompt("Drawing name", r.sheet_title || r.title || "");
+		if (nextTitle == null) return;
+		saveRename(nextNumber, nextTitle);
+	}
+
+	function hideRenameModal() {
+		var modalEl = renameModalEl();
+		if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+			var inst = window.bootstrap.Modal.getInstance(modalEl);
+			if (inst) inst.hide();
+		}
+	}
+
+	function applyRenamedIdentity(items) {
+		var byId = {};
+		(items || []).forEach(function (item) {
+			if (item && item.id) byId[item.id] = item;
+		});
+		revisions.forEach(function (rev) {
+			var next = byId[rev.id];
+			if (!next) return;
+			rev.sheet_number = next.sheet_number;
+			rev.sheet_title = next.sheet_title;
+			if (next.title != null) rev.title = next.title;
+		});
+		updateSheetLine();
+		renderSheetsList();
+		fillRevisionSelect();
+	}
+
+	function saveRename(sheetNumber, sheetTitle) {
+		var did = currentRevisionDrawingId();
+		if (!did) {
+			if (window.USISNotify) window.USISNotify.error("No drawing loaded.");
+			return;
+		}
+		var saveBtn = document.getElementById("usis-dv-rename-save");
+		if (saveBtn) saveBtn.disabled = true;
+		setRenameError("");
+		fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(did), {
+			method: "PATCH",
+			credentials: "include",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			body: JSON.stringify({
+				sheet_number: sheetNumber == null ? "" : String(sheetNumber).trim(),
+				sheet_title: sheetTitle == null ? "" : String(sheetTitle).trim(),
+				scope: "series",
+			}),
+		})
+			.then(function (res) {
+				return res.text().then(function (t) {
+					var body = {};
+					try {
+						body = t ? JSON.parse(t) : {};
+					} catch (e) {
+						body = { error: t || res.statusText };
+					}
+					return { ok: res.ok, body: body, status: res.status };
+				});
+			})
+			.then(function (res) {
+				if (saveBtn) saveBtn.disabled = false;
+				if (!res.ok) {
+					var msg = (res.body && res.body.error) || "Rename failed (" + res.status + ").";
+					setRenameError(msg);
+					if (window.USISNotify) window.USISNotify.error(msg);
+					return;
+				}
+				applyRenamedIdentity(res.body && res.body.items);
+				hideRenameModal();
+				if (window.USISNotify) window.USISNotify.success("Drawing # and name saved.");
+			})
+			.catch(function () {
+				if (saveBtn) saveBtn.disabled = false;
+				var net = "Network error saving drawing name.";
+				setRenameError(net);
+				if (window.USISNotify) window.USISNotify.error(net);
+			});
 	}
 
 	function loadDeletePermission() {
@@ -2555,6 +2853,27 @@
 				deleteDrawing("series");
 			});
 		}
+		var bRename = document.getElementById("usis-dv-rename");
+		var bRenameMore = document.getElementById("usis-dv-rename-more");
+		var bRenameSave = document.getElementById("usis-dv-rename-save");
+		if (bRename) bRename.addEventListener("click", openRenameModal);
+		if (bRenameMore) bRenameMore.addEventListener("click", openRenameModal);
+		if (bRenameSave) {
+			bRenameSave.addEventListener("click", function () {
+				var num = document.getElementById("usis-dv-rename-number");
+				var title = document.getElementById("usis-dv-rename-title");
+				saveRename(num ? num.value : "", title ? title.value : "");
+			});
+		}
+		["usis-dv-rename-number", "usis-dv-rename-title"].forEach(function (id) {
+			var input = document.getElementById(id);
+			if (!input) return;
+			input.addEventListener("keydown", function (ev) {
+				if (ev.key !== "Enter") return;
+				ev.preventDefault();
+				if (bRenameSave) bRenameSave.click();
+			});
+		});
 		var zIn = document.getElementById("usis-dv-zoom-in");
 		var zOut = document.getElementById("usis-dv-zoom-out");
 		var zFitW = document.getElementById("usis-dv-fit-width");
@@ -2657,10 +2976,13 @@
 	}
 
 	function buildMeasurementShapesForPatch() {
-		var out = measurementShapes.slice();
-		if (countMarkers.length) {
+		var out = measurementShapes.filter(function (s) {
+			return s && s.intent === "takeoff";
+		});
+		if (countIntent === "takeoff" && countMarkers.length) {
 			out.push({
 				type: "count",
+				intent: "takeoff",
 				markers: countMarkers.map(function (m) {
 					return { x: m.x, y: m.y };
 				}),
@@ -2834,6 +3156,16 @@
 		});
 	}
 
+	function syncProjectContext() {
+		if (
+			projectId &&
+			window.USISProjectContext &&
+			typeof window.USISProjectContext.setProjectId === "function"
+		) {
+			window.USISProjectContext.setProjectId(projectId);
+		}
+	}
+
 	function setBackLink(q) {
 		var back = document.getElementById("usis-dv-back");
 		if (!back) return;
@@ -2928,6 +3260,7 @@
 			})
 			.then(function () {
 				setBackLink(new URLSearchParams(window.location.search));
+				syncProjectContext();
 				startViewer();
 			});
 	}
@@ -2949,6 +3282,7 @@
 			origin: window.location && window.location.origin,
 		});
 		setBackLink(q);
+		syncProjectContext();
 		resolveLeadProjectThenStart();
 	}
 

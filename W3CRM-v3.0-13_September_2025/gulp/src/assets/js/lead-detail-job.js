@@ -170,13 +170,41 @@
 		}
 	}
 
-	function submissionBadgeClass(state) {
-		var s = (state || "").toLowerCase();
-		if (!s) return "bg-secondary";
-		if (s.indexOf("declin") >= 0 || s.indexOf("lost") >= 0 || s.indexOf("no bid") >= 0) return "bg-danger";
-		if (s.indexOf("submit") >= 0 || s.indexOf("award") >= 0 || s.indexOf("won") >= 0) return "bg-success";
-		if (s.indexOf("review") >= 0 || s.indexOf("undecided") >= 0 || s.indexOf("new") >= 0) return "bg-warning text-dark";
-		return "bg-primary";
+	function humanizeState(state) {
+		var s = String(state || "").trim();
+		if (!s || /^(none|unknown|n\/a|-)$/i.test(s)) return "";
+		var map = {
+			SUBMITTED: "Submitted",
+			WILL_SUBMIT: "Will bid",
+			DECLINED: "Declined",
+			UNDECIDED: "Undecided",
+			NOT_RESPONDING: "No response",
+			AWARDED: "Awarded",
+			LOST: "Lost",
+		};
+		if (map[s]) return map[s];
+		if (s === s.toUpperCase() && s.indexOf("_") >= 0) return "";
+		return s.replace(/_/g, " ");
+	}
+
+	function dueClass(iso) {
+		if (!iso) return "text-muted";
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return "text-muted";
+			if (d.getTime() - Date.now() <= 7 * 86400000) return "text-danger";
+		} catch (e) { /* keep muted */ }
+		return "";
+	}
+
+	function setJobStatus(el, item) {
+		if (!el) return;
+		var parts = [];
+		var state = humanizeState(item && item.submission_state);
+		if (state) parts.push(state);
+		if (item && item.estimate_approved_at) parts.push("Estimate approved");
+		else if (item && item.estimate_locked_at) parts.push("Estimate locked");
+		el.textContent = parts.join(" · ");
 	}
 
 	function appendFieldRow(tbody, label, htmlValue) {
@@ -240,29 +268,6 @@
 		container.appendChild(pre);
 	}
 
-	function setBadges(container, item) {
-		if (!container || !item) return;
-		container.innerHTML = "";
-		function addBadge(text, cls) {
-			if (!text) return;
-			var span = document.createElement("span");
-			span.className = "badge " + (cls || "bg-secondary") + " me-1 mb-1";
-			span.textContent = text;
-			container.appendChild(span);
-		}
-		if (item.submission_state) addBadge(item.submission_state, submissionBadgeClass(item.submission_state));
-		if (item.workflow_bucket) addBadge(item.workflow_bucket, "bg-dark");
-		if (item.source) addBadge(String(item.source).replace(/_/g, " "), "bg-light text-dark border");
-		if (item.trade_name) addBadge("Trade: " + item.trade_name, "bg-light text-dark border");
-		if (item.estimate_approved_at) {
-			addBadge("Estimate approved", "bg-success");
-		} else if (item.estimate_locked_at) {
-			addBadge("Estimate locked", "bg-secondary");
-		}
-		if (item.priority) addBadge("Priority: " + item.priority, "bg-info text-dark");
-		if (item.request_type) addBadge(item.request_type, "bg-secondary");
-		if (item.market_sector) addBadge(item.market_sector, "bg-secondary");
-	}
 
 	function yn(v) {
 		if (v === true) return "Yes";
@@ -446,16 +451,16 @@
 		var dueBadge = document.getElementById("usis-job-badge-due");
 		if (dueBadge) {
 			if (item.due_at) {
-				dueBadge.className = "badge bg-danger fs-6 fw-normal";
+				dueBadge.className = "small fw-medium " + dueClass(item.due_at);
 				var dueStr = formatIsoDate(item.due_at);
-				dueBadge.textContent = dueStr ? "Due " + dueStr : "Due (see dates)";
+				dueBadge.textContent = dueStr ? "Due " + dueStr : "";
 			} else {
-				dueBadge.className = "badge bg-light text-muted border fs-6 fw-normal";
-				dueBadge.textContent = "No bid due date";
+				dueBadge.className = "small text-muted";
+				dueBadge.textContent = "";
 			}
 		}
 
-		setBadges(document.getElementById("usis-job-badges"), item);
+		setJobStatus(document.getElementById("usis-job-status"), item);
 
 		renderCrmToolbar(item);
 

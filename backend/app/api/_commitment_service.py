@@ -21,6 +21,7 @@ from ..models import (
     ProjectDirectoryCompany,
     PurchaseOrderReceipt,
     PurchaseOrderReceiptLine,
+    PurchaseOrderShipment,
     Rfp,
     Submittal,
     User,
@@ -145,6 +146,9 @@ def _serialize_line(li: CommitmentLineItem) -> dict[str, Any]:
         "takeoff_line_item_id": str(li.takeoff_line_item_id) if li.takeoff_line_item_id else None,
         "submittal_id": str(li.submittal_id) if li.submittal_id else None,
         "submittal_release_required": bool(li.submittal_release_required),
+        "qty_shipped": str(li.qty_shipped),
+        "qty_received": str(li.qty_received),
+        "qty_invoiced": str(li.qty_invoiced),
         "created_at": _iso(li.created_at),
         "updated_at": _iso(li.updated_at),
     }
@@ -205,6 +209,14 @@ def _serialize_commitment_row(c: Commitment, vendor_name: str, rfp: Rfp | None =
         "authorized_by_name": _user_display_name(db.session.get(User, c.authorized_by_user_id))
         if c.authorized_by_user_id
         else None,
+        "promised_ship_date": _iso(c.promised_ship_date) if c.promised_ship_date else None,
+        "revised_ship_date": _iso(c.revised_ship_date) if c.revised_ship_date else None,
+        "actual_ship_date": _iso(c.actual_ship_date) if c.actual_ship_date else None,
+        "needed_on_site_date": _iso(c.needed_on_site_date) if c.needed_on_site_date else None,
+        "ship_date": _iso(c.ship_date) if c.ship_date else None,
+        "fulfillment_status": c.fulfillment_status,
+        "missed_ship_date": bool(c.missed_ship_date),
+        "late_vs_job": bool(c.late_vs_job),
         "created_at": _iso(c.created_at),
         "updated_at": _iso(c.updated_at),
     }
@@ -221,6 +233,8 @@ def _load_commitment(project_id: uuid.UUID, commitment_id: uuid.UUID) -> Commitm
         .options(
             selectinload(Commitment.line_items),
             selectinload(Commitment.bill_allocations),
+            selectinload(Commitment.shipments).selectinload(PurchaseOrderShipment.lines),
+            selectinload(Commitment.receipts).selectinload(PurchaseOrderReceipt.lines),
         )
     )
     return db.session.scalars(stmt).first()
@@ -259,7 +273,7 @@ def get_commitment_detail(project_id: uuid.UUID, commitment_id: uuid.UUID, cu: C
     item = _serialize_commitment_row(c, vendor_name, linked_rfp)
     lines = sorted(c.line_items, key=lambda x: (x.sort_order, str(x.id)))
     bills = sorted(c.bill_allocations, key=lambda x: str(x.created_at))
-    return {
+    out: dict[str, Any] = {
         "item": item,
         "line_items": [_serialize_line(li) for li in lines],
         "bill_allocations": [_serialize_bill(b) for b in bills],
@@ -270,6 +284,15 @@ def get_commitment_detail(project_id: uuid.UUID, commitment_id: uuid.UUID, cu: C
             "can_add_bills": _can_mutate(cu) and not _commitment_blocked_for(c, cu),
         },
     }
+    if c.commitment_kind == "purchase_order":
+        from . import _purchase_order_fulfillment as po_ful
+        from . import _workflow_service as wf
+
+        inst = wf.instance_for_subject(wf.PROCESS_PURCHASE_ORDER, "commitment", c.id)
+        out["shipments"] = [po_ful.serialize_shipment(s) for s in (c.shipments or [])]
+        out["receipts"] = [po_ful.serialize_receipt(r) for r in (c.receipts or [])]
+        out["workflow"] = wf.instance_public(inst) if inst else None
+    return out
 
 
 def _ensure_cost_code_project(cost_code_id: uuid.UUID | None, project_id: uuid.UUID) -> None:
@@ -422,6 +445,15 @@ def _apply_commitment_header_fields(
     if is_create or "default_resource" in data:
         c.default_resource = _validate_resource(data.get("default_resource"))
 
+    if "promised_ship_date" in data:
+        c.promised_ship_date = _parse_date(data.get("promised_ship_date"))
+    if "revised_ship_date" in data:
+        c.revised_ship_date = _parse_date(data.get("revised_ship_date"))
+    if "actual_ship_date" in data:
+        c.actual_ship_date = _parse_date(data.get("actual_ship_date"))
+    if "needed_on_site_date" in data:
+        c.needed_on_site_date = _parse_date(data.get("needed_on_site_date"))
+
 
 def _build_line_item_from_payload(
     commitment_id: uuid.UUID,
@@ -549,6 +581,17 @@ def create_commitment(project_id: uuid.UUID, data: Mapping[str, Any], cu: Curren
 
     if not proc_lookup_svc.is_company_in_directory(project_id, c.vendor_company_id):
         db.session.add(ProjectDirectoryCompany(project_id=project_id, company_id=c.vendor_company_id))
+
+    if c.commitment_kind == "purchase_order":
+        from . import _workflow_service as wf
+
+        wf.ensure_instance(
+            process_key=wf.PROCESS_PURCHASE_ORDER,
+            subject_type="commitment",
+            subject_id=c.id,
+            project_id=project_id,
+            cu=cu,
+        )
 
     db.session.commit()
     return get_commitment_detail(project_id, c.id, cu)
@@ -789,6 +832,22 @@ def issue_purchase_order(commitment_id: uuid.UUID, data: Mapping[str, Any], cu: 
         c.status = "approved"
         c.status_effective_date = c.status_effective_date or today
         c.approved_at = _utcnow()
+    from . import _workflow_service as wf
+
+    wf.ensure_instance(
+        process_key=wf.PROCESS_PURCHASE_ORDER,
+        subject_type="commitment",
+        subject_id=c.id,
+        project_id=c.project_id,
+        cu=cu,
+    )
+    wf.complete_subject_step(
+        process_key=wf.PROCESS_PURCHASE_ORDER,
+        subject_type="commitment",
+        subject_id=c.id,
+        step_key="issue",
+        cu=cu,
+    )
     db.session.commit()
     return get_commitment_detail(c.project_id, c.id, cu)
 
@@ -817,6 +876,7 @@ def create_purchase_order_receipt(
         status="posted" if not held else "draft",
         notes=(str(data.get("notes") or "").strip() or None) if data.get("notes") else None,
     )
+    receipt.shipment_id = _parse_uuid(data.get("shipment_id") or data.get("shipmentId"))
     db.session.add(receipt)
     db.session.flush()
     raw_lines = data.get("lines") if isinstance(data.get("lines"), list) else []
@@ -835,6 +895,20 @@ def create_purchase_order_receipt(
                 notes=(str(raw.get("notes") or "").strip() or None) if raw.get("notes") else None,
             )
         )
+    db.session.flush()
+    from . import _purchase_order_fulfillment as po_ful
+    from . import _workflow_service as wf
+
+    po_ful.refresh_fulfillment_status(c)
+    if not held:
+        wf.complete_subject_step(
+            process_key=wf.PROCESS_PURCHASE_ORDER,
+            subject_type="commitment",
+            subject_id=c.id,
+            step_key="receive",
+            cu=cu,
+        )
+        po_ful.compute_three_way_match(c)
     db.session.commit()
     return {
         "entity": "purchase_order_receipt",
@@ -842,4 +916,5 @@ def create_purchase_order_receipt(
         "commitment_id": str(c.id),
         "status": receipt.status,
         "held_unapproved": held,
+        "fulfillment_status": c.fulfillment_status,
     }

@@ -46,6 +46,10 @@ _TEST_PROJECT_NAME_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
         r"^p[1-5]-[0-9a-f]{6}$",
         r"^t-[0-9a-f]{10}$",
         r"^draw(-|1-|del-)[0-9a-f]{8}$",
+        r"^apjob2?-[0-9a-f]{8}$",
+        r"^calassign-[0-9a-f]{8}$",
+        r"^remproj-[0-9a-f]{8}$",
+        r"^pretask(req|cid|lock)?-[0-9a-f]{8}$",
     )
 )
 

@@ -1,6 +1,6 @@
 # USIS CM Mobile (Expo)
 
-Field app for USIS Construction Management: email/password sign-in, project list, and offline drawing-set cache.
+Field app for USIS Construction Management: email/password sign-in, project list, offline drawing-set cache, and daily pre-task safety plans. See `SAFETY.md` for the Appendix E form contract.
 
 ## Prerequisites
 

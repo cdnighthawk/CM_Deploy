@@ -1254,6 +1254,40 @@ body.usis-drawing-viewer .usis-dv-page__body {
 .usis-dv-chrome__sheet {
 	flex: 1 1 12rem;
 	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.usis-dv-rename-btn {
+	flex: 0 0 auto;
+	white-space: nowrap;
+	font-weight: 600;
+}
+
+.usis-drawing-cell {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	max-width: 100%;
+}
+
+.usis-drawing-cell .usis-drawing-name-link {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.usis-drawing-rename {
+	flex: 0 0 auto;
+	font-size: 0.75rem;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--usis-text-muted, #6c757d);
+}
+
+.usis-drawing-rename:hover {
+	color: var(--usis-primary);
 }
 
 .usis-dv-chrome__actions {
@@ -1327,6 +1361,20 @@ a.usis-drawing-name-link:hover {
 
 .usis-dv-toolgroup--grow {
 	flex: 1 1 auto;
+}
+
+.usis-dv-toolbar--draw {
+	border-top: 1px solid var(--usis-divider);
+	padding-top: 0.4rem;
+}
+
+.usis-dv-toolgroup--takeoff {
+	padding-left: 0.75rem;
+	border-left: 1px solid var(--usis-divider);
+}
+
+.usis-dv-toolbar .usis-dv-toolgroup--takeoff .usis-overline {
+	color: var(--usis-primary);
 }
 
 .usis-dv-toolgroup--status {

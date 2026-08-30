@@ -8,6 +8,7 @@ from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermis
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
+from .correspondence import CorrespondenceItem, CorrespondenceSource
 from .corecon_transaction import CoreconTransaction
 from .document import Document, Drawing, DrawingAnnotation
 from .drawing_set import DrawingSet
@@ -135,6 +136,8 @@ __all__ = [
     "CommitmentLineItem",
     "Company",
     "Contact",
+    "CorrespondenceItem",
+    "CorrespondenceSource",
     "CoreconTransaction",
     "CostCode",
     "DailyPretask",

@@ -317,13 +317,81 @@
 				else text = String(text);
 				var cr = data.current_revision;
 				var href = cr && cr.id ? viewerHref(pid, cr.id) : "";
-				if (!href) return text;
-				var a = document.createElement("a");
-				a.href = href;
-				a.className = "usis-drawing-name-link";
-				a.textContent = text;
-				return a;
+				var wrap = document.createElement("span");
+				wrap.className = "usis-drawing-cell";
+				if (href) {
+					var a = document.createElement("a");
+					a.href = href;
+					a.className = "usis-drawing-name-link";
+					a.textContent = text;
+					wrap.appendChild(a);
+				} else {
+					wrap.appendChild(document.createTextNode(text));
+				}
+				var btn = document.createElement("button");
+				btn.type = "button";
+				btn.className = "btn btn-link btn-sm p-0 usis-drawing-rename";
+				btn.textContent = "Edit";
+				btn.title = field === "sheet_number" ? "Change drawing #" : "Change drawing name";
+				btn.addEventListener("click", function (ev) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					cell.edit(true);
+				});
+				wrap.appendChild(btn);
+				return wrap;
 			};
+		}
+
+		function applySheetIdentityToCache(seriesId, fields) {
+			(cache.drawingSheets || []).forEach(function (sheet) {
+				if (!sheet || sheet.series_id !== seriesId) return;
+				if (fields.sheet_number !== undefined) sheet.sheet_number = fields.sheet_number;
+				if (fields.sheet_title !== undefined) sheet.sheet_title = fields.sheet_title;
+				if (sheet.current_revision) {
+					if (fields.sheet_number !== undefined) sheet.current_revision.sheet_number = fields.sheet_number;
+					if (fields.sheet_title !== undefined) sheet.current_revision.sheet_title = fields.sheet_title;
+				}
+				(sheet.revisions || []).forEach(function (rev) {
+					if (fields.sheet_number !== undefined) rev.sheet_number = fields.sheet_number;
+					if (fields.sheet_title !== undefined) rev.sheet_title = fields.sheet_title;
+				});
+			});
+		}
+
+		function saveDrawingIdentity(cell) {
+			var field = cell.getField();
+			if (field !== "sheet_number" && field !== "sheet_title") return;
+			var row = cell.getRow();
+			var data = row.getData();
+			var cr = data.current_revision;
+			var oldVal = cell.getOldValue();
+			if (!cr || !cr.id) {
+				cell.setValue(oldVal, true);
+				return;
+			}
+			var payload = { scope: "series" };
+			payload[field] = cell.getValue() == null ? "" : String(cell.getValue()).trim();
+			fetchJson("/api/v1/drawings/" + encodeURIComponent(cr.id), {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			})
+				.then(function (body) {
+					var fields = {};
+					fields[field] = payload[field] || null;
+					if (body && body.item) {
+						if (body.item.sheet_number !== undefined) fields.sheet_number = body.item.sheet_number;
+						if (body.item.sheet_title !== undefined) fields.sheet_title = body.item.sheet_title;
+					}
+					applySheetIdentityToCache(data.series_id, fields);
+					row.update(fields);
+					if (global.USISNotify) global.USISNotify.success("Drawing saved.");
+				})
+				.catch(function (err) {
+					cell.setValue(oldVal, true);
+					if (global.USISNotify) global.USISNotify.error(String((err && err.message) || err || "Save failed."));
+				});
 		}
 
 		function viewerHref(pid, drawingRevId) {
@@ -604,6 +672,7 @@
 					headerFilter: "input",
 					minWidth: 100,
 					widthGrow: 1,
+					editor: "input",
 					formatter: drawingNameLinkFormatter("sheet_number", pid),
 				},
 				{
@@ -612,6 +681,7 @@
 					headerFilter: "input",
 					minWidth: 160,
 					widthGrow: 2,
+					editor: "input",
 					formatter: drawingNameLinkFormatter("sheet_title", pid),
 				},
 				{ title: "Discipline", field: "discipline", visible: false },
@@ -652,6 +722,7 @@
 				movableColumns: true,
 				placeholder: "No drawings for this project yet.",
 				columns: cols,
+				cellEdited: saveDrawingIdentity,
 				groupBy: drawingDisciplineGroup,
 				groupToggleElement: "header",
 				groupStartOpen: function (value) {

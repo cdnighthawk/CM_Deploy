@@ -63,6 +63,7 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
         1234,
         4200,
         4321,
+        8768,
     )
     for h in hosts:
         for p in ports:
@@ -145,6 +146,7 @@ def create_app(config_object: str | None = None) -> Flask:
     from .public_portal import public_bp
     from .api.submittals_bp import submittals_bp, workflows_bp
     from .api.purchase_orders_bp import purchase_orders_bp
+    from .api.correspondence_bp import correspondence_bp
 
     app.register_blueprint(v1_bp)
     app.register_blueprint(ai_bp)
@@ -152,6 +154,7 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(submittals_bp)
     app.register_blueprint(workflows_bp)
     app.register_blueprint(purchase_orders_bp)
+    app.register_blueprint(correspondence_bp)
     app.register_blueprint(hrms_bp)
     app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
@@ -167,6 +170,7 @@ def create_app(config_object: str | None = None) -> Flask:
             or path.startswith("/api/submittals")
             or path.startswith("/api/workflows")
             or path.startswith("/api/purchase-orders")
+            or path.startswith("/api/correspondence")
         )
 
     @app.before_request

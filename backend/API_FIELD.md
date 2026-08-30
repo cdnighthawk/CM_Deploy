@@ -88,6 +88,7 @@ Revision / file:
 
 - `GET /api/v1/drawings/:id/revisions`
 - `GET /api/v1/drawings/:id/file` — raw PDF (`Authorization` required). `file_url` is usually `/api/v1/drawings/:id/file` (relative).
+- `PATCH /api/v1/drawings/:id` — `{sheet_number?, sheet_title?, scope?: "revision"|"series"}`. Default `scope` is `series`.
 
 ### Markup
 

@@ -121,6 +121,7 @@
 				</div>
 				<div class="usis-dv-chrome__sheet">
 					<div class="usis-dv-meta" id="usis-dv-sheetline"></div>
+					<button type="button" class="btn btn-link btn-sm p-0 usis-dv-rename-btn d-none" id="usis-dv-rename" title="Change drawing # and name">Rename</button>
 				</div>
 				<div class="usis-dv-chrome__actions">
 					<div class="dropdown d-none" id="usis-dv-sheets-wrap">
@@ -132,6 +133,8 @@
 					<div class="dropdown d-none" id="usis-dv-more-wrap">
 						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</button>
 						<ul class="dropdown-menu dropdown-menu-end">
+							<li><button type="button" class="dropdown-item" id="usis-dv-rename-more" title="Change drawing # and name">Rename sheet…</button></li>
+							<li><hr class="dropdown-divider"></li>
 							<li><button type="button" class="dropdown-item" id="usis-dv-delete-revision" title="Delete the current revision only">Delete revision</button></li>
 							<li><button type="button" class="dropdown-item text-danger" id="usis-dv-delete-sheet" title="Delete all revisions for this sheet">Delete sheet</button></li>
 						</ul>
@@ -183,21 +186,6 @@
 						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle" aria-pressed="false">Zoom</button>
 					</div>
 				</div>
-				<div class="usis-dv-toolgroup usis-dv-toolgroup--grow">
-					<span class="usis-overline">Measure</span>
-					<div class="usis-dv-toolgroup__row">
-						<div class="usis-seg" role="group" aria-label="Measure tools">
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF)" aria-pressed="false">Calibrate</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-line" title="Length (L or 2): click vertices; double-click, Enter, or right-click to finish" aria-pressed="false">Linear</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-poly" title="Area (3 or Shift+P): click corners; double-click, Enter, or right-click to close" aria-pressed="false">Area</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-rect" title="Rectangle (R): two diagonal clicks" aria-pressed="false">Rectangle</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-deduct" title="Inner rectangle subtracted from last gross rectangle (two clicks)" aria-pressed="false">Deduct</button>
-							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-count" title="Count (1 or Shift+Alt+C): click to place markers" aria-pressed="false">Count</button>
-						</div>
-						<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done</button>
-						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-clear">Clear</button>
-					</div>
-				</div>
 				<div class="usis-dv-toolgroup">
 					<span class="usis-overline">View</span>
 					<div class="usis-dv-toolgroup__row">
@@ -218,6 +206,36 @@
 				<div class="usis-dv-toolgroup usis-dv-toolgroup--status">
 					<span class="usis-overline">Status</span>
 					<div class="small text-muted" id="usis-dv-m-status">Calibration: none · Measured: —</div>
+				</div>
+			</div>
+
+			<div class="usis-dv-toolbar usis-dv-toolbar--draw" id="usis-dv-draw-toolbar">
+				<div class="usis-dv-toolgroup">
+					<span class="usis-overline">Measure</span>
+					<div class="usis-dv-toolgroup__row">
+						<div class="usis-seg" role="group" aria-label="Measure tools">
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-cal" title="Set scale (Alt+U): two clicks + known length (LF). Does not write to takeoff." aria-pressed="false">Calibrate</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-line" title="Measure length (L or 2). Check only — does not write to takeoff." aria-pressed="false">Linear</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-poly" title="Measure area (3 or Shift+P). Check only — does not write to takeoff." aria-pressed="false">Area</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-rect" title="Measure rectangle (R). Check only — does not write to takeoff." aria-pressed="false">Rectangle</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-deduct" title="Measure deduction from last measure rectangle. Check only." aria-pressed="false">Deduct</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-count" title="Measure count (1). Check only — does not write to takeoff." aria-pressed="false">Count</button>
+						</div>
+						<button type="button" class="btn btn-primary btn-sm" id="usis-dv-m-done" title="Finish current polyline">Done</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-clear">Clear</button>
+					</div>
+				</div>
+				<div class="usis-dv-toolgroup usis-dv-toolgroup--takeoff">
+					<span class="usis-overline">Takeoff</span>
+					<div class="usis-dv-toolgroup__row">
+						<div class="usis-seg" role="group" aria-label="Takeoff tools">
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-line" title="Takeoff length (Shift+Alt+L). Writes quantity to the selected takeoff line." aria-pressed="false">Linear</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-poly" title="Takeoff area (Shift+Alt+A). Writes quantity to the selected takeoff line." aria-pressed="false">Area</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-rect" title="Takeoff rectangle (Shift+Alt+R). Writes quantity to the selected takeoff line." aria-pressed="false">Rectangle</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-deduct" title="Takeoff deduction from last takeoff rectangle (two clicks)" aria-pressed="false">Deduct</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-t-count" title="Takeoff count (Shift+Alt+C). Writes quantity to the selected takeoff line." aria-pressed="false">Count</button>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -250,7 +268,7 @@
 					</div>
 				</div>
 				<p class="usis-dv-hint" id="usis-dv-hint">
-					<kbd>Wheel</kbd> zoom · <kbd>Ctrl+Wheel</kbd> page · hold <kbd>Space</kbd> or the mouse wheel to pan · <kbd>V</kbd> select · <kbd>Shift+V</kbd> pan · <kbd>Z</kbd> zoom · <kbd>Ctrl+0</kbd> width · <kbd>Ctrl+9</kbd> fit
+					<kbd>Wheel</kbd> zoom · <kbd>Ctrl+Wheel</kbd> page · hold <kbd>Space</kbd> or the mouse wheel to pan · <kbd>V</kbd> select · <kbd>Shift+V</kbd> pan · <kbd>Z</kbd> zoom · Measure <kbd>L</kbd> <kbd>3</kbd> <kbd>R</kbd> <kbd>1</kbd> · Takeoff <kbd>Shift+Alt+L</kbd> <kbd>A</kbd> <kbd>R</kbd> <kbd>C</kbd>
 				</p>
 			</div>
 
@@ -259,7 +277,7 @@
 					<span class="usis-overline mb-0">Takeoff details</span>
 				</div>
 				<div class="usis-dv-rail__body">
-					<p class="text-muted small mb-3" id="usis-dv-takeoff-empty">Select a takeoff on the left, or create <strong>New takeoff</strong>.</p>
+					<p class="text-muted small mb-3" id="usis-dv-takeoff-empty">Select a takeoff on the left, or create <strong>New takeoff</strong>. Then use the Takeoff tools — Measure tools do not write quantities.</p>
 					<div class="d-none" id="usis-dv-takeoff-strip" role="region" aria-label="Takeoff line">
 						<div class="mb-2">
 							<div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
@@ -334,6 +352,33 @@
 		</div>
 	</div>
 
+	<div class="modal fade" id="usis-dv-modal-rename" tabindex="-1" aria-hidden="true" aria-labelledby="usis-dv-modal-rename-title">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-dv-modal-rename-title">Rename drawing</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-dv-rename-err" role="alert"></div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-dv-rename-number">Drawing #</label>
+						<input type="text" class="form-control form-control-sm" id="usis-dv-rename-number" maxlength="50" autocomplete="off">
+					</div>
+					<div class="mb-0">
+						<label class="form-label small mb-0" for="usis-dv-rename-title">Name</label>
+						<input type="text" class="form-control form-control-sm" id="usis-dv-rename-title" maxlength="500" autocomplete="off">
+					</div>
+					<p class="small text-muted mb-0 mt-2">Saves on every revision of this sheet.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-dv-rename-save">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	@@include("../elements/script.html")
 	<script src="assets/vendor/i18n/i18n.js"></script>
 	<script src="assets/js/translator.js"></script>
@@ -346,7 +391,7 @@
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260829h"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260830b"></script>
 
 </body>
 </html>

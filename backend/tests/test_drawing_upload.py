@@ -186,6 +186,78 @@ def test_drawing_upload_uses_human_readable_storage_name(client):
     assert b"%PDF" in file_r.data
 
 
+def test_drawing_patch_sheet_number_and_title(client):
+    with client.application.app_context():
+        p = Project(name="DrawPatch-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    ids: list[str] = []
+    for rev in ("A", "B"):
+        data = {
+            "file": (io.BytesIO(payload), f"sheet-{rev}.pdf"),
+            "sheet_number": "A101",
+            "sheet_title": "Old name",
+            "revision": rev,
+        }
+        r = client.post(
+            f"/api/v1/projects/{pid}/drawings",
+            data=data,
+            content_type="multipart/form-data",
+        )
+        assert r.status_code == 201, r.get_data(as_text=True)
+        ids.append(r.get_json()["item"]["id"])
+
+    r_empty = client.patch(f"/api/v1/drawings/{ids[0]}", json={})
+    assert r_empty.status_code == 400
+
+    r_rev = client.patch(
+        f"/api/v1/drawings/{ids[0]}",
+        json={"sheet_title": "Revision name only", "scope": "revision"},
+    )
+    assert r_rev.status_code == 200, r_rev.get_data(as_text=True)
+    body_rev = r_rev.get_json()
+    assert body_rev["scope"] == "revision"
+    assert body_rev["item"]["sheet_title"] == "Revision name only"
+    assert len(body_rev["items"]) == 1
+
+    with client.application.app_context():
+        first = db.session.get(Drawing, uuid.UUID(ids[0]))
+        second = db.session.get(Drawing, uuid.UUID(ids[1]))
+        assert first is not None and second is not None
+        assert first.sheet_title == "Revision name only"
+        assert first.title == "Revision name only"
+        assert second.sheet_title == "Old name"
+
+    r_series = client.patch(
+        f"/api/v1/drawings/{ids[1]}",
+        json={"sheet_number": "A-102", "sheet_title": "Level 2 plan"},
+    )
+    assert r_series.status_code == 200, r_series.get_data(as_text=True)
+    body = r_series.get_json()
+    assert body["scope"] == "series"
+    assert body["item"]["sheet_number"] == "A-102"
+    assert body["item"]["sheet_title"] == "Level 2 plan"
+    assert {item["id"] for item in body["items"]} == set(ids)
+    assert all(item["sheet_number"] == "A-102" for item in body["items"])
+    assert all(item["sheet_title"] == "Level 2 plan" for item in body["items"])
+
+    listed = client.get(f"/api/v1/projects/{pid}/drawings")
+    assert listed.status_code == 200
+    sheets = listed.get_json()["items"]
+    assert len(sheets) == 1
+    assert sheets[0]["sheet_number"] == "A-102"
+    assert sheets[0]["sheet_title"] == "Level 2 plan"
+
+
 def test_pin_sheet_to_set_uses_matching_revision():
     from app.api.v1 import _pin_sheet_to_set
 

@@ -18,6 +18,12 @@ def test_detects_pytest_name_patterns():
     assert is_test_artifact_project(_p("P2-ae30cf"))
     assert is_test_artifact_project(_p("Admin ann"))
     assert is_test_artifact_project(_p("BIC test"))
+    assert is_test_artifact_project(_p("ApJob-f2cafd88", "24-018"))
+    assert is_test_artifact_project(_p("ApJob2-24488563"))
+    assert is_test_artifact_project(_p("CalAssign-8b752ee2"))
+    assert is_test_artifact_project(_p("RemProj-05ab4472"))
+    assert is_test_artifact_project(_p("Pretask-0ef10bcb"))
+    assert is_test_artifact_project(_p("PretaskLock-0ef10bcb"))
 
 
 def test_keeps_real_project_names():

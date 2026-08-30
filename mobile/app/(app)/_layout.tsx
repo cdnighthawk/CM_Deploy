@@ -24,6 +24,7 @@ export default function AppLayout() {
       <Stack.Screen name="projects/index" options={{ title: 'Projects' }} />
       <Stack.Screen name="projects/[id]/index" options={{ title: 'Project' }} />
       <Stack.Screen name="projects/[id]/drawings" options={{ title: 'Drawings' }} />
+      <Stack.Screen name="projects/[id]/pretask" options={{ title: 'Daily pretask' }} />
       <Stack.Screen
         name="projects/[id]/viewer"
         options={{ title: 'Sheet', presentation: 'modal' }}

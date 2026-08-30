@@ -41,6 +41,34 @@
 
 				<div class="row g-3 mb-3">
 					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
+							<div class="usis-kpi__label">Open RFPs</div>
+							<div class="usis-kpi__value" id="usis-dash-open-rfps">—</div>
+							<p class="text-muted small mb-0"><a href="usis-rfp-list.html">RFP list</a></p>
+						</div></div>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
+							<div class="usis-kpi__label">QC aging &gt; 48h</div>
+							<div class="usis-kpi__value" id="usis-dash-qc-aging">—</div>
+						</div></div>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
+							<div class="usis-kpi__label">AI critical</div>
+							<div class="usis-kpi__value" id="usis-dash-ai-critical">—</div>
+						</div></div>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
+							<div class="usis-kpi__label">POs in transit</div>
+							<div class="usis-kpi__value" id="usis-dash-po-transit">—</div>
+							<p class="text-muted small mb-0"><span id="usis-dash-po-late">—</span> late vs ship date</p>
+						</div></div>
+					</div>
+				</div>
+				<div class="row g-3 mb-3">
+					<div class="col-xl-3 col-sm-6">
 						<div class="card overflow-hidden mb-0 usis-kpi">
 							<div class="card-body p-3">
 								<div class="usis-kpi__label">Billed this month</div>
@@ -262,6 +290,7 @@
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-submittal-dashboard.js"></script>
+	<script src="assets/js/usis-dashboard-ops.js"></script>
 
 </body>
 </html>

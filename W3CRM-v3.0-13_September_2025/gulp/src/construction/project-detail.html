@@ -124,6 +124,9 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false" data-i18n="Safety">Safety</button>
 						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-correspondence" data-bs-toggle="pill" data-bs-target="#proj-pane-correspondence" type="button" role="tab" aria-controls="proj-pane-correspondence" aria-selected="false">Correspondence</button>
+						</li>
 					</ul>
 						<a class="btn btn-sm btn-outline-secondary text-nowrap d-none" id="usis-proj-contract-admin-hub" href="../usis-procurement.html">Contract admin hub</a>
 					</div>
@@ -497,6 +500,8 @@
 													<th>Vendor</th>
 													<th>Linked RFP</th>
 													<th>Status</th>
+													<th>Fulfillment</th>
+													<th>Ship</th>
 													<th class="text-end">Total</th>
 													<th class="text-end"></th>
 												</tr>
@@ -865,6 +870,21 @@
 						<div class="tab-pane fade" id="proj-pane-safety" role="tabpanel" aria-labelledby="proj-tab-safety" tabindex="0">
 							<div id="usis-proj-safety-root">
 								<p class="text-muted small mb-0">Loading project safety profile…</p>
+							</div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-correspondence" role="tabpanel" aria-labelledby="proj-tab-correspondence" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Correspondence</h5>
+									<p class="text-muted small mb-0">Teams and email archive as files. Download only — no compose, no HTML body.</p>
+								</div>
+								<a class="btn btn-sm btn-outline-secondary" href="../usis-correspondence.html">Open register</a>
+							</div>
+							<div class="table-responsive">
+								<table class="table table-sm table-hover align-middle mb-0" id="usis-proj-corr-table">
+									<thead class="table-light"><tr><th>Date</th><th>From</th><th>Subject</th><th>Files</th><th></th></tr></thead>
+									<tbody id="usis-proj-corr-tbody"></tbody>
+								</table>
 							</div>
 						</div>
 					</div>
@@ -1497,6 +1517,76 @@
 								<label class="form-label small mb-0" for="usis-c-edit-ship-to">Ship to</label>
 								<textarea class="form-control form-control-sm" id="usis-c-edit-ship-to" rows="2"></textarea>
 							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-edit-promised-ship">Promised ship</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-edit-promised-ship">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-edit-revised-ship">Revised ship</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-edit-revised-ship">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-edit-actual-ship">Actual ship</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-edit-actual-ship">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-edit-needed-on-site">Needed on site</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-edit-needed-on-site">
+							</div>
+						</div>
+						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+							<h6 class="text-muted small text-uppercase mb-0">Fulfillment</h6>
+							<div class="d-flex flex-wrap gap-1">
+								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-c-issue-po">Issue PO</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-c-match-po">Run 3-way match</button>
+							</div>
+						</div>
+						<p class="small mb-2" id="usis-c-fulfillment-meta"></p>
+						<div class="row g-2 align-items-end mb-2">
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-c-ship-carrier">Carrier</label>
+								<input class="form-control form-control-sm" id="usis-c-ship-carrier" placeholder="UPS">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-ship-track">Tracking #</label>
+								<input class="form-control form-control-sm" id="usis-c-ship-track">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-c-ship-url">Tracking URL</label>
+								<input class="form-control form-control-sm" id="usis-c-ship-url" placeholder="https://">
+							</div>
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-c-ship-status">Status</label>
+								<select class="form-select form-select-sm" id="usis-c-ship-status">
+									<option value="pending">pending</option>
+									<option value="in_transit">in_transit</option>
+									<option value="out_for_delivery">out_for_delivery</option>
+									<option value="delivered">delivered</option>
+									<option value="exception">exception</option>
+								</select>
+							</div>
+							<div class="col-md-1">
+								<button type="button" class="btn btn-outline-primary btn-sm w-100" id="usis-c-ship-add">Add</button>
+							</div>
+						</div>
+						<div class="table-responsive mb-3">
+							<table class="table table-sm table-bordered align-middle mb-0">
+								<thead class="table-light"><tr><th>Carrier</th><th>Tracking</th><th>Status</th><th></th></tr></thead>
+								<tbody id="usis-c-ship-tbody"></tbody>
+							</table>
+						</div>
+						<div class="row g-2 align-items-end mb-3">
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-recv-date">Receive date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-recv-date">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-recv-slip">Packing slip</label>
+								<input class="form-control form-control-sm" id="usis-c-recv-slip">
+							</div>
+							<div class="col-md-3">
+								<button type="button" class="btn btn-outline-primary btn-sm" id="usis-c-recv-post">Receive all remaining</button>
+							</div>
 						</div>
 					</div>
 
@@ -1724,10 +1814,11 @@
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
-	<script src="assets/js/project-detail-tools.js?v=20260829h"></script>
+	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js"></script>
 	<script src="assets/js/project-detail-procurement.js"></script>
+	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
 	<script>

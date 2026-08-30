@@ -1714,6 +1714,72 @@ def upload_project_drawing(project_id: str):
     return _jsonify({"item": result["item"], "entity": "drawing"}), 201
 
 
+def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tuple[bool, str | None]:
+    if key not in body:
+        return False, None
+    raw = body.get(key)
+    if raw is None:
+        return True, None
+    text = str(raw).strip()[:max_len]
+    return True, (text or None)
+
+
+@bp.patch("/drawings/<drawing_id>")
+def patch_drawing(drawing_id: str):
+    """Update drawing number (``sheet_number``) and/or name (``sheet_title``).
+
+    JSON: ``{ "sheet_number"?: str, "sheet_title"?: str, "scope"?: "revision" | "series" }``.
+    Default ``scope`` is ``series`` so every revision of the sheet stays in sync.
+    """
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "JSON body required"}), 400
+
+    has_number, sheet_number = _optional_drawing_text(body, "sheet_number", 50)
+    has_title, sheet_title = _optional_drawing_text(body, "sheet_title", 500)
+    if not has_number and not has_title:
+        return _jsonify({"error": "sheet_number or sheet_title is required"}), 400
+
+    scope = str(body.get("scope") or "series").strip().lower()
+    if scope not in ("revision", "series"):
+        return _jsonify({"error": "scope must be revision or series"}), 400
+
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "drawing not found"}), 404
+
+    targets = [row]
+    if scope == "series":
+        targets = list(
+            db.session.scalars(select(Drawing).where(Drawing.drawing_series_id == row.drawing_series_id)).all()
+        )
+        if not targets:
+            return _jsonify({"error": "drawing not found"}), 404
+
+    for d in targets:
+        if has_number:
+            d.sheet_number = sheet_number
+        if has_title:
+            d.sheet_title = sheet_title
+            d.title = sheet_title
+
+    db.session.commit()
+    return _jsonify(
+        {
+            "item": _drawing_public(row),
+            "items": [_drawing_public(d) for d in targets],
+            "scope": scope,
+            "series_id": str(row.drawing_series_id),
+            "entity": "drawing",
+        }
+    )
+
+
 @bp.post("/drawings/<drawing_id>/delete")
 def delete_drawing(drawing_id: str):
     """Delete one revision or the entire sheet series (all revisions).
@@ -4583,6 +4649,80 @@ def dashboard_hours_by_project():
                 "avg_hours_per_project": avg,
                 "top_project_name": projects[0]["project_name"] if projects else None,
             },
+        }
+    )
+
+
+@bp.get("/dashboard/ops-kpis")
+def dashboard_ops_kpis():
+    """Staff home KPIs: open RFPs, QC aging, AI critical, PO in-transit / late."""
+    from sqlalchemy import func as sa_func
+
+    from ..models import Commitment, DrawingAnnotation, PurchaseOrderShipment, Rfp
+    from . import _submittal_qc as qc
+
+    cu = current_user()
+
+    closed_rfp = ("awarded", "closed", "cancelled", "canceled", "void")
+    open_rfps = (
+        db.session.scalar(
+            select(sa_func.count()).select_from(Rfp).where(sa_func.lower(Rfp.status).notin_(closed_rfp))
+        )
+        or 0
+    )
+    qc_summary = qc.dashboard_summary(cu)
+    ai_critical = (
+        db.session.scalar(
+            select(sa_func.count())
+            .select_from(DrawingAnnotation)
+            .where(DrawingAnnotation.type == "ai_review", DrawingAnnotation.severity == "critical")
+        )
+        or 0
+    )
+    po_in_transit = (
+        db.session.scalar(
+            select(sa_func.count())
+            .select_from(Commitment)
+            .where(
+                Commitment.commitment_kind == "purchase_order",
+                Commitment.fulfillment_status.in_(("in_transit", "partially_shipped", "shipped")),
+            )
+        )
+        or 0
+    )
+    late_pos = (
+        db.session.scalar(
+            select(sa_func.count())
+            .select_from(Commitment)
+            .where(
+                Commitment.commitment_kind == "purchase_order",
+                Commitment.actual_ship_date.is_(None),
+                Commitment.fulfillment_status.notin_(("received", "closed")),
+                sa_func.coalesce(Commitment.revised_ship_date, Commitment.promised_ship_date) < date.today(),
+            )
+        )
+        or 0
+    )
+    in_transit_shipments = (
+        db.session.scalar(
+            select(sa_func.count())
+            .select_from(PurchaseOrderShipment)
+            .where(PurchaseOrderShipment.shipment_status.in_(("in_transit", "out_for_delivery")))
+        )
+        or 0
+    )
+    return _jsonify(
+        {
+            "entity": "dashboard_ops_kpis",
+            "openRfps": int(open_rfps),
+            "qcAging": qc_summary.get("inQcOver48h", 0),
+            "submittalsOverdue": qc_summary.get("overdue", 0),
+            "rubberStampSuspectThisWeek": qc_summary.get("rubberStampSuspectThisWeek", 0),
+            "unreleasedBlockingPos": qc_summary.get("unreleasedBlockingPos", 0),
+            "aiCritical": int(ai_critical),
+            "poInTransit": int(po_in_transit),
+            "poLate": int(late_pos),
+            "shipmentsInTransit": int(in_transit_shipments),
         }
     )
 

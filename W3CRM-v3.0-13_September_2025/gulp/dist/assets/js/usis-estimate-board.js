@@ -16,6 +16,8 @@
 	var isFetching = false;
 	var loadError = null;
 	var autoFilter = null;
+	var parkedMenu = null;
+	var parkedMenuParent = null;
 
 	var EMPTY_WILL_BID =
 		'<tr><td colspan="10" class="text-muted">No matching <code>lead_estimates</code> (will submit a bid, not yet submitted, not archived). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>';
@@ -97,7 +99,7 @@
 			'<div class="d-inline-flex align-items-center gap-1 justify-content-end">' +
 			jobBtn +
 			'<div class="dropdown custom-dropdown mb-0 tbl-orders-style">' +
-			'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
+			'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-popper-config=\'{"strategy":"fixed"}\'><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
 			'<div class="dropdown-menu dropdown-menu-end">' +
 			(jobHref
 				? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>'
@@ -146,7 +148,29 @@
 			.toLowerCase();
 	}
 
+	function restoreParkedMenu() {
+		if (!parkedMenu) return;
+		if (parkedMenuParent && parkedMenuParent.isConnected) {
+			parkedMenuParent.appendChild(parkedMenu);
+		} else if (parkedMenu.parentNode) {
+			parkedMenu.parentNode.removeChild(parkedMenu);
+		}
+		parkedMenu = null;
+		parkedMenuParent = null;
+	}
+
+	function parkDropdownMenu(toggle) {
+		var wrap = toggle.closest(".dropdown");
+		var menu = wrap ? wrap.querySelector(".dropdown-menu") : null;
+		if (!menu) return;
+		restoreParkedMenu();
+		parkedMenu = menu;
+		parkedMenuParent = menu.parentNode;
+		document.body.appendChild(menu);
+	}
+
 	function applyTableFilter() {
+		restoreParkedMenu();
 		if (!tbody || isFetching) return;
 		var q = filterInput && filterInput.value ? String(filterInput.value).trim().toLowerCase() : "";
 		if (!allItems.length && !q && loadError) return;
@@ -208,6 +232,7 @@
 		allItems = [];
 		if (filterCount) filterCount.textContent = "";
 		if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
+		restoreParkedMenu();
 		tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Loading…</td></tr>';
 		var state = currentBoard() === "submitted" ? "submitted" : "will_submit";
 		fetch(
@@ -359,7 +384,13 @@
 			window.USISEstimateCreate.open(null, { leadOptions: window.__USIS_ESTIMATE_LEADS || allItems || [] });
 		});
 	}
-	tbody.addEventListener("click", function (e) {
+	tbody.addEventListener("show.bs.dropdown", function (e) {
+		var toggle = e.target.closest('[data-bs-toggle="dropdown"]');
+		if (toggle) parkDropdownMenu(toggle);
+	});
+	tbody.addEventListener("hidden.bs.dropdown", restoreParkedMenu);
+
+	document.addEventListener("click", function (e) {
 		var createBtn = e.target.closest(".usis-est-row-create");
 		if (!createBtn) return;
 		e.preventDefault();

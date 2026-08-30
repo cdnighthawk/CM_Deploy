@@ -121,6 +121,9 @@
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="proj-tab-costing" data-bs-toggle="pill" data-bs-target="#proj-pane-costing" type="button" role="tab" aria-controls="proj-pane-costing" aria-selected="false" data-i18n="Job costing">Job costing</button>
 						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false" data-i18n="Safety">Safety</button>
+						</li>
 					</ul>
 						<a class="btn btn-sm btn-outline-secondary text-nowrap d-none" id="usis-proj-contract-admin-hub" href="../usis-procurement.html">Contract admin hub</a>
 					</div>
@@ -858,6 +861,11 @@
 						<div class="tab-pane fade" id="proj-pane-costing" role="tabpanel" aria-labelledby="proj-tab-costing" tabindex="0">
 							<h5 class="mb-2">Job costing</h5>
 							<p class="text-muted mb-0 small">Costing views are not configured for this screen yet.</p>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-safety" role="tabpanel" aria-labelledby="proj-tab-safety" tabindex="0">
+							<div id="usis-proj-safety-root">
+								<p class="text-muted small mb-0">Loading project safety profile…</p>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -1715,6 +1723,7 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js"></script>
+	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260829h"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js"></script>

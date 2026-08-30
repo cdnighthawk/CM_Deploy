@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "docon.company.schema",
+  "title": "DOCON Company Safety Profile",
+  "type": "object",
+  "required": ["legalName", "dba", "iippAdministrator", "phones", "addresses"],
+  "properties": {
+    "legalName": { "type": "string" },
+    "dba": { "type": "string" },
+    "shortName": { "type": "string" },
+    "iippAdministrator": {
+      "type": "object",
+      "required": ["name", "title", "phone", "email"],
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    },
+    "afterHoursPhone": { "type": "string" },
+    "phones": {
+      "type": "object",
+      "properties": {
+        "office": { "type": "string" },
+        "safety": { "type": "string" }
+      }
+    },
+    "addresses": {
+      "type": "object",
+      "properties": {
+        "primary": { "$ref": "#/$defs/address" },
+        "mailing": { "$ref": "#/$defs/address" }
+      }
+    },
+    "calOsha": {
+      "type": "object",
+      "properties": {
+        "jurisdiction": { "const": "California" },
+        "seriousInjuryRule": { "type": "string" },
+        "consultationNote": { "type": "string" }
+      }
+    },
+    "languages": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "trades": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "documentReview": {
+      "type": "object",
+      "properties": {
+        "iippMonths": { "type": "integer", "default": 12 },
+        "wvppMonths": { "type": "integer", "default": 12 },
+        "heatMonth": { "type": "integer", "default": 4, "description": "1-12, review before heat season" }
+      }
+    }
+  },
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "line1": { "type": "string" },
+        "line2": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zip": { "type": "string" }
+      }
+    }
+  }
+}

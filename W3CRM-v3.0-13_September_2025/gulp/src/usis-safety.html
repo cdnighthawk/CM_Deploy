@@ -35,30 +35,32 @@
 			<div class="container-fluid">
 				<div class="usis-page-header pt-0">
 					<div class="usis-page-header__text">
-						<p class="text-muted small mb-0">Training, JHAs, observations, and incidents. Certs are edited here; HR shows a read-only snapshot.</p>
+						<p class="text-muted small mb-0">Daily pre-task plans, training certs, and site safety. Certs are edited here; HR shows a read-only snapshot.</p>
 					</div>
 					<div class="usis-page-header__actions">
-						<a href="usis-documents-hub.html" class="btn btn-outline-secondary btn-sm">Documents hub</a>
-						<a href="construction/projects.html" class="btn btn-primary btn-sm">Open projects</a>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-safety-reload">Reload</button>
+						<a href="usis-daily-pretask.html" class="btn btn-primary btn-sm">New daily pretask</a>
 					</div>
 				</div>
+
+				<div class="alert alert-danger d-none py-2" id="usis-safety-err" role="alert"></div>
 
 				<div class="row g-3 mb-3">
 					<div class="col-xl-3 col-sm-6">
 						<div class="card mb-0 usis-kpi">
 							<div class="card-body p-3">
-								<div class="usis-kpi__label">Open incidents</div>
-								<div class="usis-kpi__value">—</div>
-								<p class="text-muted small mb-0">Recordables and near-misses</p>
+								<div class="usis-kpi__label">Pretasks today</div>
+								<div class="usis-kpi__value" data-usis-safety-k="pretasks_today">—</div>
+								<p class="text-muted small mb-0"><span data-usis-safety-k="pretasks_submitted_today">—</span> submitted</p>
 							</div>
 						</div>
 					</div>
 					<div class="col-xl-3 col-sm-6">
 						<div class="card mb-0 usis-kpi">
 							<div class="card-body p-3">
-								<div class="usis-kpi__label">Observations this week</div>
-								<div class="usis-kpi__value">—</div>
-								<p class="text-muted small mb-0">Field / inspect</p>
+								<div class="usis-kpi__label">Pretasks this week</div>
+								<div class="usis-kpi__value" data-usis-safety-k="pretasks_this_week">—</div>
+								<p class="text-muted small mb-0">All crews on assigned jobs</p>
 							</div>
 						</div>
 					</div>
@@ -66,7 +68,7 @@
 						<div class="card mb-0 usis-kpi">
 							<div class="card-body p-3">
 								<div class="usis-kpi__label">Certs expiring (30 days)</div>
-								<div class="usis-kpi__value">—</div>
+								<div class="usis-kpi__value" data-usis-safety-k="expiring_certs_30d">—</div>
 								<p class="text-muted small mb-0"><a href="usis-hr-dashboard.html">HR snapshot</a></p>
 							</div>
 						</div>
@@ -75,8 +77,8 @@
 						<div class="card mb-0 usis-kpi">
 							<div class="card-body p-3">
 								<div class="usis-kpi__label">Training overdue</div>
-								<div class="usis-kpi__value">—</div>
-								<p class="text-muted small mb-0">Company register</p>
+								<div class="usis-kpi__value" data-usis-safety-k="training_overdue">—</div>
+								<p class="text-muted small mb-0">Expired safety certs</p>
 							</div>
 						</div>
 					</div>
@@ -86,26 +88,25 @@
 					<div class="col-xl-3 col-md-6">
 						<div class="card mb-0 h-100">
 							<div class="card-body usis-hub-tile">
-								<span class="usis-overline">Company</span>
-								<h4 class="card-title mb-2">Policies &amp; training</h4>
-								<p class="text-muted small mb-3">Policies, manuals, and the training register.</p>
+								<span class="usis-overline">Start of shift</span>
+								<h4 class="card-title mb-2">Daily pretask</h4>
+								<p class="text-muted small mb-3">Appendix E plan: walk-through, task / hazard / control rows, crew sign-off.</p>
 								<div class="usis-hub-tile__actions">
-									<a href="usis-documents-hub.html" class="btn btn-primary btn-sm">Documents hub</a>
+									<a href="usis-daily-pretask.html" class="btn btn-primary btn-sm">File today&rsquo;s plan</a>
 								</div>
-								<p class="usis-kpi__label mb-0 mt-2">Coming soon: JHA templates, Safety KPIs</p>
 							</div>
 						</div>
 					</div>
 					<div class="col-xl-3 col-md-6">
 						<div class="card mb-0 h-100">
 							<div class="card-body usis-hub-tile">
-								<span class="usis-overline">Project / site</span>
-								<h4 class="card-title mb-2">Site programs</h4>
-								<p class="text-muted small mb-3">Project safety plans, crew checklists, and site conditions.</p>
+								<span class="usis-overline">Company</span>
+								<h4 class="card-title mb-2">Company programs</h4>
+								<p class="text-muted small mb-3">IIPP, WVPP, heat, HazCom, and Code of Safe Practices.</p>
 								<div class="usis-hub-tile__actions">
-									<a href="construction/projects.html" class="btn btn-primary btn-sm">Projects</a>
+									<a href="usis-safety-company.html" class="btn btn-outline-primary btn-sm">Company programs</a>
 								</div>
-								<p class="usis-kpi__label mb-0 mt-2">Coming soon: Project JHAs, Daily pretask</p>
+								<p class="usis-kpi__label mb-0 mt-2">Print and download from the preview</p>
 							</div>
 						</div>
 					</div>
@@ -131,8 +132,34 @@
 								<div class="usis-hub-tile__actions">
 									<span class="usis-status-chip usis-status-chip--draft">Coming soon</span>
 								</div>
-								<p class="usis-kpi__label mb-0 mt-2">Incident report, Corrective actions</p>
+								<p class="text-muted small mb-0">Open incidents: <strong data-usis-safety-k="open_incidents">—</strong></p>
 							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="card mb-3">
+					<div class="card-header border-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+						<h4 class="card-title mb-0">Recent daily pretasks</h4>
+						<a href="usis-daily-pretask.html" class="btn btn-sm btn-outline-primary">Open form</a>
+					</div>
+					<div class="card-body pt-2">
+						<div class="table-responsive">
+							<table class="table table-sm table-hover mb-0">
+								<thead>
+									<tr>
+										<th>Date</th>
+										<th>Project</th>
+										<th>Area</th>
+										<th>Crew lead</th>
+										<th>Status</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-safety-recent-body">
+									<tr><td colspan="6" class="text-muted text-center py-4">Loading…</td></tr>
+								</tbody>
+							</table>
 						</div>
 					</div>
 				</div>
@@ -166,6 +193,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-safety.js"></script>
 
 </body>
 </html>

@@ -26,6 +26,10 @@ def test_desktop_estimate_queue_uses_leads_or_estimate():
     assert resolve_modules("/api/v1/estimate-queue") == ("leads", "estimate")
 
 
+def test_desktop_project_queue_uses_projects():
+    assert resolve_modules("/api/v1/project-queue") == ("projects",)
+
+
 def test_vendor_invoice_routes_use_ap_module():
     assert resolve_modules("/api/v1/ap/invoices") == ("ap",)
     assert resolve_modules("/api/v1/ap/mailbox/sync") == ("ap",)
@@ -35,6 +39,22 @@ def test_field_photo_and_daily_report_routes_use_projects_module():
     assert resolve_modules("/api/v1/daily-reports/a1700000-0000-4000-8000-000000000001") == ("projects",)
     assert resolve_modules("/api/v1/photos/a1700000-0000-4000-8000-000000000001/file") == ("projects",)
     assert resolve_modules("/api/v1/photos/a1700000-0000-4000-8000-000000000001") == ("projects",)
+
+
+def test_daily_pretask_routes_use_safety_or_projects():
+    assert resolve_modules("/api/v1/safety/summary") == ("safety",)
+    assert resolve_modules("/api/v1/safety/pretasks") == ("safety",)
+    assert resolve_modules("/api/v1/safety/company-profile") == ("safety",)
+    assert resolve_modules("/api/v1/daily-pretasks/a1700000-0000-4000-8000-000000000001") == (
+        "safety",
+        "projects",
+    )
+    assert resolve_modules("/api/v1/projects/a1700000-0000-4000-8000-000000000001/daily-pretasks") == (
+        "projects",
+    )
+    pid = "a1700000-0000-4000-8000-000000000001"
+    assert resolve_modules(f"/api/v1/projects/{pid}/safety-profile") == ("safety", "projects")
+    assert resolve_modules(f"/api/v1/projects/{pid}/safety-packet/preview") == ("safety", "projects")
 
 
 def test_spec_section_delete_is_write_not_admin():

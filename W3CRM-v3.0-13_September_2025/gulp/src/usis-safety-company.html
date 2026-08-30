@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-safety-company.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "Company safety programs",
+				})
+			</div>
+
+			<div class="container-fluid">
+				<div class="usis-page-header pt-0">
+					<div class="usis-page-header__text">
+						<p class="text-muted small mb-0">Company IIPP, WVPP, heat, HazCom, and Code of Safe Practices. Regenerated when this profile or the templates change — not on every job.</p>
+					</div>
+					<div class="usis-page-header__actions">
+						<a href="usis-safety.html" class="btn btn-outline-secondary btn-sm">Safety hub</a>
+					</div>
+				</div>
+
+				<div class="alert alert-danger d-none py-2" id="usis-safco-err" role="alert"></div>
+				<div class="alert alert-success d-none py-2" id="usis-safco-ok" role="status"></div>
+
+				<div class="row g-3">
+					<div class="col-lg-5">
+						<div class="card mb-0">
+							<div class="card-body">
+								<h5 class="card-title">Company profile</h5>
+								<form id="usis-safco-form" class="row g-2">
+									<div class="col-md-6">
+										<label class="form-label small mb-0" for="usis-safco-legal">Legal name</label>
+										<input class="form-control form-control-sm" id="usis-safco-legal" />
+									</div>
+									<div class="col-md-6">
+										<label class="form-label small mb-0" for="usis-safco-dba">DBA</label>
+										<input class="form-control form-control-sm" id="usis-safco-dba" />
+									</div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0" for="usis-safco-short">Short name</label>
+										<input class="form-control form-control-sm" id="usis-safco-short" />
+									</div>
+									<div class="col-md-8">
+										<label class="form-label small mb-0" for="usis-safco-admin-name">IIPP administrator</label>
+										<input class="form-control form-control-sm" id="usis-safco-admin-name" />
+									</div>
+									<div class="col-md-6">
+										<label class="form-label small mb-0" for="usis-safco-admin-title">Title</label>
+										<input class="form-control form-control-sm" id="usis-safco-admin-title" />
+									</div>
+									<div class="col-md-6">
+										<label class="form-label small mb-0" for="usis-safco-admin-phone">Admin phone</label>
+										<input class="form-control form-control-sm" id="usis-safco-admin-phone" />
+									</div>
+									<div class="col-12">
+										<label class="form-label small mb-0" for="usis-safco-admin-email">Admin email</label>
+										<input class="form-control form-control-sm" id="usis-safco-admin-email" type="email" />
+									</div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0" for="usis-safco-phone-office">Office</label>
+										<input class="form-control form-control-sm" id="usis-safco-phone-office" />
+									</div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0" for="usis-safco-phone-safety">Safety</label>
+										<input class="form-control form-control-sm" id="usis-safco-phone-safety" />
+									</div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0" for="usis-safco-phone-after">After hours</label>
+										<input class="form-control form-control-sm" id="usis-safco-phone-after" />
+									</div>
+									<div class="col-12">
+										<label class="form-label small mb-0" for="usis-safco-addr1">Address</label>
+										<input class="form-control form-control-sm" id="usis-safco-addr1" />
+									</div>
+									<div class="col-md-5">
+										<label class="form-label small mb-0" for="usis-safco-city">City</label>
+										<input class="form-control form-control-sm" id="usis-safco-city" />
+									</div>
+									<div class="col-md-3">
+										<label class="form-label small mb-0" for="usis-safco-state">State</label>
+										<input class="form-control form-control-sm" id="usis-safco-state" />
+									</div>
+									<div class="col-md-4">
+										<label class="form-label small mb-0" for="usis-safco-zip">ZIP</label>
+										<input class="form-control form-control-sm" id="usis-safco-zip" />
+									</div>
+									<div class="col-12 mt-2">
+										<button type="submit" class="btn btn-primary btn-sm" id="usis-safco-save">Save profile</button>
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-safco-regen">Regenerate programs</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-7">
+						<div class="card mb-3">
+							<div class="card-body">
+								<h5 class="card-title">Company programs</h5>
+								<p class="text-muted small">Print or download from the preview. These meet Cal/OSHA electronic access when employees can open this page.</p>
+								<div id="usis-safco-docs" class="list-group list-group-flush"></div>
+							</div>
+						</div>
+						<div class="card mb-0">
+							<div class="card-body p-0">
+								<iframe id="usis-safco-preview" title="Company safety document preview" style="width:100%;min-height:28rem;border:0;"></iframe>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-safety-company.js"></script>
+
+</body>
+</html>

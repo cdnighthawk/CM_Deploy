@@ -18,9 +18,11 @@ _PREFIX_RULES: list[tuple[str, str | tuple[str, ...]]] = [
     ("/api/v1/saved-filters", ("leads", "estimate")),
     ("/api/v1/office-location", ("leads", "estimate", "crm")),
     ("/api/v1/estimate-queue", ("leads", "estimate")),
+    ("/api/v1/project-queue", "projects"),
     ("/api/v1/calendar-events", ("projects", "procurement")),
     ("/api/v1/projects", "projects"),
     ("/api/v1/daily-reports", "projects"),
+    ("/api/v1/daily-pretasks", ("safety", "projects")),
     ("/api/v1/photos", "projects"),
     ("/api/v1/time-clock", "projects"),
     ("/api/v1/rfis", "projects"),
@@ -69,6 +71,12 @@ _EXEMPT_EXACT = frozenset(
 )
 
 
+_PROJECT_SAFETY_RE = re.compile(
+    r"^/api/v1/projects/[^/]+/safety-(?:profile|packet)(?:/.*)?$",
+    re.IGNORECASE,
+)
+
+
 def resolve_modules(path: str) -> tuple[str, ...] | None:
     """Return module code(s) for path, or None if route is not module-gated."""
     p = path.rstrip("/") or path
@@ -77,6 +85,8 @@ def resolve_modules(path: str) -> tuple[str, ...] | None:
     for prefix in _EXEMPT_PREFIXES:
         if p.startswith(prefix):
             return None
+    if _PROJECT_SAFETY_RE.match(p):
+        return ("safety", "projects")
     for prefix, mod in sorted(_PREFIX_RULES, key=lambda x: -len(x[0])):
         if p.startswith(prefix):
             if isinstance(mod, tuple):

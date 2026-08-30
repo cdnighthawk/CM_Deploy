@@ -54,6 +54,10 @@ There is **no** FCM / device-token endpoint. Android stubs registration.
       "name": "Job name",
       "city": "Phoenix",
       "state": "AZ",
+      "address_line1": "100 Main St",
+      "address_line2": null,
+      "postal_code": "85004",
+      "siteAddress": "100 Main St",
       "status": "active",
       "project_type": "commercial",
       "updated_at": "<iso>",
@@ -243,6 +247,114 @@ If the project has `latitude`/`longitude` and the punch is outside `geofence_rad
 
 ---
 
+## Punch lists (field)
+
+Reuse `GET/POST /api/v1/projects/:id/issues` with `source_type`:
+
+- `punch` — owner / GC punch list (shared)
+- `crew_punch` — internal QC comments. Create with `{title, description?, room, photo_id?, source_type: "crew_punch"}`. `room` is stored as `sheet_number`; `photo_id` is stored as `source_id`. Response includes `room` and `photo_id`.
+- `inspection` — field inspections (`title`, `description` notes, `due_date` / `scheduled_date`, `status`)
+
+`GET /api/v1/issues/:id` and `PATCH /api/v1/issues/:id/status` wrap the row as `{issue, entity}`.
+
+## RFIs (field)
+
+`GET /api/v1/projects/:id/rfis` → `{items[]}`.  
+`GET /api/v1/rfis/:id` → `{item}` with question and official response.
+
+## Schedule (field)
+
+`GET /api/v1/projects/:id/schedule-items` → `{items[]}` with `title`, `start_date`, `end_date`, `crew_label`, `assignee_name`.
+
+---
+
+## Daily pretask (safety)
+
+Appendix E daily pre-task safety plan. One row per **project + work date + crew lead**. Opening “today” **gets or creates** a draft for the signed-in user. Website and phone app share this payload. Apply migration `0075_daily_pretasks`.
+
+Needs **projects** read for the get-or-create path, and **safety or projects write** to save / submit (`/api/v1/daily-pretasks/...`).
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/projects/:id/daily-pretasks?date=YYYY-MM-DD` |
+| POST | `/api/v1/projects/:id/daily-pretasks` |
+| PUT | `/api/v1/daily-pretasks/:id` |
+| POST | `/api/v1/daily-pretasks/:id/submit` |
+| GET | `/api/v1/safety/summary` |
+| GET | `/api/v1/safety/pretasks?project_id=&date=&from=&to=&status=&limit=` |
+| GET | `/api/v1/safety/pretasks/:id` |
+
+`GET` get-or-create and `POST` create accept optional `client_id` (device UUID). Replaying it returns the existing row (`created: false`).
+
+**Item:**
+
+```json
+{
+  "id": "<uuid>",
+  "project_id": "<uuid>",
+  "project_name": "Job name",
+  "project_number": "26-104",
+  "work_date": "2026-08-29",
+  "crew_lead_user_id": "<uuid>",
+  "crew_lead_name": "Jane Lead",
+  "daily_report_id": null,
+  "client_id": null,
+  "company_name": "DOCON, INC",
+  "area_of_work": "basement/kitchen",
+  "status": "draft",
+  "checklist": {
+    "supervisor_walkthrough": false,
+    "coordination_other_crafts": false,
+    "equipment_check": false,
+    "training_complete": false,
+    "sufficient_personnel": false
+  },
+  "tasks": [
+    {"jha_complete": false, "task": "Move Material", "hazards": "Cut hands", "steps": "Wear cut-resistant gloves"}
+  ],
+  "near_miss": false,
+  "near_miss_notes": "",
+  "required_permits": "",
+  "items_concerns": "",
+  "quality_previous_day": "",
+  "present_items_concerns": "",
+  "attendees": [{"print_name": "Jane Crew", "signature": "<name or data-url>"}],
+  "supervisor_name": "Charles Dossett",
+  "supervisor_signature": "<name or data-url>",
+  "submitted_at": null,
+  "created_at": "<iso>",
+  "updated_at": "<iso>"
+}
+```
+
+Submit requires: all five checklist boxes, at least one task with `task` text, `area_of_work`, and `supervisor_name`. `status: submitted` locks further field edits (admin / safety manager / superuser can still edit).
+
+Offline: queue the JSON; use `client_id` so a retry does not create a second plan. Last-write-wins on PUT of a draft.
+
+Phone-app implementation notes: `mobile/SAFETY.md`.
+
+---
+
+## Safety documents (company programs + project packet)
+
+Cal/OSHA packet generator. Templates live in `docs/safety-automation/templates/`. Apply migration `0076_safety_docs`. Company profile write and packet publish need **safety admin**. Project profile save / regenerate need **safety write** and project access. Employees with **safety read** see published company programs and published packets only.
+
+| Method | Path |
+|--------|------|
+| GET / PUT | `/api/v1/safety/company-profile` |
+| POST | `/api/v1/safety/company-docs/regenerate` |
+| GET | `/api/v1/safety/company-docs` |
+| GET | `/api/v1/safety/company-docs/:slug` (`Accept: text/html` or `?format=html`) |
+| GET / PUT | `/api/v1/projects/:id/safety-profile` |
+| POST | `/api/v1/projects/:id/safety-packet/regenerate` |
+| GET | `/api/v1/projects/:id/safety-packet` |
+| GET | `/api/v1/projects/:id/safety-packet/preview` |
+| POST | `/api/v1/projects/:id/safety-packet/publish` |
+
+Publish returns **400** when required fields are empty (superintendent name + phone, muster, hospital name + phone, who calls 911, 911 directions, address line1 or city). Regenerate still stores a **DRAFT** HTML packet with the watermark.
+
+---
+
 ## iOS / Expo parity
 
-Use these JSON shapes. Do not introduce a second payload. Expo today calls auth, projects, and drawings only; Android also uses submittals + the new daily-report and photo routes.
+Use these JSON shapes. Do not introduce a second payload. Expo today calls auth, projects, and drawings only; Android also uses submittals + the new daily-report and photo routes. Daily pretask is live on the API and website; wire it next on both field clients.

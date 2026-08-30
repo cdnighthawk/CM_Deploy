@@ -1,0 +1,48 @@
+{
+  "legalName": "DOCON, INC.",
+  "dba": "US Interior Specialties",
+  "shortName": "DOCON",
+  "iippAdministrator": {
+    "name": "Charles Dossett",
+    "title": "President / CEO / IIPP Administrator",
+    "phone": "(209) 857-8556",
+    "email": ""
+  },
+  "afterHoursPhone": "(209) 857-8556",
+  "phones": {
+    "office": "(209) 857-8556",
+    "safety": "(209) 857-8556"
+  },
+  "addresses": {
+    "primary": {
+      "line1": "43214 Black Deer Loop, Ste. 108",
+      "line2": "",
+      "city": "Temecula",
+      "state": "CA",
+      "zip": "92590"
+    },
+    "mailing": {
+      "line1": "43214 Black Deer Loop, Ste. 108",
+      "city": "Temecula",
+      "state": "CA",
+      "zip": "92590"
+    }
+  },
+  "calOsha": {
+    "jurisdiction": "California",
+    "seriousInjuryRule": "Report a serious injury, illness, or death to the nearest Cal/OSHA district office as soon as possible but no later than 8 hours (8 CCR 342).",
+    "consultationNote": "Cal/OSHA Consultation is available at no cost and does not issue citations."
+  },
+  "languages": ["English", "Spanish"],
+  "trades": [
+    "Interior specialties",
+    "Commercial interiors",
+    "Ladders and mobile elevating work platforms as used",
+    "Light demolition / patch associated with interiors"
+  ],
+  "documentReview": {
+    "iippMonths": 12,
+    "wvppMonths": 12,
+    "heatMonth": 4
+  }
+}

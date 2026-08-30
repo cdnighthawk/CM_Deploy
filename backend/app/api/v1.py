@@ -1255,6 +1255,25 @@ def list_estimate_queue():
     return _jsonify({"items": [ser.desktop_queue_item(r) for r in rows]})
 
 
+@bp.get("/project-queue")
+def list_project_queue():
+    """Desktop Projects → Queue. Same set as the website Projects board."""
+    from ..permissions.project_scope import can_see_all_projects, project_access_clause
+
+    cu = current_user()
+    filt = and_(Project.deleted_at.is_(None), project_access_clause(cu))
+    if can_see_all_projects(cu):
+        filt = and_(filt, Project.status != "planning")
+    q = (
+        select(Project)
+        .where(filt)
+        .order_by(Project.number.desc().nullslast(), Project.name.asc())
+        .limit(2000)
+    )
+    rows = db.session.scalars(q).all()
+    return _jsonify({"items": [ser.desktop_project_queue_item(r) for r in rows]})
+
+
 @bp.get("/projects")
 def list_projects():
     """Active directory jobs (``projects``), excluding soft-deleted rows."""
@@ -4720,3 +4739,9 @@ _auth_mobile.register_mobile_auth_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)
+from . import _safety_routes as _safety_routes_mod  # noqa: E402
+
+_safety_routes_mod.register_safety_routes(bp)
+from . import _safety_docs_routes as _safety_docs_routes_mod  # noqa: E402
+
+_safety_docs_routes_mod.register_safety_docs_routes(bp)

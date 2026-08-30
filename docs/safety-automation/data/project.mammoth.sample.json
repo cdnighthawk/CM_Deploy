@@ -1,0 +1,105 @@
+{
+  "projectName": "Mammoth Lakes Civic Center",
+  "projectNumber": "MLCC-001",
+  "clientName": "",
+  "gcName": "",
+  "roleOnSite": "subcontractor",
+  "address": {
+    "line1": "",
+    "city": "Mammoth Lakes",
+    "state": "CA",
+    "zip": "93546",
+    "county": "Mono"
+  },
+  "accessNotes": "Check in with GC superintendent. Visitors report to job trailer.",
+  "startDate": "2026-01-01",
+  "endDate": "",
+  "crewSizeTypical": 8,
+  "languagesOnSite": ["English", "Spanish"],
+  "superintendent": {
+    "name": "",
+    "title": "Superintendent",
+    "phone": "",
+    "email": ""
+  },
+  "projectManager": {
+    "name": "Charles Dossett",
+    "title": "Project Manager",
+    "phone": "(209) 857-8556",
+    "email": ""
+  },
+  "competentPersons": {
+    "firstAid": { "name": "", "phone": "" },
+    "lifts": { "name": "", "phone": "" },
+    "scaffolds": { "name": "", "phone": "" },
+    "silica": { "name": "", "phone": "" },
+    "fallProtection": { "name": "", "phone": "" }
+  },
+  "emergency": {
+    "musterPoint": "To be posted at job trailer / confirmed at orientation",
+    "secondaryMuster": "",
+    "whoCalls911": "Superintendent or designated employee on that shift",
+    "whoCallsCalOsha": "Charles Dossett",
+    "hospital": {
+      "name": "Mammoth Hospital",
+      "address": "85 Sierra Park Rd, Mammoth Lakes, CA 93546",
+      "phone": "(760) 934-3311",
+      "directions": "Confirm route at morning tailgate; winter roads may close."
+    },
+    "clinic": {
+      "name": "",
+      "address": "",
+      "phone": ""
+    },
+    "fireDept": "911 / Mammoth Lakes Fire Protection District",
+    "police": "911 / Mammoth Lakes Police Department",
+    "calOshaDistrictOffice": {
+      "name": "Cal/OSHA — confirm current district covering Mono County before mobilization",
+      "phone": "",
+      "address": ""
+    },
+    "cellCoverageReliable": false,
+    "radioChannel": "",
+    "directionsFor911": "Give civic center name, street address, floor/area, nearest cross street, and gate. If cell service fails, designated employee goes to nearest visible public road."
+  },
+  "climate": {
+    "outdoorWork": true,
+    "indoorWork": true,
+    "elevationFt": 7880,
+    "heatRisk": "moderate",
+    "coldIceSnow": true,
+    "wildfireSmokePossible": true,
+    "notes": "High elevation: dehydration and UV remain risks even on mild days. Winter: ice, snow, vehicle access, hypothermia. Indoor finish work may still hit 82F in unconditioned spaces."
+  },
+  "scope": {
+    "interiors": true,
+    "ladders": true,
+    "scaffolds": true,
+    "aerialLifts": true,
+    "powderActuatedTools": true,
+    "silicaCuttingGrinding": true,
+    "hotWork": false,
+    "electricalTempPower": true,
+    "occupiedBuilding": false,
+    "publicInterface": true,
+    "confinedSpace": false,
+    "excavation": false,
+    "craneOrHoist": false,
+    "steelErection": false,
+    "demolition": false,
+    "leadPaint": false,
+    "asbestosPossible": false
+  },
+  "ppeRequired": [
+    "Hard hat",
+    "Safety glasses",
+    "High-visibility vest when exposed to equipment or public traffic",
+    "Work boots with defined heel",
+    "Cut-resistant gloves as task requires",
+    "Hearing protection when noise requires raised voice",
+    "Fall protection when required by task"
+  ],
+  "chemicals": [],
+  "gcRulesStricter": "Follow GC site-specific rules when they are stricter than DOCON rules.",
+  "notes": "Replace blank names and phones before first day of work. Do not mobilize with empty superintendent or 911-caller fields."
+}

@@ -1,0 +1,142 @@
+{
+  "company": {
+    "legalName": "DOCON, INC.",
+    "dba": "US Interior Specialties",
+    "shortName": "DOCON",
+    "displayName": "DOCON, INC. dba US Interior Specialties",
+    "admin": {
+      "name": "Charles Dossett",
+      "title": "President / CEO / IIPP Administrator",
+      "phone": "(209) 857-8556",
+      "email": ""
+    },
+    "phone": {
+      "office": "(209) 857-8556",
+      "safety": "(209) 857-8556"
+    },
+    "afterHoursPhone": "(209) 857-8556",
+    "address": {
+      "block": "43214 Black Deer Loop, Ste. 108, Temecula, CA, 92590"
+    },
+    "languages": "English and Spanish"
+  },
+  "project": {
+    "name": "Mammoth Lakes Civic Center",
+    "number": "MLCC-001",
+    "client": "—",
+    "gc": "—",
+    "role": "subcontractor",
+    "address": {
+      "block": "Mammoth Lakes, CA, 93546",
+      "city": "Mammoth Lakes"
+    },
+    "accessNotes": "Check in with GC superintendent. Visitors report to job trailer.",
+    "startDate": "2026-01-01",
+    "endDate": "—",
+    "crewSize": 8,
+    "languages": "English, Spanish",
+    "superintendent": {
+      "name": "",
+      "title": "Superintendent",
+      "phone": "",
+      "email": ""
+    },
+    "pm": {
+      "name": "Charles Dossett",
+      "title": "Project Manager",
+      "phone": "(209) 857-8556",
+      "email": ""
+    },
+    "ppeList": "- Hard hat\n- Safety glasses\n- High-visibility vest when exposed to equipment or public traffic\n- Work boots with defined heel\n- Cut-resistant gloves as task requires\n- Hearing protection when noise requires raised voice\n- Fall protection when required by task",
+    "gcRules": "Follow GC site-specific rules when they are stricter than DOCON rules.",
+    "notes": "Replace blank names and phones before first day of work. Do not mobilize with empty superintendent or 911-caller fields."
+  },
+  "emergency": {
+    "muster": "To be posted at job trailer / confirmed at orientation",
+    "muster2": "—",
+    "who911": "Superintendent or designated employee on that shift",
+    "whoCalOsha": "Charles Dossett",
+    "hospital": {
+      "name": "Mammoth Hospital",
+      "address": "85 Sierra Park Rd, Mammoth Lakes, CA 93546",
+      "phone": "(760) 934-3311",
+      "directions": "Confirm route at morning tailgate; winter roads may close."
+    },
+    "clinic": {
+      "name": "",
+      "address": "",
+      "phone": ""
+    },
+    "fire": "911 / Mammoth Lakes Fire Protection District",
+    "police": "911 / Mammoth Lakes Police Department",
+    "calOsha": {
+      "name": "Cal/OSHA — confirm current district covering Mono County before mobilization",
+      "phone": "",
+      "address": ""
+    },
+    "cellOk": "No — use radio or runner",
+    "radio": "—",
+    "directions911": "Give civic center name, street address, floor/area, nearest cross street, and gate. If cell service fails, designated employee goes to nearest visible public road."
+  },
+  "climate": {
+    "outdoor": "Yes",
+    "indoor": "Yes",
+    "elevation": 7880,
+    "heatRisk": "moderate",
+    "cold": "Yes",
+    "smoke": "Yes",
+    "notes": "High elevation: dehydration and UV remain risks even on mild days. Winter: ice, snow, vehicle access, hypothermia. Indoor finish work may still hit 82F in unconditioned spaces."
+  },
+  "scope": {
+    "interiors": true,
+    "ladders": true,
+    "scaffolds": true,
+    "aerialLifts": true,
+    "powderActuatedTools": true,
+    "silicaCuttingGrinding": true,
+    "hotWork": false,
+    "electricalTempPower": true,
+    "occupiedBuilding": false,
+    "publicInterface": true,
+    "confinedSpace": false,
+    "excavation": false,
+    "craneOrHoist": false,
+    "steelErection": false,
+    "demolition": false,
+    "leadPaint": false,
+    "asbestosPossible": false
+  },
+  "cp": {
+    "firstAid": {
+      "name": "",
+      "phone": ""
+    },
+    "lifts": {
+      "name": "",
+      "phone": ""
+    },
+    "scaffolds": {
+      "name": "",
+      "phone": ""
+    },
+    "silica": {
+      "name": "",
+      "phone": ""
+    },
+    "fallProtection": {
+      "name": "",
+      "phone": ""
+    }
+  },
+  "chemicals": [],
+  "calOsha": {
+    "342Text": "Report a serious injury, illness, or death to the nearest Cal/OSHA district office as soon as possible but no later than 8 hours (8 CCR 342)."
+  },
+  "doc": {
+    "version": "0.1.0-draft",
+    "generatedAt": "2026-08-30T03:14:44.806Z",
+    "effectiveDate": "2026-01-01",
+    "nextReview": "12 months from effective date (heat: each April)",
+    "missingFields": "superintendent.name, superintendent.phone"
+  }
+}

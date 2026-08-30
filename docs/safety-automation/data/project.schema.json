@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "docon.project.schema",
+  "title": "DOCON Project Safety Profile",
+  "description": "All site-specific fields collected when a project is created. Documents merge these tokens automatically.",
+  "type": "object",
+  "required": [
+    "projectName",
+    "projectNumber",
+    "address",
+    "startDate",
+    "superintendent",
+    "scope"
+  ],
+  "properties": {
+    "projectName": { "type": "string" },
+    "projectNumber": { "type": "string" },
+    "clientName": { "type": "string" },
+    "gcName": { "type": "string" },
+    "roleOnSite": {
+      "type": "string",
+      "enum": ["subcontractor", "prime", "self-perform"]
+    },
+    "address": {
+      "type": "object",
+      "required": ["line1", "city", "state", "zip"],
+      "properties": {
+        "line1": { "type": "string" },
+        "line2": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string", "default": "CA" },
+        "zip": { "type": "string" },
+        "county": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" }
+      }
+    },
+    "accessNotes": { "type": "string", "description": "Gate, floor, badge, after-hours entry" },
+    "startDate": { "type": "string", "format": "date" },
+    "endDate": { "type": "string", "format": "date" },
+    "crewSizeTypical": { "type": "integer" },
+    "languagesOnSite": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "superintendent": { "$ref": "#/$defs/person" },
+    "projectManager": { "$ref": "#/$defs/person" },
+    "competentPersons": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/person" },
+      "description": "Keys: scaffold, fallProtection, silica, lifts, electrical, firstAid"
+    },
+    "emergency": {
+      "type": "object",
+      "required": ["musterPoint", "hospital"],
+      "properties": {
+        "musterPoint": { "type": "string" },
+        "secondaryMuster": { "type": "string" },
+        "whoCalls911": { "type": "string" },
+        "whoCallsCalOsha": { "type": "string" },
+        "hospital": { "$ref": "#/$defs/facility" },
+        "clinic": { "$ref": "#/$defs/facility" },
+        "fireDept": { "type": "string" },
+        "police": { "type": "string" },
+        "calOshaDistrictOffice": { "$ref": "#/$defs/facility" },
+        "cellCoverageReliable": { "type": "boolean" },
+        "radioChannel": { "type": "string" },
+        "directionsFor911": { "type": "string" }
+      }
+    },
+    "climate": {
+      "type": "object",
+      "properties": {
+        "outdoorWork": { "type": "boolean" },
+        "indoorWork": { "type": "boolean" },
+        "elevationFt": { "type": "integer" },
+        "heatRisk": { "type": "string", "enum": ["low", "moderate", "high"] },
+        "coldIceSnow": { "type": "boolean" },
+        "wildfireSmokePossible": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "description": "Only true items are generated into the SSSP.",
+      "properties": {
+        "interiors": { "type": "boolean", "default": true },
+        "ladders": { "type": "boolean", "default": true },
+        "scaffolds": { "type": "boolean" },
+        "aerialLifts": { "type": "boolean" },
+        "powderActuatedTools": { "type": "boolean" },
+        "silicaCuttingGrinding": { "type": "boolean" },
+        "hotWork": { "type": "boolean" },
+        "electricalTempPower": { "type": "boolean" },
+        "occupiedBuilding": { "type": "boolean" },
+        "publicInterface": { "type": "boolean" },
+        "confinedSpace": { "type": "boolean" },
+        "excavation": { "type": "boolean" },
+        "craneOrHoist": { "type": "boolean" },
+        "steelErection": { "type": "boolean" },
+        "demolition": { "type": "boolean" },
+        "leadPaint": { "type": "boolean" },
+        "asbestosPossible": { "type": "boolean" }
+      }
+    },
+    "ppeRequired": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "chemicals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["productName"],
+        "properties": {
+          "productName": { "type": "string" },
+          "manufacturer": { "type": "string" },
+          "sdsUrl": { "type": "string" },
+          "useLocation": { "type": "string" }
+        }
+      }
+    },
+    "gcRulesStricter": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "person": {
+      "type": "object",
+      "required": ["name", "phone"],
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    },
+    "facility": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "directions": { "type": "string" }
+      }
+    }
+  }
+}

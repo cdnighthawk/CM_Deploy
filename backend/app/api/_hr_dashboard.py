@@ -216,7 +216,9 @@ def register_hr_routes(bp: Blueprint) -> None:
             )
             or 0
         )
-        expiring_safety_certs_30d = 0
+        from ._safety_service import safety_cert_counts
+
+        expiring_safety_certs_30d = safety_cert_counts()["expiring_certs_30d"]
         pending_approvals_hr = 0
         applications_submitted = int(
             db.session.scalar(
@@ -314,7 +316,7 @@ def register_hr_routes(bp: Blueprint) -> None:
             {
                 "entity": "hr_dashboard_summary",
                 "stub": False,
-                "message": "Live counts from hr_* tables (safety cert snapshot still placeholder until Safety read model).",
+                "message": "Live counts from hr_* tables and safety_training_records.",
                 "counts": {
                     "pending_acknowledgments": pending_acknowledgments,
                     "onboarding_in_progress": onboarding_in_progress,

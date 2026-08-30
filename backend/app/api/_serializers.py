@@ -209,9 +209,28 @@ def primary_lead_detail_id_by_project_ids(project_ids: list[uuid.UUID]) -> dict[
     return out
 
 
+def desktop_project_queue_item(p: Project) -> dict[str, Any]:
+    """Shape expected by USISPdfApp ``CloudProject`` / ``GetProjectQueueAsync``."""
+    return {
+        "id": str(p.id),
+        "name": p.name or "",
+        "number": p.number,
+        "status": p.status,
+        "projectType": p.project_type,
+        "city": (p.city or "").strip() or None,
+        "state": (p.state or "").strip() or None,
+        "siteZip": (p.postal_code or "").strip() or None,
+        "siteAddress": (p.address_line1 or "").strip() or None,
+        "updatedAt": iso(p.updated_at),
+    }
+
+
 def project_public(p: Project, *, primary_lead_detail_id: str | None = None) -> dict[str, Any]:
     city = p.city.strip() if p.city else None
     state = p.state.strip() if p.state else None
+    street = (p.address_line1 or "").strip() or None
+    street2 = (p.address_line2 or "").strip() or None
+    postal = (p.postal_code or "").strip() or None
     d: dict[str, Any] = {
         "id": str(p.id),
         "number": p.number,
@@ -221,6 +240,10 @@ def project_public(p: Project, *, primary_lead_detail_id: str | None = None) -> 
         "status": p.status,
         "project_type": p.project_type,
         "updated_at": iso(p.updated_at),
+        "address_line1": street,
+        "address_line2": street2,
+        "postal_code": postal,
+        "siteAddress": street,
         "latitude": float(p.latitude) if p.latitude is not None else None,
         "longitude": float(p.longitude) if p.longitude is not None else None,
         "geofence_radius_m": int(p.geofence_radius_m) if p.geofence_radius_m is not None else 250,

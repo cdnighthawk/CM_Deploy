@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-daily-pretask.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+
+		@@include("elements/chatbox-construction.html")
+
+		@@include("elements/header-construction.html")
+
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "Daily pretask",
+				})
+			</div>
+
+			<div class="container-fluid">
+				<div class="usis-page-header pt-0">
+					<div class="usis-page-header__text">
+						<p class="text-muted small mb-0">Appendix E — Daily Pre-Task Safety Plan. Complete before production work. Same contract as the phone app.</p>
+						<p class="small mb-0" id="usis-pretask-meta"></p>
+					</div>
+					<div class="usis-page-header__actions">
+						<span class="usis-status-chip usis-status-chip--draft me-2" id="usis-pretask-status">Draft</span>
+						<a href="usis-safety.html" class="btn btn-outline-secondary btn-sm">Safety hub</a>
+					</div>
+				</div>
+
+				<div class="alert alert-danger d-none py-2" id="usis-pretask-err" role="alert"></div>
+				<div class="alert alert-success d-none py-2" id="usis-pretask-ok" role="status"></div>
+
+				<div class="card mb-3" id="usis-pretask-form">
+					<div class="card-body">
+						<div class="row g-2 align-items-end mb-3">
+							<div class="col-md-5">
+								<label class="form-label small mb-0" for="usis-pretask-project">Project</label>
+								<select class="form-select form-select-sm" id="usis-pretask-project"></select>
+							</div>
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-pretask-date">Date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-pretask-date">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-pretask-company">Company name</label>
+								<input type="text" class="form-control form-control-sm" id="usis-pretask-company" value="DOCON, INC">
+							</div>
+							<div class="col-md-2">
+								<button type="button" class="btn btn-sm btn-outline-primary w-100" id="usis-pretask-load" data-keep-enabled="1">Load / create</button>
+							</div>
+						</div>
+						<div class="mb-3">
+							<label class="form-label small mb-0" for="usis-pretask-area">Area of work</label>
+							<input type="text" class="form-control form-control-sm" id="usis-pretask-area" placeholder="e.g. basement/kitchen">
+						</div>
+
+						<h6 class="mb-2">Prior to the start of a task</h6>
+						<div id="usis-pretask-checklist" class="mb-3"></div>
+
+						<div class="d-flex justify-content-between align-items-center mb-2">
+							<h6 class="mb-0">Task analysis</h6>
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-pretask-add-task">Add task</button>
+						</div>
+						<div class="table-responsive mb-3">
+							<table class="table table-sm align-middle">
+								<thead>
+									<tr>
+										<th style="width: 4rem;">JHA</th>
+										<th>Task</th>
+										<th>Hazards</th>
+										<th>Steps to do it safely / tools &amp; equip.</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-pretask-tasks"></tbody>
+							</table>
+						</div>
+
+						<div class="row g-3 mb-3">
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-pretask-near-miss">Near misses</label>
+								<select class="form-select form-select-sm" id="usis-pretask-near-miss">
+									<option value="no">No</option>
+									<option value="yes">Yes (attach / describe)</option>
+								</select>
+								<textarea class="form-control form-control-sm mt-2" id="usis-pretask-near-miss-notes" rows="2" placeholder="Near-miss notes"></textarea>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-pretask-permits">Required permits</label>
+								<textarea class="form-control form-control-sm" id="usis-pretask-permits" rows="3"></textarea>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-pretask-concerns">Items / concerns</label>
+								<textarea class="form-control form-control-sm" id="usis-pretask-concerns" rows="3"></textarea>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-pretask-quality-prev">Quality — previous day&rsquo;s items</label>
+								<textarea class="form-control form-control-sm" id="usis-pretask-quality-prev" rows="2"></textarea>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-pretask-present">Present items / concerns</label>
+								<textarea class="form-control form-control-sm" id="usis-pretask-present" rows="2"></textarea>
+							</div>
+						</div>
+
+						<div class="d-flex justify-content-between align-items-center mb-2">
+							<h6 class="mb-0">Attendees</h6>
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-pretask-add-attendee">Add attendee</button>
+						</div>
+						<div class="table-responsive mb-3">
+							<table class="table table-sm">
+								<thead>
+									<tr>
+										<th>Print name</th>
+										<th>Signature</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-pretask-attendees"></tbody>
+							</table>
+						</div>
+
+						<div class="row g-2 mb-3">
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-pretask-supervisor">Printed name of supervisor</label>
+								<input type="text" class="form-control form-control-sm" id="usis-pretask-supervisor">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-pretask-supervisor-sig">Signature of supervisor</label>
+								<input type="text" class="form-control form-control-sm" id="usis-pretask-supervisor-sig" placeholder="Type name; phone app captures a drawn signature">
+							</div>
+						</div>
+
+						<div class="d-flex flex-wrap gap-2">
+							<button type="button" class="btn btn-outline-primary" id="usis-pretask-save">Save draft</button>
+							<button type="button" class="btn btn-primary" id="usis-pretask-submit">Submit plan</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-daily-pretask.js"></script>
+
+</body>
+</html>

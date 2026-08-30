@@ -834,10 +834,12 @@ def ensure_lead_workspace_project(row: LeadEstimate, cu) -> Project:
     project only when none exists. Does not award the lead.
     """
     from ..services.ingest import relink_documents_for_lead
+    from ..services.lead_workspace import collect_lead_artifacts
     from ..services.lead_workspace import ensure_lead_workspace_project as ensure_workspace
 
     proj = ensure_workspace(row, user_id=cu.id if cu is not None else None)
     relink_documents_for_lead(row)
+    collect_lead_artifacts(row, proj.id)
     db.session.commit()
     return proj
 
@@ -1505,6 +1507,49 @@ def run_project_drawing_hygiene(project_id: str):
         return _jsonify({"error": exc.message}), exc.status
 
 
+def _same_number_project_ids(pid: uuid.UUID) -> list[uuid.UUID]:
+    """This job plus any leftover workspace that still uses the same job number."""
+    project = db.session.get(Project, pid)
+    ids = [pid]
+    number = (getattr(project, "number", None) or "").strip()
+    if project is None or not number:
+        return ids
+    extras = db.session.scalars(
+        select(Project.id).where(
+            Project.deleted_at.is_(None),
+            func.lower(func.trim(Project.number)) == number.lower(),
+            Project.id != pid,
+        )
+    ).all()
+    ids.extend(extras)
+    return ids
+
+
+def _heal_same_number_drawings(pid: uuid.UUID) -> list[uuid.UUID]:
+    """If this job has no sheets, pull leftovers from the same job number onto it."""
+    ids = _same_number_project_ids(pid)
+    if len(ids) < 2:
+        return ids
+    dest_count = db.session.scalar(select(func.count()).select_from(Drawing).where(Drawing.project_id == pid)) or 0
+    if dest_count:
+        return ids
+    from ..services.lead_workspace import collect_lead_artifacts
+
+    lead = db.session.scalar(select(LeadEstimate).where(LeadEstimate.project_id == pid))
+    if lead is None:
+        project = db.session.get(Project, pid)
+        number = (getattr(project, "number", None) or "").strip()
+        if number:
+            lead = db.session.scalar(
+                select(LeadEstimate).where(func.lower(func.trim(LeadEstimate.number)) == number.lower())
+            )
+    if lead is None:
+        return ids
+    collect_lead_artifacts(lead, pid)
+    db.session.commit()
+    return [pid]
+
+
 @bp.get("/projects/<project_id>/drawings")
 def list_project_drawings(project_id: str):
     """Drawing log: one entry per sheet (``series_id``) with nested ``revisions`` (newest first)."""
@@ -1526,7 +1571,8 @@ def list_project_drawings(project_id: str):
     except ValueError:
         offset = 0
 
-    q = select(Drawing).where(Drawing.project_id == pid)
+    scope = _heal_same_number_drawings(pid)
+    q = select(Drawing).where(Drawing.project_id.in_(scope))
     q = q.order_by(Drawing.sheet_number.asc().nullslast(), Drawing.updated_at.desc())
     rows = list(db.session.scalars(q).all())
 
@@ -4063,7 +4109,7 @@ def award_lead_estimate(identifier: str):
 
     Awarding a locked/approved estimate is allowed — lock only blocks takeoff edits.
     """
-    from ..services.lead_workspace import attach_lead_and_estimates
+    from ..services.lead_workspace import attach_lead_and_estimates, collect_lead_artifacts
     from ..services.lead_workspace import ensure_lead_workspace_project as ensure_workspace
 
     row = _resolve_lead(identifier)
@@ -4091,8 +4137,10 @@ def award_lead_estimate(identifier: str):
         city_raw, state_raw = loc.get("city"), loc.get("state")
         city = str(city_raw).strip() if city_raw else None
         state = str(state_raw).strip() if state_raw else None
+        number = (row.number or "").strip() or None
         proj = Project(
             name=name,
+            number=number[:50] if number else None,
             status="active",
             project_type="commercial",
             city=city,
@@ -4104,6 +4152,8 @@ def award_lead_estimate(identifier: str):
     else:
         proj = ensure_workspace(row, user_id=cu.id if cu is not None else None)
         attach_lead_and_estimates(row, proj.id)
+    if row.project_id:
+        collect_lead_artifacts(row, row.project_id)
     awarded = db.session.get(Project, row.project_id) if row.project_id else None
     if awarded is not None and awarded.status == "planning":
         awarded.status = "active"

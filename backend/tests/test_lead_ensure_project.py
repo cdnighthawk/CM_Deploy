@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.extensions import db
 from datetime import datetime, timezone
 
-from app.models import Estimate, LeadEstimate, Project, SpecSection
+from app.models import Drawing, Estimate, LeadEstimate, Project, SpecSection
 
 
 def test_ensure_project_creates_planning_workspace(client):
@@ -181,3 +181,75 @@ def test_award_allows_locked_estimate(client):
         assert est is not None
         assert est.status == "awarded"
         assert est.estimate_locked_at is not None
+
+
+def test_award_moves_drawings_from_same_number_workspace(client):
+    number = "25270-" + uuid.uuid4().hex[:6]
+    with client.application.app_context():
+        leftover = Project(name="Planning leftover", number=number, status="planning")
+        job = Project(name="Awarded job", number=number, status="active")
+        db.session.add_all([leftover, job])
+        db.session.flush()
+        drawing = Drawing(
+            project_id=leftover.id,
+            title="A0-000",
+            sheet_number="A0-000",
+            original_filename="A0-000.pdf",
+            mime_type="application/pdf",
+        )
+        spec = SpecSection(project_id=leftover.id, code="10 14 00", title="Signage")
+        lead = LeadEstimate(
+            external_id="le-award-move-" + uuid.uuid4().hex[:8],
+            name="Proton leftover",
+            number=number,
+            project_id=job.id,
+        )
+        db.session.add_all([drawing, spec, lead])
+        db.session.commit()
+        leftover_id = leftover.id
+        job_id = job.id
+        drawing_id = drawing.id
+        spec_id = spec.id
+        lead_ext = lead.external_id
+
+    awarded = client.post(f"/api/v1/lead-estimates/{lead_ext}/award", json={})
+    assert awarded.status_code == 200, awarded.get_data(as_text=True)
+    assert awarded.get_json()["project_id"] == str(job_id)
+
+    with client.application.app_context():
+        assert db.session.get(Drawing, drawing_id).project_id == job_id
+        assert db.session.get(SpecSection, spec_id).project_id == job_id
+        assert db.session.get(Project, leftover_id) is not None
+
+
+def test_list_drawings_includes_same_number_workspace(client):
+    number = "25270-" + uuid.uuid4().hex[:6]
+    with client.application.app_context():
+        leftover = Project(name="Planning leftover", number=number, status="planning")
+        job = Project(name="Awarded job", number=number, status="active")
+        db.session.add_all([leftover, job])
+        db.session.flush()
+        drawing = Drawing(
+            project_id=leftover.id,
+            title="A0-103",
+            sheet_number="A0-103",
+            original_filename="A0-103.pdf",
+            mime_type="application/pdf",
+        )
+        lead = LeadEstimate(
+            external_id="le-list-move-" + uuid.uuid4().hex[:8],
+            name="Proton leftover",
+            number=number,
+            project_id=job.id,
+        )
+        db.session.add_all([drawing, lead])
+        db.session.commit()
+        job_id = str(job.id)
+        drawing_id = drawing.id
+
+    listed = client.get(f"/api/v1/projects/{job_id}/drawings")
+    assert listed.status_code == 200, listed.get_data(as_text=True)
+    sheets = listed.get_json()["items"]
+    assert any(s.get("sheet_number") == "A0-103" for s in sheets)
+    with client.application.app_context():
+        assert db.session.get(Drawing, drawing_id).project_id == uuid.UUID(job_id)

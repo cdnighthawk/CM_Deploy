@@ -24,6 +24,98 @@
 		return item.lead_id || item.lead_estimate_id || lead.id || item.external_id || null;
 	}
 
+	function jobProjectId(item) {
+		if (!item) return null;
+		var lead = item.lead || {};
+		return item.project_id || lead.project_id || null;
+	}
+
+	function isAwardedJob(item) {
+		if (!item) return false;
+		var lead = item.lead || {};
+		var stage = String(lead.crm_stage || item.crm_stage || "").toLowerCase();
+		var estStatus = String(item.status || "").toLowerCase();
+		return (stage === "awarded" || estStatus === "awarded") && !!jobProjectId(item);
+	}
+
+	function syncConvertJobButtons(item) {
+		var convertBtn = document.getElementById("usis-estd-convert-job");
+		var openBtn = document.getElementById("usis-estd-open-job");
+		var pid = jobProjectId(item);
+		var awarded = isAwardedJob(item);
+		var canConvert = !!(item && parentLeadId(item) && !awarded);
+		if (convertBtn) {
+			convertBtn.classList.toggle("d-none", !canConvert);
+			convertBtn.disabled = false;
+		}
+		if (openBtn) {
+			if (pid && awarded) {
+				openBtn.classList.remove("d-none");
+				openBtn.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(pid));
+			} else {
+				openBtn.classList.add("d-none");
+				openBtn.removeAttribute("href");
+			}
+		}
+	}
+
+	function convertEstimateToJob() {
+		var leadId = parentLeadId(leadItem);
+		if (!leadId) {
+			flashErr("This estimate is not attached to a lead, so it cannot become a job.");
+			return;
+		}
+		if (isAwardedJob(leadItem)) {
+			flashOk("This estimate is already a job.");
+			return;
+		}
+		if (!window.confirm("Turn this estimate into an active job? The lead will be marked Awarded.")) {
+			return;
+		}
+		var convertBtn = document.getElementById("usis-estd-convert-job");
+		if (convertBtn) convertBtn.disabled = true;
+		var body = {};
+		if (leadItem && leadItem.id) body.estimate_id = leadItem.id;
+		var req = Api
+			? Api.awardLead(leadId, body)
+			: fetch(apiBaseTrimmed() + "/api/v1/lead-estimates/" + encodeURIComponent(leadId) + "/award", {
+					method: "POST",
+					credentials: "include",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					body: JSON.stringify(body),
+				}).then(function (r) {
+					return r.text().then(function (text) {
+						var j = {};
+						try {
+							j = text ? JSON.parse(text) : {};
+						} catch (eAward) {
+							j = {};
+						}
+						if (!r.ok) throw new Error(mapApiError(j, r.status));
+						return j;
+					});
+				});
+		req
+			.then(function (data) {
+				flashOk("Job created.");
+				var pid = (data && data.project_id) || (data && data.item && data.item.project_id) || null;
+				return loadDetail().then(function () {
+					if (!pid) return;
+					var openBtn = document.getElementById("usis-estd-open-job");
+					if (openBtn) {
+						openBtn.classList.remove("d-none");
+						openBtn.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(pid));
+					}
+				});
+			})
+			.catch(function (e) {
+				flashErr(e.message || String(e));
+			})
+			.finally(function () {
+				if (convertBtn) convertBtn.disabled = false;
+			});
+	}
+
 	function rowStatusEl(tr) {
 		return tr ? tr.querySelector(".usis-est-row-status") : null;
 	}
@@ -773,6 +865,7 @@
 		if (wrap) wrap.classList.add("d-none");
 		var rev = document.getElementById("usis-estd-revision");
 		if (rev) rev.classList.add("d-none");
+		syncConvertJobButtons(null);
 		showErr("");
 		fireEstimateLoaded(lead, null, { missingEstimate: true });
 	}
@@ -802,6 +895,7 @@
 		if (wrap) wrap.classList.remove("d-none");
 		var rev = document.getElementById("usis-estd-revision");
 		if (rev) rev.classList.remove("d-none");
+		syncConvertJobButtons(item);
 		fireEstimateLoaded(item, null);
 	}
 
@@ -1037,6 +1131,8 @@
 				compactBtn.textContent = on ? "Comfortable density" : "Compact density";
 			});
 		}
+		var convertJob = document.getElementById("usis-estd-convert-job");
+		if (convertJob) convertJob.addEventListener("click", convertEstimateToJob);
 		var newEst = document.getElementById("usis-estd-new-estimate");
 		if (newEst) newEst.addEventListener("click", function () {
 			openCreateEstimate({});

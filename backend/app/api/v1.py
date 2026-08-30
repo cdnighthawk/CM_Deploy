@@ -4055,42 +4055,73 @@ def ensure_lead_estimate_project(identifier: str):
 
 @bp.post("/lead-estimates/<identifier>/award")
 def award_lead_estimate(identifier: str):
-    """Create or attach a ``Project``, mark CRM stage Awarded, propagate ``project_id`` to takeoff lines."""
+    """Create or attach a ``Project``, mark CRM stage Awarded, propagate ``project_id`` to takeoff lines.
+
+    Awarding a locked/approved estimate is allowed — lock only blocks takeoff edits.
+    """
+    from ..services.lead_workspace import attach_lead_and_estimates
+    from ..services.lead_workspace import ensure_lead_workspace_project as ensure_workspace
+
     row = _resolve_lead(identifier)
     if row is None:
         return _jsonify({"error": "lead estimate not found"}), 404
-    if _lead_estimate_is_locked(row):
-        return (
-            _jsonify({"error": "estimate is locked; unlock before awarding / linking project", "error_code": "ESTIMATE_LOCKED"}),
-            403,
-        )
     data = request.get_json(silent=True)
     if not isinstance(data, Mapping):
         data = {}
     pid = _parse_uuid_param(str(data.get("project_id") or "").strip())
+    estimate_id = _parse_uuid_param(str(data.get("estimate_id") or "").strip())
+    est = None
+    if estimate_id:
+        est = db.session.get(Estimate, estimate_id)
+        if est is None or est.lead_estimate_id != row.id:
+            return _jsonify({"error": "estimate not found for this lead"}), 404
+    cu = current_user()
     if pid:
         if not _project_exists(pid):
             return _jsonify({"error": "project not found"}), 404
-        row.project_id = pid
-    elif row.project_id and not data.get("create_new_project"):
-        pass
-    else:
+        attach_lead_and_estimates(row, pid)
+    elif data.get("create_new_project"):
         name_raw = data.get("project_name") or row.name or row.number or "Awarded project"
         name = str(name_raw).strip()[:255] or "Awarded project"
-        proj = Project(name=name, status="active", project_type="commercial")
+        loc = row.location if isinstance(row.location, Mapping) else {}
+        city_raw, state_raw = loc.get("city"), loc.get("state")
+        city = str(city_raw).strip() if city_raw else None
+        state = str(state_raw).strip() if state_raw else None
+        proj = Project(
+            name=name,
+            status="active",
+            project_type="commercial",
+            city=city,
+            state=state,
+        )
         db.session.add(proj)
         db.session.flush()
-        row.project_id = proj.id
+        attach_lead_and_estimates(row, proj.id)
+    else:
+        proj = ensure_workspace(row, user_id=cu.id if cu is not None else None)
+        attach_lead_and_estimates(row, proj.id)
     awarded = db.session.get(Project, row.project_id) if row.project_id else None
     if awarded is not None and awarded.status == "planning":
         awarded.status = "active"
     row.crm_stage = "Awarded"
+    if est is None:
+        est = est_svc.current_estimate_for_lead(row)
+    if est is not None:
+        est.status = "awarded"
+        if row.project_id and est.project_id is None:
+            est.project_id = row.project_id
     for line in row.takeoff_lines:
         line.project_id = row.project_id
     for opening in row.door_openings:
         opening.project_id = row.project_id
     db.session.commit()
-    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+    return _jsonify(
+        {
+            "item": _lead_estimate_detail(row, estimate=est),
+            "project_id": str(row.project_id) if row.project_id else None,
+            "entity": "lead_estimate",
+        }
+    )
 
 
 @bp.post("/lead-estimates/<identifier>/ai-feasibility")

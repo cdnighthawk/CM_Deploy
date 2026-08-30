@@ -115,6 +115,14 @@
 		});
 	}
 
+	function awardLead(leadId, body) {
+		return fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(leadId) + "/award", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body || {}),
+		});
+	}
+
 	/**
 	 * Resolve a URL id that may be either an estimate UUID or a lead id.
 	 * A lead without an estimate is not an error — Job information still loads.
@@ -179,6 +187,7 @@
 		getLead: getLead,
 		listDrawingSets: listDrawingSets,
 		postEstimateAction: postEstimateAction,
+		awardLead: awardLead,
 		resolveEstimateId: resolveEstimateId,
 		feeToPercent: feeToPercent,
 		percentToFee: percentToFee,

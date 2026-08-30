@@ -6,7 +6,9 @@ import uuid
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import LeadEstimate, Project, SpecSection
+from datetime import datetime, timezone
+
+from app.models import Estimate, LeadEstimate, Project, SpecSection
 
 
 def test_ensure_project_creates_planning_workspace(client):
@@ -109,3 +111,73 @@ def test_award_promotes_planning_workspace(client):
         proj = db.session.get(Project, uuid.UUID(pid))
         assert proj is not None
         assert proj.status == "active"
+
+
+def test_award_creates_active_job_and_marks_estimate(client):
+    eid = "test-award-est-" + uuid.uuid4().hex[:10]
+    with client.application.app_context():
+        le = LeadEstimate(external_id=eid, name="Convert estimate", number="CJ-" + uuid.uuid4().hex[:8])
+        db.session.add(le)
+        db.session.flush()
+        est = Estimate(lead_estimate_id=le.id, name="Bid set", status="draft", is_current=True)
+        db.session.add(est)
+        db.session.commit()
+        estimate_id = str(est.id)
+
+    awarded = client.post(
+        f"/api/v1/lead-estimates/{eid}/award",
+        json={"estimate_id": estimate_id},
+    )
+    assert awarded.status_code == 200, awarded.get_data(as_text=True)
+    body = awarded.get_json()
+    item = body["item"]
+    assert body["project_id"]
+    assert item["project_id"] == body["project_id"]
+    assert item["crm_stage"] == "Awarded"
+
+    with client.application.app_context():
+        proj = db.session.get(Project, uuid.UUID(body["project_id"]))
+        assert proj is not None
+        assert proj.status == "active"
+        est = db.session.get(Estimate, uuid.UUID(estimate_id))
+        assert est is not None
+        assert est.status == "awarded"
+        assert str(est.project_id) == body["project_id"]
+
+
+def test_award_allows_locked_estimate(client):
+    eid = "test-award-lock-" + uuid.uuid4().hex[:10]
+    with client.application.app_context():
+        le = LeadEstimate(
+            external_id=eid,
+            name="Locked award",
+            number="CJ-" + uuid.uuid4().hex[:8],
+            estimate_locked_at=datetime.now(timezone.utc),
+        )
+        db.session.add(le)
+        db.session.flush()
+        est = Estimate(
+            lead_estimate_id=le.id,
+            name="Locked bid",
+            status="submitted",
+            is_current=True,
+            estimate_locked_at=datetime.now(timezone.utc),
+        )
+        db.session.add(est)
+        db.session.commit()
+        estimate_id = str(est.id)
+
+    awarded = client.post(
+        f"/api/v1/lead-estimates/{eid}/award",
+        json={"estimate_id": estimate_id},
+    )
+    assert awarded.status_code == 200, awarded.get_data(as_text=True)
+    item = awarded.get_json()["item"]
+    assert item["crm_stage"] == "Awarded"
+    assert item["project_id"]
+
+    with client.application.app_context():
+        est = db.session.get(Estimate, uuid.UUID(estimate_id))
+        assert est is not None
+        assert est.status == "awarded"
+        assert est.estimate_locked_at is not None

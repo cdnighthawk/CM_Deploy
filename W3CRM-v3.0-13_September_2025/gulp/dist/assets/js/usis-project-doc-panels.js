@@ -526,22 +526,21 @@
 		}
 
 		function ensureCurrentDrawingsButton(setSel) {
-			if (!setSel || !setSel.parentNode) return;
-			var host = setSel.parentNode;
-			var wrap = host.querySelector(".usis-drawing-set-row");
-			if (!wrap) {
-				wrap = document.createElement("div");
-				wrap.className = "d-flex flex-wrap align-items-center gap-1 usis-drawing-set-row";
-				host.insertBefore(wrap, setSel);
-				wrap.appendChild(setSel);
+			if (!setSel) return;
+			var toolbar = setSel.closest(".usis-tool-toolbar");
+			var btn = toolbar && toolbar.querySelector(".usis-drawing-set-current");
+			if (!btn) {
+				btn = document.createElement("button");
+				btn.type = "button";
+				btn.className = "btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap";
+				btn.textContent = "Current";
+				btn.title = "Latest revision of each sheet";
+				var host = setSel.closest(".usis-sheet-filter") || setSel.parentNode;
+				if (!host || !host.parentNode) return;
+				host.insertAdjacentElement("afterend", btn);
 			}
-			if (wrap.querySelector(".usis-drawing-set-current")) return;
-			var btn = document.createElement("button");
-			btn.type = "button";
-			btn.className = "btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap";
-			btn.textContent = "Current drawings";
-			btn.title = "Latest revision of each sheet";
-			wrap.appendChild(btn);
+			if (btn.dataset.usisBound === "1") return;
+			btn.dataset.usisBound = "1";
 			btn.addEventListener("click", function () {
 				setSel.value = "";
 				applyDrawingFilter();

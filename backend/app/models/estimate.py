@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
@@ -44,6 +44,7 @@ class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="draft", server_default="draft")
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    bid_location: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     due_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True, comment="Target due date for this estimate version"

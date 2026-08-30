@@ -17,6 +17,7 @@ from ..api._lead_estimate_queries import _not_archived_or_declined, _not_grouped
 from ..extensions import db
 from ..models import Document, Drawing, LeadEstimate, Project
 from .drawing_upload import _create_drawing_row
+from .lead_workspace import attach_lead_and_estimates, ensure_lead_workspace_project
 from .object_storage import StorageError, UploadCategory, save_upload
 
 _UUID_RE = re.compile(
@@ -229,6 +230,7 @@ def list_ingest_projects(query: str = "") -> list[dict[str, Any]]:
 
 def resolve_ingest_project(metadata: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     project_id = as_uuid(metadata.get("project_id") or metadata.get("projectId"))
+    lead_estimate_id = as_uuid(metadata.get("lead_estimate_id") or metadata.get("leadEstimateId"))
     folder_name = text(
         metadata.get("folder_name") or metadata.get("folderName") or metadata.get("project_folder")
     )
@@ -250,6 +252,11 @@ def resolve_ingest_project(metadata: dict[str, Any]) -> tuple[dict[str, Any] | N
         lead = db.session.get(LeadEstimate, project_id)
         if lead is not None:
             return project_from_lead(lead), "project_id"
+
+    if lead_estimate_id:
+        lead = db.session.get(LeadEstimate, lead_estimate_id)
+        if lead is not None:
+            return project_from_lead(lead), "lead_estimate_id"
 
     if project_number:
         job = db.session.scalar(
@@ -275,6 +282,116 @@ def resolve_ingest_project(metadata: dict[str, Any]) -> tuple[dict[str, Any] | N
     return None, None
 
 
+def bind_ingest_workspace(project: dict[str, Any] | None) -> tuple[uuid.UUID | None, dict[str, Any] | None]:
+    """Ensure a real Project row and return (job_id, refreshed ingest project).
+
+    Desktop Connector often matches a lead that has no ``projects`` row yet.
+    Drawings only store ``documents.project_id``, so we create the same planning
+    workspace the website uses and attach the lead plus its estimates.
+    """
+    if not project:
+        return None, None
+    lead_id = as_uuid(project.get("lead_estimate_id"))
+    if project.get("kind") == "job":
+        job_id = as_uuid(project.get("job_id") or project.get("id"))
+        if job_id and lead_id:
+            lead = db.session.get(LeadEstimate, lead_id)
+            if lead is not None:
+                attach_lead_and_estimates(lead, job_id)
+                return job_id, project_from_lead(lead)
+        return job_id, project
+    lead = db.session.get(LeadEstimate, as_uuid(project.get("id")) or lead_id)
+    if lead is None:
+        return as_uuid(project.get("job_id")), project
+    workspace = ensure_lead_workspace_project(lead)
+    return workspace.id, project_from_lead(lead)
+
+
+def _folder_hint_from_path(raw: str) -> str:
+    path = text(raw).replace("\\", "/").strip("/")
+    if not path:
+        return ""
+    return path.split("/")[0]
+
+
+def ingest_hints_from_document(doc: Document) -> dict[str, Any]:
+    tags = _document_tags(doc)
+    source_id = text(tags.get("source_id") or tags.get("sourceId") or tags.get("relative_path"))
+    folder_name = text(tags.get("folder_name") or tags.get("folderName")) or _folder_hint_from_path(source_id)
+    return {
+        "project_id": tags.get("project_id") or tags.get("projectId"),
+        "lead_estimate_id": tags.get("lead_estimate_id") or tags.get("leadEstimateId"),
+        "project_number": tags.get("project_number") or tags.get("projectNumber"),
+        "folder_name": folder_name,
+    }
+
+
+def relink_documents_for_lead(lead: LeadEstimate) -> int:
+    """Attach unassigned docs already tagged with this lead to its workspace project."""
+    if lead.project_id is None:
+        return 0
+    rows = list(
+        db.session.scalars(
+            select(Document).where(
+                Document.project_id.is_(None),
+                Document.tags.contains({"lead_estimate_id": str(lead.id)}),
+            )
+        ).all()
+    )
+    for doc in rows:
+        doc.project_id = lead.project_id
+    return len(rows)
+
+
+def relink_unassigned_documents(*, limit: int = 2000) -> dict[str, Any]:
+    """Attach B2 drawings/docs that have no ``project_id`` to a matched job."""
+    rows = list(
+        db.session.scalars(
+            select(Document)
+            .where(Document.project_id.is_(None))
+            .order_by(Document.created_at.asc(), Document.id.asc())
+            .limit(max(1, min(int(limit), 5000)))
+        ).all()
+    )
+    linked: list[dict[str, Any]] = []
+    leftover = 0
+    for doc in rows:
+        hints = ingest_hints_from_document(doc)
+        lead_id = as_uuid(hints.get("lead_estimate_id"))
+        project, matched_by = resolve_ingest_project(hints)
+        if project is None and lead_id:
+            lead = db.session.get(LeadEstimate, lead_id)
+            if lead is not None:
+                project, matched_by = project_from_lead(lead), "lead_estimate_id"
+        job_id, project = bind_ingest_workspace(project)
+        if job_id is None:
+            leftover += 1
+            continue
+        doc.project_id = job_id
+        tags = _document_tags(doc)
+        if project and project.get("lead_estimate_id"):
+            tags["lead_estimate_id"] = project["lead_estimate_id"]
+        if project and project.get("project_number"):
+            tags["project_number"] = project["project_number"]
+        doc.tags = tags
+        linked.append(
+            {
+                "id": str(doc.id),
+                "documentType": doc.document_type,
+                "projectId": str(job_id),
+                "matchedBy": matched_by,
+                "filename": doc.original_filename or doc.title,
+            }
+        )
+    return {
+        "entity": "drawing_relink",
+        "scanned": len(rows),
+        "linked": len(linked),
+        "leftover": leftover,
+        "items": linked,
+    }
+
+
 def _document_tags(doc: Document) -> dict[str, Any]:
     tags = doc.tags if isinstance(doc.tags, dict) else {}
     return dict(tags)
@@ -297,8 +414,9 @@ def serialize_ingest_doc(doc: Document, *, kind: str, project: dict[str, Any] | 
         "document_id": str(doc.id),
         "drawing_id": str(doc.id) if kind == "drawing" or isinstance(doc, Drawing) else None,
         "project_id": (
-            (project or {}).get("id")
-            or (str(doc.project_id) if doc.project_id else None)
+            (str(doc.project_id) if doc.project_id else None)
+            or (project or {}).get("job_id")
+            or ((project or {}).get("id") if (project or {}).get("kind") == "job" else None)
         ),
         "filename": doc.original_filename or doc.title,
         "mimeType": doc.mime_type,
@@ -308,6 +426,7 @@ def serialize_ingest_doc(doc: Document, *, kind: str, project: dict[str, Any] | 
         "source": text(tags.get("source")) or None,
         "sourceSystem": text(tags.get("source")) or None,
         "sourceId": text(tags.get("source_id")) or None,
+        "lead_estimate_id": text(tags.get("lead_estimate_id")) or (project or {}).get("lead_estimate_id"),
         "file_url": doc.file_url,
         "createdAt": created,
     }
@@ -328,10 +447,9 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
         raise IngestError("content_hash does not match the uploaded file.")
 
     project, matched_by = resolve_ingest_project(metadata)
-    if project and project.get("kind") == "job":
-        job_id = as_uuid(project.get("job_id") or project.get("id"))
-    else:
-        job_id = as_uuid((project or {}).get("job_id")) if project else None
+    job_id, project = bind_ingest_workspace(project)
+    if project and project.get("kind") == "job" and matched_by is None:
+        matched_by = "workspace"
 
     existing = find_by_content_hash(checksum, job_id)
     if existing is not None:
@@ -370,6 +488,17 @@ def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, 
         "source": source,
         "source_id": source_id,
     }
+    folder_name = text(
+        metadata.get("folder_name") or metadata.get("folderName") or metadata.get("project_folder")
+    )
+    if folder_name:
+        tags["folder_name"] = folder_name
+    if project and project.get("lead_estimate_id"):
+        tags["lead_estimate_id"] = project["lead_estimate_id"]
+    if project and project.get("project_number"):
+        tags["project_number"] = project["project_number"]
+    if job_id:
+        tags["project_id"] = str(job_id)
 
     if kind == "drawing":
         split_raw = metadata.get("split_pages")

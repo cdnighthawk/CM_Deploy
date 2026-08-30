@@ -1383,7 +1383,7 @@
 		var full = labelBits.join(" — ");
 		btn.setAttribute("title", full);
 		btn.setAttribute("aria-label", full);
-		btn.textContent = num ? "Procurement · #" + num : "Procurement";
+		btn.textContent = "Procurement";
 	}
 
 	function init() {

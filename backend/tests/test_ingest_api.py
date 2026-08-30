@@ -9,7 +9,7 @@ import uuid
 from pypdf import PdfWriter
 
 from app.extensions import db
-from app.models import Document, Drawing, LeadEstimate, Project
+from app.models import Document, Drawing, Estimate, LeadEstimate, Project
 
 
 def _pdf_bytes() -> bytes:
@@ -280,3 +280,111 @@ def test_ingest_unassigned_upload_when_project_unknown(client, flask_app):
     body = r.get_json()
     assert body["project"] is None
     assert body["document"]["project_id"] is None
+
+
+def test_ingest_drawing_for_lead_creates_workspace_and_links_estimate(client, flask_app):
+    headers = _auth(flask_app)
+    pdf = _pdf_bytes()
+    suffix = uuid.uuid4().hex[:8]
+    with flask_app.app_context():
+        lead = LeadEstimate(
+            external_id=f"ingest-ws-{suffix}",
+            name=f"Unlinked Lead {suffix}",
+            number=f"LN{suffix[:6]}",
+            is_archived=False,
+            is_parent=True,
+            submission_state="UNDECIDED",
+        )
+        db.session.add(lead)
+        db.session.flush()
+        est = Estimate(name="Original", lead_estimate_id=lead.id, project_id=None)
+        db.session.add(est)
+        db.session.commit()
+        lead_id = str(lead.id)
+        estimate_id = str(est.id)
+
+    draw_r = client.post(
+        "/api/drawings",
+        headers=headers,
+        data={
+            "file": (io.BytesIO(pdf), "A301.pdf"),
+            "metadata": json.dumps(
+                {
+                    "source": "autodesk_desktop_connector",
+                    "project_id": lead_id,
+                    "sheet_number": "A301",
+                    "folder_name": f"Unlinked Lead {suffix}",
+                }
+            ),
+        },
+        content_type="multipart/form-data",
+    )
+    assert draw_r.status_code == 201, draw_r.get_data(as_text=True)
+    body = draw_r.get_json()
+    job_id = body["drawing"]["project_id"]
+    assert job_id
+    assert job_id != lead_id
+    assert body["project"]["kind"] == "job"
+    assert body["project"]["job_id"] == job_id
+    assert body["project"]["lead_estimate_id"] == lead_id
+
+    with flask_app.app_context():
+        drawing = db.session.get(Drawing, uuid.UUID(body["drawing"]["drawing_id"]))
+        lead = db.session.get(LeadEstimate, uuid.UUID(lead_id))
+        est = db.session.get(Estimate, uuid.UUID(estimate_id))
+        assert drawing is not None
+        assert drawing.project_id == uuid.UUID(job_id)
+        assert lead is not None and lead.project_id == uuid.UUID(job_id)
+        assert est is not None and est.project_id == uuid.UUID(job_id)
+        assert drawing.tags.get("lead_estimate_id") == lead_id
+
+    listed = client.get(f"/api/v1/projects/{job_id}/drawings")
+    assert listed.status_code == 200, listed.get_data(as_text=True)
+    sheets = listed.get_json()["items"]
+    assert any(s.get("sheet_number") == "A301" for s in sheets)
+
+
+def test_relink_unassigned_drawing_uses_folder_and_lead_tag(client, flask_app):
+    headers = _auth(flask_app)
+    pdf = _pdf_bytes()
+    suffix = uuid.uuid4().hex[:8]
+    folder = f"Relink Job {suffix}"
+    with flask_app.app_context():
+        lead = LeadEstimate(
+            external_id=f"ingest-relink-{suffix}",
+            name=folder,
+            number=f"RL{suffix[:6]}",
+            is_archived=False,
+            is_parent=True,
+            submission_state="UNDECIDED",
+        )
+        db.session.add(lead)
+        db.session.flush()
+        orphan = Drawing(
+            title="Orphan sheet",
+            sheet_number="A401",
+            original_filename="A401.pdf",
+            mime_type="application/pdf",
+            project_id=None,
+            tags={
+                "source": "autodesk_desktop_connector",
+                "source_id": f"{folder}/Architectural/A401.pdf",
+                "lead_estimate_id": str(lead.id),
+            },
+        )
+        db.session.add(orphan)
+        db.session.commit()
+        did = str(orphan.id)
+        lead_id = str(lead.id)
+
+    r = client.post("/api/v1/drawings/relink", headers=headers)
+    assert r.status_code == 200, r.get_data(as_text=True)
+    payload = r.get_json()
+    assert payload["linked"] >= 1
+    assert any(item["id"] == did for item in payload["items"])
+
+    with flask_app.app_context():
+        drawing = db.session.get(Drawing, uuid.UUID(did))
+        lead = db.session.get(LeadEstimate, uuid.UUID(lead_id))
+        assert drawing is not None and drawing.project_id is not None
+        assert lead is not None and lead.project_id == drawing.project_id

@@ -398,6 +398,10 @@
 			})
 			.then(function (item) {
 				renderBidScope(item);
+				if (item && item.bidLocation) {
+					var locEl = document.getElementById("usis-est-hygiene-locations");
+					if (locEl) locEl.textContent = bidLocationLine(item.bidLocation);
+				}
 				return item;
 			})
 			.catch(function () {
@@ -405,7 +409,84 @@
 			});
 	}
 
+	function bidLocationLine(loc) {
+		if (!loc) return "";
+		var labels = (loc.locations || [])
+			.map(function (x) {
+				return x.label;
+			})
+			.filter(Boolean);
+		var req = loc.requirement || "not_found";
+		var head =
+			req === "required"
+				? "Bid by " + (loc.grain || "location") + " is required"
+				: req === "unclear"
+					? "Bid-by-location is unclear"
+					: "No bid-by-location instruction found";
+		if (labels.length) head += " — " + labels.join(", ");
+		if (loc.reason) head += ". " + loc.reason;
+		if (loc.needsAi) head += " Flagged for Grok later.";
+		return head;
+	}
+
+	function renderHygiene(payload) {
+		var el = document.getElementById("usis-est-hygiene-status");
+		var locEl = document.getElementById("usis-est-hygiene-locations");
+		if (el) {
+			if (!payload) {
+				el.textContent = "Not run yet. Check labels, sheet types, and bid-by-location before the overall pass.";
+			} else {
+				var c = payload.counts || {};
+				el.textContent =
+					(payload.total || 0) +
+					" sheets — " +
+					(c.ok || 0) +
+					" labels ok, " +
+					(c.needs_ai || 0) +
+					" labels need AI, " +
+					(c.unknown || 0) +
+					" unlabeled · " +
+					(c.typed || 0) +
+					" typed, " +
+					(c.type_needs_ai || 0) +
+					" types need AI.";
+			}
+		}
+		if (locEl) locEl.textContent = payload ? bidLocationLine(payload.bidLocation) : "";
+	}
+
+	function bindHygiene(estimateKey) {
+		var btn = document.getElementById("usis-est-hygiene-run");
+		if (!btn) return;
+		btn.addEventListener("click", function () {
+			btn.disabled = true;
+			fetch(apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateKey) + "/drawings/hygiene", {
+				method: "POST",
+				credentials: "include",
+				headers: { Accept: "application/json", "Content-Type": "application/json" },
+				body: "{}",
+			})
+				.then(function (res) {
+					return res.json().then(function (j) {
+						if (!res.ok) throw new Error(j.error || res.status);
+						return j;
+					});
+				})
+				.then(function (payload) {
+					renderHygiene(payload);
+					if (window.USISNotify) window.USISNotify.success("Drawing hygiene complete.");
+				})
+				.catch(function (e) {
+					notifyErr(e.message || e);
+				})
+				.then(function () {
+					btn.disabled = false;
+				});
+		});
+	}
+
 	function bindBidScope(estimateKey, projectId) {
+		bindHygiene(estimateKey);
 		loadBidScope(estimateKey);
 		if (window.USIS_AI_WORKFLOW) {
 			window.USIS_AI_WORKFLOW.ensure({
@@ -531,6 +612,15 @@
 	function mountGrid(root, estimateKey, projectId, leadKey) {
 		var doorId = leadKey || estimateKey;
 		root.innerHTML =
+			'<div class="border rounded p-2 mb-3">' +
+			'<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">' +
+			'<strong class="small mb-0">Drawing hygiene</strong>' +
+			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-est-hygiene-run">Check labels, types &amp; bid locations</button>' +
+			"</div>" +
+			'<p class="small text-muted mb-1">CPU first. Drawing numbers, sheet types, and whether the GC wants the bid by floor, area, or building. Grok is not called yet.</p>' +
+			'<p class="small mb-1" id="usis-est-hygiene-status">Not run yet. Check labels, sheet types, and bid-by-location before the overall pass.</p>' +
+			'<p class="small mb-0" id="usis-est-hygiene-locations"></p>' +
+			"</div>" +
 			'<div class="border rounded p-2 mb-3 bg-light">' +
 			'<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">' +
 			'<strong class="small mb-0">Bid scope</strong>' +

@@ -66,10 +66,7 @@
 		.usis-submittal-log-table th:nth-child(2) { white-space: normal; min-width: 10rem; max-width: 14rem; }
 		.usis-submittal-log-table td:nth-child(14),
 		.usis-submittal-log-table th:nth-child(14) { white-space: normal; max-width: 10rem; }
-		.usis-tool-toolbar .form-control,
-		.usis-tool-toolbar .form-select { min-width: 8rem; }
 		#usis-grid-drawings { min-height: 22rem; }
-		#usis-grid-drawings .tabulator-header { min-height: 3.25rem; }
 		#usis-grid-drawings .tabulator { font-size: 0.875rem; }
 		#usis-grid-takeoff { min-height: 22rem; }
 		#usis-grid-takeoff .tabulator { font-size: 0.875rem; }
@@ -446,8 +443,8 @@
 				</div>
 
 				<div class="col-xl-12 mb-3">
-					<div class="d-flex flex-wrap align-items-center gap-2 justify-content-between">
-						<ul class="nav nav-pills flex-wrap gap-1 usis-detail-toolbar mb-0" role="tablist">
+					<div class="usis-detail-toolbar-row">
+						<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar mb-0" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true">Job info</button>
 						</li>
@@ -659,7 +656,7 @@
 
 						<!-- Drawings (Procore-style log) -->
 						<div class="tab-pane fade" id="proj-pane-drawings" role="tabpanel" aria-labelledby="proj-tab-drawings" tabindex="0">
-							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 								<div>
 									<h5 class="mb-0">Drawings</h5>
 									<p class="text-muted small mb-0">Current set and sheet metadata (project-scoped).</p>
@@ -668,20 +665,21 @@
 							</div>
 							<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading drawings…</div>
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
-							<div class="row g-2 align-items-end usis-tool-toolbar mb-3">
-								<div class="col-md-4 col-lg-3">
+							<div class="usis-tool-toolbar mb-2">
+								<div class="usis-sheet-filter">
 									<label class="form-label small text-muted mb-0" for="usis-filter-drawing-discipline">Discipline</label>
 									<select class="form-select form-select-sm" id="usis-filter-drawing-discipline">
 										<option value="">All disciplines</option>
 									</select>
 								</div>
-								<div class="col-md-4 col-lg-3">
+								<div class="usis-sheet-filter">
 									<label class="form-label small text-muted mb-0" for="usis-filter-drawing-set">Set</label>
 									<select class="form-select form-select-sm" id="usis-filter-drawing-set">
 										<option value="">Current</option>
 									</select>
 								</div>
-								<div class="col-md-6 col-lg-4">
+								<button type="button" class="btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap" title="Latest revision of each sheet">Current</button>
+								<div class="usis-sheet-search">
 									<label class="form-label small text-muted mb-0" for="usis-search-drawings">Search</label>
 									<input type="search" class="form-control form-control-sm" id="usis-search-drawings" placeholder="Sheet #, title, set, discipline…" autocomplete="off">
 								</div>

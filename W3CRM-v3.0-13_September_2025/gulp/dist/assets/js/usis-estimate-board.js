@@ -332,6 +332,7 @@
 
 	var btn = document.getElementById("usis-estimate-sync-stub");
 	if (btn) btn.addEventListener("click", loadEstimates);
+	window.usisBcPullOnDone = loadEstimates;
 	var pullBtn = document.getElementById("usis-est-bc-pull");
 	if (pullBtn) {
 		pullBtn.addEventListener("click", function () {

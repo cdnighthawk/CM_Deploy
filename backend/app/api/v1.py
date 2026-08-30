@@ -33,7 +33,6 @@ from ..models import (
     LeadEstimate,
     MaterialPrice,
     Project,
-    ProjectMember,
     Rfi,
     SpecSection,
     Submittal,
@@ -61,10 +60,12 @@ from . import _procurement_lookup_service as proc_lookup_svc
 from . import _project_members_service as project_members_svc
 from . import _project_service as project_svc
 from . import _invoice_delivery_service as invoice_delivery_svc
+from . import _drawing_hygiene as drawing_hygiene
 from . import _lead_estimate_queries as lead_q
 from . import _serializers as ser
 from . import _submittal_service as submittal_svc
 from ._perms import can_edit_rfi, current_user, users_for_picker
+from ._rfi_service import ApiError
 
 bp = Blueprint("api_v1", __name__, url_prefix="/api/v1")
 
@@ -607,6 +608,9 @@ def _drawing_public(d: Drawing) -> dict[str, Any]:
         "project_id": str(d.project_id) if d.project_id else None,
         "title": d.title,
         "parent_document_id": str(d.parent_document_id) if d.parent_document_id else None,
+        "label_status": d.label_status,
+        "sheet_function": d.sheet_function,
+        "hygiene": drawing_hygiene.hygiene_public(d),
         "created_at": _iso(d.created_at),
         "updated_at": _iso(d.updated_at),
     }
@@ -645,6 +649,9 @@ def _pin_sheet_to_set(sheet: dict[str, Any], set_f: str) -> dict[str, Any] | Non
     pinned["sheet_number"] = rev.get("sheet_number") or sheet.get("sheet_number")
     pinned["sheet_title"] = rev.get("sheet_title") or rev.get("title") or sheet.get("sheet_title")
     pinned["discipline"] = rev.get("discipline") or sheet.get("discipline")
+    pinned["label_status"] = rev.get("label_status") or sheet.get("label_status")
+    pinned["sheet_function"] = rev.get("sheet_function") or sheet.get("sheet_function")
+    pinned["hygiene"] = rev.get("hygiene") or sheet.get("hygiene")
     pinned["current_revision"] = rev
     return pinned
 
@@ -666,6 +673,9 @@ def _group_drawings_into_sheets(rows: list[Drawing]) -> list[dict[str, Any]]:
                 "sheet_number": current.sheet_number,
                 "sheet_title": current.sheet_title or current.title,
                 "discipline": current.discipline,
+                "label_status": current.label_status,
+                "sheet_function": current.sheet_function,
+                "hygiene": drawing_hygiene.hygiene_public(current),
                 "drawing_set": current.drawing_set,
                 "sets": sets,
                 "revision_count": len(group),
@@ -817,62 +827,17 @@ def _resolve_lead(identifier: str) -> LeadEstimate | None:
     return row
 
 
-def _ensure_project_membership(project_id: uuid.UUID, cu) -> None:
-    if cu is None or cu.id is None:
-        return
-    existing = db.session.get(ProjectMember, {"user_id": cu.id, "project_id": project_id})
-    if existing is not None:
-        return
-    db.session.add(
-        ProjectMember(
-            user_id=cu.id,
-            project_id=project_id,
-            member_role="estimator",
-            created_by_id=cu.id,
-        )
-    )
-
-
 def ensure_lead_workspace_project(row: LeadEstimate, cu) -> Project:
     """Link the same project the drawing viewer uses on Projects.
 
     Reuses ``project_id`` or a job with the same number. Creates a planning
     project only when none exists. Does not award the lead.
     """
-    existing = _drawing_project_for_lead(row)
-    if existing is not None:
-        if row.project_id != existing.id:
-            row.project_id = existing.id
-        _ensure_project_membership(existing.id, cu)
-        db.session.commit()
-        return existing
-    loc = row.location if isinstance(row.location, Mapping) else {}
-    city, state = ser.location_bits(loc)
-    name_raw = row.name or row.number or "Lead workspace"
-    name = str(name_raw).strip()[:255] or "Lead workspace"
-    number = (row.number or "").strip() or None
-    if number:
-        taken = db.session.scalar(
-            select(Project.id).where(
-                Project.deleted_at.is_(None),
-                func.lower(func.trim(Project.number)) == number.lower(),
-            )
-        )
-        if taken:
-            number = None
-    proj = Project(
-        name=name,
-        number=number,
-        status="planning",
-        project_type="commercial",
-        city=city,
-        state=state,
-        notes="Created from lead/estimate workspace.",
-    )
-    db.session.add(proj)
-    db.session.flush()
-    row.project_id = proj.id
-    _ensure_project_membership(proj.id, cu)
+    from ..services.ingest import relink_documents_for_lead
+    from ..services.lead_workspace import ensure_lead_workspace_project as ensure_workspace
+
+    proj = ensure_workspace(row, user_id=cu.id if cu is not None else None)
+    relink_documents_for_lead(row)
     db.session.commit()
     return proj
 
@@ -915,19 +880,9 @@ def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
 
 def _drawing_project_for_lead(row: LeadEstimate) -> Project | None:
     """Project used by the shared drawing viewer: explicit link, else same job number."""
-    if row.project_id:
-        project = db.session.get(Project, row.project_id)
-        if project is not None and project.deleted_at is None:
-            return project
-    number = (row.number or "").strip()
-    if not number:
-        return None
-    return db.session.scalar(
-        select(Project).where(
-            Project.deleted_at.is_(None),
-            func.lower(func.trim(Project.number)) == number.lower(),
-        )
-    )
+    from ..services.lead_workspace import drawing_project_for_lead
+
+    return drawing_project_for_lead(row)
 
 
 def _parent_id_norm(value: str | None) -> str | None:
@@ -1522,6 +1477,32 @@ def run_calendar_reminders():
     payload = project_schedule_svc.send_due_schedule_reminders()
     db.session.commit()
     return _jsonify(payload)
+
+
+@bp.post("/drawings/relink")
+def relink_unassigned_drawings():
+    """Attach B2 drawings/docs with no project_id to a matched lead, estimate, or job."""
+    from ..services.ingest import relink_unassigned_documents
+
+    payload = relink_unassigned_documents()
+    db.session.commit()
+    return _jsonify(payload)
+
+
+@bp.post("/projects/<project_id>/drawings/hygiene")
+def run_project_drawing_hygiene(project_id: str):
+    """CPU label + sheet-type pass. Flags exceptions for later Grok; does not call AI."""
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        payload = drawing_hygiene.run_project_hygiene(pid)
+        db.session.commit()
+        return _jsonify(payload)
+    except ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
 
 
 @bp.get("/projects/<project_id>/drawings")
@@ -4054,14 +4035,19 @@ def get_lead_estimate_audit_trail(identifier: str):
 @bp.post("/lead-estimates/<identifier>/ensure-project")
 def ensure_lead_estimate_project(identifier: str):
     """Create or reuse a planning project so Specs/Drawings match the project book."""
+    from ..services.ingest import relink_unassigned_documents
+
     row = _resolve_lead(identifier)
     if row is None:
         return _jsonify({"error": "lead estimate not found"}), 404
     proj = ensure_lead_workspace_project(row, current_user())
+    relinked = relink_unassigned_documents()
+    db.session.commit()
     return _jsonify(
         {
             "item": _lead_estimate_detail(row),
             "project_id": str(proj.id),
+            "relinked": relinked.get("linked"),
             "entity": "lead_estimate",
         }
     )

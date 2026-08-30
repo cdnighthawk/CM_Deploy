@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from ..extensions import db
 from ..models import Estimate
+from . import _bid_locations as bid_locations
 from ..models.estimator_script import (
     EstimateBidScope,
     EstimateBidScopeItem,
@@ -291,6 +292,7 @@ def _item_public(item: EstimateBidScopeItem) -> dict[str, Any]:
 
 
 def scope_public(scope: EstimateBidScope) -> dict[str, Any]:
+    est = db.session.get(Estimate, scope.estimate_id)
     return {
         "id": str(scope.id),
         "estimateId": str(scope.estimate_id),
@@ -298,6 +300,7 @@ def scope_public(scope: EstimateBidScope) -> dict[str, Any]:
         "bidPackageLabel": scope.bid_package_label,
         "notes": scope.notes,
         "status": scope.status,
+        "bidLocation": bid_locations.bid_location_public(est.bid_location if est else None),
         "items": [_item_public(i) for i in (scope.items or [])],
     }
 

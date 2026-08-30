@@ -75,7 +75,7 @@
 				</div>
 
 				<div class="col-xl-12 mb-3">
-					<ul class="nav nav-pills flex-wrap gap-1 usis-detail-toolbar" id="lead-detail-tabs" role="tablist">
+					<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar" id="lead-detail-tabs" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="lead-tab-job" data-bs-toggle="pill" data-bs-target="#lead-pane-job" type="button" role="tab" aria-controls="lead-pane-job" aria-selected="true">Job info</button>
 						</li>
@@ -175,20 +175,21 @@
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
 							<div id="usis-lead-drawings-no-project" class="text-muted small">Upload a PDF to open the same drawing viewer used on Projects.</div>
 							<div id="usis-lead-drawings-tools" class="d-none">
-								<div class="row g-2 align-items-end usis-tool-toolbar mb-3">
-									<div class="col-md-4 col-lg-3">
+								<div class="usis-tool-toolbar mb-2">
+									<div class="usis-sheet-filter">
 										<label class="form-label small text-muted mb-0" for="usis-lead-filter-drawing-discipline">Discipline</label>
 										<select class="form-select form-select-sm" id="usis-lead-filter-drawing-discipline">
 											<option value="">All disciplines</option>
 										</select>
 									</div>
-									<div class="col-md-4 col-lg-3">
+									<div class="usis-sheet-filter">
 										<label class="form-label small text-muted mb-0" for="usis-lead-filter-drawing-set">Set</label>
 										<select class="form-select form-select-sm" id="usis-lead-filter-drawing-set">
 											<option value="">Current</option>
 										</select>
 									</div>
-									<div class="col-md-6 col-lg-4">
+									<button type="button" class="btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap" title="Latest revision of each sheet">Current</button>
+									<div class="usis-sheet-search">
 										<label class="form-label small text-muted mb-0" for="usis-lead-search-drawings">Search</label>
 										<input type="search" class="form-control form-control-sm" id="usis-lead-search-drawings" placeholder="Sheet #, title…" autocomplete="off">
 									</div>

@@ -8,6 +8,7 @@ import logging
 import os
 import secrets
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -39,6 +40,8 @@ log = logging.getLogger(__name__)
 BC_OAUTH_STATE_KEY = "bc_oauth_state"
 _SYNC_LOCK = threading.Lock()
 _SYNC_RUNNING = False
+_SYNC_STARTED_AT: float | None = None
+_SYNC_STALE_AFTER_SEC = 20 * 60
 _PAGE_UPSERT = 100
 _BULK_WRITE_MAX = 100
 
@@ -238,7 +241,7 @@ def cron_secret_matches(req=None, app=None) -> bool:
     return secrets.compare_digest(expected, provided)
 
 
-def _bc_oauth_browser_page(*, ok: bool, message: str, status: int = 200):
+def _bc_oauth_browser_page(*, ok: bool, message: str, status: int = 200, close: bool = True):
     """HTML landing page after Autodesk redirects back (popup or full tab)."""
     title = "BuildingConnected connected" if ok else "BuildingConnected reconnect failed"
     leads_href = "/construction/leads.html"
@@ -270,7 +273,7 @@ def _bc_oauth_browser_page(*, ok: bool, message: str, status: int = 200):
         window.opener.postMessage(payload, window.location.origin);
       }}
     }} catch (e) {{}}
-    window.setTimeout(function () {{ window.close(); }}, 80);
+    {f'window.setTimeout(function () {{ window.close(); }}, 80);' if close else ''}
   }})();
   </script>
 </body>
@@ -431,7 +434,8 @@ def _pull_and_upsert(
 
 
 def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
-    global _SYNC_RUNNING
+    global _SYNC_RUNNING, _SYNC_STARTED_AT
+    loaded = skipped = errors = 0
     with app.app_context():
         try:
             loaded, skipped, errors = _pull_and_upsert(access_token, full=full)
@@ -467,35 +471,32 @@ def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
         except Exception:
             db.session.rollback()
             log.exception("BuildingConnected background sync failed")
-            log.info(
-                "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s",
-                loaded,
-                skipped,
-                errors,
-            )
-        except Exception:
-            db.session.rollback()
-            log.exception("BuildingConnected background sync failed")
         finally:
             with _SYNC_LOCK:
                 _SYNC_RUNNING = False
+                _SYNC_STARTED_AT = None
 
 
 def register_buildingconnected_routes(bp: Blueprint) -> None:
     @bp.get("/integrations/buildingconnected/oauth/start")
     def bc_oauth_start():
         cid = current_app.config.get("AUTODESK_CLIENT_ID")
-        redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI")
+        redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI") or (
+            request.url_root.rstrip("/")
+            + "/api/v1/integrations/buildingconnected/oauth/callback"
+        )
         scopes = str(current_app.config.get("AUTODESK_OAUTH_SCOPES") or "data:read data:write")
-        if not cid or not redir:
-            return (
-                jsonify(
-                    {
-                        "error": "AUTODESK_CLIENT_ID and AUTODESK_OAUTH_REDIRECT_URI must be set",
-                        "entity": "buildingconnected_oauth",
-                    }
+        if not cid:
+            return _bc_oauth_browser_page(
+                ok=False,
+                close=False,
+                status=503,
+                message=(
+                    "This server has no Autodesk APS app credentials. "
+                    "Add AUTODESK_CLIENT_ID and AUTODESK_CLIENT_SECRET to backend/.env "
+                    "(copy them from the Render usis-cm Environment), then restart Flask. "
+                    "To reconnect production, use Reconnect BC on www.usiscm.com instead of localhost."
                 ),
-                503,
             )
         state = secrets.token_urlsafe(32)
         session[BC_OAUTH_STATE_KEY] = state
@@ -517,10 +518,16 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
             )
         cid = current_app.config.get("AUTODESK_CLIENT_ID")
         sec = current_app.config.get("AUTODESK_CLIENT_SECRET")
-        redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI")
-        if not cid or not sec or not redir:
+        redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI") or (
+            request.url_root.rstrip("/")
+            + "/api/v1/integrations/buildingconnected/oauth/callback"
+        )
+        if not cid or not sec:
             return _bc_oauth_browser_page(
-                ok=False, message="Autodesk client is not fully configured", status=503
+                ok=False,
+                close=False,
+                message="Autodesk client is not fully configured (AUTODESK_CLIENT_ID / AUTODESK_CLIENT_SECRET).",
+                status=503,
             )
         try:
             data = exchange_authorization_code(
@@ -555,21 +562,28 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
             return jsonify({"error": str(exc), "entity": "buildingconnected_sync"}), 401
         want_full = (request.args.get("full") or "").strip().lower() in ("1", "true", "yes")
         if not _sync_inline():
-            global _SYNC_RUNNING
+            global _SYNC_RUNNING, _SYNC_STARTED_AT
             with _SYNC_LOCK:
                 if _SYNC_RUNNING:
-                    return (
-                        jsonify(
-                            {
-                                "ok": True,
-                                "status": "already_running",
-                                "entity": "buildingconnected_sync",
-                                "message": "A BuildingConnected sync is already running. Refresh Leads in a minute.",
-                            }
-                        ),
-                        202,
+                    age = (time.monotonic() - _SYNC_STARTED_AT) if _SYNC_STARTED_AT else 0
+                    if age < _SYNC_STALE_AFTER_SEC:
+                        return (
+                            jsonify(
+                                {
+                                    "ok": True,
+                                    "status": "already_running",
+                                    "entity": "buildingconnected_sync",
+                                    "message": "A BuildingConnected sync is already running. Refresh Leads in a minute.",
+                                }
+                            ),
+                            202,
+                        )
+                    log.warning(
+                        "BuildingConnected sync lock stale after %.0fs; starting a new pull",
+                        age,
                     )
                 _SYNC_RUNNING = True
+                _SYNC_STARTED_AT = time.monotonic()
             app = current_app._get_current_object()
             threading.Thread(
                 target=_run_sync_job,

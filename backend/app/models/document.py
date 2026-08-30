@@ -130,6 +130,9 @@ class Drawing(Document):
     calibration: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     drawing_set: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     revision: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    label_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    sheet_function: Mapped[Optional[str]] = mapped_column(String(40), nullable=True, index=True)
+    hygiene: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     # All revisions of the same physical sheet share one stable UUID (not necessarily a row id).
     drawing_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
 

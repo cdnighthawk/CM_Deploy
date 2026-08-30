@@ -355,12 +355,17 @@ DEFAULT_ESTIMATOR_SCOPE_STEPS: list[dict[str, Any]] = [
                 "Overall estimating pass for USIS (finish-work sub). Decide the bid-set source. "
                 "Default is our standard specs (gypsum, paint, flooring, ceilings, trim, doors/"
                 "hardware, Div 10). If the GC issued a bid package that lists sections we must "
-                "price, use that package instead. Return JSON: "
-                '{"source":"standard"|"bid_package","bid_package_label":null,"reason":""}.'
+                "price, use that package instead. Also say whether the GC requires the bid broken "
+                "down by floor, area, or building (from invitation / bid form / addenda / notes). "
+                "Do not invent a location breakdown. Return JSON: "
+                '{"source":"standard"|"bid_package","bid_package_label":null,'
+                '"bid_by_location":"required"|"not_found"|"unclear","location_grain":'
+                '"floor"|"area"|"building"|"mixed"|null,"locations":[],"reason":""}.'
             ),
             "system_hint": (
                 "Do not invent a bid package. If the invitation / spec book does not list a "
-                "package, source=standard."
+                "package, source=standard. If bid-by-floor/area/building is not written, "
+                "bid_by_location=not_found — multiple floor plans alone are not a requirement."
             ),
         },
     },

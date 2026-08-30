@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 from app.services.ingest import (
+    _folder_hint_from_path,
     folder_to_project_number,
     lead_is_archived,
     parse_ingest_metadata,
@@ -16,6 +17,12 @@ def test_folder_to_project_number_proj_year_seq():
 
 def test_folder_to_project_number_digits_passthrough():
     assert folder_to_project_number("240142") == "240142"
+
+
+def test_folder_hint_from_relative_path():
+    assert _folder_hint_from_path("Hospital Reno/Architectural/A-101.pdf") == "Hospital Reno"
+    assert _folder_hint_from_path("PROJ-2024-0142\\A101.pdf") == "PROJ-2024-0142"
+    assert _folder_hint_from_path("") == ""
 
 
 def test_parse_ingest_metadata_json_string():

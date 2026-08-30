@@ -36,6 +36,7 @@ def test_bc_oauth_start_missing_config_returns_503(client, flask_app):
     flask_app.config["AUTODESK_OAUTH_REDIRECT_URI"] = None
     r = client.get("/api/v1/integrations/buildingconnected/oauth/start")
     assert r.status_code == 503
+    assert b"AUTODESK_CLIENT_ID" in r.data
 
 
 def test_bc_oauth_start_redirects_when_configured(client, flask_app):

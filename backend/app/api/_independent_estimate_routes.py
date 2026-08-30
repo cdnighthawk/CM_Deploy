@@ -8,6 +8,7 @@ from flask import Blueprint, Response, request
 from ..extensions import db
 from ..models import AuditLog, Estimate
 from . import _document_render_service as document_render_svc
+from . import _drawing_hygiene as drawing_hygiene
 from . import _estimate_service as est_svc
 from . import _estimator_scripts as scripts
 from . import _rfi_service as rfi_svc
@@ -207,6 +208,18 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
             out = scripts.enqueue_spec_scripts(eid, current_user())
             db.session.commit()
             return _jsonify(out)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.post("/estimates/<estimate_id>/drawings/hygiene")
+    def run_estimate_drawing_hygiene(estimate_id: str):
+        eid = _parse_uuid_param(estimate_id)
+        if eid is None:
+            return _jsonify({"error": "invalid estimate id"}), 400
+        try:
+            payload = drawing_hygiene.run_estimate_hygiene(eid)
+            db.session.commit()
+            return _jsonify(payload)
         except ApiError as exc:
             return _jsonify({"error": exc.message}), exc.status
 

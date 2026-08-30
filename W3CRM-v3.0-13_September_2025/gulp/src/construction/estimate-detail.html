@@ -192,7 +192,7 @@
 				</div>
 
 				<div class="col-xl-12 mb-3">
-					<ul class="nav nav-pills flex-wrap gap-1 usis-detail-toolbar" role="tablist">
+					<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="estd-tab-job" data-bs-toggle="pill" data-bs-target="#estd-pane-job" type="button" role="tab" aria-controls="estd-pane-job" aria-selected="true">Job information</button>
 						</li>
@@ -343,7 +343,7 @@
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
 							<div id="usis-estd-drawings-no-project" class="text-muted small d-none">Upload a PDF to open the same drawing viewer used on Projects.</div>
 							<div id="usis-estd-drawings-tools" class="d-none">
-								<div class="d-flex flex-wrap align-items-end gap-2 usis-tool-toolbar mb-3">
+								<div class="usis-tool-toolbar mb-2">
 									<div class="usis-sheet-filter">
 										<label class="form-label small text-muted mb-0" for="usis-estd-filter-drawing-discipline">Discipline</label>
 										<select class="form-select form-select-sm" id="usis-estd-filter-drawing-discipline">
@@ -356,6 +356,7 @@
 											<option value="">Current</option>
 										</select>
 									</div>
+									<button type="button" class="btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap" title="Latest revision of each sheet">Current</button>
 									<div class="usis-sheet-search">
 										<label class="form-label small text-muted mb-0" for="usis-estd-search-drawings">Search</label>
 										<input type="search" class="form-control form-control-sm" id="usis-estd-search-drawings" placeholder="Sheet #, title, set, discipline…" autocomplete="off">

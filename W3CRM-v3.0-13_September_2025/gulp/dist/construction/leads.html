@@ -839,6 +839,7 @@
 	<!-- Script For Custom JS -->
     	<script src="assets/js/aiReviewBus.js"></script>
 	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-bc-pull.js?v=20260830b"></script>
 	<script src="assets/js/usis-project-context.js"></script>
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
@@ -1188,6 +1189,7 @@
 		});
 		var btn = document.getElementById("usis-bc-sync-stub");
 		if (btn) btn.addEventListener("click", loadLeads);
+		window.usisBcPullOnDone = loadLeads;
 		var pullBtn = document.getElementById("usis-bc-pull");
 		if (pullBtn) {
 			pullBtn.addEventListener("click", function () {

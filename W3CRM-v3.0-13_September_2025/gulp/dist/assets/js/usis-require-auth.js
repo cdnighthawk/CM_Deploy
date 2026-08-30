@@ -66,7 +66,12 @@
 		})
 		.then(function (body) {
 			if (body === null) return;
-			if (body && body.authenticated) return;
+			if (body && body.authenticated) {
+				if (window.USISDrawingCache && typeof window.USISDrawingCache.refresh === "function") {
+					window.USISDrawingCache.refresh();
+				}
+				return;
+			}
 			redirectToLogin();
 		})
 		.catch(function () {

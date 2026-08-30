@@ -1159,6 +1159,7 @@
 						drawingsTabulator = null;
 					}
 					applyDrawingFilter();
+					if (window.USISDrawingCache) window.USISDrawingCache.prefetchSheets(cache.drawingSheets);
 				})
 				.catch(function (err) {
 					cache.drawingSheets = [];

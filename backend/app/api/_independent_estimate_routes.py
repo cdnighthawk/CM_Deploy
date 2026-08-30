@@ -253,6 +253,14 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         if est is None:
             return _jsonify({"error": "estimate not found"}), 404
         lines = est_svc.takeoff_lines_for_estimate(est.id)
+        from ..services.employee_pc_cache import maybe_write_takeoff
+
+        maybe_write_takeoff(
+            est.project_id,
+            lines,
+            cloud_estimate_id=est.id,
+            lead_estimate_id=est.lead_estimate_id,
+        )
         return _jsonify(
             {
                 "items": [_takeoff_line_public(x) for x in lines],
@@ -295,6 +303,9 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
             return _jsonify({"error": str(exc)}), 400
         db.session.add(t)
         db.session.commit()
+        from ..services.employee_pc_cache import cache_takeoff_for_line
+
+        cache_takeoff_for_line(t)
         return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
     @bp.get("/estimates/<estimate_id>/render/quote-report")

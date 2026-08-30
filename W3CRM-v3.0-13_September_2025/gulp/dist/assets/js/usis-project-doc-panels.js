@@ -918,6 +918,7 @@
 							drawingsTabulator = null;
 						}
 						applyDrawingFilter();
+						if (global.USISDrawingCache) global.USISDrawingCache.prefetchSheets(cache.drawingSheets);
 					})
 					.catch(function (err) {
 						cache.drawingSheets = [];

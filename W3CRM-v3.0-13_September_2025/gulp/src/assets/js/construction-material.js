@@ -218,6 +218,7 @@
 		if (!document.getElementById("usis-mat-tabulator")) return;
 		buildTable();
 		wireUi();
+		if (window.USISDrawingCache) window.USISDrawingCache.refresh();
 		loadManufacturers().then(refreshCatalog);
 	}
 

@@ -603,6 +603,8 @@ def _drawing_public(d: Drawing) -> dict[str, Any]:
         "revision": d.revision,
         "version": d.version,
         "file_url": _drawing_resolved_file_url(d),
+        "original_filename": d.original_filename,
+        "project_id": str(d.project_id) if d.project_id else None,
         "title": d.title,
         "parent_document_id": str(d.parent_document_id) if d.parent_document_id else None,
         "created_at": _iso(d.created_at),
@@ -1631,7 +1633,14 @@ def _drawing_resolved_file_url(d: Drawing) -> str | None:
 
 @bp.get("/drawings/<drawing_id>/file")
 def get_drawing_pdf_file(drawing_id: str):
-    """Stream an uploaded drawing PDF (same-origin for PDF.js)."""
+    """Stream an uploaded drawing PDF (same-origin for PDF.js).
+
+    On an employee Windows PC, reuse ``%LOCALAPPDATA%\\USISCM\\{projectId}\\{drawingId}``
+    (and legacy USISPdfApp / flat USISCM\\drawings folders) so the website and
+    desktop app share one cache.
+    """
+    from ..services.employee_pc_cache import respond_drawing_pdf
+
     did = _parse_uuid_param(drawing_id)
     if not did:
         return _jsonify({"error": "invalid drawing id"}), 400
@@ -1639,15 +1648,7 @@ def get_drawing_pdf_file(drawing_id: str):
     if row is None:
         return _jsonify({"error": "drawing not found"}), 404
     name = _drawing_object_name(row)
-    dl = (row.original_filename or "drawing.pdf").replace('"', "")
-    if not dl.lower().endswith(".pdf"):
-        dl = dl + ".pdf"
-    resp = send_stored_file(
-        UploadCategory.DRAWINGS,
-        name,
-        mimetype="application/pdf",
-        download_name=dl[:200],
-    )
+    resp = respond_drawing_pdf(row, name)
     if resp is None:
         return _jsonify({"error": "file not found on server"}), 404
     return resp
@@ -4186,6 +4187,14 @@ def list_takeoff_lines(identifier: str):
         return _jsonify({"error": "lead estimate not found"}), 404
     lines = est_svc.takeoff_lines_for_lead_compat(lead)
     current = est_svc.current_estimate_for_lead(lead)
+    from ..services.employee_pc_cache import maybe_write_takeoff
+
+    maybe_write_takeoff(
+        lead.project_id,
+        lines,
+        cloud_estimate_id=current.id if current is not None else None,
+        lead_estimate_id=lead.id,
+    )
     return _jsonify(
         {
             "items": [_takeoff_line_public(x) for x in lines],
@@ -4224,6 +4233,9 @@ def create_takeoff_line(identifier: str):
         return _jsonify({"error": str(exc)}), 400
     db.session.add(t)
     db.session.commit()
+    from ..services.employee_pc_cache import cache_takeoff_for_line
+
+    cache_takeoff_for_line(t)
     return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
 
@@ -4248,6 +4260,9 @@ def patch_takeoff_line(line_id: str):
     except (ValueError, TypeError) as exc:
         return _jsonify({"error": str(exc)}), 400
     db.session.commit()
+    from ..services.employee_pc_cache import cache_takeoff_for_line
+
+    cache_takeoff_for_line(t)
     return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"})
 
 
@@ -4264,8 +4279,12 @@ def delete_takeoff_line(line_id: str):
     blocked = _require_unlocked_for_line(t)
     if blocked:
         return blocked
+    from ..services.employee_pc_cache import cache_project_takeoff, project_id_for_takeoff_line
+
+    pid = project_id_for_takeoff_line(t)
     db.session.delete(t)
     db.session.commit()
+    cache_project_takeoff(pid)
     return _jsonify({"ok": True})
 
 
@@ -4725,6 +4744,41 @@ def dashboard_ops_kpis():
             "shipmentsInTransit": int(in_transit_shipments),
         }
     )
+
+
+@bp.get("/material-pricing")
+def list_material_pricing_desktop():
+    """Full company catalog for the desktop app (``GET /api/v1/material-pricing``)."""
+    from ..services.employee_pc_cache import material_pricing_cache_row, refresh_company_from_db
+
+    rows = db.session.scalars(
+        select(MaterialPrice).order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
+    ).all()
+    refresh_company_from_db()
+    return _jsonify({"items": [material_pricing_cache_row(m) for m in rows], "entity": "material_pricing"})
+
+
+@bp.get("/wage-rates")
+def list_wage_rates_desktop():
+    """Full wage-rate list for the desktop app (``GET /api/v1/wage-rates``)."""
+    from ..services.employee_pc_cache import refresh_company_from_db, wage_rate_cache_row
+
+    rows = db.session.scalars(
+        select(WageRate).order_by(WageRate.state.asc(), WageRate.year.desc(), WageRate.trade.asc())
+    ).all()
+    refresh_company_from_db()
+    return _jsonify({"items": [wage_rate_cache_row(w) for w in rows], "entity": "wage_rates"})
+
+
+@bp.post("/pc-cache/refresh")
+@bp.get("/pc-cache/refresh")
+def refresh_employee_pc_cache():
+    """Refresh ``%LOCALAPPDATA%\\USISCM`` company JSON and optional project takeoff."""
+    from ..services.employee_pc_cache import refresh_pc_cache
+
+    raw = (request.args.get("project_id") or request.args.get("projectId") or "").strip()
+    pid = _parse_uuid_param(raw) if raw else None
+    return _jsonify(refresh_pc_cache(pid))
 
 
 @bp.get("/material-prices")

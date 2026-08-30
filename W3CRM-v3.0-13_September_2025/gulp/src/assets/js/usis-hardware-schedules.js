@@ -273,6 +273,7 @@
 		var q = (document.getElementById("usis-hs-catalog-q") || {}).value || "";
 		var ul = document.getElementById("usis-hs-catalog-results");
 		if (!ul) return;
+		if (window.USISDrawingCache) window.USISDrawingCache.refresh();
 		ul.innerHTML = '<li class="list-group-item text-muted">Searching…</li>';
 		var url =
 			"/api/v1/material-prices?csi_spec_section=" +

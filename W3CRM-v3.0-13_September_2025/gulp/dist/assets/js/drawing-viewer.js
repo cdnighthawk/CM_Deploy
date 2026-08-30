@@ -1067,6 +1067,7 @@
 		var noCat = document.getElementById("usis-dv-takeoff-modal-no-catalog");
 		var wrap = document.getElementById("usis-dv-takeoff-modal-mat-wrap");
 		setTakeoffModalErr("");
+		if (window.USISDrawingCache) window.USISDrawingCache.refresh();
 		return fetch(apiBase() + "/api/v1/material-prices?limit=300", {
 			credentials: "include",
 			headers: { Accept: "application/json" },
@@ -3091,6 +3092,7 @@
 				loadPdfFromRevision();
 				loadAnnotations();
 				loadProjectTakeoffList();
+				if (window.USISDrawingCache) window.USISDrawingCache.prefetchSheets(revisions);
 			})
 			.catch(function (err) {
 				_usisDbg("A", "drawing-viewer.js:loadRevisionsAndPdf", "revisions_fetch_fail", {

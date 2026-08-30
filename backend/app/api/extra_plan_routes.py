@@ -163,6 +163,9 @@ def register_extra_routes(bp: Blueprint) -> None:
             .options(joinedload(TakeoffLineItem.material_price))
         ).all()
         items = [_takeoff_line_public(x) for x in lines]
+        from ..services.employee_pc_cache import maybe_write_takeoff
+
+        maybe_write_takeoff(pid, lines)
         return _jsonify(
             {
                 "items": items,
@@ -198,6 +201,9 @@ def register_extra_routes(bp: Blueprint) -> None:
             return _jsonify({"error": str(exc)}), 400
         db.session.add(t)
         db.session.commit()
+        from ..services.employee_pc_cache import cache_project_takeoff
+
+        cache_project_takeoff(pid)
         return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
     @bp.get("/projects/<project_id>/documents")
@@ -285,17 +291,10 @@ def register_extra_routes(bp: Blueprint) -> None:
             return _jsonify({"error": "document not found"}), 404
         if isinstance(row, Drawing) or row.document_type == "drawing":
             from ..services.drawing_upload import resolve_drawing_object_name
+            from ..services.employee_pc_cache import respond_drawing_pdf
 
             name = resolve_drawing_object_name(row) or f"{row.id}.pdf"
-            dl = (row.original_filename or "drawing.pdf").replace('"', "")
-            if not dl.lower().endswith(".pdf"):
-                dl = dl + ".pdf"
-            resp = send_stored_file(
-                UploadCategory.DRAWINGS,
-                name,
-                mimetype="application/pdf",
-                download_name=dl[:200],
-            )
+            resp = respond_drawing_pdf(row, name)
         else:
             tags = row.tags if isinstance(row.tags, dict) else {}
             name = str(tags.get("storage_object") or "").strip() or f"{row.id}"

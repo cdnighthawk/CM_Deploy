@@ -2834,6 +2834,16 @@
 		});
 	}
 
+	function syncProjectContext() {
+		if (
+			projectId &&
+			window.USISProjectContext &&
+			typeof window.USISProjectContext.setProjectId === "function"
+		) {
+			window.USISProjectContext.setProjectId(projectId);
+		}
+	}
+
 	function setBackLink(q) {
 		var back = document.getElementById("usis-dv-back");
 		if (!back) return;
@@ -2928,6 +2938,7 @@
 			})
 			.then(function () {
 				setBackLink(new URLSearchParams(window.location.search));
+				syncProjectContext();
 				startViewer();
 			});
 	}
@@ -2949,6 +2960,7 @@
 			origin: window.location && window.location.origin,
 		});
 		setBackLink(q);
+		syncProjectContext();
 		resolveLeadProjectThenStart();
 	}
 

@@ -1191,6 +1191,15 @@ body.usis-drawing-viewer .usis-dv-page .page-title {
 	flex: 0 0 auto;
 	margin-bottom: 0.5rem;
 }
+.page-title .breadcrumb #usis-project-crumb-link,
+.page-title .breadcrumb #usis-dv-project-crumb-link {
+	display: inline-block;
+	max-width: min(28rem, 42vw);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	vertical-align: bottom;
+}
 body.usis-drawing-viewer .usis-dv-page__body {
 	flex: 1 1 auto;
 	min-height: 0;

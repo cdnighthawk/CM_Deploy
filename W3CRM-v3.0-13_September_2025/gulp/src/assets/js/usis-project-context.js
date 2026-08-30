@@ -1,10 +1,14 @@
 /**
  * Sets data-project-id on body from URL (?project_id=) or sessionStorage (Plan 1).
+ * Also stamps Home / Active projects / [number — name] into the page breadcrumb.
  */
 (function (global) {
   "use strict";
 
+  if (global.USISProjectContext) return;
+
   var KEY = "usis.activeProjectId";
+  var crumbState = { projectId: null, item: null, inflight: null };
 
   function projectIdFromQuery() {
     try {
@@ -60,8 +64,142 @@
     });
   }
 
+  function apiBase() {
+    if (typeof global.usisApiBase === "function") {
+      return global.usisApiBase();
+    }
+    if (typeof global.USIS_API_BASE === "string") {
+      return global.USIS_API_BASE.trim().replace(/\/$/, "");
+    }
+    return "";
+  }
+
+  function crumbLabel(item) {
+    var num = item && item.number != null ? String(item.number).trim() : "";
+    var name = item && item.name != null ? String(item.name).trim() : "";
+    if (num && name) return num + " — " + name;
+    return num || name || "";
+  }
+
+  function breadcrumbList() {
+    return document.querySelector(".page-title .breadcrumb");
+  }
+
+  function ensureCrumbs() {
+    var ol = breadcrumbList();
+    if (!ol) return null;
+    var active = ol.querySelector(".breadcrumb-item.active");
+
+    var projectsLi = document.getElementById("usis-projects-crumb");
+    if (!projectsLi) {
+      projectsLi = document.createElement("li");
+      projectsLi.id = "usis-projects-crumb";
+      projectsLi.className = "breadcrumb-item";
+      var projectsLink = document.createElement("a");
+      projectsLink.setAttribute("href", "construction/projects.html");
+      projectsLink.setAttribute("data-i18n", "Active projects");
+      projectsLink.textContent = "Active projects";
+      projectsLi.appendChild(projectsLink);
+      if (active) ol.insertBefore(projectsLi, active);
+      else ol.appendChild(projectsLi);
+    }
+
+    var projectLi =
+      document.getElementById("usis-project-crumb") ||
+      document.getElementById("usis-dv-project-crumb");
+    if (!projectLi) {
+      projectLi = document.createElement("li");
+      projectLi.id = "usis-project-crumb";
+      projectLi.className = "breadcrumb-item d-none";
+      var link = document.createElement("a");
+      link.id = "usis-project-crumb-link";
+      link.setAttribute("href", "construction/projects.html");
+      projectLi.appendChild(link);
+      if (active) ol.insertBefore(projectLi, active);
+      else ol.appendChild(projectLi);
+    } else {
+      projectLi.id = "usis-project-crumb";
+      var existing =
+        document.getElementById("usis-project-crumb-link") ||
+        document.getElementById("usis-dv-project-crumb-link") ||
+        projectLi.querySelector("a");
+      if (existing) existing.id = "usis-project-crumb-link";
+    }
+    return projectLi;
+  }
+
+  function applyCrumb(item, projectId) {
+    ensureCrumbs();
+    var li = document.getElementById("usis-project-crumb");
+    var link = document.getElementById("usis-project-crumb-link");
+    if (!li || !link) return;
+    var label = crumbLabel(item);
+    if (!label || !projectId) {
+      link.textContent = "";
+      link.removeAttribute("title");
+      link.setAttribute("href", "construction/projects.html");
+      li.classList.add("d-none");
+      return;
+    }
+    link.textContent = label;
+    link.setAttribute("title", label);
+    link.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(projectId));
+    li.classList.remove("d-none");
+  }
+
+  function fetchProject(projectId) {
+    if (!breadcrumbList()) return;
+    ensureCrumbs();
+    if (!projectId) {
+      applyCrumb(null, null);
+      return;
+    }
+    if (crumbState.item && crumbState.projectId === projectId) {
+      applyCrumb(crumbState.item, projectId);
+      return;
+    }
+    if (crumbState.inflight && crumbState.projectId === projectId) return;
+
+    var base = apiBase();
+    var url =
+      String(base || "").replace(/\/$/, "") +
+      "/api/v1/projects/" +
+      encodeURIComponent(projectId);
+    crumbState.projectId = projectId;
+    crumbState.inflight = fetch(url, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        if (r.status === 404) {
+          clear();
+          applyCrumb(null, null);
+          if (/project-detail\.html/i.test(global.location.pathname || "")) {
+            global.location.href = "construction/projects.html";
+          }
+          return null;
+        }
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then(function (data) {
+        crumbState.inflight = null;
+        if (!data) return;
+        var item = data.item || data;
+        crumbState.item = item;
+        applyCrumb(item, projectId);
+      })
+      .catch(function () {
+        crumbState.inflight = null;
+      });
+  }
+
   function apply(id) {
     if (!id) return;
+    if (crumbState.projectId && crumbState.projectId !== id) {
+      crumbState.item = null;
+      crumbState.inflight = null;
+    }
     document.body.setAttribute("data-project-id", id);
     try {
       global.sessionStorage.setItem(KEY, id);
@@ -72,53 +210,40 @@
       issuesLink.setAttribute("href", "construction/issues.html?project_id=" + encodeURIComponent(id));
       issuesLink.classList.remove("d-none");
     }
+    fetchProject(id);
   }
 
-  function apiBase() {
-    if (typeof global.usisApiBase === "function") {
-      return global.usisApiBase();
-    }
-    if (typeof global.USIS_API_BASE === "string" && global.USIS_API_BASE.trim()) {
-      return global.USIS_API_BASE.trim().replace(/\/$/, "");
-    }
-    return "";
-  }
-
-  function verifyProjectAccess(projectId) {
-    var base = apiBase();
-    if (!base || !projectId) return;
-    fetch(base.replace(/\/$/, "") + "/api/v1/projects/" + encodeURIComponent(projectId), {
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    })
-      .then(function (r) {
-        if (r.status === 404) {
-          clear();
-          if (/project-detail\.html/i.test(global.location.pathname || "")) {
-            global.location.href = "construction/projects.html";
-          }
-        }
-      })
-      .catch(function () {});
+  function clear() {
+    document.body.removeAttribute("data-project-id");
+    try {
+      global.sessionStorage.removeItem(KEY);
+    } catch (e) {}
+    crumbState.projectId = null;
+    crumbState.item = null;
+    crumbState.inflight = null;
+    applyCrumb(null, null);
   }
 
   function init() {
     if (document.querySelector(".usis-mobile-bottomnav")) {
       document.body.classList.add("usis-has-bottomnav");
     }
+    ensureCrumbs();
     var fromQuery = readQuery();
     if (fromQuery) {
       apply(fromQuery);
-      verifyProjectAccess(fromQuery);
       return;
     }
     try {
       var stored = global.sessionStorage.getItem(KEY);
       if (stored) {
         apply(stored);
-        verifyProjectAccess(stored);
+      } else {
+        applyCrumb(null, null);
       }
-    } catch (e) {}
+    } catch (e) {
+      applyCrumb(null, null);
+    }
   }
 
   global.USISProjectContext = {
@@ -130,12 +255,7 @@
     getProjectId: function () {
       return document.body.getAttribute("data-project-id") || projectIdFromQuery();
     },
-    clear: function () {
-      document.body.removeAttribute("data-project-id");
-      try {
-        global.sessionStorage.removeItem(KEY);
-      } catch (e) {}
-    },
+    clear: clear,
   };
 
   if (document.readyState === "loading") {

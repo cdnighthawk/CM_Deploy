@@ -87,9 +87,29 @@
 		@@include("../elements/deznav-construction.html")
 		<main class="content-body usis-dv-page">
 			<div class="page-title">
-				@@include("../elements/breadcrumb.html", {
-					"fileName": "Drawing viewer",
-				})
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li><h1 data-i18n="Drawing viewer">Drawing viewer</h1></li>
+						<li class="breadcrumb-item">
+							<a href="usis-dashboard-dark.html">
+								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<span data-i18n="Home">Home</span>
+							</a>
+						</li>
+						<li class="breadcrumb-item" id="usis-projects-crumb">
+							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
+						</li>
+						<li class="breadcrumb-item d-none" id="usis-project-crumb">
+							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
+						</li>
+						<li class="breadcrumb-item active" aria-current="page">
+							<span data-i18n="Drawing viewer">Drawing viewer</span>
+						</li>
+					</ol>
+				</nav>
 			</div>
 			<div class="container-fluid usis-dv-page__body">
 				<div id="usis-dv-fullscreen" class="usis-dv-workspace">
@@ -326,7 +346,7 @@
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260829g"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260829h"></script>
 
 </body>
 </html>

@@ -9,11 +9,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from ..extensions import db
-from ..models import Project, User
 from ..models.issue import Issue, IssueEvent
 
 GITHUB_SOURCE_NS = uuid.UUID("a3c8e1d0-5f21-4b7a-9c44-0e6d2a1b8f10")
@@ -90,19 +89,24 @@ def _project_id_from_item(item: dict[str, Any], session: Session | None = None) 
         pid = uuid.UUID(str(raw))
     except (TypeError, ValueError):
         return None
-    if _orm_session(session).get(Project, pid) is None:
-        return None
-    return pid
+    # Raw SQL so migrations do not load the current Project mapper (later columns
+    # such as latitude are not present yet at 0059/0067).
+    found = _orm_session(session).scalar(
+        text("SELECT id FROM projects WHERE id = CAST(:pid AS uuid)"),
+        {"pid": str(pid)},
+    )
+    return pid if found is not None else None
 
 
 def _user_id_from_item(item: dict[str, Any], session: Session | None = None) -> uuid.UUID | None:
-    from sqlalchemy import func
-
     email = _first_match(_EMAIL_RE, item.get("body") or "").lower()
     if not email or "@" not in email:
         return None
-    user = _orm_session(session).scalar(select(User).where(func.lower(User.email) == email))
-    return user.id if user else None
+    found = _orm_session(session).scalar(
+        text("SELECT id FROM users WHERE lower(email) = :email"),
+        {"email": email},
+    )
+    return found
 
 
 def _severity(item: dict[str, Any]) -> str:

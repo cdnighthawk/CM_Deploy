@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 	<!-- Title -->
 	<title>USIS</title>
 	
@@ -37,7 +36,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/usis-all-pages-index.html">
+	<link rel="canonical" href="https://www.usiscm.com/usis-ingest.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -53,13 +52,28 @@
 	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
 	<script src="assets/js/usis-api-fetch.js"></script>
 	<script src="assets/js/usis-theme-boot.js"></script>
-
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
-
+	<style>
+		#usis-ingest-drop {
+			border: 2px dashed var(--bs-border-color, #ced4da);
+			border-radius: 0.5rem;
+			min-height: 9rem;
+			padding: 1.5rem;
+			text-align: center;
+			background: var(--bs-body-bg, #fff);
+		}
+		#usis-ingest-drop.is-over { border-color: var(--bs-primary); background: rgba(13, 110, 253, 0.06); }
+		#usis-ingest-table { font-size: 0.8125rem; }
+		#usis-ingest-table td, #usis-ingest-table th { padding: 0.25rem 0.45rem; vertical-align: middle; }
+		.usis-ingest-status-created { color: #198754; }
+		.usis-ingest-status-duplicate { color: #6c757d; }
+		.usis-ingest-status-error { color: #dc3545; }
+		.usis-ingest-status-uploading { color: #0d6efd; }
+		#usis-ingest-project-list { max-height: 14rem; overflow: auto; }
+	</style>
 </head>
 <body>
-
 	<!-- Start - Preloader -->
 	<div id="preloader">
 		<div class="lds-ripple">
@@ -68,9 +82,7 @@
 		</div>
 	</div>
 	<!-- End - Preloader -->
-
 	<div id="main-wrapper">
-
 		<!-- Start - Nav Header -->
 		<div class="nav-header">
 			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
@@ -87,7 +99,6 @@
 			</div>
 		</div>
 		<!-- End - Nav Header -->
-
 		<!-- Start - Sidebar Chat Box  -->
 		<div class="chatbox usis-ai-chatbox">
 			<div class="chatbox-close"></div>
@@ -139,7 +150,6 @@
 			</div>
 		</div>
 		<!-- End - Sidebar Chat Box  -->
-
 
 		<link href="assets/css/usis-ui.css" rel="stylesheet">
 <!-- Start - Header -->
@@ -332,7 +342,6 @@
 			</div>
 		</div>
 		<!-- End - Header -->
-
 		<!-- Start - Sidebar Navigation -->
 		<div class="deznav">
 			<div class="deznav-scroll">
@@ -454,6 +463,12 @@
 							<li data-usis-module="documents">
 								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
 							</li>
+							<li data-usis-module="documents">
+								<a href="usis-ingest.html" data-i18n="Ingest">Ingest</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-correspondence.html">Correspondence</a>
+							</li>
 							<li data-usis-module="projects">
 								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
 							</li>
@@ -464,13 +479,11 @@
 		</div>
 		<!-- End - Sidebar Navigation -->
 
-
 		<main class="content-body">
-
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="All pages (tour)">All pages (tour)</h1></li>
+						<li><h1 data-i18n="Ingest">Ingest</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -480,207 +493,109 @@
 								<span data-i18n="Home">Home</span>
 							</a>
 						</li>
+						<li class="breadcrumb-item d-none" id="usis-projects-crumb">
+							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
+						</li>
+						<li class="breadcrumb-item d-none" id="usis-project-crumb">
+							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
+						</li>
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="All pages (tour)">All pages (tour)</span>
+							<span data-i18n="Ingest">Ingest</span>
 
 						</li>
 					</ol>
 				</nav>
 
 			</div>
-
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-0 shadow-none mb-0 bg-light">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-							<h6 class="mb-0">USIS — page index</h6>
-							<div class="text-nowrap small">
-								<a href="user.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-crm-bid-detail.html">Next</a>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+					<div>
+						<h4 class="mb-1">Mass ingest</h4>
+						<p class="text-muted small mb-0">Drop a folder of drawings, specs, and other files. Sheet-like PDFs become drawings; everything else is stored as a document. Failed uploads retry automatically.</p>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<div class="row g-3 align-items-end">
+							<div class="col-lg-5">
+								<label class="form-label small mb-1" for="usis-ingest-project-q">Job or lead</label>
+								<input class="form-control form-control-sm" id="usis-ingest-project-q" placeholder="Number or name…" autocomplete="off">
+								<div id="usis-ingest-project-selected" class="small mt-1 text-muted">No job selected — folder names will be used to match.</div>
+								<div class="list-group list-group-flush border rounded mt-1 d-none" id="usis-ingest-project-list"></div>
+							</div>
+							<div class="col-lg-3">
+								<label class="form-label small mb-1" for="usis-ingest-kind">Treat files as</label>
+								<select class="form-select form-select-sm" id="usis-ingest-kind">
+									<option value="auto" selected>Auto (sheet PDFs → drawings)</option>
+									<option value="drawing">Drawings</option>
+									<option value="document">Documents</option>
+								</select>
+							</div>
+							<div class="col-lg-2">
+								<label class="form-label small mb-1" for="usis-ingest-workers">Parallel uploads</label>
+								<select class="form-select form-select-sm" id="usis-ingest-workers">
+									<option value="1">1</option>
+									<option value="2">2</option>
+									<option value="3" selected>3</option>
+									<option value="4">4</option>
+								</select>
+							</div>
+							<div class="col-lg-2">
+								<div class="form-check mt-4">
+									<input class="form-check-input" type="checkbox" id="usis-ingest-split">
+									<label class="form-check-label small" for="usis-ingest-split">Split multi-page PDFs</label>
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div class="container-fluid">
-				<div class="card mb-3 border-0 bg-light">
-					<div class="card-body py-3">
-						<h5 class="card-title mb-0">Site map</h5>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<div id="usis-ingest-drop">
+							<p class="mb-2 fw-semibold">Drop a folder or files here</p>
+							<p class="text-muted small mb-3">Relative paths are kept so discipline / set / sheet labels can be read from the tree.</p>
+							<div class="d-flex flex-wrap justify-content-center gap-2">
+								<button type="button" class="btn btn-sm btn-primary" id="usis-ingest-pick-files">Add files</button>
+								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-ingest-pick-folder">Add folder</button>
+								<input type="file" id="usis-ingest-files-input" class="d-none" multiple>
+								<input type="file" id="usis-ingest-folder-input" class="d-none" webkitdirectory directory multiple>
+							</div>
+						</div>
 					</div>
 				</div>
-				<h5 class="mt-2">USIS product &amp; hubs</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="usis-crm-bid-detail.html"><strong>USIS CRM Bid Detail</strong></a></li>
-					<li class="mb-2"><a href="usis-calendar.html"><strong>USIS Calendar</strong></a> <span class="text-muted small">— Procurement, project schedule, RFIs, submittals, RFPs, milestones.</span></li>
-					<li class="mb-2"><a href="usis-dashboard.html"><strong>USIS Dashboard</strong></a></li>
-					<li class="mb-2"><a href="usis-dashboard-dark.html"><strong>USIS Dark Dashboard</strong></a> <span class="text-muted small">— W3CRM dark-theme KPI layout (charts, widgets, maps).</span></li>
-					<li class="mb-2"><a href="usis-documents-hub.html"><strong>USIS Documents Hub</strong></a></li>
-					<li class="mb-2"><a href="usis-ingest.html"><strong>USIS Mass ingest</strong></a> <span class="text-muted small">— Queue a folder of drawings and documents onto a job.</span></li>
-					<li class="mb-2"><a href="usis-email.html"><strong>USIS Email</strong></a> <span class="text-muted small">— Outlook inbox, sent, and compose for the signed-in user.</span></li>
-					<li class="mb-2"><a href="usis-invoices.html"><strong>USIS Vendor invoices</strong></a> <span class="text-muted small">— invoices@gousis.com intake, job routing, payment approval.</span></li>
-					<li class="mb-2"><a href="usis-invoice-approvals.html"><strong>USIS Invoice approvals</strong></a></li>
-					<li class="mb-2"><a href="usis-invoice-detail.html"><strong>USIS Invoice detail</strong></a></li>
-					<li class="mb-2"><a href="core-hr.html"><strong>Core HR (USIS landing)</strong></a></li>
-					<li class="mb-2"><a href="apply.html"><strong>Careers — apply (public)</strong></a> <span class="text-muted small">— Entry point for candidates.</span></li>
-					<li class="mb-2"><a href="usis-hr-hire.html"><strong>USIS HR — hire wizard</strong></a></li>
-					<li class="mb-2"><a href="usis-hr-dashboard.html"><strong>USIS HR Dashboard</strong></a></li>
-					<li class="mb-2"><a href="usis-hr-employee.html"><strong>USIS HR — employee</strong></a></li>
-					<li class="mb-2"><a href="usis-hr-quickbooks-employee-reference.html"><strong>USIS HR — QuickBooks employee reference</strong></a></li>
-					<li class="mb-2"><a href="usis-hr.html"><strong>USIS HR</strong></a></li>
-					<li class="mb-2"><a href="usis-leads.html"><strong>USIS Leads</strong></a></li>
-					<li class="mb-2"><a href="usis-playbook-run.html"><strong>USIS Playbook run</strong></a></li>
-					<li class="mb-2"><a href="usis-playbooks.html"><strong>USIS Playbooks</strong></a></li>
-					<li class="mb-2"><a href="usis-workflows.html"><strong>USIS Workflows</strong></a> <span class="text-muted small">— Amendable process definitions (drawing review / takeoff first pass).</span></li>
-					<li class="mb-2"><a href="usis-user-directory.html"><strong>USIS User admin</strong></a></li>
-					<li class="mb-2"><a href="usis-rfp-compare.html"><strong>USIS Rfp Compare</strong></a></li>
-					<li class="mb-2"><a href="usis-rfp-detail.html"><strong>USIS Rfp Detail</strong></a></li>
-					<li class="mb-2"><a href="usis-rfp-list.html"><strong>USIS Rfp List</strong></a></li>
-					<li class="mb-2"><a href="usis-safety.html"><strong>USIS Safety</strong></a></li>
-					<li class="mb-2"><a href="usis-daily-pretask.html"><strong>USIS Daily pretask</strong></a> <span class="text-muted small">— Appendix E pre-task safety plan.</span></li>
-					<li class="mb-2"><a href="usis-safety-company.html"><strong>USIS Company safety programs</strong></a> <span class="text-muted small">— IIPP, WVPP, heat, HazCom.</span></li>
-				</ul>
-				<h5 class="mt-2">Construction</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="construction/add-quotation.html"><strong>Construction — Add Quotation</strong></a></li>
-					<li class="mb-2"><a href="construction/attendance.html"><strong>Construction — Attendance</strong></a></li>
-					<li class="mb-2"><a href="construction/contact-us.html"><strong>Construction — Contact Us</strong></a></li>
-					<li class="mb-2"><a href="construction/construction-pricing.html"><strong>Construction — Pricing</strong></a></li>
-					<li class="mb-2"><a href="construction/drawing-viewer.html"><strong>Construction — Drawing Viewer</strong></a></li>
-					<li class="mb-2"><a href="construction/edit-quotation.html"><strong>Construction — Edit Quotation</strong></a></li>
-					<li class="mb-2"><a href="construction/estimate-detail.html"><strong>Construction — Estimate Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/estimate.html"><strong>Construction — Estimate</strong></a></li>
-					<li class="mb-2"><a href="construction/estimate_legacy.html"><strong>Construction — Estimate Legacy</strong></a></li>
-					<li class="mb-2"><a href="construction/files.html"><strong>Construction — Files</strong></a></li>
-					<li class="mb-2"><a href="construction/finance.html"><strong>Construction — Finance</strong></a></li>
-					<li class="mb-2"><a href="construction/index.html"><strong>Construction — Index</strong></a></li>
-					<li class="mb-2"><a href="construction/lead-detail.html"><strong>Construction — Lead Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/leads.html"><strong>Construction — Leads</strong></a></li>
-					<li class="mb-2"><a href="construction/lead-goldenstate-planroom.html"><strong>Construction — Leads Golden State Planroom</strong></a></li>
-					<li class="mb-2"><a href="construction/material.html"><strong>Construction — Material</strong></a></li>
-					<li class="mb-2"><a href="construction/door-schedule.html"><strong>Construction — Door schedule</strong></a> <span class="text-muted small">(requires <code>?id=</code> lead)</span></li>
-					<li class="mb-2"><a href="construction/mom-detail.html"><strong>Construction — Mom Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/mom.html"><strong>Construction — Mom</strong></a></li>
-					<li class="mb-2"><a href="construction/overview.html"><strong>Construction — Overview</strong></a></li>
-					<li class="mb-2"><a href="construction/party.html"><strong>Construction — Party</strong></a></li>
-					<li class="mb-2"><a href="construction/project-detail.html"><strong>Construction — Project Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/projects.html"><strong>Construction — Projects</strong></a></li>
-					<li class="mb-2"><a href="construction/quotation.html"><strong>Construction — Quotation</strong></a></li>
-					<li class="mb-2"><a href="reports.html"><strong>Reports</strong></a> <span class="text-muted small">— Power BI and operational reports.</span></li>
-					<li class="mb-2"><a href="construction/rfi-create.html"><strong>Construction — RFI Create</strong></a></li>
-					<li class="mb-2"><a href="construction/rfi-detail.html"><strong>Construction — RFI Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/rfis.html"><strong>Construction — RFIS</strong></a></li>
-					<li class="mb-2"><a href="construction/services.html"><strong>Construction — Services</strong></a></li>
-					<li class="mb-2"><a href="construction/submittal-detail.html"><strong>Construction — Submittal Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/task.html"><strong>Construction — Task</strong></a></li>
-					<li class="mb-2"><a href="construction/time-sheet.html"><strong>Construction — Time Sheet</strong></a></li>
-					<li class="mb-2"><a href="construction/timesheet-detail.html"><strong>Construction — Timesheet Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/todo-detail.html"><strong>Construction — Todo Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/todo.html"><strong>Construction — Todo</strong></a></li>
-					<li class="mb-2"><a href="construction/transaction.html"><strong>Construction — Transaction</strong></a></li>
-				</ul>
-				<h5 class="mt-2">Authentication &amp; careers</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="apply.html"><strong>Careers — apply (public)</strong></a> <span class="text-muted small">— Public landing for job candidates; no login required. Apply → register → hire wizard.</span></li>
-					<li class="mb-2"><a href="page-error-400.html"><strong>Page Error 400</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-403.html"><strong>Page Error 403</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-404.html"><strong>Page Error 404</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-500.html"><strong>Page Error 500</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-503.html"><strong>Page Error 503</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-forgot-password.html"><strong>Page Forgot Password</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-lock-screen.html"><strong>Page Lock Screen</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-login.html"><strong>Page Login</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-register.html"><strong>Page Register</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-				</ul>
-				<h5 class="mt-2">E-commerce demos</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="ecom-checkout.html"><strong>E-commerce Checkout</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-customers.html"><strong>E-commerce Customers</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-invoice.html"><strong>E-commerce Invoice</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-detail.html"><strong>E-commerce Product Detail</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-grid.html"><strong>E-commerce Product Grid</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-list.html"><strong>E-commerce Product List</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-order.html"><strong>E-commerce Product Order</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-				</ul>
-				<h5 class="mt-2">CMS</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="cms/add-blog.html"><strong>Add Blog</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/add-email.html"><strong>Add Email</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/blog-category.html"><strong>Blog Category</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/blog.html"><strong>Blog</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/content-add.html"><strong>Content Add</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/content.html"><strong>Content</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/email-template.html"><strong>Email Template</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/menu.html"><strong>Menu</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-				</ul>
-				<h5 class="mt-2">AI kit</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="aikit/auto-write.html"><strong>Auto Write</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/chatbot.html"><strong>Chatbot</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/fine-tune-models.html"><strong>Fine Tune Models</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/import.html"><strong>Import</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/prompt.html"><strong>Prompt</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/repurpose.html"><strong>Repurpose</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/rss.html"><strong>Rss</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/scheduled.html"><strong>Scheduled</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/setting.html"><strong>Setting</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-				</ul>
-				<h5 class="mt-2">Account</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="account/activity.html"><strong>Activity</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/api-keys.html"><strong>API Keys</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/billing.html"><strong>Billing</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/logs.html"><strong>Logs</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/overview.html"><strong>Overview</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/referrals.html"><strong>Referrals</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/security.html"><strong>Security</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/settings.html"><strong>Settings</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/statements.html"><strong>Statements</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-				</ul>
-				<h5 class="mt-2">Profile</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="profile/activity.html"><strong>Activity</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/campaigns.html"><strong>Campaigns</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/documents.html"><strong>Documents</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/followers.html"><strong>Followers</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/overview.html"><strong>Overview</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/projects-details.html"><strong>Projects Details</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/projects.html"><strong>Projects</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-				</ul>
-				<h5 class="mt-2">Other template pages</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="add-role.html"><strong>Add Role</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="app-calender.html"><strong>App Calender</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="app-profile-2.html"><strong>App Profile 2</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="app-profile.html"><strong>App Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="blog.html"><strong>Blog</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="chat.html"><strong>Chat</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="contacts.html"><strong>Contacts</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="core-hr.html"><strong>Core HR</strong></a> <span class="text-muted small">— <strong>USIS HR landing</strong> (employee directory + template chrome). Linked from deznav HR.</span></li>
-					<li class="mb-2"><a href="customer-profile.html"><strong>Customer Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="customer.html"><strong>Customer</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="edit-profile.html"><strong>Edit Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="email-compose.html"><strong>Email Compose</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="email-inbox.html"><strong>Email Inbox</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="email-read.html"><strong>Email Read</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="employee.html"><strong>Employee</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="empty-page.html"><strong>Empty Page</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="finance.html"><strong>Finance</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="index-2.html"><strong>Index 2</strong></a> <span class="text-muted small">— Original template dark dashboard (classic shell); prefer <a href="usis-dashboard-dark.html">USIS Dark Dashboard</a>.</span></li>
-					<li class="mb-2"><a href="index.html"><strong>Index</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="manage-client.html"><strong>Manage Client</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="performance.html"><strong>Performance</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="post-details.html"><strong>Post Details</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="project.html"><strong>Project</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="task-summary.html"><strong>Task Summary</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="task.html"><strong>Task</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="user-roles.html"><strong>User Roles</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="user.html"><strong>User</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-				</ul>
+				<div class="card border-0 shadow-sm">
+					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+							<div class="small" id="usis-ingest-stats">0 files queued</div>
+							<div class="d-flex flex-wrap gap-2">
+								<button type="button" class="btn btn-sm btn-primary" id="usis-ingest-start">Start</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-pause" disabled>Pause</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-retry" disabled>Retry failed</button>
+								<button type="button" class="btn btn-sm btn-outline-danger" id="usis-ingest-clear">Clear queue</button>
+							</div>
+						</div>
+						<div class="progress mb-2" style="height: 0.5rem;">
+							<div class="progress-bar" id="usis-ingest-bar" role="progressbar" style="width: 0%"></div>
+						</div>
+						<div class="table-responsive" style="max-height: 28rem;">
+							<table class="table table-sm table-hover align-middle mb-0" id="usis-ingest-table">
+								<thead class="table-light sticky-top">
+									<tr>
+										<th>File</th>
+										<th>Kind</th>
+										<th>Status</th>
+										<th>Note</th>
+									</tr>
+								</thead>
+								<tbody id="usis-ingest-tbody"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
 			</div>
-
 		</main>
-
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
 <nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
@@ -716,9 +631,7 @@
 			</div>
 		</div>
 		<!-- End - Footer -->
-
 	</div>
-
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/js/usis-i18n.js"></script>
 	<script src="assets/js/usis-report-problem.js"></script>
@@ -729,14 +642,12 @@
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/js/usis-ui.js?v=20260829f"></script>
+	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
-
-	<script src="assets/vendor/i18n/i18n.js"></script>
-	<script src="assets/js/translator.js"></script>
 	<script src="assets/js/aiReviewBus.js"></script>
 	<script src="assets/js/usis-notify.js"></script>
 	<script src="assets/js/usis-project-context.js"></script>
@@ -744,6 +655,6 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-
+	<script src="assets/js/usis-ingest.js"></script>
 </body>
 </html>

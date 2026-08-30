@@ -394,3 +394,66 @@ def test_relink_unassigned_drawing_uses_folder_and_lead_tag(client, flask_app):
         lead = db.session.get(LeadEstimate, uuid.UUID(lead_id))
         assert drawing is not None and drawing.project_id is not None
         assert lead is not None and lead.project_id == drawing.project_id
+
+
+def test_session_ingest_projects_and_auto_classify(client, flask_app):
+    pdf = _pdf_bytes()
+    number = "25" + uuid.uuid4().hex[:6]
+    with flask_app.app_context():
+        p = Project(name="MassIngest-" + uuid.uuid4().hex[:8], number=number)
+        db.session.add(p)
+        db.session.commit()
+        pid = str(p.id)
+
+    listed = client.get(f"/api/v1/ingest/projects?q={number}")
+    assert listed.status_code == 200, listed.get_data(as_text=True)
+    match = next((row for row in listed.get_json()["projects"] if row.get("project_id") == pid), None)
+    assert match is not None
+
+    draw = client.post(
+        "/api/v1/ingest/files",
+        data={
+            "file": (io.BytesIO(pdf), "A201_LEVEL-2.pdf"),
+            "kind": "auto",
+            "metadata": json.dumps(
+                {
+                    "project_id": pid,
+                    "relative_path": f"{number}/Architectural/Permit/A201_LEVEL-2.pdf",
+                }
+            ),
+        },
+        content_type="multipart/form-data",
+    )
+    assert draw.status_code == 201, draw.get_data(as_text=True)
+    draw_body = draw.get_json()
+    assert draw_body["kind"] == "drawing"
+    assert draw_body["drawing"]["drawing_id"]
+
+    spec = b"%PDF-1.4 addendum"
+    spec_r = client.post(
+        "/api/v1/ingest/files",
+        data={
+            "file": (io.BytesIO(spec), "Addendum-1.pdf"),
+            "kind": "auto",
+            "metadata": json.dumps(
+                {
+                    "project_id": pid,
+                    "relative_path": f"{number}/Specs/Addendum-1.pdf",
+                }
+            ),
+        },
+        content_type="multipart/form-data",
+    )
+    assert spec_r.status_code == 201, spec_r.get_data(as_text=True)
+    spec_body = spec_r.get_json()
+    assert spec_body["kind"] == "document"
+    assert spec_body["document"]["source"] == "mass_ingest"
+    with flask_app.app_context():
+        from sqlalchemy import text
+
+        row = db.session.execute(
+            text("SELECT document_type FROM documents WHERE id = CAST(:id AS uuid)"),
+            {"id": spec_body["document"]["id"]},
+        ).first()
+        assert row is not None
+        assert row[0] == "specification"

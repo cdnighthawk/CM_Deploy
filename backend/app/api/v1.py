@@ -1481,6 +1481,74 @@ def run_calendar_reminders():
     return _jsonify(payload)
 
 
+@bp.get("/ingest/projects")
+def session_ingest_projects():
+    """Job/lead picker for the mass ingest tool (same matching as Bearer ingest)."""
+    from ..services.ingest import list_ingest_projects
+
+    query = (
+        request.args.get("q")
+        or request.args.get("folder")
+        or request.args.get("project_number")
+        or ""
+    )
+    return _jsonify({"projects": list_ingest_projects(query)})
+
+
+@bp.post("/ingest/files")
+def session_ingest_file():
+    """Session-auth single-file ingest used by the mass ingest page."""
+    from ..services.ingest import IngestError, handle_ingest_upload, parse_ingest_metadata
+    from ..services.ingest_classify import classify_ingest_file
+
+    if not (request.content_type or "").lower().startswith("multipart/form-data"):
+        return (
+            _jsonify(
+                {
+                    "error": 'multipart/form-data required with file field "file" and form field "metadata".',
+                }
+            ),
+            400,
+        )
+    metadata = parse_ingest_metadata(request.form.get("metadata"))
+    raw_kind = (request.form.get("kind") or metadata.get("kind") or "auto").strip().lower()
+    filename = (
+        (metadata.get("filename") or metadata.get("file_name") or "")
+        if isinstance(metadata.get("filename") or metadata.get("file_name"), str)
+        else ""
+    )
+    upload = request.files.get("file")
+    if not filename and upload is not None:
+        filename = (upload.filename or "").strip()
+    rel = (
+        str(metadata.get("relative_path") or metadata.get("relativePath") or metadata.get("source_path") or filename)
+        .replace("\\", "/")
+        .strip()
+    )
+    classified = classify_ingest_file(rel, kind=raw_kind)
+    kind = classified["kind"]
+    if not metadata.get("document_type") and not metadata.get("documentType"):
+        metadata["document_type"] = classified["document_type"]
+    if not metadata.get("source") and not metadata.get("sourceSystem"):
+        metadata["source"] = "mass_ingest"
+    extra_hash = (request.form.get("content_hash") or "").strip()
+    if extra_hash and not metadata.get("content_hash"):
+        metadata["content_hash"] = extra_hash
+    try:
+        body, status = handle_ingest_upload(upload, metadata, kind=kind)
+        db.session.commit()
+    except IngestError as exc:
+        db.session.rollback()
+        return _jsonify({"error": exc.message}), exc.status
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("session ingest %s failed", kind)
+        return _jsonify({"error": f"{kind} upload failed"}), 500
+    body = dict(body)
+    body["kind"] = kind
+    return _jsonify(body), status
+
+
 @bp.post("/drawings/relink")
 def relink_unassigned_drawings():
     """Attach B2 drawings/docs with no project_id to a matched lead, estimate, or job.

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", {
+		"fileName": "usis-ingest.html",
+	})
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		#usis-ingest-drop {
+			border: 2px dashed var(--bs-border-color, #ced4da);
+			border-radius: 0.5rem;
+			min-height: 9rem;
+			padding: 1.5rem;
+			text-align: center;
+			background: var(--bs-body-bg, #fff);
+		}
+		#usis-ingest-drop.is-over { border-color: var(--bs-primary); background: rgba(13, 110, 253, 0.06); }
+		#usis-ingest-table { font-size: 0.8125rem; }
+		#usis-ingest-table td, #usis-ingest-table th { padding: 0.25rem 0.45rem; vertical-align: middle; }
+		.usis-ingest-status-created { color: #198754; }
+		.usis-ingest-status-duplicate { color: #6c757d; }
+		.usis-ingest-status-error { color: #dc3545; }
+		.usis-ingest-status-uploading { color: #0d6efd; }
+		#usis-ingest-project-list { max-height: 14rem; overflow: auto; }
+	</style>
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Ingest" })
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+					<div>
+						<h4 class="mb-1">Mass ingest</h4>
+						<p class="text-muted small mb-0">Drop a folder of drawings, specs, and other files. Sheet-like PDFs become drawings; everything else is stored as a document. Failed uploads retry automatically.</p>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<div class="row g-3 align-items-end">
+							<div class="col-lg-5">
+								<label class="form-label small mb-1" for="usis-ingest-project-q">Job or lead</label>
+								<input class="form-control form-control-sm" id="usis-ingest-project-q" placeholder="Number or name…" autocomplete="off">
+								<div id="usis-ingest-project-selected" class="small mt-1 text-muted">No job selected — folder names will be used to match.</div>
+								<div class="list-group list-group-flush border rounded mt-1 d-none" id="usis-ingest-project-list"></div>
+							</div>
+							<div class="col-lg-3">
+								<label class="form-label small mb-1" for="usis-ingest-kind">Treat files as</label>
+								<select class="form-select form-select-sm" id="usis-ingest-kind">
+									<option value="auto" selected>Auto (sheet PDFs → drawings)</option>
+									<option value="drawing">Drawings</option>
+									<option value="document">Documents</option>
+								</select>
+							</div>
+							<div class="col-lg-2">
+								<label class="form-label small mb-1" for="usis-ingest-workers">Parallel uploads</label>
+								<select class="form-select form-select-sm" id="usis-ingest-workers">
+									<option value="1">1</option>
+									<option value="2">2</option>
+									<option value="3" selected>3</option>
+									<option value="4">4</option>
+								</select>
+							</div>
+							<div class="col-lg-2">
+								<div class="form-check mt-4">
+									<input class="form-check-input" type="checkbox" id="usis-ingest-split">
+									<label class="form-check-label small" for="usis-ingest-split">Split multi-page PDFs</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<div id="usis-ingest-drop">
+							<p class="mb-2 fw-semibold">Drop a folder or files here</p>
+							<p class="text-muted small mb-3">Relative paths are kept so discipline / set / sheet labels can be read from the tree.</p>
+							<div class="d-flex flex-wrap justify-content-center gap-2">
+								<button type="button" class="btn btn-sm btn-primary" id="usis-ingest-pick-files">Add files</button>
+								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-ingest-pick-folder">Add folder</button>
+								<input type="file" id="usis-ingest-files-input" class="d-none" multiple>
+								<input type="file" id="usis-ingest-folder-input" class="d-none" webkitdirectory directory multiple>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm">
+					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+							<div class="small" id="usis-ingest-stats">0 files queued</div>
+							<div class="d-flex flex-wrap gap-2">
+								<button type="button" class="btn btn-sm btn-primary" id="usis-ingest-start">Start</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-pause" disabled>Pause</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-retry" disabled>Retry failed</button>
+								<button type="button" class="btn btn-sm btn-outline-danger" id="usis-ingest-clear">Clear queue</button>
+							</div>
+						</div>
+						<div class="progress mb-2" style="height: 0.5rem;">
+							<div class="progress-bar" id="usis-ingest-bar" role="progressbar" style="width: 0%"></div>
+						</div>
+						<div class="table-responsive" style="max-height: 28rem;">
+							<table class="table table-sm table-hover align-middle mb-0" id="usis-ingest-table">
+								<thead class="table-light sticky-top">
+									<tr>
+										<th>File</th>
+										<th>Kind</th>
+										<th>Status</th>
+										<th>Note</th>
+									</tr>
+								</thead>
+								<tbody id="usis-ingest-tbody"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-ingest.js"></script>
+</body>
+</html>

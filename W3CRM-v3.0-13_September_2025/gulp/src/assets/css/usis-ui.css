@@ -866,14 +866,17 @@ body .tabulator .tabulator-row:hover,
 	white-space: nowrap;
 }
 
-/* Project-details: one segmented row of split parents. */
+/* Project-details: parent row + always-visible child row. */
 .usis-project-tools-stack {
 	flex: 1 1 auto;
 	min-width: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
 }
 
 .usis-project-tools.usis-detail-toolbar {
-	display: inline-flex;
+	display: flex;
 	flex-wrap: nowrap !important;
 	align-items: stretch;
 	gap: 0.2rem;
@@ -881,101 +884,97 @@ body .tabulator .tabulator-row:hover,
 	padding: 0.2rem;
 	background: var(--usis-grid-header);
 	border: 1px solid var(--usis-divider);
-	border-radius: var(--usis-radius);
+	border-bottom: 0;
+	border-radius: var(--usis-radius) var(--usis-radius) 0 0;
 	overflow-x: auto;
-	overflow-y: visible;
+	overflow-y: hidden;
 }
 
-.usis-project-tool {
+.usis-project-tools .usis-project-tool {
 	flex: 0 0 auto;
-	position: relative;
-}
-
-.usis-project-tools .usis-project-tool > .btn {
 	font-weight: 550;
 	font-size: var(--usis-fs-sm);
 	line-height: 1.2;
 	min-height: 2rem;
 	height: 2rem;
-	padding: 0.3rem 0.75rem;
+	padding: 0.3rem 0.85rem;
 	border: 0;
+	border-radius: 7px;
 	background: transparent;
-	color: var(--usis-text);
+	color: var(--usis-text-secondary);
 	white-space: nowrap;
-}
-
-.usis-project-tools .usis-project-tool > .btn,
-.usis-project-tools .usis-project-tool > .btn:hover,
-.usis-project-tools .usis-project-tool > .btn:focus,
-.usis-project-tools .usis-project-tool > .btn:active {
 	box-shadow: none !important;
 }
 
-.usis-project-tools .usis-project-tool__label {
-	border-radius: 7px 0 0 7px;
+.usis-project-tools .usis-project-tool:hover,
+.usis-project-tools .usis-project-tool:focus,
+.usis-project-tools .usis-project-tool:focus-visible,
+.usis-project-tools .usis-project-tool:active {
+	box-shadow: none !important;
 }
 
-.usis-project-tools .usis-project-tool > .usis-project-tool__caret {
-	border-radius: 0 7px 7px 0;
-	min-width: 2rem;
-	padding-left: 0.35rem;
-	padding-right: 0.5rem;
-	box-shadow: inset 1px 0 0 var(--usis-divider) !important;
-}
-
-.usis-project-tools .usis-project-tool > .btn:hover,
-.usis-project-tools .usis-project-tool > .btn:focus-visible {
+.usis-project-tools .usis-project-tool:hover,
+.usis-project-tools .usis-project-tool:focus-visible {
 	background: rgba(var(--usis-primary-rgb), 0.08);
 	color: var(--usis-primary);
 }
 
-.usis-project-tools .usis-project-tool--active > .btn,
-.usis-project-tools .usis-project-tool--active > .btn:hover,
-.usis-project-tools .usis-project-tool--active > .btn:focus-visible {
+.usis-project-tools .usis-project-tool--active,
+.usis-project-tools .usis-project-tool--active:hover,
+.usis-project-tools .usis-project-tool--active:focus-visible {
 	background: var(--usis-primary);
 	color: #fff;
 }
 
-.usis-project-tools .usis-project-tool:not(.usis-project-tool--active) > .btn {
-	color: var(--usis-text-secondary);
-}
-
-.usis-project-tools .usis-project-tool--active > .usis-project-tool__caret,
-.usis-project-tools .usis-project-tool--active > .usis-project-tool__caret:hover,
-.usis-project-tools .usis-project-tool--active > .usis-project-tool__caret:focus,
-.usis-project-tools .usis-project-tool--active > .usis-project-tool__caret:active {
-	box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.22) !important;
-}
-
-.usis-project-tools .dropdown-menu {
-	min-width: 11.5rem;
-	margin-top: 0.3rem;
-	padding: 0.35rem;
-	border: 1px solid var(--usis-divider);
-	border-radius: var(--usis-radius);
+.usis-project-subtools {
+	display: flex;
+	align-items: stretch;
+	min-height: 2.35rem;
+	padding: 0.2rem 0.35rem;
 	background: var(--usis-paper);
-	box-shadow: 0 8px 24px rgba(27, 36, 44, 0.12);
+	border: 1px solid var(--usis-divider);
+	border-radius: 0 0 var(--usis-radius) var(--usis-radius);
 }
 
-.usis-project-tools .dropdown-item {
+.usis-project-subtools__group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.1rem;
+	width: 100%;
+}
+
+.usis-project-subtool {
+	appearance: none;
+	display: inline-flex;
+	align-items: center;
+	border: 0;
+	background: transparent;
+	color: var(--usis-text-secondary);
+	font-family: inherit;
 	font-size: var(--usis-fs-sm);
 	font-weight: 500;
+	line-height: 1.2;
+	min-height: 1.9rem;
+	padding: 0.3rem 0.65rem;
 	border-radius: 6px;
-	padding: 0.4rem 0.65rem;
-	color: var(--usis-text);
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
 }
 
-.usis-project-tools .dropdown-item:hover,
-.usis-project-tools .dropdown-item:focus {
+.usis-project-subtool:hover,
+.usis-project-subtool:focus-visible {
 	background: rgba(var(--usis-primary-rgb), 0.06);
 	color: var(--usis-primary);
+	text-decoration: none;
 }
 
-.usis-project-tools .dropdown-item.active,
-.usis-project-tools .dropdown-item[aria-current="page"] {
+.usis-project-subtool.active,
+.usis-project-subtool[aria-current="page"] {
 	background: rgba(var(--usis-primary-rgb), 0.1);
 	color: var(--usis-primary);
-	font-weight: 600;
+	font-weight: 650;
 }
 
 .usis-project-tools-tablist {

@@ -59,7 +59,7 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
-	<link href="assets/css/usis-ui.css?v=20260831b" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260831c" rel="stylesheet">
 	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
@@ -575,82 +575,54 @@
 					<div class="usis-detail-toolbar-row">
 						<div class="usis-project-tools-stack">
 						<nav class="usis-project-tools usis-detail-toolbar" aria-label="Project tools">
-							<div class="btn-group usis-project-tool usis-project-tool--active" data-usis-parent="job">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-job" data-i18n="Job">Job</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-label="Job pages">
-									<span class="visually-hidden">Job pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item active" data-usis-show-tab="proj-tab-job" aria-current="page" data-i18n="Job information">Job information</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-correspondence">Correspondence</button></li>
-								</ul>
+							<button type="button" class="btn usis-project-tool usis-project-tool--active" data-usis-parent="job" data-usis-show-tab="proj-tab-job" data-i18n="Job">Job</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="files" data-usis-show-tab="proj-tab-drawings" data-i18n="Files">Files</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="estimate" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="buyout" data-usis-show-tab="proj-tab-procurement" data-i18n="Buyout">Buyout</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="contract" data-usis-show-tab="proj-tab-contract" data-i18n="Contract">Contract</button>
+						</nav>
+						<nav class="usis-project-subtools" aria-label="Job pages">
+							<div class="usis-project-subtools__group" data-usis-parent="job">
+								<button type="button" class="usis-project-subtool active" data-usis-show-tab="proj-tab-job" aria-current="page" data-i18n="Job information">Job information</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="files">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-drawings" data-i18n="Files">Files</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-label="Files pages">
-									<span class="visually-hidden">Files pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button></li>
-									<li><a class="dropdown-item" id="usis-proj-tool-documents" href="usis-documents-hub.html">Documents</a></li>
-								</ul>
+							<div class="usis-project-subtools__group" data-usis-parent="files" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button>
+								<a class="usis-project-subtool" id="usis-proj-tool-documents" href="../usis-documents-hub.html">Documents</a>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="estimate">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-label="Estimate pages">
-									<span class="visually-hidden">Estimate pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-takeoff" data-i18n="Takeoff">Takeoff</button></li>
-									<li><a class="dropdown-item" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a></li>
-								</ul>
+							<div class="usis-project-subtools__group" data-usis-parent="estimate" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-takeoff" data-i18n="Takeoff">Takeoff</button>
+								<a class="usis-project-subtool" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="field">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-label="Field pages">
-									<span class="visually-hidden">Field pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-dailylog">Daily log</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-photos">Photos</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-punch">Punchlist</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-wo">Work orders</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-meetings">Meetings</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-incidents">Incidents</button></li>
-								</ul>
+							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-photos">Photos</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-punch">Punchlist</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-wo">Work orders</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-incidents">Incidents</button>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="buyout">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-procurement" data-i18n="Buyout">Buyout</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-label="Buyout pages">
-									<span class="visually-hidden">Buyout pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button></li>
-								</ul>
+							<div class="usis-project-subtools__group" data-usis-parent="buyout" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="contract">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-contract" data-i18n="Contract">Contract</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false" aria-label="Contract pages">
-									<span class="visually-hidden">Contract pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-transmittals">Transmittals</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-poco">PO change orders</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-subinv">Sub invoices</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-qc">QC checklists</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-openitems">Open items</button></li>
-								</ul>
+							<div class="usis-project-subtools__group" data-usis-parent="contract" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-poco">PO change orders</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-qc">QC checklists</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-openitems">Open items</button>
 							</div>
 						</nav>
 						</div>
@@ -2727,7 +2699,7 @@
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js?v=20260831b"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260831c"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

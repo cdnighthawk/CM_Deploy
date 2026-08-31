@@ -287,7 +287,7 @@
       "path": "construction/project-detail.html",
       "order": 36,
       "title": "Construction — Project Detail",
-      "summary": "Active project shell: Job info, Schedule (installation windows + calendar), Tasks (W3CRM-style grid, same schedule-items API), drawings, takeoff, RFIs, Submittals (log), RFP, Procurement (PO / Subcontract / RFP inner tools), Contract admin (Sage-style prime/CO shell), job costing. Use ?id= project UUID.",
+      "summary": "Active project shell. Six parents + child row: Job (Job information, Correspondence); Files (Drawings, Specs, Documents); Estimate (Estimate, Takeoff, RFP); Field (Schedule, Tasks, Safety, Daily log, Photos, Punchlist, Work orders, Meetings, Incidents); Buyout (Procurement, Submittals, RFIs); Contract (Contract admin, Job costing, Invoicing, Transmittals, Anticipated costs, PO COs, Sub invoices, QC checklists, Open items). Use ?id= project UUID.",
       "category": "construction_demo"
     },
     {

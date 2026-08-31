@@ -6,16 +6,27 @@
 	"use strict";
 
 	var KINDS = [
-		{ kind: "punchlist", titleKey: "title", extra: "location" },
-		{ kind: "work-orders", titleKey: "subject", extra: "amount" },
-		{ kind: "meetings", titleKey: "subject", extra: "meeting_date" },
-		{ kind: "safety-incidents", titleKey: "subject", extra: "severity" },
-		{ kind: "transmittals", titleKey: "subject", extra: "due_date" },
-		{ kind: "anticipated-costs", titleKey: "subject", extra: "amount" },
-		{ kind: "po-change-orders", titleKey: "subject", extra: "amount", needCommitment: true },
-		{ kind: "sub-invoices", titleKey: "subject", extra: "amount" },
-		{ kind: "qc-checklists", titleKey: "subject", extra: "review_date" },
+		{ kind: "punchlist", titleKey: "title", extra: "location", heading: "New punch item", submit: "Add item" },
+		{ kind: "work-orders", titleKey: "subject", extra: "amount", heading: "New work order", submit: "Add work order" },
+		{ kind: "meetings", titleKey: "subject", extra: "meeting_date", heading: "New meeting", submit: "Add meeting" },
+		{ kind: "safety-incidents", titleKey: "subject", extra: "severity", heading: "New safety incident", submit: "Add incident" },
+		{ kind: "transmittals", titleKey: "subject", extra: "due_date", heading: "New transmittal", submit: "Add transmittal" },
+		{ kind: "anticipated-costs", titleKey: "subject", extra: "amount", heading: "New anticipated cost", submit: "Add cost" },
+		{ kind: "po-change-orders", titleKey: "subject", extra: "amount", needCommitment: true, heading: "New PO change order", submit: "Add PO CO" },
+		{ kind: "sub-invoices", titleKey: "subject", extra: "amount", heading: "New sub invoice", submit: "Add sub invoice" },
+		{ kind: "qc-checklists", titleKey: "subject", extra: "review_date", heading: "New QC checklist", submit: "Add checklist" },
 	];
+
+	var EXTRA_UI = {
+		amount: { label: "Amount", type: "number" },
+		location: { label: "Location", type: "text" },
+		severity: { label: "Severity", type: "severity" },
+		meeting_date: { label: "Meeting date", type: "date" },
+		due_date: { label: "Due date", type: "date" },
+		review_date: { label: "Review date", type: "date" },
+	};
+
+	var pendingCfg = null;
 
 	function projectId() {
 		var p = new URLSearchParams(window.location.search);
@@ -81,35 +92,148 @@
 			});
 	}
 
-	function addKind(cfg) {
-		var title = window.prompt((cfg.titleKey === "title" ? "Title" : "Subject"));
-		if (!title) return;
+	function modalEls() {
+		return {
+			root: document.getElementById("usis-modal-wave2-create"),
+			titleEl: document.getElementById("usis-modal-wave2-create-title"),
+			form: document.getElementById("usis-wave2-create-form"),
+			err: document.getElementById("usis-wave2-create-err"),
+			titleLabel: document.getElementById("usis-wave2-title-label"),
+			titleInput: document.getElementById("usis-wave2-title"),
+			commitWrap: document.getElementById("usis-wave2-wrap-commitment"),
+			commitSel: document.getElementById("usis-wave2-commitment"),
+			extraWrap: document.getElementById("usis-wave2-wrap-extra"),
+			extraLabel: document.getElementById("usis-wave2-extra-label"),
+			extraInput: document.getElementById("usis-wave2-extra"),
+			severitySel: document.getElementById("usis-wave2-severity"),
+			submit: document.getElementById("usis-wave2-create-submit"),
+		};
+	}
+
+	function setModalErr(msg) {
+		var el = modalEls().err;
+		if (!el) return;
+		if (msg) {
+			el.textContent = String(msg);
+			el.classList.remove("d-none");
+		} else {
+			el.textContent = "";
+			el.classList.add("d-none");
+		}
+	}
+
+	function fillPoSelect() {
+		var sel = modalEls().commitSel;
+		if (!sel || !projectId()) return Promise.resolve();
+		sel.innerHTML = '<option value="">Select a PO</option>';
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId()) + "/commitments")
+			.then(function (data) {
+				var pos = (data.items || []).filter(function (c) {
+					return (c.commitment_kind || "") === "purchase_order";
+				});
+				if (!pos.length) {
+					sel.innerHTML = '<option value="">No purchase orders on this project</option>';
+					return;
+				}
+				sel.innerHTML =
+					'<option value="">Select a PO</option>' +
+					pos
+						.map(function (p) {
+							var label = (p.reference_number || p.title || p.id || "").trim();
+							if (p.vendor_name) label += " — " + p.vendor_name;
+							return '<option value="' + esc(p.id) + '">' + esc(label) + "</option>";
+						})
+						.join("");
+			})
+			.catch(function () {
+				sel.innerHTML = '<option value="">Could not load POs</option>';
+			});
+	}
+
+	function openCreateModal(cfg) {
+		var els = modalEls();
+		if (!els.root || !window.bootstrap || !window.bootstrap.Modal) {
+			window.alert("Create dialog is missing. Reload the page.");
+			return;
+		}
+		pendingCfg = cfg;
+		setModalErr("");
+		if (els.titleEl) els.titleEl.textContent = cfg.heading || "New item";
+		if (els.titleLabel) els.titleLabel.textContent = cfg.titleKey === "title" ? "Title" : "Subject";
+		if (els.titleInput) els.titleInput.value = "";
+		if (els.submit) els.submit.textContent = cfg.submit || "Create";
+		if (els.commitWrap) els.commitWrap.classList.toggle("d-none", !cfg.needCommitment);
+		if (els.commitSel) els.commitSel.value = "";
+		var extra = EXTRA_UI[cfg.extra];
+		if (els.extraWrap) els.extraWrap.classList.toggle("d-none", !extra);
+		if (extra && els.extraLabel) els.extraLabel.textContent = extra.label;
+		if (els.extraInput && els.severitySel) {
+			var isSev = extra && extra.type === "severity";
+			els.extraInput.classList.toggle("d-none", isSev);
+			els.severitySel.classList.toggle("d-none", !isSev);
+			els.severitySel.value = "";
+			els.extraInput.value = "";
+			els.extraInput.type = extra && extra.type !== "severity" ? extra.type : "text";
+			els.extraInput.placeholder = extra && extra.type === "number" ? "0.00" : extra && extra.type === "text" ? "Optional" : "";
+			els.extraInput.step = extra && extra.type === "number" ? "0.01" : "";
+		}
+		var ready = cfg.needCommitment ? fillPoSelect() : Promise.resolve();
+		ready.then(function () {
+			window.bootstrap.Modal.getOrCreateInstance(els.root).show();
+			if (els.titleInput) els.titleInput.focus();
+		});
+	}
+
+	function submitCreate(ev) {
+		if (ev) ev.preventDefault();
+		var cfg = pendingCfg;
+		var els = modalEls();
+		if (!cfg || !els.titleInput) return;
+		var title = (els.titleInput.value || "").trim();
+		if (!title) {
+			setModalErr((cfg.titleKey === "title" ? "Title" : "Subject") + " is required.");
+			els.titleInput.focus();
+			return;
+		}
 		var body = {};
-		body[cfg.titleKey] = title.trim();
+		body[cfg.titleKey] = title;
 		if (cfg.needCommitment) {
-			var cid = window.prompt("Purchase order commitment UUID");
-			if (!cid) return;
-			body.commitment_id = cid.trim();
+			var cid = ((els.commitSel && els.commitSel.value) || "").trim();
+			if (!cid) {
+				setModalErr("Select a purchase order.");
+				return;
+			}
+			body.commitment_id = cid;
 		}
-		if (cfg.extra === "amount") {
-			var amt = window.prompt("Amount (optional)");
-			if (amt) body.amount = amt;
+		var extra = EXTRA_UI[cfg.extra];
+		if (extra) {
+			var raw =
+				extra.type === "severity"
+					? ((els.severitySel && els.severitySel.value) || "").trim()
+					: ((els.extraInput && els.extraInput.value) || "").trim();
+			if (raw) body[cfg.extra] = raw;
 		}
-		if (cfg.extra === "location") {
-			var loc = window.prompt("Location (optional)");
-			if (loc) body.location = loc;
-		}
-		if (cfg.extra === "severity") {
-			var sev = window.prompt("Severity (optional)");
-			if (sev) body.severity = sev;
-		}
+		if (els.submit) els.submit.disabled = true;
+		setModalErr("");
 		fetchJson(pidPath("/wave2/" + cfg.kind), { method: "POST", body: body })
 			.then(function () {
+				if (els.root && window.bootstrap && window.bootstrap.Modal) {
+					window.bootstrap.Modal.getOrCreateInstance(els.root).hide();
+				}
 				loadKind(cfg);
 			})
 			.catch(function (err) {
-				window.alert((err && err.body) || "Could not create.");
+				var msg = (err && (err.body || err.message)) || "Could not create.";
+				if (typeof msg === "object") msg = (msg.error || msg.message) || JSON.stringify(msg);
+				setModalErr(msg);
+			})
+			.finally(function () {
+				if (els.submit) els.submit.disabled = false;
 			});
+	}
+
+	function addKind(cfg) {
+		openCreateModal(cfg);
 	}
 
 	function delKind(kind, id) {
@@ -242,6 +366,15 @@
 				if (cfg) addKind(cfg);
 			});
 		});
+		var form = document.getElementById("usis-wave2-create-form");
+		if (form) form.addEventListener("submit", submitCreate);
+		var modalRoot = document.getElementById("usis-modal-wave2-create");
+		if (modalRoot) {
+			modalRoot.addEventListener("shown.bs.modal", function () {
+				var input = document.getElementById("usis-wave2-title");
+				if (input) input.focus();
+			});
+		}
 		document.body.addEventListener("click", function (e) {
 			var btn = e.target.closest(".usis-w2-del");
 			if (btn) delKind(btn.getAttribute("data-kind"), btn.getAttribute("data-id"));

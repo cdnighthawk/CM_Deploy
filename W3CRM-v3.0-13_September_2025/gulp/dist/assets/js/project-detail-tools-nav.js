@@ -1,6 +1,6 @@
 /**
- * Project-details tool strip — six parents, children always visible.
- * Parent click = default child tab. Does not persist last child.
+ * Project-details tool strip — six split parents.
+ * Label click = default child tab. Caret = dropdown. Does not persist last child.
  */
 (function () {
 	"use strict";
@@ -57,13 +57,7 @@
 			var on = parents[i].getAttribute("data-usis-parent") === parentKey;
 			parents[i].classList.toggle("usis-project-tool--active", on);
 		}
-		var groups = stack.querySelectorAll(".usis-project-children__group");
-		for (i = 0; i < groups.length; i++) {
-			var show = groups[i].getAttribute("data-usis-parent") === parentKey;
-			if (show) groups[i].removeAttribute("hidden");
-			else groups[i].setAttribute("hidden", "");
-		}
-		var items = stack.querySelectorAll(".usis-project-child[data-usis-show-tab]");
+		var items = stack.querySelectorAll(".dropdown-item[data-usis-show-tab]");
 		for (i = 0; i < items.length; i++) {
 			var match = items[i].getAttribute("data-usis-show-tab") === tabId;
 			items[i].classList.toggle("active", match);
@@ -81,10 +75,23 @@
 		if (rfp) rfp.setAttribute("href", "../usis-rfp-list.html" + q);
 	}
 
+	function pinDropdowns(stack) {
+		if (!window.bootstrap || !window.bootstrap.Dropdown) return;
+		var carets = stack.querySelectorAll(".usis-project-tool__caret");
+		var i;
+		for (i = 0; i < carets.length; i++) {
+			window.bootstrap.Dropdown.getOrCreateInstance(carets[i], {
+				autoClose: true,
+				popperConfig: { strategy: "fixed" },
+			});
+		}
+	}
+
 	function init() {
 		var stack = document.querySelector(".usis-project-tools-stack");
 		if (!stack) return;
 		wireOutbound();
+		pinDropdowns(stack);
 		stack.addEventListener("click", function (e) {
 			var t = e.target.closest("[data-usis-show-tab]");
 			if (!t || !stack.contains(t)) return;

@@ -1,6 +1,6 @@
 /**
- * Project-details tool strip — six split parents. Label = default child tab.
- * Caret = other children. Does not persist last child.
+ * Project-details tool strip — six parents, children always visible.
+ * Parent click = default child tab. Does not persist last child.
  */
 (function () {
 	"use strict";
@@ -37,15 +37,21 @@
 
 	function setActive(tabId) {
 		var parentKey = TAB_TO_PARENT[tabId];
-		var tools = document.querySelector(".usis-project-tools");
-		if (!tools || !parentKey) return;
-		var parents = tools.querySelectorAll(".usis-project-tool");
+		var stack = document.querySelector(".usis-project-tools-stack");
+		if (!stack || !parentKey) return;
+		var parents = stack.querySelectorAll(".usis-project-tool");
 		var i;
 		for (i = 0; i < parents.length; i++) {
 			var on = parents[i].getAttribute("data-usis-parent") === parentKey;
 			parents[i].classList.toggle("usis-project-tool--active", on);
 		}
-		var items = tools.querySelectorAll(".dropdown-item[data-usis-show-tab]");
+		var groups = stack.querySelectorAll(".usis-project-children__group");
+		for (i = 0; i < groups.length; i++) {
+			var show = groups[i].getAttribute("data-usis-parent") === parentKey;
+			if (show) groups[i].removeAttribute("hidden");
+			else groups[i].setAttribute("hidden", "");
+		}
+		var items = stack.querySelectorAll(".usis-project-child[data-usis-show-tab]");
 		for (i = 0; i < items.length; i++) {
 			var match = items[i].getAttribute("data-usis-show-tab") === tabId;
 			items[i].classList.toggle("active", match);
@@ -64,12 +70,12 @@
 	}
 
 	function init() {
-		var tools = document.querySelector(".usis-project-tools");
-		if (!tools) return;
+		var stack = document.querySelector(".usis-project-tools-stack");
+		if (!stack) return;
 		wireOutbound();
-		tools.addEventListener("click", function (e) {
+		stack.addEventListener("click", function (e) {
 			var t = e.target.closest("[data-usis-show-tab]");
-			if (!t || !tools.contains(t)) return;
+			if (!t || !stack.contains(t)) return;
 			e.preventDefault();
 			showTab(t.getAttribute("data-usis-show-tab"));
 		});

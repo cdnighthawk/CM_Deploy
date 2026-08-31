@@ -828,20 +828,26 @@ body .tabulator .tabulator-row:hover,
 	white-space: nowrap;
 }
 
-/* Project-details grouped split parents (this page only). */
+/* Project-details: parents + always-visible children of the active parent. */
+.usis-project-tools-stack {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.3rem;
+}
+
 .usis-project-tools {
 	display: flex;
 	flex-wrap: nowrap !important;
 	align-items: center;
 	gap: 0.35rem;
+	max-width: 100%;
 }
 
 .usis-project-tool {
 	flex: 0 0 auto;
-}
-
-.usis-project-tool .usis-project-tool__label,
-.usis-project-tool .usis-project-tool__caret {
 	font-weight: 500;
 	font-size: var(--usis-fs-sm);
 	line-height: 1.2;
@@ -855,21 +861,54 @@ body .tabulator .tabulator-row:hover,
 	border-radius: var(--usis-radius-btn);
 }
 
-.usis-project-tool .usis-project-tool__caret {
-	min-width: 32px;
-	padding-left: 0.4rem;
-	padding-right: 0.4rem;
-}
-
-.usis-project-tool--active .usis-project-tool__label,
-.usis-project-tool--active .usis-project-tool__caret {
+.usis-project-tool--active {
 	background-color: var(--usis-primary);
 	border-color: var(--usis-primary);
 	color: #fff;
 }
 
-.usis-project-tools .dropdown-menu {
-	min-width: 160px;
+.usis-project-children {
+	display: flex;
+	align-items: center;
+	max-width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+.usis-project-children__group {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 0.15rem 1rem;
+}
+
+.usis-project-children__group[hidden] {
+	display: none !important;
+}
+
+.usis-project-child {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0.15rem 0;
+	font-size: var(--usis-fs-sm);
+	font-weight: 500;
+	line-height: 1.2;
+	color: var(--usis-text-secondary);
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.usis-project-child:hover {
+	color: var(--usis-primary);
+}
+
+.usis-project-child.active,
+.usis-project-child[aria-current="page"] {
+	color: var(--usis-primary);
+	font-weight: 600;
 }
 
 .usis-project-tools-tablist {

@@ -463,73 +463,47 @@
 			<div class="container-fluid">
 				<div class="col-xl-12 mb-3">
 					<div class="usis-detail-toolbar-row">
+						<div class="usis-project-tools-stack">
 						<nav class="usis-project-tools usis-detail-toolbar" aria-label="Project tools">
-							<div class="btn-group usis-project-tool usis-project-tool--active" data-usis-parent="job">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-job">Job</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Job pages">
-									<span class="visually-hidden">Job pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item active" data-usis-show-tab="proj-tab-job" aria-current="page">Job information</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-correspondence">Correspondence</button></li>
-								</ul>
+							<button type="button" class="btn usis-project-tool usis-project-tool--active" data-usis-parent="job" data-usis-show-tab="proj-tab-job">Job</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="files" data-usis-show-tab="proj-tab-drawings">Files</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="estimate" data-usis-show-tab="proj-tab-estimate">Estimate</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule">Field</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="buyout" data-usis-show-tab="proj-tab-procurement">Buyout</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="contract" data-usis-show-tab="proj-tab-contract">Contract</button>
+						</nav>
+						<nav class="usis-project-children" aria-label="Project pages">
+							<div class="usis-project-children__group" data-usis-parent="job">
+								<button type="button" class="usis-project-child active" data-usis-show-tab="proj-tab-job" aria-current="page">Job information</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="files">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-drawings">Files</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Files pages">
-									<span class="visually-hidden">Files pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-drawings">Drawings</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-specs">Specs</button></li>
-									<li><a class="dropdown-item" id="usis-proj-tool-documents" href="usis-documents-hub.html">Documents</a></li>
-								</ul>
+							<div class="usis-project-children__group" data-usis-parent="files" hidden>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-drawings">Drawings</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-specs">Specs</button>
+								<a class="usis-project-child" id="usis-proj-tool-documents" href="usis-documents-hub.html">Documents</a>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="estimate">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-estimate">Estimate</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Estimate pages">
-									<span class="visually-hidden">Estimate pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-estimate">Estimate</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-takeoff">Takeoff</button></li>
-									<li><a class="dropdown-item" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a></li>
-								</ul>
+							<div class="usis-project-children__group" data-usis-parent="estimate" hidden>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-estimate">Estimate</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-takeoff">Takeoff</button>
+								<a class="usis-project-child" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="field">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-schedule">Field</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Field pages">
-									<span class="visually-hidden">Field pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-schedule">Schedule</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-tasks">Tasks</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-safety">Safety</button></li>
-								</ul>
+							<div class="usis-project-children__group" data-usis-parent="field" hidden>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-schedule">Schedule</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-tasks">Tasks</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-safety">Safety</button>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="buyout">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-procurement">Buyout</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Buyout pages">
-									<span class="visually-hidden">Buyout pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-procurement">Procurement</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-submittals">Submittals</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-rfi">RFIs</button></li>
-								</ul>
+							<div class="usis-project-children__group" data-usis-parent="buyout" hidden>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-procurement">Procurement</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-submittals">Submittals</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-rfi">RFIs</button>
 							</div>
-							<div class="btn-group usis-project-tool" data-usis-parent="contract">
-								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-contract">Contract</button>
-								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Contract pages">
-									<span class="visually-hidden">Contract pages</span>
-								</button>
-								<ul class="dropdown-menu">
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-contract">Contract admin</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-costing">Job costing</button></li>
-									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-invoicing">Invoicing</button></li>
-								</ul>
+							<div class="usis-project-children__group" data-usis-parent="contract" hidden>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-contract">Contract admin</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-costing">Job costing</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-invoicing">Invoicing</button>
 							</div>
 						</nav>
+						</div>
 						<ul class="nav nav-pills nav-pills-sm usis-project-tools-tablist" role="tablist" aria-hidden="true">
 							<li class="nav-item" role="presentation">
 								<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true">Job information</button>
@@ -2361,7 +2335,7 @@
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260830d"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

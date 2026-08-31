@@ -1,7 +1,6 @@
 /**
  * Project-details tool strip — parents + a visible child row.
- * Parent click = default child. Submittals and RFIs are also parents (one click).
- * Child row follows the active parent; Submittals/RFIs still show the Buyout children.
+ * Parent click = default child. Submittals and RFIs are one-click parents (no child row).
  */
 (function () {
 	"use strict";
@@ -12,13 +11,6 @@
 		preconstruction: "Preconstruction pages",
 		field: "Field pages",
 		buyout: "Buyout pages",
-		submittals: "Buyout pages",
-		rfi: "Buyout pages",
-	};
-
-	var CHILD_GROUP = {
-		submittals: "buyout",
-		rfi: "buyout",
 	};
 
 	var TAB_TO_PARENT = {
@@ -72,13 +64,19 @@
 			var on = parents[i].getAttribute("data-usis-parent") === parentKey;
 			parents[i].classList.toggle("usis-project-tool--active", on);
 		}
-		var groupKey = CHILD_GROUP[parentKey] || parentKey;
 		var groups = stack.querySelectorAll(".usis-project-subtools__group");
+		var shown = false;
 		for (i = 0; i < groups.length; i++) {
-			groups[i].hidden = groups[i].getAttribute("data-usis-parent") !== groupKey;
+			var vis = groups[i].getAttribute("data-usis-parent") === parentKey;
+			groups[i].hidden = !vis;
+			if (vis) shown = true;
 		}
 		var sub = stack.querySelector(".usis-project-subtools");
-		if (sub) sub.setAttribute("aria-label", PARENT_LABEL[parentKey] || "Project pages");
+		if (sub) {
+			sub.hidden = !shown;
+			sub.setAttribute("aria-label", PARENT_LABEL[parentKey] || "Project pages");
+		}
+		stack.classList.toggle("usis-project-tools-stack--leaf", !shown);
 		var items = stack.querySelectorAll(".usis-project-subtool[data-usis-show-tab]");
 		for (i = 0; i < items.length; i++) {
 			var match = items[i].getAttribute("data-usis-show-tab") === tabId;

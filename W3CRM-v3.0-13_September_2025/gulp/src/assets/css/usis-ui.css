@@ -890,6 +890,11 @@ body .tabulator .tabulator-row:hover,
 	overflow-y: hidden;
 }
 
+.usis-project-tools-stack--leaf .usis-project-tools.usis-detail-toolbar {
+	border-bottom: 1px solid var(--usis-divider);
+	border-radius: var(--usis-radius);
+}
+
 .usis-project-tools .usis-project-tool {
 	flex: 0 0 auto;
 	font-weight: 550;

@@ -53,6 +53,7 @@ def chat_completion(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]] | None = None,
     model: str | None = None,
+    response_format: dict[str, Any] | None = None,
 ) -> ChatCompletionResult:
     """Call Grok chat/completions and return assistant content and/or tool calls."""
     key = xai_api_key()
@@ -67,6 +68,8 @@ def chat_completion(
     if tools:
         body["tools"] = tools
         body["tool_choice"] = "auto"
+    if response_format:
+        body["response_format"] = response_format
 
     try:
         with httpx.Client(timeout=request_timeout_sec()) as client:

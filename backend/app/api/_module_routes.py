@@ -6,6 +6,7 @@ import re
 # Longest-prefix-first tuples: (path_prefix, module_code or tuple of codes)
 _PREFIX_RULES: list[tuple[str, str | tuple[str, ...]]] = [
     ("/api/ai", "ai"),
+    ("/api/v1/ai", ("ai", "documents")),
     ("/api/v1/admin/purge-test-users", "user_admin"),
     ("/api/v1/admin/users", "user_admin"),
     ("/api/v1/admin/roles", "user_admin"),

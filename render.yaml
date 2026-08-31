@@ -54,7 +54,7 @@ services:
       - key: USIS_AI_ENABLED
         value: "1"
       - key: USIS_XAI_MODEL
-        value: grok-4-1-fast
+        value: grok-4.6
       - key: USIS_XAI_BASE_URL
         value: https://api.x.ai/v1
       - key: USIS_AI_MAX_TOOL_ROUNDS

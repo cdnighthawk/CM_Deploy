@@ -5433,3 +5433,6 @@ _safety_docs_routes_mod.register_safety_docs_routes(bp)
 from . import _wave2_routes as _wave2_routes_mod  # noqa: E402
 
 _wave2_routes_mod.register_wave2_routes(bp)
+from ..ai.ingest_api import register_ingest_ai_routes  # noqa: E402
+
+register_ingest_ai_routes(bp)

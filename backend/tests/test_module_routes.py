@@ -36,6 +36,12 @@ def test_ingest_routes_use_documents_module():
     assert resolve_modules("/api/v1/ingest/errors") == ("documents",)
 
 
+def test_desktop_ingest_ai_uses_ai_or_documents():
+    assert resolve_modules("/api/v1/ai/package-classify") == ("ai", "documents")
+    assert resolve_modules("/api/v1/ai/spec-sections") == ("ai", "documents")
+    assert resolve_modules("/api/v1/ai/sheet-identity") == ("ai", "documents")
+
+
 def test_vendor_invoice_routes_use_ap_module():
     assert resolve_modules("/api/v1/ap/invoices") == ("ap",)
     assert resolve_modules("/api/v1/ap/mailbox/sync") == ("ap",)

@@ -14,7 +14,7 @@ def xai_api_key() -> str:
 
 
 def xai_model() -> str:
-    return (os.environ.get("USIS_XAI_MODEL") or "grok-4-1-fast").strip()
+    return (os.environ.get("USIS_XAI_MODEL") or "grok-4.6").strip()
 
 
 def xai_base_url() -> str:

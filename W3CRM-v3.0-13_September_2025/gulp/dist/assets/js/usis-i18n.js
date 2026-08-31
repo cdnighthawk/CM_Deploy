@@ -154,7 +154,6 @@
 		Project: "Proyecto",
 		"Project #": "Proyecto #",
 		"Project detail": "Detalle del proyecto",
-		"Back to Projects": "Volver a Proyectos",
 		"Job info": "Datos del trabajo",
 		Schedule: "Programa",
 		Tasks: "Tareas",

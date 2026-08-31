@@ -99,11 +99,6 @@
 
 			<div class="container-fluid">
 				<div class="col-xl-12 mb-3">
-					<p class="text-muted mb-1 small" id="usis-proj-detail-idline"></p>
-					<a href="construction/projects.html" class="small"><span data-i18n="Back to Projects">&larr; Back to Projects</span></a>
-				</div>
-
-				<div class="col-xl-12 mb-3">
 					<div class="usis-detail-toolbar-row">
 						<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar mb-0" role="tablist">
 						<li class="nav-item" role="presentation">
@@ -1906,12 +1901,6 @@
 	(function () {
 		var p = new URLSearchParams(window.location.search);
 		var id = (p.get("id") || p.get("project_id") || p.get("projectId") || "").trim();
-		var el = document.getElementById("usis-proj-detail-idline");
-		if (el) {
-			el.textContent = id
-				? "Project id: " + id
-				: "No project id in URL — open this page from the Projects table (click the project name).";
-		}
 		var specsFull = document.getElementById("usis-specs-open-fullpage");
 		if (specsFull && id) {
 			specsFull.href = "construction/specs-viewer.html?project_id=" + encodeURIComponent(id);

@@ -194,6 +194,7 @@ def _serialize_commitment_row(c: Commitment, vendor_name: str, rfp: Rfp | None =
         "notes": c.notes,
         "issue_date": _iso(c.issue_date) if c.issue_date else None,
         "po_type": c.po_type,
+        "subcontract_type": c.subcontract_type,
         "reminder_date": _iso(c.reminder_date) if c.reminder_date else None,
         "vendor_contact_id": str(c.vendor_contact_id) if c.vendor_contact_id else None,
         "vendor_address_snapshot": c.vendor_address_snapshot,
@@ -404,6 +405,9 @@ def _apply_commitment_header_fields(
     if is_create or "po_type" in data:
         pt = data.get("po_type")
         c.po_type = (str(pt).strip()[:40] or None) if pt is not None and pt != "" else None
+    if is_create or "subcontract_type" in data:
+        st = data.get("subcontract_type")
+        c.subcontract_type = (str(st).strip()[:40] or None) if st not in (None, "") else None
 
     if is_create or "reminder_date" in data:
         c.reminder_date = _parse_date(data.get("reminder_date"))

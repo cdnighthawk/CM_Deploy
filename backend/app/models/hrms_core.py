@@ -116,6 +116,8 @@ class HrmsTimesheetEntry(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     filled_from_leave: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("rfi_cost_codes.id", ondelete="SET NULL"), nullable=True)
+    time_entry_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("time_entries.id", ondelete="SET NULL"), nullable=True)
 
 
 class HrmsShift(UUIDPKMixin, TimestampMixin, db.Model):

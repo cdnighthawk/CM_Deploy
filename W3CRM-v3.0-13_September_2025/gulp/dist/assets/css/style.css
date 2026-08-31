@@ -14704,6 +14704,13 @@ body[data-headerbg=color_1] .hamburger .line {
   color: var(--bs-body-color);
   font-size: 1.125rem;
 }
+.header-right .usis-report-problem-btn {
+  color: var(--bs-body-color);
+}
+.header-right .usis-report-problem-btn:hover,
+.header-right .usis-report-problem-btn:focus {
+  color: var(--bs-primary);
+}
 .header-right .right-sidebar {
   margin-right: -1.875rem;
 }

@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,6 +57,8 @@ class PayApplication(UUIDPKMixin, TimestampMixin, db.Model):
     paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     textura_invoice_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
+    status_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    approved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     project: Mapped["Project"] = relationship("Project", back_populates="pay_applications")
     lines: Mapped[List["PayApplicationLine"]] = relationship(
@@ -88,5 +90,8 @@ class PayApplicationLine(UUIDPKMixin, TimestampMixin, db.Model):
     balance_to_complete: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=Decimal("0"))
     balance_due: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=Decimal("0"))
     percent_complete: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
+    cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfi_cost_codes.id", ondelete="SET NULL"), nullable=True
+    )
 
     pay_application: Mapped["PayApplication"] = relationship("PayApplication", back_populates="lines")

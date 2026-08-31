@@ -14,9 +14,10 @@ configured per project.
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -74,6 +75,18 @@ class CostCode(UUIDPKMixin, TimestampMixin, db.Model):
     code: Mapped[str] = mapped_column(String(60), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    order_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 4), nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    owner_cost_code: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    material_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    labor_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    equipment_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    subcontractor_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    other_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    revenue_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    labor_hour_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    equipment_hour_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
 
 
 class ProjectStage(UUIDPKMixin, TimestampMixin, db.Model):

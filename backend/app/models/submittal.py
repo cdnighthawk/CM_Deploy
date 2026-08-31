@@ -117,6 +117,9 @@ class Submittal(UUIDPKMixin, TimestampMixin, db.Model):
     vendor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    originator_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("companies.id", ondelete="SET NULL"), nullable=True
+    )
     assigned_reviewer_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
@@ -213,6 +216,11 @@ class SubmittalLineItem(UUIDPKMixin, TimestampMixin, db.Model):
         nullable=True,
     )
     pdf_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    status_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    quantity: Mapped[Optional[float]] = mapped_column(Numeric(15, 4), nullable=True)
+    unit: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    needed_on_site_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     submittal: Mapped["Submittal"] = relationship(back_populates="line_items", foreign_keys=[submittal_id])
 

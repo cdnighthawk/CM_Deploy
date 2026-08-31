@@ -17,8 +17,12 @@
 	}
 
 	function projectIdFromQuery() {
-		var id = new URLSearchParams(window.location.search).get("id");
-		return id && id.trim() ? id.trim() : null;
+		if (window.USISProjectContext && typeof window.USISProjectContext.projectIdFromQuery === "function") {
+			return window.USISProjectContext.projectIdFromQuery();
+		}
+		var p = new URLSearchParams(window.location.search);
+		var id = (p.get("id") || p.get("project_id") || p.get("projectId") || "").trim();
+		return id || null;
 	}
 
 	function actorHeaders() {

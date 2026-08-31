@@ -192,6 +192,16 @@ class Rfi(UUIDPKMixin, TimestampMixin, db.Model):
         ForeignKey("companies.id", ondelete="SET NULL"),
         nullable=True,
     )
+    originator_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("companies.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    respondent_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("companies.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     # Lookups (project-scoped)
     location_id: Mapped[Optional[uuid.UUID]] = mapped_column(

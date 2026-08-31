@@ -151,6 +151,73 @@ def add_directory_company(
             "id": str(company_id),
             "name": company.name,
             "company_type": company.company_type,
+            "directory_role": existing.directory_role if existing else None,
+            "in_directory": True,
+        },
+        "entity": "project_directory_company",
+    }
+
+
+def list_full_directory(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
+    if not _can_view(cu):
+        raise ApiError("forbidden", 403)
+    project = db.session.get(Project, project_id)
+    if project is None or project.deleted_at is not None:
+        raise ApiError("project not found", 404)
+    rows = db.session.scalars(
+        select(ProjectDirectoryCompany)
+        .where(ProjectDirectoryCompany.project_id == project_id)
+        .order_by(ProjectDirectoryCompany.created_at.asc())
+    ).all()
+    items = []
+    for row in rows:
+        company = db.session.get(Company, row.company_id)
+        if company is None or company.deleted_at is not None:
+            continue
+        items.append(
+            {
+                "id": str(row.id),
+                "company_id": str(company.id),
+                "name": company.name,
+                "company_type": company.company_type,
+                "directory_role": row.directory_role,
+                "phone": company.phone,
+                "email": company.email,
+            }
+        )
+    return {"entity": "project_directory", "items": items}
+
+
+def add_directory_any(
+    project_id: uuid.UUID, company_id: uuid.UUID, cu: CurrentUser, role: str | None = None
+) -> dict[str, Any]:
+    if not _can_mutate(cu):
+        raise ApiError("forbidden", 403)
+    project = db.session.get(Project, project_id)
+    if project is None or project.deleted_at is not None:
+        raise ApiError("project not found", 404)
+    company = db.session.get(Company, company_id)
+    if company is None or company.deleted_at is not None:
+        raise ApiError("company not found", 404)
+    existing = db.session.scalar(
+        select(ProjectDirectoryCompany).where(
+            ProjectDirectoryCompany.project_id == project_id,
+            ProjectDirectoryCompany.company_id == company_id,
+        )
+    )
+    if existing is None:
+        existing = ProjectDirectoryCompany(
+            project_id=project_id, company_id=company_id, directory_role=(role or None)
+        )
+        db.session.add(existing)
+    elif role:
+        existing.directory_role = role[:40]
+    db.session.commit()
+    return {
+        "item": {
+            "id": str(company_id),
+            "name": company.name,
+            "company_type": company.company_type,
             "in_directory": True,
         },
         "entity": "project_directory_company",

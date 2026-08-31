@@ -23,6 +23,7 @@ DEFAULT_DAILY_SECTIONS: dict[str, Any] = {
     "delays": "",
     "photos": [],
     "notes": "",
+    "visitors": [],
 }
 
 
@@ -87,6 +88,7 @@ class FieldPhoto(UUIDPKMixin, TimestampMixin, db.Model):
     lon: Mapped[Optional[float]] = mapped_column(Numeric(10, 7), nullable=True)
     original_filename: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     mime_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    album: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
 
     project = relationship("Project")
     daily_report = relationship("DailyReport", back_populates="photos")

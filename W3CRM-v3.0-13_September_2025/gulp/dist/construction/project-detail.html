@@ -21,13 +21,13 @@
 	<meta property="og:site_name" content="USIS Construction Management">
 	<meta property="og:url" content="https://www.usiscm.com/">
 	<meta property="og:title" content="USIS Construction Management">
-	<meta property="og:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta property="og:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
 	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
 	<meta property="og:image:alt" content="US Interior Specialties">
 	
 	<!-- TWITTER META -->
 	<meta name="twitter:title" content="USIS Construction Management">
-	<meta name="twitter:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta name="twitter:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
 	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
 	<meta name="twitter:card" content="summary">
 	
@@ -45,6 +45,7 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<!-- Flask API root for session login/logout + credentialed ``fetch``.
 	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
@@ -58,24 +59,33 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
+	<link href="assets/css/usis-ui.css?v=20260830g" rel="stylesheet">
 	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
-		.usis-submittal-log-table { font-size: 0.78rem; white-space: nowrap; }
+		.usis-submittal-log-table { font-size: var(--usis-fs-sm, 0.75rem); white-space: nowrap; }
 		.usis-submittal-log-table td:nth-child(2),
 		.usis-submittal-log-table th:nth-child(2) { white-space: normal; min-width: 10rem; max-width: 14rem; }
 		.usis-submittal-log-table td:nth-child(14),
 		.usis-submittal-log-table th:nth-child(14) { white-space: normal; max-width: 10rem; }
 		#usis-grid-drawings { min-height: 22rem; }
-		#usis-grid-drawings .tabulator { font-size: 0.875rem; }
 		#usis-grid-takeoff { min-height: 22rem; }
-		#usis-grid-takeoff .tabulator { font-size: 0.875rem; }
 		#usis-proj-schedule-calendar { min-height: 28rem; }
 		.usis-proj-task-table-wrap { max-height: 50vh; overflow: auto; }
+		/* Theme stretches date-picker indicators (position:absolute; inset:0) to .modal-content. */
+		#usis-modal-submittal-create input[type="date"] {
+			position: relative;
+			z-index: 0;
+		}
+		#usis-modal-submittal-create #usis-submittal-c-spec-list {
+			position: relative;
+			z-index: 1;
+		}
 		.usis-bc-job-hero {
 			border-bottom: 1px solid var(--bs-border-color);
 		}
 		.usis-bc-job-hero #usis-proj-job-title { letter-spacing: -0.02em; }
+		/* Theme cards use height:100%, which stretches the map card and leaves a huge empty gap. */
 		#proj-pane-job .card {
 			height: auto;
 		}
@@ -130,49 +140,60 @@
 		<!-- End - Nav Header -->
 
 		<!-- Start - Sidebar Chat Box  -->
-		<div class="chatbox">
+		<div class="chatbox usis-ai-chatbox">
 			<div class="chatbox-close"></div>
-			<div class="clearfix">
-				<ul class="nav nav-underline">
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
-					</li>
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane fade" id="notes">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Project notes will appear here when messaging is enabled.</p>
-							</div>
-						</div>
+			<div class="usis-ai-chat" data-usis-ai-chat="1">
+				<div class="usis-ai-chat__header">
+					<div>
+						<span class="usis-overline mb-0">Assistant</span>
+						<div class="fw-semibold">USIS + Grok</div>
 					</div>
-					<div class="tab-pane fade" id="alerts">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">System alerts will appear here when configured.</p>
-							</div>
-						</div>
+					<div class="d-flex align-items-center gap-2">
+						<span class="usis-status-chip usis-status-chip--progress" data-usis-chat-mode>Assistant</span>
+						<span class="usis-seg" data-usis-chat-provider title="xAI Grok">
+							<span class="btn btn-sm active" aria-pressed="true">Grok</span>
+						</span>
 					</div>
-					<div class="tab-pane fade active show" id="chat">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Team chat is not enabled yet.</p>
-							</div>
+				</div>
+				<div class="usis-ai-chat__toolbar d-none" data-usis-chat-toolbar>
+					<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>
+					<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>
+				</div>
+				<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>
+				<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>
+				<div class="usis-ai-chat__composer">
+					<div class="usis-ai-chat__drop d-none" data-usis-chat-drop>Drop files here</div>
+					<div class="usis-ai-chat__chips" data-usis-chat-chips></div>
+					<form data-usis-chat-form>
+						<label class="visually-hidden" for="usis-ai-chat-input">Message</label>
+						<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok, or attach a file or link…"></textarea>
+						<div class="usis-ai-chat__linkrow d-none" data-usis-chat-linkrow>
+							<input type="url" class="form-control form-control-sm" data-usis-chat-link placeholder="https://…" autocomplete="off">
+							<button type="button" class="btn btn-sm btn-primary" data-usis-chat-link-add>Add link</button>
 						</div>
-					</div>
+						<div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+							<div class="d-flex align-items-center gap-1">
+								<div class="usis-ai-chat__pluswrap">
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ai-chat__plus" data-usis-chat-plus title="Attach a file or link" aria-label="Attach a file or link" aria-expanded="false">+</button>
+									<div class="usis-ai-chat__plusmenu d-none" data-usis-chat-plusmenu>
+										<button type="button" data-usis-chat-pickfile>From this computer</button>
+										<button type="button" data-usis-chat-picklink>Paste a link</button>
+									</div>
+								</div>
+								<input type="file" class="d-none" data-usis-chat-file multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,text/markdown,application/json,.txt,.csv,.md,.pdf">
+								<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>New</button>
+							</div>
+							<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>
 		<!-- End - Sidebar Chat Box  -->
 
 
-		<!-- Start - Header -->
+		<link href="assets/css/usis-ui.css" rel="stylesheet">
+<!-- Start - Header -->
 		<div class="header">
 			<div class="header-content">
 				<nav class="navbar navbar-expand">
@@ -188,20 +209,19 @@
 											</svg>
 										</button>
 									</span>
-									<input type="text" class="form-control" placeholder="Search">
+									<input type="text" class="form-control" placeholder="Search" data-i18n-placeholder="Search">
 								</div>
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
 							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
 								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
-									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
 									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
 										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
 											<i class="icon feather icon-mail"></i>
 											<span class="d-none d-lg-inline ms-1">Email</span>
 										</a>
-										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
+										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
 										</button>
@@ -209,10 +229,9 @@
 								</div>
 							</li>
 							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
-									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
-									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
-									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem" data-i18n-title="Report a problem" data-i18n-aria="Report a problem">
+									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
+									<span class="d-none d-lg-inline fs-6" data-i18n="Report a problem">Report a problem</span>
 								</button>
 							</li>
 							<li class="nav-item">
@@ -232,27 +251,17 @@
 								<div class="dropdown">
 									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
 										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
-											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
 										</svg>
 									</button>
 									<div class="dropdown-menu dropdown-menu-end py-0">
 										<div class="dz-scroll p-2" style="height: 380px;">
-								<p class="text-muted small text-center mb-0 py-5">No notifications.</p>
-							<a class="d-block text-center p-3 border-top" href="javascript:void(0);">See all notifications <i class="fa fa-arrow-right"></i></a>
+								<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
+							<a class="d-block text-center p-3 border-top" href="javascript:void(0);"><span data-i18n="See all notifications">See all notifications</span> <i class="fa fa-arrow-right"></i></a>
 									</div>
 								</div>
 							</li>
-							<li class="nav-item notification_dropdown d-none d-sm-flex">
-								<a class="nav-link dz-fullscreen" href="javascript:void(0);" aria-label="Fullscreen">
-									<svg id="icon-full" viewBox="0 0 24 24" width="20" height="20" stroke="var(--bs-body-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-									<svg id="icon-minimize" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bs-body-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minimize">
-										<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-								</a>
-							</li>	
 							<li class="nav-item header-profile-dropdown">
 								<div class="dropdown d-flex align-items-center">
 									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="usis-profile.html" title="My profile">
@@ -288,8 +297,26 @@
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
-											<span class="ms-2">My profile</span>
+											<span class="ms-2" data-i18n="My profile">My profile</span>
 										</a>
+									</li>
+									<li data-usis-profile-lang="1">
+										<div class="px-3 py-2">
+											<div class="small text-muted mb-1" data-i18n="Language">Language</div>
+											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Language">
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="en_GB">English</button>
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="es_ES">Español</button>
+											</div>
+										</div>
+									</li>
+									<li data-usis-profile-theme="1">
+										<div class="px-3 py-2">
+											<div class="small text-muted mb-1" data-i18n="Appearance">Appearance</div>
+											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Appearance">
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="light" data-i18n="Light">Light</button>
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="dark" data-i18n="Dark">Dark</button>
+											</div>
+										</div>
 									</li>
 									<li><hr class="dropdown-divider"></li>
 									<li>
@@ -299,7 +326,7 @@
 												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
 												<line x1="21" y1="12" x2="9" y2="12"></line>
 											</svg>
-											<span class="ms-2 text-danger">Logout </span>
+											<span class="ms-2 text-danger" data-i18n="Logout">Logout</span>
 										</a>
 									</li>
 								</ul>
@@ -308,6 +335,51 @@
 						</ul>
 					</div>
 				</nav>
+			</div>
+		</div>
+		<div class="modal fade" id="usis-report-problem-modal" tabindex="-1" aria-labelledby="usis-report-problem-title" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<form>
+						<div class="modal-header">
+							<h5 class="modal-title" id="usis-report-problem-title" data-i18n="Report a problem">Report a problem</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-i18n-aria="Close"></button>
+						</div>
+						<div class="modal-body">
+							<p class="text-muted small mb-3" data-i18n="Tell us what broke or what to change. It will show on the Issues page.">Tell us what broke or what to change. It will show on the Issues page.</p>
+							<div class="alert d-none" data-usis-report-status role="status"></div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-kind" data-i18n="Kind">Kind</label>
+								<select class="form-select" id="usis-report-kind" name="kind">
+									<option value="bug" data-i18n="Something broke">Something broke</option>
+									<option value="enhancement" data-i18n="Recommend a change on this page">Recommend a change on this page</option>
+									<option value="general" data-i18n="General recommendation">General recommendation</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-title" data-i18n="Title">Title</label>
+								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary" data-i18n-placeholder="Short summary">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-name" data-i18n="Your name (optional)">Your name (optional)</label>
+								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with" data-i18n-placeholder="So we know who to follow up with">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-details" data-i18n="Details">Details</label>
+								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?" data-i18n-placeholder="What happened, and what did you expect?"></textarea>
+							</div>
+							<div class="mb-0" data-usis-report-page-block>
+								<label class="form-label text-muted" for="usis-report-diagnostics" data-i18n="Sent with this report">Sent with this report</label>
+								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
+							</div>
+							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide data-i18n="Site-wide (not tied to a page).">Site-wide (not tied to a page).</p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+							<button type="submit" class="btn btn-primary" data-i18n="Send">Send</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
 		<!-- End - Header -->
@@ -338,6 +410,9 @@
 							<li data-usis-module="leads">
 								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
 							</li>
+							<li data-usis-module="leads">
+								<a href="construction/lead-goldenstate-planroom.html" data-i18n="Golden State Planroom">Golden State Planroom</a>
+							</li>
 						</ul>
 					</li>
 					<li data-usis-module="projects">
@@ -352,11 +427,22 @@
 							<span class="nav-text" data-i18n="Calendar">Calendar</span>
 						</a>
 					</li>
-					<li data-usis-module="safety">
-						<a href="usis-safety.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-shield"></i>
 							<span class="nav-text" data-i18n="Safety">Safety</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="safety">
+								<a href="usis-safety.html" data-i18n="Safety dashboard">Safety dashboard</a>
+							</li>
+							<li data-usis-module="safety">
+								<a href="usis-daily-pretask.html" data-i18n="Daily pretask">Daily pretask</a>
+							</li>
+							<li data-usis-module="safety">
+								<a href="usis-safety-company.html" data-i18n="Company programs">Company programs</a>
+							</li>
+						</ul>
 					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
@@ -371,7 +457,7 @@
 						</a>
 						<ul aria-expanded="false">
 							<li data-usis-module="hr">
-								<a href="usis-hr-dashboard.html" data-i18n="HR">HR dashboard</a>
+								<a href="usis-hr-dashboard.html" data-i18n="HR dashboard">HR dashboard</a>
 							</li>
 							<li data-usis-module="hr">
 								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
@@ -407,14 +493,26 @@
 							<li data-usis-module="user_admin">
 								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
 							</li>
+							<li>
+								<a href="usis-companies.html">Companies</a>
+							</li>
 							<li data-usis-module="playbooks">
 								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+							</li>
+							<li data-usis-module="user_admin">
+								<a href="usis-workflows.html">Workflows</a>
 							</li>
 							<li data-usis-module="reports">
 								<a href="reports.html" data-i18n="Reports">Reports</a>
 							</li>
 							<li data-usis-module="documents">
 								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-ingest.html" data-i18n="Ingest">Ingest</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-correspondence.html">Correspondence</a>
 							</li>
 							<li data-usis-module="projects">
 								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
@@ -432,26 +530,38 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1>Active project</h1></li>
+						<li><h1 data-i18n="Active project">Active project</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
 									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
-								Home
+								<span data-i18n="Home">Home</span>
 							</a>
 						</li>
-						<li class="breadcrumb-item active" aria-current="page"><a href="construction/projects.html">Active project</a></li>
+						<li class="breadcrumb-item d-none" id="usis-projects-crumb">
+							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
+						</li>
+						<li class="breadcrumb-item d-none" id="usis-project-crumb">
+							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
+						</li>
+						<li class="breadcrumb-item active" aria-current="page">
+
+							<a href="construction/projects.html" data-i18n="Active project">Active project</a>
+
+
+						</li>
 					</ol>
 				</nav>
+
 			</div>
 
 			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
 				<div class="card border-0 shadow-none mb-0 bg-light">
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-							<h6 class="mb-0">Project detail</h6>
+							<h6 class="mb-0" data-i18n="Project detail">Project detail</h6>
 							<div class="text-nowrap small">
 								<a href="party.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="projects.html">Next</a>
 							</div>
@@ -465,91 +575,117 @@
 					<div class="usis-detail-toolbar-row">
 						<div class="usis-project-tools-stack">
 						<nav class="usis-project-tools usis-detail-toolbar" aria-label="Project tools">
-							<button type="button" class="btn usis-project-tool usis-project-tool--active" data-usis-parent="job" data-usis-show-tab="proj-tab-job">Job</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="files" data-usis-show-tab="proj-tab-drawings">Files</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="estimate" data-usis-show-tab="proj-tab-estimate">Estimate</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule">Field</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="buyout" data-usis-show-tab="proj-tab-procurement">Buyout</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="contract" data-usis-show-tab="proj-tab-contract">Contract</button>
+							<button type="button" class="btn usis-project-tool usis-project-tool--active" data-usis-parent="job" data-usis-show-tab="proj-tab-job" data-i18n="Job">Job</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="files" data-usis-show-tab="proj-tab-drawings" data-i18n="Files">Files</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="estimate" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="buyout" data-usis-show-tab="proj-tab-procurement" data-i18n="Buyout">Buyout</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="contract" data-usis-show-tab="proj-tab-contract" data-i18n="Contract">Contract</button>
 						</nav>
 						<nav class="usis-project-children" aria-label="Project pages">
 							<div class="usis-project-children__group" data-usis-parent="job">
-								<button type="button" class="usis-project-child active" data-usis-show-tab="proj-tab-job" aria-current="page">Job information</button>
+								<button type="button" class="usis-project-child active" data-usis-show-tab="proj-tab-job" aria-current="page" data-i18n="Job information">Job information</button>
 								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 							</div>
 							<div class="usis-project-children__group" data-usis-parent="files" hidden>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-drawings">Drawings</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-specs">Specs</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button>
 								<a class="usis-project-child" id="usis-proj-tool-documents" href="usis-documents-hub.html">Documents</a>
 							</div>
 							<div class="usis-project-children__group" data-usis-parent="estimate" hidden>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-estimate">Estimate</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-takeoff">Takeoff</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-takeoff" data-i18n="Takeoff">Takeoff</button>
 								<a class="usis-project-child" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a>
 							</div>
 							<div class="usis-project-children__group" data-usis-parent="field" hidden>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-schedule">Schedule</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-tasks">Tasks</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-safety">Safety</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-photos">Photos</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-punch">Punchlist</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-wo">Work orders</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-meetings">Meetings</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-incidents">Incidents</button>
 							</div>
 							<div class="usis-project-children__group" data-usis-parent="buyout" hidden>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-procurement">Procurement</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-submittals">Submittals</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-rfi">RFIs</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
 							</div>
 							<div class="usis-project-children__group" data-usis-parent="contract" hidden>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-contract">Contract admin</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-costing">Job costing</button>
-								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-invoicing">Invoicing</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-poco">PO change orders</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-qc">QC checklists</button>
+								<button type="button" class="usis-project-child" data-usis-show-tab="proj-tab-openitems">Open items</button>
 							</div>
 						</nav>
 						</div>
 						<ul class="nav nav-pills nav-pills-sm usis-project-tools-tablist" role="tablist" aria-hidden="true">
 							<li class="nav-item" role="presentation">
-								<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true">Job information</button>
+								<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true" data-i18n="Job information">Job information</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-schedule" data-bs-toggle="pill" data-bs-target="#proj-pane-schedule" type="button" role="tab" aria-controls="proj-pane-schedule" aria-selected="false">Schedule</button>
+								<button class="nav-link" id="proj-tab-schedule" data-bs-toggle="pill" data-bs-target="#proj-pane-schedule" type="button" role="tab" aria-controls="proj-pane-schedule" aria-selected="false" data-i18n="Schedule">Schedule</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-tasks" data-bs-toggle="pill" data-bs-target="#proj-pane-tasks" type="button" role="tab" aria-controls="proj-pane-tasks" aria-selected="false">Tasks</button>
+								<button class="nav-link" id="proj-tab-tasks" data-bs-toggle="pill" data-bs-target="#proj-pane-tasks" type="button" role="tab" aria-controls="proj-pane-tasks" aria-selected="false" data-i18n="Tasks">Tasks</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-drawings" data-bs-toggle="pill" data-bs-target="#proj-pane-drawings" type="button" role="tab" aria-controls="proj-pane-drawings" aria-selected="false">Drawings</button>
+								<button class="nav-link" id="proj-tab-drawings" data-bs-toggle="pill" data-bs-target="#proj-pane-drawings" type="button" role="tab" aria-controls="proj-pane-drawings" aria-selected="false" data-i18n="Drawings">Drawings</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-specs" data-bs-toggle="pill" data-bs-target="#proj-pane-specs" type="button" role="tab" aria-controls="proj-pane-specs" aria-selected="false">Specs</button>
+								<button class="nav-link" id="proj-tab-specs" data-bs-toggle="pill" data-bs-target="#proj-pane-specs" type="button" role="tab" aria-controls="proj-pane-specs" aria-selected="false" data-i18n="Specs">Specs</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-takeoff" data-bs-toggle="pill" data-bs-target="#proj-pane-takeoff" type="button" role="tab" aria-controls="proj-pane-takeoff" aria-selected="false">Takeoff</button>
+								<button class="nav-link" id="proj-tab-takeoff" data-bs-toggle="pill" data-bs-target="#proj-pane-takeoff" type="button" role="tab" aria-controls="proj-pane-takeoff" aria-selected="false" data-i18n="Takeoff">Takeoff</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-estimate" data-bs-toggle="pill" data-bs-target="#proj-pane-estimate" type="button" role="tab" aria-controls="proj-pane-estimate" aria-selected="false">Estimate</button>
+								<button class="nav-link" id="proj-tab-estimate" data-bs-toggle="pill" data-bs-target="#proj-pane-estimate" type="button" role="tab" aria-controls="proj-pane-estimate" aria-selected="false" data-i18n="Estimate">Estimate</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-rfi" data-bs-toggle="pill" data-bs-target="#proj-pane-rfi" type="button" role="tab" aria-controls="proj-pane-rfi" aria-selected="false">RFIs</button>
+								<button class="nav-link" id="proj-tab-rfi" data-bs-toggle="pill" data-bs-target="#proj-pane-rfi" type="button" role="tab" aria-controls="proj-pane-rfi" aria-selected="false" data-i18n="RFIs">RFIs</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-submittals" data-bs-toggle="pill" data-bs-target="#proj-pane-submittals" type="button" role="tab" aria-controls="proj-pane-submittals" aria-selected="false">Submittals</button>
+								<button class="nav-link" id="proj-tab-submittals" data-bs-toggle="pill" data-bs-target="#proj-pane-submittals" type="button" role="tab" aria-controls="proj-pane-submittals" aria-selected="false" data-i18n="Submittals">Submittals</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false">Procurement</button>
+								<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false" data-i18n="Procurement">Procurement</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false">Invoicing</button>
+								<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false" data-i18n="Invoicing">Invoicing</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-contract" data-bs-toggle="pill" data-bs-target="#proj-pane-contract" type="button" role="tab" aria-controls="proj-pane-contract" aria-selected="false">Contract admin</button>
+								<button class="nav-link" id="proj-tab-dailylog" data-bs-toggle="pill" data-bs-target="#proj-pane-dailylog" type="button" role="tab" aria-controls="proj-pane-dailylog" aria-selected="false">Daily log</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-costing" data-bs-toggle="pill" data-bs-target="#proj-pane-costing" type="button" role="tab" aria-controls="proj-pane-costing" aria-selected="false">Job costing</button>
+								<button class="nav-link" id="proj-tab-contract" data-bs-toggle="pill" data-bs-target="#proj-pane-contract" type="button" role="tab" aria-controls="proj-pane-contract" aria-selected="false" data-i18n="Contract admin">Contract admin</button>
 							</li>
 							<li class="nav-item" role="presentation">
-								<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false">Safety</button>
+								<button class="nav-link" id="proj-tab-costing" data-bs-toggle="pill" data-bs-target="#proj-pane-costing" type="button" role="tab" aria-controls="proj-pane-costing" aria-selected="false" data-i18n="Job costing">Job costing</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false" data-i18n="Safety">Safety</button>
 							</li>
 							<li class="nav-item" role="presentation">
 								<button class="nav-link" id="proj-tab-correspondence" data-bs-toggle="pill" data-bs-target="#proj-pane-correspondence" type="button" role="tab" aria-controls="proj-pane-correspondence" aria-selected="false">Correspondence</button>
 							</li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-photos" data-bs-toggle="pill" data-bs-target="#proj-pane-photos" type="button" role="tab">Photos</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-punch" data-bs-toggle="pill" data-bs-target="#proj-pane-punch" type="button" role="tab">Punchlist</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-wo" data-bs-toggle="pill" data-bs-target="#proj-pane-wo" type="button" role="tab">Work orders</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-meetings" data-bs-toggle="pill" data-bs-target="#proj-pane-meetings" type="button" role="tab">Meetings</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-incidents" data-bs-toggle="pill" data-bs-target="#proj-pane-incidents" type="button" role="tab">Incidents</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-transmittals" data-bs-toggle="pill" data-bs-target="#proj-pane-transmittals" type="button" role="tab">Transmittals</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-anticipated" data-bs-toggle="pill" data-bs-target="#proj-pane-anticipated" type="button" role="tab">Anticipated costs</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-poco" data-bs-toggle="pill" data-bs-target="#proj-pane-poco" type="button" role="tab">PO change orders</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-subinv" data-bs-toggle="pill" data-bs-target="#proj-pane-subinv" type="button" role="tab">Sub invoices</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-qc" data-bs-toggle="pill" data-bs-target="#proj-pane-qc" type="button" role="tab">QC checklists</button></li>
+							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-openitems" data-bs-toggle="pill" data-bs-target="#proj-pane-openitems" type="button" role="tab">Open items</button></li>
 						</ul>
 					</div>
 				</div>
@@ -557,7 +693,7 @@
 				<div class="col-xl-12">
 					<div class="tab-content card card-body border-0 shadow-sm">
 						<div class="tab-pane fade show active" id="proj-pane-job" role="tabpanel" aria-labelledby="proj-tab-job" tabindex="0">
-							<div class="alert alert-light border py-2 mb-2" data-usis-loading>Loading job information…</div>
+							<div class="alert alert-light border py-2 mb-2" data-usis-loading data-i18n="Loading job information…">Loading job information…</div>
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
 							<div id="usis-project-job-root" class="d-none">
 								<div class="usis-bc-job-hero mb-4 pb-3">
@@ -570,7 +706,7 @@
 											<div class="small fw-medium" id="usis-proj-job-badge-due"></div>
 											<div class="small text-muted" id="usis-proj-job-status"></div>
 											<div class="mt-2 d-flex flex-wrap justify-content-md-end gap-1">
-												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-proj-edit-btn">Edit</button>
+												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-proj-edit-btn" data-i18n="Edit">Edit</button>
 											</div>
 										</div>
 									</div>
@@ -637,16 +773,16 @@
 						<div class="tab-pane fade" id="proj-pane-schedule" role="tabpanel" aria-labelledby="proj-tab-schedule" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 								<div>
-									<h5 class="mb-0">Construction schedule</h5>
+									<h5 class="mb-0" data-i18n="Construction schedule">Construction schedule</h5>
 									<p class="text-muted small mb-0">Installation or work windows by area. Assign a person so they see the window on their calendar and get a reminder.</p>
 								</div>
 							</div>
 							<ul class="nav nav-pills gap-1 mb-3" role="tablist">
 								<li class="nav-item" role="presentation">
-									<button class="nav-link active" id="proj-sched-sub-tab-list" data-bs-toggle="pill" data-bs-target="#proj-sched-sub-pane-list" type="button" role="tab" aria-controls="proj-sched-sub-pane-list" aria-selected="true">Installation dates</button>
+									<button class="nav-link active" id="proj-sched-sub-tab-list" data-bs-toggle="pill" data-bs-target="#proj-sched-sub-pane-list" type="button" role="tab" aria-controls="proj-sched-sub-pane-list" aria-selected="true" data-i18n="Installation dates">Installation dates</button>
 								</li>
 								<li class="nav-item" role="presentation">
-									<button class="nav-link" id="proj-sched-sub-tab-cal" data-bs-toggle="pill" data-bs-target="#proj-sched-sub-pane-cal" type="button" role="tab" aria-controls="proj-sched-sub-pane-cal" aria-selected="false">Calendar</button>
+									<button class="nav-link" id="proj-sched-sub-tab-cal" data-bs-toggle="pill" data-bs-target="#proj-sched-sub-pane-cal" type="button" role="tab" aria-controls="proj-sched-sub-pane-cal" aria-selected="false" data-i18n="Calendar">Calendar</button>
 								</li>
 							</ul>
 							<div class="tab-content">
@@ -655,7 +791,7 @@
 									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-sched-error role="alert"></div>
 									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 										<p class="text-muted small mb-0">Rows are inclusive date ranges (e.g. 1 June through 10 June).</p>
-										<button type="button" class="btn btn-primary btn-sm" id="usis-sched-btn-add">+ Add window</button>
+										<button type="button" class="btn btn-primary btn-sm" id="usis-sched-btn-add" data-i18n="+ Add window">+ Add window</button>
 									</div>
 									<div class="table-responsive">
 										<table class="table table-sm table-bordered align-middle mb-0">
@@ -686,7 +822,7 @@
 						<div class="tab-pane fade" id="proj-pane-tasks" role="tabpanel" aria-labelledby="proj-tab-tasks" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 								<div>
-									<h5 class="mb-0">Tasks</h5>
+									<h5 class="mb-0" data-i18n="Tasks">Tasks</h5>
 									<p class="text-muted small mb-0">Each row is an <strong>installation window</strong> (same records as <strong>Schedule</strong> and the calendar).</p>
 								</div>
 							</div>
@@ -751,7 +887,7 @@
 						<div class="tab-pane fade" id="proj-pane-drawings" role="tabpanel" aria-labelledby="proj-tab-drawings" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 								<div>
-									<h5 class="mb-0">Drawings</h5>
+									<h5 class="mb-0" data-i18n="Drawings">Drawings</h5>
 									<p class="text-muted small mb-0">Current set and sheet metadata (project-scoped).</p>
 								</div>
 								<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-modal-drawing-create">+ Upload / add</button>
@@ -783,7 +919,7 @@
 						<div class="tab-pane fade" id="proj-pane-specs" role="tabpanel" aria-labelledby="proj-tab-specs" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 								<div>
-									<h5 class="mb-0">Specifications</h5>
+									<h5 class="mb-0" data-i18n="Specifications">Specifications</h5>
 									<p class="text-muted small mb-0">CSI spec book: pick sections from the MasterFormat catalog or import a spec-book PDF. Click a section to open the PDF viewer.</p>
 								</div>
 								<a class="btn btn-sm btn-outline-secondary" id="usis-specs-open-fullpage" href="construction/specs-viewer.html" target="_blank" rel="noopener">Open full page</a>
@@ -798,7 +934,7 @@
 						<div class="tab-pane fade" id="proj-pane-estimate" role="tabpanel" aria-labelledby="proj-tab-estimate" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 								<div>
-									<h5 class="mb-0">Pricing</h5>
+									<h5 class="mb-0" data-i18n="Pricing">Pricing</h5>
 									<p class="text-muted small mb-0">LEMOS cost types (Labor, Material, Equipment, Subcontract, Other) on project takeoff lines.</p>
 								</div>
 								<a class="btn btn-primary btn-sm" id="usis-pricing-open" href="construction/construction-pricing.html">Open pricing workspace</a>
@@ -810,12 +946,12 @@
 						<div class="tab-pane fade" id="proj-pane-rfi" role="tabpanel" aria-labelledby="proj-tab-rfi" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 								<div>
-									<h5 class="mb-0">RFIs</h5>
+									<h5 class="mb-0" data-i18n="RFIs">RFIs</h5>
 									<p class="text-muted small mb-0">Procore-style log: # / Subject / Status / Ball-in-Court / Assignees / Due. Same APIs as the full RFI workspace (<code>rfis.html</code>). Use the <strong>Submittals</strong> tab for shop drawings and submittal workflow.</p>
 								</div>
 								<div class="d-flex gap-1">
-									<a class="btn btn-outline-secondary btn-sm" id="usis-rfi-open-log" href="construction/rfis.html">Open RFI Log</a>
-									<a class="btn btn-primary btn-sm" id="usis-rfi-open-create" href="construction/rfi-create.html">+ Create RFI</a>
+									<a class="btn btn-outline-secondary btn-sm" id="usis-rfi-open-log" href="construction/rfis.html" data-i18n="Open RFI Log">Open RFI Log</a>
+									<a class="btn btn-primary btn-sm" id="usis-rfi-open-create" href="construction/rfi-create.html" data-i18n="+ Create RFI">+ Create RFI</a>
 								</div>
 							</div>
 							<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading RFIs…</div>
@@ -825,7 +961,7 @@
 									<label class="form-label small text-muted mb-0" for="usis-filter-rfi-status">Status</label>
 									<select class="form-select form-select-sm" id="usis-filter-rfi-status">
 										<option value="">All statuses</option>
-										<option value="draft">Draft</option>
+										<option value="draft" data-i18n="Draft">Draft</option>
 										<option value="open">Open</option>
 										<option value="closed">Closed</option>
 										<option value="closed_draft">Closed-Draft</option>
@@ -859,10 +995,10 @@
 						<div class="tab-pane fade" id="proj-pane-submittals" role="tabpanel" aria-labelledby="proj-tab-submittals" tabindex="0">
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 								<div>
-									<h5 class="mb-0">Submittals</h5>
+									<h5 class="mb-0" data-i18n="Submittals">Submittals</h5>
 									<p class="text-muted small mb-0">Procore-style register: workflow dates, contractor, responses, and attachments. Open a row for PDF review markup. Pair with the <strong>RFIs</strong> tab for questions linked to drawings or specs.</p>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-open-create" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create">+ Create submittal</button>
+								<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-open-create" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create" data-i18n="+ Create submittal">+ Create submittal</button>
 								</div>
 								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading submittals…</div>
 								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
@@ -872,12 +1008,17 @@
 										<select class="form-select form-select-sm" id="usis-filter-submittal-status">
 											<option value="">All statuses</option>
 											<option value="draft">Draft</option>
-											<option value="submitted">Submitted</option>
-											<option value="in_review">In review</option>
+											<option value="submitted" data-i18n="Submitted">Submitted</option>
+											<option value="in_review" data-i18n="In review">In review</option>
 											<option value="approved">Approved</option>
 											<option value="approved_as_noted">Approved as noted</option>
 											<option value="rejected">Rejected</option>
 											<option value="closed">Closed</option>
+											<option value="incomplete">Incomplete</option>
+											<option value="in_qc">In QC</option>
+											<option value="internally_approved">Internally approved</option>
+											<option value="revise_resubmit">Revise &amp; resubmit</option>
+											<option value="released">Released</option>
 										</select>
 									</div>
 									<div class="col-md-6 col-lg-4">
@@ -986,6 +1127,16 @@
 												</tr>
 											</thead>
 											<tbody id="usis-tbody-commitments-sub"></tbody>
+										</table>
+									</div>
+									<div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+										<h6 class="mb-0">Subcontract change orders</h6>
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-sco-add">+ SCO</button>
+									</div>
+									<div class="table-responsive">
+										<table class="table table-sm table-hover mb-0">
+											<thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th></tr></thead>
+											<tbody id="usis-sco-tbody"><tr><td colspan="4" class="text-muted">Loading…</td></tr></tbody>
 										</table>
 									</div>
 								</div>
@@ -1262,16 +1413,50 @@
 								</div>
 								<div class="col-lg-6">
 									<div class="card border-0 shadow-sm h-100">
-										<div class="card-header bg-white py-2 fw-semibold border-bottom">Change orders (prime)</div>
+										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+											<span>Change orders (prime)</span>
+											<button type="button" class="btn btn-primary btn-sm" id="usis-ca-co-add">+ New prime CO</button>
+										</div>
 										<div class="card-body small">
-											<p class="text-muted mb-2">Owner-facing prime CO log (not SCO). USIS has no prime-CO API yet — track and approve prime COs in <strong>Sage CM</strong> until a register is added here.</p>
+											<p class="text-muted mb-2">Owner-facing prime CO log. Approved + status date revises the owner contract.</p>
 											<div class="table-responsive">
 												<table class="table table-hover table-sm align-middle mb-0">
 													<thead class="table-light"><tr><th>#</th><th>Title</th><th>Status</th><th class="text-end">Amount</th></tr></thead>
-													<tbody id="usis-ca-co-tbody"><tr><td colspan="4" class="text-muted">No prime change orders yet (endpoint TBD).</td></tr></tbody>
+													<tbody id="usis-ca-co-tbody"><tr><td colspan="4" class="text-muted">Loading…</td></tr></tbody>
 												</table>
 											</div>
-											<button type="button" class="btn btn-sm btn-outline-secondary mt-2" disabled title="Planned">+ New prime CO</button>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="card border-0 shadow-sm h-100">
+										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+											<span>Change proposal requests</span>
+											<button type="button" class="btn btn-primary btn-sm" id="usis-ca-cpr-add">+ New CPR</button>
+										</div>
+										<div class="card-body small">
+											<p class="text-muted mb-2">Price a potential change with a vendor, then convert to a prime CO.</p>
+											<div class="table-responsive">
+												<table class="table table-hover table-sm align-middle mb-0">
+													<thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead>
+													<tbody id="usis-ca-cpr-tbody"><tr><td colspan="5" class="text-muted">Loading…</td></tr></tbody>
+												</table>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<div class="card border-0 shadow-sm h-100">
+										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+											<span>Project directory</span>
+										</div>
+										<div class="card-body small">
+											<div class="table-responsive">
+												<table class="table table-hover table-sm align-middle mb-0">
+													<thead class="table-light"><tr><th>Company</th><th>Type</th><th>Role</th></tr></thead>
+													<tbody id="usis-ca-dir-tbody"><tr><td colspan="3" class="text-muted">Loading…</td></tr></tbody>
+												</table>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -1316,8 +1501,135 @@
 							</p>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-costing" role="tabpanel" aria-labelledby="proj-tab-costing" tabindex="0">
-							<h5 class="mb-2">Job costing</h5>
-							<p class="text-muted mb-0 small">Costing views are not configured for this screen yet.</p>
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Job cost codes</h5>
+									<p class="text-muted small mb-0">Project codes used on POs, bills, CPRs, COs, and timecards. Resource budgets live on the code.</p>
+								</div>
+								<button type="button" class="btn btn-primary btn-sm" id="usis-jcc-add">+ Add cost code</button>
+							</div>
+							<div class="table-responsive">
+								<table class="table table-sm table-hover align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>Order</th>
+											<th>Code</th>
+											<th>Description</th>
+											<th>Qty</th>
+											<th>Units</th>
+											<th class="text-end">Revenue</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="usis-jcc-tbody"><tr><td colspan="7" class="text-muted">Loading…</td></tr></tbody>
+								</table>
+							</div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-dailylog" role="tabpanel" aria-labelledby="proj-tab-dailylog" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Daily log</h5>
+									<p class="text-muted small mb-0">One report per calendar day. Workforce, equipment, deliveries, and visitors.</p>
+								</div>
+								<div class="d-flex gap-2 align-items-center">
+									<input type="date" class="form-control form-control-sm" id="usis-dailylog-date" />
+									<button type="button" class="btn btn-primary btn-sm" id="usis-dailylog-save">Save</button>
+								</div>
+							</div>
+							<div class="row g-3">
+								<div class="col-md-6">
+									<label class="form-label small">Weather / notes</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-weather" rows="2"></textarea>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small">Work performed</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-work" rows="2"></textarea>
+								</div>
+								<div class="col-12">
+									<label class="form-label small">Workforce (one per line: company — count — notes)</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-manpower" rows="3"></textarea>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small">Equipment</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-equipment" rows="3"></textarea>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small">Deliveries</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-deliveries" rows="3"></textarea>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small">Visitors</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-visitors" rows="2"></textarea>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small">Delays</label>
+									<textarea class="form-control form-control-sm" id="usis-dailylog-delays" rows="2"></textarea>
+								</div>
+							</div>
+							<p class="small text-muted mt-2 mb-0" id="usis-dailylog-status"></p>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-photos" role="tabpanel">
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Photos</h5>
+									<p class="text-muted small mb-0">Jobsite photos grouped by album.</p>
+								</div>
+								<div class="d-flex gap-2">
+									<input type="text" class="form-control form-control-sm" id="usis-photo-album" placeholder="Album (optional)" style="max-width:10rem">
+									<input type="file" class="form-control form-control-sm" id="usis-photo-file" accept="image/*">
+									<button type="button" class="btn btn-primary btn-sm" id="usis-photo-upload">Upload</button>
+								</div>
+							</div>
+							<div id="usis-photo-gallery" class="row g-2"></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-punch" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Punchlist</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="punchlist">+ Item</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Title</th><th>Status</th><th>Location</th><th></th></tr></thead><tbody id="usis-w2-punchlist"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-wo" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Work orders</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="work-orders">+ Work order</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-work-orders"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-meetings" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Meetings</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="meetings">+ Meeting</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="usis-w2-meetings"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-incidents" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Safety incidents</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="safety-incidents">+ Incident</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Severity</th><th>Status</th><th></th></tr></thead><tbody id="usis-w2-safety-incidents"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-transmittals" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Transmittals</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="transmittals">+ Transmittal</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th>Due</th><th></th></tr></thead><tbody id="usis-w2-transmittals"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-anticipated" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Anticipated costs</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="anticipated-costs">+ Cost</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-anticipated-costs"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-poco" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">PO change orders</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-po-change-orders"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-subinv" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Sub invoices</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="sub-invoices">+ Sub invoice</button></div>
+							<p class="text-muted small">Sage-style sub invoice log. Owner G702 pay apps stay on Invoicing; vendor AP email bills stay on Invoices.</p>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-sub-invoices"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-qc" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">QC checklists</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="qc-checklists">+ Checklist</button></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th>Review</th><th></th></tr></thead><tbody id="usis-w2-qc-checklists"></tbody></table></div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-openitems" role="tabpanel">
+							<div class="d-flex justify-content-between align-items-center mb-2">
+								<div>
+									<h5 class="mb-1">Team open items</h5>
+									<p class="text-muted small mb-0">RFIs, punch, issues, expiring insurance, and your workflow inbox.</p>
+								</div>
+								<a class="btn btn-outline-secondary btn-sm" href="../usis-companies.html">Companies admin</a>
+							</div>
+							<div class="table-responsive mb-3"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Kind</th><th>Title</th><th>Status</th></tr></thead><tbody id="usis-openitems-tbody"></tbody></table></div>
+							<h6>Workflow inbox</h6>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>Type</th><th>Status</th><th>When</th></tr></thead><tbody id="usis-wfinbox-tbody"></tbody></table></div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-safety" role="tabpanel" aria-labelledby="proj-tab-safety" tabindex="0">
 							<div id="usis-proj-safety-root">
@@ -1345,7 +1657,7 @@
 		</main>
 
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
-<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
+<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
 		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
 		<span class="fs-11">Home</span>
@@ -1361,6 +1673,10 @@
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
 		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
 		<span class="fs-11">Estimate</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
+		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
+		<span class="fs-11">Issues</span>
 	</a>
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
 		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
@@ -1639,34 +1955,34 @@
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">Create submittal</h5>
+					<h5 class="modal-title" data-i18n="Create submittal">Create submittal</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<div class="alert alert-danger py-2 d-none" id="usis-submittal-create-err" role="alert"></div>
 					<div class="row g-2">
 						<div class="col-12">
-							<label class="form-label small mb-0" for="usis-submittal-c-title">Title <span class="text-danger">*</span></label>
+							<label class="form-label small mb-0" for="usis-submittal-c-title"><span data-i18n="Title">Title</span> <span class="text-danger">*</span></label>
 							<input class="form-control form-control-sm" id="usis-submittal-c-title" required maxlength="500" placeholder="e.g. Concrete mix design">
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-spec">Spec section</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-spec" data-i18n="Spec section">Spec section</label>
 							<input class="form-control form-control-sm" id="usis-submittal-c-spec" maxlength="120" placeholder="03 30 00">
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-type">Type</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-type" data-i18n="Type">Type</label>
 							<select class="form-select form-select-sm" id="usis-submittal-c-type">
 								<option value="">—</option>
-								<option value="Shop Drawing">Shop Drawing</option>
-								<option value="Product Information">Product Information</option>
-								<option value="Product Manual">Product Manual</option>
-								<option value="Sample">Sample</option>
-								<option value="Document">Document</option>
-								<option value="Other">Other</option>
+								<option value="Shop Drawing" data-i18n="Shop Drawing">Shop Drawing</option>
+								<option value="Product Information" data-i18n="Product Information">Product Information</option>
+								<option value="Product Manual" data-i18n="Product Manual">Product Manual</option>
+								<option value="Sample" data-i18n="Sample">Sample</option>
+								<option value="Document" data-i18n="Document">Document</option>
+								<option value="Other" data-i18n="Other">Other</option>
 							</select>
 						</div>
 						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-status">Status</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-status" data-i18n="Status">Status</label>
 							<select class="form-select form-select-sm" id="usis-submittal-c-status">
 								<option value="draft">Draft</option>
 								<option value="submitted">Submitted</option>
@@ -1674,31 +1990,31 @@
 							</select>
 						</div>
 						<div class="col-md-8">
-							<label class="form-label small mb-0" for="usis-submittal-c-bic">Ball in court (name or email)</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-bic" data-i18n="Ball in court (name or email)">Ball in court (name or email)</label>
 							<input class="form-control form-control-sm" id="usis-submittal-c-bic" maxlength="200" placeholder="Reviewer email">
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-contractor">Responsible contractor</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-contractor" data-i18n="Responsible contractor">Responsible contractor</label>
 							<input class="form-control form-control-sm" id="usis-submittal-c-contractor" maxlength="300">
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-rev">Revision label</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-rev" data-i18n="Revision label">Revision label</label>
 							<input class="form-control form-control-sm" id="usis-submittal-c-rev" maxlength="50" placeholder="0 / A / B">
 						</div>
 						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-due">Review due</label>
-							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-due" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
+							<label class="form-label small mb-0" for="usis-submittal-c-due" data-i18n="Review due">Review due</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
 						</div>
 						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-submitby">Submit by</label>
-							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-submitby" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
+							<label class="form-label small mb-0" for="usis-submittal-c-submitby" data-i18n="Submit by">Submit by</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
 						</div>
 						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-received">Received date</label>
-							<input type="text" class="form-control form-control-sm" id="usis-submittal-c-received" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10">
+							<label class="form-label small mb-0" for="usis-submittal-c-received" data-i18n="Received date">Received date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
 						</div>
 						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom">Received from</label>
+							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom" data-i18n="Received from">Received from</label>
 							<input class="form-control form-control-sm" id="usis-submittal-c-receivedfrom" maxlength="300">
 						</div>
 					</div>
@@ -1730,8 +2046,8 @@
 					<p class="text-muted small mb-0">Product data submittals auto-link ASI / Bobrick technical data when manufacturer name matches.</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-create-submit">Create</button>
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-create-submit" data-i18n="Create">Create</button>
 				</div>
 			</div>
 		</div>
@@ -2304,12 +2620,17 @@
 	</div>
 
 	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-i18n.js"></script>
+	<script src="assets/js/usis-report-problem.js"></script>
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
 <script src="assets/js/usis-nav-access.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/js/usis-ui.js?v=20260829f"></script>
+	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
+	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
@@ -2327,6 +2648,8 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js?v=20260830b"></script>
+	<script src="assets/js/project-detail-wave1.js?v=20260831a"></script>
+	<script src="assets/js/project-detail-wave2.js?v=20260831a"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
@@ -2335,11 +2658,11 @@
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js?v=20260830d"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260831a"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);
-		var id = p.get("id");
+		var id = (p.get("id") || p.get("project_id") || p.get("projectId") || "").trim();
 		var specsFull = document.getElementById("usis-specs-open-fullpage");
 		if (specsFull && id) {
 			specsFull.href = "construction/specs-viewer.html?project_id=" + encodeURIComponent(id);

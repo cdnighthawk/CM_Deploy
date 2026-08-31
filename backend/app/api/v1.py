@@ -51,6 +51,7 @@ from . import _reports_catalog_service as reports_catalog_svc
 from . import _power_bi_service as power_bi_svc
 from . import _prime_contract_sov_service as prime_sov_svc
 from . import _project_contract_service as project_contract_svc
+from . import _change_management_service as change_mgmt_svc
 from . import _calendar_service as calendar_svc
 from . import _issue_service as issue_svc
 from . import _project_schedule_service as project_schedule_svc
@@ -3476,6 +3477,11 @@ def list_project_directory_companies(project_id: str):
     if not _project_exists(pid):
         return _jsonify({"error": "project not found"}), 404
     q = (request.args.get("q") or "").strip()
+    if (request.args.get("all") or "").strip() in ("1", "true", "yes"):
+        try:
+            return _jsonify(proc_lookup_svc.list_full_directory(pid, current_user()))
+        except rfi_svc.ApiError as exc:
+            return _proc_lookup_err(exc)
     try:
         limit = int(request.args.get("limit") or 20)
     except ValueError:
@@ -3497,7 +3503,10 @@ def add_project_directory_company(project_id: str):
     cid = _parse_uuid_param(str(data.get("company_id") or ""))
     if not cid:
         return _jsonify({"error": "company_id required"}), 400
+    role = (str(data.get("directory_role") or data.get("role") or "").strip() or None)
     try:
+        if role or (str(data.get("any_type") or "") in ("1", "true")):
+            return _jsonify(proc_lookup_svc.add_directory_any(pid, cid, current_user(), role=role)), 201
         return _jsonify(proc_lookup_svc.add_directory_company(pid, cid, current_user())), 201
     except rfi_svc.ApiError as exc:
         return _proc_lookup_err(exc)
@@ -3949,6 +3958,152 @@ def delete_project_contract(project_id: str, contract_id: str):
         return ("", 204)
     except rfi_svc.ApiError as exc:
         return _project_contract_err(exc)
+
+
+def _change_err(exc: rfi_svc.ApiError):
+    return _jsonify({"error": exc.message}), exc.status
+
+
+@bp.get("/projects/<project_id>/cprs")
+def list_project_cprs(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.list_cprs(pid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.post("/projects/<project_id>/cprs")
+def create_project_cpr(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.create_cpr(pid, request.get_json(silent=True) or {}, current_user())), 201
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.patch("/projects/<project_id>/cprs/<cpr_id>")
+def patch_project_cpr(project_id: str, cpr_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(cpr_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.patch_cpr(pid, cid, request.get_json(silent=True) or {}, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.delete("/projects/<project_id>/cprs/<cpr_id>")
+def delete_project_cpr(project_id: str, cpr_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(cpr_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        change_mgmt_svc.delete_cpr(pid, cid, current_user())
+        return ("", 204)
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.get("/projects/<project_id>/change-orders")
+def list_project_change_orders(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.list_cos(pid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.post("/projects/<project_id>/change-orders")
+def create_project_change_order(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.create_co(pid, request.get_json(silent=True) or {}, current_user())), 201
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.patch("/projects/<project_id>/change-orders/<co_id>")
+def patch_project_change_order(project_id: str, co_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(co_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.patch_co(pid, cid, request.get_json(silent=True) or {}, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.delete("/projects/<project_id>/change-orders/<co_id>")
+def delete_project_change_order(project_id: str, co_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(co_id)
+    if not pid or cid is None:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        change_mgmt_svc.delete_co(pid, cid, current_user())
+        return ("", 204)
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.get("/projects/<project_id>/scos")
+def list_project_scos(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    comm = _parse_uuid_param(request.args.get("commitment_id") or "")
+    try:
+        return _jsonify(change_mgmt_svc.list_scos(pid, current_user(), commitment_id=comm))
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.post("/projects/<project_id>/scos")
+def create_project_sco(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.create_sco(pid, request.get_json(silent=True) or {}, current_user())), 201
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.patch("/projects/<project_id>/scos/<sco_id>")
+def patch_project_sco(project_id: str, sco_id: str):
+    pid = _parse_uuid_param(project_id)
+    sid = _parse_uuid_param(sco_id)
+    if not pid or not sid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify(change_mgmt_svc.patch_sco(pid, sid, request.get_json(silent=True) or {}, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
+
+
+@bp.delete("/projects/<project_id>/scos/<sco_id>")
+def delete_project_sco(project_id: str, sco_id: str):
+    pid = _parse_uuid_param(project_id)
+    sid = _parse_uuid_param(sco_id)
+    if not pid or not sid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        change_mgmt_svc.delete_sco(pid, sid, current_user())
+        return ("", 204)
+    except rfi_svc.ApiError as exc:
+        return _change_err(exc)
 
 
 @bp.get("/projects/<project_id>/prime-contract/sov")
@@ -5214,3 +5369,6 @@ _safety_routes_mod.register_safety_routes(bp)
 from . import _safety_docs_routes as _safety_docs_routes_mod  # noqa: E402
 
 _safety_docs_routes_mod.register_safety_docs_routes(bp)
+from . import _wave2_routes as _wave2_routes_mod  # noqa: E402
+
+_wave2_routes_mod.register_wave2_routes(bp)

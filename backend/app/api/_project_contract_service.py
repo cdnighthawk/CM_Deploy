@@ -88,6 +88,9 @@ def _serialize(row: ProjectContract) -> dict[str, Any]:
         "is_primary": bool(row.is_primary),
         "sort_order": row.sort_order,
         "notes": row.notes,
+        "contract_type": row.contract_type,
+        "status": row.status,
+        "status_date": _iso(row.status_date),
         "created_at": row.created_at.isoformat() if row.created_at else None,
         "updated_at": row.updated_at.isoformat() if row.updated_at else None,
     }
@@ -221,6 +224,14 @@ def _apply_fields(row: ProjectContract, data: Mapping[str, Any]) -> None:
     if "notes" in data:
         n = data.get("notes")
         row.notes = None if n is None else (str(n).strip() or None)
+    if "contract_type" in data:
+        raw = data.get("contract_type")
+        row.contract_type = None if raw in (None, "") else str(raw).strip()[:40]
+    if "status" in data:
+        st = str(data.get("status") or "draft").strip()
+        row.status = st or "draft"
+    if "status_date" in data:
+        row.status_date = _parse_date(data.get("status_date"))
     if "sort_order" in data and data.get("sort_order") is not None:
         try:
             row.sort_order = int(data.get("sort_order"))

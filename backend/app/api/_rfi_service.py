@@ -250,6 +250,8 @@ def rfi_public(rfi: Rfi, *, include_detail: bool = False, cu: Optional[CurrentUs
             if rfi.responsible_contractor_company_id
             else None
         ),
+        "originator_company_id": str(rfi.originator_company_id) if rfi.originator_company_id else None,
+        "respondent_company_id": str(rfi.respondent_company_id) if rfi.respondent_company_id else None,
         "created_by": _user_label(
             db.session.get(User, rfi.created_by_user_id) if rfi.created_by_user_id else None
         ),
@@ -401,9 +403,38 @@ def reply_public(r: RfiReply) -> dict[str, Any]:
 
 def lookup_public(row: Any) -> dict[str, Any]:
     out = {"id": str(row.id), "project_id": str(row.project_id)}
-    for attr in ("name", "code", "title", "description", "path", "prefix", "sort_order"):
+    for attr in (
+        "name",
+        "code",
+        "title",
+        "description",
+        "path",
+        "prefix",
+        "sort_order",
+        "order_number",
+        "units",
+        "owner_cost_code",
+    ):
         if hasattr(row, attr):
-            out[attr] = getattr(row, attr)
+            val = getattr(row, attr)
+            if hasattr(val, "quantize"):
+                out[attr] = float(val)
+            else:
+                out[attr] = val
+    for attr in (
+        "quantity",
+        "material_budget",
+        "labor_budget",
+        "equipment_budget",
+        "subcontractor_budget",
+        "other_budget",
+        "revenue_budget",
+        "labor_hour_budget",
+        "equipment_hour_budget",
+    ):
+        if hasattr(row, attr):
+            val = getattr(row, attr)
+            out[attr] = float(val) if val is not None else None
     if hasattr(row, "pdf_url"):
         pu = getattr(row, "pdf_url")
         if pu is not None:
@@ -423,9 +454,8 @@ def list_lookup(project_id: uuid.UUID, kind: str) -> list[dict[str, Any]]:
     }.get(kind)
     if Model is None:
         raise ApiError(f"unknown lookup: {kind}", 400)
-    rows = db.session.scalars(
-        select(Model).where(Model.project_id == project_id).order_by(getattr(Model, "sort_order", Model.created_at).asc() if hasattr(Model, "sort_order") else Model.created_at.asc())
-    ).all()
+    order_col = getattr(Model, "order_number", None) or getattr(Model, "sort_order", None) or Model.created_at
+    rows = db.session.scalars(select(Model).where(Model.project_id == project_id).order_by(order_col.asc())).all()
     return [lookup_public(r) for r in rows]
 
 
@@ -559,7 +589,23 @@ def patch_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, data: Mapp
     allowed = {
         "locations": {"name", "path", "parent_id", "is_active"},
         "spec_sections": {"code", "title", "is_active", "pdf_url"},
-        "cost_codes": {"code", "description", "is_active"},
+        "cost_codes": {
+            "code",
+            "description",
+            "is_active",
+            "order_number",
+            "quantity",
+            "units",
+            "owner_cost_code",
+            "material_budget",
+            "labor_budget",
+            "equipment_budget",
+            "subcontractor_budget",
+            "other_budget",
+            "revenue_budget",
+            "labor_hour_budget",
+            "equipment_hour_budget",
+        },
         "project_stages": {"code", "name", "prefix", "sort_order", "is_active"},
         "sub_jobs": {"code", "name", "is_active"},
     }.get(kind, set())
@@ -577,9 +623,29 @@ def patch_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, data: Mapp
             row.parent_id = _parse_uuid(str(v)) if v not in (None, "") else None
         elif k == "is_active":
             row.is_active = bool(v)
-        elif k == "sort_order":
-            row.sort_order = int(v)
-        elif k in ("code", "title", "name", "description", "path", "prefix", "pdf_url"):
+        elif k in ("sort_order", "order_number"):
+            setattr(row, k, int(v or 0))
+        elif k in (
+            "quantity",
+            "material_budget",
+            "labor_budget",
+            "equipment_budget",
+            "subcontractor_budget",
+            "other_budget",
+            "revenue_budget",
+            "labor_hour_budget",
+            "equipment_hour_budget",
+        ):
+            from decimal import Decimal, InvalidOperation
+
+            if v in (None, ""):
+                setattr(row, k, None)
+            else:
+                try:
+                    setattr(row, k, Decimal(str(v)))
+                except (InvalidOperation, ValueError) as e:
+                    raise ApiError(f"invalid {k}") from e
+        elif k in ("code", "title", "name", "description", "path", "prefix", "pdf_url", "units", "owner_cost_code"):
             s = (str(v).strip() if v is not None else "") or None
             if k == "pdf_url" and s is not None and len(s) > 1024:
                 s = s[:1024]
@@ -843,6 +909,10 @@ def _apply_payload(rfi: Rfi, data: Mapping[str, Any], *, partial: bool, project_
         _set("rfi_manager_user_id", _resolve_user(data.get("rfi_manager_user_id")))
     if "received_from_user_id" in data:
         _set("received_from_user_id", _resolve_user(data.get("received_from_user_id")))
+    if "originator_company_id" in data:
+        rfi.originator_company_id = _resolve_company(data.get("originator_company_id"))
+    if "respondent_company_id" in data:
+        rfi.respondent_company_id = _resolve_company(data.get("respondent_company_id"))
     if "responsible_contractor_company_id" in data:
         _set(
             "responsible_contractor_company_id",

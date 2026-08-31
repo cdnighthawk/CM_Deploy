@@ -29,5 +29,10 @@ class PrimeContractSovLine(UUIDPKMixin, TimestampMixin, db.Model):
     phase_code: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     description: Mapped[str] = mapped_column(String(500), nullable=False, default="", server_default="")
     scheduled_value: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=Decimal("0"))
+    cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfi_cost_codes.id", ondelete="SET NULL"), nullable=True
+    )
+    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 4), nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
 
     project: Mapped["Project"] = relationship("Project", back_populates="prime_contract_sov_lines")

@@ -35,5 +35,8 @@ class ProjectContract(UUIDPKMixin, TimestampMixin, db.Model):
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    contract_type: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    status: Mapped[str] = mapped_column(String(40), nullable=False, default="draft", server_default="draft")
+    status_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     project = relationship("Project", back_populates="contracts")

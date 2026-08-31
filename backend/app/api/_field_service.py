@@ -186,6 +186,7 @@ def field_photo_public(row: FieldPhoto) -> dict[str, Any]:
         "location_text": row.location_text or "",
         "drawing_id": str(row.drawing_id) if row.drawing_id else None,
         "daily_report_id": str(row.daily_report_id) if row.daily_report_id else None,
+        "album": getattr(row, "album", None) or "",
         "created_at": iso(row.created_at),
     }
 
@@ -238,6 +239,7 @@ def create_field_photo(
         lon=_num_or_none(form.get("lon")),
         original_filename=filename,
         mime_type=mime,
+        album=(str(form.get("album") or "").strip()[:120] or None),
     )
     db.session.add(row)
     db.session.flush()
@@ -293,6 +295,9 @@ def update_field_photo(photo_id: uuid.UUID, data: Mapping[str, Any], cu: Current
             if report is None or report.project_id != row.project_id:
                 raise FieldApiError("daily report not found", 404)
         row.daily_report_id = report_id
+    if "album" in data:
+        album = str(data.get("album") or "").strip()[:120]
+        row.album = album or None
     db.session.add(row)
     db.session.commit()
     db.session.refresh(row)

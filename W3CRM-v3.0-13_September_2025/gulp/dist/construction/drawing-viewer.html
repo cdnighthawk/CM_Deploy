@@ -438,11 +438,22 @@
 							<span class="nav-text" data-i18n="Calendar">Calendar</span>
 						</a>
 					</li>
-					<li data-usis-module="safety">
-						<a href="usis-safety.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-shield"></i>
 							<span class="nav-text" data-i18n="Safety">Safety</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="safety">
+								<a href="usis-safety.html" data-i18n="Safety dashboard">Safety dashboard</a>
+							</li>
+							<li data-usis-module="safety">
+								<a href="usis-daily-pretask.html" data-i18n="Daily pretask">Daily pretask</a>
+							</li>
+							<li data-usis-module="safety">
+								<a href="usis-safety-company.html" data-i18n="Company programs">Company programs</a>
+							</li>
+						</ul>
 					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
@@ -493,14 +504,26 @@
 							<li data-usis-module="user_admin">
 								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
 							</li>
+							<li>
+								<a href="usis-companies.html">Companies</a>
+							</li>
 							<li data-usis-module="playbooks">
 								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+							</li>
+							<li data-usis-module="user_admin">
+								<a href="usis-workflows.html">Workflows</a>
 							</li>
 							<li data-usis-module="reports">
 								<a href="reports.html" data-i18n="Reports">Reports</a>
 							</li>
 							<li data-usis-module="documents">
 								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-ingest.html" data-i18n="Ingest">Ingest</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-correspondence.html">Correspondence</a>
 							</li>
 							<li data-usis-module="projects">
 								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
@@ -516,24 +539,24 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1>Drawing viewer</h1></li>
+						<li><h1 data-i18n="Drawing viewer">Drawing viewer</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
-								<span>Home</span>
+								<span data-i18n="Home">Home</span>
 							</a>
 						</li>
 						<li class="breadcrumb-item d-none" id="usis-projects-crumb">
-							<a href="construction/projects.html">Active projects</a>
+							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
 						</li>
 						<li class="breadcrumb-item d-none" id="usis-project-crumb">
 							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
 						</li>
 						<li class="breadcrumb-item active" aria-current="page">
-							<span>Drawing viewer</span>
+							<span data-i18n="Drawing viewer">Drawing viewer</span>
 						</li>
 					</ol>
 				</nav>
@@ -713,11 +736,41 @@
 				</div>
 			</div>
 		</main>
+		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
+<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
+		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
+		<span class="fs-11">Home</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/leads.html">
+		<i class="icon feather icon-users d-block fs-5 mb-0"></i>
+		<span class="fs-11">Leads</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
+		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
+		<span class="fs-11">Projects</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
+		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
+		<span class="fs-11">Estimate</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
+		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
+		<span class="fs-11">Issues</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
+		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
+		<span class="fs-11">Drawings</span>
+	</a>
+</nav>
+
+<!-- Start - Footer -->
 		<div class="footer">
 			<div class="copyright text-center">
 			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
 			</div>
 		</div>
+		<!-- End - Footer -->
 	</div>
 
 	<div class="modal fade" id="usis-dv-modal-takeoff-line" tabindex="-1" aria-hidden="true" aria-labelledby="usis-dv-modal-takeoff-line-title">
@@ -792,7 +845,8 @@
 <script src="assets/js/usis-nav-access.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js"></script>
+	<script src="assets/js/usis-ui.js?v=20260829f"></script>
+	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>

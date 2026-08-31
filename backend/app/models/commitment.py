@@ -91,6 +91,7 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
     textura_contract_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
     issue_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     po_type: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    subcontract_type: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     reminder_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     vendor_contact_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True

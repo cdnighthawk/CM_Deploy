@@ -21,13 +21,13 @@
 	<meta property="og:site_name" content="USIS Construction Management">
 	<meta property="og:url" content="https://www.usiscm.com/">
 	<meta property="og:title" content="USIS Construction Management">
-	<meta property="og:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta property="og:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
 	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
 	<meta property="og:image:alt" content="US Interior Specialties">
 	
 	<!-- TWITTER META -->
 	<meta name="twitter:title" content="USIS Construction Management">
-	<meta name="twitter:description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
+	<meta name="twitter:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
 	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
 	<meta name="twitter:card" content="summary">
 	
@@ -45,6 +45,7 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<!-- Flask API root for session login/logout + credentialed ``fetch``.
 	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
@@ -108,8 +109,6 @@
 			max-width: 4.5rem;
 			text-align: right;
 		}
-		.usis-col-filter-scroll { max-height: 14rem; overflow-y: auto; font-size: 0.8125rem; }
-		#usis-bc-col-filter-modal .accordion-button { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
 		#usis-bc-leads-table th.usis-bulk-col,
 		#usis-bc-leads-table td.usis-bulk-col { width: 28px; max-width: 28px; }
 	</style>
@@ -147,49 +146,60 @@
 		<!-- End - Nav Header -->
 
 		<!-- Start - Sidebar Chat Box  -->
-		<div class="chatbox">
+		<div class="chatbox usis-ai-chatbox">
 			<div class="chatbox-close"></div>
-			<div class="clearfix">
-				<ul class="nav nav-underline">
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#notes">Notes</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link" data-bs-toggle="tab" href="#alerts">Alerts</a>
-					</li>
-					<li class="nav-item">
-						<a class="nav-link active" data-bs-toggle="tab" href="#chat">Chat</a>
-					</li>
-				</ul>
-				<div class="tab-content">
-					<div class="tab-pane fade" id="notes">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Project notes will appear here when messaging is enabled.</p>
-							</div>
-						</div>
+			<div class="usis-ai-chat" data-usis-ai-chat="1">
+				<div class="usis-ai-chat__header">
+					<div>
+						<span class="usis-overline mb-0">Assistant</span>
+						<div class="fw-semibold">USIS + Grok</div>
 					</div>
-					<div class="tab-pane fade" id="alerts">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">System alerts will appear here when configured.</p>
-							</div>
-						</div>
+					<div class="d-flex align-items-center gap-2">
+						<span class="usis-status-chip usis-status-chip--progress" data-usis-chat-mode>Assistant</span>
+						<span class="usis-seg" data-usis-chat-provider title="xAI Grok">
+							<span class="btn btn-sm active" aria-pressed="true">Grok</span>
+						</span>
 					</div>
-					<div class="tab-pane fade active show" id="chat">
-						<div class="card mb-0">
-							<div class="card-body py-4 text-center text-muted small">
-								<p class="mb-0">Team chat is not enabled yet.</p>
-							</div>
+				</div>
+				<div class="usis-ai-chat__toolbar d-none" data-usis-chat-toolbar>
+					<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>
+					<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>
+				</div>
+				<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>
+				<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>
+				<div class="usis-ai-chat__composer">
+					<div class="usis-ai-chat__drop d-none" data-usis-chat-drop>Drop files here</div>
+					<div class="usis-ai-chat__chips" data-usis-chat-chips></div>
+					<form data-usis-chat-form>
+						<label class="visually-hidden" for="usis-ai-chat-input">Message</label>
+						<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok, or attach a file or link…"></textarea>
+						<div class="usis-ai-chat__linkrow d-none" data-usis-chat-linkrow>
+							<input type="url" class="form-control form-control-sm" data-usis-chat-link placeholder="https://…" autocomplete="off">
+							<button type="button" class="btn btn-sm btn-primary" data-usis-chat-link-add>Add link</button>
 						</div>
-					</div>
+						<div class="d-flex align-items-center justify-content-between gap-2 mt-2">
+							<div class="d-flex align-items-center gap-1">
+								<div class="usis-ai-chat__pluswrap">
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ai-chat__plus" data-usis-chat-plus title="Attach a file or link" aria-label="Attach a file or link" aria-expanded="false">+</button>
+									<div class="usis-ai-chat__plusmenu d-none" data-usis-chat-plusmenu>
+										<button type="button" data-usis-chat-pickfile>From this computer</button>
+										<button type="button" data-usis-chat-picklink>Paste a link</button>
+									</div>
+								</div>
+								<input type="file" class="d-none" data-usis-chat-file multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,text/markdown,application/json,.txt,.csv,.md,.pdf">
+								<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>New</button>
+							</div>
+							<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>
 		<!-- End - Sidebar Chat Box  -->
 
 
-		<!-- Start - Header -->
+		<link href="assets/css/usis-ui.css" rel="stylesheet">
+<!-- Start - Header -->
 		<div class="header">
 			<div class="header-content">
 				<nav class="navbar navbar-expand">
@@ -205,20 +215,19 @@
 											</svg>
 										</button>
 									</span>
-									<input type="text" class="form-control" placeholder="Search">
+									<input type="text" class="form-control" placeholder="Search" data-i18n-placeholder="Search">
 								</div>
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
 							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
 								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
-									<span class="d-none d-xl-inline text-muted small fw-semibold text-uppercase me-1">USIS</span>
 									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
 										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
 											<i class="icon feather icon-mail"></i>
 											<span class="d-none d-lg-inline ms-1">Email</span>
 										</a>
-										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open chat panel" aria-label="Open chat panel">
+										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
 										</button>
@@ -226,10 +235,9 @@
 								</div>
 							</li>
 							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1" id="usis-theme-toggle"
-									aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
-									<i class="icon feather icon-moon fs-5" data-usis-icon-dark aria-hidden="true"></i>
-									<i class="icon feather icon-sun fs-5 d-none" data-usis-icon-light aria-hidden="true"></i>
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem" data-i18n-title="Report a problem" data-i18n-aria="Report a problem">
+									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
+									<span class="d-none d-lg-inline fs-6" data-i18n="Report a problem">Report a problem</span>
 								</button>
 							</li>
 							<li class="nav-item">
@@ -249,27 +257,17 @@
 								<div class="dropdown">
 									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
 										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
-											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
 										</svg>
 									</button>
 									<div class="dropdown-menu dropdown-menu-end py-0">
 										<div class="dz-scroll p-2" style="height: 380px;">
-								<p class="text-muted small text-center mb-0 py-5">No notifications.</p>
-							<a class="d-block text-center p-3 border-top" href="javascript:void(0);">See all notifications <i class="fa fa-arrow-right"></i></a>
+								<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
+							<a class="d-block text-center p-3 border-top" href="javascript:void(0);"><span data-i18n="See all notifications">See all notifications</span> <i class="fa fa-arrow-right"></i></a>
 									</div>
 								</div>
 							</li>
-							<li class="nav-item notification_dropdown d-none d-sm-flex">
-								<a class="nav-link dz-fullscreen" href="javascript:void(0);" aria-label="Fullscreen">
-									<svg id="icon-full" viewBox="0 0 24 24" width="20" height="20" stroke="var(--bs-body-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-									<svg id="icon-minimize" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bs-body-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-minimize">
-										<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" style="stroke-dasharray: 37, 57; stroke-dashoffset: 0;"></path>
-									</svg>
-								</a>
-							</li>	
 							<li class="nav-item header-profile-dropdown">
 								<div class="dropdown d-flex align-items-center">
 									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="usis-profile.html" title="My profile">
@@ -305,8 +303,26 @@
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
-											<span class="ms-2">My profile</span>
+											<span class="ms-2" data-i18n="My profile">My profile</span>
 										</a>
+									</li>
+									<li data-usis-profile-lang="1">
+										<div class="px-3 py-2">
+											<div class="small text-muted mb-1" data-i18n="Language">Language</div>
+											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Language">
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="en_GB">English</button>
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="es_ES">Español</button>
+											</div>
+										</div>
+									</li>
+									<li data-usis-profile-theme="1">
+										<div class="px-3 py-2">
+											<div class="small text-muted mb-1" data-i18n="Appearance">Appearance</div>
+											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Appearance">
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="light" data-i18n="Light">Light</button>
+												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="dark" data-i18n="Dark">Dark</button>
+											</div>
+										</div>
 									</li>
 									<li><hr class="dropdown-divider"></li>
 									<li>
@@ -316,7 +332,7 @@
 												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
 												<line x1="21" y1="12" x2="9" y2="12"></line>
 											</svg>
-											<span class="ms-2 text-danger">Logout </span>
+											<span class="ms-2 text-danger" data-i18n="Logout">Logout</span>
 										</a>
 									</li>
 								</ul>
@@ -325,6 +341,51 @@
 						</ul>
 					</div>
 				</nav>
+			</div>
+		</div>
+		<div class="modal fade" id="usis-report-problem-modal" tabindex="-1" aria-labelledby="usis-report-problem-title" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<form>
+						<div class="modal-header">
+							<h5 class="modal-title" id="usis-report-problem-title" data-i18n="Report a problem">Report a problem</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-i18n-aria="Close"></button>
+						</div>
+						<div class="modal-body">
+							<p class="text-muted small mb-3" data-i18n="Tell us what broke or what to change. It will show on the Issues page.">Tell us what broke or what to change. It will show on the Issues page.</p>
+							<div class="alert d-none" data-usis-report-status role="status"></div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-kind" data-i18n="Kind">Kind</label>
+								<select class="form-select" id="usis-report-kind" name="kind">
+									<option value="bug" data-i18n="Something broke">Something broke</option>
+									<option value="enhancement" data-i18n="Recommend a change on this page">Recommend a change on this page</option>
+									<option value="general" data-i18n="General recommendation">General recommendation</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-title" data-i18n="Title">Title</label>
+								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary" data-i18n-placeholder="Short summary">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-name" data-i18n="Your name (optional)">Your name (optional)</label>
+								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with" data-i18n-placeholder="So we know who to follow up with">
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="usis-report-details" data-i18n="Details">Details</label>
+								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?" data-i18n-placeholder="What happened, and what did you expect?"></textarea>
+							</div>
+							<div class="mb-0" data-usis-report-page-block>
+								<label class="form-label text-muted" for="usis-report-diagnostics" data-i18n="Sent with this report">Sent with this report</label>
+								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
+							</div>
+							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide data-i18n="Site-wide (not tied to a page).">Site-wide (not tied to a page).</p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+							<button type="submit" class="btn btn-primary" data-i18n="Send">Send</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
 		<!-- End - Header -->
@@ -372,11 +433,22 @@
 							<span class="nav-text" data-i18n="Calendar">Calendar</span>
 						</a>
 					</li>
-					<li data-usis-module="safety">
-						<a href="usis-safety.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-shield"></i>
 							<span class="nav-text" data-i18n="Safety">Safety</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="safety">
+								<a href="usis-safety.html" data-i18n="Safety dashboard">Safety dashboard</a>
+							</li>
+							<li data-usis-module="safety">
+								<a href="usis-daily-pretask.html" data-i18n="Daily pretask">Daily pretask</a>
+							</li>
+							<li data-usis-module="safety">
+								<a href="usis-safety-company.html" data-i18n="Company programs">Company programs</a>
+							</li>
+						</ul>
 					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
@@ -391,7 +463,7 @@
 						</a>
 						<ul aria-expanded="false">
 							<li data-usis-module="hr">
-								<a href="usis-hr-dashboard.html" data-i18n="HR">HR dashboard</a>
+								<a href="usis-hr-dashboard.html" data-i18n="HR dashboard">HR dashboard</a>
 							</li>
 							<li data-usis-module="hr">
 								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
@@ -427,14 +499,26 @@
 							<li data-usis-module="user_admin">
 								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
 							</li>
+							<li>
+								<a href="usis-companies.html">Companies</a>
+							</li>
 							<li data-usis-module="playbooks">
 								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+							</li>
+							<li data-usis-module="user_admin">
+								<a href="usis-workflows.html">Workflows</a>
 							</li>
 							<li data-usis-module="reports">
 								<a href="reports.html" data-i18n="Reports">Reports</a>
 							</li>
 							<li data-usis-module="documents">
 								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-ingest.html" data-i18n="Ingest">Ingest</a>
+							</li>
+							<li data-usis-module="documents">
+								<a href="usis-correspondence.html">Correspondence</a>
 							</li>
 							<li data-usis-module="projects">
 								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
@@ -453,19 +537,31 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1>Leads</h1></li>
+						<li><h1 data-i18n="Leads">Leads</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
 									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
-								Home
+								<span data-i18n="Home">Home</span>
 							</a>
 						</li>
-						<li class="breadcrumb-item active" aria-current="page">Leads</li>
+						<li class="breadcrumb-item d-none" id="usis-projects-crumb">
+							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
+						</li>
+						<li class="breadcrumb-item d-none" id="usis-project-crumb">
+							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
+						</li>
+						<li class="breadcrumb-item active" aria-current="page">
+
+
+							<span data-i18n="Leads">Leads</span>
+
+						</li>
 					</ol>
 				</nav>
+
 				
 			</div>
 
@@ -474,7 +570,7 @@
 					<div class="card-body py-2">
 						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
 							<div class="me-2">
-								<h6 class="mb-1">Construction — Leads</h6>
+								<h6 class="mb-1" data-i18n="Construction — Leads">Construction — Leads</h6>
 								
 							</div>
 							<div class="text-nowrap small">
@@ -493,42 +589,42 @@
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 							<div class="input-group message-search-area width200 w-xs-100">
-								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
+								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" data-i18n-placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
 								<div class="input-group-append">
 									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-bc-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
 								</div>
 							</div>
 							<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-bc-filter-count" aria-live="polite"></span>
 							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-leads-filter-btn" data-bs-toggle="offcanvas" data-bs-target="#usis-leads-filter-drawer" aria-controls="usis-leads-filter-drawer">
-								<i class="fa fa-filter me-1"></i> Filter <span class="badge text-bg-primary ms-1 d-none" id="usis-leads-filter-badge"></span>
+								<i class="fa fa-filter me-1"></i> <span data-i18n="Filter">Filter</span> <span class="badge text-bg-primary ms-1 d-none" id="usis-leads-filter-badge"></span>
 							</button>
 							<div class="dropdown">
 								<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" id="usis-leads-saved-btn" data-bs-toggle="dropdown" aria-expanded="false">
-									Saved
+									<span data-i18n="Saved">Saved</span>
 								</button>
 								<ul class="dropdown-menu" id="usis-leads-saved-menu" aria-labelledby="usis-leads-saved-btn">
-									<li><span class="dropdown-item-text text-muted">No saved filters yet</span></li>
+									<li><span class="dropdown-item-text text-muted" data-i18n="No saved filters yet">No saved filters yet</span></li>
 								</ul>
 							</div>
 							<button type="button" class="btn btn-outline-secondary btn-sm d-md-none" id="usis-bc-sort-filter" title="Sort and filter columns">
-								<i class="fa fa-filter me-1"></i> Sort &amp; Filter
+								<i class="fa fa-filter me-1"></i> <span data-i18n="Sort &amp; Filter">Sort &amp; Filter</span>
 							</button>
 							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-bc-reset-view" title="Clear header filters, sort, and hidden columns">
-								Reset view
+								<span data-i18n="Reset view">Reset view</span>
 							</button>
 						</div>
 						<div class="d-flex flex-wrap gap-2">
 							<button type="button" class="btn btn-outline-secondary btn-sm w-xs-100" id="usis-bc-pull" title="Pull latest BuildingConnected opportunities">
-								<i class="icon feather icon-download me-1"></i> Sync BC
+								<i class="icon feather icon-download me-1"></i> <span data-i18n="Sync BC">Sync BC</span>
 							</button>
 							<a href="/api/v1/integrations/buildingconnected/oauth/start" class="btn btn-outline-secondary btn-sm w-xs-100" data-usis-bc-reconnect title="Grant BuildingConnected write access (data:write) and refresh the stored token">
-								<i class="icon feather icon-link me-1"></i> Reconnect BC
+								<i class="icon feather icon-link me-1"></i> <span data-i18n="Reconnect BC">Reconnect BC</span>
 							</a>
 							<button type="button" class="btn btn-outline-primary btn-sm w-xs-100" id="usis-bc-sync-stub" title="Reload lead list">
-								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
+								<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Reload from API">Reload from API</span>
 							</button>
 							<a href="javascript:void(0);" class="btn btn-primary btn-sm w-xs-100" data-bs-toggle="offcanvas" data-bs-target="#lead-detail-offcanvas">
-								<i class="icon feather icon-plus me-1"></i> Add lead
+								<i class="icon feather icon-plus me-1"></i> <span data-i18n="Add lead">Add lead</span>
 							</a>
 						</div>
 					</div>
@@ -539,10 +635,10 @@
 
 				<div class="usis-bulk-bar d-none" id="usis-bc-leads-bulk-bar" role="region" aria-live="polite">
 					<span id="usis-bc-leads-bulk-count" class="fw-semibold me-1">0 selected</span>
-					<button type="button" class="btn btn-sm btn-success" data-usis-bulk-bc="WILL_SUBMIT">Will Bid</button>
-					<button type="button" class="btn btn-sm btn-danger" data-usis-bulk-bc="DECLINED">Will Not Bid</button>
-					<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-bulk-bc="UNDECIDED">Undecided</button>
-					<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-bc-leads-bulk-clear">Clear</button>
+					<button type="button" class="btn btn-sm btn-success" data-usis-bulk-bc="WILL_SUBMIT" data-i18n="Will Bid">Will Bid</button>
+					<button type="button" class="btn btn-sm btn-danger" data-usis-bulk-bc="DECLINED" data-i18n="Will Not Bid">Will Not Bid</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-bulk-bc="UNDECIDED" data-i18n="Undecided">Undecided</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-bc-leads-bulk-clear" data-i18n="Clear">Clear</button>
 				</div>
 
 				<!-- Start - Leads table -->
@@ -552,21 +648,21 @@
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-bc-leads-check-all" aria-label="Select all visible leads"></th>
-									<th class="text-nowrap" data-sort-key="number">Project #</th>
-									<th class="usis-bc-col-lead" data-sort-key="name">Lead</th>
-									<th class="text-nowrap usis-bc-col-trade" data-sort-key="trade_name">Trade invited</th>
-									<th class="usis-bc-col-company" data-sort-key="company_name">Company</th>
-									<th class="usis-bc-col-city" data-sort-key="city">City</th>
-									<th class="text-nowrap" data-sort-key="state">State</th>
-									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles">Dist</th>
-									<th class="text-nowrap" data-sort-key="due_at">Bid due date</th>
-									<th class="text-center text-nowrap" data-sort-key="estimate">Estimate</th>
-									<th class="text-end text-nowrap">Action</th>
+									<th class="text-nowrap" data-sort-key="number" data-i18n="Project #">Project #</th>
+									<th class="usis-bc-col-lead" data-sort-key="name" data-i18n="Lead">Lead</th>
+									<th class="text-nowrap usis-bc-col-trade" data-sort-key="trade_name" data-i18n="Trade invited">Trade invited</th>
+									<th class="usis-bc-col-company" data-sort-key="company_name" data-i18n="Company">Company</th>
+									<th class="usis-bc-col-city" data-sort-key="city" data-i18n="City">City</th>
+									<th class="text-nowrap" data-sort-key="state" data-i18n="State">State</th>
+									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles" data-i18n="Dist">Dist</th>
+									<th class="text-nowrap" data-sort-key="due_at" data-i18n="Bid due date">Bid due date</th>
+									<th class="text-center text-nowrap" data-sort-key="estimate" data-i18n="Estimate">Estimate</th>
+									<th class="text-end text-nowrap" data-i18n="Action">Action</th>
 								</tr>
 							</thead>
 							<tbody id="usis-bc-leads-tbody">
 								<tr>
-									<td colspan="11" class="text-muted">Loading leads from API…</td>
+									<td colspan="11" class="text-muted" data-i18n="Loading leads from API…">Loading leads from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -578,7 +674,7 @@
 		</main>
 		<!-- End - Content Body -->
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
-<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body shadow-lg" aria-label="USIS primary">
+<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
 		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
 		<span class="fs-11">Home</span>
@@ -594,6 +690,10 @@
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
 		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
 		<span class="fs-11">Estimate</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
+		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
+		<span class="fs-11">Issues</span>
 	</a>
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
 		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
@@ -617,10 +717,10 @@
 		<div class="offcanvas-header d-flex justify-content-between border-5 border-bottom border-primary">
 			<div class="d-flex align-items-center gap-2">
 				<button type="button" class="btn-close m-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-				<h5 class="offcanvas-title fw-semibold" id="lead-detail-title">Lead (Building Connected)</h5>
+				<h5 class="offcanvas-title fw-semibold" id="lead-detail-title" data-i18n="Lead (Building Connected)">Lead (Building Connected)</h5>
 			</div>
 			<div>
-				<button type="button" class="btn btn-primary">Save</button>
+				<button type="button" class="btn btn-primary" data-i18n="Save">Save</button>
 			</div>
 		</div>
 		<div class="offcanvas-body">
@@ -656,40 +756,40 @@
 		</div>
 	</div>
 
-	<div class="offcanvas offcanvas-end usis-leads-filter-drawer" tabindex="-1" id="usis-leads-filter-drawer" aria-labelledby="usis-leads-filter-title">
+		<div class="offcanvas offcanvas-end usis-leads-filter-drawer" tabindex="-1" id="usis-leads-filter-drawer" aria-labelledby="usis-leads-filter-title">
 		<div class="offcanvas-header py-3">
-			<h5 class="offcanvas-title fw-semibold mb-0" id="usis-leads-filter-title">Filter</h5>
+			<h5 class="offcanvas-title fw-semibold mb-0" id="usis-leads-filter-title" data-i18n="Filter">Filter</h5>
 			<div class="d-flex align-items-center gap-1">
-				<button type="button" class="btn btn-link btn-sm text-decoration-none" id="usis-leads-filter-reset">Reset all</button>
+				<button type="button" class="btn btn-link btn-sm text-decoration-none" id="usis-leads-filter-reset" data-i18n="Reset all">Reset all</button>
 				<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 			</div>
 		</div>
 		<div class="offcanvas-body p-0 d-flex flex-column">
 			<ul class="nav nav-tabs usis-leads-filter-tabs px-3 pt-1" role="tablist">
 				<li class="nav-item" role="presentation">
-					<button class="nav-link active" id="usis-leads-tab-filter-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-filter" type="button" role="tab" aria-controls="usis-leads-tab-filter" aria-selected="true">Filter</button>
+					<button class="nav-link active" id="usis-leads-tab-filter-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-filter" type="button" role="tab" aria-controls="usis-leads-tab-filter" aria-selected="true" data-i18n="Filter">Filter</button>
 				</li>
 				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="usis-leads-tab-saved-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-saved" type="button" role="tab" aria-controls="usis-leads-tab-saved" aria-selected="false">Saved filters</button>
+					<button class="nav-link" id="usis-leads-tab-saved-btn" data-bs-toggle="tab" data-bs-target="#usis-leads-tab-saved" type="button" role="tab" aria-controls="usis-leads-tab-saved" aria-selected="false" data-i18n="Saved filters">Saved filters</button>
 				</li>
 			</ul>
 			<div class="tab-content flex-grow-1 overflow-auto">
 				<div class="tab-pane fade show active p-3" id="usis-leads-tab-filter" role="tabpanel" aria-labelledby="usis-leads-tab-filter-btn">
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-q">Search</label>
-						<input type="search" class="form-control" id="usis-leads-f-q" placeholder="job name, GC, city, bid #" autocomplete="off">
+						<label class="usis-section-overline" for="usis-leads-f-q" data-i18n="Search">Search</label>
+						<input type="search" class="form-control" id="usis-leads-f-q" placeholder="job name, GC, city, bid #" data-i18n-placeholder="job name, GC, city, bid #" autocomplete="off">
 					</div>
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-distance-preset">Distance from office</label>
+						<label class="usis-section-overline" for="usis-leads-f-distance-preset" data-i18n="Distance from office">Distance from office</label>
 						<div class="d-flex align-items-center gap-2">
 							<select class="form-select" id="usis-leads-f-distance-preset" aria-label="Distance from office">
-								<option value="">Any distance</option>
-								<option value="25">Within 25 miles</option>
-								<option value="50">Within 50 miles</option>
-								<option value="100">Within 100 miles</option>
-								<option value="150">Within 150 miles</option>
-								<option value="250">Within 250 miles</option>
-								<option value="custom">Custom miles…</option>
+								<option value="" data-i18n="Any distance">Any distance</option>
+								<option value="25" data-i18n="Within 25 miles">Within 25 miles</option>
+								<option value="50" data-i18n="Within 50 miles">Within 50 miles</option>
+								<option value="100" data-i18n="Within 100 miles">Within 100 miles</option>
+								<option value="150" data-i18n="Within 150 miles">Within 150 miles</option>
+								<option value="250" data-i18n="Within 250 miles">Within 250 miles</option>
+								<option value="custom" data-i18n="Custom miles…">Custom miles…</option>
 							</select>
 							<input type="number" class="form-control d-none" id="usis-leads-f-distance" min="1" max="5000" step="1" placeholder="miles" aria-label="Maximum miles from office">
 						</div>
@@ -700,23 +800,23 @@
 								<input type="text" class="form-control" id="usis-leads-f-office-state" placeholder="ST" maxlength="2" style="max-width:4.5rem" autocomplete="address-level1" aria-label="Office state">
 								<input type="text" class="form-control" id="usis-leads-f-office-zip" placeholder="ZIP" maxlength="10" style="max-width:6.5rem" autocomplete="postal-code" aria-label="Office ZIP">
 							</div>
-							<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-leads-f-office-save">Save office</button>
+							<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-leads-f-office-save" data-i18n="Save office">Save office</button>
 						</div>
 					</div>
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-trade">Work performed</label>
+						<label class="usis-section-overline" for="usis-leads-f-trade" data-i18n="Work performed">Work performed</label>
 						<select class="form-select" id="usis-leads-f-trade" multiple size="5">
-							<option value="drywall">Drywall</option>
-							<option value="paint">Paint</option>
-							<option value="flooring">Flooring</option>
-							<option value="ceilings">Ceilings</option>
-							<option value="trim">Trim</option>
-							<option value="specialties">Specialties</option>
-							<option value="multi">Multi</option>
+							<option value="drywall" data-i18n="Drywall">Drywall</option>
+							<option value="paint" data-i18n="Paint">Paint</option>
+							<option value="flooring" data-i18n="Flooring">Flooring</option>
+							<option value="ceilings" data-i18n="Ceilings">Ceilings</option>
+							<option value="trim" data-i18n="Trim">Trim</option>
+							<option value="specialties" data-i18n="Specialties">Specialties</option>
+							<option value="multi" data-i18n="Multi">Multi</option>
 						</select>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Companies</span>
+						<span class="usis-section-overline" data-i18n="Companies">Companies</span>
 						<div class="position-relative">
 							<input type="search" class="form-control" id="usis-leads-f-company-q" placeholder="Company" autocomplete="off" aria-autocomplete="list" aria-controls="usis-leads-f-company-results">
 							<div class="list-group usis-leads-typeahead d-none" id="usis-leads-f-company-results" role="listbox"></div>
@@ -724,44 +824,44 @@
 						<div class="d-flex flex-wrap gap-1 mt-2" id="usis-leads-f-company-chips"></div>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Sector</span>
+						<span class="usis-section-overline" data-i18n="Sector">Sector</span>
 						<div class="form-check">
 							<input class="form-check-input" type="checkbox" value="commercial" id="usis-leads-f-sector-commercial">
-							<label class="form-check-label" for="usis-leads-f-sector-commercial">Commercial</label>
+							<label class="form-check-label" for="usis-leads-f-sector-commercial" data-i18n="Commercial">Commercial</label>
 						</div>
 						<div class="form-check">
 							<input class="form-check-input" type="checkbox" value="government" id="usis-leads-f-sector-government">
-							<label class="form-check-label" for="usis-leads-f-sector-government">Government</label>
+							<label class="form-check-label" for="usis-leads-f-sector-government" data-i18n="Government">Government</label>
 						</div>
 					</div>
 					<div class="mb-3">
-						<label class="usis-section-overline" for="usis-leads-f-stage">Pipeline stage</label>
+						<label class="usis-section-overline" for="usis-leads-f-stage" data-i18n="Pipeline stage">Pipeline stage</label>
 						<select class="form-select" id="usis-leads-f-stage" multiple size="5">
-							<option value="new">New Lead</option>
-							<option value="invited">Invited</option>
-							<option value="estimating">Estimating</option>
-							<option value="submitted">Submitted</option>
-							<option value="awarded">Awarded</option>
-							<option value="lost">Lost</option>
+							<option value="new" data-i18n="New Lead">New Lead</option>
+							<option value="invited" data-i18n="Invited">Invited</option>
+							<option value="estimating" data-i18n="Estimating">Estimating</option>
+							<option value="submitted" data-i18n="Submitted">Submitted</option>
+							<option value="awarded" data-i18n="Awarded">Awarded</option>
+							<option value="lost" data-i18n="Lost">Lost</option>
 						</select>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Date filters</span>
-						<label class="form-label small mb-1" for="usis-leads-f-due-from">Bid due date</label>
+						<span class="usis-section-overline" data-i18n="Date filters">Date filters</span>
+						<label class="form-label small mb-1" for="usis-leads-f-due-from" data-i18n="Bid due date">Bid due date</label>
 						<div class="d-flex align-items-center gap-2">
 							<input type="date" class="form-control" id="usis-leads-f-due-from" aria-label="Bid due from">
 							<span class="text-muted">→</span>
 							<input type="date" class="form-control" id="usis-leads-f-due-to" aria-label="Bid due to">
 						</div>
-						<label class="form-label small mb-1 mt-2" for="usis-leads-f-start-from">Expected start date</label>
+						<label class="form-label small mb-1 mt-2" for="usis-leads-f-start-from" data-i18n="Expected start date">Expected start date</label>
 						<div class="d-flex align-items-center gap-2">
 							<input type="date" class="form-control" id="usis-leads-f-start-from" aria-label="Expected start from">
 							<span class="text-muted">→</span>
 							<input type="date" class="form-control" id="usis-leads-f-start-to" aria-label="Expected start to">
 						</div>
-						<button type="button" class="btn btn-link btn-sm px-0 mt-2" id="usis-leads-f-more-dates" aria-expanded="false" aria-controls="usis-leads-f-extra-dates">View all date filters</button>
+						<button type="button" class="btn btn-link btn-sm px-0 mt-2" id="usis-leads-f-more-dates" aria-expanded="false" aria-controls="usis-leads-f-extra-dates" data-i18n="View all date filters">View all date filters</button>
 						<div class="d-none" id="usis-leads-f-extra-dates">
-							<label class="form-label small mb-1" for="usis-leads-f-activity-from">Last activity date</label>
+							<label class="form-label small mb-1" for="usis-leads-f-activity-from" data-i18n="Last activity date">Last activity date</label>
 							<div class="d-flex align-items-center gap-2">
 								<input type="date" class="form-control" id="usis-leads-f-activity-from" aria-label="Last activity from">
 								<span class="text-muted">→</span>
@@ -770,7 +870,7 @@
 						</div>
 					</div>
 					<div class="mb-3">
-						<span class="usis-section-overline">Value</span>
+						<span class="usis-section-overline" data-i18n="Value">Value</span>
 						<div class="d-flex align-items-center gap-2">
 							<input type="number" class="form-control" id="usis-leads-f-value-min" min="0" step="1000" placeholder="min $" aria-label="Minimum value">
 							<span class="text-muted">–</span>
@@ -778,20 +878,20 @@
 						</div>
 					</div>
 					<div class="mb-0">
-						<label class="usis-section-overline" for="usis-leads-f-owner">Owner / estimator</label>
+						<label class="usis-section-overline" for="usis-leads-f-owner" data-i18n="Owner / estimator">Owner / estimator</label>
 						<select class="form-select" id="usis-leads-f-owner" multiple size="4"></select>
 					</div>
 				</div>
 				<div class="tab-pane fade p-3" id="usis-leads-tab-saved" role="tabpanel" aria-labelledby="usis-leads-tab-saved-btn">
 					<div id="usis-leads-saved-empty" class="usis-empty py-4">
-						<p class="usis-empty__body mb-0">No saved filters yet. Set criteria, then Save filter.</p>
+						<p class="usis-empty__body mb-0" data-i18n="No saved filters yet. Set criteria, then Save filter.">No saved filters yet. Set criteria, then Save filter.</p>
 					</div>
 					<div id="usis-leads-saved-list" class="d-none"></div>
 				</div>
 			</div>
 			<div class="usis-leads-filter-footer border-top p-3 d-flex justify-content-between gap-2">
-				<button type="button" class="btn btn-outline-primary" id="usis-leads-filter-save">Save filter</button>
-				<button type="button" class="btn btn-primary" id="usis-leads-filter-apply">Apply</button>
+				<button type="button" class="btn btn-outline-primary" id="usis-leads-filter-save" data-i18n="Save filter">Save filter</button>
+				<button type="button" class="btn btn-primary" id="usis-leads-filter-apply" data-i18n="Apply">Apply</button>
 			</div>
 		</div>
 	</div>
@@ -800,33 +900,39 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title" id="usis-leads-save-title">Save filter</h5>
+					<h5 class="modal-title" id="usis-leads-save-title" data-i18n="Save filter">Save filter</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<label class="form-label" for="usis-leads-save-name">Filter name</label>
+					<label class="form-label" for="usis-leads-save-name" data-i18n="Filter name">Filter name</label>
 					<input type="text" class="form-control" id="usis-leads-save-name" maxlength="80" required>
 					<div class="form-check mt-3">
 						<input class="form-check-input" type="checkbox" id="usis-leads-save-default">
-						<label class="form-check-label" for="usis-leads-save-default">Set as my default view</label>
+						<label class="form-check-label" for="usis-leads-save-default" data-i18n="Set as my default view">Set as my default view</label>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" id="usis-leads-save-confirm">Save</button>
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="button" class="btn btn-primary" id="usis-leads-save-confirm" data-i18n="Save">Save</button>
 				</div>
 			</div>
 		</div>
 	</div>
 
+
 	<!-- Start - Page Scripts -->
 	<script src="assets/js/usis-auth-links.js"></script>
+	<script src="assets/js/usis-i18n.js"></script>
+	<script src="assets/js/usis-report-problem.js"></script>
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
 <script src="assets/js/usis-nav-access.js"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
+	<script src="assets/js/usis-ui.js?v=20260829f"></script>
+	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
+	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>

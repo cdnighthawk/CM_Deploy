@@ -80,6 +80,7 @@ def _serialize_line(li: PayApplicationLine) -> dict[str, Any]:
         "balance_to_complete": _money_str(li.balance_to_complete),
         "balance_due": _money_str(li.balance_due),
         "percent_complete": str(li.percent_complete) if li.percent_complete is not None else None,
+        "cost_code_id": str(li.cost_code_id) if li.cost_code_id else None,
         "created_at": _iso_dt(li.created_at),
         "updated_at": _iso_dt(li.updated_at),
     }
@@ -106,6 +107,8 @@ def _serialize_header(pa: PayApplication, include_line_count: bool = False) -> d
         "paid_at": _iso_dt(pa.paid_at),
         "notes": pa.notes,
         "textura_invoice_id": pa.textura_invoice_id,
+        "status_date": _iso_date(pa.status_date),
+        "approved": bool(pa.approved),
         "created_at": _iso_dt(pa.created_at),
         "updated_at": _iso_dt(pa.updated_at),
     }
@@ -402,6 +405,11 @@ def _replace_lines(pa: PayApplication, raw_lines: list[Any], cu: CurrentUser) ->
             materials_stored=_dec(raw.get("materials_stored")),
             retention_to_date=_dec(raw.get("retention_to_date")),
         )
+        if raw.get("cost_code_id"):
+            try:
+                li.cost_code_id = uuid.UUID(str(raw.get("cost_code_id")))
+            except ValueError:
+                pass
         pct_raw = raw.get("percent_complete")
         if pct_raw is not None and pct_raw != "":
             li.percent_complete = _dec(pct_raw).quantize(Decimal("0.01"))
@@ -448,6 +456,13 @@ def patch_pay_application(
                     raise ApiError("invalid period_to", 400) from None
         if "notes" in data:
             pa.notes = str(data.get("notes") or "").strip() or None
+        if "status_date" in data:
+            raw_sd = data.get("status_date")
+            pa.status_date = None if raw_sd in (None, "") else date.fromisoformat(str(raw_sd)[:10])
+        if "approved" in data:
+            pa.approved = bool(data.get("approved"))
+            if pa.approved and not pa.status_date:
+                pa.status_date = date.today()
         if isinstance(data.get("lines"), list):
             _replace_lines(pa, data["lines"], cu)
 

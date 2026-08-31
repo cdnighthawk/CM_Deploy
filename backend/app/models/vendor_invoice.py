@@ -6,7 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, List, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -77,6 +77,30 @@ class VendorInvoice(UUIDPKMixin, TimestampMixin, db.Model):
     events: Mapped[List["VendorInvoiceEvent"]] = relationship(
         back_populates="invoice", cascade="all, delete-orphan"
     )
+    lines: Mapped[List["VendorInvoiceLine"]] = relationship(
+        back_populates="invoice", cascade="all, delete-orphan", order_by="VendorInvoiceLine.sort_order"
+    )
+
+
+class VendorInvoiceLine(UUIDPKMixin, TimestampMixin, db.Model):
+    __tablename__ = "vendor_invoice_lines"
+
+    invoice_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("vendor_invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfi_cost_codes.id", ondelete="SET NULL"), nullable=True
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    description: Mapped[str] = mapped_column(String(500), nullable=False, default="", server_default="")
+    quantity: Mapped[Decimal] = mapped_column(Numeric(15, 4), nullable=False, default=Decimal("0"))
+    unit: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    unit_cost: Mapped[Decimal] = mapped_column(Numeric(15, 4), nullable=False, default=Decimal("0"))
+    line_total: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False, default=Decimal("0"))
+    resource: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    billable: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+
+    invoice: Mapped["VendorInvoice"] = relationship("VendorInvoice", back_populates="lines")
 
 
 class VendorInvoiceFile(UUIDPKMixin, TimestampMixin, db.Model):

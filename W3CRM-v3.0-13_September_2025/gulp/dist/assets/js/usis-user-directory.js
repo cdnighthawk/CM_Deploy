@@ -132,8 +132,10 @@
 	}
 
 	function isApplicantOnly(u) {
-		if (u && u.is_applicant_only) return true;
-		var r = (u && u.roles) || [];
+		if (!u) return false;
+		if (u.is_superuser) return false;
+		if (u.is_applicant_only) return true;
+		var r = u.roles || [];
 		if (!r.length) return false;
 		return r.length === 1 && r[0].code === "applicant";
 	}
@@ -780,6 +782,8 @@
 		document.getElementById("usis-ud-modal-active").checked = true;
 		document.getElementById("usis-ud-modal-super").checked = false;
 		document.getElementById("usis-ud-modal-email").removeAttribute("readonly");
+		var resendAdd = document.getElementById("usis-ud-modal-resend");
+		if (resendAdd) resendAdd.classList.add("d-none");
 		renderRoleChecks([]);
 		loadAllProjectsForPicker(function (err) {
 			if (err) modalErr(err);
@@ -808,6 +812,8 @@
 		document.getElementById("usis-ud-modal-pw").value = "";
 		document.getElementById("usis-ud-modal-active").checked = !!u.is_active;
 		document.getElementById("usis-ud-modal-super").checked = !!u.is_superuser;
+		var resendEdit = document.getElementById("usis-ud-modal-resend");
+		if (resendEdit) resendEdit.classList.remove("d-none");
 		var sel = (u.roles || []).map(function (r) {
 			return r.id;
 		});
@@ -908,6 +914,52 @@
 			});
 	}
 
+	function inviteResultMessage(body) {
+		var inv = (body && body.invite) || {};
+		if (inv.sent) return "Invite email sent.";
+		if (inv.dry_run) return "Invite recorded (mail is in dry-run; no message was delivered).";
+		return (inv.error && String(inv.error)) || (body && body.error) || "Could not send invite.";
+	}
+
+	function resendUserInvite() {
+		var id = (document.getElementById("usis-ud-modal-user-id").value || "").trim();
+		if (!id) return;
+		var btn = document.getElementById("usis-ud-modal-resend");
+		if (btn) btn.disabled = true;
+		modalErr("");
+		apiFetch("/api/v1/admin/users/" + encodeURIComponent(id) + "/resend-invite", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: "{}",
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (btn) btn.disabled = false;
+				if (!res.ok) {
+					modalErr(inviteResultMessage(res.body) || "Could not send invite.");
+					return;
+				}
+				var msg = inviteResultMessage(res.body);
+				if (res.body && res.body.invite && (res.body.invite.sent || res.body.invite.dry_run)) {
+					if (window.USISNotify && window.USISNotify.success) {
+						window.USISNotify.success(msg);
+					} else {
+						modalErr(msg);
+					}
+				} else {
+					modalErr(msg);
+				}
+			})
+			.catch(function () {
+				if (btn) btn.disabled = false;
+				modalErr("Network error sending invite.");
+			});
+	}
+
 	function deleteStaffUser(userId) {
 		var u = null;
 		for (var i = 0; i < state.users.length; i++) {
@@ -1003,6 +1055,13 @@
 		}
 		var saveBtn = document.getElementById("usis-ud-modal-save");
 		if (saveBtn) saveBtn.addEventListener("click", saveUserModal);
+		var resendBtn = document.getElementById("usis-ud-modal-resend");
+		if (resendBtn) {
+			resendBtn.addEventListener("click", function (e) {
+				e.preventDefault();
+				resendUserInvite();
+			});
+		}
 		var tbody = document.getElementById("usis-ud-users-body");
 		if (tbody) tbody.addEventListener("click", function (ev) {
 			var b = ev.target.closest(".usis-ud-edit");

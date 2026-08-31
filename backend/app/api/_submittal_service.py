@@ -167,6 +167,11 @@ def _line_item_public(li: SubmittalLineItem) -> dict[str, Any]:
         "model": li.model,
         "catalog_product_id": str(li.catalog_product_id) if li.catalog_product_id else None,
         "pdf_url": li.pdf_url,
+        "status": li.status,
+        "status_date": li.status_date.isoformat() if li.status_date else None,
+        "quantity": float(li.quantity) if li.quantity is not None else None,
+        "unit": li.unit,
+        "needed_on_site_date": li.needed_on_site_date.isoformat() if li.needed_on_site_date else None,
     }
 
 
@@ -200,6 +205,8 @@ def _submittal_public(s: Submittal, include_lines: bool = False) -> dict[str, An
         "assigned_reviewer_id": str(s.assigned_reviewer_id) if getattr(s, "assigned_reviewer_id", None) else None,
         "workflow_instance_id": str(s.workflow_instance_id) if getattr(s, "workflow_instance_id", None) else None,
         "public_token": getattr(s, "public_token", None),
+        "originator_company_id": str(s.originator_company_id) if getattr(s, "originator_company_id", None) else None,
+        "vendor_id": str(s.vendor_id) if getattr(s, "vendor_id", None) else None,
     }
     if include_lines:
         lines = sorted(s.line_items or [], key=lambda x: (x.sort_order, x.created_at or _utcnow()))
@@ -318,7 +325,23 @@ def _apply_line_items(s: Submittal, raw_items: Any, project_id: uuid.UUID) -> No
             model=model,
             catalog_product_id=catalog_id,
             pdf_url=pdf_url,
+            status=(str(item.get("status") or "").strip()[:40] or None),
+            unit=(str(item.get("unit") or "").strip()[:40] or None),
         )
+        if item.get("quantity") not in (None, ""):
+            try:
+                li.quantity = float(item.get("quantity"))
+            except (TypeError, ValueError):
+                pass
+        for date_key in ("status_date", "needed_on_site_date"):
+            raw_d = item.get(date_key)
+            if raw_d:
+                try:
+                    from datetime import date as _date
+
+                    setattr(li, date_key, _date.fromisoformat(str(raw_d)[:10]))
+                except ValueError:
+                    pass
         db.session.add(li)
 
 
@@ -410,6 +433,8 @@ def create_submittal(project_id: uuid.UUID, data: Mapping[str, Any], cu: Current
         returned_at=_parse_dt(data.get("returned_at")),
         response=(str(data.get("response")).strip() or None) if data.get("response") is not None else None,
         approvers=data.get("approvers") if isinstance(data.get("approvers"), (list, dict)) else None,
+        originator_company_id=_parse_uuid(data.get("originator_company_id")),
+        vendor_id=_parse_uuid(data.get("vendor_id")),
     )
     db.session.add(s)
     db.session.flush()
@@ -479,6 +504,10 @@ def patch_submittal(sid: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) ->
     if "approvers" in data:
         ap = data.get("approvers")
         s.approvers = ap if isinstance(ap, (list, dict)) else None
+    if "originator_company_id" in data:
+        s.originator_company_id = _parse_uuid(data.get("originator_company_id"))
+    if "vendor_id" in data:
+        s.vendor_id = _parse_uuid(data.get("vendor_id"))
     after = _submittal_snapshot(s)
     if after != before:
         _append_audit(s, "edit", "Updated submittal fields", before, after, cu.id)

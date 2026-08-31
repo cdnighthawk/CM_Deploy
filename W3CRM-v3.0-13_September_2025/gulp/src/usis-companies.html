@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-companies.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "Companies",
+				})
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h4 class="mb-1">Companies and contacts</h4>
+						<p class="text-muted small mb-0">Directory admin: companies, contacts, insurance, and licenses.</p>
+					</div>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-co-add">+ Company</button>
+				</div>
+				<div class="row g-3">
+					<div class="col-lg-5">
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<input type="search" class="form-control form-control-sm mb-2" id="usis-co-q" placeholder="Search companies…">
+								<div class="table-responsive">
+									<table class="table table-sm table-hover mb-0">
+										<thead class="table-light"><tr><th>Name</th><th>Type</th></tr></thead>
+										<tbody id="usis-co-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-7">
+						<div class="card border-0 shadow-sm mb-3">
+							<div class="card-body">
+								<h6 class="mb-2">Contacts</h6>
+								<div class="d-flex gap-2 mb-2">
+									<input class="form-control form-control-sm" id="usis-ct-first" placeholder="First">
+									<input class="form-control form-control-sm" id="usis-ct-last" placeholder="Last">
+									<input class="form-control form-control-sm" id="usis-ct-email" placeholder="Email">
+									<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ct-add">Add</button>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm mb-0">
+										<thead class="table-light"><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
+										<tbody id="usis-ct-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div class="card border-0 shadow-sm mb-3">
+							<div class="card-body">
+								<h6 class="mb-2">Insurance</h6>
+								<div class="d-flex gap-2 mb-2">
+									<input class="form-control form-control-sm" id="usis-ins-type" placeholder="Type">
+									<input class="form-control form-control-sm" id="usis-ins-carrier" placeholder="Carrier">
+									<input type="date" class="form-control form-control-sm" id="usis-ins-exp">
+									<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ins-add">Add</button>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm mb-0">
+										<thead class="table-light"><tr><th>Type</th><th>Carrier</th><th>Expires</th></tr></thead>
+										<tbody id="usis-ins-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<h6 class="mb-2">Licenses</h6>
+								<div class="d-flex gap-2 mb-2">
+									<input class="form-control form-control-sm" id="usis-lic-type" placeholder="Type">
+									<input class="form-control form-control-sm" id="usis-lic-num" placeholder="Number">
+									<input type="date" class="form-control form-control-sm" id="usis-lic-exp">
+									<button type="button" class="btn btn-outline-primary btn-sm" id="usis-lic-add">Add</button>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm mb-0">
+										<thead class="table-light"><tr><th>Type</th><th>Number</th><th>Expires</th></tr></thead>
+										<tbody id="usis-lic-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	@@include("elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-companies.js?v=20260831a"></script>
+
+</body>
+</html>

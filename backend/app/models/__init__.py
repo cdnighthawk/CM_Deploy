@@ -6,6 +6,14 @@ from .ai_chat import AiChatMessage, AiChatSession
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
+from .change_management import (
+    ChangeProposalRequest,
+    ChangeProposalRequestItem,
+    OwnerChangeOrder,
+    OwnerChangeOrderItem,
+    SubcontractChangeOrder,
+    SubcontractChangeOrderItem,
+)
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
 from .correspondence import CorrespondenceItem, CorrespondenceSource
@@ -123,7 +131,22 @@ from .workflow import (
 )
 from .textura_credential import TexturaCredential
 from .textura_sync_log import TexturaSyncLog
-from .vendor_invoice import VendorInvoice, VendorInvoiceEvent, VendorInvoiceFile
+from .vendor_invoice import VendorInvoice, VendorInvoiceEvent, VendorInvoiceFile, VendorInvoiceLine
+from .wave2 import (
+    AnticipatedCost,
+    CompanyInsurancePolicy,
+    CompanyLicense,
+    IssueCompany,
+    Meeting,
+    PunchlistItem,
+    PurchaseOrderChangeOrder,
+    QcChecklist,
+    SafetyIncident,
+    SubInvoice,
+    Transmittal,
+    WorkOrder,
+    WorkflowAmountRule,
+)
 from .sales_tax_rate import SalesTaxRate
 from .takeoff_line_item import TakeoffLineItem
 from .wage_rate import WageRate
@@ -133,6 +156,8 @@ __all__ = [
     "AiChatSession",
     "AuditLog",
     "BuildingConnectedOAuthToken",
+    "ChangeProposalRequest",
+    "ChangeProposalRequestItem",
     "ChecklistRun",
     "ChecklistRunStep",
     "ChecklistTemplate",
@@ -202,6 +227,8 @@ __all__ = [
     "LeadEstimate",
     "Location",
     "ManufacturerProductData",
+    "OwnerChangeOrder",
+    "OwnerChangeOrderItem",
     "MaterialPrice",
     "MobileRefreshToken",
     "PayApplication",
@@ -241,6 +268,8 @@ __all__ = [
     "Role",
     "RoleModulePermission",
     "SpecSection",
+    "SubcontractChangeOrder",
+    "SubcontractChangeOrderItem",
     "SubJob",
     "Submittal",
     "SubmittalAudit",
@@ -266,5 +295,19 @@ __all__ = [
     "VendorInvoice",
     "VendorInvoiceEvent",
     "VendorInvoiceFile",
+    "VendorInvoiceLine",
+    "AnticipatedCost",
+    "CompanyInsurancePolicy",
+    "CompanyLicense",
+    "IssueCompany",
+    "Meeting",
+    "PunchlistItem",
+    "PurchaseOrderChangeOrder",
+    "QcChecklist",
+    "SafetyIncident",
+    "SubInvoice",
+    "Transmittal",
+    "WorkOrder",
+    "WorkflowAmountRule",
     "WageRate",
 ]

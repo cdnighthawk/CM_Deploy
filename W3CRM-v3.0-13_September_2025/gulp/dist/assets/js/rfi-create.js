@@ -432,17 +432,24 @@
 			fillSelect($("usis-rfi-manager"), asLabel, { emptyLabel: "Select manager…" });
 			fillSelect($("usis-rfi-assignee-picker"), asLabel, { emptyLabel: "Select user…" });
 			fillSelect($("usis-rfi-dist-picker"), asLabel, { emptyLabel: "Select user…" });
-			fillSelect($("usis-rfi-received-from"), asLabel, { emptyLabel: "—" });
+			fillSelect($("usis-rfi-received-from"), asLabel, { emptyLabel: "Select a person" });
 			fillSelect(
 				$("usis-rfi-responsible"),
 				state.companies.map(function (c) { return { id: c.id, label: c.name }; }),
-				{ emptyLabel: "—" }
+				{ emptyLabel: "Select a vendor" }
 			);
 		});
 	}
 
 	function loadLookupsAndCustom() {
 		if (!state.projectId) return Promise.resolve();
+		var emptyByKind = {
+			locations: "Select a Location",
+			spec_sections: "Select a Specification",
+			cost_codes: "Select a cost code",
+			project_stages: "Select…",
+			sub_jobs: "Select…",
+		};
 		var kinds = [
 			["locations", "usis-rfi-location", "name"],
 			["spec_sections", "usis-rfi-spec", "code"],
@@ -459,7 +466,7 @@
 					if (k[0] === "cost_codes" && r.description) label = r.code + " — " + r.description;
 					return { id: r.id, label: label };
 				});
-				fillSelect($(k[1]), formatted);
+				fillSelect($(k[1]), formatted, { emptyLabel: emptyByKind[k[0]] || "—" });
 			}).catch(function () {
 				state.lookups[k[0]] = [];
 			});
@@ -476,7 +483,7 @@
 			wrap.innerHTML = "";
 			rows.forEach(function (f) {
 				var col = document.createElement("div");
-				col.className = "col-md-6";
+				col.className = "usis-rfi-field";
 				var id = "usis-rfi-cf-" + U.escAttr(f.key);
 				var label = '<label class="form-label" for="' + id + '">' + U.esc(f.label) + "</label>";
 				var input = "";
@@ -503,10 +510,11 @@
 				var sel = "[data-field-key='" + r.field_key + "']";
 				var el = document.querySelector(sel);
 				if (!el) return;
+				var wrap = el.closest(".usis-rfi-field") || el.closest(".col-md-6, .col-md-12");
 				if (r.requirement === "hidden") {
-					el.closest(".col-md-6, .col-md-12") && el.closest(".col-md-6, .col-md-12").classList.add("d-none");
+					if (wrap) wrap.classList.add("d-none");
 				} else if (r.requirement === "required") {
-					var lbl = el.closest(".col-md-6, .col-md-12").querySelector("label");
+					var lbl = wrap && wrap.querySelector("label");
 					if (lbl && !/\*/.test(lbl.innerText)) {
 						lbl.innerHTML += '<span class="req">*</span>';
 					}
@@ -644,31 +652,43 @@
 		if (send) send.addEventListener("click", function () { submit("draft"); });
 	}
 
+	function addAssigneeFromPicker() {
+		var picker = $("usis-rfi-assignee-picker");
+		if (!picker) return;
+		var uid = picker.value;
+		if (!uid) return;
+		if (state.assignees.some(function (a) { return a.user_id === uid; })) return;
+		state.assignees.push({
+			user_id: uid,
+			is_required: $("usis-rfi-assignee-required") && $("usis-rfi-assignee-required").checked,
+		});
+		picker.value = "";
+		renderAssigneeChips();
+	}
+
+	function addDistributionFromPicker() {
+		var picker = $("usis-rfi-dist-picker");
+		if (!picker) return;
+		var uid = picker.value;
+		if (!uid) return;
+		if (state.distribution.some(function (d) { return d.user_id === uid; })) return;
+		state.distribution.push({ user_id: uid });
+		picker.value = "";
+		renderDistributionChips();
+	}
+
 	function wireAssignees() {
 		var btn = $("usis-rfi-assignee-add");
-		if (!btn) return;
-		btn.addEventListener("click", function () {
-			var uid = $("usis-rfi-assignee-picker").value;
-			if (!uid) return;
-			if (state.assignees.some(function (a) { return a.user_id === uid; })) return;
-			state.assignees.push({
-				user_id: uid,
-				is_required: $("usis-rfi-assignee-required").checked,
-			});
-			renderAssigneeChips();
-		});
+		var picker = $("usis-rfi-assignee-picker");
+		if (btn) btn.addEventListener("click", addAssigneeFromPicker);
+		if (picker) picker.addEventListener("change", addAssigneeFromPicker);
 	}
 
 	function wireDistribution() {
 		var btn = $("usis-rfi-dist-add");
-		if (!btn) return;
-		btn.addEventListener("click", function () {
-			var uid = $("usis-rfi-dist-picker").value;
-			if (!uid) return;
-			if (state.distribution.some(function (d) { return d.user_id === uid; })) return;
-			state.distribution.push({ user_id: uid });
-			renderDistributionChips();
-		});
+		var picker = $("usis-rfi-dist-picker");
+		if (btn) btn.addEventListener("click", addDistributionFromPicker);
+		if (picker) picker.addEventListener("change", addDistributionFromPicker);
 	}
 
 	function wireProjectChange() {

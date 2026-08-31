@@ -31,6 +31,11 @@
 		limit: 200,
 		total: 0,
 		meId: "",
+		activityDays: 7,
+		activityType: "",
+		activityUserId: "",
+		activityPeople: [],
+		activityFeed: [],
 	};
 
 	function apiBase() {
@@ -119,6 +124,35 @@
 	function displayName(u) {
 		var n = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
 		return n || u.email || "—";
+	}
+
+	function fmtWhen(iso) {
+		if (!iso) return "Never";
+		var d = new Date(iso);
+		if (isNaN(d.getTime())) return String(iso);
+		var sec = (Date.now() - d.getTime()) / 1000;
+		var abs = Math.abs(sec);
+		var label;
+		if (abs < 45) label = "Just now";
+		else if (abs < 3600) label = Math.max(1, Math.round(abs / 60)) + " min ago";
+		else if (abs < 86400) label = Math.max(1, Math.round(abs / 3600)) + " hr ago";
+		else if (abs < 86400 * 7) label = Math.max(1, Math.round(abs / 86400)) + " days ago";
+		else
+			label = d.toLocaleString(undefined, {
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+				hour: "numeric",
+				minute: "2-digit",
+			});
+		return label;
+	}
+
+	function fmtWhenTitle(iso) {
+		if (!iso) return "Never";
+		var d = new Date(iso);
+		if (isNaN(d.getTime())) return String(iso);
+		return d.toLocaleString();
 	}
 
 	function roleLabels(u) {
@@ -316,7 +350,7 @@
 		});
 		if (!rows.length) {
 			tb.innerHTML =
-				'<tr><td colspan="7" class="text-muted small">No staff users match this search. Job applicants are listed under Applications.</td></tr>';
+				'<tr><td colspan="8" class="text-muted small">No staff users match this search. Job applicants are listed under Applications.</td></tr>';
 			return;
 		}
 		tb.innerHTML = rows
@@ -324,7 +358,10 @@
 				var actions =
 					'<button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-edit" data-id="' +
 					esc(u.id) +
-					'">Edit</button>';
+					'">Edit</button>' +
+					' <button type="button" class="btn btn-sm btn-outline-secondary py-0 usis-ud-activity" data-id="' +
+					esc(u.id) +
+					'">Activity</button>';
 				if (u.id !== state.meId) {
 					actions +=
 						' <button type="button" class="btn btn-sm btn-outline-danger py-0 usis-ud-delete" data-id="' +
@@ -348,8 +385,15 @@
 					'<td class="text-center">' +
 					(u.is_superuser ? "Yes" : "—") +
 					"</td>" +
-					'<td class="text-center">' +
-					(u.has_password ? "Yes" : "—") +
+					'<td class="text-nowrap" title="' +
+					esc(fmtWhenTitle(u.last_login_at)) +
+					'">' +
+					esc(fmtWhen(u.last_login_at)) +
+					"</td>" +
+					'<td class="text-nowrap" title="' +
+					esc(fmtWhenTitle(u.last_seen_at)) +
+					'">' +
+					esc(fmtWhen(u.last_seen_at)) +
 					"</td>" +
 					"<td class=\"text-nowrap\">" +
 					actions +
@@ -764,6 +808,161 @@
 			});
 	}
 
+	function setActivityTypeButtons() {
+		document.querySelectorAll(".usis-ud-act-type").forEach(function (btn) {
+			var on = (btn.getAttribute("data-type") || "") === state.activityType;
+			btn.classList.toggle("btn-primary", on);
+			btn.classList.toggle("btn-outline-secondary", !on);
+		});
+	}
+
+	function setActivityDayButtons() {
+		document.querySelectorAll(".usis-ud-act-days").forEach(function (btn) {
+			var on = String(btn.getAttribute("data-days") || "") === String(state.activityDays);
+			btn.classList.toggle("btn-primary", on);
+			btn.classList.toggle("btn-outline-secondary", !on);
+		});
+	}
+
+	function renderActivityPeople() {
+		var tb = document.getElementById("usis-ud-activity-people");
+		if (!tb) return;
+		var rows = state.activityPeople || [];
+		if (!rows.length) {
+			tb.innerHTML = '<tr><td colspan="6" class="text-muted small">No staff users to show.</td></tr>';
+			return;
+		}
+		tb.innerHTML = rows
+			.map(function (u) {
+				var active = u.id === state.activityUserId ? " table-active" : "";
+				return (
+					'<tr class="usis-ud-act-person' +
+					active +
+					'" data-id="' +
+					esc(u.id) +
+					'" style="cursor:pointer">' +
+					"<td>" +
+					esc(u.name || displayName(u)) +
+					'<div class="small text-muted">' +
+					esc(u.email || "") +
+					"</div></td>" +
+					'<td class="text-nowrap" title="' +
+					esc(fmtWhenTitle(u.last_login_at)) +
+					'">' +
+					esc(fmtWhen(u.last_login_at)) +
+					"</td>" +
+					'<td class="text-nowrap" title="' +
+					esc(fmtWhenTitle(u.last_seen_at)) +
+					'">' +
+					esc(fmtWhen(u.last_seen_at)) +
+					"</td>" +
+					'<td class="text-end">' +
+					esc(u.actions_today || 0) +
+					"</td>" +
+					'<td class="text-end">' +
+					esc(u.actions_period || 0) +
+					"</td>" +
+					'<td class="text-end">' +
+					esc(u.logins_period || 0) +
+					"</td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function renderActivityFeed() {
+		var tb = document.getElementById("usis-ud-activity-feed");
+		if (!tb) return;
+		var title = document.getElementById("usis-ud-activity-feed-title");
+		var clearBtn = document.getElementById("usis-ud-activity-clear");
+		var person = null;
+		if (state.activityUserId) {
+			for (var i = 0; i < state.activityPeople.length; i++) {
+				if (state.activityPeople[i].id === state.activityUserId) {
+					person = state.activityPeople[i];
+					break;
+				}
+			}
+		}
+		if (title) {
+			title.textContent = person ? "Activity — " + (person.name || person.email) : "Recent activity";
+		}
+		if (clearBtn) clearBtn.classList.toggle("d-none", !state.activityUserId);
+		var rows = state.activityFeed || [];
+		if (!rows.length) {
+			tb.innerHTML = '<tr><td colspan="3" class="text-muted small">No activity in this range yet.</td></tr>';
+			return;
+		}
+		tb.innerHTML = rows
+			.map(function (ev) {
+				return (
+					"<tr><td class=\"text-nowrap\" title=\"" +
+					esc(fmtWhenTitle(ev.created_at)) +
+					'">' +
+					esc(fmtWhen(ev.created_at)) +
+					"</td><td>" +
+					esc(ev.user_name || ev.user_email || "—") +
+					'</td><td>' +
+					esc(ev.summary || ev.event_type) +
+					(ev.path
+						? '<div class="small text-muted text-break">' + esc(ev.path) + "</div>"
+						: "") +
+					"</td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function loadActivity() {
+		setActivityDayButtons();
+		setActivityTypeButtons();
+		var days = state.activityDays || 7;
+		apiFetch("/api/v1/admin/activity/summary?days=" + encodeURIComponent(days))
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					showPageErr(authErrorMessage(res, res.body));
+					return;
+				}
+				state.activityPeople = res.body.items || [];
+				renderActivityPeople();
+			})
+			.catch(function () {
+				showPageErr("Network error loading activity.");
+			});
+		var qs =
+			"?days=" +
+			encodeURIComponent(days) +
+			"&limit=200";
+		if (state.activityUserId) qs += "&user_id=" + encodeURIComponent(state.activityUserId);
+		if (state.activityType) qs += "&event_type=" + encodeURIComponent(state.activityType);
+		apiFetch("/api/v1/admin/activity" + qs)
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) return;
+				state.activityFeed = res.body.items || [];
+				renderActivityFeed();
+			})
+			.catch(function () {});
+	}
+
+	function showUserActivity(userId) {
+		state.activityUserId = userId || "";
+		var tab = document.getElementById("usis-ud-tab-activity");
+		if (tab && typeof bootstrap !== "undefined") {
+			bootstrap.Tab.getOrCreateInstance(tab).show();
+		}
+		loadActivity();
+	}
+
 	function userModal() {
 		var el = document.getElementById("usis-ud-modal-user");
 		if (!el || typeof bootstrap === "undefined") return null;
@@ -781,6 +980,8 @@
 		document.getElementById("usis-ud-modal-pw").value = "";
 		document.getElementById("usis-ud-modal-active").checked = true;
 		document.getElementById("usis-ud-modal-super").checked = false;
+		var actAdd = document.getElementById("usis-ud-modal-activity");
+		if (actAdd) actAdd.textContent = "Last login: — · Last seen: —";
 		document.getElementById("usis-ud-modal-email").removeAttribute("readonly");
 		var resendAdd = document.getElementById("usis-ud-modal-resend");
 		if (resendAdd) resendAdd.classList.add("d-none");
@@ -812,6 +1013,14 @@
 		document.getElementById("usis-ud-modal-pw").value = "";
 		document.getElementById("usis-ud-modal-active").checked = !!u.is_active;
 		document.getElementById("usis-ud-modal-super").checked = !!u.is_superuser;
+		var actEdit = document.getElementById("usis-ud-modal-activity");
+		if (actEdit) {
+			actEdit.textContent =
+				"Last login: " +
+				fmtWhen(u.last_login_at) +
+				" · Last seen: " +
+				fmtWhen(u.last_seen_at);
+		}
 		var resendEdit = document.getElementById("usis-ud-modal-resend");
 		if (resendEdit) resendEdit.classList.remove("d-none");
 		var sel = (u.roles || []).map(function (r) {
@@ -1072,6 +1281,11 @@
 			var del = ev.target.closest(".usis-ud-delete");
 			if (del && del.getAttribute("data-id")) {
 				deleteStaffUser(del.getAttribute("data-id"));
+				return;
+			}
+			var act = ev.target.closest(".usis-ud-activity");
+			if (act && act.getAttribute("data-id")) {
+				showUserActivity(act.getAttribute("data-id"));
 			}
 		});
 		var search = document.getElementById("usis-ud-search");
@@ -1091,6 +1305,41 @@
 				});
 			}
 		});
+		var activityTab = document.getElementById("usis-ud-tab-activity");
+		if (activityTab) {
+			activityTab.addEventListener("shown.bs.tab", function () {
+				loadActivity();
+			});
+		}
+		document.querySelectorAll(".usis-ud-act-days").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				state.activityDays = parseInt(btn.getAttribute("data-days") || "7", 10) || 7;
+				loadActivity();
+			});
+		});
+		document.querySelectorAll(".usis-ud-act-type").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				state.activityType = btn.getAttribute("data-type") || "";
+				loadActivity();
+			});
+		});
+		var peopleBody = document.getElementById("usis-ud-activity-people");
+		if (peopleBody) {
+			peopleBody.addEventListener("click", function (ev) {
+				var row = ev.target.closest(".usis-ud-act-person");
+				if (!row) return;
+				var id = row.getAttribute("data-id") || "";
+				state.activityUserId = id === state.activityUserId ? "" : id;
+				loadActivity();
+			});
+		}
+		var clearPerson = document.getElementById("usis-ud-activity-clear");
+		if (clearPerson) {
+			clearPerson.addEventListener("click", function () {
+				state.activityUserId = "";
+				loadActivity();
+			});
+		}
 		var rolesBody = document.getElementById("usis-ud-roles-body");
 		if (rolesBody) {
 			rolesBody.addEventListener("click", function (ev) {

@@ -24,15 +24,6 @@
 		#usis-grid-takeoff { min-height: 22rem; }
 		#usis-proj-schedule-calendar { min-height: 28rem; }
 		.usis-proj-task-table-wrap { max-height: 50vh; overflow: auto; }
-		/* Theme stretches date-picker indicators (position:absolute; inset:0) to .modal-content. */
-		#usis-modal-submittal-create input[type="date"] {
-			position: relative;
-			z-index: 0;
-		}
-		#usis-modal-submittal-create #usis-submittal-c-spec-list {
-			position: relative;
-			z-index: 1;
-		}
 		.usis-bc-job-hero {
 			border-bottom: 1px solid var(--bs-border-color);
 		}
@@ -130,12 +121,10 @@
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="buyout" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-order">Order</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-poco">PO change orders</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
@@ -184,6 +173,9 @@
 								<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false" data-i18n="Procurement">Procurement</button>
 							</li>
 							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-order" data-bs-toggle="pill" data-bs-target="#proj-pane-order" type="button" role="tab" aria-controls="proj-pane-order" aria-selected="false">Order</button>
+							</li>
+							<li class="nav-item" role="presentation">
 								<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false" data-i18n="Invoicing">Invoicing</button>
 							</li>
 							<li class="nav-item" role="presentation">
@@ -208,7 +200,6 @@
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-incidents" data-bs-toggle="pill" data-bs-target="#proj-pane-incidents" type="button" role="tab">Incidents</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-transmittals" data-bs-toggle="pill" data-bs-target="#proj-pane-transmittals" type="button" role="tab">Transmittals</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-anticipated" data-bs-toggle="pill" data-bs-target="#proj-pane-anticipated" type="button" role="tab">Anticipated costs</button></li>
-							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-poco" data-bs-toggle="pill" data-bs-target="#proj-pane-poco" type="button" role="tab">PO change orders</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-subinv" data-bs-toggle="pill" data-bs-target="#proj-pane-subinv" type="button" role="tab">Sub invoices</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-qc" data-bs-toggle="pill" data-bs-target="#proj-pane-qc" type="button" role="tab">QC checklists</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-openitems" data-bs-toggle="pill" data-bs-target="#proj-pane-openitems" type="button" role="tab">Open items</button></li>
@@ -524,7 +515,7 @@
 									<h5 class="mb-0" data-i18n="Submittals">Submittals</h5>
 									<p class="text-muted small mb-0">Procore-style register: workflow dates, contractor, responses, and attachments. Open a row for PDF review markup. Pair with the <strong>RFIs</strong> tab for questions linked to drawings or specs.</p>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-open-create" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create" data-i18n="+ Create submittal">+ Create submittal</button>
+								<a class="btn btn-primary btn-sm" id="usis-submittal-open-create" href="construction/submittal-create.html" data-i18n="+ Create submittal">+ Create submittal</a>
 								</div>
 								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading submittals…</div>
 								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
@@ -583,11 +574,14 @@
 						<div class="tab-pane fade" id="proj-pane-procurement" role="tabpanel" aria-labelledby="proj-tab-procurement" tabindex="0">
 							<div class="mb-3">
 								<h5 class="mb-1">Procurement</h5>
-								<p class="text-muted small mb-0">Purchase orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
+								<p class="text-muted small mb-0">Purchase orders, PO change orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
 							</div>
 							<ul class="nav nav-pills flex-wrap gap-1 mb-3" role="tablist">
 								<li class="nav-item" role="presentation">
 									<button class="nav-link active" id="usis-proc-subtab-po" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-po" type="button" role="tab" aria-controls="usis-proc-subpane-po" aria-selected="true">Purchase orders</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="usis-proc-subtab-poco" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-poco" type="button" role="tab" aria-controls="usis-proc-subpane-poco" aria-selected="false">PO change orders</button>
 								</li>
 								<li class="nav-item" role="presentation">
 									<button class="nav-link" id="usis-proc-subtab-sub" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-sub" type="button" role="tab" aria-controls="usis-proc-subpane-sub" aria-selected="false">Subcontracts</button>
@@ -626,6 +620,28 @@
 												</tr>
 											</thead>
 											<tbody id="usis-tbody-commitments-po"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="usis-proc-subpane-poco" role="tabpanel" aria-labelledby="usis-proc-subtab-poco" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Change orders against purchase orders on this job. Each PO CO must link to an existing PO.</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button>
+										</div>
+									</div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>#</th>
+													<th>Subject</th>
+													<th>Status</th>
+													<th class="text-end">Amount</th>
+													<th class="text-end"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-w2-po-change-orders"></tbody>
 										</table>
 									</div>
 								</div>
@@ -721,6 +737,41 @@
 										</table>
 									</div>
 								</div>
+							</div>
+						</div>
+
+						<div class="tab-pane fade" id="proj-pane-order" role="tabpanel" aria-labelledby="proj-tab-order" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Order</h5>
+									<p class="text-muted small mb-0">Order-by is the schedule install start minus lead time on the PO. When that date moves, the vendor contact is emailed and confirmation is tracked here. Field receive stays on the phone.</p>
+								</div>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-order-refresh">Refresh</button>
+							</div>
+							<div class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Order list filter">
+								<button type="button" class="btn btn-sm btn-primary usis-order-filter" data-usis-order-bucket="all" aria-pressed="true">All</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary usis-order-filter" data-usis-order-bucket="late" aria-pressed="false">Late</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary usis-order-filter" data-usis-order-bucket="week" aria-pressed="false">This week</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary usis-order-filter" data-usis-order-bucket="overdue" aria-pressed="false">Confirm overdue</button>
+							</div>
+							<div class="alert alert-light border py-2 mb-2 d-none" id="usis-order-loading">Loading…</div>
+							<div class="alert alert-danger py-2 mb-2 d-none" id="usis-order-error" role="alert"></div>
+							<div class="table-responsive">
+								<table class="table table-hover table-sm align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>PO</th>
+											<th>Vendor</th>
+											<th>Schedule</th>
+											<th>Install</th>
+											<th>Lead</th>
+											<th>Order by</th>
+											<th>Confirm</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="usis-order-tbody"></tbody>
+								</table>
 							</div>
 						</div>
 
@@ -1131,10 +1182,6 @@
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Anticipated costs</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="anticipated-costs">+ Cost</button></div>
 							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-anticipated-costs"></tbody></table></div>
 						</div>
-						<div class="tab-pane fade" id="proj-pane-poco" role="tabpanel">
-							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">PO change orders</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button></div>
-							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-po-change-orders"></tbody></table></div>
-						</div>
 						<div class="tab-pane fade" id="proj-pane-subinv" role="tabpanel">
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Sub invoices</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="sub-invoices">+ Sub invoice</button></div>
 							<p class="text-muted small">Sage-style sub invoice log. Owner G702 pay apps stay on Invoicing; vendor AP email bills stay on Invoices.</p>
@@ -1443,102 +1490,17 @@
 		</div>
 	</div>
 	<div class="modal fade" id="usis-modal-submittal-create" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title" data-i18n="Create submittal">Create submittal</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="alert alert-danger py-2 d-none" id="usis-submittal-create-err" role="alert"></div>
-					<div class="row g-2">
-						<div class="col-12">
-							<label class="form-label small mb-0" for="usis-submittal-c-title"><span data-i18n="Title">Title</span> <span class="text-danger">*</span></label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-title" required maxlength="500" placeholder="e.g. Concrete mix design">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-spec" data-i18n="Spec section">Spec section</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-spec" maxlength="120" placeholder="03 30 00">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-type" data-i18n="Type">Type</label>
-							<select class="form-select form-select-sm" id="usis-submittal-c-type">
-								<option value="">—</option>
-								<option value="Shop Drawing" data-i18n="Shop Drawing">Shop Drawing</option>
-								<option value="Product Information" data-i18n="Product Information">Product Information</option>
-								<option value="Product Manual" data-i18n="Product Manual">Product Manual</option>
-								<option value="Sample" data-i18n="Sample">Sample</option>
-								<option value="Document" data-i18n="Document">Document</option>
-								<option value="Other" data-i18n="Other">Other</option>
-							</select>
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-status" data-i18n="Status">Status</label>
-							<select class="form-select form-select-sm" id="usis-submittal-c-status">
-								<option value="draft">Draft</option>
-								<option value="submitted">Submitted</option>
-								<option value="in_review">In review</option>
-							</select>
-						</div>
-						<div class="col-md-8">
-							<label class="form-label small mb-0" for="usis-submittal-c-bic" data-i18n="Ball in court (name or email)">Ball in court (name or email)</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-bic" maxlength="200" placeholder="Reviewer email">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-contractor" data-i18n="Responsible contractor">Responsible contractor</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-contractor" maxlength="300">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-rev" data-i18n="Revision label">Revision label</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-rev" maxlength="50" placeholder="0 / A / B">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-due" data-i18n="Review due">Review due</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-submitby" data-i18n="Submit by">Submit by</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-received" data-i18n="Received date">Received date</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom" data-i18n="Received from">Received from</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-receivedfrom" maxlength="300">
-						</div>
-					</div>
-					<hr class="my-3">
-					<div class="mb-2">
-						<h6 class="mb-1 small">Spec sections <span class="text-muted fw-normal">(optional)</span></h6>
-						<p class="text-muted small mb-2">Title is enough to create. Check CSI sections only if you want line items.</p>
-						<input type="search" class="form-control form-control-sm mb-2" id="usis-submittal-c-spec-q" placeholder="Find CSI section…" autocomplete="off">
-						<div class="alert alert-light border py-2 small mb-2 d-none" id="usis-submittal-c-spec-empty">
-							No spec sections on this project yet. You can still create the submittal.
-						</div>
-						<div class="border rounded px-2 py-1 bg-body" id="usis-submittal-c-spec-list" style="max-height: 12rem; overflow: auto;"></div>
-					</div>
-					<h6 class="mb-2 small">Selected line items</h6>
-					<div class="table-responsive mb-2" style="max-height: 14rem;">
-						<table class="table table-sm table-bordered align-middle mb-0">
-							<thead class="table-light">
-								<tr>
-									<th>Spec</th>
-									<th>Description</th>
-									<th>Mfr</th>
-									<th>Model</th>
-									<th></th>
-								</tr>
-							</thead>
-							<tbody id="usis-submittal-c-lines-tbody"></tbody>
-						</table>
-					</div>
-					<p class="text-muted small mb-0">Product data submittals auto-link ASI / Bobrick technical data when manufacturer name matches.</p>
+					<p class="text-muted small mb-0">The New Submittal page lives at <a href="construction/submittal-create.html">construction/submittal-create.html</a>. Use the "+ Create submittal" button at the top of this tab.</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-create-submit" data-i18n="Create">Create</button>
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
@@ -1843,6 +1805,28 @@
 							<div class="col-md-3">
 								<label class="form-label small mb-0" for="usis-c-edit-needed-on-site">Needed on site</label>
 								<input type="date" class="form-control form-control-sm" id="usis-c-edit-needed-on-site">
+								<div class="form-text" id="usis-c-edit-needed-hint">From the linked schedule start. Do not type a second need-by.</div>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-c-edit-schedule">Schedule install</label>
+								<select class="form-select form-select-sm" id="usis-c-edit-schedule">
+									<option value="">— None —</option>
+								</select>
+							</div>
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-c-edit-lead-time">Lead time (days)</label>
+								<input type="number" min="0" step="1" class="form-control form-control-sm" id="usis-c-edit-lead-time" placeholder="14">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-edit-order-by">Order by</label>
+								<input type="text" class="form-control form-control-sm" id="usis-c-edit-order-by" readonly>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0">Supplier confirm</label>
+								<div class="d-flex flex-wrap align-items-center gap-2">
+									<span class="badge text-bg-light" id="usis-c-edit-confirm-status">none</span>
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-c-edit-confirm">Mark confirmed</button>
+								</div>
 							</div>
 						</div>
 						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
@@ -1858,11 +1842,11 @@
 								<label class="form-label small mb-0" for="usis-c-ship-carrier">Carrier</label>
 								<input class="form-control form-control-sm" id="usis-c-ship-carrier" placeholder="UPS">
 							</div>
-							<div class="col-md-3">
+							<div class="col-md-2">
 								<label class="form-label small mb-0" for="usis-c-ship-track">Tracking #</label>
 								<input class="form-control form-control-sm" id="usis-c-ship-track">
 							</div>
-							<div class="col-md-4">
+							<div class="col-md-3">
 								<label class="form-label small mb-0" for="usis-c-ship-url">Tracking URL</label>
 								<input class="form-control form-control-sm" id="usis-c-ship-url" placeholder="https://">
 							</div>
@@ -1876,13 +1860,17 @@
 									<option value="exception">exception</option>
 								</select>
 							</div>
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-c-ship-eta">Est. delivery</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-ship-eta">
+							</div>
 							<div class="col-md-1">
 								<button type="button" class="btn btn-outline-primary btn-sm w-100" id="usis-c-ship-add">Add</button>
 							</div>
 						</div>
 						<div class="table-responsive mb-3">
 							<table class="table table-sm table-bordered align-middle mb-0">
-								<thead class="table-light"><tr><th>Carrier</th><th>Tracking</th><th>Status</th><th></th></tr></thead>
+								<thead class="table-light"><tr><th>Carrier</th><th>Tracking</th><th>Status</th><th>Est. delivery</th><th></th></tr></thead>
 								<tbody id="usis-c-ship-tbody"></tbody>
 							</table>
 						</div>
@@ -2171,11 +2159,12 @@
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js"></script>
-	<script src="assets/js/project-detail-procurement.js"></script>
+	<script src="assets/js/project-detail-procurement.js?v=20260831d"></script>
+	<script src="assets/js/project-detail-order.js?v=20260831d"></script>
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js?v=20260831c"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260831d"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

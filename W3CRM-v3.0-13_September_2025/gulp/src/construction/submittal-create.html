@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "submittal-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-sub-form .form-label { font-size: 0.825rem; margin-bottom: 0.2rem; color: #495057; }
+		.usis-sub-form .form-label .req { color: #c92a2a; margin-left: 0.15rem; }
+		.usis-sub-section { background: #fff; border: 1px solid #e9ecef; border-radius: 0.5rem; padding: 1rem 1.25rem 1.25rem; }
+		.usis-sub-section-toggle {
+			display: flex; align-items: center; gap: 0.5rem; width: 100%;
+			background: none; border: 0; padding: 0 0 0.85rem; margin: 0;
+			font-size: 1.05rem; font-weight: 600; color: inherit; text-align: left;
+		}
+		.usis-sub-section-toggle .fa-chevron-down { font-size: 0.7rem; transition: transform 0.15s ease; }
+		.usis-sub-section-toggle.collapsed .fa-chevron-down { transform: rotate(-90deg); }
+		.usis-sub-numrev { display: flex; align-items: center; gap: 0.35rem; }
+		.usis-sub-numrev .usis-sub-rev { max-width: 4.75rem; }
+		.usis-sub-readonly { min-height: 2rem; padding: 0.4rem 0; color: #6c757d; }
+		.usis-chip { display: inline-flex; gap: .25rem; align-items: center; background: #f1f3f5; border-radius: 9999px; padding: .15rem .55rem; font-size: 0.78rem; }
+		.usis-chip .x { cursor: pointer; opacity: 0.6; }
+		.usis-chip .x:hover { opacity: 1; }
+		#usis-sub-attach-drop {
+			border: 2px dashed #adb5bd; border-radius: 0.5rem; padding: 2rem 1rem;
+			text-align: center; color: #6c757d; background: #f8f9fa; min-height: 10rem;
+			display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+		}
+		#usis-sub-attach-drop.is-drag { background: #e7f5ff; border-color: #1c7ed6; color: #1c7ed6; }
+		.usis-sub-wf-table { width: 100%; }
+		.usis-sub-wf-table th { font-size: 0.78rem; font-weight: 600; color: #495057; border-bottom: 1px solid #e9ecef; padding: 0.35rem 0.4rem; }
+		.usis-sub-wf-table td { padding: 0.4rem; vertical-align: middle; }
+		.usis-sub-grip { color: #adb5bd; cursor: grab; padding: 0 0.25rem; }
+		.usis-sub-days { max-width: 5.5rem; }
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New Submittal",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1">Construction — New Submittal</h6>
+							</div>
+							<div class="text-nowrap small">
+								<a href="construction/rfi-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="construction/submittal-detail.html">Next</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid usis-sub-form">
+				<form id="usis-sub-form" autocomplete="off" novalidate>
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+						<h3 class="mb-0" data-i18n="New Submittal">New Submittal</h3>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-light" id="usis-sub-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-outline-secondary" id="usis-sub-btn-draft" data-i18n="Create as Draft">Create as Draft</button>
+							<button type="button" class="btn btn-primary" id="usis-sub-btn-create" data-i18n="Create">Create</button>
+						</div>
+					</div>
+
+					<div class="alert alert-danger d-none" id="usis-sub-error" role="alert"></div>
+
+					<div class="usis-sub-section mb-3">
+						<button type="button" class="usis-sub-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sub-sec-general" aria-expanded="true">
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-sub-sec-general">
+							<div class="row g-3">
+								<div class="col-12">
+									<label class="form-label" for="usis-sub-c-title"><span data-i18n="Title">Title</span><span class="req">*</span></label>
+									<input class="form-control form-control-sm" id="usis-sub-c-title" required maxlength="500" placeholder="e.g. Concrete mix design">
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-spec" data-i18n="Specification">Specification</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-spec"><option value="">—</option></select>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-number"><span data-i18n="Number &amp; Revision">Number &amp; Revision</span><span class="req">*</span></label>
+									<div class="usis-sub-numrev">
+										<input class="form-control form-control-sm" id="usis-sub-c-number" readonly placeholder="Auto">
+										<span class="text-muted">.</span>
+										<input class="form-control form-control-sm usis-sub-rev" id="usis-sub-c-rev" maxlength="50" value="0">
+									</div>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-type" data-i18n="Submittal Type">Submittal Type</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-type">
+										<option value="">—</option>
+										<option value="Shop Drawing" data-i18n="Shop Drawing">Shop Drawing</option>
+										<option value="Product Information" data-i18n="Product Information">Product Information</option>
+										<option value="Product Manual" data-i18n="Product Manual">Product Manual</option>
+										<option value="Sample" data-i18n="Sample">Sample</option>
+										<option value="Document" data-i18n="Document">Document</option>
+										<option value="Other" data-i18n="Other">Other</option>
+									</select>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-contractor" data-i18n="Responsible Contractor">Responsible Contractor</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-contractor"><option value="">—</option></select>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-receivedfrom" data-i18n="Received From">Received From</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-receivedfrom"><option value="">—</option></select>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-due" data-i18n="Final Due Date">Final Due Date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-sub-c-due">
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-location" data-i18n="Location">Location</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-location"><option value="">—</option></select>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-drawing-picker" data-i18n="Linked Drawings">Linked Drawings</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-drawing-picker"><option value="">Select…</option></select>
+									<div class="mt-1 d-flex flex-wrap gap-1" id="usis-sub-c-drawing-chips"></div>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-dist-picker" data-i18n="Distribution List">Distribution List</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-dist-picker"><option value="">Select…</option></select>
+									<div class="mt-1 d-flex flex-wrap gap-1" id="usis-sub-c-dist-chips"></div>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-bic" data-i18n="Ball In Court">Ball In Court</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-bic"><option value="">—</option></select>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" data-i18n="Private">Private</label>
+									<div class="form-check mt-1">
+										<input class="form-check-input" type="checkbox" id="usis-sub-c-private">
+										<label class="form-check-label small" for="usis-sub-c-private" data-i18n="Visible only to admins, workflow, and distribution list members.">Visible only to admins, workflow, and distribution list members.</label>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-sub-c-notes" data-i18n="Description">Description</label>
+									<textarea class="form-control" id="usis-sub-c-notes" rows="8" placeholder="Describe the submittal package"></textarea>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label" for="usis-sub-c-attach-file" data-i18n="Attachments">Attachments</label>
+									<div id="usis-sub-attach-drop" tabindex="0" role="button" aria-label="Drag files here or click to attach">
+										<i class="fa fa-image fa-2x mb-1" aria-hidden="true"></i>
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-sub-attach-btn" data-i18n="Attach Files">Attach Files</button>
+										<span class="small" data-i18n="or Drag &amp; Drop">or Drag &amp; Drop</span>
+									</div>
+									<input type="file" class="d-none" id="usis-sub-c-attach-file" multiple>
+									<div class="mt-2" id="usis-sub-c-attach-list"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-sub-section mb-3">
+						<button type="button" class="usis-sub-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sub-sec-material" aria-expanded="true">
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+							<span data-i18n="Material Tracking">Material Tracking</span>
+						</button>
+						<div class="collapse show" id="usis-sub-sec-material">
+							<div class="row g-3">
+								<div class="col-12">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" id="usis-sub-c-material">
+										<label class="form-check-label" for="usis-sub-c-material" data-i18n="Material Tracking?">Material Tracking?</label>
+									</div>
+								</div>
+							</div>
+							<div class="row g-3 mt-0 d-none" id="usis-sub-material-fields">
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-risk" data-i18n="Supply Chain Risk">Supply Chain Risk</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-risk">
+										<option value="">—</option>
+										<option value="low">Low</option>
+										<option value="medium">Medium</option>
+										<option value="high">High</option>
+									</select>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-mfr" data-i18n="Manufacturer">Manufacturer</label>
+									<input class="form-control form-control-sm" id="usis-sub-c-mfr" maxlength="200">
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-mfr-loc" data-i18n="Manufacturer Location (City, State, Country)">Manufacturer Location (City, State, Country)</label>
+									<input class="form-control form-control-sm" id="usis-sub-c-mfr-loc" maxlength="300">
+								</div>
+								<div class="col-md-3">
+									<label class="form-label" for="usis-sub-c-release" data-i18n="Release to contractor">Release to contractor</label>
+									<input type="date" class="form-control form-control-sm" id="usis-sub-c-release">
+								</div>
+								<div class="col-md-9">
+									<label class="form-label" for="usis-sub-c-comments" data-i18n="Comments (Public)">Comments (Public)</label>
+									<textarea class="form-control" id="usis-sub-c-comments" rows="5"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-sub-section mb-3">
+						<button type="button" class="usis-sub-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sub-sec-lines" aria-expanded="true">
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+							<span data-i18n="Spec line items">Spec line items</span>
+						</button>
+						<div class="collapse show" id="usis-sub-sec-lines">
+							<p class="text-muted small mb-2">Title is enough to create. Check CSI sections only if you want line items.</p>
+							<input type="search" class="form-control form-control-sm mb-2" id="usis-sub-c-spec-q" placeholder="Find CSI section…" autocomplete="off">
+							<div class="alert alert-light border py-2 small mb-2 d-none" id="usis-sub-c-spec-empty">
+								No spec sections on this project yet. You can still create the submittal.
+							</div>
+							<div class="border rounded px-2 py-1 bg-body mb-3" id="usis-sub-c-spec-list" style="max-height: 12rem; overflow: auto;"></div>
+							<h6 class="mb-2 small" data-i18n="Selected line items">Selected line items</h6>
+							<div class="table-responsive">
+								<table class="table table-sm table-bordered align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>Spec</th>
+											<th>Description</th>
+											<th>Mfr</th>
+											<th>Model</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="usis-sub-c-lines-tbody"></tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-sub-section mb-3">
+						<button type="button" class="usis-sub-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sub-sec-schedule" aria-expanded="true">
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+							<span data-i18n="Submittal Schedule Information">Submittal Schedule Information</span>
+						</button>
+						<div class="collapse show" id="usis-sub-sec-schedule">
+							<div class="row g-3">
+								<div class="col-12">
+									<label class="form-label" for="usis-sub-c-task" data-i18n="Schedule Task">Schedule Task</label>
+									<select class="form-select form-select-sm" id="usis-sub-c-task"><option value="">Select</option></select>
+								</div>
+								<div class="col-md-6">
+									<div class="mb-3">
+										<div class="form-label" data-i18n="Planned Return Date">Planned Return Date</div>
+										<div class="usis-sub-readonly" id="usis-sub-c-planned-return">—</div>
+									</div>
+									<div class="mb-3">
+										<div class="form-label" data-i18n="Planned Internal Review Completed Date">Planned Internal Review Completed Date</div>
+										<div class="usis-sub-readonly" id="usis-sub-c-planned-internal">—</div>
+									</div>
+									<div>
+										<div class="form-label" data-i18n="Planned Submit By Date">Planned Submit By Date</div>
+										<div class="usis-sub-readonly" id="usis-sub-c-planned-submit">—</div>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="mb-3">
+										<label class="form-label" for="usis-sub-c-design-days" data-i18n="Design Team Review Time">Design Team Review Time</label>
+										<div class="input-group input-group-sm" style="max-width: 12rem;">
+											<input type="number" min="0" class="form-control usis-sub-days" id="usis-sub-c-design-days" value="10">
+											<span class="input-group-text">day(s)</span>
+										</div>
+									</div>
+									<div>
+										<label class="form-label" for="usis-sub-c-internal-days" data-i18n="Internal Review Time">Internal Review Time</label>
+										<div class="input-group input-group-sm" style="max-width: 12rem;">
+											<input type="number" min="0" class="form-control usis-sub-days" id="usis-sub-c-internal-days" value="14">
+											<span class="input-group-text">day(s)</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-sub-section mb-3">
+						<button type="button" class="usis-sub-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sub-sec-delivery" aria-expanded="true">
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+							<span data-i18n="Delivery Information">Delivery Information</span>
+						</button>
+						<div class="collapse show" id="usis-sub-sec-delivery">
+							<div class="row g-3">
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-needed" data-i18n="Anticipated Delivery Date">Anticipated Delivery Date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-sub-c-needed">
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-confirmed" data-i18n="Confirmed Delivery Date">Confirmed Delivery Date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-sub-c-confirmed">
+								</div>
+								<div class="col-md-4">
+									<label class="form-label" for="usis-sub-c-actual" data-i18n="Actual Delivery Date">Actual Delivery Date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-sub-c-actual">
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-sub-section mb-3">
+						<button type="button" class="usis-sub-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sub-sec-workflow" aria-expanded="true">
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+							<span data-i18n="Submittal Workflow">Submittal Workflow</span>
+						</button>
+						<div class="collapse show" id="usis-sub-sec-workflow">
+							<div class="table-responsive">
+								<table class="usis-sub-wf-table mb-2">
+									<thead>
+										<tr>
+											<th style="width: 2rem;"></th>
+											<th style="width: 4rem;" data-i18n="Step">Step</th>
+											<th data-i18n="Name">Name</th>
+											<th style="width: 10rem;" data-i18n="Role">Role</th>
+											<th style="width: 11rem;" data-i18n="Due Date">Due Date</th>
+											<th style="width: 2.5rem;"></th>
+										</tr>
+									</thead>
+									<tbody id="usis-sub-c-wf-tbody"></tbody>
+								</table>
+							</div>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-sub-c-wf-add" data-i18n="Add Step">Add Step</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/submittal-create.js"></script>
+
+</body>
+</html>

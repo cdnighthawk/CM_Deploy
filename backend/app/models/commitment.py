@@ -115,6 +115,20 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
     revised_ship_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     actual_ship_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     needed_on_site_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    lead_time_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    schedule_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("project_schedule_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    order_by_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    supplier_confirm_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="none", server_default="none"
+    )
+    supplier_confirm_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    supplier_confirm_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_notified_order_by_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     fulfillment_status: Mapped[str] = mapped_column(
         String(40), nullable=False, default="open", server_default="open", index=True
     )

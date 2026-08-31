@@ -126,6 +126,9 @@ def serialize_receipt(r: PurchaseOrderReceipt) -> dict[str, Any]:
         "packingSlipRef": r.packing_slip_ref,
         "status": r.status,
         "notes": r.notes,
+        "clientId": str(r.client_id) if r.client_id else None,
+        "condition": r.condition,
+        "photoIds": list(r.photo_ids or []),
         "lines": [
             {
                 "id": str(ln.id),

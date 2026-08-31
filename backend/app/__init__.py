@@ -246,6 +246,16 @@ def create_app(config_object: str | None = None) -> Flask:
             response.headers["X-Request-Id"] = str(rid)
         return response
 
+    @app.after_request
+    def _track_user_activity(response):
+        try:
+            from .api._user_activity_service import after_request_track
+
+            after_request_track(response)
+        except Exception:
+            app.logger.exception("user activity tracking failed")
+        return response
+
     @app.get("/healthz")
     def healthz():
         out: dict = {"status": "ok", "request_id": getattr(g, "request_id", None)}

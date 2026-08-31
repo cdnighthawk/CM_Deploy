@@ -58,6 +58,9 @@ class User(UUIDPKMixin, TimestampMixin, db.Model):
     last_login_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    last_seen_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     roles: Mapped[List["UserRole"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

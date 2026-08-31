@@ -1,6 +1,7 @@
 """API tests for Procore-style submittals (log, audit, attachments, annotations)."""
 from __future__ import annotations
 
+import io
 import uuid
 
 import pytest
@@ -301,3 +302,41 @@ def test_get_project_detail(client):
 
     missing = client.get(f"/api/v1/projects/{uuid.uuid4()}")
     assert missing.status_code == 404
+
+
+def test_submittal_create_notes_and_multipart_upload(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("DOCUMENT_UPLOAD_FOLDER", str(tmp_path))
+    with client.application.app_context():
+        client.application.config["DOCUMENT_UPLOAD_FOLDER"] = str(tmp_path)
+        p = Project(name="New-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/submittals",
+        json={
+            "title": "Hollow metal frames",
+            "notes": "Shop drawings for HM frames",
+            "needed_by_date": "2026-09-15",
+            "approvers": {"version": 1, "steps": [{"step": 1, "role": "Approver"}]},
+        },
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    item = r.get_json()["item"]
+    assert item["notes"] == "Shop drawings for HM frames"
+    assert item["needed_by_date"] == "2026-09-15"
+    sid = item["id"]
+
+    data = {"file": (io.BytesIO(b"%PDF-1.4 test"), "frames.pdf")}
+    r2 = client.post(
+        f"/api/v1/projects/{pid}/submittals/{sid}/attachments/upload",
+        data=data,
+        content_type="multipart/form-data",
+    )
+    assert r2.status_code == 201, r2.get_data(as_text=True)
+    body = r2.get_json()
+    assert body["item"]["original_filename"] == "frames.pdf"
+    assert body["item"]["file_url"]
+    assert "/api/v1/documents/" in body["item"]["file_url"]

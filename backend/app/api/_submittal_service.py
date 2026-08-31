@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime, timezone
+from pathlib import Path
 from typing import Any, Mapping, Optional  # noqa: F401 — Mapping used in _apply_line_items
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
+from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import (
@@ -19,6 +21,8 @@ from ..models import (
     SubmittalLineItem,
     SubmittalPdfAnnotation,
 )
+from ..services.object_storage import StorageError, UploadCategory, save_upload
+from ..services.project_file_keys import preferred_document_object_name
 from ._perms import CurrentUser, can_create_submittal, can_view_submittal_log
 from ._rfi_service import ApiError, _parse_dt, _parse_uuid
 
@@ -29,6 +33,7 @@ __all__ = [
     "create_submittal",
     "patch_submittal",
     "add_submittal_attachment",
+    "upload_submittal_attachment_file",
     "get_document_annotations",
     "put_document_annotations",
     "lookup_product_catalog",
@@ -46,6 +51,31 @@ def _iso(dt: datetime | date | None) -> str | None:
     if isinstance(dt, datetime):
         return dt.isoformat()
     return dt.isoformat()
+
+
+def _parse_date(raw: Any) -> date | None:
+    if raw in (None, ""):
+        return None
+    if isinstance(raw, datetime):
+        return raw.date()
+    if isinstance(raw, date):
+        return raw
+    dt = _parse_dt(raw)
+    return dt.date() if dt else None
+
+
+def _parse_id_list(raw: Any) -> list[str] | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        return None
+    out: list[str] = []
+    for x in raw:
+        if x in (None, ""):
+            continue
+        uid = _parse_uuid(x)
+        out.append(str(uid) if uid else str(x).strip())
+    return out
 
 
 def _is_admin(cu: CurrentUser) -> bool:
@@ -100,6 +130,10 @@ def _submittal_snapshot(s: Submittal) -> dict[str, Any]:
         "returned_at": _iso(s.returned_at),
         "response": s.response,
         "approvers": s.approvers,
+        "notes": s.notes,
+        "needed_by_date": s.needed_by_date.isoformat() if s.needed_by_date else None,
+        "linked_drawing_ids": s.linked_drawing_ids,
+        "released_at": _iso(s.released_at),
     }
 
 
@@ -202,6 +236,9 @@ def _submittal_public(s: Submittal, include_lines: bool = False) -> dict[str, An
         "trade": getattr(s, "trade", None),
         "action_type": getattr(s, "action_type", None),
         "needed_by_date": s.needed_by_date.isoformat() if getattr(s, "needed_by_date", None) else None,
+        "notes": getattr(s, "notes", None),
+        "linked_drawing_ids": getattr(s, "linked_drawing_ids", None),
+        "released_at": _iso(getattr(s, "released_at", None)),
         "assigned_reviewer_id": str(s.assigned_reviewer_id) if getattr(s, "assigned_reviewer_id", None) else None,
         "workflow_instance_id": str(s.workflow_instance_id) if getattr(s, "workflow_instance_id", None) else None,
         "public_token": getattr(s, "public_token", None),
@@ -435,6 +472,10 @@ def create_submittal(project_id: uuid.UUID, data: Mapping[str, Any], cu: Current
         approvers=data.get("approvers") if isinstance(data.get("approvers"), (list, dict)) else None,
         originator_company_id=_parse_uuid(data.get("originator_company_id")),
         vendor_id=_parse_uuid(data.get("vendor_id")),
+        notes=(str(data.get("notes")).strip() or None) if data.get("notes") else None,
+        needed_by_date=_parse_date(data.get("needed_by_date")),
+        linked_drawing_ids=_parse_id_list(data.get("linked_drawing_ids")),
+        released_at=_parse_dt(data.get("released_at")),
     )
     db.session.add(s)
     db.session.flush()
@@ -508,6 +549,15 @@ def patch_submittal(sid: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) ->
         s.originator_company_id = _parse_uuid(data.get("originator_company_id"))
     if "vendor_id" in data:
         s.vendor_id = _parse_uuid(data.get("vendor_id"))
+    if "notes" in data:
+        v = data.get("notes")
+        s.notes = (str(v).strip() or None) if v not in (None, "") else None
+    if "needed_by_date" in data:
+        s.needed_by_date = _parse_date(data.get("needed_by_date"))
+    if "linked_drawing_ids" in data:
+        s.linked_drawing_ids = _parse_id_list(data.get("linked_drawing_ids"))
+    if "released_at" in data:
+        s.released_at = _parse_dt(data.get("released_at"))
     after = _submittal_snapshot(s)
     if after != before:
         _append_audit(s, "edit", "Updated submittal fields", before, after, cu.id)
@@ -556,6 +606,87 @@ def add_submittal_attachment(sid: uuid.UUID, data: Mapping[str, Any], cu: Curren
     )
     db.session.add(d)
     db.session.flush()
+    _append_audit(
+        s,
+        "attachment_add",
+        f"Added attachment v{version}",
+        None,
+        {"document_id": str(d.id), "version": version},
+        cu.id,
+    )
+    db.session.commit()
+    return {"item": _document_public(d), "entity": "submittal_attachment"}
+
+
+_SUBMITTAL_UPLOAD_EXT = frozenset(
+    {
+        ".pdf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".webp",
+        ".txt",
+        ".csv",
+        ".doc",
+        ".docx",
+        ".xls",
+        ".xlsx",
+        ".dwg",
+        ".zip",
+    }
+)
+
+
+def upload_submittal_attachment_file(sid: uuid.UUID, file_storage: Any, cu: CurrentUser) -> dict[str, Any]:
+    s = _get_submittal_eager(sid)
+    if s is None:
+        raise ApiError("submittal not found", 404)
+    if not _can_edit_submittal(cu, s):
+        raise ApiError("not allowed to add attachments", 403)
+    if file_storage is None or not getattr(file_storage, "filename", None):
+        raise ApiError("missing file field (multipart form-data)", 400)
+    raw_name = secure_filename(file_storage.filename) or "upload.bin"
+    ext = Path(raw_name).suffix.lower() or ".bin"
+    if ext not in _SUBMITTAL_UPLOAD_EXT:
+        raise ApiError(
+            f"unsupported file type ({ext}); allowed: {', '.join(sorted(_SUBMITTAL_UPLOAD_EXT))}",
+            400,
+        )
+
+    docs = _submittal_docs(s)
+    version = (max(d.version for d in docs) + 1) if docs else 1
+
+    d = Document(
+        project_id=s.project_id,
+        document_type="other",
+        title=raw_name[:500],
+        original_filename=raw_name[:500],
+        mime_type=(getattr(file_storage, "mimetype", None) or "").strip()[:120] or None,
+        uploaded_by_user_id=cu.id,
+        submittal_id=s.id,
+        version=version,
+        tags={"entity": "submittal", "submittal_id": str(s.id), "suffix": ext},
+    )
+    db.session.add(d)
+    db.session.flush()
+    object_name = preferred_document_object_name(d)
+    try:
+        sz = save_upload(UploadCategory.DOCUMENTS, object_name, file_storage)
+    except StorageError as exc:
+        db.session.rollback()
+        raise ApiError(exc.message, int(getattr(exc, "status", 500) or 500)) from exc
+    except OSError as exc:
+        db.session.rollback()
+        raise ApiError(f"could not save file: {exc}", 500) from exc
+    if not sz:
+        db.session.rollback()
+        raise ApiError("empty upload", 400)
+    d.file_url = f"/api/v1/documents/{d.id}/file"
+    d.file_size_bytes = int(sz)
+    tags = dict(d.tags or {})
+    tags["storage_object"] = object_name
+    d.tags = tags
     _append_audit(
         s,
         "attachment_add",

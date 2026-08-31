@@ -552,6 +552,7 @@ def register_hr_routes(bp: Blueprint) -> None:
                     "phone": u.phone,
                     "is_active": u.is_active,
                     "last_login_at": _iso(u.last_login_at),
+                    "last_seen_at": _iso(u.last_seen_at),
                 },
                 "onboarding_items": onboarding_items,
                 "policy_acknowledgments": policy_acknowledgments,

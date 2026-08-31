@@ -823,6 +823,58 @@
 			fillCostCodeSelects();
 		});
 	}
+	function applyScheduleNeedByLock() {
+		var sel = document.getElementById("usis-c-edit-schedule");
+		var ns = document.getElementById("usis-c-edit-needed-on-site");
+		var hint = document.getElementById("usis-c-edit-needed-hint");
+		if (!sel || !ns) return;
+		var opt = sel.options[sel.selectedIndex];
+		var start = opt ? opt.getAttribute("data-start") : "";
+		if (sel.value && start) {
+			ns.value = start;
+			ns.readOnly = true;
+			if (hint) hint.classList.remove("d-none");
+		} else {
+			ns.readOnly = false;
+			if (hint) hint.classList.add("d-none");
+		}
+		refreshOrderByPreview();
+	}
+	function refreshOrderByPreview() {
+		var ns = (document.getElementById("usis-c-edit-needed-on-site") || {}).value;
+		var lead = (document.getElementById("usis-c-edit-lead-time") || {}).value;
+		var ob = document.getElementById("usis-c-edit-order-by");
+		if (!ob) return;
+		if (!ns || lead === "" || lead == null || isNaN(Number(lead))) {
+			ob.value = "—";
+			return;
+		}
+		var d = new Date(ns + "T00:00:00");
+		d.setDate(d.getDate() - Number(lead));
+		ob.value =
+			d.getFullYear() +
+			"-" +
+			String(d.getMonth() + 1).padStart(2, "0") +
+			"-" +
+			String(d.getDate()).padStart(2, "0");
+	}
+	function loadScheduleItems(selectedId) {
+		if (!projectId) return Promise.resolve();
+		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/schedule-items").then(function (data) {
+			var sel = document.getElementById("usis-c-edit-schedule");
+			if (!sel) return;
+			sel.innerHTML = '<option value="">— None —</option>';
+			(data.items || []).forEach(function (it) {
+				var o = document.createElement("option");
+				o.value = it.id;
+				o.setAttribute("data-start", String(it.start_date || "").slice(0, 10));
+				o.textContent = (it.title || "Window") + " · " + String(it.start_date || "").slice(0, 10);
+				if (selectedId && String(selectedId) === String(it.id)) o.selected = true;
+				sel.appendChild(o);
+			});
+			applyScheduleNeedByLock();
+		});
+	}
 	function configureCreateModalForKind(kind) {
 		var k = kind === "subcontract" ? "subcontract" : "purchase_order";
 		var kindSel = document.getElementById("usis-c-create-kind");
@@ -869,6 +921,23 @@
 		if (rs) rs.value = isoDateOnly(item.revised_ship_date);
 		if (as) as.value = isoDateOnly(item.actual_ship_date);
 		if (ns) ns.value = isoDateOnly(item.needed_on_site_date);
+		var lead = document.getElementById("usis-c-edit-lead-time");
+		if (lead) lead.value = item.lead_time_days != null ? item.lead_time_days : "";
+		var ob = document.getElementById("usis-c-edit-order-by");
+		if (ob) ob.value = isoDateOnly(item.order_by_date) || "—";
+		var conf = document.getElementById("usis-c-edit-confirm-status");
+		if (conf) {
+			var st = item.supplier_confirm_status || "none";
+			conf.textContent = st;
+			conf.className =
+				st === "confirmed"
+					? "badge text-bg-success"
+					: st === "overdue"
+						? "badge text-bg-danger"
+						: st === "sent"
+							? "badge text-bg-warning"
+							: "badge text-bg-light";
+		}
 		var meta = document.getElementById("usis-c-fulfillment-meta");
 		if (meta) {
 			meta.textContent =
@@ -921,6 +990,7 @@
 					loadTaxCodes(),
 					loadPoTypes(),
 					loadVendorProfile(item.vendor_company_id, "usis-c-edit"),
+					loadScheduleItems(item.schedule_item_id),
 				]).then(function () {
 					var csel = document.getElementById("usis-c-edit-vendor-contact");
 					if (csel && item.vendor_contact_id) csel.value = item.vendor_contact_id;
@@ -1006,6 +1076,8 @@
 				track +
 				"</td><td>" +
 				esc(s.shipmentStatus || "") +
+				"</td><td>" +
+				esc((s.estimatedDeliveryDate || "").slice(0, 10) || "—") +
 				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm text-danger p-0 usis-c-ship-del" data-id="' +
 				esc(s.id) +
 				'">Remove</button></td>';
@@ -1224,6 +1296,8 @@
 					revised_ship_date: (document.getElementById("usis-c-edit-revised-ship") || {}).value || null,
 					actual_ship_date: (document.getElementById("usis-c-edit-actual-ship") || {}).value || null,
 					needed_on_site_date: (document.getElementById("usis-c-edit-needed-on-site") || {}).value || null,
+					lead_time_days: (document.getElementById("usis-c-edit-lead-time") || {}).value || null,
+					schedule_item_id: (document.getElementById("usis-c-edit-schedule") || {}).value || null,
 				};
 				var sd = document.getElementById("usis-c-edit-status-date").value;
 				if (sd) payload.status_effective_date = sd;
@@ -1372,12 +1446,14 @@
 					tracking_number: document.getElementById("usis-c-ship-track").value.trim() || null,
 					tracking_url: document.getElementById("usis-c-ship-url").value.trim() || null,
 					shipment_status: document.getElementById("usis-c-ship-status").value,
+					estimated_delivery_date: document.getElementById("usis-c-ship-eta").value || null,
 					lines: lines,
 				})
 					.then(function () {
 						document.getElementById("usis-c-ship-carrier").value = "";
 						document.getElementById("usis-c-ship-track").value = "";
 						document.getElementById("usis-c-ship-url").value = "";
+						document.getElementById("usis-c-ship-eta").value = "";
 						toastOk("Shipment added.");
 						return openEditModal(cid);
 					})
@@ -1386,6 +1462,36 @@
 					});
 			});
 		}
+		var confirmBtn = document.getElementById("usis-c-edit-confirm");
+		if (confirmBtn) {
+			confirmBtn.addEventListener("click", function () {
+				var cid = document.getElementById("usis-c-edit-id").value;
+				if (!cid || !projectId) return;
+				var promised = (document.getElementById("usis-c-edit-promised-ship") || {}).value || null;
+				fetchJsonBody(
+					"POST",
+					"/api/v1/projects/" +
+						encodeURIComponent(projectId) +
+						"/purchase-orders/" +
+						encodeURIComponent(cid) +
+						"/supplier-confirm",
+					{ promised_ship_date: promised }
+				)
+					.then(function () {
+						toastOk("Supplier date confirmed.");
+						return openEditModal(cid);
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
+		}
+		var schedSel = document.getElementById("usis-c-edit-schedule");
+		if (schedSel) schedSel.addEventListener("change", applyScheduleNeedByLock);
+		var leadInp = document.getElementById("usis-c-edit-lead-time");
+		if (leadInp) leadInp.addEventListener("input", refreshOrderByPreview);
+		var nsInp = document.getElementById("usis-c-edit-needed-on-site");
+		if (nsInp) nsInp.addEventListener("change", refreshOrderByPreview);
 		var recvPost = document.getElementById("usis-c-recv-post");
 		if (recvPost) {
 			recvPost.addEventListener("click", function () {
@@ -1442,6 +1548,7 @@
 			});
 		}
 	}
+	window.usisOpenCommitmentEdit = openEditModal;
 	wireVendorComboboxes();
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", wire);

@@ -201,3 +201,88 @@ def register_field_routes(bp: Blueprint) -> None:
             return jsonify(switch_job(data, current_user()))
         except FieldApiError as exc:
             return _err(exc)
+
+    def _order_err(exc):
+        from ._rfi_service import ApiError
+
+        if isinstance(exc, ApiError):
+            return jsonify({"error": exc.message}), exc.status
+        return _err(exc)
+
+    def _parse_iso_date(raw: str | None):
+        if not raw or not str(raw).strip():
+            return None
+        try:
+            return date.fromisoformat(str(raw).strip()[:10])
+        except ValueError:
+            return False
+
+    @bp.get("/projects/<project_id>/receivables")
+    def get_project_receivables(project_id: str):
+        from . import _order_tracking_service as ot
+        from ._rfi_service import ApiError
+
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        try:
+            return jsonify(ot.list_receivables(pid, current_user(), due=(request.args.get("due") or "open")))
+        except (ApiError, FieldApiError) as exc:
+            return _order_err(exc)
+
+    @bp.get("/projects/<project_id>/deliveries")
+    def get_project_deliveries(project_id: str):
+        from . import _order_tracking_service as ot
+        from ._rfi_service import ApiError
+
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        start = _parse_iso_date(request.args.get("from"))
+        end = _parse_iso_date(request.args.get("to"))
+        if start is False or end is False:
+            return jsonify({"error": "invalid date; use YYYY-MM-DD"}), 400
+        try:
+            return jsonify(ot.list_deliveries(pid, current_user(), from_date=start, to_date=end))
+        except (ApiError, FieldApiError) as exc:
+            return _order_err(exc)
+
+    @bp.get("/projects/<project_id>/purchase-orders/<commitment_id>/receive")
+    def get_project_po_receive(project_id: str, commitment_id: str):
+        from . import _order_tracking_service as ot
+        from ._rfi_service import ApiError
+
+        pid = _parse_uuid_param(project_id)
+        cid = _parse_uuid_param(commitment_id)
+        if not pid or not cid:
+            return jsonify({"error": "invalid id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        try:
+            return jsonify(ot.get_receive_detail(pid, cid, current_user()))
+        except (ApiError, FieldApiError) as exc:
+            return _order_err(exc)
+
+    @bp.post("/projects/<project_id>/purchase-orders/<commitment_id>/receipts")
+    def post_project_po_receipt(project_id: str, commitment_id: str):
+        from . import _order_tracking_service as ot
+        from ._rfi_service import ApiError
+
+        pid = _parse_uuid_param(project_id)
+        cid = _parse_uuid_param(commitment_id)
+        if not pid or not cid:
+            return jsonify({"error": "invalid id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        data = _json_body()
+        if data is None:
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            body, status = ot.create_field_receipt(pid, cid, data, current_user())
+            return jsonify(body), status
+        except (ApiError, FieldApiError) as exc:
+            return _order_err(exc)

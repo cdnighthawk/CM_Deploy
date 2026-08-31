@@ -5,6 +5,7 @@ import uuid
 from urllib.parse import quote, unquote
 
 import pytest
+from sqlalchemy import select
 from werkzeug.security import generate_password_hash
 
 from app.extensions import db
@@ -96,6 +97,11 @@ def test_session_login_and_auth_status(client, no_dev_admin):
     assert body["authenticated"] is True
     assert body["user"]["email"] == email
     assert body["user"]["first_name"] == "L"
+
+    with client.application.app_context():
+        u = db.session.scalar(select(User).where(User.email == email))
+        assert u is not None
+        assert u.last_login_at is not None
 
 
 def test_login_respects_safe_next_redirect(client, no_dev_admin):

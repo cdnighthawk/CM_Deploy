@@ -238,11 +238,26 @@ def login():
 
     session["user_id"] = str(u.id)
     session.permanent = bool(remember)
+    from .api._user_activity_service import record_login
+
+    record_login(u, "password")
+    db.session.commit()
     return redirect(_login_redirect_target(form_next))
 
 
 @auth_bp.get("/auth/logout")
 def logout():
+    uid = session.get("user_id")
+    if uid:
+        try:
+            user = db.session.get(User, uuid.UUID(str(uid)))
+        except (TypeError, ValueError):
+            user = None
+        if user is not None:
+            from .api._user_activity_service import record_logout
+
+            record_logout(user)
+            db.session.commit()
     session.pop("user_id", None)
     flash("You have been signed out.", "info")
     nxt = (request.args.get("next") or "").strip() or None
@@ -358,8 +373,9 @@ def microsoft_sso_callback():
     if not u.is_active:
         return redirect(_redirect_to_shell_login(next_after_login=next_url, ms_error="inactive"))
 
-    u.last_login_at = datetime.now(timezone.utc)
-    db.session.add(u)
+    from .api._user_activity_service import record_login
+
+    record_login(u, "microsoft")
     db.session.commit()
     session["user_id"] = str(u.id)
     session.permanent = True

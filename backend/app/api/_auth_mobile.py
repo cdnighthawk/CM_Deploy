@@ -162,10 +162,11 @@ def register_mobile_auth_routes(bp) -> None:
         if u is None:
             return jsonify({"error": "invalid email or password"}), 401
 
-        u.last_login_at = datetime.now(timezone.utc)
-        db.session.add(u)
         access_token, expires_in = issue_access_token(u.id)
         refresh_token = _issue_refresh_token(u, device_label=device_label)
+        from ._user_activity_service import record_login
+
+        record_login(u, "mobile")
         db.session.commit()
 
         return jsonify(

@@ -270,6 +270,10 @@ def patch_schedule_item(
     if row.assignee_user_id and row.assignee_user_id != prev_assignee:
         db.session.refresh(row, attribute_names=["assignee", "project"])
         notify_schedule_assignee(row, event="assigned", actor=actor)
+    from . import _order_tracking_service as ot
+
+    for po in ot.recalc_commitments_for_schedule_item(row):
+        ot.notify_supplier_order_by_change(po)
     return schedule_item_public(row)
 
 

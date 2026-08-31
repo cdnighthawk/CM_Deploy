@@ -92,7 +92,7 @@ Seven parents, left to right: **Contract · Files · Submittals · RFIs · Estim
 | **Submittals** | Submittals | Same Buyout child row |
 | **RFIs** | RFIs | Same Buyout child row |
 | **Estimate** | Estimate | Estimate · Takeoff · RFP |
-| **Buyout** | Procurement | Procurement · Submittals · RFIs · Correspondence · Transmittals · Anticipated costs · PO change orders · Sub invoices |
+| **Buyout** | Procurement | Procurement · Order · Submittals · RFIs · Correspondence · Transmittals · Anticipated costs · PO change orders · Sub invoices |
 | **Field** | Schedule | Schedule · Tasks · Photos · Daily log · Meetings · Work orders · QC checklists · Punchlist · Incidents · Safety |
 
 Do not add remaining Sage leftovers (directory, journals, bills, permits, ITB, timecards, …) until they have a real page. Do not put these children on the left sidebar **Projects** link — that stays the job list.

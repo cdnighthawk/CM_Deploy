@@ -530,6 +530,9 @@
 					<li class="nav-item" role="presentation">
 						<button class="nav-link" id="usis-ud-tab-roles" data-bs-toggle="pill" data-bs-target="#usis-ud-pane-roles" type="button" role="tab" aria-selected="false">Roles</button>
 					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" id="usis-ud-tab-activity" data-bs-toggle="pill" data-bs-target="#usis-ud-pane-activity" type="button" role="tab" aria-selected="false">Activity</button>
+					</li>
 				</ul>
 				<div class="tab-content">
 					<div class="tab-pane fade show active" id="usis-ud-pane-users" role="tabpanel">
@@ -556,8 +559,9 @@
 												<th>Roles</th>
 												<th class="text-center">Active</th>
 												<th class="text-center">Super</th>
-												<th class="text-center">Login</th>
-												<th style="width: 9rem"></th>
+												<th>Last login</th>
+												<th>Last seen</th>
+												<th style="width: 11rem"></th>
 											</tr>
 										</thead>
 										<tbody id="usis-ud-users-body"></tbody>
@@ -597,6 +601,62 @@
 											</tr>
 										</thead>
 										<tbody id="usis-ud-roles-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="usis-ud-pane-activity" role="tabpanel">
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<div class="d-flex flex-wrap gap-2 align-items-end justify-content-between mb-3">
+									<div>
+										<h6 class="mb-1">Staff activity</h6>
+										<p class="text-muted small mb-0">Last sign-in and what each person did in the site. Use this to see who is working and where.</p>
+									</div>
+									<div class="d-flex flex-wrap gap-1" role="group" aria-label="Activity range">
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-act-days" data-days="1">Today</button>
+										<button type="button" class="btn btn-sm btn-primary usis-ud-act-days" data-days="7">7 days</button>
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-act-days" data-days="30">30 days</button>
+									</div>
+								</div>
+								<div class="table-responsive mb-3">
+									<table class="table table-sm table-hover align-middle mb-0">
+										<thead>
+											<tr>
+												<th>Name</th>
+												<th>Last login</th>
+												<th>Last seen</th>
+												<th class="text-end">Today</th>
+												<th class="text-end">In range</th>
+												<th class="text-end">Logins</th>
+											</tr>
+										</thead>
+										<tbody id="usis-ud-activity-people"></tbody>
+									</table>
+								</div>
+								<div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+									<div class="d-flex flex-wrap align-items-center gap-2">
+										<h6 class="mb-0" id="usis-ud-activity-feed-title">Recent activity</h6>
+										<button type="button" class="btn btn-sm btn-outline-secondary d-none" id="usis-ud-activity-clear">Everyone</button>
+									</div>
+									<div class="d-flex flex-wrap gap-1" role="group" aria-label="Activity type">
+										<button type="button" class="btn btn-sm btn-primary usis-ud-act-type" data-type="">All</button>
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-act-type" data-type="login">Logins</button>
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-act-type" data-type="page_view">Pages</button>
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-act-type" data-type="api_write">Changes</button>
+									</div>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm align-middle mb-0">
+										<thead>
+											<tr>
+												<th>When</th>
+												<th>Person</th>
+												<th>What they did</th>
+											</tr>
+										</thead>
+										<tbody id="usis-ud-activity-feed"></tbody>
 									</table>
 								</div>
 							</div>
@@ -645,6 +705,7 @@
 								<input class="form-check-input" type="checkbox" id="usis-ud-modal-super">
 								<label class="form-check-label small" for="usis-ud-modal-super">Superuser (full admin)</label>
 							</div>
+							<p class="small text-muted mb-3" id="usis-ud-modal-activity">Last login: — · Last seen: —</p>
 							<label class="form-label small fw-semibold mb-1">Roles</label>
 							<div id="usis-ud-modal-role-checks" class="border rounded p-2 bg-light" style="max-height: 12rem; overflow: auto;"></div>
 							<p class="small text-muted mt-2 mb-1">Assigned projects (Admin and Executive roles see all projects).</p>

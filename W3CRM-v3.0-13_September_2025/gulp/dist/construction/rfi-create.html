@@ -60,23 +60,151 @@
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 
 	<style>
-		.usis-rfi-form h5 { margin-bottom: 0.75rem; }
-		.usis-rfi-form .form-label { font-size: 0.825rem; margin-bottom: 0.15rem; color: #495057; }
-		.usis-rfi-form .form-label .req { color: #c92a2a; margin-left: 0.15rem; }
+		.usis-rfi-form { max-width: 1320px; }
+		.usis-rfi-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.25rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-rfi-form .form-label .req { color: var(--usis-error, #c92a2a); margin-left: 0.15rem; }
 		.usis-rfi-form .text-muted { font-size: 0.78rem; }
-		.usis-rfi-section { background: #fff; border: 1px solid #e9ecef; border-radius: 0.5rem; padding: 1rem; }
-		.usis-chip { display: inline-flex; gap: .25rem; align-items: center; background: #f1f3f5; border-radius: 9999px; padding: .15rem .55rem; font-size: 0.78rem; }
-		.usis-chip .x { cursor: pointer; opacity: 0.6; }
-		.usis-chip .x:hover { opacity: 1; }
-		#usis-rfi-attach-drop {
-			border: 2px dashed #adb5bd;
+		.usis-rfi-page-title { font-size: 1.5rem; font-weight: 700; margin: 0.35rem 0 1rem; }
+		.usis-rfi-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 0.75rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-rfi-banner i { margin-top: 0.15rem; }
+		.usis-rfi-section {
+			background: #fff;
+			border: 1px solid var(--usis-divider, #e9ecef);
 			border-radius: 0.5rem;
-			padding: 1.5rem;
+			padding: 0.7rem 1.15rem 1.15rem;
+			margin-bottom: 1rem;
+		}
+		.usis-rfi-section-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			width: 100%;
+			background: none;
+			border: 0;
+			padding: 0.2rem 0 0.75rem;
+			font-weight: 700;
+			font-size: 1.02rem;
+			color: inherit;
+			text-align: left;
+		}
+		.usis-rfi-section-toggle .usis-rfi-chevron {
+			width: 0.9rem;
+			font-size: 0.7rem;
+			transition: transform 0.15s ease;
+		}
+		.usis-rfi-section-toggle.collapsed .usis-rfi-chevron { transform: rotate(-90deg); }
+		.usis-rfi-request {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(220px, 30%);
+			gap: 1.15rem 1.5rem;
+			align-items: stretch;
+		}
+		@media (max-width: 991.98px) {
+			.usis-rfi-request { grid-template-columns: 1fr; }
+		}
+		.usis-rfi-question { min-height: 14rem; }
+		.usis-rfi-attach-col { display: flex; flex-direction: column; }
+		#usis-rfi-attach-drop {
+			flex: 1;
+			min-height: 12rem;
+			border: 2px dashed #adb5bd;
+			border-radius: 0.35rem;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.45rem;
+			padding: 1.25rem;
 			text-align: center;
 			color: #6c757d;
-			background: #f8f9fa;
+			background: #fafbfc;
+			cursor: pointer;
 		}
-		#usis-rfi-attach-drop.is-drag { background: #e7f5ff; border-color: #1c7ed6; color: #1c7ed6; }
+		#usis-rfi-attach-drop.is-drag {
+			background: #e8eef1;
+			border-color: var(--usis-primary, #1c7ed6);
+			color: var(--usis-primary, #1c7ed6);
+		}
+		#usis-rfi-attach-drop .usis-rfi-attach-icon { font-size: 1.7rem; opacity: 0.5; }
+		.usis-rfi-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1rem 1.25rem;
+			align-items: start;
+		}
+		@media (max-width: 1199.98px) {
+			.usis-rfi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		}
+		@media (max-width: 575.98px) {
+			.usis-rfi-grid { grid-template-columns: 1fr; }
+		}
+		.usis-rfi-field { min-width: 0; }
+		.usis-rfi-field--span2 { grid-column: span 2; }
+		.usis-rfi-field--notes { grid-column: 1 / span 2; }
+		@media (max-width: 1199.98px) {
+			.usis-rfi-field--span2,
+			.usis-rfi-field--notes { grid-column: 1 / -1; }
+		}
+		.usis-rfi-custom-fields { display: contents; }
+		.usis-rfi-readonly {
+			min-height: 2rem;
+			padding: 0.4rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+		}
+		.usis-rfi-multiselect {
+			border: 1px solid var(--bs-border-color, #dee2e6);
+			border-radius: var(--bs-border-radius-sm, 0.35rem);
+			padding: 0.35rem;
+			min-height: 2.35rem;
+			background: #fff;
+		}
+		.usis-rfi-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+		.usis-rfi-multiselect .form-select {
+			border: 0;
+			box-shadow: none;
+			padding-left: 0.35rem;
+			background-color: transparent;
+		}
+		.usis-chip {
+			display: inline-flex;
+			gap: .25rem;
+			align-items: center;
+			background: #e8eef1;
+			color: var(--usis-primary, #1f4e5f);
+			border-radius: 9999px;
+			padding: .12rem .55rem;
+			font-size: 0.78rem;
+		}
+		.usis-chip .x { cursor: pointer; opacity: 0.6; }
+		.usis-chip .x:hover { opacity: 1; }
+		.usis-rfi-project-card { font-size: 0.75rem; line-height: 1.4; }
+		.usis-rfi-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.15rem 0 1.5rem;
+		}
+		.usis-rfi-req-note { color: var(--usis-error, #c92a2a); font-size: 0.8rem; }
+		.usis-rfi-form-footer .btn { min-width: 7rem; }
 	</style>
 
 </head>
@@ -550,201 +678,235 @@
 
 					<div class="alert alert-danger d-none" id="usis-rfi-error" role="alert"></div>
 
-					<div class="row g-3">
-						<div class="col-lg-8">
+					<div class="usis-rfi-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Draft RFI. For draft RFIs, Number and Due Date are both suggested values. Neither will be applied until the RFI is Open.">Draft RFI. For draft RFIs, Number and Due Date are both suggested values. Neither will be applied until the RFI is Open.</span>
+					</div>
 
-							<div class="usis-rfi-section mb-3">
-								<h5 data-i18n="General Information">General Information</h5>
-								<div class="row g-3">
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-project"><span data-i18n="Project">Project</span><span class="req">*</span></label>
-										<select class="form-select form-select-sm" id="usis-rfi-project" required>
-											<option value="">Loading…</option>
-										</select>
-										<div class="usis-rfi-project-card border rounded px-2 py-2 mt-2 small d-none" id="usis-rfi-project-card">
-											<div><span class="text-muted" data-i18n="Project #">Project #</span> <strong id="usis-rfi-proj-number">—</strong></div>
-											<div><span class="text-muted" data-i18n="Name">Name</span> <span id="usis-rfi-proj-name">—</span></div>
-											<div><span class="text-muted" data-i18n="Type / Status">Type / Status</span> <span id="usis-rfi-proj-type-status">—</span></div>
-											<div><span class="text-muted" data-i18n="Address">Address</span> <span id="usis-rfi-proj-address">—</span></div>
-											<div><span class="text-muted" data-i18n="Owner">Owner</span> <span id="usis-rfi-proj-owner">—</span></div>
-											<div><span class="text-muted">GC</span> <span id="usis-rfi-proj-gc">—</span></div>
-											<div><span class="text-muted" data-i18n="Architect">Architect</span> <span id="usis-rfi-proj-architect">—</span></div>
-											<div><span class="text-muted" data-i18n="Contract">Contract</span> <span id="usis-rfi-proj-contract">—</span></div>
-											<div><span class="text-muted" data-i18n="Start">Start</span> <span id="usis-rfi-proj-start">—</span></div>
-										</div>
-									</div>
-									<div class="col-md-3">
-										<label class="form-label" for="usis-rfi-number" data-i18n="Number">Number</label>
-										<input type="number" min="1" class="form-control form-control-sm" id="usis-rfi-number" placeholder="Auto" data-i18n-placeholder="Auto">
-										<div class="text-muted" data-i18n="Leave blank for next sequential.">Leave blank for next sequential.</div>
-									</div>
-									<div class="col-md-3">
-										<label class="form-label" for="usis-rfi-prefix" data-i18n="Prefix">Prefix</label>
-										<input type="text" class="form-control form-control-sm" id="usis-rfi-prefix" placeholder="RFI">
-									</div>
-									<div class="col-md-12">
+					<h1 class="usis-rfi-page-title" data-i18n="New RFI">New RFI</h1>
+
+										<div class="usis-rfi-section">
+						<button type="button" class="usis-rfi-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-rfi-sec-request" aria-expanded="true" aria-controls="usis-rfi-sec-request">
+							<i class="fa fa-chevron-down usis-rfi-chevron" aria-hidden="true"></i>
+							<span data-i18n="Request">Request</span>
+						</button>
+						<div class="collapse show" id="usis-rfi-sec-request">
+							<div class="usis-rfi-request">
+								<div>
+									<div class="mb-3 usis-rfi-field">
 										<label class="form-label" for="usis-rfi-subject"><span data-i18n="Subject">Subject</span><span class="req">*</span></label>
 										<input type="text" class="form-control form-control-sm" id="usis-rfi-subject" data-field-key="subject" maxlength="500" required placeholder="Short descriptive title" data-i18n-placeholder="Short descriptive title">
 									</div>
-
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-manager"><span data-i18n="RFI Manager">RFI Manager</span><span class="req">*</span></label>
-										<select class="form-select form-select-sm" id="usis-rfi-manager" data-field-key="rfi_manager"></select>
+									<div class="mb-2 usis-rfi-field">
+										<label class="form-label" for="usis-rfi-question"><span data-i18n="Question">Question</span><span class="req">*</span></label>
+										<textarea class="form-control usis-rfi-question" id="usis-rfi-question" data-field-key="question" rows="10" placeholder="State the question clearly. Reference drawings / specs as needed." data-i18n-placeholder="State the question clearly. Reference drawings / specs as needed."></textarea>
 									</div>
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-due" data-i18n="Due Date">Due Date</label>
-										<input type="date" class="form-control form-control-sm" id="usis-rfi-due" data-field-key="due_date">
-									</div>
-
-									<div class="col-md-12" data-field-key="assignees">
-										<label class="form-label" for="usis-rfi-assignee-picker"><span data-i18n="Assignees">Assignees</span><span class="req">*</span></label>
-										<div class="d-flex gap-2 align-items-center">
-											<select class="form-select form-select-sm" id="usis-rfi-assignee-picker" style="max-width: 16rem"></select>
-											<div class="form-check m-0">
-												<input class="form-check-input" type="checkbox" id="usis-rfi-assignee-required">
-												<label class="form-check-label small" for="usis-rfi-assignee-required" data-i18n="Make response required">Make response required</label>
-											</div>
-											<button type="button" class="btn btn-outline-primary btn-sm" id="usis-rfi-assignee-add" data-i18n="Add assignee">Add assignee</button>
-										</div>
-										<div class="mt-2 d-flex flex-wrap gap-1" id="usis-rfi-assignees-chips"></div>
-									</div>
-
-									<div class="col-md-12" data-field-key="distribution">
-										<label class="form-label" for="usis-rfi-dist-picker" data-i18n="Distribution">Distribution</label>
-										<div class="d-flex gap-2 align-items-center">
-											<select class="form-select form-select-sm" id="usis-rfi-dist-picker" style="max-width: 16rem"></select>
-											<button type="button" class="btn btn-outline-primary btn-sm" id="usis-rfi-dist-add" data-i18n="Add to distribution">Add to distribution</button>
-										</div>
-										<div class="mt-2 d-flex flex-wrap gap-1" id="usis-rfi-dist-chips"></div>
-									</div>
-
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-received-from" data-i18n="Received From">Received From</label>
-										<select class="form-select form-select-sm" id="usis-rfi-received-from" data-field-key="received_from"><option value="">—</option></select>
-									</div>
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-responsible" data-i18n="Responsible Contractor">Responsible Contractor</label>
-										<select class="form-select form-select-sm" id="usis-rfi-responsible" data-field-key="responsible_contractor"><option value="">—</option></select>
-									</div>
-
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-drawing-number" data-i18n="Drawing Number">Drawing Number</label>
-										<input type="text" class="form-control form-control-sm" id="usis-rfi-drawing-number" data-field-key="drawing_number" maxlength="120">
-									</div>
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-location" data-i18n="Location">Location</label>
-										<select class="form-select form-select-sm" id="usis-rfi-location" data-field-key="location"><option value="">—</option></select>
-									</div>
-
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-spec" data-i18n="Spec Section">Spec Section</label>
-										<select class="form-select form-select-sm" id="usis-rfi-spec" data-field-key="spec_section"><option value="">—</option></select>
-									</div>
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-cost-code" data-i18n="Cost Code">Cost Code</label>
-										<select class="form-select form-select-sm" id="usis-rfi-cost-code" data-field-key="cost_code"><option value="">—</option></select>
-									</div>
-
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-stage" data-i18n="Project Stage">Project Stage</label>
-										<select class="form-select form-select-sm" id="usis-rfi-stage" data-field-key="project_stage"><option value="">—</option></select>
-									</div>
-									<div class="col-md-6">
-										<label class="form-label" for="usis-rfi-sub-job" data-i18n="Sub Job">Sub Job</label>
-										<select class="form-select form-select-sm" id="usis-rfi-sub-job" data-field-key="sub_job"><option value="">—</option></select>
-									</div>
-
-									<div class="col-md-6" data-field-key="cost_impact">
-										<label class="form-label" data-i18n="Cost Impact">Cost Impact</label>
-										<div class="input-group input-group-sm">
-											<select class="form-select" id="usis-rfi-cost-choice">
-												<option value="">—</option>
-												<option value="yes" data-i18n="Yes">Yes</option>
-												<option value="yes_unknown" data-i18n="Yes (Unknown)">Yes (Unknown)</option>
-												<option value="no" data-i18n="No">No</option>
-												<option value="tbd" data-i18n="TBD">TBD</option>
-												<option value="na" data-i18n="N/A">N/A</option>
-											</select>
-											<span class="input-group-text">$</span>
-											<input type="number" step="0.01" class="form-control" id="usis-rfi-cost-amount" placeholder="Amount" data-i18n-placeholder="Amount">
-										</div>
-									</div>
-									<div class="col-md-6" data-field-key="schedule_impact">
-										<label class="form-label" data-i18n="Schedule Impact">Schedule Impact</label>
-										<div class="input-group input-group-sm">
-											<select class="form-select" id="usis-rfi-sched-choice">
-												<option value="">—</option>
-												<option value="yes" data-i18n="Yes">Yes</option>
-												<option value="yes_unknown" data-i18n="Yes (Unknown)">Yes (Unknown)</option>
-												<option value="no" data-i18n="No">No</option>
-												<option value="tbd" data-i18n="TBD">TBD</option>
-												<option value="na" data-i18n="N/A">N/A</option>
-											</select>
-											<input type="number" class="form-control" id="usis-rfi-sched-days" placeholder="Days" data-i18n-placeholder="Days">
-										</div>
-									</div>
-
-									<div class="col-md-3">
-										<label class="form-label" for="usis-rfi-private" data-i18n="Private">Private</label>
-										<select class="form-select form-select-sm" id="usis-rfi-private" data-field-key="private">
-											<option value="false">No</option>
-											<option value="true">Yes</option>
-										</select>
-									</div>
-									<div class="col-md-9">
-										<label class="form-label" for="usis-rfi-reference" data-i18n="Reference">Reference</label>
-										<input type="text" class="form-control form-control-sm" id="usis-rfi-reference" data-field-key="reference" maxlength="500">
+									<div class="d-flex flex-wrap align-items-center gap-2">
+										<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-rfi-ai-draft">
+											<i class="fa fa-magic me-1"></i> <span data-i18n="Draft with AI (Beta)">Draft with AI (Beta)</span>
+										</button>
+										<span class="small text-muted" data-i18n="Generates Subject + Question + Impact fields from a short prompt.">Generates Subject + Question + Impact fields from a short prompt.</span>
 									</div>
 								</div>
-
-								<!-- Custom fields injected here from /rfi-custom-field-defs -->
-								<div class="row g-3 mt-1" id="usis-rfi-custom-fields"></div>
-							</div>
-
-							<div class="usis-rfi-section mb-3">
-								<h5 data-i18n="Request">Request</h5>
-								<div class="mb-2">
-									<label class="form-label" for="usis-rfi-general" data-i18n="General information (background)">General information (background)</label>
-									<textarea class="form-control form-control-sm" id="usis-rfi-general" rows="2" placeholder="Context that helps interpret the question correctly" data-i18n-placeholder="Context that helps interpret the question correctly"></textarea>
-								</div>
-								<div class="mb-2">
-									<label class="form-label" for="usis-rfi-question"><span data-i18n="Question">Question</span><span class="req">*</span></label>
-									<textarea class="form-control" id="usis-rfi-question" data-field-key="question" rows="6" placeholder="State the question clearly. Reference drawings / specs as needed." data-i18n-placeholder="State the question clearly. Reference drawings / specs as needed."></textarea>
-								</div>
-								<div class="mb-2 d-flex align-items-center gap-2">
-									<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-rfi-ai-draft">
-										<i class="fa fa-magic me-1"></i> <span data-i18n="Draft with AI (Beta)">Draft with AI (Beta)</span>
-									</button>
-									<span class="small text-muted" data-i18n="Generates Subject + Question + Impact fields from a short prompt.">Generates Subject + Question + Impact fields from a short prompt.</span>
-								</div>
-								<div class="mb-0">
+								<div class="usis-rfi-attach-col">
 									<label class="form-label" for="usis-rfi-attach-file" data-i18n="Attachments">Attachments</label>
-									<div id="usis-rfi-attach-drop" tabindex="0" role="button" aria-label="Drag files here or click to attach">
-										<span data-i18n="Drop files here or click to browse">Drop files here or click to browse</span>
+									<div id="usis-rfi-attach-drop" tabindex="0" role="button" aria-label="Attach files or drag and drop">
+										<i class="fa fa-image usis-rfi-attach-icon" aria-hidden="true"></i>
+										<span data-i18n="Attach Files or Drag &amp; Drop">Attach Files or Drag &amp; Drop</span>
 									</div>
 									<input type="file" class="form-control form-control-sm d-none" id="usis-rfi-attach-file" multiple>
 									<div class="mt-2" id="usis-rfi-attach-list"></div>
 									<div class="text-muted small mt-1" data-i18n="Attachments are uploaded after the RFI is saved.">Attachments are uploaded after the RFI is saved.</div>
 								</div>
 							</div>
-
 						</div>
+					</div>
 
-						<div class="col-lg-4">
-							<div class="usis-rfi-section sticky-top" style="top:5.5rem">
-								<h5 data-i18n="Save">Save</h5>
-								<p class="small text-muted" data-i18n="Required to save as Open: Number, Subject, Assignees, Due Date, Question. As Standard you can save as Draft and send for review to your RFI Manager.">Required to save as Open: Number, Subject, Assignees, Due Date, Question. As Standard you can save as Draft and send for review to your RFI Manager.</p>
-								<div class="d-flex flex-column gap-2">
-									<button type="button" class="btn btn-outline-secondary" id="usis-rfi-btn-draft" data-i18n="Create as Draft">Create as Draft</button>
-									<button type="button" class="btn btn-primary" id="usis-rfi-btn-open" data-i18n="Create as Open">Create as Open</button>
-									<button type="button" class="btn btn-link" id="usis-rfi-btn-send-review" data-i18n="Send for review">Send for review</button>
-									<a class="btn btn-link text-muted" href="construction/rfis.html" data-i18n="Cancel">Cancel</a>
+					<div class="usis-rfi-section">
+						<button type="button" class="usis-rfi-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-rfi-sec-general" aria-expanded="true" aria-controls="usis-rfi-sec-general">
+							<i class="fa fa-chevron-down usis-rfi-chevron" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-rfi-sec-general">
+							<div class="usis-rfi-grid">
+
+								<div class="usis-rfi-field usis-rfi-field--span2">
+									<label class="form-label" for="usis-rfi-project"><span data-i18n="Project">Project</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-rfi-project" required>
+										<option value="">Loading…</option>
+									</select>
+									<div class="usis-rfi-project-card text-muted mt-1 d-none" id="usis-rfi-project-card">
+										<strong id="usis-rfi-proj-number">—</strong>
+										<span id="usis-rfi-proj-name">—</span>
+										<span class="mx-1">·</span>
+										<span id="usis-rfi-proj-type-status">—</span>
+										<div>
+											<span id="usis-rfi-proj-address">—</span>
+											<span class="mx-1">·</span>
+											<span data-i18n="Owner">Owner</span> <span id="usis-rfi-proj-owner">—</span>
+											· GC <span id="usis-rfi-proj-gc">—</span>
+											· <span id="usis-rfi-proj-architect">—</span>
+										</div>
+										<div>
+											<span data-i18n="Contract">Contract</span> <span id="usis-rfi-proj-contract">—</span>
+											· <span data-i18n="Start">Start</span> <span id="usis-rfi-proj-start">—</span>
+										</div>
+									</div>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-number" data-i18n="Number">Number</label>
+									<input type="number" min="1" class="form-control form-control-sm" id="usis-rfi-number" placeholder="Auto" data-i18n-placeholder="Auto">
+									<div class="text-muted" data-i18n="Leave blank for next sequential.">Leave blank for next sequential.</div>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-prefix" data-i18n="Prefix">Prefix</label>
+									<input type="text" class="form-control form-control-sm" id="usis-rfi-prefix" placeholder="RFI">
+								</div>
+
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-manager"><span data-i18n="RFI Manager">RFI Manager</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-rfi-manager" data-field-key="rfi_manager"></select>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-received-from" data-i18n="Received From">Received From</label>
+									<select class="form-select form-select-sm" id="usis-rfi-received-from" data-field-key="received_from"><option value="">Select a person</option></select>
+								</div>
+								<div class="usis-rfi-field" data-field-key="distribution">
+									<label class="form-label" for="usis-rfi-dist-picker" data-i18n="Distribution List">Distribution List</label>
+									<div class="usis-rfi-multiselect">
+										<div class="usis-rfi-chips" id="usis-rfi-dist-chips"></div>
+										<div class="d-flex gap-1 align-items-center">
+											<select class="form-select form-select-sm" id="usis-rfi-dist-picker"></select>
+											<button type="button" class="btn btn-link btn-sm py-0" id="usis-rfi-dist-add" data-i18n="Add">Add</button>
+										</div>
+									</div>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" data-i18n="Status">Status</label>
+									<div class="usis-rfi-readonly" id="usis-rfi-status-display">—</div>
+								</div>
+
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-responsible" data-i18n="Responsible Contractor">Responsible Contractor</label>
+									<select class="form-select form-select-sm" id="usis-rfi-responsible" data-field-key="responsible_contractor"><option value="">Select a vendor</option></select>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-spec" data-i18n="Specification">Specification</label>
+									<select class="form-select form-select-sm" id="usis-rfi-spec" data-field-key="spec_section"><option value="">Select a Specification</option></select>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-location" data-i18n="Location">Location</label>
+									<select class="form-select form-select-sm" id="usis-rfi-location" data-field-key="location"><option value="">Select a Location</option></select>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" data-i18n="Ball In Court">Ball In Court</label>
+									<div class="usis-rfi-readonly" id="usis-rfi-bic-display">—</div>
+								</div>
+
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-stage" data-i18n="RFI Stage">RFI Stage</label>
+									<select class="form-select form-select-sm" id="usis-rfi-stage" data-field-key="project_stage"><option value="">Select…</option></select>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-drawing-number" data-i18n="Drawing Number">Drawing Number</label>
+									<input type="text" class="form-control form-control-sm" id="usis-rfi-drawing-number" data-field-key="drawing_number" maxlength="120">
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-cost-code" data-i18n="Cost Code">Cost Code</label>
+									<select class="form-select form-select-sm" id="usis-rfi-cost-code" data-field-key="cost_code"><option value="">Select a cost code</option></select>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" data-i18n="Created By">Created By</label>
+									<div class="usis-rfi-readonly" id="usis-rfi-created-by-display">—</div>
+								</div>
+
+								<div class="usis-rfi-field" data-field-key="schedule_impact">
+									<label class="form-label" data-i18n="Schedule Impact">Schedule Impact</label>
+									<select class="form-select form-select-sm mb-1" id="usis-rfi-sched-choice">
+										<option value="" data-i18n="Select…">Select…</option>
+										<option value="yes" data-i18n="Yes">Yes</option>
+										<option value="yes_unknown" data-i18n="Yes (Unknown)">Yes (Unknown)</option>
+										<option value="no" data-i18n="No">No</option>
+										<option value="tbd" data-i18n="TBD">TBD</option>
+										<option value="na" data-i18n="N/A">N/A</option>
+									</select>
+									<input type="number" class="form-control form-control-sm" id="usis-rfi-sched-days" placeholder="Days" data-i18n-placeholder="Days">
+								</div>
+								<div class="usis-rfi-field" data-field-key="cost_impact">
+									<label class="form-label" data-i18n="Cost Impact">Cost Impact</label>
+									<select class="form-select form-select-sm mb-1" id="usis-rfi-cost-choice">
+										<option value="" data-i18n="Select…">Select…</option>
+										<option value="yes" data-i18n="Yes">Yes</option>
+										<option value="yes_unknown" data-i18n="Yes (Unknown)">Yes (Unknown)</option>
+										<option value="no" data-i18n="No">No</option>
+										<option value="tbd" data-i18n="TBD">TBD</option>
+										<option value="na" data-i18n="N/A">N/A</option>
+									</select>
+									<div class="input-group input-group-sm">
+										<span class="input-group-text">$</span>
+										<input type="number" step="0.01" class="form-control" id="usis-rfi-cost-amount" placeholder="Amount" data-i18n-placeholder="Amount">
+									</div>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-reference" data-i18n="Reference">Reference</label>
+									<input type="text" class="form-control form-control-sm" id="usis-rfi-reference" data-field-key="reference" maxlength="500">
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" data-i18n="Date Initiated">Date Initiated</label>
+									<div class="usis-rfi-readonly" id="usis-rfi-initiated-display">—</div>
+								</div>
+
+								<div class="usis-rfi-field usis-rfi-field--span2" data-field-key="assignees">
+									<label class="form-label" for="usis-rfi-assignee-picker"><span data-i18n="Assignees">Assignees</span><span class="req">*</span></label>
+									<div class="usis-rfi-multiselect">
+										<div class="usis-rfi-chips" id="usis-rfi-assignees-chips"></div>
+										<div class="d-flex flex-wrap gap-2 align-items-center">
+											<select class="form-select form-select-sm" id="usis-rfi-assignee-picker"></select>
+											<div class="form-check m-0">
+												<input class="form-check-input" type="checkbox" id="usis-rfi-assignee-required">
+												<label class="form-check-label small" for="usis-rfi-assignee-required" data-i18n="Make response required">Make response required</label>
+											</div>
+											<button type="button" class="btn btn-link btn-sm py-0" id="usis-rfi-assignee-add" data-i18n="Add">Add</button>
+										</div>
+									</div>
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-due" data-i18n="Response Needed By">Response Needed By</label>
+									<input type="date" class="form-control form-control-sm" id="usis-rfi-due" data-field-key="due_date">
+								</div>
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-sub-job" data-i18n="Sub Job">Sub Job</label>
+									<select class="form-select form-select-sm" id="usis-rfi-sub-job" data-field-key="sub_job"><option value="">Select…</option></select>
+								</div>
+
+								<div class="usis-rfi-field">
+									<label class="form-label" for="usis-rfi-private" data-i18n="Private">Private</label>
+									<select class="form-select form-select-sm" id="usis-rfi-private" data-field-key="private">
+										<option value="false">No</option>
+										<option value="true">Yes</option>
+									</select>
+								</div>
+
+								<div class="usis-rfi-custom-fields" id="usis-rfi-custom-fields"></div>
+
+								<div class="usis-rfi-field usis-rfi-field--notes">
+									<label class="form-label" for="usis-rfi-general" data-i18n="Notes">Notes</label>
+									<textarea class="form-control form-control-sm" id="usis-rfi-general" rows="5" placeholder="Context that helps interpret the question correctly" data-i18n-placeholder="Context that helps interpret the question correctly"></textarea>
 								</div>
 							</div>
 						</div>
-
 					</div>
-				</form>
+
+					<div class="usis-rfi-form-footer">
+						<div class="usis-rfi-req-note" data-i18n="* required fields">* required fields</div>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-outline-secondary" href="construction/rfis.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-outline-secondary" id="usis-rfi-btn-draft" data-i18n="Create as Draft">Create as Draft</button>
+							<button type="button" class="btn btn-outline-primary" id="usis-rfi-btn-send-review" data-i18n="Send for Review">Send for Review</button>
+							<button type="button" class="btn btn-primary" id="usis-rfi-btn-open" data-i18n="Create as Open">Create as Open</button>
+						</div>
+					</div>
+</form>
 			</div>
 		</main>
 

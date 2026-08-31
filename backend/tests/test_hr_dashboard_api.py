@@ -119,6 +119,7 @@ def test_hr_employee_summary_demo_user(client, hr_sample_employee):
     assert u.get("email") == hr_sample_employee["email"]
     assert "phone" in u
     assert "last_login_at" in u
+    assert "last_seen_at" in u
     assert isinstance(data.get("onboarding_items"), list)
     assert isinstance(data.get("policy_acknowledgments"), list)
     assert isinstance(data.get("training_assignments"), list)

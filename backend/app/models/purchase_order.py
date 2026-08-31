@@ -11,8 +11,8 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
@@ -92,6 +92,7 @@ class PurchaseOrderShipmentLine(UUIDPKMixin, TimestampMixin, db.Model):
 
 class PurchaseOrderReceipt(UUIDPKMixin, TimestampMixin, db.Model):
     __tablename__ = "purchase_order_receipts"
+    __table_args__ = (UniqueConstraint("client_id", name="uq_purchase_order_receipts_client_id"),)
 
     commitment_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("commitments.id", ondelete="CASCADE"), nullable=False, index=True
@@ -114,6 +115,9 @@ class PurchaseOrderReceipt(UUIDPKMixin, TimestampMixin, db.Model):
         String(40), nullable=False, default="posted", server_default="posted", index=True
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    client_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    condition: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    photo_ids: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
 
     commitment: Mapped["Commitment"] = relationship("Commitment", back_populates="receipts")
     shipment: Mapped[Optional["PurchaseOrderShipment"]] = relationship(

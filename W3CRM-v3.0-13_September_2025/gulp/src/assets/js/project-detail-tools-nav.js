@@ -32,6 +32,7 @@
 		"proj-tab-estimate": "preconstruction",
 		"proj-tab-takeoff": "preconstruction",
 		"proj-tab-procurement": "buyout",
+		"proj-tab-order": "buyout",
 		"proj-tab-submittals": "submittals",
 		"proj-tab-rfi": "rfi",
 		"proj-tab-correspondence": "buyout",

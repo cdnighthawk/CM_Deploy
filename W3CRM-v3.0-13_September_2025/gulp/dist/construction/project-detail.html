@@ -4,57 +4,9 @@
 
 	<base href="../">
 	
-	<!-- Title -->
-	<title>USIS</title>
-	
-	<!-- Meta -->
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="author" content="USIS">
-	<meta name="robots" content="index, follow">
-	<meta name="format-detection" content="telephone=no">
-	
-	<meta name="keywords" content="USIS, US Interior Specialties, construction management, projects, estimates, field operations">
-	<meta name="description" content="USIS Construction Management for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
-	
-	<meta property="og:type" content="website">
-	<meta property="og:site_name" content="USIS Construction Management">
-	<meta property="og:url" content="https://www.usiscm.com/">
-	<meta property="og:title" content="USIS Construction Management">
-	<meta property="og:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
-	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
-	<meta property="og:image:alt" content="US Interior Specialties">
-	
-	<!-- TWITTER META -->
-	<meta name="twitter:title" content="USIS Construction Management">
-	<meta name="twitter:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
-	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/usis-eagle-logo.png">
-	<meta name="twitter:card" content="summary">
-	
-	<!-- FAVICONS ICON -->
-	<link rel="icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
-	<link rel="shortcut icon" type="image/png" href="assets/images/branding/usis-eagle-logo.png">
-	
-	<!-- MOBILE SPECIFIC -->
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	
-	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/project-detail.html">
-	
-	<!-- Plugins Stylesheet -->
-	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
-	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
-	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
-	<link href="assets/css/usis-ui.css" rel="stylesheet">
-
-	<!-- Flask API root for session login/logout + credentialed ``fetch``.
-	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
-	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
-	<script src="assets/js/usis-api-base-default.js"></script>
-	<script src="assets/js/usis-api-base.js"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
-	<script src="assets/js/usis-api-fetch.js"></script>
-	<script src="assets/js/usis-theme-boot.js"></script>
+	@@include("../elements/meta.html", {
+		"fileName": "project-detail.html",
+	})
 	
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
@@ -72,15 +24,6 @@
 		#usis-grid-takeoff { min-height: 22rem; }
 		#usis-proj-schedule-calendar { min-height: 28rem; }
 		.usis-proj-task-table-wrap { max-height: 50vh; overflow: auto; }
-		/* Theme stretches date-picker indicators (position:absolute; inset:0) to .modal-content. */
-		#usis-modal-submittal-create input[type="date"] {
-			position: relative;
-			z-index: 0;
-		}
-		#usis-modal-submittal-create #usis-submittal-c-spec-list {
-			position: relative;
-			z-index: 1;
-		}
 		.usis-bc-job-hero {
 			border-bottom: 1px solid var(--bs-border-color);
 		}
@@ -111,453 +54,25 @@
 </head>
 <body>
 		
-	<!-- Start - Preloader -->
-	<div id="preloader">
-		<div class="lds-ripple">
-			<div></div>
-			<div></div>
-		</div>
-	</div>
-	<!-- End - Preloader -->
+	@@include("../elements/preloader.html")
 
 	<div id="main-wrapper">
 
-		<!-- Start - Nav Header -->
-		<div class="nav-header">
-			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
-	<img class="logo-abbr usis-logo-mark" src="assets/images/branding/usis-eagle-logo.png" alt="" width="36" height="36">
-	<span class="brand-title usis-logo-title">USIS CM</span>
-</a>
+		@@include("../elements/nav-header-construction.html")
 
-			<div class="nav-control">
-				<div class="hamburger">
-					<span class="line"></span>
-					<span class="line"></span>
-					<span class="line"></span>
-				</div>
-			</div>
-		</div>
-		<!-- End - Nav Header -->
+		@@include("../elements/chatbox-construction.html")
 
-		<!-- Start - Sidebar Chat Box  -->
-		<div class="chatbox usis-ai-chatbox">
-			<div class="chatbox-close"></div>
-			<div class="usis-ai-chat" data-usis-ai-chat="1">
-				<div class="usis-ai-chat__header">
-					<div>
-						<span class="usis-overline mb-0">Assistant</span>
-						<div class="fw-semibold">USIS + Grok</div>
-					</div>
-					<div class="d-flex align-items-center gap-2">
-						<span class="usis-status-chip usis-status-chip--progress" data-usis-chat-mode>Assistant</span>
-						<span class="usis-seg" data-usis-chat-provider title="xAI Grok">
-							<span class="btn btn-sm active" aria-pressed="true">Grok</span>
-						</span>
-					</div>
-				</div>
-				<div class="usis-ai-chat__toolbar d-none" data-usis-chat-toolbar>
-					<label class="visually-hidden" for="usis-ai-chat-history">Saved chats</label>
-					<select class="form-select form-select-sm" id="usis-ai-chat-history" data-usis-chat-history></select>
-				</div>
-				<p class="usis-ai-chat__status small text-muted px-3 mb-0" data-usis-chat-status>Checking Grok…</p>
-				<div class="usis-ai-chat__messages" data-usis-chat-log role="log" aria-live="polite"></div>
-				<div class="usis-ai-chat__composer">
-					<div class="usis-ai-chat__drop d-none" data-usis-chat-drop>Drop files here</div>
-					<div class="usis-ai-chat__chips" data-usis-chat-chips></div>
-					<form data-usis-chat-form>
-						<label class="visually-hidden" for="usis-ai-chat-input">Message</label>
-						<textarea class="form-control form-control-sm" id="usis-ai-chat-input" data-usis-chat-input rows="3" placeholder="Ask Grok, or attach a file or link…"></textarea>
-						<div class="usis-ai-chat__linkrow d-none" data-usis-chat-linkrow>
-							<input type="url" class="form-control form-control-sm" data-usis-chat-link placeholder="https://…" autocomplete="off">
-							<button type="button" class="btn btn-sm btn-primary" data-usis-chat-link-add>Add link</button>
-						</div>
-						<div class="d-flex align-items-center justify-content-between gap-2 mt-2">
-							<div class="d-flex align-items-center gap-1">
-								<div class="usis-ai-chat__pluswrap">
-									<button type="button" class="btn btn-sm btn-outline-secondary usis-ai-chat__plus" data-usis-chat-plus title="Attach a file or link" aria-label="Attach a file or link" aria-expanded="false">+</button>
-									<div class="usis-ai-chat__plusmenu d-none" data-usis-chat-plusmenu>
-										<button type="button" data-usis-chat-pickfile>From this computer</button>
-										<button type="button" data-usis-chat-picklink>Paste a link</button>
-									</div>
-								</div>
-								<input type="file" class="d-none" data-usis-chat-file multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,text/csv,text/markdown,application/json,.txt,.csv,.md,.pdf">
-								<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-chat-clear>New</button>
-							</div>
-							<button type="submit" class="btn btn-sm btn-primary" data-usis-chat-send>Send</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-		<!-- End - Sidebar Chat Box  -->
+		@@include("../elements/header-construction.html")
 
-
-		<link href="assets/css/usis-ui.css" rel="stylesheet">
-<!-- Start - Header -->
-		<div class="header">
-			<div class="header-content">
-				<nav class="navbar navbar-expand">
-					<div class="collapse navbar-collapse justify-content-between">
-						<div class="header-left">
-							<form>
-								<div class="header-search input-group">
-									<span class="input-group-text">
-										<button class="bg-transparent border-0" aria-label="Header Search">
-											<svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<circle cx="8.78605" cy="8.78605" r="8.23951" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
-												<path d="M14.5168 14.9447L17.7471 18.1667" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
-											</svg>
-										</button>
-									</span>
-									<input type="text" class="form-control" placeholder="Search" data-i18n-placeholder="Search">
-								</div>
-							</form>	
-						</div>
-						<ul class="navbar-nav header-right">
-							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
-								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
-									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
-										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
-											<i class="icon feather icon-mail"></i>
-											<span class="d-none d-lg-inline ms-1">Email</span>
-										</a>
-										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
-											<i class="icon feather icon-message-square"></i>
-											<span class="d-none d-lg-inline ms-1">Chat</span>
-										</button>
-									</div>
-								</div>
-							</li>
-							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem" data-i18n-title="Report a problem" data-i18n-aria="Report a problem">
-									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
-									<span class="d-none d-lg-inline fs-6" data-i18n="Report a problem">Report a problem</span>
-								</button>
-							</li>
-							<li class="nav-item">
-								<select class="selectpicker form-select i18n-select" id="langSwitcher">
-									<option value="en_GB" title="English" data-content="<img src='assets/images/flags/gb-eng.svg' alt=''> English">English</option>
-									<option value="pt_BR" title="Portuguese" data-content="<img src='assets/images/flags/pt.svg' alt=''> Português">Português</option>
-									<option value="fr_FR" title="French" data-content="<img src='assets/images/flags/fr.svg' alt=''> Français">Français</option>
-									<option value="de_DE" title="German" data-content="<img src='assets/images/flags/de.svg' alt=''> Deutsch">Deutsch</option>
-									<option value="it_IT" title="Italian" data-content="<img src='assets/images/flags/it.svg' alt=''> Italiano">Italiano</option>
-									<option value="jp_JP" title="Japanese" data-content="<img src='assets/images/flags/jp.svg' alt=''> 日本語">日本語</option>
-									<option value="es_ES" title="Spanish" data-content="<img src='assets/images/flags/es.svg' alt=''> Español">Español</option>
-									<option value="ar_TN" title="Arabic" data-content="<img src='assets/images/flags/arab.svg' alt=''> العربية">العربية</option>
-									<option value="tr_TR" title="Turkish" data-content="<img src='assets/images/flags/tr.svg' alt=''> Türkçe">Türkçe</option>
-								</select>
-							</li>
-							<li class="nav-item dropdown notification_dropdown">
-								<div class="dropdown">
-									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
-										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-										</svg>
-									</button>
-									<div class="dropdown-menu dropdown-menu-end py-0">
-										<div class="dz-scroll p-2" style="height: 380px;">
-								<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
-							<a class="d-block text-center p-3 border-top" href="javascript:void(0);"><span data-i18n="See all notifications">See all notifications</span> <i class="fa fa-arrow-right"></i></a>
-									</div>
-								</div>
-							</li>
-							<li class="nav-item header-profile-dropdown">
-								<div class="dropdown d-flex align-items-center">
-									<a class="nav-link py-0 pe-1 d-flex align-items-center" href="usis-profile.html" title="My profile">
-										<div class="profile-head mb-0">
-											<div class="profile-media usis-header-avatar rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width:2.5rem;height:2.5rem;font-size:0.75rem;" aria-hidden="true">
-												<span class="usis-header-avatar-initials">—</span>
-											</div>
-											<div class="header-info">
-												<h6 class="author-name mb-0 usis-header-session-name">—</h6>
-												<small class="text-truncate d-block usis-header-session-email" style="max-width:10rem;">—</small>
-											</div>
-										</div>
-									</a>
-									<a class="nav-link py-0 ps-0 pe-2 text-body d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Account menu">
-										<i class="fa fa-angle-down" aria-hidden="true"></i>
-									</a>
-									<ul class="dropdown-menu dropdown-menu-end">
-									<li>
-										<div class="py-2 d-flex px-3 align-items-center">
-											<div class="avatar avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center usis-header-avatar flex-shrink-0" aria-hidden="true">
-												<span class="usis-header-avatar-initials small fw-semibold">—</span>
-											</div>
-											<div class="ms-2 overflow-hidden">
-												<h6 class="mb-0 text-truncate usis-header-session-name">—</h6>
-												<small class="text-muted text-truncate d-block usis-header-session-email">—</small>
-											</div>	
-										</div>
-									</li>
-									<li><hr class="dropdown-divider"></li>
-									<li>
-										<a class="dropdown-item" href="usis-profile.html">
-											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
-											</svg>
-											<span class="ms-2" data-i18n="My profile">My profile</span>
-										</a>
-									</li>
-									<li data-usis-profile-lang="1">
-										<div class="px-3 py-2">
-											<div class="small text-muted mb-1" data-i18n="Language">Language</div>
-											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Language">
-												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="en_GB">English</button>
-												<button type="button" class="btn btn-outline-secondary" data-usis-set-lang="es_ES">Español</button>
-											</div>
-										</div>
-									</li>
-									<li data-usis-profile-theme="1">
-										<div class="px-3 py-2">
-											<div class="small text-muted mb-1" data-i18n="Appearance">Appearance</div>
-											<div class="btn-group btn-group-sm w-100" role="group" aria-label="Appearance">
-												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="light" data-i18n="Light">Light</button>
-												<button type="button" class="btn btn-outline-secondary" data-usis-set-theme="dark" data-i18n="Dark">Dark</button>
-											</div>
-										</div>
-									</li>
-									<li><hr class="dropdown-divider"></li>
-									<li>
-										<a href="#" class="dropdown-item usis-logout-link">
-											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bs-danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-												<path stroke="var(--bs-danger)" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-												<polyline stroke="var(--bs-danger)" points="16 17 21 12 16 7"></polyline>
-												<line x1="21" y1="12" x2="9" y2="12"></line>
-											</svg>
-											<span class="ms-2 text-danger" data-i18n="Logout">Logout</span>
-										</a>
-									</li>
-								</ul>
-								</div>
-							</li>
-						</ul>
-					</div>
-				</nav>
-			</div>
-		</div>
-		<div class="modal fade" id="usis-report-problem-modal" tabindex="-1" aria-labelledby="usis-report-problem-title" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-					<form>
-						<div class="modal-header">
-							<h5 class="modal-title" id="usis-report-problem-title" data-i18n="Report a problem">Report a problem</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-i18n-aria="Close"></button>
-						</div>
-						<div class="modal-body">
-							<p class="text-muted small mb-3" data-i18n="Tell us what broke or what to change. It will show on the Issues page.">Tell us what broke or what to change. It will show on the Issues page.</p>
-							<div class="alert d-none" data-usis-report-status role="status"></div>
-							<div class="mb-3">
-								<label class="form-label" for="usis-report-kind" data-i18n="Kind">Kind</label>
-								<select class="form-select" id="usis-report-kind" name="kind">
-									<option value="bug" data-i18n="Something broke">Something broke</option>
-									<option value="enhancement" data-i18n="Recommend a change on this page">Recommend a change on this page</option>
-									<option value="general" data-i18n="General recommendation">General recommendation</option>
-								</select>
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="usis-report-title" data-i18n="Title">Title</label>
-								<input class="form-control" id="usis-report-title" name="title" required placeholder="Short summary" data-i18n-placeholder="Short summary">
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="usis-report-name" data-i18n="Your name (optional)">Your name (optional)</label>
-								<input class="form-control" id="usis-report-name" name="reporterName" placeholder="So we know who to follow up with" data-i18n-placeholder="So we know who to follow up with">
-							</div>
-							<div class="mb-3">
-								<label class="form-label" for="usis-report-details" data-i18n="Details">Details</label>
-								<textarea class="form-control" id="usis-report-details" name="details" rows="4" required placeholder="What happened, and what did you expect?" data-i18n-placeholder="What happened, and what did you expect?"></textarea>
-							</div>
-							<div class="mb-0" data-usis-report-page-block>
-								<label class="form-label text-muted" for="usis-report-diagnostics" data-i18n="Sent with this report">Sent with this report</label>
-								<textarea class="form-control bg-transparent text-muted" id="usis-report-diagnostics" data-usis-report-diagnostics rows="3" readonly></textarea>
-							</div>
-							<p class="text-muted small mb-0 d-none" data-usis-report-sitewide data-i18n="Site-wide (not tied to a page).">Site-wide (not tied to a page).</p>
-						</div>
-						<div class="modal-footer">
-							<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
-							<button type="submit" class="btn btn-primary" data-i18n="Send">Send</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-		<!-- End - Header -->
-
-		<!-- Start - Sidebar Navigation -->
-		<div class="deznav">
-			<div class="deznav-scroll">
-				<ul class="metismenu" id="menu">
-					<li class="menu-title" data-i18n="USIS">USIS</li>
-					<li data-usis-module="dashboard">
-						<a href="usis-dashboard-dark.html" aria-expanded="false">
-							<i class="icon feather icon-home"></i>
-							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
-						</a>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-file-text"></i>
-							<span class="nav-text" data-i18n="Estimate">Estimate</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="estimate">
-								<a href="construction/estimate.html" data-i18n="Estimate">Estimate</a>
-							</li>
-							<li data-usis-module="estimate">
-								<a href="construction/estimate.html?tab=submitted" data-i18n="Submitted">Submitted</a>
-							</li>
-							<li data-usis-module="leads">
-								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
-							</li>
-							<li data-usis-module="leads">
-								<a href="construction/lead-goldenstate-planroom.html" data-i18n="Golden State Planroom">Golden State Planroom</a>
-							</li>
-						</ul>
-					</li>
-					<li data-usis-module="projects">
-						<a href="construction/projects.html" aria-expanded="false">
-							<i class="icon feather icon-layers"></i>
-							<span class="nav-text" data-i18n="Projects">Projects</span>
-						</a>
-					</li>
-					<li data-usis-module="projects">
-						<a href="usis-calendar.html" aria-expanded="false">
-							<i class="icon feather icon-calendar"></i>
-							<span class="nav-text" data-i18n="Calendar">Calendar</span>
-						</a>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-shield"></i>
-							<span class="nav-text" data-i18n="Safety">Safety</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="safety">
-								<a href="usis-safety.html" data-i18n="Safety dashboard">Safety dashboard</a>
-							</li>
-							<li data-usis-module="safety">
-								<a href="usis-daily-pretask.html" data-i18n="Daily pretask">Daily pretask</a>
-							</li>
-							<li data-usis-module="safety">
-								<a href="usis-safety-company.html" data-i18n="Company programs">Company programs</a>
-							</li>
-						</ul>
-					</li>
-					<li>
-						<a href="usis-email.html" aria-expanded="false">
-							<i class="icon feather icon-mail"></i>
-							<span class="nav-text" data-i18n="Email">Email</span>
-						</a>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-user-check"></i>
-							<span class="nav-text" data-i18n="HR">HR</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="hr">
-								<a href="usis-hr-dashboard.html" data-i18n="HR dashboard">HR dashboard</a>
-							</li>
-							<li data-usis-module="hr">
-								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
-							</li>
-							<li data-usis-module="hrms">
-								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
-							</li>
-						</ul>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-dollar-sign"></i>
-							<span class="nav-text" data-i18n="Finance">Finance</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="ap">
-								<a href="usis-invoices.html" data-i18n="Invoices">Invoices</a>
-							</li>
-							<li data-usis-module="ap">
-								<a href="usis-invoice-approvals.html" data-i18n="Invoice approvals">Invoice approvals</a>
-							</li>
-							<li data-usis-module="hrms">
-								<a href="usis-hrms-expenses.html" data-i18n="Expenses">Expenses</a>
-							</li>
-						</ul>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-settings"></i>
-							<span class="nav-text" data-i18n="Admin">Admin</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="user_admin">
-								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
-							</li>
-							<li>
-								<a href="usis-companies.html">Companies</a>
-							</li>
-							<li>
-								<a href="usis-cost-codes.html">Cost codes</a>
-							</li>
-							<li data-usis-module="playbooks">
-								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="usis-workflows.html">Workflows</a>
-							</li>
-							<li data-usis-module="reports">
-								<a href="reports.html" data-i18n="Reports">Reports</a>
-							</li>
-							<li data-usis-module="documents">
-								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
-							</li>
-							<li data-usis-module="documents">
-								<a href="usis-ingest.html" data-i18n="Ingest">Ingest</a>
-							</li>
-							<li data-usis-module="documents">
-								<a href="usis-correspondence.html">Correspondence</a>
-							</li>
-							<li data-usis-module="projects">
-								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
-							</li>
-						</ul>
-					</li>
-				</ul>
-			</div>
-		</div>
-		<!-- End - Sidebar Navigation -->
-
+		@@include("../elements/deznav-construction.html")
 
 		<main class="content-body">
 			
 			<div class="page-title">
-				<nav aria-label="breadcrumb">
-					<ol class="breadcrumb">
-						<li><h1 data-i18n="Active project">Active project</h1></li>
-						<li class="breadcrumb-item">
-							<a href="usis-dashboard-dark.html">
-								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
-									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-								<span data-i18n="Home">Home</span>
-							</a>
-						</li>
-						<li class="breadcrumb-item d-none" id="usis-projects-crumb">
-							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
-						</li>
-						<li class="breadcrumb-item d-none" id="usis-project-crumb">
-							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
-						</li>
-						<li class="breadcrumb-item active" aria-current="page">
-
-							<a href="construction/projects.html" data-i18n="Active project">Active project</a>
-
-
-						</li>
-					</ol>
-				</nav>
-
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Active project",
+					"fileHref": "construction/projects.html",
+				})
 			</div>
 
 			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
@@ -606,12 +121,10 @@
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="buyout" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-order">Order</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-poco">PO change orders</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
@@ -660,6 +173,9 @@
 								<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false" data-i18n="Procurement">Procurement</button>
 							</li>
 							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-order" data-bs-toggle="pill" data-bs-target="#proj-pane-order" type="button" role="tab" aria-controls="proj-pane-order" aria-selected="false">Order</button>
+							</li>
+							<li class="nav-item" role="presentation">
 								<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false" data-i18n="Invoicing">Invoicing</button>
 							</li>
 							<li class="nav-item" role="presentation">
@@ -684,7 +200,6 @@
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-incidents" data-bs-toggle="pill" data-bs-target="#proj-pane-incidents" type="button" role="tab">Incidents</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-transmittals" data-bs-toggle="pill" data-bs-target="#proj-pane-transmittals" type="button" role="tab">Transmittals</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-anticipated" data-bs-toggle="pill" data-bs-target="#proj-pane-anticipated" type="button" role="tab">Anticipated costs</button></li>
-							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-poco" data-bs-toggle="pill" data-bs-target="#proj-pane-poco" type="button" role="tab">PO change orders</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-subinv" data-bs-toggle="pill" data-bs-target="#proj-pane-subinv" type="button" role="tab">Sub invoices</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-qc" data-bs-toggle="pill" data-bs-target="#proj-pane-qc" type="button" role="tab">QC checklists</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-openitems" data-bs-toggle="pill" data-bs-target="#proj-pane-openitems" type="button" role="tab">Open items</button></li>
@@ -1000,7 +515,7 @@
 									<h5 class="mb-0" data-i18n="Submittals">Submittals</h5>
 									<p class="text-muted small mb-0">Procore-style register: workflow dates, contractor, responses, and attachments. Open a row for PDF review markup. Pair with the <strong>RFIs</strong> tab for questions linked to drawings or specs.</p>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-open-create" data-bs-toggle="modal" data-bs-target="#usis-modal-submittal-create" data-i18n="+ Create submittal">+ Create submittal</button>
+								<a class="btn btn-primary btn-sm" id="usis-submittal-open-create" href="construction/submittal-create.html" data-i18n="+ Create submittal">+ Create submittal</a>
 								</div>
 								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading submittals…</div>
 								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
@@ -1059,11 +574,14 @@
 						<div class="tab-pane fade" id="proj-pane-procurement" role="tabpanel" aria-labelledby="proj-tab-procurement" tabindex="0">
 							<div class="mb-3">
 								<h5 class="mb-1">Procurement</h5>
-								<p class="text-muted small mb-0">Purchase orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
+								<p class="text-muted small mb-0">Purchase orders, PO change orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
 							</div>
 							<ul class="nav nav-pills flex-wrap gap-1 mb-3" role="tablist">
 								<li class="nav-item" role="presentation">
 									<button class="nav-link active" id="usis-proc-subtab-po" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-po" type="button" role="tab" aria-controls="usis-proc-subpane-po" aria-selected="true">Purchase orders</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="usis-proc-subtab-poco" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-poco" type="button" role="tab" aria-controls="usis-proc-subpane-poco" aria-selected="false">PO change orders</button>
 								</li>
 								<li class="nav-item" role="presentation">
 									<button class="nav-link" id="usis-proc-subtab-sub" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-sub" type="button" role="tab" aria-controls="usis-proc-subpane-sub" aria-selected="false">Subcontracts</button>
@@ -1102,6 +620,28 @@
 												</tr>
 											</thead>
 											<tbody id="usis-tbody-commitments-po"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="usis-proc-subpane-poco" role="tabpanel" aria-labelledby="usis-proc-subtab-poco" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Change orders against purchase orders on this job. Each PO CO must link to an existing PO.</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button>
+										</div>
+									</div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>#</th>
+													<th>Subject</th>
+													<th>Status</th>
+													<th class="text-end">Amount</th>
+													<th class="text-end"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-w2-po-change-orders"></tbody>
 										</table>
 									</div>
 								</div>
@@ -1197,6 +737,41 @@
 										</table>
 									</div>
 								</div>
+							</div>
+						</div>
+
+						<div class="tab-pane fade" id="proj-pane-order" role="tabpanel" aria-labelledby="proj-tab-order" tabindex="0">
+							<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+								<div>
+									<h5 class="mb-1">Order</h5>
+									<p class="text-muted small mb-0">Order-by is the schedule install start minus lead time on the PO. When that date moves, the vendor contact is emailed and confirmation is tracked here. Field receive stays on the phone.</p>
+								</div>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-order-refresh">Refresh</button>
+							</div>
+							<div class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Order list filter">
+								<button type="button" class="btn btn-sm btn-primary usis-order-filter" data-usis-order-bucket="all" aria-pressed="true">All</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary usis-order-filter" data-usis-order-bucket="late" aria-pressed="false">Late</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary usis-order-filter" data-usis-order-bucket="week" aria-pressed="false">This week</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary usis-order-filter" data-usis-order-bucket="overdue" aria-pressed="false">Confirm overdue</button>
+							</div>
+							<div class="alert alert-light border py-2 mb-2 d-none" id="usis-order-loading">Loading…</div>
+							<div class="alert alert-danger py-2 mb-2 d-none" id="usis-order-error" role="alert"></div>
+							<div class="table-responsive">
+								<table class="table table-hover table-sm align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>PO</th>
+											<th>Vendor</th>
+											<th>Schedule</th>
+											<th>Install</th>
+											<th>Lead</th>
+											<th>Order by</th>
+											<th>Confirm</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="usis-order-tbody"></tbody>
+								</table>
 							</div>
 						</div>
 
@@ -1607,10 +1182,6 @@
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Anticipated costs</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="anticipated-costs">+ Cost</button></div>
 							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-anticipated-costs"></tbody></table></div>
 						</div>
-						<div class="tab-pane fade" id="proj-pane-poco" role="tabpanel">
-							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">PO change orders</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button></div>
-							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-po-change-orders"></tbody></table></div>
-						</div>
 						<div class="tab-pane fade" id="proj-pane-subinv" role="tabpanel">
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Sub invoices</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="sub-invoices">+ Sub invoice</button></div>
 							<p class="text-muted small">Sage-style sub invoice log. Owner G702 pay apps stay on Invoicing; vendor AP email bills stay on Invoices.</p>
@@ -1657,41 +1228,7 @@
 			</div>
 		</main>
 
-		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
-<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
-		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
-		<span class="fs-11">Home</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/leads.html">
-		<i class="icon feather icon-users d-block fs-5 mb-0"></i>
-		<span class="fs-11">Leads</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
-		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
-		<span class="fs-11">Projects</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
-		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
-		<span class="fs-11">Estimate</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
-		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
-		<span class="fs-11">Issues</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
-		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
-		<span class="fs-11">Drawings</span>
-	</a>
-</nav>
-
-<!-- Start - Footer -->
-		<div class="footer">
-			<div class="copyright text-center">
-			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
-			</div>
-		</div>
-		<!-- End - Footer -->
+		@@include("../elements/footer.html")
 
 	</div>
 
@@ -1952,108 +1489,23 @@
 			</div>
 		</div>
 	</div>
-	<div class="modal fade" id="usis-modal-submittal-create" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal fade" id="usis-modal-submittal-create" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title" data-i18n="Create submittal">Create submittal</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="alert alert-danger py-2 d-none" id="usis-submittal-create-err" role="alert"></div>
-					<div class="row g-2">
-						<div class="col-12">
-							<label class="form-label small mb-0" for="usis-submittal-c-title"><span data-i18n="Title">Title</span> <span class="text-danger">*</span></label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-title" required maxlength="500" placeholder="e.g. Concrete mix design">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-spec" data-i18n="Spec section">Spec section</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-spec" maxlength="120" placeholder="03 30 00">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-type" data-i18n="Type">Type</label>
-							<select class="form-select form-select-sm" id="usis-submittal-c-type">
-								<option value="">—</option>
-								<option value="Shop Drawing" data-i18n="Shop Drawing">Shop Drawing</option>
-								<option value="Product Information" data-i18n="Product Information">Product Information</option>
-								<option value="Product Manual" data-i18n="Product Manual">Product Manual</option>
-								<option value="Sample" data-i18n="Sample">Sample</option>
-								<option value="Document" data-i18n="Document">Document</option>
-								<option value="Other" data-i18n="Other">Other</option>
-							</select>
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-status" data-i18n="Status">Status</label>
-							<select class="form-select form-select-sm" id="usis-submittal-c-status">
-								<option value="draft">Draft</option>
-								<option value="submitted">Submitted</option>
-								<option value="in_review">In review</option>
-							</select>
-						</div>
-						<div class="col-md-8">
-							<label class="form-label small mb-0" for="usis-submittal-c-bic" data-i18n="Ball in court (name or email)">Ball in court (name or email)</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-bic" maxlength="200" placeholder="Reviewer email">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-contractor" data-i18n="Responsible contractor">Responsible contractor</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-contractor" maxlength="300">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-rev" data-i18n="Revision label">Revision label</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-rev" maxlength="50" placeholder="0 / A / B">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-due" data-i18n="Review due">Review due</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-due">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-submitby" data-i18n="Submit by">Submit by</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-submitby">
-						</div>
-						<div class="col-md-4">
-							<label class="form-label small mb-0" for="usis-submittal-c-received" data-i18n="Received date">Received date</label>
-							<input type="date" class="form-control form-control-sm" id="usis-submittal-c-received">
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-submittal-c-receivedfrom" data-i18n="Received from">Received from</label>
-							<input class="form-control form-control-sm" id="usis-submittal-c-receivedfrom" maxlength="300">
-						</div>
-					</div>
-					<hr class="my-3">
-					<div class="mb-2">
-						<h6 class="mb-1 small">Spec sections <span class="text-muted fw-normal">(optional)</span></h6>
-						<p class="text-muted small mb-2">Title is enough to create. Check CSI sections only if you want line items.</p>
-						<input type="search" class="form-control form-control-sm mb-2" id="usis-submittal-c-spec-q" placeholder="Find CSI section…" autocomplete="off">
-						<div class="alert alert-light border py-2 small mb-2 d-none" id="usis-submittal-c-spec-empty">
-							No spec sections on this project yet. You can still create the submittal.
-						</div>
-						<div class="border rounded px-2 py-1 bg-body" id="usis-submittal-c-spec-list" style="max-height: 12rem; overflow: auto;"></div>
-					</div>
-					<h6 class="mb-2 small">Selected line items</h6>
-					<div class="table-responsive mb-2" style="max-height: 14rem;">
-						<table class="table table-sm table-bordered align-middle mb-0">
-							<thead class="table-light">
-								<tr>
-									<th>Spec</th>
-									<th>Description</th>
-									<th>Mfr</th>
-									<th>Model</th>
-									<th></th>
-								</tr>
-							</thead>
-							<tbody id="usis-submittal-c-lines-tbody"></tbody>
-						</table>
-					</div>
-					<p class="text-muted small mb-0">Product data submittals auto-link ASI / Bobrick technical data when manufacturer name matches.</p>
+					<p class="text-muted small mb-0">The New Submittal page lives at <a href="construction/submittal-create.html">construction/submittal-create.html</a>. Use the "+ Create submittal" button at the top of this tab.</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-submittal-create-submit" data-i18n="Create">Create</button>
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="modal fade" id="usis-modal-rfi-create" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="usis-modal-rfi-create" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -2353,6 +1805,28 @@
 							<div class="col-md-3">
 								<label class="form-label small mb-0" for="usis-c-edit-needed-on-site">Needed on site</label>
 								<input type="date" class="form-control form-control-sm" id="usis-c-edit-needed-on-site">
+								<div class="form-text" id="usis-c-edit-needed-hint">From the linked schedule start. Do not type a second need-by.</div>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-c-edit-schedule">Schedule install</label>
+								<select class="form-select form-select-sm" id="usis-c-edit-schedule">
+									<option value="">— None —</option>
+								</select>
+							</div>
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-c-edit-lead-time">Lead time (days)</label>
+								<input type="number" min="0" step="1" class="form-control form-control-sm" id="usis-c-edit-lead-time" placeholder="14">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-c-edit-order-by">Order by</label>
+								<input type="text" class="form-control form-control-sm" id="usis-c-edit-order-by" readonly>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0">Supplier confirm</label>
+								<div class="d-flex flex-wrap align-items-center gap-2">
+									<span class="badge text-bg-light" id="usis-c-edit-confirm-status">none</span>
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-c-edit-confirm">Mark confirmed</button>
+								</div>
 							</div>
 						</div>
 						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
@@ -2368,11 +1842,11 @@
 								<label class="form-label small mb-0" for="usis-c-ship-carrier">Carrier</label>
 								<input class="form-control form-control-sm" id="usis-c-ship-carrier" placeholder="UPS">
 							</div>
-							<div class="col-md-3">
+							<div class="col-md-2">
 								<label class="form-label small mb-0" for="usis-c-ship-track">Tracking #</label>
 								<input class="form-control form-control-sm" id="usis-c-ship-track">
 							</div>
-							<div class="col-md-4">
+							<div class="col-md-3">
 								<label class="form-label small mb-0" for="usis-c-ship-url">Tracking URL</label>
 								<input class="form-control form-control-sm" id="usis-c-ship-url" placeholder="https://">
 							</div>
@@ -2386,13 +1860,17 @@
 									<option value="exception">exception</option>
 								</select>
 							</div>
+							<div class="col-md-2">
+								<label class="form-label small mb-0" for="usis-c-ship-eta">Est. delivery</label>
+								<input type="date" class="form-control form-control-sm" id="usis-c-ship-eta">
+							</div>
 							<div class="col-md-1">
 								<button type="button" class="btn btn-outline-primary btn-sm w-100" id="usis-c-ship-add">Add</button>
 							</div>
 						</div>
 						<div class="table-responsive mb-3">
 							<table class="table table-sm table-bordered align-middle mb-0">
-								<thead class="table-light"><tr><th>Carrier</th><th>Tracking</th><th>Status</th><th></th></tr></thead>
+								<thead class="table-light"><tr><th>Carrier</th><th>Tracking</th><th>Status</th><th>Est. delivery</th><th></th></tr></thead>
 								<tbody id="usis-c-ship-tbody"></tbody>
 							</table>
 						</div>
@@ -2661,22 +2139,7 @@
 		</div>
 	</div>
 
-	<script src="assets/js/usis-auth-links.js"></script>
-	<script src="assets/js/usis-i18n.js"></script>
-	<script src="assets/js/usis-report-problem.js"></script>
-	<script src="assets/js/usis-applicant-guard.js"></script>
-	<script src="assets/js/usis-require-auth.js"></script>
-	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js"></script>
-	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
-	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js?v=20260829f"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
-	<script src="assets/js/usis-ai-chat.js"></script>
-	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
-	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
-	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
+	@@include("../elements/script.html")
 	<script src="assets/vendor/i18n/i18n.js"></script>
 	<script src="assets/js/translator.js"></script>
 		<script src="assets/js/aiReviewBus.js"></script>
@@ -2696,11 +2159,12 @@
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js"></script>
-	<script src="assets/js/project-detail-procurement.js"></script>
+	<script src="assets/js/project-detail-procurement.js?v=20260831d"></script>
+	<script src="assets/js/project-detail-order.js?v=20260831d"></script>
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js?v=20260831c"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260831d"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

@@ -70,6 +70,19 @@
 				if (window.USISDrawingCache && typeof window.USISDrawingCache.refresh === "function") {
 					window.USISDrawingCache.refresh();
 				}
+				try {
+					var payload = JSON.stringify({
+						path: (location.pathname || "") + (location.search || ""),
+						title: document.title || "",
+					});
+					fetch(apiBase() + "/api/v1/me/activity/page-view", {
+						method: "POST",
+						credentials: "include",
+						headers: { "Content-Type": "application/json", Accept: "application/json" },
+						body: payload,
+						keepalive: true,
+					}).catch(function () {});
+				} catch (e) {}
 				return;
 			}
 			redirectToLogin();

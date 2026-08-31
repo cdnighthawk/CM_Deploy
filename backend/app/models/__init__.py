@@ -5,6 +5,7 @@ Append new models here as future migrations land.
 from .ai_chat import AiChatMessage, AiChatSession
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
+from .user_activity import UserActivityEvent
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .change_management import (
     ChangeProposalRequest,
@@ -293,6 +294,7 @@ __all__ = [
     "TimeEntry",
     "TimePunch",
     "User",
+    "UserActivityEvent",
     "UserRole",
     "VendorInvoice",
     "VendorInvoiceEvent",

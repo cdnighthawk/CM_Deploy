@@ -9,178 +9,6 @@
 	var filtersWired = false;
 	var drawingsTabulator = null;
 	var activeProjectId = null;
-	var submittalCreateLines = [];
-	var submittalSpecOptions = [];
-
-	function specLineId(line) {
-		return line && line.spec_section_id != null ? String(line.spec_section_id) : "";
-	}
-
-	function renderSubmittalCreateLines() {
-		var tb = document.getElementById("usis-submittal-c-lines-tbody");
-		if (!tb) return;
-		tb.innerHTML = "";
-		if (!submittalCreateLines.length) {
-			tb.innerHTML =
-				'<tr><td colspan="5" class="text-muted small">No line items — check spec sections above.</td></tr>';
-			return;
-		}
-		submittalCreateLines.forEach(function (line, idx) {
-			var tr = document.createElement("tr");
-			tr.innerHTML =
-				"<td class=\"small\">" +
-				esc(line.spec_section_code || "—") +
-				"</td><td class=\"small\">" +
-				esc(line.description || "—") +
-				"</td><td><input type=\"text\" class=\"form-control form-control-sm usis-sub-line-mfr\" data-idx=\"" +
-				idx +
-				'" maxlength="200" placeholder="Optional" value="' +
-				esc(line.manufacturer || "") +
-				'"></td><td><input type="text" class="form-control form-control-sm usis-sub-line-model" data-idx="' +
-				idx +
-				'" maxlength="200" placeholder="Optional" value="' +
-				esc(line.model || "") +
-				'"></td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 text-danger usis-sub-line-rm" data-idx="' +
-				idx +
-				'">Remove</button></td>';
-			tb.appendChild(tr);
-		});
-		tb.querySelectorAll(".usis-sub-line-mfr").forEach(function (inp) {
-			inp.addEventListener("input", function () {
-				var i = parseInt(inp.getAttribute("data-idx"), 10);
-				if (!isNaN(i) && submittalCreateLines[i]) {
-					submittalCreateLines[i].manufacturer = inp.value.trim() || null;
-				}
-			});
-		});
-		tb.querySelectorAll(".usis-sub-line-model").forEach(function (inp) {
-			inp.addEventListener("input", function () {
-				var i = parseInt(inp.getAttribute("data-idx"), 10);
-				if (!isNaN(i) && submittalCreateLines[i]) {
-					submittalCreateLines[i].model = inp.value.trim() || null;
-				}
-			});
-		});
-		tb.querySelectorAll(".usis-sub-line-rm").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				var i = parseInt(btn.getAttribute("data-idx"), 10);
-				if (isNaN(i)) return;
-				var removed = submittalCreateLines.splice(i, 1)[0];
-				var box = document.querySelector(
-					'#usis-submittal-c-spec-list input[data-spec-id="' + specLineId(removed) + '"]'
-				);
-				if (box) box.checked = false;
-				renderSubmittalCreateLines();
-			});
-		});
-	}
-
-	function activeSpecOptions() {
-		return submittalSpecOptions.filter(function (s) {
-			return s && s.is_active !== false;
-		});
-	}
-
-	function setSpecChecked(spec, checked) {
-		var id = spec && spec.id != null ? String(spec.id) : "";
-		var idx = submittalCreateLines.findIndex(function (line) {
-			return specLineId(line) === id;
-		});
-		if (checked && idx < 0) {
-			submittalCreateLines.push({
-				spec_section_id: spec.id,
-				spec_section_code: spec.code,
-				description: spec.title,
-				manufacturer: null,
-				model: null,
-				save_to_catalog: true,
-			});
-			var titleEl = document.getElementById("usis-submittal-c-title");
-			if (titleEl && !titleEl.value.trim()) {
-				titleEl.value = spec.title || spec.code || "";
-			}
-			var specEl = document.getElementById("usis-submittal-c-spec");
-			if (specEl && !specEl.value.trim()) {
-				specEl.value = spec.code || "";
-			}
-		} else if (!checked && idx >= 0) {
-			submittalCreateLines.splice(idx, 1);
-		}
-		renderSubmittalCreateLines();
-	}
-
-	function renderSubmittalSpecPicker() {
-		var list = document.getElementById("usis-submittal-c-spec-list");
-		var empty = document.getElementById("usis-submittal-c-spec-empty");
-		var qEl = document.getElementById("usis-submittal-c-spec-q");
-		if (!list) return;
-		var q = qEl && qEl.value ? qEl.value.trim().toLowerCase() : "";
-		var items = activeSpecOptions().filter(function (s) {
-			if (!q) return true;
-			var hay = ((s.code || "") + " " + (s.title || "")).toLowerCase();
-			return hay.indexOf(q) !== -1;
-		});
-		if (empty) empty.classList.toggle("d-none", activeSpecOptions().length > 0);
-		list.innerHTML = "";
-		if (!activeSpecOptions().length) {
-			return;
-		}
-		if (!items.length) {
-			list.innerHTML = '<p class="text-muted small mb-0 py-1">No sections match that search.</p>';
-			return;
-		}
-		items.forEach(function (spec) {
-			var id = String(spec.id);
-			var checked = submittalCreateLines.some(function (line) {
-				return specLineId(line) === id;
-			});
-			var boxId = "usis-submittal-c-spec-cb-" + id;
-			var row = document.createElement("div");
-			row.className = "form-check d-flex align-items-start gap-2 py-1 mb-0";
-			row.innerHTML =
-				'<input class="form-check-input mt-1" type="checkbox" id="' +
-				esc(boxId) +
-				'" data-spec-id="' +
-				esc(id) +
-				'"' +
-				(checked ? " checked" : "") +
-				'><label class="form-check-label small" for="' +
-				esc(boxId) +
-				'">' +
-				esc(spec.code || "—") +
-				(spec.title ? " — " + esc(spec.title) : "") +
-				"</label>";
-			var box = row.querySelector("input");
-			row.addEventListener("pointerdown", function (e) {
-				e.stopPropagation();
-			});
-			box.addEventListener("change", function () {
-				setSpecChecked(spec, box.checked);
-			});
-			list.appendChild(row);
-		});
-	}
-
-	function loadSubmittalSpecOptions(projectId) {
-		var empty = document.getElementById("usis-submittal-c-spec-empty");
-		var list = document.getElementById("usis-submittal-c-spec-list");
-		if (list) list.innerHTML = '<p class="text-muted small mb-0 py-1">Loading spec sections…</p>';
-		if (empty) empty.classList.add("d-none");
-		return fetchJson("/api/v1/projects/" + encodeURIComponent(projectId) + "/rfi-lookups/spec_sections")
-			.then(function (data) {
-				submittalSpecOptions = data.items || [];
-				renderSubmittalSpecPicker();
-			})
-			.catch(function (e) {
-				submittalSpecOptions = [];
-				if (list) {
-					list.innerHTML =
-						'<p class="text-danger small mb-0 py-1">' +
-						esc(e.message || "Could not load spec sections.") +
-						"</p>";
-				}
-			});
-	}
 
 	function setSubmittalCreateVisible(canCreate) {
 		var btn = document.getElementById("usis-submittal-open-create");
@@ -581,13 +409,6 @@
 		}
 		if (status === 403) return raw || "You do not have permission to do that.";
 		return raw || String(status);
-	}
-
-	function isoFromDateInput(el) {
-		if (!el || !el.value) return null;
-		var v = String(el.value).trim();
-		if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
-		return v + "T00:00:00+00:00";
 	}
 
 	function fmtDate(iso) {
@@ -1056,85 +877,6 @@
 					});
 			});
 		}
-
-		var specSearch = document.getElementById("usis-submittal-c-spec-q");
-		if (specSearch) {
-			specSearch.addEventListener("input", renderSubmittalSpecPicker);
-		}
-		var specList = document.getElementById("usis-submittal-c-spec-list");
-		if (specList) {
-			specList.addEventListener("pointerdown", function () {
-				var modal = document.getElementById("usis-modal-submittal-create");
-				if (!modal) return;
-				modal.querySelectorAll('input[type="date"]').forEach(function (el) {
-					if (document.activeElement === el) el.blur();
-				});
-			});
-		}
-		var subModal = document.getElementById("usis-modal-submittal-create");
-		if (subModal) {
-			subModal.addEventListener("show.bs.modal", function () {
-				submittalCreateLines = [];
-				submittalSpecOptions = [];
-				var qEl = document.getElementById("usis-submittal-c-spec-q");
-				if (qEl) qEl.value = "";
-				renderSubmittalCreateLines();
-				var pid = activeProjectId || projectIdFromQuery();
-				if (pid) loadSubmittalSpecOptions(pid);
-			});
-		}
-
-		var subBtn = document.getElementById("usis-submittal-create-submit");
-		if (subBtn) {
-			subBtn.addEventListener("click", function () {
-				var pid = activeProjectId || projectIdFromQuery();
-				if (!pid) return;
-				var err = document.getElementById("usis-submittal-create-err");
-				if (err) {
-					err.classList.add("d-none");
-					err.textContent = "";
-				}
-				var titleEl = document.getElementById("usis-submittal-c-title");
-				var title = titleEl && titleEl.value ? titleEl.value.trim() : "";
-				if (!title) {
-					if (err) {
-						err.textContent = "Title is required.";
-						err.classList.remove("d-none");
-					}
-					return;
-				}
-				var payload = {
-					title: title,
-					spec_section: (document.getElementById("usis-submittal-c-spec") || {}).value || null,
-					submittal_type: (document.getElementById("usis-submittal-c-type") || {}).value || null,
-					status: (document.getElementById("usis-submittal-c-status") || {}).value || "draft",
-					ball_in_court: (document.getElementById("usis-submittal-c-bic") || {}).value || null,
-					responsible_contractor: (document.getElementById("usis-submittal-c-contractor") || {}).value || null,
-					revision: (document.getElementById("usis-submittal-c-rev") || {}).value || null,
-					due_at: isoFromDateInput(document.getElementById("usis-submittal-c-due")),
-					submit_by_at: isoFromDateInput(document.getElementById("usis-submittal-c-submitby")),
-					received_at: isoFromDateInput(document.getElementById("usis-submittal-c-received")),
-					received_from: (document.getElementById("usis-submittal-c-receivedfrom") || {}).value || null,
-					line_items: submittalCreateLines.slice(),
-				};
-				fetchJsonBody("POST", "/api/v1/projects/" + encodeURIComponent(pid) + "/submittals", payload)
-					.then(function () {
-						var modalEl = document.getElementById("usis-modal-submittal-create");
-						if (modalEl && window.bootstrap && window.bootstrap.Modal) {
-							var inst = window.bootstrap.Modal.getInstance(modalEl);
-							if (inst) inst.hide();
-						}
-						if (titleEl) titleEl.value = "";
-						return loadAll(pid);
-					})
-					.catch(function (e) {
-						if (err) {
-							err.textContent = e.message || String(e);
-							err.classList.remove("d-none");
-						}
-					});
-			});
-		}
 	}
 
 	function loadAll(projectId) {
@@ -1207,6 +949,10 @@
 		var create = document.getElementById("usis-rfi-open-create");
 		if (open) open.setAttribute("href", "construction/rfis.html?project_id=" + encodeURIComponent(pid));
 		if (create) create.setAttribute("href", "construction/rfi-create.html?project_id=" + encodeURIComponent(pid));
+		var subCreate = document.getElementById("usis-submittal-open-create");
+		if (subCreate) {
+			subCreate.setAttribute("href", "construction/submittal-create.html?project_id=" + encodeURIComponent(pid));
+		}
 		var pricing = document.getElementById("usis-pricing-open");
 		if (pricing)
 			pricing.setAttribute(

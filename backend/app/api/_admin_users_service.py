@@ -84,6 +84,7 @@ def user_public(u: User) -> dict[str, Any]:
         "is_superuser": u.is_superuser,
         "has_password": bool(u.password_hash),
         "last_login_at": _iso(u.last_login_at),
+        "last_seen_at": _iso(u.last_seen_at),
         "created_at": _iso(u.created_at),
         "updated_at": _iso(u.updated_at),
         "roles": roles,

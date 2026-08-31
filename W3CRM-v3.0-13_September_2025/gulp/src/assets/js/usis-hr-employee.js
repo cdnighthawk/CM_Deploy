@@ -73,6 +73,25 @@
 		}
 	}
 
+	function fmtDateTime(iso) {
+		if (!iso) return "—";
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return esc(iso);
+			return esc(
+				d.toLocaleString(undefined, {
+					year: "numeric",
+					month: "short",
+					day: "numeric",
+					hour: "numeric",
+					minute: "2-digit",
+				})
+			);
+		} catch (e) {
+			return esc(iso);
+		}
+	}
+
 	function isOverdue(dueIso, completedIso) {
 		if (!dueIso || completedIso) return false;
 		var t = new Date(dueIso).getTime();
@@ -317,7 +336,8 @@
 					"usis-hr-emp-active",
 					u.is_active === false ? "Inactive" : u.is_active === true ? "Active" : "—"
 				);
-				setText("usis-hr-emp-last-login", u.last_login_at ? fmtDate(u.last_login_at) : "—");
+				setText("usis-hr-emp-last-login", u.last_login_at ? fmtDateTime(u.last_login_at) : "—");
+				setText("usis-hr-emp-last-seen", u.last_seen_at ? fmtDateTime(u.last_seen_at) : "—");
 				wireResendInvite(data, u.id);
 
 				renderPendingApprovals(data.pending_hr_approvals || []);

@@ -63,7 +63,7 @@ A. Built USIS pages (`usis-*.html` at `gulp/src/`)
 | usis-hr.html | HR landing — narrative and deep links only; KPIs stay on dashboard (Plan 19 section 7) | usis-hr-dashboard “HR landing”; links to QuickBooks reference |
 | usis-hr-quickbooks-employee-reference.html | HR reference — typical QuickBooks employee / payroll fields (not legal advice) | usis-hr, usis-hr-dashboard quick links; index |
 | usis-playbooks.html | Operational playbooks — checklist templates, steps, start run; API `/api/v1/playbooks/*` (Plan 22) | deznav “Playbooks”; usis-all-pages-index |
-| usis-user-directory.html | User admin — live `users` / `roles` / `user_roles`; API `/api/v1/admin/users`, `/api/v1/admin/roles` (admin / superuser) | deznav “User admin”; usis-dashboard card; usis-all-pages-index |
+| usis-user-directory.html | User admin — live `users` / `roles` / `user_roles`; last login, last seen, and Activity tab (`GET /api/v1/admin/activity`); API `/api/v1/admin/users`, `/api/v1/admin/roles` (admin / superuser) | deznav “User admin”; usis-dashboard card; usis-all-pages-index |
 | usis-playbook-run.html | One active checklist run (`?run_id=`) | usis-playbooks “Recent runs”; index |
 | usis-leads.html | Redirect / handoff to BC leads | TBD direct nav; links to `construction/leads.html` (canonical) |
 
@@ -80,8 +80,9 @@ B. Built construction shell pages (`construction/*.html`) in active USIS flows
 | construction/drawing-viewer.html | Drawing viewer shell | usis-dashboard “Drawings”; usis-bottomnav |
 | construction/rfis.html | RFI log | `construction/project-detail.html` RFIs tab (“Open RFI Log”); cross-links from construction flows |
 | construction/rfi-create.html | Create RFI | `construction/project-detail.html` RFIs tab (“+ Create RFI”); cross-links |
+| construction/submittal-create.html | New Submittal | `construction/project-detail.html` Submittals tab (“+ Create submittal”) |
 | construction/lead-detail.html | Lead detail | JS/list from leads.html (pattern `?id=` or internal links — verify when wiring) |
-| construction/project-detail.html | Active project shell. Parents: Contract, Files, Submittals, RFIs, Preconstruction, Buyout, Field. Contract: Job information, Open items, Contract admin, Job costing, Invoicing. Files: Drawings, Specs, Documents. Submittals and RFIs are one-click parents and still show the Buyout child row. Preconstruction: Estimate, Takeoff, RFP. Buyout: Procurement, Submittals, RFIs, Correspondence, Transmittals, Anticipated costs, PO change orders, Sub invoices. Field: Schedule, Tasks, Photos, Daily log, Meetings, Work orders, QC checklists, Punchlist, Incidents, Safety. | JS/list from projects.html; deznav “Projects” stays the job list only |
+| construction/project-detail.html | Active project shell. Parents: Contract, Files, Submittals, RFIs, Preconstruction, Buyout, Field. Contract: Job information, Open items, Contract admin, Job costing, Invoicing. Files: Drawings, Specs, Documents. Submittals and RFIs are one-click parents and still show the Buyout child row. Preconstruction: Estimate, Takeoff, RFP. Buyout: Procurement, Order, Submittals, RFIs, Correspondence, Transmittals, Anticipated costs, PO change orders, Sub invoices. Field: Schedule, Tasks, Photos, Daily log, Meetings, Work orders, QC checklists, Punchlist, Incidents, Safety. | JS/list from projects.html; deznav “Projects” stays the job list only |
 | construction/estimate-detail.html | Estimate detail | JS from estimate.html |
 | construction/door-schedule.html | Door schedule takeoff (Div 08) | estimate-detail Takeoff tab; deznav Construction |
 | construction/hardware-schedules.html | Company hardware schedules HD-1…N (08 71 00 catalog) | deznav; door-schedule “Hardware schedules” link |
@@ -193,3 +194,4 @@ H. Revision history (manual)
 • 2026-08-31 — §B: Active Projects menu on `construction/project-detail.html` has five parents. Job absorbs Client Contract Admin (contract admin, job costing, owner invoicing). Buyout stays Procurement only. Left sidebar Projects stays the job list.
 • 2026-08-31 — §B: Daily row on `construction/project-detail.html` (Drawings, RFIs, Submittals, Daily log, Schedule, Open items) stays one click. Parents remain Job · Files · Preconstruction · Buyout · Field.
 • 2026-08-31 — §B: Dropped the Daily row. Submittals and RFIs are parents. Job parent retitled Contract.
+• 2026-08-31 — §B: Buyout → **Order** board on project-detail. Order-by = schedule start − PO lead time; supplier confirm on date change. Field receive stays on `/api/v1` wrappers.

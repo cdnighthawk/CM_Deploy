@@ -19,6 +19,7 @@ from ..models import (
     CostCode,
     Project,
     ProjectDirectoryCompany,
+    ProjectScheduleItem,
     PurchaseOrderReceipt,
     PurchaseOrderReceiptLine,
     PurchaseOrderShipment,
@@ -214,6 +215,12 @@ def _serialize_commitment_row(c: Commitment, vendor_name: str, rfp: Rfp | None =
         "revised_ship_date": _iso(c.revised_ship_date) if c.revised_ship_date else None,
         "actual_ship_date": _iso(c.actual_ship_date) if c.actual_ship_date else None,
         "needed_on_site_date": _iso(c.needed_on_site_date) if c.needed_on_site_date else None,
+        "lead_time_days": c.lead_time_days,
+        "schedule_item_id": str(c.schedule_item_id) if c.schedule_item_id else None,
+        "order_by_date": _iso(c.order_by_date) if c.order_by_date else None,
+        "supplier_confirm_status": c.supplier_confirm_status,
+        "supplier_confirm_sent_at": _iso(c.supplier_confirm_sent_at),
+        "supplier_confirm_at": _iso(c.supplier_confirm_at),
         "ship_date": _iso(c.ship_date) if c.ship_date else None,
         "fulfillment_status": c.fulfillment_status,
         "missed_ship_date": bool(c.missed_ship_date),
@@ -458,6 +465,27 @@ def _apply_commitment_header_fields(
     if "needed_on_site_date" in data:
         c.needed_on_site_date = _parse_date(data.get("needed_on_site_date"))
 
+    if is_create or "lead_time_days" in data:
+        raw_lead = data.get("lead_time_days")
+        if raw_lead in (None, ""):
+            c.lead_time_days = None
+        else:
+            try:
+                lead_i = int(raw_lead)
+            except (TypeError, ValueError) as e:
+                raise ApiError("invalid lead_time_days", 400) from e
+            if lead_i < 0:
+                raise ApiError("lead_time_days cannot be negative", 400)
+            c.lead_time_days = lead_i
+
+    if is_create or "schedule_item_id" in data:
+        sid = _parse_uuid(data.get("schedule_item_id"))
+        if sid is not None:
+            sched = db.session.get(ProjectScheduleItem, sid)
+            if sched is None or sched.project_id != project_id:
+                raise ApiError("schedule item not found on this project", 400)
+        c.schedule_item_id = sid
+
 
 def _build_line_item_from_payload(
     commitment_id: uuid.UUID,
@@ -551,6 +579,9 @@ def create_commitment(project_id: uuid.UUID, data: Mapping[str, Any], cu: Curren
             payload["ship_to_address"] = ship
 
     _apply_commitment_header_fields(c, payload, project_id, is_create=True)
+    from . import _order_tracking_service as ot
+
+    ot.sync_commitment_order_dates(c)
 
     vendor = db.session.get(Company, c.vendor_company_id)
     if vendor and not (data.get("vendor_address_snapshot") or "").strip():
@@ -597,7 +628,11 @@ def create_commitment(project_id: uuid.UUID, data: Mapping[str, Any], cu: Curren
             cu=cu,
         )
 
+    notify = ot.sync_commitment_order_dates(c)
     db.session.commit()
+    if notify:
+        ot.notify_supplier_order_by_change(c)
+        db.session.commit()
     return get_commitment_detail(project_id, c.id, cu)
 
 
@@ -623,9 +658,17 @@ def patch_commitment(
             raise ApiError("invalid status", 400)
         if st != "draft" and "status_effective_date" not in data and not c.status_effective_date:
             raise ApiError("status_effective_date required when status is not draft", 400)
+    prev_promised = c.promised_ship_date
     _apply_commitment_header_fields(c, data, project_id, is_create=False)
+    from . import _order_tracking_service as ot
+
+    notify = ot.sync_commitment_order_dates(c)
+    ot.maybe_auto_confirm_from_promised_ship(c, prev_promised)
     db.session.flush()
     db.session.commit()
+    if notify:
+        ot.notify_supplier_order_by_change(c)
+        db.session.commit()
     return get_commitment_detail(project_id, commitment_id, cu)
 
 
@@ -852,7 +895,13 @@ def issue_purchase_order(commitment_id: uuid.UUID, data: Mapping[str, Any], cu: 
         step_key="issue",
         cu=cu,
     )
+    from . import _order_tracking_service as ot
+
+    notify = ot.sync_commitment_order_dates(c)
     db.session.commit()
+    if notify:
+        ot.notify_supplier_order_by_change(c)
+        db.session.commit()
     return get_commitment_detail(c.project_id, c.id, cu)
 
 
@@ -868,9 +917,26 @@ def create_purchase_order_receipt(
     ).first()
     if c is None:
         raise ApiError("purchase order not found", 404)
+    client_id = _parse_uuid(data.get("client_id"))
+    if data.get("client_id") and client_id is None:
+        raise ApiError("invalid client_id", 400)
+    if client_id is not None:
+        existing = db.session.scalar(select(PurchaseOrderReceipt).where(PurchaseOrderReceipt.client_id == client_id))
+        if existing is not None:
+            return {
+                "entity": "purchase_order_receipt",
+                "id": str(existing.id),
+                "commitment_id": str(existing.commitment_id),
+                "status": existing.status,
+                "held_unapproved": existing.status == "draft",
+                "fulfillment_status": c.fulfillment_status,
+                "created": False,
+            }
     held = str(data.get("condition") or "").strip().lower() == "held_unapproved"
     _assert_submittal_gates(c, allow_held_unapproved=held)
     received_on = _parse_date(data.get("received_on")) or date.today()
+    photo_ids = data.get("photo_ids") if isinstance(data.get("photo_ids"), list) else None
+    condition = (str(data.get("condition") or "").strip().lower() or None)
     receipt = PurchaseOrderReceipt(
         commitment_id=c.id,
         received_on=received_on,
@@ -879,6 +945,9 @@ def create_purchase_order_receipt(
         document_id=_parse_uuid(data.get("document_id")),
         status="posted" if not held else "draft",
         notes=(str(data.get("notes") or "").strip() or None) if data.get("notes") else None,
+        client_id=client_id,
+        condition=condition,
+        photo_ids=photo_ids,
     )
     receipt.shipment_id = _parse_uuid(data.get("shipment_id") or data.get("shipmentId"))
     db.session.add(receipt)
@@ -921,4 +990,5 @@ def create_purchase_order_receipt(
         "status": receipt.status,
         "held_unapproved": held,
         "fulfillment_status": c.fulfillment_status,
+        "created": True,
     }

@@ -44,6 +44,7 @@ from . import _estimate_service as est_svc
 from ..models.hrms_core import HrmsTimesheetEntry
 from ..services import door_schedule as door_schedule_svc
 from . import _commitment_service as commitment_svc
+from . import _order_tracking_service as order_tracking_svc
 from . import _admin_users_service as admin_users_svc
 from . import _document_render_service as document_render_svc
 from . import _pay_application_service as pay_app_svc
@@ -3476,6 +3477,25 @@ def post_submittal_attachment(project_id: str, submittal_id: str):
     return _jsonify(body), 201
 
 
+@bp.post("/projects/<project_id>/submittals/<submittal_id>/attachments/upload")
+def upload_project_submittal_attachment(project_id: str, submittal_id: str):
+    pid = _parse_uuid_param(project_id)
+    sid = _parse_uuid_param(submittal_id)
+    if not pid or not sid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    s = db.session.get(Submittal, sid)
+    if s is None or s.project_id != pid:
+        return _jsonify({"error": "submittal not found"}), 404
+    f = request.files.get("file")
+    try:
+        body = submittal_svc.upload_submittal_attachment_file(sid, f, current_user())
+    except submittal_svc.ApiError as exc:
+        return _submittal_err(exc)
+    return _jsonify(body), 201
+
+
 @bp.get("/documents/<document_id>/submittal-annotations")
 def get_submittal_document_annotations(document_id: str):
     did = _parse_uuid_param(document_id)
@@ -3599,6 +3619,38 @@ def get_project_procurement_defaults(project_id: str):
             "entity": "procurement_defaults",
         }
     )
+
+
+@bp.get("/projects/<project_id>/order-board")
+def list_project_order_board(project_id: str):
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        return _jsonify(
+            order_tracking_svc.list_order_board(
+                pid, current_user(), bucket=(request.args.get("bucket") or "all")
+            )
+        )
+    except rfi_svc.ApiError as exc:
+        return _commitment_err(exc)
+
+
+@bp.post("/projects/<project_id>/purchase-orders/<commitment_id>/supplier-confirm")
+def confirm_project_supplier_notice(project_id: str, commitment_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(commitment_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify(order_tracking_svc.confirm_supplier_notice(pid, cid, data, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _commitment_err(exc)
 
 
 @bp.get("/projects/<project_id>/commitments")
@@ -5421,6 +5473,9 @@ _integration_textura.register_textura_routes(bp)
 from . import _auth_mobile  # noqa: E402
 
 _auth_mobile.register_mobile_auth_routes(bp)
+from . import _user_activity_service as _user_activity_svc  # noqa: E402
+
+_user_activity_svc.register_activity_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)

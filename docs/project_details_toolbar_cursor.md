@@ -83,7 +83,7 @@ Default: only the project-details page receives the grouped bar.
 
 ## 4. Information architecture (locked)
 
-Seven parents, left to right: **Contract · Files · Submittals · RFIs · Preconstruction · Buyout · Field**. Label click = default child. **Submittals** and **RFIs** sit on the parent row so they are one click. Children of the active parent render as a **visible row** (not a caret dropdown). On Submittals or RFIs, the Buyout child row still shows.
+Seven parents, left to right: **Contract · Files · Submittals · RFIs · Estimate · Buyout · Field**. Label click = default child. **Submittals** and **RFIs** sit on the parent row so they are one click. Children of the active parent render as a **visible row** (not a caret dropdown). On Submittals or RFIs, the Buyout child row still shows.
 
 | Parent | Label click opens | Children (order) |
 |---|---|---|
@@ -91,7 +91,7 @@ Seven parents, left to right: **Contract · Files · Submittals · RFIs · Preco
 | **Files** | Drawings | Drawings · Specs · Documents |
 | **Submittals** | Submittals | Same Buyout child row |
 | **RFIs** | RFIs | Same Buyout child row |
-| **Preconstruction** | Estimate | Estimate · Takeoff · RFP |
+| **Estimate** | Estimate | Estimate · Takeoff · RFP |
 | **Buyout** | Procurement | Procurement · Submittals · RFIs · Correspondence · Transmittals · Anticipated costs · PO change orders · Sub invoices |
 | **Field** | Schedule | Schedule · Tasks · Photos · Daily log · Meetings · Work orders · QC checklists · Punchlist · Incidents · Safety |
 
@@ -206,9 +206,9 @@ drawings, drawing-viewer, sheets                  → Files
 specs, specifications                             → Files
 documents, documents hub, files register          → Files
 
-estimate, estimating                              → Preconstruction
-takeoff                                           → Preconstruction
-rfp, rfps                                         → Preconstruction
+estimate, estimating                              → Estimate
+takeoff                                           → Estimate
+rfp, rfps                                         → Estimate
 
 procurement, purchase orders, pos                 → Buyout
 submittals, submittal-qc, submittal register      → Buyout
@@ -260,11 +260,11 @@ Style leftovers with `usis-ui.css` page-scoped rules if the default Bootstrap sp
 
 ## 10. Acceptance
 
-1. Project-details bar shows seven parents: Contract, Files, Submittals, RFIs, Preconstruction, Buyout, Field. No Daily row.
-2. Files label opens Drawings. Preconstruction label opens Estimate. Contract → Job information. Field → Schedule. Buyout → Procurement. Submittals and RFIs open those pages in one click.
+1. Project-details bar shows seven parents: Contract, Files, Submittals, RFIs, Estimate, Buyout, Field. No Daily row.
+2. Files label opens Drawings. Estimate label opens Estimate. Contract → Job information. Field → Schedule. Buyout → Procurement. Submittals and RFIs open those pages in one click.
 3. The child row lists only the children in §4, in that order, for the active parent.
 4. On Drawings / Specs / Documents, **Files** is the active parent.
-5. On Takeoff / Estimate / RFP, **Preconstruction** is the active parent. On Submittals, **Submittals** is the active parent (Buyout child row still shows). On RFIs, **RFIs** is the active parent (Buyout child row still shows). On Daily log / Photos / Meetings / Work orders / Punchlist / Incidents / QC, **Field** is the active parent. On Anticipated costs / PO COs / Sub invoices, **Buyout** is the active parent. On Contract admin / Job costing / Invoicing / Open items, **Contract** is the active parent.
+5. On Takeoff / Estimate / RFP, **Estimate** is the active parent. On Submittals, **Submittals** is the active parent (Buyout child row still shows). On RFIs, **RFIs** is the active parent (Buyout child row still shows). On Daily log / Photos / Meetings / Work orders / Punchlist / Incidents / QC, **Field** is the active parent. On Anticipated costs / PO COs / Sub invoices, **Buyout** is the active parent. On Contract admin / Job costing / Invoicing / Open items, **Contract** is the active parent.
 6. **Contract admin hub** is gone from this page.
 7. Left sidebar, CRM, dashboard, public portal, field app — unchanged.
 8. No new React/MUI files. No new hub routes. No gulp-clean of dist.

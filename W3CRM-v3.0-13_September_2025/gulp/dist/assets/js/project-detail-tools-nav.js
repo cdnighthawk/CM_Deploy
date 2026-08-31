@@ -8,7 +8,7 @@
 	var PARENT_LABEL = {
 		job: "Contract pages",
 		files: "Files pages",
-		preconstruction: "Preconstruction pages",
+		preconstruction: "Estimate pages",
 		field: "Field pages",
 		buyout: "Buyout pages",
 	};

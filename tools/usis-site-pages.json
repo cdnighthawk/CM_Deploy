@@ -319,6 +319,13 @@
       "category": "construction_demo"
     },
     {
+      "path": "construction/purchase-order-create.html",
+      "order": 40,
+      "title": "Construction — Purchase Order Create",
+      "summary": "Full-page New Purchase Order form, matching RFI and Submittal create.",
+      "category": "construction_demo"
+    },
+    {
       "path": "construction/rfi-detail.html",
       "order": 41,
       "title": "Construction — RFI Detail",

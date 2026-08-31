@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "purchase-order-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-po-form { max-width: 1320px; }
+		.usis-po-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.25rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-po-form .form-label .req { color: var(--usis-error, #c92a2a); margin-left: 0.15rem; }
+		.usis-po-form .text-muted { font-size: 0.78rem; }
+		.usis-po-page-title { font-size: 1.5rem; font-weight: 700; margin: 0.35rem 0 1rem; }
+		.usis-po-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 0.75rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-po-banner i { margin-top: 0.15rem; }
+		.usis-po-section {
+			background: #fff;
+			border: 1px solid var(--usis-divider, #e9ecef);
+			border-radius: 0.5rem;
+			padding: 0.7rem 1.15rem 1.15rem;
+			margin-bottom: 1rem;
+		}
+		.usis-po-section-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			width: 100%;
+			background: none;
+			border: 0;
+			padding: 0.2rem 0 0.75rem;
+			font-weight: 700;
+			font-size: 1.02rem;
+			color: inherit;
+			text-align: left;
+		}
+		.usis-po-section-toggle .usis-po-chevron {
+			width: 0.9rem;
+			font-size: 0.7rem;
+			transition: transform 0.15s ease;
+		}
+		.usis-po-section-toggle.collapsed .usis-po-chevron { transform: rotate(-90deg); }
+		.usis-po-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1rem 1.25rem;
+			align-items: start;
+		}
+		@media (max-width: 1199.98px) {
+			.usis-po-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		}
+		@media (max-width: 575.98px) {
+			.usis-po-grid { grid-template-columns: 1fr; }
+		}
+		.usis-po-field { min-width: 0; }
+		.usis-po-field--span2 { grid-column: span 2; }
+		.usis-po-field--span4 { grid-column: 1 / -1; }
+		@media (max-width: 1199.98px) {
+			.usis-po-field--span2 { grid-column: 1 / -1; }
+		}
+		.usis-po-readonly {
+			min-height: 2rem;
+			padding: 0.4rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+		}
+		.usis-po-project-card { font-size: 0.75rem; line-height: 1.4; }
+		.usis-po-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.15rem 0 1.5rem;
+		}
+		.usis-po-req-note { color: var(--usis-error, #c92a2a); font-size: 0.8rem; }
+		.usis-po-form-footer .btn { min-width: 7rem; }
+		.usis-combobox-menu { z-index: 20; max-height: 12rem; overflow: auto; }
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New Purchase Order",
+				})
+			</div>
+
+			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
+				<div class="card border-info shadow-none mb-0">
+					<div class="card-body py-2">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1" data-i18n="Construction — New Purchase Order">Construction — New Purchase Order</h6>
+							</div>
+							<div class="text-nowrap small">
+								<a href="construction/submittal-create.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="construction/project-detail.html">Next</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="container-fluid usis-po-form">
+				<form id="usis-po-form" autocomplete="off" novalidate>
+					<input type="hidden" id="usis-po-vendor-id" value="">
+					<input type="hidden" id="usis-po-issued-by-id" value="">
+					<input type="hidden" id="usis-po-authorized-by-id" value="">
+
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+						<h1 class="usis-po-page-title mb-0" data-i18n="New Purchase Order">New Purchase Order</h1>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-light" id="usis-po-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-outline-secondary" id="usis-po-btn-draft" data-i18n="Create as Draft">Create as Draft</button>
+							<button type="button" class="btn btn-primary" id="usis-po-btn-create" data-i18n="Create">Create</button>
+						</div>
+					</div>
+
+					<div class="alert alert-danger d-none" id="usis-po-error" role="alert"></div>
+
+					<div class="usis-po-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Draft purchase order. PO # and vendor are required. Line items can be added now or after the PO is saved.">Draft purchase order. PO # and vendor are required. Line items can be added now or after the PO is saved.</span>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-general" aria-expanded="true" aria-controls="usis-po-sec-general">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-general">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-po-project"><span data-i18n="Project">Project</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-po-project" required>
+										<option value="">Loading…</option>
+									</select>
+									<div class="usis-po-project-card text-muted mt-1 d-none" id="usis-po-project-card">
+										<strong id="usis-po-proj-number">—</strong>
+										<span id="usis-po-proj-name">—</span>
+										<span class="mx-1">·</span>
+										<span id="usis-po-proj-type-status">—</span>
+										<div>
+											<span id="usis-po-proj-address">—</span>
+										</div>
+									</div>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-ref"><span data-i18n="PO #">PO #</span><span class="req">*</span></label>
+									<input class="form-control form-control-sm" id="usis-po-ref" maxlength="80" placeholder="PO-1001" required>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-issue-date" data-i18n="Issue date">Issue date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-issue-date">
+								</div>
+
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-po-title"><span data-i18n="PO subject">PO subject</span><span class="req">*</span></label>
+									<input class="form-control form-control-sm" id="usis-po-title" maxlength="500" placeholder="e.g. Drywall package" required>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-status" data-i18n="Status">Status</label>
+									<select class="form-select form-select-sm" id="usis-po-status">
+										<option value="draft">draft</option>
+										<option value="pending_submission">pending_submission</option>
+										<option value="pending">pending</option>
+										<option value="not_approved">not_approved</option>
+										<option value="approved">approved</option>
+									</select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-status-date" data-i18n="Status date">Status date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-status-date">
+								</div>
+
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-type" data-i18n="PO type">PO type</label>
+									<select class="form-select form-select-sm" id="usis-po-type"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-reminder-date" data-i18n="Reminder date">Reminder date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-reminder-date">
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-currency" data-i18n="Currency">Currency</label>
+									<input class="form-control form-control-sm" id="usis-po-currency" maxlength="8" value="USD">
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" data-i18n="Created By">Created By</label>
+									<div class="usis-po-readonly" id="usis-po-created-by-display">—</div>
+								</div>
+
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-po-notes" data-i18n="Notes">Notes</label>
+									<textarea class="form-control form-control-sm" id="usis-po-notes" rows="3" placeholder="Optional header notes"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-vendor" aria-expanded="true" aria-controls="usis-po-sec-vendor">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Vendor Information">Vendor Information</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-vendor">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2 position-relative">
+									<label class="form-label" for="usis-po-vendor-q"><span data-i18n="Company">Company</span><span class="req">*</span></label>
+									<input type="search" class="form-control form-control-sm" id="usis-po-vendor-q" autocomplete="off" placeholder="Type vendor name…">
+									<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-po-vendor-menu"></div>
+									<p class="text-muted small mb-0 mt-1 d-none" id="usis-po-vendor-dir-hint"></p>
+									<button type="button" class="btn btn-link btn-sm p-0 d-none" id="usis-po-vendor-add-dir">Add to project directory</button>
+								</div>
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-po-vendor-contact" data-i18n="Contact">Contact</label>
+									<select class="form-select form-select-sm" id="usis-po-vendor-contact"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-po-vendor-address" data-i18n="Vendor address">Vendor address</label>
+									<textarea class="form-control form-control-sm" id="usis-po-vendor-address" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-issued" aria-expanded="true" aria-controls="usis-po-sec-issued">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Issued &amp; Authorized By">Issued &amp; Authorized By</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-issued">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2 position-relative">
+									<label class="form-label" for="usis-po-issued-by-q" data-i18n="Issued by">Issued by</label>
+									<input type="search" class="form-control form-control-sm" id="usis-po-issued-by-q" autocomplete="off" placeholder="Search users…">
+									<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-po-issued-by-menu"></div>
+								</div>
+								<div class="usis-po-field usis-po-field--span2 position-relative">
+									<label class="form-label" for="usis-po-authorized-by-q" data-i18n="Authorized by">Authorized by</label>
+									<input type="search" class="form-control form-control-sm" id="usis-po-authorized-by-q" autocomplete="off" placeholder="Search users…">
+									<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-po-authorized-by-menu"></div>
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-po-issued-address" data-i18n="Company address">Company address</label>
+									<textarea class="form-control form-control-sm" id="usis-po-issued-address" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-ship" aria-expanded="true" aria-controls="usis-po-sec-ship">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Ship To Address">Ship To Address</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-ship">
+							<textarea class="form-control form-control-sm" id="usis-po-ship-to" rows="2" placeholder="Job site / ship-to"></textarea>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-defaults" aria-expanded="true" aria-controls="usis-po-sec-defaults">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Default Line Item Values">Default Line Item Values</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-defaults">
+							<div class="usis-po-grid">
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-delivery" data-i18n="Delivery date">Delivery date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-def-delivery">
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-cc" data-i18n="Cost code">Cost code</label>
+									<select class="form-select form-select-sm" id="usis-po-def-cc"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-tax" data-i18n="Tax code">Tax code</label>
+									<select class="form-select form-select-sm" id="usis-po-def-tax"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-resource" data-i18n="Resource">Resource</label>
+									<select class="form-select form-select-sm" id="usis-po-def-resource">
+										<option value="">—</option>
+										<option value="material">Material</option>
+										<option value="labor">Labor</option>
+										<option value="equipment">Equipment</option>
+										<option value="subcontractor">Subcontractor</option>
+										<option value="other">Other</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-lines" aria-expanded="true" aria-controls="usis-po-sec-lines">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="PO Items">PO Items</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-lines">
+							<p class="text-muted small mb-2">New lines pick up the default cost code, tax, resource, and delivery date above.</p>
+							<div class="table-responsive mb-2">
+								<table class="table table-sm table-bordered align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>Item #</th>
+											<th>Description</th>
+											<th>Qty</th>
+											<th>Unit</th>
+											<th>Unit price</th>
+											<th>Cost code</th>
+											<th>Tax</th>
+											<th>Resource</th>
+											<th>Delivery</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="usis-po-lines-tbody"></tbody>
+								</table>
+							</div>
+							<button type="button" class="btn btn-outline-primary btn-sm mb-0" id="usis-po-line-add">+ Add line</button>
+						</div>
+					</div>
+
+					<div class="usis-po-form-footer">
+						<div class="usis-po-req-note" data-i18n="* required fields">* required fields</div>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-outline-secondary" id="usis-po-cancel-footer" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-outline-secondary" id="usis-po-btn-draft-footer" data-i18n="Create as Draft">Create as Draft</button>
+							<button type="button" class="btn btn-primary" id="usis-po-btn-create-footer" data-i18n="Create">Create</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/purchase-order-create.js"></script>
+
+</body>
+</html>

@@ -599,7 +599,7 @@
 										<p class="text-muted small mb-0">Committed cost when approved; multiple vendor bills per PO (PO-to-bill).</p>
 										<div class="d-flex flex-wrap gap-1">
 											<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-procurement-refresh-po">Refresh</button>
-											<button type="button" class="btn btn-primary btn-sm usis-procurement-new-po" data-bs-toggle="modal" data-bs-target="#usis-modal-commitment-create" data-usis-commitment-kind="purchase_order">+ New PO</button>
+											<a class="btn btn-primary btn-sm" id="usis-po-open-create" href="construction/purchase-order-create.html">+ New PO</a>
 										</div>
 									</div>
 									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-proc-po-loading>Loading…</div>
@@ -1514,6 +1514,22 @@
 				</div>
 				<div class="modal-body">
 					<p class="text-muted small mb-0">The full Procore-style Create RFI page lives at <a href="construction/rfi-create.html">construction/rfi-create.html</a>. Use the "+ Create RFI" button at the top of this tab.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="usis-modal-po-create" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">New purchase order</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted small mb-0">The New Purchase Order page lives at <a href="construction/purchase-order-create.html">construction/purchase-order-create.html</a>. Use the "+ New PO" button on the Procurement tab.</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>

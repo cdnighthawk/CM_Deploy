@@ -287,7 +287,7 @@
       "path": "construction/project-detail.html",
       "order": 36,
       "title": "Construction — Project Detail",
-      "summary": "Active project shell. Daily (1-click): Drawings, RFIs, Submittals, Daily log, Schedule, Open items. Then five parents in job-flow order: Job (Job information, Open items, Contract admin, Job costing, Invoicing); Files (Drawings, Specs, Documents); Preconstruction (Estimate, Takeoff, RFP); Buyout (Procurement, Submittals, RFIs, Correspondence, Transmittals, Anticipated costs, PO COs, Sub invoices); Field (Schedule, Tasks, Photos, Daily log, Meetings, Work orders, QC, Punchlist, Incidents, Safety). Use ?id= project UUID.",
+      "summary": "Active project shell. Parents: Contract, Files, Submittals, RFIs, Preconstruction, Buyout, Field. Contract (Job information, Open items, Contract admin, Job costing, Invoicing); Files (Drawings, Specs, Documents); Submittals and RFIs are one-click parents and still show the Buyout child row; Preconstruction (Estimate, Takeoff, RFP); Buyout (Procurement, Submittals, RFIs, Correspondence, Transmittals, Anticipated costs, PO COs, Sub invoices); Field (Schedule, Tasks, Photos, Daily log, Meetings, Work orders, QC, Punchlist, Incidents, Safety). Use ?id= project UUID.",
       "category": "construction_demo"
     },
     {

@@ -1,16 +1,24 @@
 /**
- * Project-details tool strip — Daily (1-click) + parents + a visible child row.
- * Daily tools stay on screen. Parent click = default child. Child row follows the active parent.
+ * Project-details tool strip — parents + a visible child row.
+ * Parent click = default child. Submittals and RFIs are also parents (one click).
+ * Child row follows the active parent; Submittals/RFIs still show the Buyout children.
  */
 (function () {
 	"use strict";
 
 	var PARENT_LABEL = {
-		job: "Job pages",
+		job: "Contract pages",
 		files: "Files pages",
 		preconstruction: "Preconstruction pages",
 		field: "Field pages",
 		buyout: "Buyout pages",
+		submittals: "Buyout pages",
+		rfi: "Buyout pages",
+	};
+
+	var CHILD_GROUP = {
+		submittals: "buyout",
+		rfi: "buyout",
 	};
 
 	var TAB_TO_PARENT = {
@@ -24,8 +32,8 @@
 		"proj-tab-estimate": "preconstruction",
 		"proj-tab-takeoff": "preconstruction",
 		"proj-tab-procurement": "buyout",
-		"proj-tab-submittals": "buyout",
-		"proj-tab-rfi": "buyout",
+		"proj-tab-submittals": "submittals",
+		"proj-tab-rfi": "rfi",
 		"proj-tab-correspondence": "buyout",
 		"proj-tab-transmittals": "buyout",
 		"proj-tab-anticipated": "buyout",
@@ -65,9 +73,10 @@
 			var on = parents[i].getAttribute("data-usis-parent") === parentKey;
 			parents[i].classList.toggle("usis-project-tool--active", on);
 		}
+		var groupKey = CHILD_GROUP[parentKey] || parentKey;
 		var groups = stack.querySelectorAll(".usis-project-subtools__group");
 		for (i = 0; i < groups.length; i++) {
-			groups[i].hidden = groups[i].getAttribute("data-usis-parent") !== parentKey;
+			groups[i].hidden = groups[i].getAttribute("data-usis-parent") !== groupKey;
 		}
 		var sub = stack.querySelector(".usis-project-subtools");
 		if (sub) sub.setAttribute("aria-label", PARENT_LABEL[parentKey] || "Project pages");

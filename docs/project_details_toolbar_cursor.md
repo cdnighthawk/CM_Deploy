@@ -83,19 +83,17 @@ Default: only the project-details page receives the grouped bar.
 
 ## 4. Information architecture (locked)
 
-**Daily** (always visible, one click): Drawings · RFIs · Submittals · Daily log · Schedule · Open items
-
-Five parents below Daily. Label click = default child. Children of the active parent render as a **visible row** (not a caret dropdown). Selecting a Daily tool also lights the parent it belongs to.
+Seven parents, left to right: **Contract · Files · Submittals · RFIs · Preconstruction · Buyout · Field**. Label click = default child. **Submittals** and **RFIs** sit on the parent row so they are one click. Children of the active parent render as a **visible row** (not a caret dropdown). On Submittals or RFIs, the Buyout child row still shows.
 
 | Parent | Label click opens | Children (order) |
 |---|---|---|
-| **Job** | Job information | Job information · Open items · Contract admin · Job costing · Invoicing |
+| **Contract** | Job information | Job information · Open items · Contract admin · Job costing · Invoicing |
 | **Files** | Drawings | Drawings · Specs · Documents |
+| **Submittals** | Submittals | Same Buyout child row |
+| **RFIs** | RFIs | Same Buyout child row |
 | **Preconstruction** | Estimate | Estimate · Takeoff · RFP |
 | **Buyout** | Procurement | Procurement · Submittals · RFIs · Correspondence · Transmittals · Anticipated costs · PO change orders · Sub invoices |
 | **Field** | Schedule | Schedule · Tasks · Photos · Daily log · Meetings · Work orders · QC checklists · Punchlist · Incidents · Safety |
-
-**Job-flow order:** contract issued (Job) → leftover pricing (Preconstruction) → award, then submittals/RFIs, then purchase (Buyout) → build (Field). Files sit after Job because the set is used to buy and to build.
 
 Do not add remaining Sage leftovers (directory, journals, bills, permits, ITB, timecards, …) until they have a real page. Do not put these children on the left sidebar **Projects** link — that stays the job list.
 
@@ -262,11 +260,11 @@ Style leftovers with `usis-ui.css` page-scoped rules if the default Bootstrap sp
 
 ## 10. Acceptance
 
-1. Project-details bar shows a Daily row (Drawings · RFIs · Submittals · Daily log · Schedule · Open items) then five parents: Job, Files, Preconstruction, Buyout, Field.
-2. Files label opens Drawings. Preconstruction label opens Estimate. Job → Job information. Field → Schedule. Buyout → Procurement.
+1. Project-details bar shows seven parents: Contract, Files, Submittals, RFIs, Preconstruction, Buyout, Field. No Daily row.
+2. Files label opens Drawings. Preconstruction label opens Estimate. Contract → Job information. Field → Schedule. Buyout → Procurement. Submittals and RFIs open those pages in one click.
 3. The child row lists only the children in §4, in that order, for the active parent.
 4. On Drawings / Specs / Documents, **Files** is the active parent.
-5. On Takeoff / Estimate / RFP / RFIs / Submittals / Transmittals, **Preconstruction** is the active parent. On Daily log / Photos / Meetings / Work orders / Punchlist / Incidents / QC, **Field** is the active parent. On Anticipated costs / PO COs / Sub invoices, **Buyout** is the active parent. On Contract admin / Job costing / Invoicing / Open items, **Job** is the active parent.
+5. On Takeoff / Estimate / RFP, **Preconstruction** is the active parent. On Submittals, **Submittals** is the active parent (Buyout child row still shows). On RFIs, **RFIs** is the active parent (Buyout child row still shows). On Daily log / Photos / Meetings / Work orders / Punchlist / Incidents / QC, **Field** is the active parent. On Anticipated costs / PO COs / Sub invoices, **Buyout** is the active parent. On Contract admin / Job costing / Invoicing / Open items, **Contract** is the active parent.
 6. **Contract admin hub** is gone from this page.
 7. Left sidebar, CRM, dashboard, public portal, field app — unchanged.
 8. No new React/MUI files. No new hub routes. No gulp-clean of dist.

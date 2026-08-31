@@ -135,7 +135,6 @@
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-poco">PO change orders</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
@@ -208,7 +207,6 @@
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-incidents" data-bs-toggle="pill" data-bs-target="#proj-pane-incidents" type="button" role="tab">Incidents</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-transmittals" data-bs-toggle="pill" data-bs-target="#proj-pane-transmittals" type="button" role="tab">Transmittals</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-anticipated" data-bs-toggle="pill" data-bs-target="#proj-pane-anticipated" type="button" role="tab">Anticipated costs</button></li>
-							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-poco" data-bs-toggle="pill" data-bs-target="#proj-pane-poco" type="button" role="tab">PO change orders</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-subinv" data-bs-toggle="pill" data-bs-target="#proj-pane-subinv" type="button" role="tab">Sub invoices</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-qc" data-bs-toggle="pill" data-bs-target="#proj-pane-qc" type="button" role="tab">QC checklists</button></li>
 							<li class="nav-item" role="presentation"><button class="nav-link" id="proj-tab-openitems" data-bs-toggle="pill" data-bs-target="#proj-pane-openitems" type="button" role="tab">Open items</button></li>
@@ -583,11 +581,14 @@
 						<div class="tab-pane fade" id="proj-pane-procurement" role="tabpanel" aria-labelledby="proj-tab-procurement" tabindex="0">
 							<div class="mb-3">
 								<h5 class="mb-1">Procurement</h5>
-								<p class="text-muted small mb-0">Purchase orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
+								<p class="text-muted small mb-0">Purchase orders, PO change orders, subcontracts (retainage when applicable), and RFPs for this job. POs and subs share the commitments API; RFPs use the same list API as the full RFP workspace.</p>
 							</div>
 							<ul class="nav nav-pills flex-wrap gap-1 mb-3" role="tablist">
 								<li class="nav-item" role="presentation">
 									<button class="nav-link active" id="usis-proc-subtab-po" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-po" type="button" role="tab" aria-controls="usis-proc-subpane-po" aria-selected="true">Purchase orders</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="usis-proc-subtab-poco" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-poco" type="button" role="tab" aria-controls="usis-proc-subpane-poco" aria-selected="false">PO change orders</button>
 								</li>
 								<li class="nav-item" role="presentation">
 									<button class="nav-link" id="usis-proc-subtab-sub" data-bs-toggle="pill" data-bs-target="#usis-proc-subpane-sub" type="button" role="tab" aria-controls="usis-proc-subpane-sub" aria-selected="false">Subcontracts</button>
@@ -626,6 +627,28 @@
 												</tr>
 											</thead>
 											<tbody id="usis-tbody-commitments-po"></tbody>
+										</table>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="usis-proc-subpane-poco" role="tabpanel" aria-labelledby="usis-proc-subtab-poco" tabindex="0">
+									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+										<p class="text-muted small mb-0">Change orders against purchase orders on this job. Each PO CO must link to an existing PO.</p>
+										<div class="d-flex flex-wrap gap-1">
+											<button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button>
+										</div>
+									</div>
+									<div class="table-responsive">
+										<table class="table table-hover table-sm align-middle mb-0">
+											<thead class="table-light">
+												<tr>
+													<th>#</th>
+													<th>Subject</th>
+													<th>Status</th>
+													<th class="text-end">Amount</th>
+													<th class="text-end"></th>
+												</tr>
+											</thead>
+											<tbody id="usis-w2-po-change-orders"></tbody>
 										</table>
 									</div>
 								</div>
@@ -1130,10 +1153,6 @@
 						<div class="tab-pane fade" id="proj-pane-anticipated" role="tabpanel">
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Anticipated costs</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="anticipated-costs">+ Cost</button></div>
 							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-anticipated-costs"></tbody></table></div>
-						</div>
-						<div class="tab-pane fade" id="proj-pane-poco" role="tabpanel">
-							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">PO change orders</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button></div>
-							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-po-change-orders"></tbody></table></div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-subinv" role="tabpanel">
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Sub invoices</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="sub-invoices">+ Sub invoice</button></div>

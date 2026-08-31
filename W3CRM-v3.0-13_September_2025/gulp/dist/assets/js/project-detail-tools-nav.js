@@ -37,7 +37,6 @@
 		"proj-tab-correspondence": "buyout",
 		"proj-tab-transmittals": "buyout",
 		"proj-tab-anticipated": "buyout",
-		"proj-tab-poco": "buyout",
 		"proj-tab-subinv": "buyout",
 		"proj-tab-schedule": "field",
 		"proj-tab-tasks": "field",

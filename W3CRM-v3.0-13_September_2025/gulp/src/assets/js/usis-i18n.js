@@ -390,6 +390,8 @@
 		Assigned: "Asignado",
 		"Crew (optional)": "Cuadrilla (opcional)",
 		"Purchase orders": "Órdenes de compra",
+		"PO change orders": "Órdenes de cambio de OC",
+		"+ PO CO": "+ OC cambio",
 		Subcontracts: "Subcontratos",
 		RFPs: "RFPs",
 		"Material orders": "Pedidos de material",

@@ -1,6 +1,6 @@
 /**
- * Project-details tool strip — six parents + a visible child row.
- * Parent click = default child. Child row stays on screen for the active parent.
+ * Project-details tool strip — Daily (1-click) + parents + a visible child row.
+ * Daily tools stay on screen. Parent click = default child. Child row follows the active parent.
  */
 (function () {
 	"use strict";
@@ -8,40 +8,39 @@
 	var PARENT_LABEL = {
 		job: "Job pages",
 		files: "Files pages",
-		estimate: "Estimate pages",
+		preconstruction: "Preconstruction pages",
 		field: "Field pages",
 		buyout: "Buyout pages",
-		contract: "Contract pages",
 	};
 
 	var TAB_TO_PARENT = {
 		"proj-tab-job": "job",
-		"proj-tab-correspondence": "job",
+		"proj-tab-openitems": "job",
+		"proj-tab-contract": "job",
+		"proj-tab-costing": "job",
+		"proj-tab-invoicing": "job",
 		"proj-tab-drawings": "files",
 		"proj-tab-specs": "files",
-		"proj-tab-estimate": "estimate",
-		"proj-tab-takeoff": "estimate",
-		"proj-tab-schedule": "field",
-		"proj-tab-tasks": "field",
-		"proj-tab-safety": "field",
-		"proj-tab-dailylog": "field",
-		"proj-tab-photos": "field",
-		"proj-tab-punch": "field",
-		"proj-tab-wo": "field",
-		"proj-tab-meetings": "field",
-		"proj-tab-incidents": "field",
+		"proj-tab-estimate": "preconstruction",
+		"proj-tab-takeoff": "preconstruction",
 		"proj-tab-procurement": "buyout",
 		"proj-tab-submittals": "buyout",
 		"proj-tab-rfi": "buyout",
-		"proj-tab-contract": "contract",
-		"proj-tab-costing": "contract",
-		"proj-tab-invoicing": "contract",
-		"proj-tab-transmittals": "contract",
-		"proj-tab-anticipated": "contract",
-		"proj-tab-poco": "contract",
-		"proj-tab-subinv": "contract",
-		"proj-tab-qc": "contract",
-		"proj-tab-openitems": "contract",
+		"proj-tab-correspondence": "buyout",
+		"proj-tab-transmittals": "buyout",
+		"proj-tab-anticipated": "buyout",
+		"proj-tab-poco": "buyout",
+		"proj-tab-subinv": "buyout",
+		"proj-tab-schedule": "field",
+		"proj-tab-tasks": "field",
+		"proj-tab-photos": "field",
+		"proj-tab-dailylog": "field",
+		"proj-tab-meetings": "field",
+		"proj-tab-wo": "field",
+		"proj-tab-qc": "field",
+		"proj-tab-punch": "field",
+		"proj-tab-incidents": "field",
+		"proj-tab-safety": "field",
 	};
 
 	function projectId() {

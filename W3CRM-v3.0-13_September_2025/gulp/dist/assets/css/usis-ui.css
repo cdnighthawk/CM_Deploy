@@ -866,13 +866,44 @@ body .tabulator .tabulator-row:hover,
 	white-space: nowrap;
 }
 
-/* Project-details: parent row + always-visible child row. */
+/* Project-details: Daily (1-click) + parents + child row. */
 .usis-project-tools-stack {
 	flex: 1 1 auto;
 	min-width: 0;
 	width: 100%;
 	display: flex;
 	flex-direction: column;
+}
+
+.usis-project-daily {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 0.1rem;
+	max-width: 100%;
+	min-height: 2.35rem;
+	padding: 0.2rem 0.35rem;
+	background: var(--usis-paper);
+	border: 1px solid var(--usis-divider);
+	border-bottom: 0;
+	border-radius: var(--usis-radius) var(--usis-radius) 0 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+.usis-project-daily__label {
+	flex: 0 0 auto;
+	padding: 0 0.55rem 0 0.25rem;
+	color: var(--usis-text-secondary);
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+
+.usis-project-daily .usis-project-subtool {
+	font-weight: 550;
 }
 
 .usis-project-tools.usis-detail-toolbar {
@@ -885,7 +916,7 @@ body .tabulator .tabulator-row:hover,
 	background: var(--usis-grid-header);
 	border: 1px solid var(--usis-divider);
 	border-bottom: 0;
-	border-radius: var(--usis-radius) var(--usis-radius) 0 0;
+	border-radius: 0;
 	overflow-x: auto;
 	overflow-y: hidden;
 }

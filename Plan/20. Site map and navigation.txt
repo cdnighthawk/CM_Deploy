@@ -81,14 +81,14 @@ B. Built construction shell pages (`construction/*.html`) in active USIS flows
 | construction/rfis.html | RFI log | `construction/project-detail.html` RFIs tab (“Open RFI Log”); cross-links from construction flows |
 | construction/rfi-create.html | Create RFI | `construction/project-detail.html` RFIs tab (“+ Create RFI”); cross-links |
 | construction/lead-detail.html | Lead detail | JS/list from leads.html (pattern `?id=` or internal links — verify when wiring) |
-| construction/project-detail.html | Active project shell. Six parents (Job · Files · Estimate · Field · Buyout · Contract) plus a visible child row. Job: Job information, Correspondence. Files: Drawings, Specs, Documents. Estimate: Estimate, Takeoff, RFP. Field: Schedule, Tasks, Safety, Daily log, Photos, Punchlist, Work orders, Meetings, Incidents. Buyout: Procurement, Submittals, RFIs. Contract: Contract admin, Job costing, Invoicing, Transmittals, Anticipated costs, PO change orders, Sub invoices, QC checklists, Open items. | JS/list from projects.html; deznav “Projects” stays the job list only |
+| construction/project-detail.html | Active project shell. Daily (1-click): Drawings, RFIs, Submittals, Daily log, Schedule, Open items. Then five parents in job-flow order. Job: Job information, Open items, Contract admin, Job costing, Invoicing. Files: Drawings, Specs, Documents. Preconstruction: Estimate, Takeoff, RFP. Buyout: Procurement, Submittals, RFIs, Correspondence, Transmittals, Anticipated costs, PO change orders, Sub invoices. Field: Schedule, Tasks, Photos, Daily log, Meetings, Work orders, QC checklists, Punchlist, Incidents, Safety. | JS/list from projects.html; deznav “Projects” stays the job list only |
 | construction/estimate-detail.html | Estimate detail | JS from estimate.html |
 | construction/door-schedule.html | Door schedule takeoff (Div 08) | estimate-detail Takeoff tab; deznav Construction |
 | construction/hardware-schedules.html | Company hardware schedules HD-1…N (08 71 00 catalog) | deznav; door-schedule “Hardware schedules” link |
 | construction/rfi-detail.html | RFI detail | JS from rfis.html |
 | construction/submittal-detail.html | Submittal detail | Linked from submittal flows when implemented |
 
-Other `construction/*.html` files exist on disk (attendance, finance, files, **task.html** standalone demo, etc.) but are **not** in the USIS top nav until promoted; many appear only under §C demo menus. Active-project tools live on **project-detail** (six parents + child row), not as deznav children under Projects. The **Tasks** UX is **project-detail → Field → Tasks** (not only the legacy `construction/task.html` demo).
+Other `construction/*.html` files exist on disk (attendance, finance, files, **task.html** standalone demo, etc.) but are **not** in the USIS top nav until promoted; many appear only under §C demo menus. Active-project tools live on **project-detail** (Daily row + five parents + child row), not as deznav children under Projects. The **Tasks** UX is **project-detail → Field → Tasks** (not only the legacy `construction/task.html` demo).
 
 --------------------------------------------------------------------
 C. W3CRM template / demo pages (non-product unless promoted)
@@ -190,4 +190,5 @@ H. Revision history (manual)
 • 2026-05-13 — §A + deznav + dashboard: `usis-user-directory.html` + `usis-user-directory.js`; admin APIs `/api/v1/admin/users`, `/api/v1/admin/roles`; `tools/usis-site-pages.json` (user admin + repaired `usis-procurement.html` entry); replaces static `user.html` / `user-roles.html` for live directory management.
 • 2026-05-17 — §I: active-page fake-data policy; `tools/usis-active-pages-checklist.json`, `tools/lint_active_pages_no_fake_data.py`; header session chrome uses live user / empty states (no template profile).
 • 2026-08-27 — Retired `usis-crm-leads.html` (CRM pipeline) from deznav and the site tour; leads stay on `construction/leads.html`.
-• 2026-08-31 — §B: locked Active Projects menu on `construction/project-detail.html` to the six parents + child row (Field/Contract expanded with daily log, photos, punchlist, work orders, meetings, incidents, transmittals, anticipated costs, PO COs, sub invoices, QC, open items). Left sidebar Projects stays the job list.
+• 2026-08-31 — §B: Active Projects menu on `construction/project-detail.html` has five parents. Job absorbs Client Contract Admin (contract admin, job costing, owner invoicing). Buyout stays Procurement only. Left sidebar Projects stays the job list.
+• 2026-08-31 — §B: Daily row on `construction/project-detail.html` (Drawings, RFIs, Submittals, Daily log, Schedule, Open items) stays one click. Parents remain Job · Files · Preconstruction · Buyout · Field.

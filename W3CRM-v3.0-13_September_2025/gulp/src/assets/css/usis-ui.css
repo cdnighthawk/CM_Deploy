@@ -525,6 +525,44 @@ body:not([data-headerbg="color_1"]) .header .header-search .form-control {
 	justify-content: center;
 }
 
+/* Card utilities: soft USIS chips, not thin Bootstrap outlines. Leave filled primaries alone. */
+.content-body .card-header .btn:not(.btn-primary):not(.btn-success):not(.btn-danger):not(.btn-ai):not(.usis-ai-review),
+.content-body .card-body .btn-outline-primary.btn-sm,
+.content-body .card-body .btn-outline-secondary.btn-sm {
+	--bs-btn-padding-y: 0.25rem;
+	--bs-btn-padding-x: 0.55rem;
+	--bs-btn-font-size: var(--usis-fs-sm);
+	--bs-btn-color: var(--usis-primary);
+	--bs-btn-bg: var(--bs-primary-bg-subtle);
+	--bs-btn-border-color: transparent;
+	--bs-btn-hover-color: #fff;
+	--bs-btn-hover-bg: var(--usis-primary);
+	--bs-btn-hover-border-color: transparent;
+	--bs-btn-active-color: #fff;
+	--bs-btn-active-bg: var(--usis-primary);
+	--bs-btn-active-border-color: transparent;
+	--bs-btn-disabled-color: var(--usis-text-disabled);
+	--bs-btn-disabled-bg: var(--usis-grid-header);
+	--bs-btn-disabled-border-color: transparent;
+	font-size: var(--usis-fs-sm);
+	font-weight: 600;
+	min-height: var(--usis-control-h);
+	border-radius: var(--usis-radius-btn);
+	box-shadow: none;
+}
+
+.content-body .card-header .btn-outline-secondary,
+.content-body .card-header .btn-secondary,
+.content-body .card-header .btn-light,
+.content-body .card-body .btn-outline-secondary.btn-sm {
+	--bs-btn-color: var(--usis-text-secondary);
+	--bs-btn-bg: var(--usis-grid-header);
+	--bs-btn-hover-color: var(--usis-text);
+	--bs-btn-hover-bg: #e4eaee;
+	--bs-btn-active-color: var(--usis-text);
+	--bs-btn-active-bg: #dce4e9;
+}
+
 .usis-bulk-bar {
 	display: flex;
 	flex-wrap: wrap;

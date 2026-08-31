@@ -174,7 +174,7 @@
 			els.severitySel.value = "";
 			els.extraInput.value = "";
 			els.extraInput.type = extra && extra.type !== "severity" ? extra.type : "text";
-			els.extraInput.placeholder = extra && extra.type === "number" ? "0.00" : extra && extra.type === "text" ? "Optional" : "";
+			els.extraInput.placeholder = extra && extra.type === "text" ? "Optional" : extra && extra.type === "number" ? "Optional" : "";
 			els.extraInput.step = extra && extra.type === "number" ? "0.01" : "";
 		}
 		var ready = cfg.needCommitment ? fillPoSelect() : Promise.resolve();

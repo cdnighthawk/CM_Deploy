@@ -1481,6 +1481,34 @@ def run_calendar_reminders():
     return _jsonify(payload)
 
 
+def _ingest_actor_email() -> str | None:
+    try:
+        user = current_user().user
+    except Exception:
+        return None
+    return user.email if user is not None else None
+
+
+def _record_session_ingest_failure(metadata: dict[str, Any], kind: str, message: str, http_status: int, exc: Exception | None = None):
+    from ..services import ingest_errors as ingest_err_svc
+
+    row = ingest_err_svc.record_upload_failure(
+        source="mass_ingest",
+        metadata=metadata,
+        kind=kind,
+        message=message,
+        http_status=http_status,
+        exc=exc,
+        actor_email=_ingest_actor_email(),
+    )
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None
+    return row
+
+
 @bp.get("/ingest/projects")
 def session_ingest_projects():
     """Job/lead picker for the mass ingest tool (same matching as Bearer ingest)."""
@@ -1531,6 +1559,13 @@ def session_ingest_file():
         metadata["document_type"] = classified["document_type"]
     if not metadata.get("source") and not metadata.get("sourceSystem"):
         metadata["source"] = "mass_ingest"
+    if filename and not metadata.get("filename"):
+        metadata["filename"] = filename
+    if rel and not metadata.get("relative_path"):
+        metadata["relative_path"] = rel
+    extra_batch = (request.form.get("batch_id") or "").strip()
+    if extra_batch and not metadata.get("batch_id"):
+        metadata["batch_id"] = extra_batch
     extra_hash = (request.form.get("content_hash") or "").strip()
     if extra_hash and not metadata.get("content_hash"):
         metadata["content_hash"] = extra_hash
@@ -1539,14 +1574,106 @@ def session_ingest_file():
         db.session.commit()
     except IngestError as exc:
         db.session.rollback()
-        return _jsonify({"error": exc.message}), exc.status
-    except Exception:
+        row = _record_session_ingest_failure(metadata, kind, exc.message, exc.status, exc)
+        payload = {"error": exc.message}
+        if row is not None:
+            payload["error_id"] = str(row.id)
+        return _jsonify(payload), exc.status
+    except Exception as exc:
         db.session.rollback()
         current_app.logger.exception("session ingest %s failed", kind)
-        return _jsonify({"error": f"{kind} upload failed"}), 500
+        reason = f"{type(exc).__name__}: {exc}"[:400]
+        row = _record_session_ingest_failure(metadata, kind, f"{kind} upload failed: {reason}", 500, exc)
+        payload = {"error": f"{kind} upload failed: {reason}"}
+        if row is not None:
+            payload["error_id"] = str(row.id)
+        return _jsonify(payload), 500
     body = dict(body)
     body["kind"] = kind
     return _jsonify(body), status
+
+
+@bp.get("/ingest/errors")
+def list_ingest_errors():
+    from sqlalchemy.exc import ProgrammingError
+
+    from ..services import ingest_errors as ingest_err_svc
+
+    try:
+        return _jsonify(
+            ingest_err_svc.list_failures(
+                batch_id=request.args.get("batch_id"),
+                status=request.args.get("status"),
+                q=request.args.get("q"),
+                limit=request.args.get("limit") or 200,
+                offset=request.args.get("offset") or 0,
+            )
+        )
+    except (ProgrammingError, ValueError):
+        db.session.rollback()
+        return _jsonify({"items": [], "total": 0, "open_count": 0, "entity": "ingest_errors"}), 503
+
+
+@bp.post("/ingest/errors")
+def report_ingest_error():
+    from ..services import ingest_errors as ingest_err_svc
+    from ..services.ingest import as_uuid
+
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return _jsonify({"error": "JSON object required"}), 400
+    message = str(data.get("message") or data.get("error") or "").strip()
+    if not message:
+        return _jsonify({"error": "message required"}), 400
+    row = ingest_err_svc.record_failure(
+        source=str(data.get("source") or "mass_ingest"),
+        message=message,
+        relative_path=str(data.get("relative_path") or data.get("path") or ""),
+        filename=str(data.get("filename") or ""),
+        kind=str(data.get("kind") or ""),
+        batch_id=str(data.get("batch_id") or "") or None,
+        project_id=as_uuid(data.get("project_id")),
+        project_number=str(data.get("project_number") or ""),
+        http_status=int(data["http_status"]) if str(data.get("http_status") or "").isdigit() else None,
+        detail=data.get("detail") if isinstance(data.get("detail"), dict) else None,
+        actor_email=_ingest_actor_email(),
+    )
+    if row is None:
+        return _jsonify({"error": "could not record ingest error"}), 503
+    db.session.commit()
+    return _jsonify({"item": ingest_err_svc.public(row), "entity": "ingest_error"}), 201
+
+
+@bp.post("/ingest/errors/resolve")
+def resolve_ingest_error_batch():
+    from ..services import ingest_errors as ingest_err_svc
+
+    data = request.get_json(silent=True) or {}
+    batch_id = str((data.get("batch_id") if isinstance(data, dict) else None) or request.args.get("batch_id") or "")
+    if not batch_id.strip():
+        return _jsonify({"error": "batch_id required"}), 400
+    count = ingest_err_svc.resolve_batch(batch_id, note=str((data or {}).get("note") or ""))
+    db.session.commit()
+    return _jsonify({"resolved": count, "batch_id": batch_id, "entity": "ingest_errors"})
+
+
+@bp.patch("/ingest/errors/<error_id>")
+def patch_ingest_error(error_id: str):
+    from ..services import ingest_errors as ingest_err_svc
+    from ..services.ingest import as_uuid
+
+    eid = as_uuid(error_id)
+    if eid is None:
+        return _jsonify({"error": "invalid error id"}), 400
+    data = request.get_json(silent=True) or {}
+    status = str(data.get("status") or "resolved").strip().lower()
+    if status != "resolved":
+        return _jsonify({"error": "only status=resolved is supported"}), 400
+    row = ingest_err_svc.resolve_failure(eid, note=str(data.get("note") or ""))
+    if row is None:
+        return _jsonify({"error": "ingest error not found"}), 404
+    db.session.commit()
+    return _jsonify({"item": ingest_err_svc.public(row), "entity": "ingest_error"})
 
 
 @bp.post("/drawings/relink")

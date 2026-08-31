@@ -149,9 +149,37 @@ def _ingest_upload(kind: str):
         db.session.commit()
     except IngestError as exc:
         db.session.rollback()
-        return jsonify({"error": exc.message}), exc.status
-    except Exception:
+        row = _record_bearer_failure(metadata, kind, exc.message, exc.status, exc)
+        payload = {"error": exc.message}
+        if row is not None:
+            payload["error_id"] = str(row.id)
+        return jsonify(payload), exc.status
+    except Exception as exc:
         db.session.rollback()
         current_app.logger.exception("ingest %s upload failed", kind)
-        return jsonify({"error": f"{kind} upload failed"}), 500
+        reason = f"{type(exc).__name__}: {exc}"[:400]
+        row = _record_bearer_failure(metadata, kind, f"{kind} upload failed: {reason}", 500, exc)
+        payload = {"error": f"{kind} upload failed: {reason}"}
+        if row is not None:
+            payload["error_id"] = str(row.id)
+        return jsonify(payload), 500
     return jsonify(body), status
+
+
+def _record_bearer_failure(metadata: dict, kind: str, message: str, http_status: int, exc: Exception | None = None):
+    from ..services import ingest_errors as ingest_err_svc
+
+    row = ingest_err_svc.record_upload_failure(
+        source="ingest_api",
+        metadata=metadata,
+        kind=kind,
+        message=message,
+        http_status=http_status,
+        exc=exc,
+    )
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None
+    return row

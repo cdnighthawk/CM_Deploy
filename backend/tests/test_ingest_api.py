@@ -6,6 +6,7 @@ import io
 import json
 import uuid
 
+import pytest
 from pypdf import PdfWriter
 
 from app.extensions import db
@@ -457,3 +458,82 @@ def test_session_ingest_projects_and_auto_classify(client, flask_app):
         ).first()
         assert row is not None
         assert row[0] == "specification"
+
+
+def _ingest_errors_ready(flask_app) -> bool:
+    from sqlalchemy import inspect
+
+    with flask_app.app_context():
+        return "ingest_error_events" in inspect(db.engine).get_table_names()
+
+
+def test_session_ingest_failure_is_recorded_and_resolvable(client, flask_app):
+    if not _ingest_errors_ready(flask_app):
+        pytest.skip("ingest_error_events missing (run flask db upgrade)")
+
+    batch = "batch-" + uuid.uuid4().hex[:12]
+    rel = f"no-job/Architectural/{batch}/A101_PLAN.pdf"
+    failed = client.post(
+        "/api/v1/ingest/files",
+        data={
+            "file": (io.BytesIO(b""), "A101_PLAN.pdf"),
+            "kind": "drawing",
+            "metadata": json.dumps(
+                {
+                    "relative_path": rel,
+                    "batch_id": batch,
+                    "filename": "A101_PLAN.pdf",
+                }
+            ),
+        },
+        content_type="multipart/form-data",
+    )
+    assert failed.status_code == 400, failed.get_data(as_text=True)
+    body = failed.get_json()
+    assert body["error"]
+    assert body.get("error_id")
+
+    listed = client.get(f"/api/v1/ingest/errors?batch_id={batch}&status=open")
+    assert listed.status_code == 200, listed.get_data(as_text=True)
+    items = listed.get_json()["items"]
+    match = next((row for row in items if row.get("relative_path") == rel), None)
+    assert match is not None
+    assert match["status"] == "open"
+    assert match["kind"] == "drawing"
+    assert match["http_status"] == 400
+
+    patched = client.patch(
+        f"/api/v1/ingest/errors/{match['id']}",
+        json={"status": "resolved", "note": "reviewed"},
+    )
+    assert patched.status_code == 200, patched.get_data(as_text=True)
+    assert patched.get_json()["item"]["status"] == "resolved"
+
+    open_again = client.get(f"/api/v1/ingest/errors?batch_id={batch}&status=open")
+    assert open_again.status_code == 200
+    assert all(row["relative_path"] != rel for row in open_again.get_json()["items"])
+
+
+def test_client_can_report_ingest_error(client, flask_app):
+    if not _ingest_errors_ready(flask_app):
+        pytest.skip("ingest_error_events missing (run flask db upgrade)")
+
+    batch = "batch-" + uuid.uuid4().hex[:12]
+    created = client.post(
+        "/api/v1/ingest/errors",
+        json={
+            "batch_id": batch,
+            "relative_path": "dump/too-big.pdf",
+            "filename": "too-big.pdf",
+            "kind": "document",
+            "http_status": 413,
+            "message": "file too large (max 50MB)",
+        },
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    item = created.get_json()["item"]
+    assert item["message"].startswith("file too large")
+
+    resolved = client.post("/api/v1/ingest/errors/resolve", json={"batch_id": batch})
+    assert resolved.status_code == 200, resolved.get_data(as_text=True)
+    assert resolved.get_json()["resolved"] >= 1

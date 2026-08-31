@@ -41,6 +41,10 @@
 		paused: false,
 		inFlight: 0,
 		searchTimer: null,
+		batchId: "",
+		queueFilter: "all",
+		trackerItems: [],
+		trackerTimer: null,
 	};
 
 	function el(id) {
@@ -63,6 +67,33 @@
 			return;
 		}
 		if (kind === "error") window.alert(msg);
+	}
+
+	function newBatchId() {
+		return window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+	}
+
+	function batchId() {
+		if (state.batchId) return state.batchId;
+		try {
+			state.batchId = sessionStorage.getItem("usis-ingest-batch-id") || "";
+		} catch (e) {
+			state.batchId = "";
+		}
+		if (!state.batchId) {
+			state.batchId = newBatchId();
+			try {
+				sessionStorage.setItem("usis-ingest-batch-id", state.batchId);
+			} catch (e) {}
+		}
+		return state.batchId;
+	}
+
+	function resetBatch() {
+		state.batchId = newBatchId();
+		try {
+			sessionStorage.setItem("usis-ingest-batch-id", state.batchId);
+		} catch (e) {}
 	}
 
 	function normalizeRel(path) {
@@ -173,15 +204,21 @@
 		var tb = el("usis-ingest-tbody");
 		if (!tb) return;
 		var rows = state.items;
+		if (state.queueFilter === "error") {
+			rows = rows.filter(function (item) {
+				return item.status === "error";
+			});
+		}
 		var extra = "";
-		if (rows.length > DISPLAY_CAP) {
+		var cap = state.queueFilter === "error" ? 1000 : DISPLAY_CAP;
+		if (rows.length > cap) {
 			extra =
 				'<tr><td colspan="4" class="text-muted small">Showing first ' +
-				DISPLAY_CAP +
+				cap +
 				" of " +
 				rows.length +
 				" files.</td></tr>";
-			rows = rows.slice(0, DISPLAY_CAP);
+			rows = rows.slice(0, cap);
 		}
 		tb.innerHTML = rows
 			.map(function (item) {
@@ -223,6 +260,7 @@
 				note: file.size > MAX_BYTES ? "file too large (max 50MB)" : "",
 			};
 			state.items.push(item);
+			if (item.status === "error") reportClientError(item, { message: item.note, status: 413 });
 			added += 1;
 		});
 		renderTable();
@@ -299,6 +337,7 @@
 				document_type: item.documentType,
 				source: "mass_ingest",
 				source_id: item.rel,
+				batch_id: batchId(),
 				split_pages: !!(el("usis-ingest-split") && el("usis-ingest-split").checked),
 			})
 		);
@@ -315,6 +354,7 @@
 				if (!res.ok) {
 					var err = new Error(body.error || res.status + " " + (text || res.statusText));
 					err.status = res.status;
+					err.errorId = body.error_id || "";
 					throw err;
 				}
 				return body;
@@ -371,6 +411,8 @@
 			.catch(function (err) {
 				next.status = "error";
 				next.note = err.message || String(err);
+				if (!err.errorId) reportClientError(next, err);
+				loadTracker();
 			})
 			.then(function () {
 				state.inFlight -= 1;
@@ -382,13 +424,155 @@
 
 	function start() {
 		if (state.running) return;
+		batchId();
 		state.paused = false;
 		state.running = true;
 		renderStats();
+		loadTracker();
+		if (state.trackerTimer) clearInterval(state.trackerTimer);
+		state.trackerTimer = setInterval(function () {
+			if (!state.running) {
+				clearInterval(state.trackerTimer);
+				state.trackerTimer = null;
+				return;
+			}
+			loadTracker();
+		}, 4000);
 		pump();
 		pump();
 		pump();
 		pump();
+	}
+
+	function reportClientError(item, err) {
+		if (!api().fetchJson) return;
+		var project = state.project || {};
+		api()
+			.fetchJson("/api/v1/ingest/errors", {
+				method: "POST",
+				body: {
+					batch_id: batchId(),
+					source: "mass_ingest",
+					relative_path: item.rel,
+					filename: item.file && item.file.name,
+					kind: item.kind,
+					project_id: project.job_id || project.project_id || project.id || "",
+					project_number: project.project_number || "",
+					http_status: err && err.status,
+					message: (err && err.message) || "upload failed",
+				},
+			})
+			.catch(function () {});
+	}
+
+	function formatWhen(iso) {
+		if (!iso) return "";
+		var d = new Date(iso);
+		if (isNaN(d.getTime())) return iso;
+		return d.toLocaleString();
+	}
+
+	function renderTracker() {
+		var tb = el("usis-ingest-err-tbody");
+		var stats = el("usis-ingest-err-stats");
+		var rows = state.trackerItems || [];
+		if (stats) {
+			stats.textContent = rows.length
+				? rows.length + " shown · open this filter: " + (state.trackerOpenCount || 0)
+				: "No recorded failures yet.";
+		}
+		if (!tb) return;
+		if (!rows.length) {
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted small">No errors recorded for this filter.</td></tr>';
+			return;
+		}
+		tb.innerHTML = rows
+			.map(function (row) {
+				return (
+					"<tr data-id=\"" +
+					esc(row.id) +
+					'"><td class="small text-nowrap">' +
+					esc(formatWhen(row.created_at)) +
+					'</td><td class="text-break">' +
+					esc(row.relative_path || row.filename || "") +
+					"</td><td>" +
+					esc(row.project_number || "") +
+					"</td><td>" +
+					esc(row.http_status || "") +
+					'</td><td class="text-break small">' +
+					esc(row.message || "") +
+					'</td><td class="usis-ingest-status-' +
+					esc(row.status || "open") +
+					'">' +
+					esc(row.status || "open") +
+					"</td><td>" +
+					(row.status === "open"
+						? '<button type="button" class="btn btn-link btn-sm p-0" data-resolve="' +
+						  esc(row.id) +
+						  '">Resolve</button>'
+						: "") +
+					"</td></tr>"
+				);
+			})
+			.join("");
+		tb.querySelectorAll("[data-resolve]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				resolveOne(btn.getAttribute("data-resolve"));
+			});
+		});
+	}
+
+	function trackerQuery() {
+		var scope = (el("usis-ingest-err-scope") || {}).value || "batch";
+		var params = { limit: 200 };
+		if (scope === "batch") {
+			params.batch_id = batchId();
+			params.status = "";
+		} else if (scope === "open") {
+			params.status = "open";
+		} else {
+			params.status = "";
+		}
+		return params;
+	}
+
+	function loadTracker() {
+		if (!api().fetchJson) return;
+		api()
+			.fetchJson("/api/v1/ingest/errors", { params: trackerQuery() })
+			.then(function (data) {
+				state.trackerItems = (data && data.items) || [];
+				state.trackerOpenCount = (data && data.open_count) || 0;
+				renderTracker();
+			})
+			.catch(function () {
+				renderTracker();
+			});
+	}
+
+	function resolveOne(id) {
+		if (!id || !api().fetchJson) return;
+		api()
+			.fetchJson("/api/v1/ingest/errors/" + id, { method: "PATCH", body: { status: "resolved" } })
+			.then(function () {
+				loadTracker();
+			})
+			.catch(function (err) {
+				notify("error", err.message || "Could not resolve error");
+			});
+	}
+
+	function resolveBatch() {
+		if (!api().fetchJson) return;
+		api()
+			.fetchJson("/api/v1/ingest/errors/resolve", { method: "POST", body: { batch_id: batchId() } })
+			.then(function (data) {
+				notify("success", (data && data.resolved ? data.resolved : 0) + " error(s) resolved");
+				loadTracker();
+			})
+			.catch(function (err) {
+				notify("error", err.message || "Could not resolve errors");
+			});
 	}
 
 	function renderProjectList(projects) {
@@ -562,8 +746,21 @@
 			el("usis-ingest-clear").addEventListener("click", function () {
 				if (state.running) return;
 				state.items = [];
+				resetBatch();
+				renderTable();
+				loadTracker();
+			});
+		}
+		if (el("usis-ingest-errors-only")) {
+			el("usis-ingest-errors-only").addEventListener("change", function () {
+				state.queueFilter = el("usis-ingest-errors-only").checked ? "error" : "all";
 				renderTable();
 			});
+		}
+		if (el("usis-ingest-err-refresh")) el("usis-ingest-err-refresh").addEventListener("click", loadTracker);
+		if (el("usis-ingest-err-resolve")) el("usis-ingest-err-resolve").addEventListener("click", resolveBatch);
+		if (el("usis-ingest-err-scope")) {
+			el("usis-ingest-err-scope").addEventListener("change", loadTracker);
 		}
 		var q = el("usis-ingest-project-q");
 		if (q) {
@@ -580,6 +777,8 @@
 		showSelected();
 		preselectFromQuery();
 		renderStats();
+		renderTracker();
+		loadTracker();
 	}
 
 	if (document.readyState === "loading") {

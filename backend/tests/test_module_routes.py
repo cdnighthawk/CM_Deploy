@@ -30,6 +30,12 @@ def test_desktop_project_queue_uses_projects():
     assert resolve_modules("/api/v1/project-queue") == ("projects",)
 
 
+def test_ingest_routes_use_documents_module():
+    assert resolve_modules("/api/v1/ingest/projects") == ("documents",)
+    assert resolve_modules("/api/v1/ingest/files") == ("documents",)
+    assert resolve_modules("/api/v1/ingest/errors") == ("documents",)
+
+
 def test_vendor_invoice_routes_use_ap_module():
     assert resolve_modules("/api/v1/ap/invoices") == ("ap",)
     assert resolve_modules("/api/v1/ap/mailbox/sync") == ("ap",)

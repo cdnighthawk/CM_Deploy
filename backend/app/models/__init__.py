@@ -34,6 +34,7 @@ from .hr import (
     HrTrainingAssignment,
 )
 from .hr_dispatch import HrEmployeeDispatch
+from .ingest_error import IngestErrorEvent
 from .invoice_delivery_method import InvoiceDeliveryMethod
 from .issue import Issue, IssueEvent
 from .material_order import ProjectMaterialOrder
@@ -163,6 +164,7 @@ __all__ = [
     "EstimatorStandardSpec",
     "FieldPhoto",
     "HrEmployeeDispatch",
+    "IngestErrorEvent",
     "InvoiceDeliveryMethod",
     "Issue",
     "IssueEvent",

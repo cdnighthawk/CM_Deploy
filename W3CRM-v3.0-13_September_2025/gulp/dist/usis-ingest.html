@@ -70,6 +70,8 @@
 		.usis-ingest-status-duplicate { color: #6c757d; }
 		.usis-ingest-status-error { color: #dc3545; }
 		.usis-ingest-status-uploading { color: #0d6efd; }
+		.usis-ingest-status-open { color: #dc3545; }
+		.usis-ingest-status-resolved { color: #6c757d; }
 		#usis-ingest-project-list { max-height: 14rem; overflow: auto; }
 	</style>
 </head>
@@ -513,7 +515,7 @@
 				<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 					<div>
 						<h4 class="mb-1">Mass ingest</h4>
-						<p class="text-muted small mb-0">Drop a folder of drawings, specs, and other files. Sheet-like PDFs become drawings; everything else is stored as a document. Failed uploads retry automatically.</p>
+						<p class="text-muted small mb-0">Drop a folder of drawings, specs, and other files. Sheet-like PDFs become drawings; everything else is stored as a document. Failed uploads retry automatically. Failures stay in the error tracker below so a crashed run is still visible.</p>
 					</div>
 				</div>
 				<div class="card border-0 shadow-sm mb-3">
@@ -569,7 +571,11 @@
 					<div class="card-body">
 						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 							<div class="small" id="usis-ingest-stats">0 files queued</div>
-							<div class="d-flex flex-wrap gap-2">
+							<div class="d-flex flex-wrap align-items-center gap-2">
+								<div class="form-check mb-0">
+									<input class="form-check-input" type="checkbox" id="usis-ingest-errors-only">
+									<label class="form-check-label small" for="usis-ingest-errors-only">Errors only</label>
+								</div>
 								<button type="button" class="btn btn-sm btn-primary" id="usis-ingest-start">Start</button>
 								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-pause" disabled>Pause</button>
 								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-retry" disabled>Retry failed</button>
@@ -590,6 +596,41 @@
 									</tr>
 								</thead>
 								<tbody id="usis-ingest-tbody"></tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm mt-3">
+					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+							<div>
+								<h5 class="mb-1">Error tracker</h5>
+								<div class="small text-muted" id="usis-ingest-err-stats">No recorded failures yet.</div>
+							</div>
+							<div class="d-flex flex-wrap gap-2">
+								<select class="form-select form-select-sm" id="usis-ingest-err-scope" style="width: auto;">
+									<option value="batch" selected>This run</option>
+									<option value="open">All open</option>
+									<option value="all">All recorded</option>
+								</select>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-err-refresh">Refresh</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ingest-err-resolve">Resolve this run</button>
+							</div>
+						</div>
+						<div class="table-responsive" style="max-height: 20rem;">
+							<table class="table table-sm table-hover align-middle mb-0" id="usis-ingest-err-table">
+								<thead class="table-light sticky-top">
+									<tr>
+										<th>When</th>
+										<th>File</th>
+										<th>Job</th>
+										<th>Code</th>
+										<th>Error</th>
+										<th>Status</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-ingest-err-tbody"></tbody>
 							</table>
 						</div>
 					</div>
@@ -655,6 +696,6 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-ingest.js"></script>
+	<script src="assets/js/usis-ingest.js?v=20260830err"></script>
 </body>
 </html>

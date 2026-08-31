@@ -16,6 +16,7 @@ from .change_management import (
 )
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
+from .company_cost_code import CompanyCostCode
 from .correspondence import CorrespondenceItem, CorrespondenceSource
 from .corecon_transaction import CoreconTransaction
 from .document import Document, Drawing, DrawingAnnotation
@@ -167,6 +168,7 @@ __all__ = [
     "CommitmentBillAllocation",
     "CommitmentLineItem",
     "Company",
+    "CompanyCostCode",
     "Contact",
     "CorrespondenceItem",
     "CorrespondenceSource",

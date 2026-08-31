@@ -104,52 +104,49 @@
 						<nav class="usis-project-tools usis-detail-toolbar" aria-label="Project tools">
 							<button type="button" class="btn usis-project-tool usis-project-tool--active" data-usis-parent="job" data-usis-show-tab="proj-tab-job" data-i18n="Job">Job</button>
 							<button type="button" class="btn usis-project-tool" data-usis-parent="files" data-usis-show-tab="proj-tab-drawings" data-i18n="Files">Files</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="estimate" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="preconstruction" data-usis-show-tab="proj-tab-estimate">Preconstruction</button>
 							<button type="button" class="btn usis-project-tool" data-usis-parent="buyout" data-usis-show-tab="proj-tab-procurement" data-i18n="Buyout">Buyout</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="contract" data-usis-show-tab="proj-tab-contract" data-i18n="Contract">Contract</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
 						</nav>
 						<nav class="usis-project-subtools" aria-label="Job pages">
 							<div class="usis-project-subtools__group" data-usis-parent="job">
 								<button type="button" class="usis-project-subtool active" data-usis-show-tab="proj-tab-job" aria-current="page" data-i18n="Job information">Job information</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-openitems">Open items</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="files" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button>
 								<a class="usis-project-subtool" id="usis-proj-tool-documents" href="../usis-documents-hub.html">Documents</a>
 							</div>
-							<div class="usis-project-subtools__group" data-usis-parent="estimate" hidden>
+							<div class="usis-project-subtools__group" data-usis-parent="preconstruction" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-takeoff" data-i18n="Takeoff">Takeoff</button>
 								<a class="usis-project-subtool" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a>
-							</div>
-							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-photos">Photos</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-punch">Punchlist</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-wo">Work orders</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-incidents">Incidents</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="buyout" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
-							</div>
-							<div class="usis-project-subtools__group" data-usis-parent="contract" hidden>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-correspondence">Correspondence</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-poco">PO change orders</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
+							</div>
+							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-photos">Photos</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-wo">Work orders</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-qc">QC checklists</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-openitems">Open items</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-punch">Punchlist</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-incidents">Incidents</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
 							</div>
 						</nav>
 						</div>
@@ -1031,9 +1028,8 @@
 							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 								<div>
 									<h5 class="mb-1">Job cost codes</h5>
-									<p class="text-muted small mb-0">Project codes used on POs, bills, CPRs, COs, and timecards. Original budgets live on the prime contract.</p>
+									<p class="text-muted small mb-0">Codes on this job come from takeoff. Maintain the company list under <a href="../usis-cost-codes.html">Admin → Cost codes</a>.</p>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm" id="usis-jcc-add">Add Manually</button>
 							</div>
 							<div class="table-responsive">
 								<table class="table table-sm table-hover align-middle mb-0">
@@ -1045,7 +1041,7 @@
 											<th>Qty</th>
 											<th>Units</th>
 											<th class="text-end">Revenue</th>
-											<th></th>
+											<th class="text-end">Takeoff lines</th>
 										</tr>
 									</thead>
 									<tbody id="usis-jcc-tbody"><tr><td colspan="7" class="text-muted">Loading…</td></tr></tbody>
@@ -2167,7 +2163,7 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js?v=20260830b"></script>
-	<script src="assets/js/project-detail-wave1.js?v=20260831b"></script>
+	<script src="assets/js/project-detail-wave1.js?v=20260831c"></script>
 	<script src="assets/js/project-detail-wave2.js?v=20260831c"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>

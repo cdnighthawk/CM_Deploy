@@ -12,6 +12,8 @@
 	var parentLeadKey = null;
 	var takeoffAf = null;
 	var lastTakeoffRows = [];
+	var companyCostCodeValues = {};
+	var companyCostCodeDescs = {};
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") {
@@ -102,7 +104,15 @@
 				editor: "list",
 				editorParams: { values: ["L", "M", "E", "S", "O"] },
 			},
-			{ title: "Cost code", field: "job_cost_code", width: 110, editor: "input" },
+			{
+				title: "Cost code",
+				field: "job_cost_code",
+				width: 130,
+				editor: Object.keys(companyCostCodeValues).length ? "list" : "input",
+				editorParams: Object.keys(companyCostCodeValues).length
+					? { values: companyCostCodeValues, autocomplete: true, listOnEmpty: true }
+					: {},
+			},
 			{
 				title: "Cost code desc.",
 				field: "job_cost_code_description",
@@ -694,6 +704,9 @@
 				var id = row.getData().id;
 				var body = {};
 				body[field] = newVal;
+				if (field === "job_cost_code" && companyCostCodeDescs[newVal]) {
+					body.job_cost_code_description = companyCostCodeDescs[newVal];
+				}
 
 				fetch(apiBase() + "/api/v1/takeoff-lines/" + encodeURIComponent(id), {
 					method: "PATCH",
@@ -882,6 +895,20 @@
 		if (noLead) noLead.classList.add("d-none");
 		root.classList.remove("d-none");
 		root.innerHTML = '<p class="text-muted small mb-0">Loading takeoff…</p>';
+		fetch(apiBase() + "/api/v1/cost-codes?active=1", { credentials: "include", headers: { Accept: "application/json" } })
+			.then(function (r) {
+				return r.ok ? r.json() : { items: [] };
+			})
+			.then(function (data) {
+				companyCostCodeValues = {};
+				companyCostCodeDescs = {};
+				((data && data.items) || []).forEach(function (it) {
+					if (!it || !it.code) return;
+					companyCostCodeValues[it.code] = it.code + (it.description ? " — " + it.description : "");
+					companyCostCodeDescs[it.code] = it.description || "";
+				});
+			})
+			.catch(function () {});
 		document.addEventListener("usis-lead-estimate-loaded", onLeadLoaded);
 	}
 

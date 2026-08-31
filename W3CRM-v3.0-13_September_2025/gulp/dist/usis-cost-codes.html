@@ -37,7 +37,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/usis-companies.html">
+	<link rel="canonical" href="https://www.usiscm.com/usis-cost-codes.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -478,7 +478,7 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="Companies">Companies</h1></li>
+						<li><h1 data-i18n="Cost codes">Cost codes</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -497,7 +497,7 @@
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="Companies">Companies</span>
+							<span data-i18n="Cost codes">Cost codes</span>
 
 						</li>
 					</ol>
@@ -507,76 +507,27 @@
 			<div class="container-fluid">
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
-						<h4 class="mb-1">Companies and contacts</h4>
-						<p class="text-muted small mb-0">Directory admin: companies, contacts, insurance, and licenses.</p>
+						<h4 class="mb-1">Cost codes</h4>
+						<p class="text-muted small mb-0">Company-wide master list. Takeoff picks from this list; each job’s cost codes populate from that takeoff.</p>
 					</div>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-co-add">+ Company</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-cc-add">Add Manually</button>
 				</div>
-				<div class="row g-3">
-					<div class="col-lg-5">
-						<div class="card border-0 shadow-sm">
-							<div class="card-body">
-								<input type="search" class="form-control form-control-sm mb-2" id="usis-co-q" placeholder="Search companies…">
-								<div class="table-responsive">
-									<table class="table table-sm table-hover mb-0">
-										<thead class="table-light"><tr><th>Name</th><th>Type</th></tr></thead>
-										<tbody id="usis-co-tbody"></tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="col-lg-7">
-						<div class="card border-0 shadow-sm mb-3">
-							<div class="card-body">
-								<h6 class="mb-2">Contacts</h6>
-								<div class="d-flex gap-2 mb-2">
-									<input class="form-control form-control-sm" id="usis-ct-first" placeholder="First">
-									<input class="form-control form-control-sm" id="usis-ct-last" placeholder="Last">
-									<input class="form-control form-control-sm" id="usis-ct-email" placeholder="Email">
-									<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ct-add">Add</button>
-								</div>
-								<div class="table-responsive">
-									<table class="table table-sm mb-0">
-										<thead class="table-light"><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
-										<tbody id="usis-ct-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-						<div class="card border-0 shadow-sm mb-3">
-							<div class="card-body">
-								<h6 class="mb-2">Insurance</h6>
-								<div class="d-flex gap-2 mb-2">
-									<input class="form-control form-control-sm" id="usis-ins-type" placeholder="Type">
-									<input class="form-control form-control-sm" id="usis-ins-carrier" placeholder="Carrier">
-									<input type="date" class="form-control form-control-sm" id="usis-ins-exp">
-									<button type="button" class="btn btn-outline-primary btn-sm" id="usis-ins-add">Add</button>
-								</div>
-								<div class="table-responsive">
-									<table class="table table-sm mb-0">
-										<thead class="table-light"><tr><th>Type</th><th>Carrier</th><th>Expires</th></tr></thead>
-										<tbody id="usis-ins-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-						<div class="card border-0 shadow-sm">
-							<div class="card-body">
-								<h6 class="mb-2">Licenses</h6>
-								<div class="d-flex gap-2 mb-2">
-									<input class="form-control form-control-sm" id="usis-lic-type" placeholder="Type">
-									<input class="form-control form-control-sm" id="usis-lic-num" placeholder="Number">
-									<input type="date" class="form-control form-control-sm" id="usis-lic-exp">
-									<button type="button" class="btn btn-outline-primary btn-sm" id="usis-lic-add">Add</button>
-								</div>
-								<div class="table-responsive">
-									<table class="table table-sm mb-0">
-										<thead class="table-light"><tr><th>Type</th><th>Number</th><th>Expires</th></tr></thead>
-										<tbody id="usis-lic-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
-									</table>
-								</div>
-							</div>
+				<div class="card border-0 shadow-sm">
+					<div class="card-body">
+						<input type="search" class="form-control form-control-sm mb-2" id="usis-cc-q" placeholder="Search codes…">
+						<div class="table-responsive">
+							<table class="table table-sm table-hover align-middle mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>Order</th>
+										<th>Code</th>
+										<th>Description</th>
+										<th>Units</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-cc-tbody"><tr><td colspan="5" class="text-muted">Loading…</td></tr></tbody>
+							</table>
 						</div>
 					</div>
 				</div>
@@ -621,6 +572,95 @@
 
 	</div>
 
+	<div class="modal fade" id="usis-modal-cc" tabindex="-1" aria-labelledby="usis-modal-cc-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<form id="usis-cc-form">
+					<div class="modal-header">
+						<h5 class="modal-title" id="usis-modal-cc-title">Add cost code</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<input type="hidden" id="usis-cc-id" value="">
+						<div class="alert alert-danger py-2 d-none" id="usis-cc-err" role="alert"></div>
+						<div class="row g-2 mb-3">
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-cc-order">Order Number</label>
+								<input type="number" class="form-control form-control-sm" id="usis-cc-order" min="0" step="1">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-cc-code">Code <span class="text-danger">*</span></label>
+								<input class="form-control form-control-sm" id="usis-cc-code" maxlength="60" required autocomplete="off" placeholder="e.g. 03-100">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-cc-units">Units</label>
+								<input class="form-control form-control-sm" id="usis-cc-units" maxlength="40" value="LS" placeholder="LS">
+							</div>
+							<div class="col-12">
+								<label class="form-label small mb-0" for="usis-cc-desc">Description <span class="text-danger">*</span></label>
+								<input class="form-control form-control-sm" id="usis-cc-desc" maxlength="500" required autocomplete="off">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-cc-tax">Default Tax Code</label>
+								<input class="form-control form-control-sm" id="usis-cc-tax" maxlength="40">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-cc-ap-tax">Default AP Tax Code</label>
+								<input class="form-control form-control-sm" id="usis-cc-ap-tax" maxlength="40">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-cc-ar-tax">Default AR Tax Code</label>
+								<input class="form-control form-control-sm" id="usis-cc-ar-tax" maxlength="40">
+							</div>
+						</div>
+						<h6 class="text-muted small text-uppercase mb-2">Internal grouping codes</h6>
+						<div class="row g-2 mb-2 align-items-center">
+							<div class="col-4"><label class="form-label small mb-0" for="usis-cc-div">Division</label></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-div" maxlength="40" placeholder="Code"></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-div-desc" maxlength="200" placeholder="Description"></div>
+						</div>
+						<div class="row g-2 mb-2 align-items-center">
+							<div class="col-4"><label class="form-label small mb-0" for="usis-cc-maj">Major</label></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-maj" maxlength="40" placeholder="Code"></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-maj-desc" maxlength="200" placeholder="Description"></div>
+						</div>
+						<div class="row g-2 mb-2 align-items-center">
+							<div class="col-4"><label class="form-label small mb-0" for="usis-cc-min">Minor</label></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-min" maxlength="40" placeholder="Code"></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-min-desc" maxlength="200" placeholder="Description"></div>
+						</div>
+						<div class="row g-2 mb-3 align-items-center">
+							<div class="col-4"><label class="form-label small mb-0" for="usis-cc-submin">Subminor</label></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-submin" maxlength="40" placeholder="Code"></div>
+							<div class="col-4"><input class="form-control form-control-sm" id="usis-cc-submin-desc" maxlength="200" placeholder="Description"></div>
+						</div>
+						<h6 class="text-muted small text-uppercase mb-2">Other</h6>
+						<div class="row g-2">
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-cc-owner">Owner Code</label>
+								<input class="form-control form-control-sm" id="usis-cc-owner" maxlength="80">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-cc-owner-desc">Owner Code Description</label>
+								<input class="form-control form-control-sm" id="usis-cc-owner-desc" maxlength="200">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-cc-wc">Default Workers Compensation Code</label>
+								<input class="form-control form-control-sm" id="usis-cc-wc" maxlength="40">
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-cc-save-new">Save &amp; New</button>
+						<button type="submit" class="btn btn-primary btn-sm">Save &amp; Close</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/js/usis-i18n.js"></script>
 	<script src="assets/js/usis-report-problem.js"></script>
@@ -644,7 +684,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-companies.js?v=20260831a"></script>
+	<script src="assets/js/usis-cost-codes.js?v=20260831a"></script>
 
 </body>
 </html>

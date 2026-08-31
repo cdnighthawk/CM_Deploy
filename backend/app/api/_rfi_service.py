@@ -401,6 +401,74 @@ def reply_public(r: RfiReply) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+_COST_CODE_STR = (
+    "code",
+    "description",
+    "units",
+    "owner_cost_code",
+    "owner_cost_code_desc",
+    "default_tax_code",
+    "division_code",
+    "division_desc",
+    "major_code",
+    "major_desc",
+    "minor_code",
+    "minor_desc",
+    "subminor_code",
+    "subminor_desc",
+    "workers_comp_code",
+    "ap_tax_code",
+    "ar_tax_code",
+)
+_COST_CODE_DEC = (
+    "quantity",
+    "material_budget",
+    "labor_budget",
+    "equipment_budget",
+    "subcontractor_budget",
+    "other_budget",
+    "revenue_budget",
+    "labor_hour_budget",
+    "equipment_hour_budget",
+)
+
+
+def _blank_to_none(v: Any) -> Any:
+    if v is None:
+        return None
+    if isinstance(v, str) and not v.strip():
+        return None
+    return v
+
+
+def _apply_cost_code_fields(row: Any, data: Mapping[str, Any]) -> None:
+    from decimal import Decimal, InvalidOperation
+
+    for k in _COST_CODE_STR:
+        if k not in data or not hasattr(row, k):
+            continue
+        v = _blank_to_none(data.get(k))
+        setattr(row, k, str(v).strip() if v is not None else None)
+    if "order_number" in data and hasattr(row, "order_number"):
+        try:
+            row.order_number = int(data.get("order_number") or 0)
+        except (TypeError, ValueError) as e:
+            raise ApiError("invalid order_number") from e
+    if "is_active" in data and hasattr(row, "is_active"):
+        row.is_active = bool(data.get("is_active"))
+    for k in _COST_CODE_DEC:
+        if k not in data or not hasattr(row, k):
+            continue
+        v = data.get(k)
+        if v in (None, ""):
+            setattr(row, k, None)
+            continue
+        try:
+            setattr(row, k, Decimal(str(v)))
+        except (InvalidOperation, ValueError) as e:
+            raise ApiError(f"invalid {k}") from e
+
+
 def lookup_public(row: Any) -> dict[str, Any]:
     out = {"id": str(row.id), "project_id": str(row.project_id)}
     for attr in (
@@ -414,6 +482,19 @@ def lookup_public(row: Any) -> dict[str, Any]:
         "order_number",
         "units",
         "owner_cost_code",
+        "owner_cost_code_desc",
+        "default_tax_code",
+        "division_code",
+        "division_desc",
+        "major_code",
+        "major_desc",
+        "minor_code",
+        "minor_desc",
+        "subminor_code",
+        "subminor_desc",
+        "workers_comp_code",
+        "ap_tax_code",
+        "ar_tax_code",
     ):
         if hasattr(row, attr):
             val = getattr(row, attr)
@@ -421,17 +502,7 @@ def lookup_public(row: Any) -> dict[str, Any]:
                 out[attr] = float(val)
             else:
                 out[attr] = val
-    for attr in (
-        "quantity",
-        "material_budget",
-        "labor_budget",
-        "equipment_budget",
-        "subcontractor_budget",
-        "other_budget",
-        "revenue_budget",
-        "labor_hour_budget",
-        "equipment_hour_budget",
-    ):
+    for attr in _COST_CODE_DEC:
         if hasattr(row, attr):
             val = getattr(row, attr)
             out[attr] = float(val) if val is not None else None
@@ -454,6 +525,10 @@ def list_lookup(project_id: uuid.UUID, kind: str) -> list[dict[str, Any]]:
     }.get(kind)
     if Model is None:
         raise ApiError(f"unknown lookup: {kind}", 400)
+    if kind == "cost_codes":
+        from ._cost_code_service import sync_project_cost_codes_from_takeoff
+
+        return sync_project_cost_codes_from_takeoff(project_id)
     order_col = getattr(Model, "order_number", None) or getattr(Model, "sort_order", None) or Model.created_at
     rows = db.session.scalars(select(Model).where(Model.project_id == project_id).order_by(order_col.asc())).all()
     return [lookup_public(r) for r in rows]
@@ -469,6 +544,11 @@ def create_lookup(project_id: uuid.UUID, kind: str, data: Mapping[str, Any]) -> 
     }.get(kind)
     if Model is None:
         raise ApiError(f"unknown lookup: {kind}", 400)
+    if kind == "cost_codes":
+        raise ApiError(
+            "Job cost codes come from takeoff. Add master codes under Admin → Cost codes.",
+            400,
+        )
     if kind == "spec_sections":
         created = add_spec_sections(project_id, [data])
         if created:
@@ -597,6 +677,19 @@ def patch_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, data: Mapp
             "quantity",
             "units",
             "owner_cost_code",
+            "owner_cost_code_desc",
+            "default_tax_code",
+            "division_code",
+            "division_desc",
+            "major_code",
+            "major_desc",
+            "minor_code",
+            "minor_desc",
+            "subminor_code",
+            "subminor_desc",
+            "workers_comp_code",
+            "ap_tax_code",
+            "ar_tax_code",
             "material_budget",
             "labor_budget",
             "equipment_budget",
@@ -645,7 +738,30 @@ def patch_lookup(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, data: Mapp
                     setattr(row, k, Decimal(str(v)))
                 except (InvalidOperation, ValueError) as e:
                     raise ApiError(f"invalid {k}") from e
-        elif k in ("code", "title", "name", "description", "path", "prefix", "pdf_url", "units", "owner_cost_code"):
+        elif k in (
+            "code",
+            "title",
+            "name",
+            "description",
+            "path",
+            "prefix",
+            "pdf_url",
+            "units",
+            "owner_cost_code",
+            "owner_cost_code_desc",
+            "default_tax_code",
+            "division_code",
+            "division_desc",
+            "major_code",
+            "major_desc",
+            "minor_code",
+            "minor_desc",
+            "subminor_code",
+            "subminor_desc",
+            "workers_comp_code",
+            "ap_tax_code",
+            "ar_tax_code",
+        ):
             s = (str(v).strip() if v is not None else "") or None
             if k == "pdf_url" and s is not None and len(s) > 1024:
                 s = s[:1024]

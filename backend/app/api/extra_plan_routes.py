@@ -204,6 +204,9 @@ def register_extra_routes(bp: Blueprint) -> None:
         from ..services.employee_pc_cache import cache_project_takeoff
 
         cache_project_takeoff(pid)
+        from ._cost_code_service import sync_project_cost_codes_from_takeoff
+
+        sync_project_cost_codes_from_takeoff(pid)
         return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
     @bp.get("/projects/<project_id>/documents")

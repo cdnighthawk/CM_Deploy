@@ -72,63 +72,43 @@
 
 	function loadJcc() {
 		var tbody = document.getElementById("usis-jcc-tbody");
-		if (!tbody || !projectId()) return;
-		fetchJson(pidPath("/rfi-lookups/cost_codes"))
+		if (!tbody || !projectId()) return Promise.resolve();
+		return fetchJson(pidPath("/rfi-lookups/cost_codes"))
 			.then(function (data) {
 				var items = (data && data.items) || data || [];
 				if (!Array.isArray(items)) items = [];
 				if (!items.length) {
-					tbody.innerHTML = emptyRow(7, "No cost codes yet.");
+					tbody.innerHTML = emptyRow(7, "No takeoff cost codes yet. Assign codes on takeoff lines.");
 					return;
 				}
 				tbody.innerHTML = items
 					.map(function (cc) {
+						var warn = cc.in_company_list === false ? ' <span class="text-muted">(not in company list)</span>' : "";
 						return (
-							"<tr data-id=\"" +
+							'<tr data-id="' +
 							esc(cc.id) +
-							"\"><td>" +
+							'"><td>' +
 							esc(cc.order_number != null ? cc.order_number : "") +
 							"</td><td>" +
 							esc(cc.code || "") +
 							"</td><td>" +
 							esc(cc.description || "") +
+							warn +
 							"</td><td>" +
 							esc(cc.quantity != null ? cc.quantity : "") +
 							"</td><td>" +
 							esc(cc.units || "") +
-							"</td><td class=\"text-end\">" +
+							'</td><td class="text-end">' +
 							money(cc.revenue_budget) +
-							"</td><td><button type=\"button\" class=\"btn btn-link btn-sm p-0 usis-jcc-del\">Delete</button></td></tr>"
+							'</td><td class="text-end">' +
+							esc(cc.takeoff_line_count != null ? cc.takeoff_line_count : "") +
+							"</td></tr>"
 						);
 					})
 					.join("");
 			})
 			.catch(function () {
 				tbody.innerHTML = emptyRow(7, "Could not load cost codes.");
-			});
-	}
-
-	function addJcc() {
-		if (!projectId()) return;
-		var code = window.prompt("Cost code (e.g. 03-100)");
-		if (!code) return;
-		var description = window.prompt("Description") || "";
-		fetchJson(pidPath("/rfi-lookups/cost_codes"), {
-			method: "POST",
-			body: { code: code.trim(), description: description.trim() },
-		})
-			.then(loadJcc)
-			.catch(function (err) {
-				window.alert((err && err.body) || "Could not add cost code.");
-			});
-	}
-
-	function delJcc(id) {
-		if (!id || !window.confirm("Delete this cost code?")) return;
-		fetchJson(pidPath("/rfi-lookups/cost_codes/" + encodeURIComponent(id)), { method: "DELETE" })
-			.then(loadJcc)
-			.catch(function () {
-				window.alert("Could not delete cost code.");
 			});
 	}
 
@@ -364,17 +344,6 @@
 		loadDailyLog();
 		loadScos();
 
-		var addJ = document.getElementById("usis-jcc-add");
-		if (addJ) addJ.addEventListener("click", addJcc);
-		var jccBody = document.getElementById("usis-jcc-tbody");
-		if (jccBody) {
-			jccBody.addEventListener("click", function (e) {
-				var btn = e.target.closest(".usis-jcc-del");
-				if (!btn) return;
-				var tr = btn.closest("tr");
-				if (tr) delJcc(tr.getAttribute("data-id"));
-			});
-		}
 		var addCprBtn = document.getElementById("usis-ca-cpr-add");
 		if (addCprBtn) addCprBtn.addEventListener("click", addCpr);
 		var addCoBtn = document.getElementById("usis-ca-co-add");

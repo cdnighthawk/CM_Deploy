@@ -56,6 +56,7 @@ from . import _calendar_service as calendar_svc
 from . import _issue_service as issue_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
+from . import _cost_code_service as cost_code_svc
 from . import _material_order_service as material_order_svc
 from . import _procurement_lookup_service as proc_lookup_svc
 from . import _project_members_service as project_members_svc
@@ -1066,6 +1067,10 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
         if "job_cost_code" in data:
             v = data["job_cost_code"]
             t.job_cost_code = (str(v).strip()[:60] or None) if v is not None else None
+            if t.job_cost_code and "job_cost_code_description" not in data:
+                master = cost_code_svc.get_company_cost_code_by_code(t.job_cost_code)
+                if master:
+                    t.job_cost_code_description = master.description
         if "job_cost_code_description" in data:
             v = data["job_cost_code_description"]
             t.job_cost_code_description = (str(v).strip()[:500] or None) if v is not None else None
@@ -1100,6 +1105,10 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
         t.job_cost_code = (str(v).strip()[:60] or None) if v is not None else None
         v = data.get("job_cost_code_description")
         t.job_cost_code_description = (str(v).strip()[:500] or None) if v is not None else None
+        if t.job_cost_code and not t.job_cost_code_description:
+            master = cost_code_svc.get_company_cost_code_by_code(t.job_cost_code)
+            if master:
+                t.job_cost_code_description = master.description
         v = data.get("notes")
         t.notes = str(v) if v is not None else None
         v = data.get("status")
@@ -1114,6 +1123,14 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
         if "material_pricing_id" in data:
             _apply_takeoff_material_pricing_fk(t, data.get("material_pricing_id"))
     t.extended_total = _compute_extended(t.quantity, t.unit_cost)
+
+
+def _sync_jcc_for_takeoff_line(t: TakeoffLineItem) -> None:
+    from ..services.employee_pc_cache import project_id_for_takeoff_line
+
+    pid = project_id_for_takeoff_line(t)
+    if pid:
+        cost_code_svc.sync_project_cost_codes_from_takeoff(pid)
 
 
 def _rfi_public(r: Rfi) -> dict[str, Any]:
@@ -2775,6 +2792,46 @@ def import_project_spec_book(project_id: str):
     except rfi_svc.ApiError as exc:
         return _rfi_err(exc)
     return _jsonify(result), 201
+
+
+@bp.get("/cost-codes")
+def list_company_cost_codes():
+    try:
+        return _jsonify(cost_code_svc.list_company_cost_codes(active_only=request.args.get("active") == "1"))
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.post("/cost-codes")
+def create_company_cost_code():
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify({"item": cost_code_svc.create_company_cost_code(data), "entity": "company_cost_codes"}), 201
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.patch("/cost-codes/<row_id>")
+def patch_company_cost_code(row_id: str):
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify({"item": cost_code_svc.patch_company_cost_code(rid, data), "entity": "company_cost_codes"})
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.delete("/cost-codes/<row_id>")
+def delete_company_cost_code(row_id: str):
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify(cost_code_svc.delete_company_cost_code(rid))
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
 
 
 @bp.get("/projects/<project_id>/rfi-lookups/<kind>")
@@ -4666,6 +4723,7 @@ def create_takeoff_line(identifier: str):
     from ..services.employee_pc_cache import cache_takeoff_for_line
 
     cache_takeoff_for_line(t)
+    _sync_jcc_for_takeoff_line(t)
     return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
 
@@ -4693,6 +4751,7 @@ def patch_takeoff_line(line_id: str):
     from ..services.employee_pc_cache import cache_takeoff_for_line
 
     cache_takeoff_for_line(t)
+    _sync_jcc_for_takeoff_line(t)
     return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"})
 
 
@@ -4715,6 +4774,8 @@ def delete_takeoff_line(line_id: str):
     db.session.delete(t)
     db.session.commit()
     cache_project_takeoff(pid)
+    if pid:
+        cost_code_svc.sync_project_cost_codes_from_takeoff(pid)
     return _jsonify({"ok": True})
 
 

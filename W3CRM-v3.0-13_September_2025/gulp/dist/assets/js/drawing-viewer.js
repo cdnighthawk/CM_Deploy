@@ -71,6 +71,7 @@
 	var deductPoints = [];
 	var measurePreviewRect = null;
 	var navMode = "select";
+	var estimateMode = false;
 	var spaceHeld = false;
 	var panState = null;
 	var zoomDrag = null;
@@ -565,7 +566,7 @@
 			pdfHref = apiBase() + "/api/v1/drawings/" + encodeURIComponent(r.id) + "/file";
 		}
 		var parts = [];
-		if (nameHtml && pdfHref) {
+		if (pdfHref) {
 			parts.push(
 				"<a class='usis-drawing-name-link' href='" +
 					esc(pdfHref) +
@@ -579,6 +580,16 @@
 		if (r.discipline) parts.push(esc(r.discipline));
 		if (r.drawing_set) parts.push("Set " + esc(r.drawing_set));
 		el.innerHTML = parts.join(" · ");
+		var dl = document.getElementById("usis-dv-download");
+		if (dl) {
+			if (pdfHref) {
+				dl.setAttribute("href", pdfHref);
+				dl.classList.remove("is-disabled");
+			} else {
+				dl.setAttribute("href", "#");
+				dl.classList.add("is-disabled");
+			}
+		}
 		setRenameButtonVisible(true);
 	}
 
@@ -590,7 +601,7 @@
 			wrap.classList.add("d-none");
 			return;
 		}
-		wrap.classList.remove("d-none");
+		wrap.classList.add("d-none");
 		ul.innerHTML = revisions
 			.map(function (r, i) {
 				var lab = (r.sheet_number || "?") + " — " + (r.sheet_title || r.id);
@@ -825,6 +836,7 @@
 		}
 
 		if (ctrl && (key === "s" || key === "S")) {
+			if (!estimateMode) return;
 			e.preventDefault();
 			applyTakeoffPatch();
 			return;
@@ -832,11 +844,13 @@
 
 		if (alt && !ctrl && (key === "u" || key === "U")) {
 			e.preventDefault();
+			setEstimateMode(true);
 			startCalibrateTool();
 			return;
 		}
 
 		if (shift && alt && !ctrl) {
+			setEstimateMode(true);
 			if (key === "l" || key === "L") {
 				e.preventDefault();
 				startLineTool("takeoff");
@@ -865,6 +879,7 @@
 			return;
 		}
 		if (shift && !ctrl && !alt && (key === "P" || key === "p")) {
+			if (!estimateMode) return;
 			e.preventDefault();
 			startPolyTool(activeIntent());
 			return;
@@ -882,6 +897,7 @@
 			setNavMode("zoom");
 			return;
 		}
+		if (!estimateMode) return;
 		if (key === "R" || key === "r") {
 			e.preventDefault();
 			startRectTool(activeIntent());
@@ -1679,6 +1695,32 @@
 		});
 	}
 
+	function setEstimateMode(on, opts) {
+		opts = opts || {};
+		estimateMode = !!on;
+		document.body.classList.toggle("usis-dv-estimate-on", estimateMode);
+		var btn = document.getElementById("usis-dv-estimate-toggle");
+		if (btn) {
+			btn.classList.toggle("active", estimateMode);
+			btn.setAttribute("aria-pressed", estimateMode ? "true" : "false");
+		}
+		if (!estimateMode) {
+			setMeasureMode("none");
+			setNavMode("select");
+		}
+		if (!opts.skipUrl) {
+			try {
+				var u = new URL(window.location.href);
+				if (estimateMode) u.searchParams.set("estimate", "1");
+				else u.searchParams.delete("estimate");
+				window.history.replaceState({}, "", u.toString());
+			} catch (e2) {
+				/* ignore */
+			}
+		}
+		refreshTakeoffStrip();
+	}
+
 	function setNavMode(mode) {
 		navMode = mode === "pan" || mode === "zoom" ? mode : "select";
 		measureMode = "none";
@@ -1960,6 +2002,7 @@
 			if (window.USISNotify) window.USISNotify.error("Fabric.js not loaded.");
 			return;
 		}
+		if (!estimateMode) setEstimateMode(true);
 		drawIntent = "measure";
 		resetRectDraft();
 		calPoints = [];
@@ -1969,6 +2012,7 @@
 
 	function startLineTool(intent) {
 		intent = normalizeIntent(intent);
+		if (!estimateMode) setEstimateMode(true);
 		if (!fabricLib || !ensureDrawIntent(intent)) return;
 		drawIntent = intent;
 		resetRectDraft();
@@ -1984,6 +2028,7 @@
 
 	function startPolyTool(intent) {
 		intent = normalizeIntent(intent);
+		if (!estimateMode) setEstimateMode(true);
 		if (!fabricLib || !ensureDrawIntent(intent)) return;
 		drawIntent = intent;
 		resetRectDraft();
@@ -1999,6 +2044,7 @@
 
 	function startRectTool(intent) {
 		intent = normalizeIntent(intent);
+		if (!estimateMode) setEstimateMode(true);
 		if (!fabricLib || !ensureDrawIntent(intent)) return;
 		drawIntent = intent;
 		resetRectDraft();
@@ -2014,6 +2060,7 @@
 
 	function startDeductTool(intent) {
 		intent = normalizeIntent(intent);
+		if (!estimateMode) setEstimateMode(true);
 		if (!fabricLib || !ensureDrawIntent(intent)) return;
 		if (lastGrossShapeIndex < 0) {
 			if (window.USISNotify)
@@ -2041,6 +2088,7 @@
 
 	function startCountTool(intent) {
 		intent = normalizeIntent(intent);
+		if (!estimateMode) setEstimateMode(true);
 		if (!fabricLib || !ensureDrawIntent(intent)) return;
 		drawIntent = intent;
 		countIntent = intent;
@@ -2700,7 +2748,7 @@
 		var bZoom = document.getElementById("usis-dv-m-zoom");
 		if (bPan)
 			bPan.addEventListener("click", function () {
-				setNavMode("pan");
+				setNavMode(navMode === "pan" ? "select" : "pan");
 			});
 		if (bZoom)
 			bZoom.addEventListener("click", function () {
@@ -2996,6 +3044,12 @@
 
 	function wireUi() {
 		loadDeletePermission();
+		var estToggle = document.getElementById("usis-dv-estimate-toggle");
+		if (estToggle) {
+			estToggle.addEventListener("click", function () {
+				setEstimateMode(!estimateMode);
+			});
+		}
 		var sel = document.getElementById("usis-dv-revision");
 		if (sel) {
 			sel.addEventListener("change", function () {
@@ -3341,28 +3395,25 @@
 		var back = document.getElementById("usis-dv-back");
 		if (!back) return;
 		var returnUrl = (q.get("return_url") || "").trim();
+		var label = "Close viewer";
 		if (returnUrl) {
 			back.setAttribute("href", returnUrl);
-			back.textContent = "\u2190 Back";
-			return;
-		}
-		if (fromPage === "estimate" && (estimateId || leadId)) {
+			label = "Back";
+		} else if (fromPage === "estimate" && (estimateId || leadId)) {
 			back.setAttribute(
 				"href",
 				"construction/estimate-detail.html?id=" + encodeURIComponent(estimateId || leadId)
 			);
-			back.textContent = "\u2190 Estimate";
-			return;
-		}
-		if (leadId) {
+			label = "Back to estimate";
+		} else if (leadId) {
 			back.setAttribute("href", "construction/lead-detail.html?id=" + encodeURIComponent(leadId));
-			back.textContent = "\u2190 Lead";
-			return;
-		}
-		if (projectId) {
+			label = "Back to lead";
+		} else if (projectId) {
 			back.setAttribute("href", "construction/project-detail.html?id=" + encodeURIComponent(projectId));
-			back.textContent = "\u2190 Project";
+			label = "Back to project";
 		}
+		back.setAttribute("title", label);
+		back.setAttribute("aria-label", label);
 	}
 
 	function startViewer() {
@@ -3445,6 +3496,9 @@
 		activeDrawingId = q.get("drawing_id");
 		drawingSetFilter = (q.get("drawing_set") || "").trim() || null;
 		takeoffLineId = (q.get("takeoff_line") || "").trim() || null;
+		if (q.get("estimate") === "1" || takeoffLineId || fromPage === "estimate") {
+			setEstimateMode(true);
+		}
 		_usisDbg("E", "drawing-viewer.js:init", "init_query", {
 			projectId: projectId,
 			leadId: leadId,

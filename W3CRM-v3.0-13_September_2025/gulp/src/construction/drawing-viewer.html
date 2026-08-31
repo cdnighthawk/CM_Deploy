@@ -10,7 +10,7 @@
 
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
-	<link href="assets/css/usis-ui.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260831a" rel="stylesheet">
 
 	<style>
 		.usis-dv-fs-body {
@@ -25,7 +25,7 @@
 			min-height: 0;
 			display: flex;
 			flex-direction: column;
-			background: #525659;
+			background: #c8ccd0;
 		}
 		.usis-dv-canvas-wrap {
 			flex: 1 1 auto;
@@ -34,7 +34,7 @@
 			position: relative;
 			overscroll-behavior: none;
 			touch-action: none;
-			background: #525659;
+			background: #c8ccd0;
 		}
 		.usis-dv-canvas-wrap.usis-dv-nav-pan { cursor: grab; }
 		.usis-dv-canvas-wrap.is-panning { cursor: grabbing; }
@@ -68,7 +68,7 @@
 			left: 0;
 			top: 0;
 			touch-action: none;
-			cursor: crosshair;
+			cursor: default;
 			margin: 0;
 		}
 		body.usis-drawing-viewer .modal { z-index: 10060; }
@@ -116,22 +116,47 @@
 		<header class="usis-dv-chrome">
 			<div class="usis-dv-chrome__titlebar">
 				<div class="usis-dv-chrome__nav">
-					<a id="usis-dv-back" href="construction/project-detail.html" class="btn btn-outline-secondary btn-sm">&larr; Project</a>
+					<a id="usis-dv-back" href="construction/project-detail.html" class="usis-dv-iconbtn" title="Back to project" aria-label="Back to project">
+						<i class="icon feather icon-arrow-left" aria-hidden="true"></i>
+					</a>
+					<button type="button" class="usis-dv-iconbtn" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)" aria-label="Newer revision">
+						<i class="icon feather icon-chevron-left" aria-hidden="true"></i>
+					</button>
+					<button type="button" class="usis-dv-iconbtn" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)" aria-label="Older revision">
+						<i class="icon feather icon-chevron-right" aria-hidden="true"></i>
+					</button>
 				</div>
 				<div class="usis-dv-chrome__sheet">
 					<div class="usis-dv-meta" id="usis-dv-sheetline"></div>
 					<button type="button" class="btn btn-link btn-sm p-0 usis-dv-rename-btn d-none" id="usis-dv-rename" title="Change drawing # and name">Rename</button>
 				</div>
+				<select class="form-select form-select-sm usis-dv-rev-select" id="usis-dv-revision" aria-label="Revision"></select>
+				<div class="usis-dv-chrome__pages" role="group" aria-label="Page">
+					<button type="button" class="usis-dv-iconbtn" id="usis-dv-page-prev" title="Previous page (PageUp)" aria-label="Previous page">&minus;</button>
+					<span class="usis-dv-page-label" id="usis-dv-page-label">1 / 1</span>
+					<button type="button" class="usis-dv-iconbtn" id="usis-dv-page-next" title="Next page (PageDown)" aria-label="Next page">+</button>
+				</div>
 				<div class="usis-dv-chrome__actions">
+					<a id="usis-dv-download" class="usis-dv-iconbtn usis-dv-iconbtn--stack" href="#" target="_blank" rel="noopener noreferrer" title="Download PDF" aria-label="Download PDF">
+						<i class="icon feather icon-download" aria-hidden="true"></i>
+						<span>Download</span>
+					</a>
+					<button type="button" class="usis-dv-iconbtn usis-dv-iconbtn--stack usis-dv-estimate-toggle" id="usis-dv-estimate-toggle" aria-pressed="false" title="Estimating tools">
+						<i class="icon feather icon-edit-3" aria-hidden="true"></i>
+						<span>Estimate</span>
+					</button>
 					<div class="dropdown d-none" id="usis-dv-sheets-wrap">
 						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="usis-dv-thumb-list">Sheets</button>
 						<ul class="dropdown-menu dropdown-menu-end" id="usis-dv-thumb-list"></ul>
 					</div>
-					<button type="button" class="btn btn-sm usis-ai-review" id="usis-dv-ai-stub"><i class="icon feather icon-star me-1" aria-hidden="true"></i>Review</button>
 					<div class="dropdown" id="usis-dv-more-wrap">
-						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">More</button>
+						<button type="button" class="usis-dv-iconbtn usis-dv-iconbtn--stack" data-bs-toggle="dropdown" aria-expanded="false" title="More" aria-label="More">
+							<i class="icon feather icon-more-vertical" aria-hidden="true"></i>
+							<span>More</span>
+						</button>
 						<ul class="dropdown-menu dropdown-menu-end">
 							<li><button type="button" class="dropdown-item" id="usis-dv-ann-add">Save note</button></li>
+							<li><button type="button" class="dropdown-item" id="usis-dv-ai-stub">Run first-pass review</button></li>
 							<li><button type="button" class="dropdown-item" id="usis-dv-takeoff-firstpass">Run first-pass takeoff</button></li>
 							<li><button type="button" class="dropdown-item" id="usis-dv-review-done">Mark review leftover done</button></li>
 							<li><button type="button" class="dropdown-item" id="usis-dv-takeoff-done">Mark takeoff leftover done</button></li>
@@ -141,6 +166,10 @@
 							<li class="usis-dv-more-admin"><button type="button" class="dropdown-item text-danger" id="usis-dv-delete-sheet" title="Delete all revisions for this sheet">Delete sheet</button></li>
 						</ul>
 					</div>
+					<button type="button" class="usis-dv-iconbtn usis-dv-iconbtn--stack" id="usis-dv-fs-close" title="Close" aria-label="Close">
+						<i class="icon feather icon-x" aria-hidden="true"></i>
+						<span>Close</span>
+					</button>
 				</div>
 			</div>
 
@@ -174,28 +203,10 @@
 			</div>
 
 			<div class="usis-dv-toolbar" id="usis-dv-measure-toolbar">
-				<select class="form-select form-select-sm" id="usis-dv-revision" aria-label="Drawing set"></select>
-				<div class="usis-seg" role="group" aria-label="Revision">
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-newer" title="Newer revision (Ctrl+Shift+PageUp)">&larr;</button>
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-rev-older" title="Older revision (Ctrl+Shift+PageDown)">&rarr;</button>
-				</div>
-				<span class="usis-dv-toolbar__rule" aria-hidden="true"></span>
 				<div class="usis-seg" role="group" aria-label="View tools">
 					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-none" title="Select (V)" aria-pressed="true">Select</button>
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan without leaving the current tool." aria-pressed="false">Pan</button>
 					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-m-zoom" title="Zoom (Z): click to zoom in, Ctrl+click to zoom out, drag a rectangle" aria-pressed="false">Zoom</button>
-				</div>
-				<div class="usis-seg" role="group" aria-label="Zoom">
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)">−</button>
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)">+</button>
 					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-width" title="Fit width (Ctrl+0)">Width</button>
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
-				</div>
-				<span class="usis-dv-zoom-label" id="usis-dv-zoom-label">100%</span>
-				<div class="usis-seg" role="group" aria-label="Page">
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-prev" title="Previous page (PageUp or Ctrl+wheel)">−</button>
-					<span class="usis-dv-page-label" id="usis-dv-page-label">1 / 1</span>
-					<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dv-page-next" title="Next page (PageDown or Ctrl+wheel)">+</button>
 				</div>
 				<span class="usis-dv-toolbar__rule" aria-hidden="true"></span>
 				<div class="usis-seg" role="group" aria-label="Draw destination">
@@ -240,6 +251,15 @@
 							<canvas id="usis-dv-canvas" width="0" height="0"></canvas>
 							<canvas id="usis-dv-overlay" width="0" height="0"></canvas>
 						</div>
+					</div>
+					<div class="usis-dv-floatzoom" aria-label="View tools">
+						<button type="button" class="usis-dv-floatzoom__btn" id="usis-dv-m-pan" title="Pan (Shift+V). Hold Space or the mouse wheel to pan." aria-pressed="false" aria-label="Pan">
+							<i class="icon feather icon-move" aria-hidden="true"></i>
+						</button>
+						<button type="button" class="usis-dv-floatzoom__btn" id="usis-dv-zoom-in" title="Zoom in (Ctrl++ or wheel)" aria-label="Zoom in">+</button>
+						<button type="button" class="usis-dv-floatzoom__btn" id="usis-dv-zoom-out" title="Zoom out (Ctrl+− or wheel)" aria-label="Zoom out">&minus;</button>
+						<span class="usis-dv-zoom-label" id="usis-dv-zoom-label">100%</span>
+						<button type="button" class="usis-dv-floatzoom__btn usis-dv-floatzoom__fit" id="usis-dv-fit-page" title="Fit page (Ctrl+9)">Fit</button>
 					</div>
 				</div>
 				<p class="usis-dv-hint d-none" id="usis-dv-hint"></p>
@@ -365,7 +385,7 @@
 	<script src="assets/vendor/pdfjs-3.11/pdf.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
-	<script src="assets/js/drawing-viewer.js?v=20260830d"></script>
+	<script src="assets/js/drawing-viewer.js?v=20260831a"></script>
 
 </body>
 </html>

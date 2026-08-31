@@ -53,7 +53,7 @@
 		}
 		var link = doc.createElement("link");
 		link.rel = "stylesheet";
-		link.href = "assets/css/usis-ui.css?v=20260830a";
+		link.href = "assets/css/usis-ui.css?v=20260830c";
 		doc.head.appendChild(link);
 	}
 

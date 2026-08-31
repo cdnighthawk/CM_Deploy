@@ -11,7 +11,7 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
-	<link href="assets/css/usis-ui.css?v=20260830a" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260830c" rel="stylesheet">
 	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
@@ -100,54 +100,120 @@
 			<div class="container-fluid">
 				<div class="col-xl-12 mb-3">
 					<div class="usis-detail-toolbar-row">
-						<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar mb-0" role="tablist">
-						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true" data-i18n="Job information">Job information</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-schedule" data-bs-toggle="pill" data-bs-target="#proj-pane-schedule" type="button" role="tab" aria-controls="proj-pane-schedule" aria-selected="false" data-i18n="Schedule">Schedule</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-tasks" data-bs-toggle="pill" data-bs-target="#proj-pane-tasks" type="button" role="tab" aria-controls="proj-pane-tasks" aria-selected="false" data-i18n="Tasks">Tasks</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-drawings" data-bs-toggle="pill" data-bs-target="#proj-pane-drawings" type="button" role="tab" aria-controls="proj-pane-drawings" aria-selected="false" data-i18n="Drawings">Drawings</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-specs" data-bs-toggle="pill" data-bs-target="#proj-pane-specs" type="button" role="tab" aria-controls="proj-pane-specs" aria-selected="false" data-i18n="Specs">Specs</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-takeoff" data-bs-toggle="pill" data-bs-target="#proj-pane-takeoff" type="button" role="tab" aria-controls="proj-pane-takeoff" aria-selected="false" data-i18n="Takeoff">Takeoff</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-estimate" data-bs-toggle="pill" data-bs-target="#proj-pane-estimate" type="button" role="tab" aria-controls="proj-pane-estimate" aria-selected="false" data-i18n="Estimate">Estimate</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-rfi" data-bs-toggle="pill" data-bs-target="#proj-pane-rfi" type="button" role="tab" aria-controls="proj-pane-rfi" aria-selected="false" data-i18n="RFIs">RFIs</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-submittals" data-bs-toggle="pill" data-bs-target="#proj-pane-submittals" type="button" role="tab" aria-controls="proj-pane-submittals" aria-selected="false" data-i18n="Submittals">Submittals</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false" data-i18n="Procurement">Procurement</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false" data-i18n="Invoicing">Invoicing</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-contract" data-bs-toggle="pill" data-bs-target="#proj-pane-contract" type="button" role="tab" aria-controls="proj-pane-contract" aria-selected="false" data-i18n="Contract admin">Contract admin</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-costing" data-bs-toggle="pill" data-bs-target="#proj-pane-costing" type="button" role="tab" aria-controls="proj-pane-costing" aria-selected="false" data-i18n="Job costing">Job costing</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false" data-i18n="Safety">Safety</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="proj-tab-correspondence" data-bs-toggle="pill" data-bs-target="#proj-pane-correspondence" type="button" role="tab" aria-controls="proj-pane-correspondence" aria-selected="false">Correspondence</button>
-						</li>
-					</ul>
-						<a class="btn btn-sm btn-outline-secondary text-nowrap d-none" id="usis-proj-contract-admin-hub" href="../usis-procurement.html">Contract admin hub</a>
+						<nav class="usis-project-tools usis-detail-toolbar" aria-label="Project tools">
+							<div class="btn-group usis-project-tool usis-project-tool--active" data-usis-parent="job">
+								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-job" data-i18n="Job">Job</button>
+								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Job pages">
+									<span class="visually-hidden">Job pages</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><button type="button" class="dropdown-item active" data-usis-show-tab="proj-tab-job" aria-current="page" data-i18n="Job information">Job information</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-correspondence">Correspondence</button></li>
+								</ul>
+							</div>
+							<div class="btn-group usis-project-tool" data-usis-parent="files">
+								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-drawings" data-i18n="Files">Files</button>
+								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Files pages">
+									<span class="visually-hidden">Files pages</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button></li>
+									<li><a class="dropdown-item" id="usis-proj-tool-documents" href="usis-documents-hub.html">Documents</a></li>
+								</ul>
+							</div>
+							<div class="btn-group usis-project-tool" data-usis-parent="estimate">
+								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
+								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Estimate pages">
+									<span class="visually-hidden">Estimate pages</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-takeoff" data-i18n="Takeoff">Takeoff</button></li>
+									<li><a class="dropdown-item" id="usis-proj-tool-rfp" href="../usis-rfp-list.html">RFP</a></li>
+								</ul>
+							</div>
+							<div class="btn-group usis-project-tool" data-usis-parent="field">
+								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
+								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Field pages">
+									<span class="visually-hidden">Field pages</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button></li>
+								</ul>
+							</div>
+							<div class="btn-group usis-project-tool" data-usis-parent="buyout">
+								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-procurement" data-i18n="Buyout">Buyout</button>
+								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Buyout pages">
+									<span class="visually-hidden">Buyout pages</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button></li>
+								</ul>
+							</div>
+							<div class="btn-group usis-project-tool" data-usis-parent="contract">
+								<button type="button" class="btn usis-project-tool__label" data-usis-show-tab="proj-tab-contract" data-i18n="Contract">Contract</button>
+								<button type="button" class="btn dropdown-toggle dropdown-toggle-split usis-project-tool__caret" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="Contract pages">
+									<span class="visually-hidden">Contract pages</span>
+								</button>
+								<ul class="dropdown-menu">
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button></li>
+									<li><button type="button" class="dropdown-item" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button></li>
+								</ul>
+							</div>
+						</nav>
+						<ul class="nav nav-pills nav-pills-sm usis-project-tools-tablist" role="tablist" aria-hidden="true">
+							<li class="nav-item" role="presentation">
+								<button class="nav-link active" id="proj-tab-job" data-bs-toggle="pill" data-bs-target="#proj-pane-job" type="button" role="tab" aria-controls="proj-pane-job" aria-selected="true" data-i18n="Job information">Job information</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-schedule" data-bs-toggle="pill" data-bs-target="#proj-pane-schedule" type="button" role="tab" aria-controls="proj-pane-schedule" aria-selected="false" data-i18n="Schedule">Schedule</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-tasks" data-bs-toggle="pill" data-bs-target="#proj-pane-tasks" type="button" role="tab" aria-controls="proj-pane-tasks" aria-selected="false" data-i18n="Tasks">Tasks</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-drawings" data-bs-toggle="pill" data-bs-target="#proj-pane-drawings" type="button" role="tab" aria-controls="proj-pane-drawings" aria-selected="false" data-i18n="Drawings">Drawings</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-specs" data-bs-toggle="pill" data-bs-target="#proj-pane-specs" type="button" role="tab" aria-controls="proj-pane-specs" aria-selected="false" data-i18n="Specs">Specs</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-takeoff" data-bs-toggle="pill" data-bs-target="#proj-pane-takeoff" type="button" role="tab" aria-controls="proj-pane-takeoff" aria-selected="false" data-i18n="Takeoff">Takeoff</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-estimate" data-bs-toggle="pill" data-bs-target="#proj-pane-estimate" type="button" role="tab" aria-controls="proj-pane-estimate" aria-selected="false" data-i18n="Estimate">Estimate</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-rfi" data-bs-toggle="pill" data-bs-target="#proj-pane-rfi" type="button" role="tab" aria-controls="proj-pane-rfi" aria-selected="false" data-i18n="RFIs">RFIs</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-submittals" data-bs-toggle="pill" data-bs-target="#proj-pane-submittals" type="button" role="tab" aria-controls="proj-pane-submittals" aria-selected="false" data-i18n="Submittals">Submittals</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-procurement" data-bs-toggle="pill" data-bs-target="#proj-pane-procurement" type="button" role="tab" aria-controls="proj-pane-procurement" aria-selected="false" data-i18n="Procurement">Procurement</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-invoicing" data-bs-toggle="pill" data-bs-target="#proj-pane-invoicing" type="button" role="tab" aria-controls="proj-pane-invoicing" aria-selected="false" data-i18n="Invoicing">Invoicing</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-contract" data-bs-toggle="pill" data-bs-target="#proj-pane-contract" type="button" role="tab" aria-controls="proj-pane-contract" aria-selected="false" data-i18n="Contract admin">Contract admin</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-costing" data-bs-toggle="pill" data-bs-target="#proj-pane-costing" type="button" role="tab" aria-controls="proj-pane-costing" aria-selected="false" data-i18n="Job costing">Job costing</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false" data-i18n="Safety">Safety</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-correspondence" data-bs-toggle="pill" data-bs-target="#proj-pane-correspondence" type="button" role="tab" aria-controls="proj-pane-correspondence" aria-selected="false">Correspondence</button>
+							</li>
+						</ul>
 					</div>
 				</div>
 
@@ -1897,6 +1963,7 @@
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
+	<script src="assets/js/project-detail-tools-nav.js"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

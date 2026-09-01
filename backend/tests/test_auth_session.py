@@ -104,6 +104,37 @@ def test_session_login_and_auth_status(client, no_dev_admin):
         assert u.last_login_at is not None
 
 
+def test_session_login_with_username(client, no_dev_admin):
+    username = "dev_" + uuid.uuid4().hex[:8]
+    with client.application.app_context():
+        u = User(
+            email=None,
+            username=username,
+            first_name="Dev",
+            last_name="Review",
+            password_hash=generate_password_hash("review-login-1"),
+            is_active=True,
+        )
+        db.session.add(u)
+        db.session.commit()
+
+    ok = client.post(
+        "/auth/login",
+        data={"email": username, "password": "review-login-1"},
+        follow_redirects=False,
+    )
+    assert ok.status_code == 302
+    loc = unquote(ok.headers.get("Location") or "")
+    assert "page-login.html" not in loc or "login_error=" not in loc
+
+    st = client.get("/api/v1/auth/status")
+    assert st.status_code == 200
+    body = st.get_json()
+    assert body["authenticated"] is True
+    assert body["user"]["username"] == username
+    assert body["user"]["email"] is None
+
+
 def test_login_respects_safe_next_redirect(client, no_dev_admin):
     email = "next_" + uuid.uuid4().hex[:10] + "@t.com"
     with client.application.app_context():

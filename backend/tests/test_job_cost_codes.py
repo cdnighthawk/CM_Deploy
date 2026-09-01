@@ -62,3 +62,43 @@ def test_company_cost_codes_and_takeoff_sync(client):
     assert rows[0]["quantity"] == 12
     assert rows[0]["takeoff_line_count"] == 1
     assert rows[0]["in_company_list"] is True
+
+
+CSI_IMPORT_CSV = """Code,Title,Level
+ZZ 00 00,Test Division,1
+ZZ 10 00,Test Major,2
+ZZ 11 00,Test Minor,3
+ZZ 11 13,Test Subminor,3
+"""
+
+
+def test_import_csi_company_cost_codes(client):
+    imported = client.post("/api/v1/cost-codes/import", json={"csv": CSI_IMPORT_CSV})
+    assert imported.status_code == 200, imported.get_data(as_text=True)
+    body = imported.get_json()
+    assert body["total"] == 4
+    assert body["created"] + body["updated"] == 4
+
+    listed = client.get("/api/v1/cost-codes")
+    assert listed.status_code == 200
+    by_code = {r["code"]: r for r in listed.get_json()["items"]}
+    assert "ZZ 00 00" in by_code
+    assert by_code["ZZ 00 00"]["description"] == "Test Division"
+    assert by_code["ZZ 00 00"]["division_code"] == "ZZ 00 00"
+    assert by_code["ZZ 10 00"]["major_code"] == "ZZ 10 00"
+    assert by_code["ZZ 10 00"]["division_desc"] == "Test Division"
+    assert by_code["ZZ 11 00"]["minor_code"] == "ZZ 11 00"
+    assert by_code["ZZ 11 00"]["major_desc"] == "Test Major"
+    assert by_code["ZZ 11 13"]["subminor_code"] == "ZZ 11 13"
+    assert by_code["ZZ 11 13"]["minor_code"] == "ZZ 11 00"
+    assert by_code["ZZ 11 13"]["minor_desc"] == "Test Minor"
+
+    again = client.post("/api/v1/cost-codes/import", json={"csv": CSI_IMPORT_CSV})
+    assert again.status_code == 200
+    assert again.get_json()["created"] == 0
+    assert again.get_json()["updated"] == 4
+
+    for row in by_code.values():
+        if str(row.get("code") or "").startswith("ZZ "):
+            deleted = client.delete(f"/api/v1/cost-codes/{row['id']}")
+            assert deleted.status_code == 200

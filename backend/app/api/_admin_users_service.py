@@ -77,6 +77,7 @@ def user_public(u: User) -> dict[str, Any]:
     return {
         "id": str(u.id),
         "email": u.email,
+        "username": u.username,
         "first_name": u.first_name,
         "last_name": u.last_name,
         "phone": u.phone,
@@ -207,7 +208,8 @@ def list_users(
         count_stmt = count_stmt.where(User.id.notin_(applicant_ids))
     if qn:
         filt = or_(
-            func.lower(User.email).contains(qn),
+            func.lower(func.coalesce(User.email, "")).contains(qn),
+            func.lower(func.coalesce(User.username, "")).contains(qn),
             func.lower(func.coalesce(User.first_name, "")).contains(qn),
             func.lower(func.coalesce(User.last_name, "")).contains(qn),
         )
@@ -216,7 +218,7 @@ def list_users(
     total = db.session.scalar(count_stmt) or 0
     stmt = (
         stmt.options(selectinload(User.roles).selectinload(UserRole.role))
-        .order_by(User.email.asc())
+        .order_by(func.lower(func.coalesce(User.email, User.username, "")))
         .offset(offset)
         .limit(limit)
     )
@@ -237,16 +239,36 @@ def get_user(cu: CurrentUser, user_id: uuid.UUID) -> dict[str, Any] | None:
 
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_USERNAME_RE = re.compile(r"^[a-z][a-z0-9._-]{1,47}$")
 
 
-def _normalize_email(raw: str) -> str:
+def _normalize_email(raw: str, *, required: bool = True) -> str | None:
     s = (raw or "").strip().lower()
     if not s:
-        raise ApiError("email is required")
+        if required:
+            raise ApiError("email is required")
+        return None
     if len(s) > 255:
         raise ApiError("email is too long")
     if not _EMAIL_RE.match(s):
         raise ApiError("invalid email format")
+    return s
+
+
+def _normalize_username(raw: str, *, required: bool = False) -> str | None:
+    s = (raw or "").strip().lower()
+    if not s:
+        if required:
+            raise ApiError("username is required")
+        return None
+    if "@" in s:
+        raise ApiError("username cannot be an email address")
+    if len(s) > 80:
+        raise ApiError("username is too long")
+    if not _USERNAME_RE.match(s):
+        raise ApiError(
+            "username must start with a letter and use letters, digits, dots, underscores, or hyphens"
+        )
     return s
 
 
@@ -281,10 +303,18 @@ def create_user(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
     _require_admin(cu)
     if not isinstance(data, dict):
         raise ApiError("JSON body required")
-    email = _normalize_email(str(data.get("email") or ""))
-    existing = db.session.scalar(select(User.id).where(User.email == email))
-    if existing is not None:
-        raise ApiError("a user with this email already exists")
+    email = _normalize_email(str(data.get("email") or ""), required=False)
+    username = _normalize_username(str(data.get("username") or ""))
+    if not email and not username:
+        raise ApiError("email or username is required")
+    if email:
+        existing = db.session.scalar(select(User.id).where(User.email == email))
+        if existing is not None:
+            raise ApiError("a user with this email already exists")
+    if username:
+        existing_u = db.session.scalar(select(User.id).where(func.lower(User.username) == username))
+        if existing_u is not None:
+            raise ApiError("a user with this username already exists")
     fn = (data.get("first_name") or None)
     ln = (data.get("last_name") or None)
     phone = (data.get("phone") or None)
@@ -304,8 +334,11 @@ def create_user(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
     pwd_hash: str | None = None
     if pwd_raw is not None and str(pwd_raw).strip():
         pwd_hash = generate_password_hash(str(pwd_raw))
+    if not email and not pwd_hash:
+        raise ApiError("password is required when the user has no email")
     u = User(
         email=email,
+        username=username,
         first_name=fn,
         last_name=ln,
         phone=phone,
@@ -330,7 +363,7 @@ def create_user(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
         )
     elif not isinstance(send_invite, bool):
         send_invite = str(send_invite).strip().lower() in ("1", "true", "yes", "on")
-    if send_invite:
+    if send_invite and email:
         from ._notifications import send_user_invite_email
 
         inviter = cu.user.email if cu.user and cu.user.email else None
@@ -433,11 +466,23 @@ def patch_user(cu: CurrentUser, user_id: uuid.UUID, data: dict[str, Any]) -> dic
     if u is None:
         return None
     if "email" in data:
-        email = _normalize_email(str(data.get("email") or ""))
-        clash = db.session.scalar(select(User.id).where(User.email == email, User.id != user_id))
-        if clash is not None:
-            raise ApiError("a user with this email already exists")
+        email = _normalize_email(str(data.get("email") or ""), required=False)
+        if email:
+            clash = db.session.scalar(select(User.id).where(User.email == email, User.id != user_id))
+            if clash is not None:
+                raise ApiError("a user with this email already exists")
         u.email = email
+    if "username" in data:
+        username = _normalize_username(str(data.get("username") or ""))
+        if username:
+            clash_u = db.session.scalar(
+                select(User.id).where(func.lower(User.username) == username, User.id != user_id)
+            )
+            if clash_u is not None:
+                raise ApiError("a user with this username already exists")
+        u.username = username
+    if not (u.email or "").strip() and not (u.username or "").strip():
+        raise ApiError("email or username is required")
     if "first_name" in data:
         v = data["first_name"]
         u.first_name = None if v is None else (str(v).strip()[:120] or None)
@@ -458,6 +503,8 @@ def patch_user(cu: CurrentUser, user_id: uuid.UUID, data: dict[str, Any]) -> dic
     if "password" in data:
         pr = data["password"]
         if pr is None or str(pr).strip() == "":
+            if not (u.email or "").strip():
+                raise ApiError("password is required when the user has no email")
             u.password_hash = None
         else:
             u.password_hash = generate_password_hash(str(pr))

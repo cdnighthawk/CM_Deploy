@@ -9,7 +9,7 @@ from typing import Any
 
 import jwt
 from flask import current_app, jsonify, request
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db
@@ -49,6 +49,7 @@ def _user_public(u: User) -> dict[str, Any]:
     return {
         "id": str(u.id),
         "email": u.email,
+        "username": u.username,
         "first_name": u.first_name,
         "last_name": u.last_name,
     }
@@ -132,18 +133,28 @@ def _revoke_refresh_row(row: MobileRefreshToken) -> None:
         db.session.add(row)
 
 
-def authenticate_email_password(email: str, password: str) -> User | None:
-    email_norm = email.strip().lower()
-    if not email_norm or not password:
+def authenticate_identifier_password(identifier: str, password: str) -> User | None:
+    ident = (identifier or "").strip().lower()
+    if not ident or not password:
         return None
     u = db.session.scalar(
-        select(User).where(User.email == email_norm, User.is_active.is_(True))
+        select(User).where(
+            User.is_active.is_(True),
+            or_(
+                func.lower(User.email) == ident,
+                func.lower(User.username) == ident,
+            ),
+        )
     )
     if u is None or not u.password_hash:
         return None
     if not check_password_hash(u.password_hash, password):
         return None
     return u
+
+
+def authenticate_email_password(email: str, password: str) -> User | None:
+    return authenticate_identifier_password(email, password)
 
 
 def register_mobile_auth_routes(bp) -> None:
@@ -154,11 +165,11 @@ def register_mobile_auth_routes(bp) -> None:
         body = request.get_json(silent=True) or {}
         if not isinstance(body, dict):
             return jsonify({"error": "JSON body required"}), 400
-        email = str(body.get("email") or "")
+        ident = str(body.get("email") or body.get("username") or body.get("identifier") or "")
         password = str(body.get("password") or "")
         device_label = str(body.get("device_label") or "") or None
 
-        u = authenticate_email_password(email, password)
+        u = authenticate_identifier_password(ident, password)
         if u is None:
             return jsonify({"error": "invalid email or password"}), 401
 

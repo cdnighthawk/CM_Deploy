@@ -1,4 +1,4 @@
-"""Create the website_reviewer role and three read-only reviewer accounts.
+"""Create the website_reviewer role and three username-only reviewer accounts.
 
 From ``backend/``:
 
@@ -7,9 +7,9 @@ From ``backend/``:
 
 Optional env overrides for passwords (otherwise unique passwords are generated):
 
-  REVIEWER1_PASSWORD
-  REVIEWER2_PASSWORD
-  REVIEWER3_PASSWORD
+  DEV1_PASSWORD
+  DEV2_PASSWORD
+  DEV3_PASSWORD
 """
 from __future__ import annotations
 
@@ -40,9 +40,9 @@ from app.permissions.defaults import (  # noqa: E402
 )
 
 REVIEWER_ACCOUNTS: tuple[tuple[str, str, str, str], ...] = (
-    ("reviewer1@usis.local", "Reviewer", "One", "REVIEWER1_PASSWORD"),
-    ("reviewer2@usis.local", "Reviewer", "Two", "REVIEWER2_PASSWORD"),
-    ("reviewer3@usis.local", "Reviewer", "Three", "REVIEWER3_PASSWORD"),
+    ("dev1", "Developer", "One", "DEV1_PASSWORD"),
+    ("dev2", "Developer", "Two", "DEV2_PASSWORD"),
+    ("dev3", "Developer", "Three", "DEV3_PASSWORD"),
 )
 
 
@@ -94,12 +94,13 @@ def _assign_all_projects(user: User) -> int:
     return added
 
 
-def _ensure_user(email: str, first: str, last: str, password: str, roles: list[Role]) -> User:
-    user = db.session.scalar(select(User).where(User.email == email))
+def _ensure_user(username: str, first: str, last: str, password: str, roles: list[Role]) -> User:
+    user = db.session.scalar(select(User).where(User.username == username))
     action = "Updated"
     if user is None:
         user = User(
-            email=email,
+            email=None,
+            username=username,
             first_name=first,
             last_name=last,
             is_active=True,
@@ -113,6 +114,8 @@ def _ensure_user(email: str, first: str, last: str, password: str, roles: list[R
         user.last_name = last
         user.is_active = True
         user.is_superuser = False
+        if not user.username:
+            user.username = username
 
     user.password_hash = generate_password_hash(password)
 
@@ -124,7 +127,7 @@ def _ensure_user(email: str, first: str, last: str, password: str, roles: list[R
             db.session.add(UserRole(user_id=user.id, role_id=role.id))
 
     assigned = _assign_all_projects(user)
-    print(f"{action} user {email} ({assigned} project memberships added)")
+    print(f"{action} user {username} ({assigned} project memberships added)")
     return user
 
 
@@ -137,11 +140,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    planned = [(email, first, last, _password_for(env_key)) for email, first, last, env_key in REVIEWER_ACCOUNTS]
+    planned = [
+        (username, first, last, _password_for(env_key))
+        for username, first, last, env_key in REVIEWER_ACCOUNTS
+    ]
 
-    print("Website reviewer accounts:")
-    for email, first, last, password in planned:
-        print(f"  {email}  ({first} {last})")
+    print("Website reviewer accounts (username login, no email):")
+    for username, first, last, password in planned:
+        print(f"  {username}  ({first} {last})")
         print(f"    password: {password}")
 
     if not args.execute:
@@ -161,10 +167,10 @@ def main() -> None:
             "Read only",
             "Legacy read-only role used by current production permission checks",
         )
-        for email, first, last, password in planned:
-            _ensure_user(email, first, last, password, [reviewer_role, legacy_read])
+        for username, first, last, password in planned:
+            _ensure_user(username, first, last, password, [reviewer_role, legacy_read])
         db.session.commit()
-        print("Website reviewer accounts are ready. Sign in at /page-login.html")
+        print("Reviewer accounts are ready. Sign in at /page-login.html with username and password.")
 
 
 if __name__ == "__main__":

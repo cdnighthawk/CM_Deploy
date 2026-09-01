@@ -170,6 +170,10 @@
 											<i class="icon feather icon-mail"></i>
 											<span class="d-none d-lg-inline ms-1">Email</span>
 										</a>
+										<a href="usis-messenger.html" class="btn btn-outline-secondary px-2" id="usis-header-messages" title="Messages" aria-label="Messages">
+											<i class="icon feather icon-message-circle"></i>
+											<span class="d-none d-lg-inline ms-1" data-i18n="Messages">Messages</span>
+										</a>
 										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
@@ -400,6 +404,12 @@
 						</a>
 					</li>
 					<li>
+						<a href="usis-messenger.html" aria-expanded="false">
+							<i class="icon feather icon-message-circle"></i>
+							<span class="nav-text" data-i18n="Messages">Messages</span>
+						</a>
+					</li>
+					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-user-check"></i>
 							<span class="nav-text" data-i18n="HR">HR</span>
@@ -444,6 +454,12 @@
 							</li>
 							<li>
 								<a href="usis-companies.html">Companies</a>
+							</li>
+							<li>
+								<a href="usis-company-settings.html">Company settings</a>
+							</li>
+							<li>
+								<a href="usis-cost-codes.html">Cost codes</a>
 							</li>
 							<li data-usis-module="playbooks">
 								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
@@ -541,11 +557,15 @@
 								<div class="d-flex flex-wrap gap-2 align-items-end justify-content-between mb-3">
 									<div class="flex-grow-1" style="min-width: 12rem; max-width: 24rem">
 										<label class="form-label small mb-0" for="usis-ud-search">Search</label>
-										<input type="search" class="form-control form-control-sm" id="usis-ud-search" placeholder="Email or name…">
+										<input type="search" class="form-control form-control-sm" id="usis-ud-search" placeholder="Email, username, or name…">
 									</div>
 									<div class="d-flex flex-wrap gap-1">
+										<button type="button" class="btn btn-sm btn-outline-success" id="usis-ud-desktop" data-i18n-title title="Download the latest Windows installer. Open the file to install or update.">
+											<span data-i18n="Install desktop app">Install desktop app</span><span id="usis-ud-desktop-ver"></span>
+										</button>
 										<button type="button" class="btn btn-sm btn-outline-danger d-none" id="usis-ud-purge-test" title="Remove pytest @t.com / @example.com test accounts">Remove test users</button>
 										<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-ud-refresh">Refresh</button>
+										<button type="button" class="btn btn-sm btn-outline-primary" id="usis-ud-review-logins">Create 3 review logins</button>
 										<button type="button" class="btn btn-sm btn-primary" id="usis-ud-add">+ Add user</button>
 									</div>
 								</div>
@@ -555,7 +575,7 @@
 										<thead>
 											<tr>
 												<th>Name</th>
-												<th>Email</th>
+												<th>Login</th>
 												<th>Roles</th>
 												<th class="text-center">Active</th>
 												<th class="text-center">Super</th>
@@ -677,8 +697,12 @@
 							<input type="hidden" id="usis-ud-modal-user-id" value="">
 							<div class="row g-2 mb-2">
 								<div class="col-md-6">
-									<label class="form-label small mb-0" for="usis-ud-modal-email">Email <span class="text-danger">*</span></label>
-									<input type="email" class="form-control form-control-sm" id="usis-ud-modal-email" maxlength="255" autocomplete="off">
+									<label class="form-label small mb-0" for="usis-ud-modal-email">Email</label>
+									<input type="email" class="form-control form-control-sm" id="usis-ud-modal-email" maxlength="255" autocomplete="off" placeholder="Optional">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label small mb-0" for="usis-ud-modal-username">Username</label>
+									<input type="text" class="form-control form-control-sm" id="usis-ud-modal-username" maxlength="80" autocomplete="off" placeholder="Required if no email">
 								</div>
 								<div class="col-md-6">
 									<label class="form-label small mb-0" for="usis-ud-modal-phone">Phone</label>
@@ -694,7 +718,7 @@
 								</div>
 								<div class="col-12">
 									<label class="form-label small mb-0" for="usis-ud-modal-pw">Password</label>
-									<input type="password" class="form-control form-control-sm" id="usis-ud-modal-pw" autocomplete="new-password" placeholder="Leave blank to skip (edit: keep existing)">
+									<input type="password" class="form-control form-control-sm" id="usis-ud-modal-pw" autocomplete="new-password" placeholder="Required if no email (edit: leave blank to keep)">
 								</div>
 							</div>
 							<div class="form-check mb-2">
@@ -708,7 +732,13 @@
 							<p class="small text-muted mb-3" id="usis-ud-modal-activity">Last login: — · Last seen: —</p>
 							<label class="form-label small fw-semibold mb-1">Roles</label>
 							<div id="usis-ud-modal-role-checks" class="border rounded p-2 bg-light" style="max-height: 12rem; overflow: auto;"></div>
-							<p class="small text-muted mt-2 mb-1">Assigned projects (Admin and Executive roles see all projects).</p>
+							<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 mb-1">
+								<p class="small text-muted mb-0">Assigned projects (Admin, Executive, and Website Reviewer see all projects).</p>
+								<div class="d-flex flex-wrap gap-1">
+									<button type="button" class="btn btn-sm btn-outline-secondary py-0" id="usis-ud-projects-all">Select all</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary py-0" id="usis-ud-projects-none">Clear</button>
+								</div>
+							</div>
 							<div id="usis-ud-modal-project-checks" class="border rounded p-2 bg-light" style="max-height: 10rem; overflow: auto;">
 								<p class="text-muted small mb-0">Loading projects…</p>
 							</div>
@@ -717,6 +747,57 @@
 							<button type="button" class="btn btn-sm btn-outline-primary d-none me-auto" id="usis-ud-modal-resend">Resend invite</button>
 							<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
 							<button type="button" class="btn btn-sm btn-primary" id="usis-ud-modal-save">Save</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal fade" id="usis-ud-modal-review" tabindex="-1" aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">Create 3 review logins</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="alert alert-danger py-2 d-none" id="usis-ud-review-err" role="alert"></div>
+							<p class="small text-muted">These accounts have no email. Developers sign in with username and password. They get the Website Reviewer role (read-only) and all projects.</p>
+							<div class="table-responsive">
+								<table class="table table-sm align-middle mb-0">
+									<thead>
+										<tr>
+											<th>Username</th>
+											<th>First</th>
+											<th>Last</th>
+											<th>Password</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-username" value="dev1" maxlength="80"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-fn" value="Developer" maxlength="120"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-ln" value="One" maxlength="120"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-pw" autocomplete="off" placeholder="Min. 8 characters"></td>
+										</tr>
+										<tr>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-username" value="dev2" maxlength="80"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-fn" value="Developer" maxlength="120"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-ln" value="Two" maxlength="120"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-pw" autocomplete="off" placeholder="Min. 8 characters"></td>
+										</tr>
+										<tr>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-username" value="dev3" maxlength="80"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-fn" value="Developer" maxlength="120"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-ln" value="Three" maxlength="120"></td>
+											<td><input type="text" class="form-control form-control-sm usis-ud-review-pw" autocomplete="off" placeholder="Min. 8 characters"></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-sm btn-primary" id="usis-ud-review-save">Create accounts</button>
 						</div>
 					</div>
 				</div>

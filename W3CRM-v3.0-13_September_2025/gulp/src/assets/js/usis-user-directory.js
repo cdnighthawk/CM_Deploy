@@ -123,7 +123,7 @@
 
 	function displayName(u) {
 		var n = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
-		return n || u.email || "—";
+		return n || u.email || u.username || "—";
 	}
 
 	function fmtWhen(iso) {
@@ -153,6 +153,11 @@
 		var d = new Date(iso);
 		if (isNaN(d.getTime())) return String(iso);
 		return d.toLocaleString();
+	}
+
+	function loginLabel(u) {
+		if (u.email && u.username) return u.email + " · " + u.username;
+		return u.email || u.username || "—";
 	}
 
 	function roleLabels(u) {
@@ -276,6 +281,12 @@
 		return out;
 	}
 
+	function setAllProjectChecks(checked) {
+		document.querySelectorAll(".usis-ud-project-cb").forEach(function (cb) {
+			cb.checked = !!checked;
+		});
+	}
+
 	function loadAllProjectsForPicker(cb) {
 		if (state.allProjects.length) {
 			if (cb) cb(null);
@@ -374,7 +385,7 @@
 					esc(displayName(u)) +
 					"</td>" +
 					"<td>" +
-					esc(u.email) +
+					esc(loginLabel(u)) +
 					"</td>" +
 					"<td><span class=\"small\">" +
 					esc(roleLabels(u)) +
@@ -844,7 +855,7 @@
 					"<td>" +
 					esc(u.name || displayName(u)) +
 					'<div class="small text-muted">' +
-					esc(u.email || "") +
+					esc(u.email || u.username || "") +
 					"</div></td>" +
 					'<td class="text-nowrap" title="' +
 					esc(fmtWhenTitle(u.last_login_at)) +
@@ -885,7 +896,7 @@
 			}
 		}
 		if (title) {
-			title.textContent = person ? "Activity — " + (person.name || person.email) : "Recent activity";
+			title.textContent = person ? "Activity — " + (person.name || person.email || person.username) : "Recent activity";
 		}
 		if (clearBtn) clearBtn.classList.toggle("d-none", !state.activityUserId);
 		var rows = state.activityFeed || [];
@@ -974,6 +985,7 @@
 		document.getElementById("usis-ud-modal-title").textContent = "Add user";
 		document.getElementById("usis-ud-modal-user-id").value = "";
 		document.getElementById("usis-ud-modal-email").value = "";
+		document.getElementById("usis-ud-modal-username").value = "";
 		document.getElementById("usis-ud-modal-phone").value = "";
 		document.getElementById("usis-ud-modal-fn").value = "";
 		document.getElementById("usis-ud-modal-ln").value = "";
@@ -1007,6 +1019,7 @@
 		document.getElementById("usis-ud-modal-title").textContent = "Edit user";
 		document.getElementById("usis-ud-modal-user-id").value = u.id;
 		document.getElementById("usis-ud-modal-email").value = u.email || "";
+		document.getElementById("usis-ud-modal-username").value = u.username || "";
 		document.getElementById("usis-ud-modal-phone").value = u.phone || "";
 		document.getElementById("usis-ud-modal-fn").value = u.first_name || "";
 		document.getElementById("usis-ud-modal-ln").value = u.last_name || "";
@@ -1022,7 +1035,10 @@
 				fmtWhen(u.last_seen_at);
 		}
 		var resendEdit = document.getElementById("usis-ud-modal-resend");
-		if (resendEdit) resendEdit.classList.remove("d-none");
+		if (resendEdit) {
+			if (u.email) resendEdit.classList.remove("d-none");
+			else resendEdit.classList.add("d-none");
+		}
 		var sel = (u.roles || []).map(function (r) {
 			return r.id;
 		});
@@ -1046,6 +1062,8 @@
 		modalErr("");
 		var id = document.getElementById("usis-ud-modal-user-id").value.trim();
 		var email = document.getElementById("usis-ud-modal-email").value.trim();
+		var username = (document.getElementById("usis-ud-modal-username") || {}).value || "";
+		username = String(username).trim();
 		var phone = document.getElementById("usis-ud-modal-phone").value.trim();
 		var fn = document.getElementById("usis-ud-modal-fn").value.trim();
 		var ln = document.getElementById("usis-ud-modal-ln").value.trim();
@@ -1054,12 +1072,17 @@
 		var sup = document.getElementById("usis-ud-modal-super").checked;
 		var roleIds = collectRoleIds();
 		var projectIds = collectProjectIds();
-		if (!email) {
-			modalErr("Email is required.");
+		if (!email && !username) {
+			modalErr("Email or username is required.");
+			return;
+		}
+		if (!email && !pw && !id) {
+			modalErr("Password is required when the user has no email.");
 			return;
 		}
 		var payload = {
-			email: email,
+			email: email || null,
+			username: username || null,
 			first_name: fn || null,
 			last_name: ln || null,
 			phone: phone || null,
@@ -1213,12 +1236,294 @@
 			});
 	}
 
+	function reviewModal() {
+		var el = document.getElementById("usis-ud-modal-review");
+		if (!el || typeof bootstrap === "undefined") return null;
+		return bootstrap.Modal.getOrCreateInstance(el);
+	}
+
+	function reviewErr(msg) {
+		var el = document.getElementById("usis-ud-review-err");
+		if (!el) return;
+		if (msg) {
+			el.textContent = msg;
+			el.classList.remove("d-none");
+		} else {
+			el.classList.add("d-none");
+		}
+	}
+
+	function reviewRoleIds() {
+		var codes = { website_reviewer: 1, read_only: 1 };
+		return state.roles
+			.filter(function (r) {
+				return codes[r.code];
+			})
+			.map(function (r) {
+				return r.id;
+			});
+	}
+
+	function collectReviewAccounts() {
+		var usernames = document.querySelectorAll(".usis-ud-review-username");
+		var fns = document.querySelectorAll(".usis-ud-review-fn");
+		var lns = document.querySelectorAll(".usis-ud-review-ln");
+		var pws = document.querySelectorAll(".usis-ud-review-pw");
+		var out = [];
+		for (var i = 0; i < usernames.length; i++) {
+			out.push({
+				username: (usernames[i].value || "").trim(),
+				first_name: (fns[i] && fns[i].value ? fns[i].value.trim() : "") || null,
+				last_name: (lns[i] && lns[i].value ? lns[i].value.trim() : "") || null,
+				password: pws[i] ? pws[i].value : "",
+			});
+		}
+		return out;
+	}
+
+	function createOneReviewUser(account, roleIds, projectIds) {
+		return apiFetch("/api/v1/admin/users", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				email: null,
+				username: account.username,
+				first_name: account.first_name,
+				last_name: account.last_name,
+				password: account.password,
+				is_active: true,
+				is_superuser: false,
+				role_ids: roleIds,
+				send_invite: false,
+			}),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, status: r.status, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					throw new Error(
+						(res.body && res.body.error) ||
+							"Could not create " + account.username + " (" + res.status + ")."
+					);
+				}
+				var savedId = res.body && res.body.item && res.body.item.id;
+				if (!savedId || !projectIds.length) return account.username;
+				return new Promise(function (resolve, reject) {
+					saveUserProjectMemberships(savedId, projectIds, function (err) {
+						if (err) reject(new Error(err));
+						else resolve(account.username);
+					});
+				});
+			});
+	}
+
+	function openReviewLogins() {
+		reviewErr("");
+		var m = reviewModal();
+		if (m) m.show();
+	}
+
+	function saveReviewLogins() {
+		reviewErr("");
+		var accounts = collectReviewAccounts();
+		if (accounts.length !== 3) {
+			reviewErr("Three review accounts are required.");
+			return;
+		}
+		for (var i = 0; i < accounts.length; i++) {
+			if (!accounts[i].username) {
+				reviewErr("Each review login needs a username.");
+				return;
+			}
+			if (!accounts[i].password || accounts[i].password.length < 8) {
+				reviewErr("Each review login needs a password of at least 8 characters.");
+				return;
+			}
+		}
+		var roleIds = reviewRoleIds();
+		if (!roleIds.length) {
+			reviewErr("The website_reviewer role is missing. Refresh roles, then try again.");
+			return;
+		}
+		var btn = document.getElementById("usis-ud-review-save");
+		if (btn) btn.disabled = true;
+		loadAllProjectsForPicker(function (err) {
+			if (err) {
+				if (btn) btn.disabled = false;
+				reviewErr(err);
+				return;
+			}
+			var projectIds = state.allProjects.map(function (p) {
+				return p.id;
+			});
+			var chain = Promise.resolve();
+			accounts.forEach(function (account) {
+				chain = chain.then(function () {
+					return createOneReviewUser(account, roleIds, projectIds);
+				});
+			});
+			chain
+				.then(function () {
+					if (btn) btn.disabled = false;
+					var m = reviewModal();
+					if (m) m.hide();
+					if (window.USISNotify && window.USISNotify.success) {
+						window.USISNotify.success("Created 3 review logins (dev usernames, no email).");
+					}
+					loadUsers(true);
+				})
+				.catch(function (e) {
+					if (btn) btn.disabled = false;
+					reviewErr((e && e.message) || "Could not create review logins.");
+				});
+		});
+	}
+
+	function t(key) {
+		if (window.USISI18n && typeof window.USISI18n.tr === "function") {
+			return window.USISI18n.tr(key);
+		}
+		return key;
+	}
+
+	function filenameFromDisposition(header) {
+		if (!header) return "";
+		var star = /filename\*=UTF-8''([^;]+)/i.exec(header);
+		if (star) {
+			try {
+				return decodeURIComponent(star[1].trim());
+			} catch (e) {
+				return star[1].trim();
+			}
+		}
+		var m = /filename="?([^";]+)"?/i.exec(header);
+		return m ? m[1].trim() : "";
+	}
+
+	function setDesktopVersion(text) {
+		var ver = document.getElementById("usis-ud-desktop-ver");
+		if (!ver) return;
+		ver.textContent = text ? " (" + text + ")" : "";
+	}
+
+	function loadDesktopApp() {
+		var btn = document.getElementById("usis-ud-desktop");
+		if (!btn) return;
+		apiFetch("/api/v1/admin/desktop-app")
+			.then(function (r) {
+				return r.json().then(
+					function (j) {
+						return { ok: r.ok, status: r.status, body: j };
+					},
+					function () {
+						return { ok: r.ok, status: r.status, body: {} };
+					}
+				);
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					btn.disabled = true;
+					btn.title =
+						(res.body && res.body.error) ||
+						"Desktop app download is not available.";
+					setDesktopVersion("");
+					return;
+				}
+				var item = (res.body && res.body.item) || {};
+				btn.disabled = false;
+				btn.title = t("Download the latest Windows installer. Open the file to install or update.");
+				setDesktopVersion(item.version || "");
+				if (item.filename) btn.setAttribute("data-filename", item.filename);
+			})
+			.catch(function () {
+				btn.disabled = true;
+				btn.title = "Desktop app download is not available.";
+			});
+	}
+
+	function downloadDesktopApp() {
+		var btn = document.getElementById("usis-ud-desktop");
+		if (!btn || btn.disabled) return;
+		var ver = document.getElementById("usis-ud-desktop-ver");
+		var prevVer = ver ? ver.textContent : "";
+		btn.disabled = true;
+		if (ver) ver.textContent = " — " + t("Downloading…");
+		clearPageErr();
+		apiFetch("/api/v1/admin/desktop-app/download")
+			.then(function (r) {
+				if (!r.ok) {
+					return r.json().then(
+						function (j) {
+							throw new Error(authErrorMessage(r, j));
+						},
+						function () {
+							throw new Error("Could not download the desktop app (" + r.status + ").");
+						}
+					);
+				}
+				var name =
+					filenameFromDisposition(r.headers.get("Content-Disposition")) ||
+					btn.getAttribute("data-filename") ||
+					"USIS-Setup.exe";
+				return r.blob().then(function (blob) {
+					return { blob: blob, name: name };
+				});
+			})
+			.then(function (file) {
+				var a = document.createElement("a");
+				a.href = URL.createObjectURL(file.blob);
+				a.download = file.name;
+				document.body.appendChild(a);
+				a.click();
+				a.remove();
+				setTimeout(function () {
+					URL.revokeObjectURL(a.href);
+				}, 8000);
+				if (window.USISNotify && window.USISNotify.success) {
+					window.USISNotify.success("Downloaded " + file.name + ". Open the file to install.");
+				}
+			})
+			.catch(function (e) {
+				showPageErr((e && e.message) || "Could not download the desktop app.");
+			})
+			.then(function () {
+				btn.disabled = false;
+				if (ver) ver.textContent = prevVer;
+			});
+	}
+
 	function wire() {
 		var addBtn = document.getElementById("usis-ud-add");
 		if (addBtn) {
 			addBtn.addEventListener("click", function (e) {
 				e.preventDefault();
 				openAddUser();
+			});
+		}
+		var reviewBtn = document.getElementById("usis-ud-review-logins");
+		if (reviewBtn) {
+			reviewBtn.addEventListener("click", function (e) {
+				e.preventDefault();
+				openReviewLogins();
+			});
+		}
+		var reviewSave = document.getElementById("usis-ud-review-save");
+		if (reviewSave) reviewSave.addEventListener("click", saveReviewLogins);
+		var projAll = document.getElementById("usis-ud-projects-all");
+		if (projAll) {
+			projAll.addEventListener("click", function (e) {
+				e.preventDefault();
+				setAllProjectChecks(true);
+			});
+		}
+		var projNone = document.getElementById("usis-ud-projects-none");
+		if (projNone) {
+			projNone.addEventListener("click", function (e) {
+				e.preventDefault();
+				setAllProjectChecks(false);
 			});
 		}
 		var ref = document.getElementById("usis-ud-refresh");
@@ -1351,8 +1656,16 @@
 		}
 		var roleSaveBtn = document.getElementById("usis-ud-modal-role-save");
 		if (roleSaveBtn) roleSaveBtn.addEventListener("click", saveRolePermissions);
+		var desktopBtn = document.getElementById("usis-ud-desktop");
+		if (desktopBtn) {
+			desktopBtn.addEventListener("click", function (e) {
+				e.preventDefault();
+				downloadDesktopApp();
+			});
+		}
 		readPageSize();
 		guardPageAccess();
+		loadDesktopApp();
 		loadRoles(function (err) {
 			if (err) showPageErr(err);
 			loadUsers(false);

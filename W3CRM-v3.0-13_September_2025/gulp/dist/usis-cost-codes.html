@@ -168,6 +168,10 @@
 											<i class="icon feather icon-mail"></i>
 											<span class="d-none d-lg-inline ms-1">Email</span>
 										</a>
+										<a href="usis-messenger.html" class="btn btn-outline-secondary px-2" id="usis-header-messages" title="Messages" aria-label="Messages">
+											<i class="icon feather icon-message-circle"></i>
+											<span class="d-none d-lg-inline ms-1" data-i18n="Messages">Messages</span>
+										</a>
 										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
 											<i class="icon feather icon-message-square"></i>
 											<span class="d-none d-lg-inline ms-1">Chat</span>
@@ -397,6 +401,12 @@
 						</a>
 					</li>
 					<li>
+						<a href="usis-messenger.html" aria-expanded="false">
+							<i class="icon feather icon-message-circle"></i>
+							<span class="nav-text" data-i18n="Messages">Messages</span>
+						</a>
+					</li>
+					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-user-check"></i>
 							<span class="nav-text" data-i18n="HR">HR</span>
@@ -513,7 +523,11 @@
 						<h4 class="mb-1">Cost codes</h4>
 						<p class="text-muted small mb-0">Company-wide master list. Takeoff picks from this list; each job’s cost codes populate from that takeoff.</p>
 					</div>
-					<button type="button" class="btn btn-primary btn-sm" id="usis-cc-add">Add Manually</button>
+					<div class="d-flex flex-wrap gap-2">
+						<input type="file" class="d-none" id="usis-cc-import-file" accept=".csv,text/csv">
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-cc-import">Import CSV</button>
+						<button type="button" class="btn btn-primary btn-sm" id="usis-cc-add">Add Manually</button>
+					</div>
 				</div>
 				<div class="card border-0 shadow-sm">
 					<div class="card-body">
@@ -686,7 +700,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-cost-codes.js?v=20260831a"></script>
+	<script src="assets/js/usis-cost-codes.js?v=20260901a"></script>
 
 </body>
 </html>

@@ -206,12 +206,47 @@
 			});
 	}
 
+	function importCsv(file) {
+		if (!file) return Promise.resolve();
+		return file.text().then(function (text) {
+			return fetchJson("/api/v1/cost-codes/import", { method: "POST", body: { csv: text } });
+		}).then(function (result) {
+			var created = result && result.created != null ? result.created : 0;
+			var updated = result && result.updated != null ? result.updated : 0;
+			window.alert("Imported " + created + " new and updated " + updated + " existing cost codes.");
+			return load();
+		}).catch(function (err) {
+			var msg = "Could not import cost codes.";
+			if (err && err.body) {
+				try {
+					var parsed = JSON.parse(err.body);
+					msg = parsed.error || msg;
+				} catch (e) {
+					msg = String(err.body).slice(0, 240) || msg;
+				}
+			}
+			window.alert(msg);
+		});
+	}
+
 	function onReady() {
 		load();
 		var add = el("usis-cc-add");
 		if (add) add.addEventListener("click", function () {
 			openForm(null);
 		});
+		var importBtn = el("usis-cc-import");
+		var importFile = el("usis-cc-import-file");
+		if (importBtn && importFile) {
+			importBtn.addEventListener("click", function () {
+				importFile.click();
+			});
+			importFile.addEventListener("change", function () {
+				var file = importFile.files && importFile.files[0];
+				importFile.value = "";
+				importCsv(file);
+			});
+		}
 		var q = el("usis-cc-q");
 		if (q) q.addEventListener("input", render);
 		var form = el("usis-cc-form");

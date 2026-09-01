@@ -48,7 +48,8 @@ class RoleModulePermission(db.Model):
 class User(UUIDPKMixin, TimestampMixin, db.Model):
     __tablename__ = "users"
 
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), unique=True, nullable=True, index=True)
+    username: Mapped[Optional[str]] = mapped_column(String(80), unique=True, nullable=True, index=True)
     password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     first_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)

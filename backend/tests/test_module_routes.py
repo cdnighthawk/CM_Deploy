@@ -14,6 +14,8 @@ def test_user_activity_admin_gated_page_view_exempt():
     assert resolve_modules("/api/v1/admin/activity") == ("user_admin",)
     assert resolve_modules("/api/v1/admin/activity/summary") == ("user_admin",)
     assert resolve_modules("/api/v1/me/activity/page-view") is None
+    assert resolve_modules("/api/v1/admin/desktop-app") == ("user_admin",)
+    assert resolve_modules("/api/v1/admin/desktop-app/download") == ("user_admin",)
 
 
 def test_hr_me_self_service_routes_not_module_gated():

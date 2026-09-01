@@ -3,6 +3,7 @@
 Append new models here as future migrations land.
 """
 from .ai_chat import AiChatMessage, AiChatSession
+from .chat import ChatConversation, ChatMessage, ChatParticipant
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
 from .user_activity import UserActivityEvent
@@ -164,6 +165,9 @@ from .wage_rate import WageRate
 __all__ = [
     "AiChatMessage",
     "AiChatSession",
+    "ChatConversation",
+    "ChatMessage",
+    "ChatParticipant",
     "AuditLog",
     "BuildingConnectedOAuthToken",
     "ChangeProposalRequest",

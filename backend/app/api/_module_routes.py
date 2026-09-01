@@ -9,6 +9,7 @@ _PREFIX_RULES: list[tuple[str, str | tuple[str, ...]]] = [
     ("/api/v1/ai", ("ai", "documents")),
     ("/api/v1/admin/purge-test-users", "user_admin"),
     ("/api/v1/admin/activity", "user_admin"),
+    ("/api/v1/admin/desktop-app", "user_admin"),
     ("/api/v1/admin/users", "user_admin"),
     ("/api/v1/admin/roles", "user_admin"),
     ("/api/v1/hrms", "hrms"),

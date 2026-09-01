@@ -64,6 +64,7 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
         4200,
         4321,
         8768,
+        8770,
     )
     for h in hosts:
         for p in ports:
@@ -163,8 +164,10 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(github_webhooks_bp)
     app.register_blueprint(ingest_bp)
     from .api._in_app_notifications import register_on_app
+    from .api._messenger_service import register_on_app as register_messenger
 
     register_on_app(app)
+    register_messenger(app)
 
     def _protected_api_path(path: str) -> bool:
         return (

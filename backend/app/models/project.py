@@ -61,6 +61,16 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     postal_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     country: Mapped[Optional[str]] = mapped_column(String(2), nullable=True, default="US")
+    expected_install_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    ship_to_kind: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="jobsite", server_default="jobsite"
+    )
+    ship_to_office_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("company_offices.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     latitude: Mapped[Optional[float]] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(Numeric(9, 6), nullable=True)
     geofence_radius_m: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=250)
@@ -86,6 +96,7 @@ class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     gc_company = relationship("Company", foreign_keys=[gc_company_id])
     owner_company = relationship("Company", foreign_keys=[owner_company_id])
     architect_company = relationship("Company", foreign_keys=[architect_company_id])
+    ship_to_office = relationship("CompanyOffice", foreign_keys=[ship_to_office_id])
 
     rfis = relationship("Rfi", back_populates="project", cascade="all, delete-orphan")
     submittals = relationship("Submittal", back_populates="project", cascade="all, delete-orphan")

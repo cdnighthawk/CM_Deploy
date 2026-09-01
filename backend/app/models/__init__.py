@@ -16,7 +16,7 @@ from .change_management import (
     SubcontractChangeOrderItem,
 )
 from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
-from .company import Company, Contact
+from .company import Company, CompanyOffice, Contact
 from .company_cost_code import CompanyCostCode
 from .correspondence import CorrespondenceItem, CorrespondenceSource
 from .vendor_line_card import CsiBuyChannel, VendorLineCard
@@ -177,6 +177,7 @@ __all__ = [
     "CommitmentBillAllocation",
     "CommitmentLineItem",
     "Company",
+    "CompanyOffice",
     "CompanyCostCode",
     "Contact",
     "CorrespondenceItem",

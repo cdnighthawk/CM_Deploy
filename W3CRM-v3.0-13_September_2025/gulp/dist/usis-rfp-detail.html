@@ -437,6 +437,12 @@
 							<li>
 								<a href="usis-companies.html">Companies</a>
 							</li>
+							<li>
+								<a href="usis-company-settings.html">Company settings</a>
+							</li>
+							<li>
+								<a href="usis-cost-codes.html">Cost codes</a>
+							</li>
 							<li data-usis-module="playbooks">
 								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
 							</li>
@@ -469,7 +475,7 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="RFP detail">RFP detail</h1></li>
+						<li><h1 data-i18n="RFP">RFP</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -488,7 +494,7 @@
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="RFP detail">RFP detail</span>
+							<span data-i18n="RFP">RFP</span>
 
 						</li>
 					</ol>
@@ -540,6 +546,41 @@
 							<div class="col-md-3">
 								<p class="small text-muted mb-1">Status</p>
 								<p class="mb-0"><span id="usis-rfp-status">Draft</span> <code class="ms-2" id="usis-rfp-mail-tag"></code></p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card mb-3">
+					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+							<div>
+								<h2 class="h6 mb-1">Shipping &amp; install</h2>
+								<p class="text-muted small mb-0">Pulled from job information. Choose the jobsite or one of your offices.</p>
+							</div>
+							<div class="d-flex flex-wrap gap-2">
+								<a class="btn btn-sm btn-outline-secondary d-none" id="usis-rfp-job-link" href="#">Open job</a>
+								<a class="btn btn-sm btn-outline-secondary" href="usis-company-settings.html">Office locations</a>
+							</div>
+						</div>
+						<div class="row g-3">
+							<div class="col-md-4">
+								<label class="form-label small mb-1" for="usis-rfp-ship-kind">Ship to</label>
+								<select class="form-select form-select-sm" id="usis-rfp-ship-kind">
+									<option value="jobsite">Jobsite</option>
+									<option value="office">Office</option>
+								</select>
+							</div>
+							<div class="col-md-4 d-none" id="usis-rfp-ship-office-wrap">
+								<label class="form-label small mb-1" for="usis-rfp-ship-office">Office</label>
+								<select class="form-select form-select-sm" id="usis-rfp-ship-office"></select>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-1" for="usis-rfp-install">Expected install date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-rfp-install">
+							</div>
+							<div class="col-12">
+								<p class="small text-muted mb-1">Shipping address</p>
+								<p class="mb-0" id="usis-rfp-ship-address" style="white-space:pre-wrap">—</p>
 							</div>
 						</div>
 					</div>

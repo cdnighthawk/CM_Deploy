@@ -117,7 +117,7 @@ def _commitment_blocked_for(c: Commitment, cu: CurrentUser) -> bool:
 
 
 def _vendor_company_ok(c: Company) -> bool:
-    return c.company_type in ("vendor", "subcontractor", "gc", "other", "self")
+    return c.company_type in ("vendor", "supplier", "subcontractor", "gc", "other", "self")
 
 
 def _validate_resource(raw: Any) -> str | None:
@@ -145,6 +145,8 @@ def _serialize_line(li: CommitmentLineItem) -> dict[str, Any]:
         "resource": li.resource,
         "delivery_date": _iso(li.delivery_date) if li.delivery_date else None,
         "takeoff_line_item_id": str(li.takeoff_line_item_id) if li.takeoff_line_item_id else None,
+        "rfp_line_item_id": str(li.rfp_line_item_id) if li.rfp_line_item_id else None,
+        "estimate_line_item_id": str(li.estimate_line_item_id) if li.estimate_line_item_id else None,
         "submittal_id": str(li.submittal_id) if li.submittal_id else None,
         "submittal_release_required": bool(li.submittal_release_required),
         "qty_shipped": str(li.qty_shipped),
@@ -526,12 +528,16 @@ def _build_line_item_from_payload(
         resource=_validate_resource(resource),
         delivery_date=delivery_date,
         takeoff_line_item_id=_parse_uuid(data.get("takeoff_line_item_id")),
+        rfp_line_item_id=_parse_uuid(data.get("rfp_line_item_id")),
+        estimate_line_item_id=_parse_uuid(data.get("estimate_line_item_id")),
         submittal_id=_parse_uuid(data.get("submittal_id")),
         submittal_release_required=bool(data.get("submittal_release_required", True)),
     )
 
 
-def create_commitment(project_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
+def create_commitment(
+    project_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser, *, commit: bool = True
+) -> dict[str, Any]:
     if not _can_mutate(cu):
         raise ApiError("forbidden", 403)
     project = db.session.get(Project, project_id)
@@ -574,7 +580,7 @@ def create_commitment(project_id: uuid.UUID, data: Mapping[str, Any], cu: Curren
 
     payload = dict(data)
     if not (payload.get("ship_to_address") or "").strip():
-        ship = proc_lookup_svc.format_project_address(project)
+        ship = proc_lookup_svc.format_job_ship_to(project)
         if ship:
             payload["ship_to_address"] = ship
 
@@ -629,10 +635,11 @@ def create_commitment(project_id: uuid.UUID, data: Mapping[str, Any], cu: Curren
         )
 
     notify = ot.sync_commitment_order_dates(c)
-    db.session.commit()
-    if notify:
-        ot.notify_supplier_order_by_change(c)
+    if commit:
         db.session.commit()
+        if notify:
+            ot.notify_supplier_order_by_change(c)
+            db.session.commit()
     return get_commitment_detail(project_id, c.id, cu)
 
 

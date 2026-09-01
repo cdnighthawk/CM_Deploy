@@ -16,6 +16,7 @@
     { "path": "usis-playbooks.html", "in_nav": "deznav" },
     { "path": "usis-playbook-run.html", "in_nav": "js" },
     { "path": "usis-user-directory.html", "in_nav": "deznav" },
+    { "path": "usis-company-settings.html", "in_nav": "deznav" },
     { "path": "usis-procurement.html", "in_nav": "deznav" },
     { "path": "reports.html", "in_nav": "deznav" },
     { "path": "usis-rfp-list.html", "in_nav": "dashboard" },

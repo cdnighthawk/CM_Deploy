@@ -73,6 +73,14 @@ def format_project_address(p: Project) -> str:
     return "\n".join(parts)
 
 
+def format_job_ship_to(p: Project) -> str:
+    """Jobsite or selected office, matching RFP / job information shipping."""
+    from ._office_location import resolve_job_shipping
+
+    ship = (resolve_job_shipping(p).get("shipping_address") or "").strip()
+    return ship or format_project_address(p)
+
+
 def list_po_types(cu: CurrentUser) -> dict[str, Any]:
     if not _can_view(cu):
         raise ApiError("forbidden", 403)

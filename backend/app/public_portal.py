@@ -71,6 +71,27 @@ def _closed_page(r: Rfp) -> tuple[str, int]:
     return html, 403
 
 
+def _shipping_html(r: Rfp) -> str:
+    from .api._office_location import resolve_job_shipping
+
+    project = db.session.get(Project, r.project_id) if r.project_id else None
+    ship = resolve_job_shipping(project)
+    addr = (ship.get("shipping_address") or "").strip()
+    install = (ship.get("expected_install_date") or "").strip()
+    if not addr and not install:
+        return ""
+    parts = ["<h2>Shipping &amp; install</h2>"]
+    if addr:
+        label = ship.get("shipping_label") or "Ship to"
+        parts.append(
+            f"<p class='mb-1'><strong>Ship to ({escape(str(label))})</strong></p>"
+            f"<div class='prewrap mb-2'>{escape(addr)}</div>"
+        )
+    if install:
+        parts.append(f"<p class='mb-0'><strong>Expected install date:</strong> {escape(install)}</p>")
+    return "".join(parts)
+
+
 def _narrative_html(r: Rfp) -> str:
     parts = []
     for label, val in (
@@ -157,6 +178,7 @@ def public_rfp_get(token: str):
     <div class="wrap"><div class="card-like">
     <h1>{escape(r.title)}</h1>
     <p class="muted mb-3">Submit a quote using the form below. You can drop a PDF quote instead of filling prices.</p>
+    {_shipping_html(r)}
     {_narrative_html(r)}
     {_drawings_html(r, token)}
     <form method="post" enctype="multipart/form-data" class="mt-3"><div class="mb-3"><label class="form-label">Vendor name</label>

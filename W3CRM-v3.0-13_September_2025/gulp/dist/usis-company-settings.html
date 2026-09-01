@@ -36,7 +36,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/usis-rfp-list.html">
+	<link rel="canonical" href="https://www.usiscm.com/usis-company-settings.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -475,7 +475,7 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="RFP list">RFP list</h1></li>
+						<li><h1 data-i18n="Company settings">Company settings</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -494,45 +494,42 @@
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="RFP list">RFP list</span>
+							<span data-i18n="Company settings">Company settings</span>
 
 						</li>
 					</ol>
 				</nav>
 
 			</div>
-
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-							<div class="me-2">
-								<h6 class="mb-1">USIS Rfp List</h6>
-								<p class="text-muted small mb-0">USIS product or hub page. Use as a shell for live data and workflows; see Plan 20 for navigation.</p>
-							</div>
-							<div class="text-nowrap small">
-								<a href="usis-rfp-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-safety.html">Next</a>
-							</div>
-						</div>
-						<p class="text-muted small mt-2 mb-0">Plan reference: USIS Plan 20 — Site map and navigation (repository documentation).</p>
-					</div>
-				</div>
-			</div>
 			<div class="container-fluid">
-				<div class="usis-page-header">
+				<div class="usis-page-header mb-3">
 					<div class="usis-page-header__text">
-						<span class="usis-overline">Procurement</span>
-						<h1 class="h5 mb-1">RFP list</h1>
-						<p class="text-muted small mb-0">Draft, send, and track vendor requests.</p>
+						<span class="usis-overline">Admin</span>
+						<h1 class="h5 mb-1">Company settings</h1>
+						<p class="text-muted small mb-0">Office locations used for shipping on RFPs and for lead distance filters.</p>
 					</div>
 					<div class="usis-page-header__actions">
-						<button type="button" class="btn btn-sm btn-primary" id="usis-rfp-new">New RFP draft</button>
+						<button type="button" class="btn btn-sm btn-primary" id="usis-co-add">Add office</button>
 					</div>
 				</div>
-				<div class="table-responsive">
-					<table class="table table-sm usis-grid mb-0"><thead><tr><th>Title</th><th>Status</th><th>Source</th><th>Token</th></tr></thead>
-					<tbody id="usis-rfp-tbody"></tbody>
-				</table>
+				<div class="alert d-none py-2 px-3 mb-3" id="usis-co-flash" role="status"></div>
+				<div class="card border-0 shadow-sm">
+					<div class="card-body">
+						<p class="text-muted small mb-3">The default office is the origin for lead distance filters. RFPs can ship to the jobsite or any office listed here.</p>
+						<div class="table-responsive">
+							<table class="table table-sm table-hover align-middle mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>Name</th>
+										<th>Address</th>
+										<th>Default</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-co-tbody"><tr><td colspan="4" class="text-muted">Loading…</td></tr></tbody>
+							</table>
+						</div>
+					</div>
 				</div>
 			</div>
 		</main>
@@ -572,6 +569,56 @@
 		</div>
 		<!-- End - Footer -->
 	</div>
+
+	<div class="modal fade" id="usis-co-modal" tabindex="-1" aria-labelledby="usis-co-modal-title" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-co-modal-title">Office</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-co-err" role="alert"></div>
+					<input type="hidden" id="usis-co-id" value="">
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-co-name">Name</label>
+						<input type="text" class="form-control form-control-sm" id="usis-co-name" maxlength="120" placeholder="e.g. Escondido shop">
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-co-addr1">Address line 1</label>
+						<input type="text" class="form-control form-control-sm" id="usis-co-addr1" maxlength="255">
+					</div>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-co-addr2">Address line 2</label>
+						<input type="text" class="form-control form-control-sm" id="usis-co-addr2" maxlength="255">
+					</div>
+					<div class="row g-2 mb-2">
+						<div class="col-md-5">
+							<label class="form-label small mb-0" for="usis-co-city">City</label>
+							<input type="text" class="form-control form-control-sm" id="usis-co-city" maxlength="120">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label small mb-0" for="usis-co-state">State</label>
+							<input type="text" class="form-control form-control-sm" id="usis-co-state" maxlength="50">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-co-zip">ZIP</label>
+							<input type="text" class="form-control form-control-sm" id="usis-co-zip" maxlength="20">
+						</div>
+					</div>
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" id="usis-co-default">
+						<label class="form-check-label small" for="usis-co-default">Default office (lead distance + fallback ship-to)</label>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-primary" id="usis-co-save">Save office</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/js/usis-i18n.js"></script>
 	<script src="assets/js/usis-report-problem.js"></script>
@@ -588,13 +635,9 @@
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
-	<script src="assets/js/aiReviewBus.js"></script>
-	<script src="assets/js/usis-notify.js"></script>
-	<script src="assets/js/usis-project-context.js"></script>
-	<script src="assets/js/usis-command-palette.js"></script>
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-rfp-list.js"></script>
+	<script src="assets/js/usis-company-settings.js"></script>
 </body>
 </html>

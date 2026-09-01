@@ -167,6 +167,7 @@ def auth_status():
             "user": {
                 "id": str(u.id),
                 "email": u.email,
+                "username": u.username,
                 "first_name": u.first_name,
                 "last_name": u.last_name,
             },
@@ -529,6 +530,13 @@ def _project_detail_public(p: Project) -> dict[str, Any]:
             "contract_value": _num_or_none(p.contract_value),
             "contract_date": _iso(p.contract_date) if p.contract_date else None,
             "start_date": _iso(p.start_date) if p.start_date else None,
+            "expected_install_date": _iso(p.expected_install_date)
+            if getattr(p, "expected_install_date", None)
+            else None,
+            "ship_to_kind": (getattr(p, "ship_to_kind", None) or "jobsite"),
+            "ship_to_office_id": str(p.ship_to_office_id)
+            if getattr(p, "ship_to_office_id", None)
+            else None,
             "substantial_completion_date": _iso(p.substantial_completion_date)
             if p.substantial_completion_date
             else None,
@@ -554,6 +562,9 @@ def _project_detail_public(p: Project) -> dict[str, Any]:
             "created_at": _iso(p.created_at),
         }
     )
+    from ._office_location import resolve_job_shipping
+
+    d["job_shipping"] = resolve_job_shipping(p)
     return d
 
 
@@ -3613,7 +3624,7 @@ def get_project_procurement_defaults(project_id: str):
     return _jsonify(
         {
             "item": {
-                "ship_to_address": proc_lookup_svc.format_project_address(project),
+                "ship_to_address": proc_lookup_svc.format_job_ship_to(project),
                 "issue_date": date.today().isoformat(),
             },
             "entity": "procurement_defaults",

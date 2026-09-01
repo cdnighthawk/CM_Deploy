@@ -16,7 +16,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Company, Contact, Document, Rfp, RfpDrawing, RfpLineItem, RfpVendorQuote
+from ..models import Company, Contact, Document, Project, Rfp, RfpDrawing, RfpLineItem, RfpVendorQuote
 from ..services.object_storage import UploadCategory, save_upload
 from ._notifications import (
     GraphMailError,
@@ -35,6 +35,13 @@ _SKIP_INLINE_MAX = 20 * 1024
 _MAX_QUOTE_PDF = 25 * 1024 * 1024
 _TAG_RE = re.compile(r"\[RFP\s+([A-Za-z0-9_-]{6,32})\]", re.IGNORECASE)
 _PORTAL_RE = re.compile(r"/public/rfp/([A-Za-z0-9_-]{8,64})", re.IGNORECASE)
+
+
+def _job_shipping_for_rfp(r: Rfp) -> dict[str, Any]:
+    from ._office_location import resolve_job_shipping
+
+    project = db.session.get(Project, r.project_id) if r.project_id else None
+    return resolve_job_shipping(project)
 
 
 def quotes_mailbox() -> str:
@@ -178,6 +185,7 @@ def _quote_attachment_public(q: RfpVendorQuote, att: Mapping[str, Any] | None) -
 
 
 def serialize_rfp(r: Rfp, *, staff: bool = True) -> dict[str, Any]:
+    from ._rfp_award_po import commitment_summary, po_for_rfp
     from ._rfp_body_service import all_line_items, serialize_drawing_row, serialize_line, visible_line_items
 
     quotes = db.session.scalars(
@@ -212,6 +220,9 @@ def serialize_rfp(r: Rfp, *, staff: bool = True) -> dict[str, Any]:
         "show_line_table": bool(r.show_line_table),
         "cc_estimator": bool(r.cc_estimator),
         "frozen": not ((r.status or "Draft") == "Draft" and r.sent_at is None),
+        "awarded_quote_id": str(r.awarded_quote_id) if getattr(r, "awarded_quote_id", None) else None,
+        "commitment": commitment_summary(po_for_rfp(r)),
+        "job_shipping": _job_shipping_for_rfp(r),
         "line_items": [serialize_line(x, staff=staff) for x in (staff_lines if staff else vendor_lines)],
         "visible_line_items": [serialize_line(x, staff=False) for x in vendor_lines],
         "drawings": [serialize_drawing_row(d) for d in drawings],
@@ -435,6 +446,29 @@ def build_invite_email(
         files_cta_text = f"View drawings & specifications: {files_display}\n\n"
     due_html = f"<p>Please respond by <strong>{escape(due)}</strong>.</p>" if due else ""
     due_text = f"Please respond by {due}.\n\n" if due else ""
+    ship = _job_shipping_for_rfp(rfp)
+    ship_addr = (ship.get("shipping_address") or "").strip()
+    install = (ship.get("expected_install_date") or "").strip()
+    ship_html = ""
+    ship_text = ""
+    if ship_addr or install:
+        ship_bits_html = []
+        ship_bits_text = []
+        if ship_addr:
+            label = ship.get("shipping_label") or "Ship to"
+            ship_bits_html.append(
+                f"<p style='margin:0 0 6px'><strong>Ship to ({escape(str(label))}):</strong><br>"
+                f"<span style='white-space:pre-wrap'>{escape(ship_addr)}</span></p>"
+            )
+            ship_bits_text.append(f"Ship to ({label}): {ship_addr}")
+        if install:
+            ship_bits_html.append(f"<p style='margin:0 0 6px'><strong>Expected install date:</strong> {escape(install)}</p>")
+            ship_bits_text.append(f"Expected install date: {install}")
+        ship_html = (
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Shipping &amp; install</h3>"
+            + "".join(ship_bits_html)
+        )
+        ship_text = "Shipping & install:\n" + "\n".join(ship_bits_text) + "\n\n"
     narrative_html = (
         _prewrap_html("Scope of work", rfp.scope_of_work)
         + _prewrap_html("Inclusions", rfp.inclusions)
@@ -452,6 +486,7 @@ def build_invite_email(
         f"<p>Hello {escape(quote.vendor_label)},</p>"
         f"<p>Please submit a quote for <strong>{escape(title)}</strong>.</p>"
         f"{due_html}"
+        f"{ship_html}"
         f"{narrative_html}"
         f"{line_table_html}"
         f"{drawings_html}"
@@ -466,6 +501,7 @@ def build_invite_email(
         f"Hello {quote.vendor_label},\n\n"
         f"Please submit a quote for {title}.\n"
         f"{due_text}"
+        f"{ship_text}"
         f"{narrative_text}"
         f"{line_text}"
         f"{drawings_text}"

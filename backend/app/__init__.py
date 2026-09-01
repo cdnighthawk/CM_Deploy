@@ -16,10 +16,31 @@ from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_dotenv_if_not_testing() -> None:
+    """Load ``backend/.env``. Under pytest, keep DB creds but isolate SSO/redirects."""
+    testing = os.environ.get("USIS_TESTING", "").strip() in ("1", "true", "yes")
+    load_dotenv(_BACKEND_DIR / ".env", override=not testing)
+    if not testing:
+        return
+    for key in (
+        "MS_ENTRA_TENANT_ID",
+        "MS_ENTRA_CLIENT_ID",
+        "MS_ENTRA_CLIENT_SECRET",
+        "MS_ENTRA_REDIRECT_URI",
+        "MS_ENTRA_ALLOWED_EMAIL_DOMAINS",
+        "MS_ENTRA_ALLOW_JIT_USER",
+    ):
+        os.environ[key] = ""
+    os.environ["USIS_POST_LOGIN_REDIRECT"] = "http://127.0.0.1:3000/usis-dashboard-dark.html"
+
+
+_load_dotenv_if_not_testing()
+
 from .config import client_debug_log_dev_open
 from .extensions import db, migrate
-
-_BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
 def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> list[str]:
@@ -72,7 +93,7 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
             if o not in seen:
                 out.append(o)
                 seen.add(o)
-        return out
+    return out
 
 
 def _session_cookie_domain_from_public_url() -> str | None:
@@ -114,14 +135,15 @@ def _should_autoload_bc_csv() -> bool:
 
 
 def create_app(config_object: str | None = None) -> Flask:
-    load_dotenv(_BACKEND_DIR / ".env", override=True)
+    _load_dotenv_if_not_testing()
 
     app = Flask(__name__, instance_relative_config=False)
 
     app.config.from_object(config_object or "app.config.Config")
-    from .config import _env_database_url
+    from .config import _env_database_url, apply_ms_entra_from_env
 
     app.config["SQLALCHEMY_DATABASE_URI"] = _env_database_url()
+    apply_ms_entra_from_env(app.config)
 
     db.init_app(app)
     migrate.init_app(app, db, directory=os.path.join(os.path.dirname(__file__), "..", "migrations"))

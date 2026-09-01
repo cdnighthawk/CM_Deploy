@@ -231,7 +231,7 @@
 					showApplicantView(body.user);
 					return;
 				}
-				if (body && body.authenticated && !applicantFlow && !nxt) {
+				if (body && body.authenticated && !body.dev_bypass && !applicantFlow && !nxt) {
 					window.location.replace("usis-dashboard-dark.html");
 					return;
 				}
@@ -241,6 +241,9 @@
 					var b = document.getElementById("usis-ms-login-btn");
 					if (b) {
 						var next = new URLSearchParams(window.location.search).get("next") || "";
+						if (!next) {
+							try { next = new URL("usis-dashboard-dark.html", window.location.href).href; } catch (e) {}
+						}
 						var href = apiBase() + "/auth/microsoft/start";
 						if (next) href += "?next=" + encodeURIComponent(next);
 						b.setAttribute("href", href);

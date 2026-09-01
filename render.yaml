@@ -82,6 +82,10 @@ services:
         sync: false
       - key: B2_PREFIX
         value: prod/usis-cm
+      - key: QUOTES_MAILBOX
+        value: quotes@gousis.com
+      - key: INVOICE_MAILBOX
+        value: invoices@gousis.com
 
   - type: cron
     name: usis-calendar-reminders

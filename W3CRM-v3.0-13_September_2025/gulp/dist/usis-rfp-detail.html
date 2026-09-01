@@ -517,13 +517,76 @@
 						<span class="usis-overline">Procurement</span>
 						<h1 class="h5 mb-1">RFP detail</h1>
 					</div>
-					<div class="usis-page-header__actions">
+					<div class="usis-page-header__actions d-flex flex-wrap gap-2">
 						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-email-preview">Email preview</button>
+						<button type="button" class="btn btn-sm btn-outline-primary" id="usis-rfp-sync">Sync quotes mailbox</button>
+						<a class="btn btn-sm btn-outline-secondary" href="usis-rfp-list.html">Back to RFPs</a>
+					</div>
+				</div>
+				<div id="usis-rfp-flash" class="alert d-none py-2 px-3 mb-3" role="status"></div>
+				<div class="row g-3 mb-3">
+					<div class="col-lg-8">
+						<div class="card h-100">
+							<div class="card-body">
+								<div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+									<div>
+										<h1 class="h5 mb-1" id="usis-rfp-title">RFP</h1>
+										<p class="text-muted small mb-0">
+											<span id="usis-rfp-status">Draft</span>
+											<span class="mx-1">·</span>
+											<span id="usis-rfp-due">No due date</span>
+											<span class="mx-1">·</span>
+											<code id="usis-rfp-mail-tag"></code>
+										</p>
+									</div>
+									<p class="small text-muted mb-0">From / Reply-To: <strong id="usis-rfp-mailbox">quotes@gousis.com</strong></p>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-sm mb-0">
+										<thead><tr><th>Description</th><th>Qty</th><th>Unit</th></tr></thead>
+										<tbody id="usis-rfp-lines-body"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-4">
+						<div class="card h-100">
+							<div class="card-body">
+								<h2 class="h6">Invite vendors</h2>
+								<p class="text-muted small">Search the directory, then send from quotes@gousis.com. Vendors can reply to that mailbox or use the portal link.</p>
+								<label class="form-label small mb-1" for="usis-rfp-vendor-search">Company</label>
+								<input type="search" class="form-control form-control-sm mb-2" id="usis-rfp-vendor-search" placeholder="Search companies" autocomplete="off">
+								<div id="usis-rfp-vendor-results" class="list-group mb-2 d-none"></div>
+								<label class="form-label small mb-1" for="usis-rfp-vendor-email">Email</label>
+								<div class="input-group input-group-sm mb-2">
+									<input type="email" class="form-control" id="usis-rfp-vendor-email" placeholder="vendor@example.com">
+									<button type="button" class="btn btn-outline-secondary" id="usis-rfp-vendor-add">Add</button>
+								</div>
+								<div id="usis-rfp-bidder-chips" class="mb-3"></div>
+								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-rfp-send">Send invitations</button>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="card">
-					<div class="card-body p-3">
-						<pre class="small mb-0" id="usis-rfp-detail-json"></pre>
+					<div class="card-body">
+						<h2 class="h6 mb-3">Quotes</h2>
+						<div class="table-responsive">
+							<table class="table table-sm mb-0">
+								<thead>
+									<tr>
+										<th>Vendor</th>
+										<th>Email</th>
+										<th>Source</th>
+										<th>Sent</th>
+										<th>Received</th>
+										<th>Notes / files</th>
+									</tr>
+								</thead>
+								<tbody id="usis-rfp-quotes-body"></tbody>
+							</table>
+						</div>
 					</div>
 				</div>
 				<div class="modal fade" id="usis-rfp-email-modal" tabindex="-1" aria-labelledby="usis-rfp-email-title" aria-hidden="true">
@@ -599,44 +662,6 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script>
-	(function () {
-		function apiBase() {
-			if (window.location.protocol === "file:") return "http://127.0.0.1:5000";
-			return "";
-		}
-		var id = new URLSearchParams(window.location.search).get("id");
-		var pre = document.getElementById("usis-rfp-detail-json");
-		if (!id) {
-			pre.textContent = "Missing ?id= rfp uuid";
-			return;
-		}
-		fetch(apiBase() + "/api/v1/rfps/" + encodeURIComponent(id), { credentials: "include" })
-			.then(function (r) {
-				return r.json();
-			})
-			.then(function (d) {
-				pre.textContent = JSON.stringify(d, null, 2);
-			})
-			.catch(function (e) {
-				pre.textContent = String(e);
-			});
-		document.getElementById("usis-rfp-email-preview").addEventListener("click", function (ev) {
-			ev.preventDefault();
-			fetch(apiBase() + "/api/v1/rfps/" + encodeURIComponent(id) + "/email-preview", { credentials: "include" })
-				.then(function (r) {
-					return r.json();
-				})
-				.then(function (d) {
-					var body = document.getElementById("usis-rfp-email-body");
-					if (body) body.textContent = d.html || JSON.stringify(d, null, 2);
-					var modalEl = document.getElementById("usis-rfp-email-modal");
-					if (modalEl && window.bootstrap && window.bootstrap.Modal) {
-						window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
-					}
-				});
-		});
-	})();
-	</script>
+	<script src="assets/js/usis-rfp-detail.js"></script>
 </body>
 </html>

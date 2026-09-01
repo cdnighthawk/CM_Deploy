@@ -329,6 +329,28 @@ def _serialize_attachment_meta(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def search_mailbox_messages(*, mailbox: str, query: str, top: int = 25) -> dict[str, Any]:
+    """Search a mailbox with Graph ``$search`` (KQL). Best-effort; caller handles errors."""
+    q = (query or "").strip()
+    if not q:
+        return {"mailbox": mailbox, "query": q, "items": []}
+    n = max(1, min(int(top or 25), 50))
+    safe = q.replace('"', " ").strip()
+    url = _user_mail_url(mailbox, "messages")
+    params = {
+        "$search": f'"{safe}"',
+        "$top": str(n),
+        "$select": _MAIL_LIST_SELECT,
+    }
+    payload = _graph_http("GET", url, params=params, headers={"ConsistencyLevel": "eventual"}) or {}
+    items = payload.get("value") or []
+    return {
+        "mailbox": mailbox,
+        "query": q,
+        "items": [_serialize_message_summary(x) for x in items if isinstance(x, dict)],
+    }
+
+
 def list_mailbox_messages(*, mailbox: str, folder: str, top: int = 50) -> dict[str, Any]:
     """List inbox or sent items for ``mailbox`` (must be the signed-in user)."""
     key = (folder or "inbox").strip().lower()
@@ -432,6 +454,7 @@ def _send_via_graph(
     to: str,
     html_body: str | None = None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
 ) -> None:
     import httpx
 
@@ -449,6 +472,9 @@ def _send_via_graph(
         },
         "saveToSentItems": True,
     }
+    reply = (reply_to or "").strip()
+    if reply:
+        payload["message"]["replyTo"] = [{"emailAddress": {"address": reply}}]
     encoded = urllib.parse.quote(sender)
     url = f"https://graph.microsoft.com/v1.0/users/{encoded}/sendMail"
     with httpx.Client(timeout=30.0) as client:
@@ -468,13 +494,26 @@ def _deliver_email(
     to: str,
     html_body: str | None = None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
 ) -> None:
     if _graph_configured():
         _send_via_graph(
-            subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr
+            subject=subject,
+            body=body,
+            to=to,
+            html_body=html_body,
+            from_addr=from_addr,
+            reply_to=reply_to,
         )
         return
-    _send_via_smtplib(subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr)
+    _send_via_smtplib(
+        subject=subject,
+        body=body,
+        to=to,
+        html_body=html_body,
+        from_addr=from_addr,
+        reply_to=reply_to,
+    )
 
 
 def _send_via_smtplib(
@@ -484,6 +523,7 @@ def _send_via_smtplib(
     to: str,
     html_body: str | None = None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
 ) -> None:  # pragma: no cover - I/O
     import smtplib
     from email.message import EmailMessage
@@ -499,6 +539,8 @@ def _send_via_smtplib(
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = to
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg.set_content(body)
     if html_body:
         msg.add_alternative(html_body, subtype="html")
@@ -535,6 +577,7 @@ def send_html_notification_email(
     body: str,
     html_body: str | None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
 ) -> dict[str, object]:
     """Best-effort synchronous send with optional HTML alternative body."""
     if not to:
@@ -545,7 +588,12 @@ def send_html_notification_email(
 
     try:
         _deliver_email(
-            subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr
+            subject=subject,
+            body=body,
+            to=to,
+            html_body=html_body,
+            from_addr=from_addr,
+            reply_to=reply_to,
         )
         return {"sent": True, "dry_run": False, "error": None}
     except Exception as exc:  # pragma: no cover - I/O

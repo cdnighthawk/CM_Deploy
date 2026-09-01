@@ -202,6 +202,7 @@ def create_app(config_object: str | None = None) -> Flask:
         if path in (
             "/api/v1/integrations/buildingconnected/sync",
             "/api/v1/integrations/calendar-reminders/run",
+            "/api/v1/rfps/mailbox/sync",
         ):
             from .api._integration_bc import cron_secret_matches
 

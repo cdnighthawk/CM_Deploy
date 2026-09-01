@@ -41,6 +41,7 @@ _WRITE_LABELS: tuple[tuple[str, str], ...] = (
     ("/api/purchase-orders", "a purchase order"),
     ("/api/v1/material-orders", "a material order"),
     ("/api/v1/pay-applications", "a pay application"),
+    ("/api/v1/rfps", "an RFP"),
     ("/api/v1/rfp", "an RFP"),
     ("/api/v1/lead-estimates", "a lead estimate"),
     ("/api/v1/estimate-queue", "the estimate queue"),

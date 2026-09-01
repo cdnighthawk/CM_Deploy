@@ -22,7 +22,17 @@ from ..models import (
     RfpLineItem,
     TakeoffLineItem,
 )
-from ._rfi_service import _parse_dt
+from ._perms import current_user
+from ._rfi_service import ApiError, _parse_dt
+from ._rfp_quotes_service import (
+    build_invite_email,
+    mailbox_ready,
+    new_mail_tag,
+    quotes_mailbox,
+    serialize_rfp,
+    send_invitations,
+    sync_quotes_mailbox,
+)
 from .v1 import (
     _apply_takeoff_payload,
     _decimal_from_json,
@@ -613,7 +623,14 @@ def register_extra_routes(bp: Blueprint) -> None:
         pj_id = _parse_uuid_param(str(data.get("project_id") or "").strip())
         title = str(data.get("title") or "RFP")[:500]
         token = secrets.token_urlsafe(32)[:64]
-        r = Rfp(lead_estimate_id=le_id, project_id=pj_id, title=title, public_token=token, status="Draft")
+        r = Rfp(
+            lead_estimate_id=le_id,
+            project_id=pj_id,
+            title=title,
+            public_token=token,
+            mail_tag=new_mail_tag(),
+            status="Draft",
+        )
         db.session.add(r)
         db.session.flush()
         if le_id:
@@ -621,7 +638,37 @@ def register_extra_routes(bp: Blueprint) -> None:
             if le is not None:
                 le.primary_rfp_id = r.id
         db.session.commit()
-        return _jsonify({"item": {"id": str(r.id), "public_token": r.public_token}, "entity": "rfp"}), 201
+        return _jsonify(
+            {"item": {"id": str(r.id), "public_token": r.public_token, "mail_tag": r.mail_tag}, "entity": "rfp"}
+        ), 201
+
+    @bp.get("/rfps/mailbox")
+    def rfp_mailbox_status():
+        return _jsonify(
+            {
+                "entity": "rfp_mailbox",
+                "item": {"mailbox": quotes_mailbox(), "graph_configured": mailbox_ready()},
+            }
+        )
+
+    @bp.post("/rfps/mailbox/sync")
+    def rfp_mailbox_sync():
+        from flask import current_app
+
+        from ._integration_bc import cron_secret_matches
+
+        cu = current_user()
+        if cu.user is None and not cron_secret_matches(request, current_app):
+            return _jsonify({"error": "authentication required"}), 401
+        try:
+            top = int(request.args.get("top") or 50)
+        except (TypeError, ValueError):
+            top = 50
+        try:
+            item = sync_quotes_mailbox(top=top, actor_user_id=cu.id)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"entity": "rfp_mailbox_sync", "item": item})
 
     @bp.get("/rfps/<rfp_id>")
     def get_rfp(rfp_id: str):
@@ -631,38 +678,44 @@ def register_extra_routes(bp: Blueprint) -> None:
         r = db.session.get(Rfp, rid)
         if r is None:
             return _jsonify({"error": "rfp not found"}), 404
-        lines = db.session.scalars(
-            select(RfpLineItem).where(RfpLineItem.rfp_id == rid).order_by(RfpLineItem.sort_order)
-        ).all()
-        return _jsonify(
-            {
-                "item": {
-                    "id": str(r.id),
-                    "title": r.title,
-                    "status": r.status,
-                    "due_at": _iso(r.due_at),
-                    "public_token": r.public_token,
-                    "line_items": [
-                        {
-                            "id": str(x.id),
-                            "description": x.description,
-                            "quantity": float(x.quantity),
-                            "unit": x.unit,
-                        }
-                        for x in lines
-                    ],
-                },
-                "entity": "rfp",
-            }
-        )
+        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
 
     @bp.get("/rfps/<rfp_id>/email-preview")
     def rfp_email_preview(rfp_id: str):
+        from ..models import RfpVendorQuote
+
         rid = _parse_uuid_param(rfp_id)
         if not rid:
             return _jsonify({"error": "invalid rfp id"}), 400
         r = db.session.get(Rfp, rid)
         if r is None:
             return _jsonify({"error": "rfp not found"}), 404
-        html = f"<html><body><h2>{r.title}</h2><p>Vendor portal: /public/rfp/{r.public_token}</p></body></html>"
-        return _jsonify({"html": html, "entity": "rfp_email_preview"})
+        quote = db.session.scalars(
+            select(RfpVendorQuote).where(RfpVendorQuote.rfp_id == rid).order_by(RfpVendorQuote.created_at)
+        ).first()
+        preview = quote or RfpVendorQuote(
+            rfp_id=r.id,
+            vendor_label="Vendor",
+            invite_token=r.public_token,
+        )
+        subject, text, html = build_invite_email(r, preview)
+        return _jsonify(
+            {
+                "html": html,
+                "subject": subject,
+                "text": text,
+                "from": quotes_mailbox(),
+                "entity": "rfp_email_preview",
+            }
+        )
+
+    @bp.post("/rfps/<rfp_id>/send")
+    def rfp_send(rfp_id: str):
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        try:
+            return _jsonify(send_invitations(rid, data if isinstance(data, Mapping) else {}))
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status

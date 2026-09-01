@@ -32,7 +32,9 @@ class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
     title: Mapped[str] = mapped_column(String(500), nullable=False, default="", server_default="")
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="Draft", server_default="Draft")
     due_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     public_token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    mail_tag: Mapped[Optional[str]] = mapped_column(String(16), nullable=True, unique=True, index=True)
 
     line_items: Mapped[List["RfpLineItem"]] = relationship(
         back_populates="rfp", cascade="all, delete-orphan", order_by="RfpLineItem.sort_order"
@@ -64,7 +66,25 @@ class RfpVendorQuote(UUIDPKMixin, TimestampMixin, db.Model):
         UUID(as_uuid=True), ForeignKey("rfps.id", ondelete="CASCADE"), nullable=False, index=True
     )
     vendor_label: Mapped[str] = mapped_column(String(255), nullable=False, default="Vendor", server_default="Vendor")
+    vendor_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    vendor_contact_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    invited_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    invite_token: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    sent_from_mailbox: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="invited", server_default="invited")
+    graph_inbound_message_id: Mapped[Optional[str]] = mapped_column(String(256), nullable=True, unique=True, index=True)
+    from_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    from_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    subject: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    received_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    mailbox: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     line_prices: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+    attachments: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     rfp = relationship("Rfp", back_populates="vendor_quotes")

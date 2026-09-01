@@ -70,6 +70,8 @@ Transactional mail uses SMTP env vars (SendGrid recommended). Without them, the 
 | `MAIL_FROM` | `noreply@yourdomain.com` |
 | `USIS_APP_PUBLIC_URL` | `https://your-service.onrender.com` |
 | `USIS_SEND_USER_INVITE_EMAIL` | `1` to email new users from User admin |
+| `QUOTES_MAILBOX` | `quotes@gousis.com` (RFP send / inbound quotes) |
+| `INVOICE_MAILBOX` | `invoices@gousis.com` (AP invoice ingest) |
 
 Staff invites: **User admin** (`/usis-user-directory.html`) or `POST /api/v1/admin/users` with `"send_invite": true`. Applicant self-register (`/apply.html`) does **not** send email today.
 

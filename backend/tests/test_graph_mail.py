@@ -71,6 +71,44 @@ def test_send_plain_uses_graph(monkeypatch, flask_app):
     assert send_call.kwargs["json"]["message"]["subject"] == "Test"
 
 
+def test_send_html_sets_reply_to(monkeypatch, flask_app):
+    from app.api import _notifications as mail
+
+    mail.reset_graph_token_cache()
+    _graph_env(monkeypatch)
+
+    token_response = MagicMock()
+    token_response.raise_for_status = MagicMock()
+    token_response.json.return_value = {"access_token": "tok", "expires_in": 3600}
+
+    send_response = MagicMock()
+    send_response.status_code = 202
+    send_response.text = ""
+
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.__exit__.return_value = False
+    http_client.post.side_effect = [token_response, send_response]
+
+    with flask_app.app_context():
+        with patch("httpx.Client", return_value=http_client):
+            result = mail.send_html_notification_email(
+                to="vendor@example.com",
+                subject="[RFP abc123] Bid",
+                body="Please quote",
+                html_body="<p>Please quote</p>",
+                from_addr="quotes@gousis.com",
+                reply_to="quotes@gousis.com",
+            )
+
+    assert result["sent"] is True
+    send_call = http_client.post.call_args_list[1]
+    assert "users/quotes%40gousis.com/sendMail" in send_call.args[0]
+    assert send_call.kwargs["json"]["message"]["replyTo"] == [
+        {"emailAddress": {"address": "quotes@gousis.com"}}
+    ]
+
+
 def test_compose_sends_as_user_mailbox(monkeypatch, flask_app):
     from app.api import _notifications as mail
 

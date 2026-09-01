@@ -247,7 +247,7 @@ def create_company(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
         raise ApiError("name is required")
     ctype = str(data.get("company_type") or "other").strip() or "other"
     row = Company(name=name[:255], company_type=ctype)
-    for key in ("phone", "email", "website", "city", "state", "postal_code", "address_line1", "notes"):
+    for key in ("phone", "email", "website", "city", "state", "postal_code", "address_line1", "address_line2", "tax_id", "notes"):
         if key in data:
             setattr(row, key, (str(data.get(key) or "").strip() or None))
     db.session.add(row)
@@ -261,7 +261,7 @@ def patch_company(company_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUse
     row = db.session.get(Company, company_id)
     if row is None or row.deleted_at is not None:
         raise ApiError("company not found", 404)
-    for key in ("name", "company_type", "phone", "email", "website", "city", "state", "postal_code", "address_line1", "notes"):
+    for key in ("name", "company_type", "phone", "email", "website", "city", "state", "postal_code", "address_line1", "address_line2", "tax_id", "notes"):
         if key in data:
             val = str(data.get(key) or "").strip() or None
             if key == "name" and not val:

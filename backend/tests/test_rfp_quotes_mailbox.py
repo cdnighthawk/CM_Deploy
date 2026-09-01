@@ -66,7 +66,7 @@ def test_send_records_invite_without_graph(client, no_dev_admin):
     ctx = _staff(client)
     created = client.post(
         "/api/v1/rfps",
-        json={"project_id": ctx["pid"], "title": "Drywall bid package"},
+        json={"project_id": ctx["pid"], "title": "Drywall bid package", "due_at": "2026-09-30", "scope_of_work": "Price drywall package."},
         headers=ctx["hdr"],
     )
     assert created.status_code == 201, created.get_data(as_text=True)
@@ -98,7 +98,7 @@ def test_sync_ingests_matching_reply_and_skips_duplicate(client, no_dev_admin, m
     ctx = _staff(client)
     created = client.post(
         "/api/v1/rfps",
-        json={"project_id": ctx["pid"], "title": "Electrical package"},
+        json={"project_id": ctx["pid"], "title": "Electrical package", "due_at": "2026-09-30", "scope_of_work": "Price electrical package."},
         headers=ctx["hdr"],
     )
     rfp_id = created.get_json()["item"]["id"]
@@ -179,7 +179,7 @@ def test_portal_invite_token_updates_existing_quote(client, no_dev_admin):
     ctx = _staff(client)
     created = client.post(
         "/api/v1/rfps",
-        json={"project_id": ctx["pid"], "title": "Paint package"},
+        json={"project_id": ctx["pid"], "title": "Paint package", "due_at": "2026-09-30", "scope_of_work": "Price paint package."},
         headers=ctx["hdr"],
     )
     rfp_id = created.get_json()["item"]["id"]
@@ -192,7 +192,10 @@ def test_portal_invite_token_updates_existing_quote(client, no_dev_admin):
     page = client.get(f"/public/rfp/{token}")
     assert page.status_code == 200
     assert b"Paint package" in page.data
-    posted = client.post(f"/public/rfp/{token}", data={"vendor_label": "Quote Vendor", "notes": "Portal bid 8k"})
+    posted = client.post(
+        f"/public/rfp/{token}",
+        data={"vendor_label": "Quote Vendor", "notes": "Portal bid 8k", "lump_sum_amount": "8000"},
+    )
     assert posted.status_code == 200
     got = client.get(f"/api/v1/rfps/{rfp_id}", headers=ctx["hdr"])
     quotes = got.get_json()["item"]["quotes"]

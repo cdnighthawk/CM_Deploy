@@ -15,7 +15,7 @@ from sqlalchemy import func, select
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Company, Contact, Document, Rfp, RfpLineItem, RfpVendorQuote
+from ..models import Company, Contact, Document, Rfp, RfpDrawing, RfpLineItem, RfpVendorQuote
 from ..services.object_storage import UploadCategory, save_upload
 from ._notifications import (
     GraphMailError,
@@ -44,6 +44,36 @@ def quotes_mailbox() -> str:
     if not configured:
         configured = (os.environ.get("QUOTES_MAILBOX") or "quotes@gousis.com").strip()
     return configured or "quotes@gousis.com"
+
+
+def quotes_from_name() -> str:
+    try:
+        name = str(current_app.config.get("QUOTES_FROM_NAME") or "").strip()
+    except RuntimeError:
+        name = ""
+    return name or (os.environ.get("QUOTES_FROM_NAME") or "US Interior Specialties").strip() or "US Interior Specialties"
+
+
+def quotes_bcc_self() -> bool:
+    try:
+        val = current_app.config.get("RFP_MAIL_BCC_SELF")
+    except RuntimeError:
+        val = None
+    if val is None:
+        raw = (os.environ.get("RFP_MAIL_BCC_SELF") or "true").strip().lower()
+        return raw not in ("0", "false", "no", "off")
+    return bool(val)
+
+
+def mail_identity() -> dict[str, Any]:
+    mailbox = quotes_mailbox()
+    return {
+        "from_address": mailbox,
+        "from_name": quotes_from_name(),
+        "reply_to": mailbox,
+        "bcc": mailbox if quotes_bcc_self() else None,
+        "from_header": f"{quotes_from_name()} <{mailbox}>",
+    }
 
 
 def mailbox_ready() -> bool:
@@ -129,36 +159,51 @@ def serialize_quote(q: RfpVendorQuote) -> dict[str, Any]:
         "mailbox": q.mailbox,
         "line_prices": q.line_prices,
         "attachments": q.attachments or [],
+        "lump_sum_amount": float(q.lump_sum_amount) if q.lump_sum_amount is not None else None,
+        "vendor_exclusions": q.vendor_exclusions,
+        "send_status": q.send_status,
         "notes": q.notes,
         "portal_path": f"/public/rfp/{q.invite_token}" if q.invite_token else None,
     }
 
 
-def serialize_rfp(r: Rfp) -> dict[str, Any]:
-    lines = db.session.scalars(
-        select(RfpLineItem).where(RfpLineItem.rfp_id == r.id).order_by(RfpLineItem.sort_order)
-    ).all()
+def serialize_rfp(r: Rfp, *, staff: bool = True) -> dict[str, Any]:
+    from ._rfp_body_service import all_line_items, serialize_drawing_row, serialize_line, visible_line_items
+
     quotes = db.session.scalars(
         select(RfpVendorQuote).where(RfpVendorQuote.rfp_id == r.id).order_by(RfpVendorQuote.created_at)
     ).all()
+    staff_lines = all_line_items(r)
+    vendor_lines = visible_line_items(r)
+    drawings = db.session.scalars(
+        select(RfpDrawing).where(RfpDrawing.rfp_id == r.id).order_by(RfpDrawing.sort_order)
+    ).all()
+    ident = mail_identity()
     return {
         "id": str(r.id),
         "title": r.title,
         "status": r.status,
         "due_at": _iso(r.due_at),
         "sent_at": _iso(r.sent_at),
+        "project_id": str(r.project_id) if r.project_id else None,
+        "lead_estimate_id": str(r.lead_estimate_id) if r.lead_estimate_id else None,
         "public_token": r.public_token,
         "mail_tag": r.mail_tag,
-        "quotes_mailbox": quotes_mailbox(),
-        "line_items": [
-            {
-                "id": str(x.id),
-                "description": x.description,
-                "quantity": float(x.quantity),
-                "unit": x.unit,
-            }
-            for x in lines
-        ],
+        "quotes_mailbox": ident["from_address"],
+        "from_name": ident["from_name"],
+        "from_header": ident["from_header"],
+        "line_source": r.line_source or "manual",
+        "source_estimate_id": str(r.source_estimate_id) if r.source_estimate_id else None,
+        "scope_of_work": r.scope_of_work,
+        "inclusions": r.inclusions,
+        "exclusions": r.exclusions,
+        "clarifications": r.clarifications,
+        "show_line_table": bool(r.show_line_table),
+        "cc_estimator": bool(r.cc_estimator),
+        "frozen": not ((r.status or "Draft") == "Draft" and r.sent_at is None),
+        "line_items": [serialize_line(x, staff=staff) for x in (staff_lines if staff else vendor_lines)],
+        "visible_line_items": [serialize_line(x, staff=False) for x in vendor_lines],
+        "drawings": [serialize_drawing_row(d) for d in drawings],
         "quotes": [serialize_quote(q) for q in quotes],
     }
 
@@ -247,71 +292,328 @@ def invite_portal_url(quote: RfpVendorQuote) -> str:
     return f"{public_app_origin()}/public/rfp/{token}"
 
 
-def build_invite_email(rfp: Rfp, quote: RfpVendorQuote) -> tuple[str, str, str]:
+def _prewrap_html(label: str, text: str | None) -> str:
+    body = (text or "").strip()
+    if not body:
+        return ""
+    return (
+        f"<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>{escape(label)}</h3>"
+        f"<div style='white-space:pre-wrap;font-size:14px'>{escape(body)}</div>"
+    )
+
+
+def _prewrap_text(label: str, text: str | None) -> str:
+    body = (text or "").strip()
+    if not body:
+        return ""
+    return f"{label}:\n{body}\n\n"
+
+
+def drawing_public_url(quote: RfpVendorQuote, row_id: uuid.UUID) -> str:
+    token = ensure_invite_token(quote)
+    return f"{public_app_origin()}/public/rfp/{token}/drawings/{row_id}"
+
+
+def build_invite_email(
+    rfp: Rfp,
+    quote: RfpVendorQuote,
+    *,
+    attached_ids: set[str] | None = None,
+    redact_token: bool = False,
+) -> tuple[str, str, str]:
+    from ._rfp_body_service import serialize_drawing_row, visible_line_items
+
     ensure_mail_tag(rfp)
     portal = invite_portal_url(quote)
+    if redact_token and quote.invite_token:
+        last4 = quote.invite_token[-4:]
+        portal_display = f"{public_app_origin()}/public/rfp/…{last4}"
+    else:
+        portal_display = portal
     due = ""
     if rfp.due_at:
         due = str(rfp.due_at)[:10]
-    lines = db.session.scalars(
-        select(RfpLineItem).where(RfpLineItem.rfp_id == rfp.id).order_by(RfpLineItem.sort_order)
-    ).all()
+    lines = visible_line_items(rfp)
     title = (rfp.title or "RFP").strip() or "RFP"
     subject = f"[RFP {rfp.mail_tag}] {title}"[:500]
-    line_rows = "".join(
-        f"<tr><td>{escape(x.description)}</td><td>{float(x.quantity):g}</td><td>{escape(x.unit)}</td></tr>"
-        for x in lines
-    )
-    line_text = "\n".join(f"- {x.description} ({float(x.quantity):g} {x.unit})" for x in lines) or "(no line items)"
+    ident = mail_identity()
+
+    def qty_cell(x: RfpLineItem) -> str:
+        if x.quantity is None:
+            return ""
+        return f"{float(x.quantity):g}"
+
+    line_table_html = ""
+    line_text = ""
+    if lines:
+        line_rows = "".join(
+            f"<tr><td>{escape(x.csi_division or '')}</td><td>{escape(x.description)}</td>"
+            f"<td>{qty_cell(x)}</td><td>{escape(x.unit)}</td><td>{escape(x.notes or '')}</td></tr>"
+            for x in lines
+        )
+        line_table_html = (
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Line items</h3>"
+            "<table cellpadding='6' cellspacing='0' border='1' style='border-collapse:collapse;font-size:14px'>"
+            "<thead><tr><th align='left'>CSI</th><th align='left'>Description</th><th>Qty</th><th>Unit</th>"
+            "<th align='left'>Notes</th></tr></thead>"
+            f"<tbody>{line_rows}</tbody></table>"
+        )
+        line_text = "Line items:\n" + "\n".join(
+            f"- {x.description} ({qty_cell(x)} {x.unit})" for x in lines
+        ) + "\n\n"
+    drawing_rows = db.session.scalars(
+        select(RfpDrawing).where(RfpDrawing.rfp_id == rfp.id).order_by(RfpDrawing.sort_order)
+    ).all()
+    draw_html_parts: list[str] = []
+    draw_text_parts: list[str] = []
+    attached_ids = attached_ids or set()
+    for row in drawing_rows:
+        meta = serialize_drawing_row(row)
+        label = " · ".join(p for p in (meta.get("sheet_number"), meta.get("sheet_title") or meta.get("filename")) if p)
+        link = drawing_public_url(quote, row.id)
+        badges = []
+        if str(row.id) in attached_ids or row.delivery in ("attach", "both"):
+            if str(row.id) in attached_ids:
+                badges.append("Attached")
+            else:
+                badges.append("Link")
+        else:
+            badges.append("Link")
+        badge = " / ".join(badges)
+        draw_html_parts.append(
+            f"<li>{escape(label or 'Drawing')} — {escape(badge)} — "
+            f"<a href='{escape(link)}'>Open sheet</a></li>"
+        )
+        draw_text_parts.append(f"- {label} ({badge}): {link}")
+    drawings_html = ""
+    drawings_text = ""
+    if draw_html_parts:
+        drawings_html = (
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Drawings</h3>"
+            f"<ul>{''.join(draw_html_parts)}</ul>"
+        )
+        drawings_text = "Drawings:\n" + "\n".join(draw_text_parts) + "\n\n"
     due_html = f"<p>Please respond by <strong>{escape(due)}</strong>.</p>" if due else ""
     due_text = f"Please respond by {due}.\n\n" if due else ""
+    narrative_html = (
+        _prewrap_html("Scope of work", rfp.scope_of_work)
+        + _prewrap_html("Inclusions", rfp.inclusions)
+        + _prewrap_html("Exclusions", rfp.exclusions)
+        + _prewrap_html("Clarifications", rfp.clarifications)
+    )
+    narrative_text = (
+        _prewrap_text("Scope of work", rfp.scope_of_work)
+        + _prewrap_text("Inclusions", rfp.inclusions)
+        + _prewrap_text("Exclusions", rfp.exclusions)
+        + _prewrap_text("Clarifications", rfp.clarifications)
+    )
     html = (
         "<html><body style='font-family:Source Sans 3,system-ui,sans-serif;color:#1B242C'>"
         f"<p>Hello {escape(quote.vendor_label)},</p>"
         f"<p>Please submit a quote for <strong>{escape(title)}</strong>.</p>"
         f"{due_html}"
-        "<table cellpadding='6' cellspacing='0' border='1' style='border-collapse:collapse;font-size:14px'>"
-        "<thead><tr><th align='left'>Description</th><th>Qty</th><th>Unit</th></tr></thead>"
-        f"<tbody>{line_rows or '<tr><td colspan=3>No line items</td></tr>'}</tbody></table>"
+        f"{narrative_html}"
+        f"{line_table_html}"
+        f"{drawings_html}"
         f"<p style='margin-top:16px'><a href='{escape(portal)}'>Open the vendor portal to submit your quote</a></p>"
-        f"<p>You may also reply to this email. Send quotes to {escape(quotes_mailbox())} "
+        f"<p>You may also reply to this email. Send quotes to {escape(ident['from_address'])} "
         f"and keep <code>[RFP {escape(rfp.mail_tag)}]</code> in the subject.</p>"
-        "<p>Thank you,<br>US Interior Specialties</p>"
+        f"<p>Thank you,<br>{escape(ident['from_name'])}</p>"
         "</body></html>"
     )
     text = (
         f"Hello {quote.vendor_label},\n\n"
         f"Please submit a quote for {title}.\n"
         f"{due_text}"
-        f"Line items:\n{line_text}\n\n"
-        f"Vendor portal: {portal}\n\n"
+        f"{narrative_text}"
+        f"{line_text}"
+        f"{drawings_text}"
+        f"Vendor portal: {portal_display}\n\n"
         f"You may also reply to this email. Keep [RFP {rfp.mail_tag}] in the subject.\n"
-        f"Quotes mailbox: {quotes_mailbox()}\n"
+        f"Quotes mailbox: {ident['from_address']}\n"
     )
     return subject, text, html
 
 
-def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None) -> dict[str, Any]:
+def send_preview(rfp: Rfp, data: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    from ._notifications import _graph_configured
+    from ._rfp_body_service import attachment_plan, content_ready, vendor_directory
+
     payload = data if isinstance(data, Mapping) else {}
+    ident = mail_identity()
+    ok, errors, warnings = content_ready(rfp)
+    include_att = bool(payload.get("include_attachments", True))
+    plan = attachment_plan(rfp, include_attachments=include_att, graph_limit=_graph_configured())
+    if plan.get("warning"):
+        warnings.append(plan["warning"])
+    attached_ids = {str(row.id) for row, *_ in plan["attached"]}
+    quote = db.session.scalars(
+        select(RfpVendorQuote).where(RfpVendorQuote.rfp_id == rfp.id).order_by(RfpVendorQuote.created_at)
+    ).first()
+    preview_quote = quote or RfpVendorQuote(
+        rfp_id=rfp.id,
+        vendor_label="Vendor",
+        invite_token=rfp.public_token,
+    )
+    subject, text, html = build_invite_email(
+        rfp, preview_quote, attached_ids=attached_ids, redact_token=True
+    )
+    recipients = []
     bidders = payload.get("bidders")
-    if not isinstance(bidders, list) or not bidders:
-        raise ApiError("bidders must be a non-empty list")
+    if isinstance(bidders, list) and bidders:
+        for raw in bidders:
+            if not isinstance(raw, Mapping):
+                continue
+            email = str(raw.get("email") or "").strip()
+            cid = str(raw.get("company_id") or "")
+            missing = not email or "@" not in email
+            recipients.append(
+                {
+                    "company_id": cid or None,
+                    "email": email or None,
+                    "vendor_label": raw.get("vendor_label") or email,
+                    "ready": not missing,
+                    "error": "Add email on the vendor record." if missing else None,
+                    "company_edit_url": f"usis-companies.html?id={cid}" if cid else None,
+                    "token_last4": None,
+                }
+            )
+    else:
+        quotes = db.session.scalars(
+            select(RfpVendorQuote).where(RfpVendorQuote.rfp_id == rfp.id).order_by(RfpVendorQuote.created_at)
+        ).all()
+        for q in quotes:
+            tok = q.invite_token or ""
+            missing = not (q.invited_email or "")
+            recipients.append(
+                {
+                    "quote_id": str(q.id),
+                    "company_id": str(q.vendor_company_id) if q.vendor_company_id else None,
+                    "email": q.invited_email,
+                    "vendor_label": q.vendor_label,
+                    "ready": not missing,
+                    "error": "Add email on the vendor record." if missing else None,
+                    "company_edit_url": (
+                        f"usis-companies.html?id={q.vendor_company_id}" if q.vendor_company_id else None
+                    ),
+                    "token_last4": tok[-4:] if tok else None,
+                    "send_status": q.send_status,
+                }
+            )
+    drawings = []
+    from ._rfp_body_service import serialize_drawing_row as ser_d
+
+    for row in plan["all_rows"]:
+        item = ser_d(row)
+        item["will_attach"] = str(row.id) in attached_ids
+        drawings.append(item)
+    return {
+        "from": ident["from_address"],
+        "from_name": ident["from_name"],
+        "from_header": ident["from_header"],
+        "reply_to": ident["reply_to"],
+        "bcc": ident["bcc"],
+        "subject": subject,
+        "html": html,
+        "text": text,
+        "due_at": _iso(rfp.due_at),
+        "recipients": recipients,
+        "drawings": drawings,
+        "attach_bytes": plan["attach_bytes"],
+        "warnings": warnings,
+        "errors": errors,
+        "ready": ok and any(r.get("ready") for r in recipients),
+        "entity": "rfp_email_preview",
+    }
+
+
+def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None, *, user_id: UUID | None = None) -> dict[str, Any]:
+    from ._notifications import _graph_configured
+    from ._rfp_body_service import attachment_plan, content_ready, freeze_drawings_on_send, log_send_audit
+
+    payload = data if isinstance(data, Mapping) else {}
     rfp = _load_rfp(rfp_id)
-    ensure_mail_tag(rfp)
-    mailbox = quotes_mailbox()
+    ok, errors, warnings = content_ready(rfp)
+    if not ok:
+        raise ApiError("; ".join(errors))
+    bidders = payload.get("bidders")
+    quote_ids = payload.get("quote_ids")
+    send_all = bool(payload.get("send_all_ready") or payload.get("send_all"))
+    quotes_to_send: list[RfpVendorQuote] = []
     sends: list[dict[str, Any]] = []
+    if isinstance(bidders, list) and bidders:
+        for raw in bidders:
+            if not isinstance(raw, Mapping):
+                sends.append({"ok": False, "error": "each bidder must be an object"})
+                continue
+            company = None
+            cid = _parse_uuid(raw.get("company_id") or raw.get("vendor_company_id"))
+            if cid:
+                company = db.session.get(Company, cid)
+            if company is not None and not (company.email or "").strip():
+                contact_id = _parse_uuid(raw.get("contact_id"))
+                contact = db.session.get(Contact, contact_id) if contact_id else None
+                contact_email = (contact.email if contact is not None else "") or ""
+                if not contact_email and not (raw.get("email") or "").strip():
+                    sends.append(
+                        {
+                            "ok": False,
+                            "error": "Add email on the vendor record.",
+                            "company_id": str(company.id),
+                            "company_edit_url": f"usis-companies.html?id={company.id}",
+                        }
+                    )
+                    continue
+            try:
+                quotes_to_send.append(_upsert_bidder(rfp, raw))
+            except ApiError as exc:
+                sends.append({"ok": False, "error": exc.message, "company_id": str(cid) if cid else None})
+    elif send_all or (isinstance(quote_ids, list) and quote_ids):
+        q = select(RfpVendorQuote).where(RfpVendorQuote.rfp_id == rfp.id)
+        if isinstance(quote_ids, list) and quote_ids and not send_all:
+            wanted = [_parse_uuid(x) for x in quote_ids]
+            wanted = [x for x in wanted if x]
+            q = q.where(RfpVendorQuote.id.in_(wanted))
+        quotes_to_send = list(db.session.scalars(q.order_by(RfpVendorQuote.created_at)).all())
+    else:
+        raise ApiError("bidders must be a non-empty list")
+    ready = [q for q in quotes_to_send if (q.invited_email or "").strip() and "@" in (q.invited_email or "")]
+    blocked = [q for q in quotes_to_send if q not in ready]
+    for q in blocked:
+        sends.append(
+            {
+                "ok": False,
+                "quote_id": str(q.id),
+                "error": "Add email on the vendor record.",
+                "company_id": str(q.vendor_company_id) if q.vendor_company_id else None,
+                "company_edit_url": (
+                    f"usis-companies.html?id={q.vendor_company_id}" if q.vendor_company_id else None
+                ),
+            }
+        )
+    if not ready:
+        raise ApiError("No vendors with an email address are ready to send.")
+    ensure_mail_tag(rfp)
+    freeze_drawings_on_send(rfp)
+    ident = mail_identity()
+    mailbox = ident["from_address"]
+    include_att = bool(payload.get("include_attachments", True))
+    if payload.get("reminder"):
+        include_att = bool(payload.get("include_attachments"))
+    plan = attachment_plan(rfp, include_attachments=include_att, graph_limit=_graph_configured())
+    attached_ids = {str(row.id) for row, *_ in plan["attached"]}
+    mail_attachments = [
+        {"name": fname, "content_type": "application/pdf", "content": data}
+        for _row, data, fname in plan["attached"]
+    ]
+    cc_addr = None
+    if payload.get("cc_estimator") or rfp.cc_estimator:
+        cc_addr = str(payload.get("cc_email") or "").strip() or None
     now = _utcnow()
     sent_ok = False
-    for raw in bidders:
-        if not isinstance(raw, Mapping):
-            sends.append({"ok": False, "error": "each bidder must be an object"})
-            continue
-        try:
-            quote = _upsert_bidder(rfp, raw)
-        except ApiError as exc:
-            sends.append({"ok": False, "error": exc.message})
-            continue
-        subject, text, html = build_invite_email(rfp, quote)
+    drawing_ids = [str(r.id) for r in plan["all_rows"]]
+    for quote in ready:
+        subject, text, html = build_invite_email(rfp, quote, attached_ids=attached_ids)
         result = send_html_notification_email(
             to=quote.invited_email or "",
             subject=subject,
@@ -319,17 +621,33 @@ def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None) -> dict[
             html_body=html,
             from_addr=mailbox,
             reply_to=mailbox,
+            bcc=ident["bcc"],
+            cc=cc_addr,
+            attachments=mail_attachments or None,
+            from_name=ident["from_name"],
         )
-        ok = bool(result.get("sent") or result.get("dry_run"))
-        if ok:
+        ok_send = bool(result.get("sent") or result.get("dry_run"))
+        if ok_send:
             quote.sent_at = now
             quote.sent_from_mailbox = mailbox
+            quote.send_status = "sent" if result.get("sent") else "queued"
             if not quote.source:
                 quote.source = "invited"
             sent_ok = True
+            log_send_audit(
+                rfp=rfp,
+                quote=quote,
+                from_email=mailbox,
+                drawing_ids=drawing_ids,
+                attach_bytes=int(plan["attach_bytes"] or 0),
+                message_id=None,
+                user_id=user_id,
+            )
+        else:
+            quote.send_status = "bounced"
         sends.append(
             {
-                "ok": ok,
+                "ok": ok_send,
                 "quote_id": str(quote.id),
                 "email": quote.invited_email,
                 "vendor_label": quote.vendor_label,
@@ -342,7 +660,10 @@ def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None) -> dict[
         if rfp.status == "Draft":
             rfp.status = "Sent"
     db.session.commit()
-    return {"item": serialize_rfp(rfp), "sends": sends, "entity": "rfp_send"}
+    body = {"item": serialize_rfp(rfp), "sends": sends, "entity": "rfp_send"}
+    if warnings:
+        body["warnings"] = warnings
+    return body
 
 
 def record_portal_quote(
@@ -351,12 +672,58 @@ def record_portal_quote(
     *,
     vendor_label: str,
     notes: str | None,
+    line_prices: Any | None = None,
+    lump_sum_amount: Any | None = None,
+    vendor_exclusions: str | None = None,
 ) -> RfpVendorQuote:
+    from decimal import Decimal, InvalidOperation
+
+    from ._rfp_body_service import rfp_closed, visible_line_items
+
+    if rfp_closed(rfp):
+        raise ApiError("This RFP is closed.", 403)
     row = quote or RfpVendorQuote(rfp_id=rfp.id)
     row.vendor_label = (vendor_label or row.vendor_label or "Vendor")[:255]
     row.notes = notes
+    row.vendor_exclusions = (vendor_exclusions or "").strip() or None
     row.source = "portal"
     row.received_at = row.received_at or _utcnow()
+    visible = visible_line_items(rfp)
+    if visible:
+        parsed: list[dict[str, Any]] = []
+        raw_prices = line_prices if isinstance(line_prices, list) else []
+        by_id = {
+            str(item.get("line_id")): item
+            for item in raw_prices
+            if isinstance(item, Mapping)
+        }
+        for ln in visible:
+            cell = by_id.get(str(ln.id), {})
+            try:
+                unit_price = Decimal(str(cell.get("unit_price"))) if cell.get("unit_price") not in (None, "") else None
+            except (InvalidOperation, ValueError):
+                unit_price = None
+            qty = ln.quantity if ln.quantity is not None else Decimal("1")
+            extension = (unit_price * qty) if unit_price is not None else None
+            parsed.append(
+                {
+                    "line_id": str(ln.id),
+                    "unit_price": float(unit_price) if unit_price is not None else None,
+                    "extension": float(extension) if extension is not None else None,
+                }
+            )
+        row.line_prices = parsed
+        row.lump_sum_amount = None
+    else:
+        try:
+            row.lump_sum_amount = (
+                Decimal(str(lump_sum_amount)) if lump_sum_amount not in (None, "") else None
+            )
+        except (InvalidOperation, ValueError):
+            raise ApiError("lump_sum_amount must be a number")
+        if row.lump_sum_amount is None:
+            raise ApiError("lump sum is required")
+        row.line_prices = None
     if quote is None:
         db.session.add(row)
     _refresh_status(rfp)

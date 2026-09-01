@@ -54,6 +54,7 @@
 	<script src="assets/js/usis-theme-boot.js"></script>
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 </head>
 <body>
 	<!-- Start - Preloader -->
@@ -518,54 +519,159 @@
 						<h1 class="h5 mb-1">RFP detail</h1>
 					</div>
 					<div class="usis-page-header__actions d-flex flex-wrap gap-2">
-						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-email-preview">Email preview</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-clone">Clone to new RFP</button>
+						<a class="btn btn-sm btn-outline-secondary" id="usis-rfp-compare-link" href="usis-rfp-compare.html">Compare</a>
 						<button type="button" class="btn btn-sm btn-outline-primary" id="usis-rfp-sync">Sync quotes mailbox</button>
 						<a class="btn btn-sm btn-outline-secondary" href="usis-rfp-list.html">Back to RFPs</a>
 					</div>
 				</div>
 				<div id="usis-rfp-flash" class="alert d-none py-2 px-3 mb-3" role="status"></div>
+				<div class="card mb-3">
+					<div class="card-body">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label small mb-1" for="usis-rfp-title-input">Title</label>
+								<input type="text" class="form-control form-control-sm" id="usis-rfp-title-input">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-1" for="usis-rfp-due-input">Due date</label>
+								<input type="date" class="form-control form-control-sm" id="usis-rfp-due-input">
+							</div>
+							<div class="col-md-3">
+								<p class="small text-muted mb-1">Status</p>
+								<p class="mb-0"><span id="usis-rfp-status">Draft</span> <code class="ms-2" id="usis-rfp-mail-tag"></code></p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card mb-3">
+					<div class="card-body">
+						<h2 class="h6 mb-3">What vendors should price</h2>
+						<div class="btn-group mb-3" role="group" aria-label="Line source">
+							<input type="radio" class="btn-check" name="usis-rfp-source" id="usis-rfp-src-takeoff" value="takeoff">
+							<label class="btn btn-sm btn-outline-primary" for="usis-rfp-src-takeoff">Attach takeoff</label>
+							<input type="radio" class="btn-check" name="usis-rfp-source" id="usis-rfp-src-manual" value="manual">
+							<label class="btn btn-sm btn-outline-primary" for="usis-rfp-src-manual">List items</label>
+							<input type="radio" class="btn-check" name="usis-rfp-source" id="usis-rfp-src-narrative" value="narrative">
+							<label class="btn btn-sm btn-outline-primary" for="usis-rfp-src-narrative">Scope only</label>
+						</div>
+						<div class="mb-3">
+							<label class="form-label small mb-1" for="usis-rfp-scope">Scope of work</label>
+							<textarea class="form-control form-control-sm" id="usis-rfp-scope" rows="4" style="white-space:pre-wrap"></textarea>
+						</div>
+						<div class="row g-3">
+							<div class="col-md-4">
+								<label class="form-label small mb-1" for="usis-rfp-inclusions">Inclusions</label>
+								<textarea class="form-control form-control-sm" id="usis-rfp-inclusions" rows="3" style="white-space:pre-wrap"></textarea>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-1" for="usis-rfp-exclusions">Exclusions</label>
+								<textarea class="form-control form-control-sm" id="usis-rfp-exclusions" rows="3" style="white-space:pre-wrap"></textarea>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-1" for="usis-rfp-clarifications">Clarifications / notes to bidders</label>
+								<textarea class="form-control form-control-sm" id="usis-rfp-clarifications" rows="3" style="white-space:pre-wrap"></textarea>
+							</div>
+						</div>
+						<div id="usis-rfp-takeoff-panel" class="mt-3 d-none">
+							<div id="usis-rfp-takeoff-empty" class="alert alert-light border d-none py-2">No takeoff on this job yet. List items or write a scope instead.</div>
+							<div id="usis-rfp-takeoff-banner" class="alert alert-info py-2 d-none"></div>
+							<div class="row g-2 mb-2">
+								<div class="col-md-5">
+									<label class="form-label small mb-1" for="usis-rfp-estimate">Estimate</label>
+									<select class="form-select form-select-sm" id="usis-rfp-estimate"></select>
+								</div>
+								<div class="col-md-3">
+									<label class="form-label small mb-1" for="usis-rfp-trade-filter">Trade / CSI</label>
+									<input type="search" class="form-control form-control-sm" id="usis-rfp-trade-filter" placeholder="Filter">
+								</div>
+								<div class="col-md-4 d-flex align-items-end gap-2 flex-wrap">
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-select-remaining">Select remaining scopes</button>
+									<button type="button" class="btn btn-sm btn-primary" id="usis-rfp-attach">Attach selected</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-refresh-takeoff">Refresh selected from takeoff</button>
+								</div>
+							</div>
+							<div class="table-responsive" style="max-height:16rem;overflow:auto">
+								<table class="table table-sm mb-0">
+									<thead><tr><th><input type="checkbox" id="usis-rfp-takeoff-all"></th><th>CSI</th><th>Trade</th><th>Description</th><th>Qty</th><th>Unit</th><th>Room</th><th>Notes</th></tr></thead>
+									<tbody id="usis-rfp-takeoff-body"></tbody>
+								</table>
+							</div>
+						</div>
+						<div id="usis-rfp-lines-panel" class="mt-3">
+							<div class="d-flex justify-content-between align-items-center mb-2">
+								<h3 class="h6 mb-0">Line items</h3>
+								<button type="button" class="btn btn-sm btn-outline-primary" id="usis-rfp-add-line">Add row</button>
+							</div>
+							<div class="table-responsive">
+								<table class="table table-sm mb-0">
+									<thead><tr><th>CSI</th><th>Description</th><th>Qty</th><th>Unit</th><th>Notes</th><th>Source</th><th></th></tr></thead>
+									<tbody id="usis-rfp-lines-body"></tbody>
+								</table>
+							</div>
+							<p id="usis-rfp-internal-lines" class="small text-muted mt-2 d-none">Internal lines are hidden from vendors in scope-only mode.</p>
+						</div>
+						<div class="mt-3">
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-save">Save draft</button>
+						</div>
+					</div>
+				</div>
 				<div class="row g-3 mb-3">
-					<div class="col-lg-8">
+					<div class="col-lg-5">
 						<div class="card h-100">
 							<div class="card-body">
-								<div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
-									<div>
-										<h1 class="h5 mb-1" id="usis-rfp-title">RFP</h1>
-										<p class="text-muted small mb-0">
-											<span id="usis-rfp-status">Draft</span>
-											<span class="mx-1">·</span>
-											<span id="usis-rfp-due">No due date</span>
-											<span class="mx-1">·</span>
-											<code id="usis-rfp-mail-tag"></code>
-										</p>
-									</div>
-									<p class="small text-muted mb-0">From / Reply-To: <strong id="usis-rfp-mailbox">quotes@gousis.com</strong></p>
+								<h2 class="h6">Vendors</h2>
+								<p class="text-muted small">Directory companies (vendor / subcontractor). Send is blocked until the company record has an email.</p>
+								<label class="form-label small mb-1" for="usis-rfp-vendor-search">Search</label>
+								<input type="search" class="form-control form-control-sm mb-2" id="usis-rfp-vendor-search" placeholder="Search companies" autocomplete="off">
+								<div id="usis-rfp-vendor-results" class="list-group mb-2"></div>
+								<div id="usis-rfp-bidder-chips" class="mb-2"></div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-7">
+						<div class="card h-100">
+							<div class="card-body">
+								<h2 class="h6">Drawings for vendors</h2>
+								<p class="text-muted small mb-2">Default is a tokenized link. Attach PDF is opt-in and capped at 18 MB per message.</p>
+								<div class="mb-2">
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-draw-arch">Select architectural + finish sheets</button>
 								</div>
-								<div class="table-responsive">
+								<div class="table-responsive" style="max-height:16rem;overflow:auto">
 									<table class="table table-sm mb-0">
-										<thead><tr><th>Description</th><th>Qty</th><th>Unit</th></tr></thead>
-										<tbody id="usis-rfp-lines-body"></tbody>
+										<thead><tr><th></th><th>Sheet</th><th>Title</th><th>Disc.</th><th>Rev</th><th>Delivery</th></tr></thead>
+										<tbody id="usis-rfp-draw-body"></tbody>
 									</table>
 								</div>
 							</div>
 						</div>
 					</div>
-					<div class="col-lg-4">
-						<div class="card h-100">
-							<div class="card-body">
-								<h2 class="h6">Invite vendors</h2>
-								<p class="text-muted small">Search the directory, then send from quotes@gousis.com. Vendors can reply to that mailbox or use the portal link.</p>
-								<label class="form-label small mb-1" for="usis-rfp-vendor-search">Company</label>
-								<input type="search" class="form-control form-control-sm mb-2" id="usis-rfp-vendor-search" placeholder="Search companies" autocomplete="off">
-								<div id="usis-rfp-vendor-results" class="list-group mb-2 d-none"></div>
-								<label class="form-label small mb-1" for="usis-rfp-vendor-email">Email</label>
-								<div class="input-group input-group-sm mb-2">
-									<input type="email" class="form-control" id="usis-rfp-vendor-email" placeholder="vendor@example.com">
-									<button type="button" class="btn btn-outline-secondary" id="usis-rfp-vendor-add">Add</button>
-								</div>
-								<div id="usis-rfp-bidder-chips" class="mb-3"></div>
-								<button type="button" class="btn btn-primary btn-sm w-100" id="usis-rfp-send">Send invitations</button>
+				</div>
+				<div class="card mb-3">
+					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+							<h2 class="h6 mb-0">Preview / Send from quotes@gousis.com</h2>
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="usis-rfp-cc-estimator">
+								<label class="form-check-label small" for="usis-rfp-cc-estimator">CC my work email</label>
 							</div>
+						</div>
+						<p class="small mb-2">From / Reply-To: <strong id="usis-rfp-mailbox">quotes@gousis.com</strong> (not editable)</p>
+						<div class="row g-3">
+							<div class="col-md-4">
+								<h3 class="h6">Recipients</h3>
+								<div id="usis-rfp-preview-recipients" class="small"></div>
+							</div>
+							<div class="col-md-8">
+								<h3 class="h6">Message + drawings</h3>
+								<div id="usis-rfp-preview-msg" class="border rounded p-2 small" style="max-height:18rem;overflow:auto;white-space:pre-wrap"></div>
+							</div>
+						</div>
+						<div class="d-flex flex-wrap gap-2 mt-3">
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-email-preview">Refresh preview</button>
+							<button type="button" class="btn btn-sm btn-primary" id="usis-rfp-send">Send to all ready vendors</button>
+							<button type="button" class="btn btn-sm btn-outline-primary" id="usis-rfp-send-selected">Send to selected</button>
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-save-2">Save draft</button>
 						</div>
 					</div>
 				</div>
@@ -582,6 +688,7 @@
 										<th>Sent</th>
 										<th>Received</th>
 										<th>Notes / files</th>
+										<th></th>
 									</tr>
 								</thead>
 								<tbody id="usis-rfp-quotes-body"></tbody>

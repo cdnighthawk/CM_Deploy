@@ -113,7 +113,10 @@
 	}
 
 	function onReady() {
+		var qsId = new URLSearchParams(window.location.search).get("id");
+		if (qsId) selectedId = qsId;
 		loadCompanies();
+		if (qsId) loadDetail();
 		var q = document.getElementById("usis-co-q");
 		if (q) q.addEventListener("input", loadCompanies);
 		document.getElementById("usis-co-tbody").addEventListener("click", function (e) {

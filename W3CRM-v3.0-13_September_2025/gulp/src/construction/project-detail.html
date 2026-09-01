@@ -604,7 +604,7 @@
 									</div>
 									<div class="alert alert-light border py-2 mb-2 d-none" data-usis-proc-po-loading>Loading…</div>
 									<div class="alert alert-danger py-2 mb-2 d-none" data-usis-proc-po-error role="alert"></div>
-									<div class="table-responsive">
+									<div class="table-responsive" style="overflow: visible;">
 										<table class="table table-hover table-sm align-middle mb-0">
 											<thead class="table-light">
 												<tr>
@@ -756,7 +756,7 @@
 							</div>
 							<div class="alert alert-light border py-2 mb-2 d-none" id="usis-order-loading">Loading…</div>
 							<div class="alert alert-danger py-2 mb-2 d-none" id="usis-order-error" role="alert"></div>
-							<div class="table-responsive">
+							<div class="table-responsive" style="overflow: visible;">
 								<table class="table table-hover table-sm align-middle mb-0">
 									<thead class="table-light">
 										<tr>
@@ -2000,6 +2000,26 @@
 		</div>
 	</div>
 
+	<div class="modal fade" id="usis-modal-po-comms" tabindex="-1" aria-labelledby="usis-modal-po-comms-label" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-modal-po-comms-label">Vendor communications</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="text-muted small mb-2" id="usis-po-comms-sub"></p>
+					<div class="alert alert-warning py-2 px-3 small d-none" id="usis-po-comms-mail-warn" role="status"></div>
+					<div class="alert alert-light border py-2 d-none" id="usis-po-comms-loading">Loading…</div>
+					<div id="usis-po-comms-list"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="modal fade" id="usis-modal-prime-sov" tabindex="-1" aria-labelledby="usis-modal-prime-sov-label" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 			<div class="modal-content">
@@ -2175,8 +2195,8 @@
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js"></script>
-	<script src="assets/js/project-detail-procurement.js?v=20260831d"></script>
-	<script src="assets/js/project-detail-order.js?v=20260831d"></script>
+	<script src="assets/js/project-detail-procurement.js?v=20260831e"></script>
+	<script src="assets/js/project-detail-order.js?v=20260831e"></script>
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>

@@ -3680,6 +3680,20 @@ def get_project_commitment(project_id: str, commitment_id: str):
         return _commitment_err(exc)
 
 
+@bp.get("/projects/<project_id>/commitments/<commitment_id>/communications")
+def list_project_commitment_communications(project_id: str, commitment_id: str):
+    pid = _parse_uuid_param(project_id)
+    cid = _parse_uuid_param(commitment_id)
+    if not pid or not cid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        return _jsonify(order_tracking_svc.list_commitment_communications(pid, cid, current_user()))
+    except rfi_svc.ApiError as exc:
+        return _commitment_err(exc)
+
+
 @bp.post("/projects/<project_id>/commitments")
 def create_project_commitment(project_id: str):
     pid = _parse_uuid_param(project_id)

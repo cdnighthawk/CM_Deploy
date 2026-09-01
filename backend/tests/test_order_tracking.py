@@ -226,3 +226,67 @@ def test_field_receivables_deliveries_and_receipt_replay(client, no_dev_admin):
     assert replay.status_code == 200, replay.get_data(as_text=True)
     assert replay.get_json()["created"] is False
     assert replay.get_json()["id"] == rid
+
+
+def test_po_communications_order_notice_and_shipment(client, no_dev_admin, monkeypatch):
+    ctx = _setup(client)
+    hdr = {"X-Usis-User-Id": ctx["uid"]}
+    pid = ctx["pid"]
+    monkeypatch.setattr(
+        "app.api._order_tracking_service.send_plain_notification_email",
+        lambda **kwargs: {"sent": True, "dry_run": False, "error": None},
+    )
+    created = client.post(
+        f"/api/v1/projects/{pid}/commitments",
+        json={
+            "commitment_kind": "purchase_order",
+            "vendor_company_id": ctx["vid"],
+            "vendor_contact_id": ctx["contact_id"],
+            "title": "Metal studs",
+            "reference_number": "PO-COMM-9",
+            "needed_on_site_date": (date.today() + timedelta(days=14)).isoformat(),
+            "lead_time_days": 5,
+            "line_items": [
+                {
+                    "description": "Stud",
+                    "quantity": "10",
+                    "unit": "EA",
+                    "unit_cost": "12",
+                    "submittal_release_required": False,
+                }
+            ],
+        },
+        headers=hdr,
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    cid = created.get_json()["item"]["id"]
+    lid = created.get_json()["line_items"][0]["id"]
+
+    issued = client.post(f"/api/purchase-orders/{cid}/issue", json={}, headers=hdr)
+    assert issued.status_code == 200, issued.get_data(as_text=True)
+
+    eta = (date.today() + timedelta(days=4)).isoformat()
+    ship = client.post(
+        f"/api/purchase-orders/{cid}/shipments",
+        json={
+            "carrier": "FedEx",
+            "tracking_number": "FXCOMM",
+            "shipment_status": "in_transit",
+            "estimated_delivery_date": eta,
+            "last_note": "Left dock 7am",
+            "lines": [{"commitment_line_item_id": lid, "quantity": "10"}],
+        },
+        headers=hdr,
+    )
+    assert ship.status_code == 201, ship.get_data(as_text=True)
+
+    comms = client.get(f"/api/v1/projects/{pid}/commitments/{cid}/communications", headers=hdr)
+    assert comms.status_code == 200, comms.get_data(as_text=True)
+    body = comms.get_json()
+    assert body["entity"] == "purchase_order_communications"
+    assert body["item"]["po_number"] == "PO-COMM-9"
+    sources = {row["source"] for row in body["items"]}
+    assert "shipment" in sources
+    assert "correspondence" in sources or "order_notice" in sources
+    assert any("FXCOMM" in (row.get("preview") or "") for row in body["items"])
+    assert any("PO-COMM-9" in (row.get("subject") or "") for row in body["items"])

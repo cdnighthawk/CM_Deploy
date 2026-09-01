@@ -57,6 +57,12 @@
 				items.forEach(function (row) {
 					var tr = document.createElement("tr");
 					if (row.buy_late) tr.classList.add("table-warning");
+					var menu =
+						typeof window.usisPoOverflowMenu === "function"
+							? window.usisPoOverflowMenu({ id: row.commitment_id, kind: "po" })
+							: '<td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-order-open" data-id="' +
+								esc(row.commitment_id) +
+								'">Open</button></td>';
 					tr.innerHTML =
 						"<td>" +
 						esc(row.po_number || "—") +
@@ -75,16 +81,8 @@
 						'">' +
 						esc(row.supplier_confirm_status || "none") +
 						"</span></td>" +
-						'<td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-order-open" data-id="' +
-						esc(row.commitment_id) +
-						'">Open</button></td>';
+						menu;
 					tb.appendChild(tr);
-				});
-				tb.querySelectorAll(".usis-order-open").forEach(function (btn) {
-					btn.addEventListener("click", function () {
-						var cid = btn.getAttribute("data-id");
-						if (window.usisOpenCommitmentEdit) window.usisOpenCommitmentEdit(cid);
-					});
 				});
 			})
 			.catch(function (e) {
@@ -124,4 +122,5 @@
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire);
 	else wire();
+	window.usisReloadOrderBoard = loadBoard;
 })();

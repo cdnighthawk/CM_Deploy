@@ -15,12 +15,14 @@ from ..models import (
     CommitmentLineItem,
     Company,
     Contact,
+    CorrespondenceItem,
     Project,
+    ProjectMaterialOrder,
     ProjectScheduleItem,
     PurchaseOrderReceipt,
     PurchaseOrderShipment,
 )
-from ._notifications import send_plain_notification_email
+from ._notifications import _graph_configured, _mail_from, send_plain_notification_email
 from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError, _parse_uuid
 
@@ -168,6 +170,19 @@ def notify_supplier_order_by_change(c: Commitment) -> dict[str, Any]:
         c.supplier_confirm_sent_at = _utcnow()
         c.supplier_confirm_at = None
         c.last_notified_order_by_date = c.order_by_date
+        try:
+            from . import _correspondence_service as corr
+
+            corr.archive_outbound_message(
+                project_id=c.project_id,
+                subject=subject,
+                body=body,
+                from_email=_mail_from() or None,
+                from_name="USIS",
+                to_email=to,
+            )
+        except Exception:
+            pass
     db.session.flush()
     return result
 
@@ -506,3 +521,313 @@ def create_field_receipt(
     body = commitment_svc.create_purchase_order_receipt(commitment_id, data, cu)
     body["created"] = True
     return body, 201
+
+
+def _comm_item(
+    *,
+    source: str,
+    kind_label: str,
+    at: datetime | date | None,
+    subject: str,
+    preview: str = "",
+    direction: str = "internal",
+    from_name: str | None = None,
+    from_email: str | None = None,
+    to_email: str | None = None,
+    item_id: str | None = None,
+    download_url: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "id": item_id,
+        "source": source,
+        "kind_label": kind_label,
+        "direction": direction,
+        "at": _iso(at),
+        "subject": subject,
+        "preview": (preview or "")[:400],
+        "from_name": from_name,
+        "from_email": from_email,
+        "to_email": to_email,
+        "download_url": download_url,
+    }
+
+
+def _comm_blob(*parts: Any) -> str:
+    return " ".join(str(p or "") for p in parts).lower()
+
+
+def _matches_po_thread(blob: str, tokens: list[str]) -> bool:
+    if not blob or not tokens:
+        return False
+    return any(t in blob for t in tokens)
+
+
+def _mailbox_search_targets(cu: CurrentUser) -> list[str]:
+    boxes: list[str] = []
+    system = (_mail_from() or "").strip()
+    if system:
+        boxes.append(system)
+    try:
+        from . import _correspondence_service as corr
+
+        boxes.extend(corr.configured_mailboxes())
+    except Exception:
+        pass
+    user_email = ""
+    if cu.user is not None:
+        user_email = (getattr(cu.user, "email", None) or "").strip()
+    if user_email and "@" in user_email:
+        boxes.append(user_email)
+    seen: set[str] = set()
+    out: list[str] = []
+    for b in boxes:
+        key = b.strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(b.strip())
+    return out
+
+
+def list_commitment_communications(
+    project_id: uuid.UUID, commitment_id: uuid.UUID, cu: CurrentUser
+) -> dict[str, Any]:
+    """Emails and order/delivery notes between USIS and the PO vendor."""
+    if not _can_view(cu):
+        raise ApiError("forbidden", 403)
+    c = db.session.scalar(
+        select(Commitment)
+        .options(
+            selectinload(Commitment.shipments).selectinload(PurchaseOrderShipment.lines),
+            selectinload(Commitment.receipts),
+            selectinload(Commitment.vendor),
+        )
+        .where(Commitment.id == commitment_id, Commitment.project_id == project_id)
+    )
+    if c is None or c.commitment_kind != "purchase_order":
+        raise ApiError("purchase order not found", 404)
+    vendor = c.vendor or db.session.get(Company, c.vendor_company_id)
+    vendor_name = vendor.name if vendor else ""
+    vendor_email = _vendor_contact_email(c)
+    po_ref = (c.reference_number or "").strip()
+    tokens: list[str] = []
+    if po_ref and len(po_ref) >= 3:
+        tokens.append(po_ref.lower())
+    if vendor_email:
+        tokens.append(vendor_email.lower())
+    if vendor_name and len(vendor_name) >= 4:
+        tokens.append(vendor_name.lower())
+
+    items: list[dict[str, Any]] = []
+    if c.supplier_confirm_sent_at:
+        items.append(
+            _comm_item(
+                source="order_notice",
+                kind_label="Order-by notice",
+                at=c.supplier_confirm_sent_at,
+                subject=f"Order-by date update — {po_ref or 'PO'}",
+                preview=(
+                    f"Order by: {c.order_by_date.isoformat() if c.order_by_date else '—'}; "
+                    f"needed on site: {c.needed_on_site_date.isoformat() if c.needed_on_site_date else '—'}"
+                ),
+                direction="outbound",
+                from_name="USIS",
+                from_email=_mail_from() or None,
+                to_email=vendor_email,
+            )
+        )
+    if c.supplier_confirm_at:
+        items.append(
+            _comm_item(
+                source="supplier_confirm",
+                kind_label="Vendor confirmation",
+                at=c.supplier_confirm_at,
+                subject=f"Supplier confirmed — {po_ref or 'PO'}",
+                preview=(
+                    f"Promised ship: {c.promised_ship_date.isoformat() if c.promised_ship_date else '—'}"
+                ),
+                direction="inbound",
+                from_name=vendor_name or None,
+                from_email=vendor_email,
+            )
+        )
+    for s in c.shipments or []:
+        if (s.shipment_status or "") == "cancelled":
+            continue
+        bits = [
+            s.carrier,
+            s.tracking_number,
+            s.shipment_status,
+            f"est. delivery {s.estimated_delivery_date.isoformat()}" if s.estimated_delivery_date else None,
+            s.last_note,
+        ]
+        items.append(
+            _comm_item(
+                source="shipment",
+                kind_label="Shipment / delivery",
+                at=s.actual_ship_date or s.promised_ship_date or s.updated_at or s.created_at,
+                subject=f"Shipment — {po_ref or 'PO'}",
+                preview=" · ".join(str(b) for b in bits if b),
+                direction="inbound" if s.tracking_number else "internal",
+                from_name=vendor_name or None,
+                item_id=str(s.id),
+            )
+        )
+    for r in c.receipts or []:
+        items.append(
+            _comm_item(
+                source="receipt",
+                kind_label="Field receipt",
+                at=r.received_on or r.created_at,
+                subject=f"Received — {po_ref or 'PO'}",
+                preview=" · ".join(
+                    str(b)
+                    for b in (r.condition, r.packing_slip_ref, r.notes, r.status)
+                    if b
+                ),
+                direction="internal",
+                item_id=str(r.id),
+            )
+        )
+    mat_rows = db.session.scalars(
+        select(ProjectMaterialOrder).where(ProjectMaterialOrder.commitment_id == c.id)
+    ).all()
+    for mo in mat_rows:
+        bits = [
+            mo.description,
+            f"order {mo.order_date.isoformat()}" if mo.order_date else None,
+            f"delivery {mo.expected_delivery_date.isoformat()}" if mo.expected_delivery_date else None,
+            mo.shipping_company,
+            mo.tracking_number,
+            mo.notes,
+        ]
+        items.append(
+            _comm_item(
+                source="material_order",
+                kind_label="Material order",
+                at=mo.order_date or mo.expected_delivery_date or mo.created_at,
+                subject=mo.description or f"Material order — {po_ref or 'PO'}",
+                preview=" · ".join(str(b) for b in bits if b),
+                direction="internal",
+                from_name=mo.vendor_name or vendor_name or None,
+                item_id=str(mo.id),
+            )
+        )
+
+    seen_keys: set[str] = set()
+    corr_rows = db.session.scalars(
+        select(CorrespondenceItem)
+        .where(CorrespondenceItem.project_id == project_id)
+        .order_by(CorrespondenceItem.sent_at.desc().nullslast())
+        .limit(500)
+    ).all()
+    for row in corr_rows:
+        blob = _comm_blob(row.subject, row.from_email, row.from_name, row.search_text)
+        if not tokens or not _matches_po_thread(blob, tokens):
+            continue
+        key = f"corr:{row.id}"
+        seen_keys.add(key)
+        items.append(
+            _comm_item(
+                source="correspondence",
+                kind_label="Email",
+                at=row.sent_at or row.created_at,
+                subject=row.subject or "(no subject)",
+                preview=(row.search_text or "")[:400],
+                direction="outbound" if (row.source_type or "") == "outbound" else "inbound",
+                from_name=row.from_name,
+                from_email=row.from_email,
+                item_id=str(row.id),
+                download_url=f"/api/correspondence/{row.id}/download",
+            )
+        )
+
+    mailbox: dict[str, Any] = {"searched": False, "error": None, "mailboxes": []}
+    query = po_ref if po_ref and len(po_ref) >= 3 else (vendor_email or "")
+    if query and _graph_configured():
+        mailbox["searched"] = True
+        try:
+            from ._notifications import search_mailbox_messages
+        except Exception as exc:
+            mailbox["error"] = str(exc)
+            search_mailbox_messages = None  # type: ignore[assignment]
+        if search_mailbox_messages is not None:
+            errors: list[str] = []
+            for box in _mailbox_search_targets(cu):
+                mailbox["mailboxes"].append(box)
+                try:
+                    listing = search_mailbox_messages(mailbox=box, query=query, top=25)
+                except Exception as exc:
+                    errors.append(f"{box}: {exc}")
+                    continue
+                for msg in listing.get("items") or []:
+                    blob = _comm_blob(
+                        msg.get("subject"),
+                        (msg.get("from") or {}).get("address"),
+                        (msg.get("from") or {}).get("name"),
+                        msg.get("preview"),
+                        " ".join((x.get("address") or "") for x in (msg.get("to") or [])),
+                    )
+                    if not tokens or not _matches_po_thread(blob, tokens):
+                        continue
+                    mid = str(msg.get("id") or "")
+                    key = f"mail:{mid}"
+                    if key in seen_keys:
+                        continue
+                    seen_keys.add(key)
+                    frm = msg.get("from") if isinstance(msg.get("from"), dict) else {}
+                    to_list = msg.get("to") if isinstance(msg.get("to"), list) else []
+                    to_addr = (to_list[0].get("address") if to_list and isinstance(to_list[0], dict) else None)
+                    items.append(
+                        _comm_item(
+                            source="mailbox",
+                            kind_label="Mailbox",
+                            at=_parse_mailbox_dt(msg.get("received")),
+                            subject=str(msg.get("subject") or "(no subject)"),
+                            preview=str(msg.get("preview") or ""),
+                            direction="inbound",
+                            from_name=(frm or {}).get("name"),
+                            from_email=(frm or {}).get("address"),
+                            to_email=to_addr,
+                            item_id=mid,
+                        )
+                    )
+            if errors:
+                mailbox["error"] = "; ".join(errors[:5])
+
+    if any(
+        i.get("source") == "correspondence"
+        and "order-by date update" in (i.get("subject") or "").lower()
+        for i in items
+    ):
+        items = [i for i in items if i.get("source") != "order_notice"]
+
+    items.sort(key=lambda r: r.get("at") or "", reverse=True)
+    return {
+        "entity": "purchase_order_communications",
+        "item": {
+            "commitment_id": str(c.id),
+            "project_id": str(c.project_id),
+            "po_number": po_ref or None,
+            "title": c.title,
+            "vendor_name": vendor_name,
+            "vendor_email": vendor_email,
+        },
+        "items": items,
+        "mailbox": mailbox,
+    }
+
+
+def _parse_mailbox_dt(raw: Any) -> datetime | None:
+    if not raw:
+        return None
+    s = str(raw).strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt

@@ -328,6 +328,51 @@ def sync_mailboxes(*, top: int = 40, cu: CurrentUser | None = None) -> dict[str,
     }
 
 
+def archive_outbound_message(
+    *,
+    project_id: uuid.UUID | None,
+    subject: str,
+    body: str,
+    from_email: str | None = None,
+    from_name: str | None = None,
+    to_email: str | None = None,
+) -> CorrespondenceItem:
+    """Persist an outbound system/staff email so PO/order threads can be reopened later."""
+    subj = (subject or "").strip()[:500] or "(no subject)"
+    body_text = _plain_text(body or "")
+    frm = (from_email or "").strip() or None
+    name = (from_name or "").strip() or "USIS"
+    to_addr = (to_email or "").strip() or None
+    year = _utcnow().year
+    rel = f"{str(project_id) if project_id else UNFILED}/{year}/{uuid.uuid4().hex[:16]}"
+    headers = "\n".join(
+        [
+            f"From: {name} <{frm or ''}>",
+            f"To: {to_addr or ''}",
+            f"Subject: {subj}",
+            f"Date: {_iso(_utcnow())}",
+            "Source: outbound",
+        ]
+    )
+    _write_message_files(rel, headers=headers, body_text=body_text, attachments=[])
+    item = CorrespondenceItem(
+        project_id=project_id,
+        source_type="outbound",
+        subject=subj,
+        from_name=name,
+        from_email=frm,
+        sent_at=_utcnow(),
+        storage_relpath=rel,
+        search_text=f"{subj} {name} {frm or ''} {to_addr or ''} {body_text}"[:20000],
+        has_attachments=False,
+        attachment_count=0,
+        filed_at=_utcnow() if project_id else None,
+    )
+    db.session.add(item)
+    db.session.flush()
+    return item
+
+
 def ingest_local_message(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
     """Test/dev ingest without Graph — writes the same file layout."""
     if not _can_mutate(cu):

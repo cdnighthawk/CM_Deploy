@@ -443,6 +443,47 @@
 		d.textContent = String(s);
 		return d.innerHTML;
 	}
+	function overflowMenuHtml(opts) {
+		var id = esc(opts.id || "");
+		var kind = esc(opts.kind || "po");
+		var cid = esc(opts.commitmentId || opts.id || "");
+		return (
+			'<td class="text-end text-nowrap">' +
+			'<div class="dropdown">' +
+			'<button type="button" class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="Actions">' +
+			'<i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>' +
+			"</button>" +
+			'<ul class="dropdown-menu dropdown-menu-end">' +
+			'<li><button type="button" class="dropdown-item usis-po-act" data-act="update" data-kind="' +
+			kind +
+			'" data-id="' +
+			id +
+			'" data-commitment-id="' +
+			cid +
+			'">Update</button></li>' +
+			'<li><button type="button" class="dropdown-item usis-po-act" data-act="comms" data-kind="' +
+			kind +
+			'" data-id="' +
+			id +
+			'" data-commitment-id="' +
+			cid +
+			'">View communications</button></li>' +
+			'<li><hr class="dropdown-divider"></li>' +
+			'<li><button type="button" class="dropdown-item text-danger usis-po-act" data-act="delete" data-kind="' +
+			kind +
+			'" data-id="' +
+			id +
+			'" data-commitment-id="' +
+			cid +
+			'">Delete</button></li>' +
+			"</ul></div></td>"
+		);
+	}
+	function refreshPoSurfaces() {
+		loadCommitmentsList();
+		loadMaterialOrders();
+		if (typeof window.usisReloadOrderBoard === "function") window.usisReloadOrderBoard();
+	}
 	function toastErr(msg) {
 		if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(msg);
 	}
@@ -555,15 +596,9 @@
 				fulfill +
 				'<td class="text-end">' +
 				esc(row.total_amount != null ? row.total_amount : "—") +
-				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-c-open" data-id="' +
-				esc(row.id) +
-				'">Edit</button></td>';
+				"</td>" +
+				overflowMenuHtml({ id: row.id, kind: isPo ? "po" : "sub", commitmentId: row.id });
 			tb.appendChild(tr);
-		});
-		tb.querySelectorAll(".usis-c-open").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				openEditModal(btn.getAttribute("data-id"));
-			});
 		});
 	}
 	function loadCommitmentsList() {
@@ -708,15 +743,9 @@
 				esc(row.tracking_number || "—") +
 				"</td><td><span class=\"badge bg-light text-dark border\">" +
 				esc(row.status || "draft") +
-				'</span></td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-mat-edit" data-id="' +
-				esc(row.id) +
-				'">Edit</button></td>';
+				"</span></td>" +
+				overflowMenuHtml({ id: row.id, kind: "mat", commitmentId: row.commitment_id });
 			tb.appendChild(tr);
-		});
-		tb.querySelectorAll(".usis-mat-edit").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				openMaterialOrderPrompt(btn.getAttribute("data-id"));
-			});
 		});
 	}
 	function loadMaterialOrders() {
@@ -1540,7 +1569,7 @@
 							window.bootstrap.Modal.getOrCreateInstance(modal).hide();
 						}
 						toastOk("Deleted.");
-						return loadCommitmentsList();
+						refreshPoSurfaces();
 					})
 					.catch(function (e) {
 						toastErr(e.message || String(e));
@@ -1548,7 +1577,170 @@
 			});
 		}
 	}
+	function fmtWhen(iso) {
+		if (!iso) return "";
+		try {
+			var d = new Date(iso);
+			if (isNaN(d.getTime())) return String(iso);
+			return d.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+		} catch (e) {
+			return String(iso);
+		}
+	}
+	function commsDirBadge(dir) {
+		if (dir === "outbound") return '<span class="badge text-bg-primary">Sent</span>';
+		if (dir === "inbound") return '<span class="badge text-bg-success">Received</span>';
+		return '<span class="badge bg-light text-dark border">Record</span>';
+	}
+	function openPoCommunications(cid) {
+		if (!projectId || !cid) return;
+		var modal = document.getElementById("usis-modal-po-comms");
+		var title = document.getElementById("usis-modal-po-comms-label");
+		var sub = document.getElementById("usis-po-comms-sub");
+		var warn = document.getElementById("usis-po-comms-mail-warn");
+		var loading = document.getElementById("usis-po-comms-loading");
+		var list = document.getElementById("usis-po-comms-list");
+		if (title) title.textContent = "Vendor communications";
+		if (sub) sub.textContent = "Order notices, delivery tracking, and emails that mention this PO.";
+		if (warn) {
+			warn.textContent = "";
+			warn.classList.add("d-none");
+		}
+		if (list) list.innerHTML = "";
+		if (loading) loading.classList.remove("d-none");
+		if (modal && window.bootstrap) window.bootstrap.Modal.getOrCreateInstance(modal).show();
+		fetchJson(
+			"/api/v1/projects/" +
+				encodeURIComponent(projectId) +
+				"/commitments/" +
+				encodeURIComponent(cid) +
+				"/communications"
+		)
+			.then(function (data) {
+				if (loading) loading.classList.add("d-none");
+				var item = data.item || {};
+				if (title) {
+					title.textContent =
+						"Vendor communications — " + (item.po_number || item.title || "PO");
+				}
+				if (sub) {
+					sub.textContent =
+						(item.vendor_name || "Vendor") +
+						(item.vendor_email ? " · " + item.vendor_email : "") +
+						". Order notices, delivery tracking, and emails that mention this PO.";
+				}
+				var mail = data.mailbox || {};
+				if (warn && mail.error) {
+					warn.textContent = "Mailbox search: " + mail.error;
+					warn.classList.remove("d-none");
+				}
+				var rows = data.items || [];
+				if (!list) return;
+				if (!rows.length) {
+					list.innerHTML =
+						'<p class="text-muted small mb-0">No emails or delivery notes for this PO yet. Order-by notices and vendor replies that mention the PO number will show here.</p>';
+					return;
+				}
+				list.innerHTML = rows
+					.map(function (row) {
+						var who = row.from_name || row.from_email || "";
+						if (row.to_email) who = (who ? who + " → " : "") + row.to_email;
+						var dl = row.download_url
+							? '<a class="small" href="' +
+								esc(row.download_url) +
+								'" target="_blank" rel="noopener">Open message</a>'
+							: "";
+						return (
+							'<div class="border rounded p-2 mb-2">' +
+							'<div class="d-flex flex-wrap justify-content-between gap-2 mb-1">' +
+							"<div>" +
+							commsDirBadge(row.direction) +
+							' <span class="badge bg-light text-dark border">' +
+							esc(row.kind_label || row.source || "") +
+							"</span></div>" +
+							'<span class="small text-muted">' +
+							esc(fmtWhen(row.at)) +
+							"</span></div>" +
+							'<div class="fw-semibold">' +
+							esc(row.subject || "(no subject)") +
+							"</div>" +
+							(who ? '<div class="small text-muted">' + esc(who) + "</div>" : "") +
+							(row.preview
+								? '<p class="small mb-1 mt-1">' + esc(row.preview) + "</p>"
+								: "") +
+							dl +
+							"</div>"
+						);
+					})
+					.join("");
+			})
+			.catch(function (e) {
+				if (loading) loading.classList.add("d-none");
+				if (list) {
+					list.innerHTML =
+						'<p class="text-danger small mb-0">' + esc(e.message || String(e)) + "</p>";
+				} else {
+					toastErr(e.message || String(e));
+				}
+			});
+	}
+	function deleteCommitment(cid, kind) {
+		if (!cid || !projectId) return;
+		var label = kind === "sub" ? "subcontract" : "purchase order";
+		if (!window.confirm("Delete this " + label + " and its lines, bills, and related records?")) return;
+		fetchEmpty(
+			"DELETE",
+			"/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments/" + encodeURIComponent(cid)
+		)
+			.then(function () {
+				toastOk("Deleted.");
+				refreshPoSurfaces();
+			})
+			.catch(function (e) {
+				toastErr(e.message || String(e));
+			});
+	}
+	function deleteMaterialOrder(mid) {
+		if (!mid || !projectId) return;
+		if (!window.confirm("Delete this material order?")) return;
+		fetchEmpty(
+			"DELETE",
+			"/api/v1/projects/" + encodeURIComponent(projectId) + "/material-orders/" + encodeURIComponent(mid)
+		)
+			.then(function () {
+				toastOk("Deleted.");
+				return loadMaterialOrders();
+			})
+			.catch(function (e) {
+				toastErr(e.message || String(e));
+			});
+	}
+	function onPoActClick(ev) {
+		var btn = ev.target && ev.target.closest ? ev.target.closest(".usis-po-act") : null;
+		if (!btn) return;
+		ev.preventDefault();
+		var act = btn.getAttribute("data-act");
+		var kind = btn.getAttribute("data-kind") || "po";
+		var id = btn.getAttribute("data-id");
+		var cid = btn.getAttribute("data-commitment-id") || id;
+		if (act === "update") {
+			if (kind === "mat") openMaterialOrderPrompt(id);
+			else openEditModal(cid);
+			return;
+		}
+		if (act === "comms") {
+			openPoCommunications(cid);
+			return;
+		}
+		if (act === "delete") {
+			if (kind === "mat") deleteMaterialOrder(id);
+			else deleteCommitment(cid, kind);
+		}
+	}
 	window.usisOpenCommitmentEdit = openEditModal;
+	window.usisOpenPoCommunications = openPoCommunications;
+	window.usisPoOverflowMenu = overflowMenuHtml;
+	document.addEventListener("click", onPoActClick);
 	wireVendorComboboxes();
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", wire);

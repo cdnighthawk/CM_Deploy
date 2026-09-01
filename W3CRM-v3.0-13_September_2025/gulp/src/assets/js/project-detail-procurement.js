@@ -904,6 +904,11 @@
 			applyScheduleNeedByLock();
 		});
 	}
+	function poCreateHref() {
+		var href = "construction/purchase-order-create.html";
+		if (projectId) href += "?project_id=" + encodeURIComponent(projectId);
+		return href;
+	}
 	function configureCreateModalForKind(kind) {
 		var k = kind === "subcontract" ? "subcontract" : "purchase_order";
 		var kindSel = document.getElementById("usis-c-create-kind");
@@ -1247,6 +1252,13 @@
 				createRfpDraft();
 			});
 		}
+		var poNew = document.getElementById("usis-po-open-create");
+		if (poNew) {
+			poNew.addEventListener("click", function (ev) {
+				ev.preventDefault();
+				window.location.href = poCreateHref();
+			});
+		}
 		var createModal = document.getElementById("usis-modal-commitment-create");
 		if (createModal) {
 			createModal.addEventListener("show.bs.modal", function (ev) {
@@ -1257,6 +1269,11 @@
 						: null;
 				if (!kind) {
 					kind = activeProcTool === "sub" ? "subcontract" : "purchase_order";
+				}
+				if (kind === "purchase_order") {
+					ev.preventDefault();
+					window.location.href = poCreateHref();
+					return;
 				}
 				configureCreateModalForKind(kind);
 				resetCreateForm();

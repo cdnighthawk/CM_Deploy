@@ -248,6 +248,101 @@ def read_stored_bytes(category: UploadCategory, object_name: str) -> bytes | Non
     return mirrored.read_bytes()
 
 
+def prefixed_key(rel: str) -> str:
+    """B2 key for a path that is not under a category prefix (RFP snapshots)."""
+    prefix = (current_app.config.get("B2_PREFIX") or "").strip().strip("/")
+    rel = (rel or "").strip().strip("/").replace("\\", "/")
+    parts = [p for p in rel.split("/") if p and p not in (".", "..")]
+    if prefix:
+        return "/".join([prefix, *parts])
+    return "/".join(parts)
+
+
+def local_raw_path(rel: str) -> Path:
+    """On-disk path for a raw (non-category) object when B2 is off."""
+    root = (current_app.config.get("DOCUMENT_ROOT") or "").strip()
+    if root:
+        base = Path(root).expanduser().resolve()
+    else:
+        base = Path(current_app.instance_path).resolve() / "rfp_snaps"
+    parts = [p for p in prefixed_key(rel).replace("\\", "/").split("/") if p and p not in (".", "..")]
+    return base.joinpath(*parts)
+
+
+def put_raw_bytes(rel: str, payload: bytes, *, content_type: str | None = None) -> str:
+    """Write bytes to a raw key. Returns the relative key (no bucket prefix)."""
+    rel = (rel or "").strip().strip("/")
+    if b2_enabled():
+        key = prefixed_key(rel)
+        _put_bytes(key, payload, content_type=content_type)
+        try:
+            _mirror_to_nas(key, payload)
+        except OSError:
+            pass
+        return rel
+    path = local_raw_path(rel)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+    return rel
+
+
+def read_raw_bytes(rel: str) -> bytes | None:
+    if b2_enabled():
+        return _get_bytes(prefixed_key(rel))
+    path = local_raw_path(rel)
+    if path.is_file():
+        return path.read_bytes()
+    return None
+
+
+def copy_b2_object(src_key: str, dest_key: str) -> bool:
+    """Server-side copy inside the private bucket. Returns False if src is missing."""
+    if not b2_enabled():
+        return False
+    bucket = current_app.config["B2_BUCKET_NAME"]
+    try:
+        _s3_client().copy_object(
+            Bucket=bucket,
+            Key=dest_key,
+            CopySource={"Bucket": bucket, "Key": src_key},
+        )
+        return True
+    except Exception as exc:
+        if _is_not_found(exc):
+            return False
+        current_app.logger.warning("b2 copy failed src=%s dest=%s err=%s", src_key, dest_key, exc)
+        return False
+
+
+def presigned_get_url(
+    rel: str,
+    *,
+    ttl: int,
+    filename: str,
+    content_type: str | None = None,
+) -> str | None:
+    """Short-lived GET URL for a private B2 object, or None when B2 is off."""
+    if not b2_enabled():
+        return None
+    safe = (filename or "download.bin").replace('"', "")
+    params: dict = {
+        "Bucket": current_app.config["B2_BUCKET_NAME"],
+        "Key": prefixed_key(rel),
+        "ResponseContentDisposition": f'attachment; filename="{safe}"',
+    }
+    if content_type:
+        params["ResponseContentType"] = content_type
+    try:
+        return _s3_client().generate_presigned_url(
+            "get_object",
+            Params=params,
+            ExpiresIn=max(30, int(ttl or 600)),
+        )
+    except Exception as exc:
+        current_app.logger.warning("b2 presign failed key=%s err=%s", rel, exc)
+        return None
+
+
 def send_stored_file(
     category: UploadCategory,
     object_name: str,

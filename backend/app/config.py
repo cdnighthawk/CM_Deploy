@@ -294,11 +294,17 @@ class Config:
         "off",
     )
     RFP_MAIL_MAX_ATTACH_MB: int = int((os.environ.get("RFP_MAIL_MAX_ATTACH_MB") or "18").strip() or "18")
+    B2_DOWNLOAD_TTL_SEC: int = int((os.environ.get("B2_DOWNLOAD_TTL_SEC") or "600").strip() or "600")
 
     # Backblaze B2 (S3-compatible) for uploads when all four core vars are set.
-    B2_APPLICATION_KEY_ID: str | None = (os.environ.get("B2_APPLICATION_KEY_ID") or "").strip() or None
+    # Ticket aliases B2_KEY_ID / B2_BUCKET fall back to the names already in use.
+    B2_APPLICATION_KEY_ID: str | None = (
+        (os.environ.get("B2_APPLICATION_KEY_ID") or os.environ.get("B2_KEY_ID") or "").strip() or None
+    )
     B2_APPLICATION_KEY: str | None = (os.environ.get("B2_APPLICATION_KEY") or "").strip() or None
-    B2_BUCKET_NAME: str | None = (os.environ.get("B2_BUCKET_NAME") or "").strip() or None
+    B2_BUCKET_NAME: str | None = (
+        (os.environ.get("B2_BUCKET_NAME") or os.environ.get("B2_BUCKET") or "").strip() or None
+    )
     B2_ENDPOINT: str | None = (os.environ.get("B2_ENDPOINT") or "").strip() or None
     B2_PREFIX: str | None = (os.environ.get("B2_PREFIX") or "").strip() or None
     # Local/NAS archive only. Used by scripts/mirror_b2.py — do not set on Render.

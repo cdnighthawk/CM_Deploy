@@ -272,11 +272,20 @@ def test_drawing_token_link_and_freeze(client, no_dev_admin):
     assert sent.status_code == 200, sent.get_data(as_text=True)
     token = sent.get_json()["item"]["quotes"][0]["invite_token"]
     page = client.get(f"/public/rfp/{token}")
-    assert b"A101" in page.data
+    assert page.status_code == 200
+    assert b"Drawings" in page.data
+    files = client.get(f"/public/rfp/{token}/files")
+    assert files.status_code == 200
+    assert b"A101" in files.data
     preview = client.get(f"/api/v1/rfps/{item['id']}/email-preview", headers=ctx["hdr"])
     assert preview.get_json()["from"] == "quotes@gousis.com"
     text = preview.get_json()["text"] or ""
     assert "A101" in text
+    assert "View drawings" in text
+    assert "backblaze" not in text.lower()
+    html = preview.get_json()["html"] or ""
+    assert "cid:" not in html.lower()
+    assert preview.get_json()["attach_bytes"] == 0
 
 
 def test_remaining_scopes_create(client, no_dev_admin):
@@ -391,4 +400,81 @@ def test_staff_quote_pdf_upload_and_reject_non_pdf(client, no_dev_admin):
     )
     assert via_vendor.status_code == 201, via_vendor.get_data(as_text=True)
     assert len(via_vendor.get_json()["item"]["attachments"]) >= 2
+
+
+_PDF_B = b"%PDF-1.4\n1 0 obj\n<</Length 4>>\nstream\nREPL\nendstream\nendobj\n%%EOF\n"
+
+
+def test_files_page_download_freeze_and_expired_403(client, no_dev_admin):
+    from app.models.rfp import Rfp, RfpDrawing
+    from app.services.object_storage import UploadCategory, save_upload
+
+    ctx = _staff(client)
+    with client.application.app_context():
+        d = Drawing(
+            project_id=uuid.UUID(ctx["pid"]),
+            document_type="drawing",
+            title="A201 Plans",
+            sheet_number="A201",
+            sheet_title="Plans",
+            discipline="Architectural",
+            original_filename="A201.pdf",
+            mime_type="application/pdf",
+            file_size_bytes=len(_PDF),
+        )
+        db.session.add(d)
+        db.session.flush()
+        save_upload(UploadCategory.DRAWINGS, f"{d.id}.pdf", BytesIO(_PDF))
+        db.session.commit()
+        did = str(d.id)
+    item = _create_rfp(client, ctx, title="Snap sheets", scope_of_work="Price per plans.")
+    put = client.put(
+        f"/api/v1/rfps/{item['id']}/drawings",
+        json={"drawings": [{"drawing_id": did}]},
+        headers=ctx["hdr"],
+    )
+    assert put.status_code == 200, put.get_data(as_text=True)
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={"bidders": [{"company_id": ctx["vid"], "email": ctx["email"]}]},
+        headers=ctx["hdr"],
+    )
+    assert sent.status_code == 200, sent.get_data(as_text=True)
+    token = sent.get_json()["item"]["quotes"][0]["invite_token"]
+    files = client.get(f"/public/rfp/{token}/files")
+    assert files.status_code == 200
+    assert b"A201" in files.data
+    assert b"Submit quote" in files.data
+    with client.application.app_context():
+        row = db.session.scalar(select(RfpDrawing).where(RfpDrawing.rfp_id == uuid.UUID(item["id"])))
+        assert row is not None
+        assert row.b2_key
+        assert "/snap/" in row.b2_key
+        snap_key = row.b2_key
+        drawing_row_id = str(row.id)
+        save_upload(UploadCategory.DRAWINGS, f"{did}.pdf", BytesIO(_PDF_B))
+        live = db.session.get(Drawing, uuid.UUID(did))
+        live.original_filename = "A201-rev2.pdf"
+        db.session.commit()
+    dl = client.get(f"/public/rfp/{token}/files/{drawing_row_id}/download")
+    assert dl.status_code == 200, dl.get_data(as_text=True)[:400]
+    assert dl.data.startswith(b"%PDF")
+    assert b"REPL" not in dl.data
+    with client.application.app_context():
+        row = db.session.get(RfpDrawing, uuid.UUID(drawing_row_id))
+        assert row.b2_key == snap_key
+    zip_post = client.post(f"/public/rfp/{token}/files/zip")
+    assert zip_post.status_code in (200, 202, 302)
+    zip_get = client.get(f"/public/rfp/{token}/files/zip", follow_redirects=True)
+    assert zip_get.status_code == 200
+    assert zip_get.data[:2] == b"PK" or zip_get.mimetype == "application/zip"
+    with client.application.app_context():
+        rfp = db.session.get(Rfp, uuid.UUID(item["id"]))
+        rfp.due_at = datetime.now(timezone.utc) - timedelta(days=1)
+        db.session.commit()
+    closed = client.get(f"/public/rfp/{token}/files")
+    assert closed.status_code == 403
+    assert b"A201" not in closed.data
+    assert client.get(f"/public/rfp/{token}/files/{drawing_row_id}/download").status_code == 403
+    assert client.get(f"/public/rfp/{token}").status_code == 403
 

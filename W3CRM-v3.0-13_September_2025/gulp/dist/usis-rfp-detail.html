@@ -623,7 +623,7 @@
 								<div class="d-flex justify-content-between align-items-start gap-2 mb-2">
 									<div>
 										<h2 class="h6 mb-1">Vendors</h2>
-										<p class="text-muted small mb-0">Directory companies (vendor / subcontractor). Send is blocked until the company record has an email.</p>
+										<p class="text-muted small mb-0">Directory companies (vendor / subcontractor / supplier). Send is blocked until the company record has an email.</p>
 									</div>
 									<button type="button" class="btn btn-sm btn-outline-primary flex-shrink-0" id="usis-rfp-add-vendor">Add vendor</button>
 								</div>
@@ -640,13 +640,13 @@
 						<div class="card h-100">
 							<div class="card-body">
 								<h2 class="h6">Drawings for vendors</h2>
-								<p class="text-muted small mb-2">Default is a tokenized link. Attach PDF is opt-in and capped at 18 MB per message.</p>
+								<p class="text-muted small mb-2">Checked sheets are copied to a private files page when you send. Email never attaches plan sets.</p>
 								<div class="mb-2">
 									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-rfp-draw-arch">Select architectural + finish sheets</button>
 								</div>
 								<div class="table-responsive" style="max-height:16rem;overflow:auto">
 									<table class="table table-sm mb-0">
-										<thead><tr><th></th><th>Sheet</th><th>Title</th><th>Disc.</th><th>Rev</th><th>Delivery</th></tr></thead>
+										<thead><tr><th></th><th>Sheet</th><th>Title</th><th>Disc.</th><th>Rev</th><th>Size</th><th>Updated</th></tr></thead>
 										<tbody id="usis-rfp-draw-body"></tbody>
 									</table>
 								</div>

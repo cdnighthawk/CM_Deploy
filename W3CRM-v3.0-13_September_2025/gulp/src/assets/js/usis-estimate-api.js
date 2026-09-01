@@ -174,6 +174,11 @@
 		return n;
 	}
 
+	function specScan(estimateId, suffix, opts) {
+		var path = "/api/v1/estimates/" + encodeURIComponent(estimateId) + "/spec-scan" + (suffix || "");
+		return fetchJson(path, opts);
+	}
+
 	global.USISEstimateApi = {
 		apiBase: apiBase,
 		fetchJson: fetchJson,
@@ -192,5 +197,68 @@
 		resolveEstimateId: resolveEstimateId,
 		feeToPercent: feeToPercent,
 		percentToFee: percentToFee,
+		getSpecScan: function (estimateId, showOut) {
+			var q = showOut ? "?show_out_of_trade=1" : "";
+			return specScan(estimateId, q);
+		},
+		analyzeSpecScan: function (estimateId, body) {
+			return specScan(estimateId, "/analyze", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body || {}),
+			});
+		},
+		applySpecModel: function (estimateId, body) {
+			return specScan(estimateId, "/apply-model", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body || {}),
+			});
+		},
+		patchSpecSections: function (estimateId, items) {
+			return specScan(estimateId, "/sections", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ items: items || [] }),
+			});
+		},
+		confirmSpecSections: function (estimateId, items) {
+			return specScan(estimateId, "/confirm-sections", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ items: items || [] }),
+			});
+		},
+		patchSpecMentions: function (estimateId, items) {
+			return specScan(estimateId, "/mentions", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ items: items || [] }),
+			});
+		},
+		confirmSpecProducts: function (estimateId, items) {
+			return specScan(estimateId, "/confirm-products", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ items: items || [] }),
+			});
+		},
+		suggestSpecVendors: function (estimateId) {
+			return specScan(estimateId, "/suggest-vendors", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+		},
+		patchSpecVendors: function (estimateId, items) {
+			return specScan(estimateId, "/vendors", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ items: items || [] }),
+			});
+		},
+		draftSpecRfps: function (estimateId, body) {
+			return specScan(estimateId, "/draft-rfps", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body || {}),
+			});
+		},
 	};
 })(typeof window !== "undefined" ? window : this);

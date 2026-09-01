@@ -48,6 +48,7 @@ _PREFIX_RULES: list[tuple[str, str | tuple[str, ...]]] = [
     ("/api/v1/rfp", "procurement"),
     ("/api/v1/power-bi", "reports"),
     ("/api/v1/safety", "safety"),
+    ("/api/v1/csi-buy-channels", "crm"),
     ("/api/v1/companies", "crm"),
     ("/api/v1/contacts", "crm"),
 ]

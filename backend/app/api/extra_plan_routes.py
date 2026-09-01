@@ -645,6 +645,7 @@ def register_extra_routes(bp: Blueprint) -> None:
             status="Draft",
             line_source=source,
             source_estimate_id=est_id,
+            source_spec_scan_id=_parse_uuid_param(str(data.get("source_spec_scan_id") or "").strip()),
             show_line_table=source != "narrative",
             scope_of_work=(str(data.get("scope_of_work") or "").strip() or None),
             inclusions=(str(data.get("inclusions") or "").strip() or None),

@@ -780,6 +780,8 @@
 		hideVendorResults();
 	}
 
+	window.usisRfpPickVendor = pickVendor;
+
 	function fv(id) {
 		var n = $(id);
 		return n ? String(n.value || "").trim() : "";

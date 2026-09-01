@@ -224,3 +224,7 @@ def register_wave2_routes(bp: Blueprint) -> None:
             return _jsonify(wave2_svc.convert_clock_to_timecard(current_user(), request.get_json(silent=True) or {}))
         except ApiError as exc:
             return _err(exc)
+
+    from . import _vendor_line_card_routes as vlc_routes
+
+    vlc_routes.register_vendor_line_card_routes(bp)

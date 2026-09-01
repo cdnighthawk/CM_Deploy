@@ -7,7 +7,7 @@
 	})
 
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
-	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+    10|	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 
 </head>
 <body>
@@ -31,9 +31,39 @@
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
 						<h4 class="mb-1">Companies and contacts</h4>
-						<p class="text-muted small mb-0">Directory admin: companies, contacts, insurance, and licenses.</p>
+						<p class="text-muted small mb-0">Directory admin: manufacturers, distributors, line cards, contacts, insurance, and licenses.</p>
 					</div>
 					<button type="button" class="btn btn-primary btn-sm" id="usis-co-add">+ Company</button>
+				</div>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<h6 class="mb-1">How we buy each spec</h6>
+						<p class="text-muted small mb-2">Manufacturer = buy direct (e.g. 10 26 00 wall protection). Distributor = must go through a vendor (e.g. 10 28 00 accessories).</p>
+						<div class="row g-2 align-items-end mb-2">
+							<div class="col-md-4">
+								<label class="form-label small mb-1" for="usis-buy-csi">CSI section</label>
+								<input class="form-control form-control-sm" id="usis-buy-csi" list="usis-csi-list" placeholder="10 26 00" autocomplete="off">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-1">Buy from</label>
+								<div class="btn-group btn-group-sm w-100" role="group" aria-label="Buy from">
+									<input type="radio" class="btn-check" name="usis-buy-from" id="usis-buy-from-mfr" value="manufacturer" checked>
+									<label class="btn btn-outline-primary" for="usis-buy-from-mfr">Manufacturer</label>
+									<input type="radio" class="btn-check" name="usis-buy-from" id="usis-buy-from-dist" value="distributor">
+									<label class="btn btn-outline-primary" for="usis-buy-from-dist">Distributor</label>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<button type="button" class="btn btn-outline-primary btn-sm" id="usis-buy-add">Save buy path</button>
+							</div>
+						</div>
+						<div class="table-responsive">
+							<table class="table table-sm mb-0">
+								<thead class="table-light"><tr><th>CSI</th><th>Title</th><th>Buy from</th><th></th></tr></thead>
+								<tbody id="usis-buy-tbody"></tbody>
+							</table>
+						</div>
+					</div>
 				</div>
 				<div class="row g-3">
 					<div class="col-lg-5">
@@ -42,7 +72,7 @@
 								<input type="search" class="form-control form-control-sm mb-2" id="usis-co-q" placeholder="Search companies…">
 								<div class="table-responsive">
 									<table class="table table-sm table-hover mb-0">
-										<thead class="table-light"><tr><th>Name</th><th>Type</th></tr></thead>
+										<thead class="table-light"><tr><th>Name</th><th>Type</th><th>Role</th></tr></thead>
 										<tbody id="usis-co-tbody"></tbody>
 									</table>
 								</div>
@@ -50,6 +80,42 @@
 						</div>
 					</div>
 					<div class="col-lg-7">
+						<div class="card border-0 shadow-sm mb-3">
+							<div class="card-body">
+								<h6 class="mb-1">Supply role</h6>
+								<p class="text-muted small mb-2">Manufacturer = we buy the product from them. Distributor = they resell brands.</p>
+								<div class="btn-group btn-group-sm" role="group" aria-label="Supply role">
+									<input type="radio" class="btn-check" name="usis-supply-role" id="usis-role-unset" value="" checked>
+									<label class="btn btn-outline-secondary" for="usis-role-unset">Unset</label>
+									<input type="radio" class="btn-check" name="usis-supply-role" id="usis-role-mfr" value="manufacturer">
+									<label class="btn btn-outline-primary" for="usis-role-mfr">Manufacturer</label>
+									<input type="radio" class="btn-check" name="usis-supply-role" id="usis-role-dist" value="distributor">
+									<label class="btn btn-outline-primary" for="usis-role-dist">Distributor</label>
+									<input type="radio" class="btn-check" name="usis-supply-role" id="usis-role-both" value="both">
+									<label class="btn btn-outline-primary" for="usis-role-both">Both</label>
+								</div>
+							</div>
+						</div>
+						<div class="card border-0 shadow-sm mb-3">
+							<div class="card-body">
+								<h6 class="mb-1">Line card</h6>
+								<p class="text-muted small mb-2">Specs this company sells, and the manufacturers they carry. Example: 10 21 00 → Bobrick and ASI, not Scranton.</p>
+								<div class="row g-2 align-items-end mb-2">
+									<div class="col-md-4">
+										<label class="form-label small mb-1" for="usis-lc-csi">Add spec</label>
+										<input class="form-control form-control-sm" id="usis-lc-csi" list="usis-csi-list" placeholder="10 21 00" autocomplete="off">
+									</div>
+									<div class="col-md-5">
+										<label class="form-label small mb-1" for="usis-lc-mfr">Manufacturer (optional)</label>
+										<input class="form-control form-control-sm" id="usis-lc-mfr" list="usis-mfr-list" placeholder="Bobrick" autocomplete="off">
+									</div>
+									<div class="col-md-3">
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-lc-add-spec">Add</button>
+									</div>
+								</div>
+								<div id="usis-lc-specs"><p class="text-muted small mb-0">Select a company.</p></div>
+							</div>
+						</div>
 						<div class="card border-0 shadow-sm mb-3">
 							<div class="card-body">
 								<h6 class="mb-2">Contacts</h6>
@@ -96,7 +162,7 @@
 								<div class="table-responsive">
 									<table class="table table-sm mb-0">
 										<thead class="table-light"><tr><th>Type</th><th>Number</th><th>Expires</th></tr></thead>
-										<tbody id="usis-lic-tbody"><tr><td colspan="3" class="text-muted">Select a company.</td></tr></tbody>
+										<tbody id="usis-lic-tbody"><tr><td colspan="3" class="text-muted">No licenses.</td></tr></tbody>
 									</table>
 								</div>
 							</div>
@@ -118,7 +184,9 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-companies.js?v=20260831a"></script>
+	<script src="assets/js/usis-companies.js?v=20260901b"></script>
+	<datalist id="usis-csi-list"></datalist>
+	<datalist id="usis-mfr-list"></datalist>
 
 </body>
 </html>

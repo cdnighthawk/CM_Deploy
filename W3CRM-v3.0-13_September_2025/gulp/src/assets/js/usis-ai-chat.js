@@ -24,6 +24,7 @@
 		safety_review: "Safety",
 		analytics_review: "Reports",
 		submittal_review: "Submittals",
+		spec_package_review: "Spec package",
 	};
 
 	var MAX_ATTACH = 4;

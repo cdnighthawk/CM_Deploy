@@ -214,6 +214,9 @@
 							<button class="nav-link" id="estd-tab-estimate" data-bs-toggle="pill" data-bs-target="#estd-pane-estimate" type="button" role="tab" aria-controls="estd-pane-estimate" aria-selected="false">Estimate</button>
 						</li>
 						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="estd-tab-spec-package" data-bs-toggle="pill" data-bs-target="#estd-pane-spec-package" type="button" role="tab" aria-controls="estd-pane-spec-package" aria-selected="false">Spec package</button>
+						</li>
+						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="estd-tab-rfp" data-bs-toggle="pill" data-bs-target="#estd-pane-rfp" type="button" role="tab" aria-controls="estd-pane-rfp" aria-selected="false">RFP</button>
 						</li>
 					</ul>
@@ -551,6 +554,11 @@
 							</div>
 							<p id="usis-est-detail-no-id" class="text-muted mb-0">Open this page from Estimates or a lead, then create an estimate. <a href="construction/estimate.html">Back to Estimates</a>.</p>
 						</div>
+						<div class="tab-pane fade" id="estd-pane-spec-package" role="tabpanel" aria-labelledby="estd-tab-spec-package" tabindex="0">
+							<div id="usis-spec-pkg-root">
+								<p class="text-muted mb-0">Open an estimate to analyze specs and draft vendor RFPs.</p>
+							</div>
+						</div>
 						<div class="tab-pane fade" id="estd-pane-rfp" role="tabpanel" aria-labelledby="estd-tab-rfp" tabindex="0">
 							<h5 class="mb-2">RFP</h5>
 							<p class="text-muted mb-0 small">RFP documents and responses will appear here when this estimate is linked to an RFP workspace.</p>
@@ -698,6 +706,7 @@
 	<script src="assets/js/usis-estimate-detail.js?v=20260830k"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>
+	<script src="assets/js/usis-estimate-spec-package.js?v=20260901a"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

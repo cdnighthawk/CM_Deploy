@@ -204,6 +204,7 @@ def serialize_rfp(r: Rfp, *, staff: bool = True) -> dict[str, Any]:
         "from_header": ident["from_header"],
         "line_source": r.line_source or "manual",
         "source_estimate_id": str(r.source_estimate_id) if r.source_estimate_id else None,
+        "source_spec_scan_id": str(r.source_spec_scan_id) if getattr(r, "source_spec_scan_id", None) else None,
         "scope_of_work": r.scope_of_work,
         "inclusions": r.inclusions,
         "exclusions": r.exclusions,

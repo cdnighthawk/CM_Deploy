@@ -172,6 +172,7 @@ _SECTIONS: tuple[tuple[str, str], ...] = (
     ("101416", "Plaques"),
     ("101423", "Panel Signage"),
     ("101426", "Post and Panel Signage"),
+    ("102100", "Compartments and Cubicles"),
     ("102113", "Toilet Compartments"),
     ("102123", "Cubicle Curtains and Track"),
     ("102200", "Partitions"),

@@ -43,9 +43,14 @@ def max_level(a: str, b: str) -> str:
 
 
 # Project lookup rows (CSI spec sections, locations, …) can be added with write.
+# Line-card and buy-path rows are the same kind of directory maintenance.
 # DELETE is admin elsewhere so contracts/RFIs stay protected.
 _WRITE_LEVEL_DELETE_RE = re.compile(
-    r"^/api/v1/projects/[^/]+/rfi-lookups/[^/]+/[^/]+/?$",
+    r"^/api/v1/(?:"
+    r"projects/[^/]+/rfi-lookups/[^/]+/[^/]+|"
+    r"csi-buy-channels/[^/]+|"
+    r"companies/[^/]+/line-card/(?:specs/[^/]+|[^/]+)"
+    r")/?$",
     re.IGNORECASE,
 )
 

@@ -49,6 +49,12 @@ class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
         nullable=True,
         index=True,
     )
+    source_spec_scan_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("estimate_spec_scans.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     scope_of_work: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     inclusions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     exclusions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

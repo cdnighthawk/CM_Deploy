@@ -22,6 +22,24 @@ def _normalize_database_url(url: str) -> str:
     return u
 
 
+def apply_ms_entra_from_env(cfg: dict) -> None:
+    """Re-read Entra settings after dotenv. ``Config`` class attrs are frozen at import."""
+    cfg["MS_ENTRA_TENANT_ID"] = (os.environ.get("MS_ENTRA_TENANT_ID") or "").strip() or None
+    cfg["MS_ENTRA_CLIENT_ID"] = (os.environ.get("MS_ENTRA_CLIENT_ID") or "").strip() or None
+    cfg["MS_ENTRA_CLIENT_SECRET"] = (os.environ.get("MS_ENTRA_CLIENT_SECRET") or "").strip() or None
+    cfg["MS_ENTRA_REDIRECT_URI"] = (os.environ.get("MS_ENTRA_REDIRECT_URI") or "").strip() or None
+    cfg["MS_ENTRA_SCOPES"] = (
+        (os.environ.get("MS_ENTRA_SCOPES") or "").strip() or "openid profile email offline_access"
+    )
+    jit_raw = (os.environ.get("MS_ENTRA_ALLOW_JIT_USER") or "").strip().lower()
+    cfg["MS_ENTRA_ALLOW_JIT_USER"] = jit_raw in ("1", "true", "yes", "on")
+    cfg["MS_ENTRA_ALLOWED_EMAIL_DOMAINS"] = tuple(
+        d.strip().lower().lstrip("@")
+        for d in (os.environ.get("MS_ENTRA_ALLOWED_EMAIL_DOMAINS") or "").split(",")
+        if d.strip()
+    )
+
+
 def _env_database_url() -> str:
     """Local Flask uses LOCAL_DATABASE_URL so it does not follow a dead Render host."""
     env = (os.environ.get("FLASK_ENV") or "").strip().lower()

@@ -1926,10 +1926,9 @@ a.usis-drawing-name-link:hover {
 	}
 }
 
-/* ——— FAB ——— */
+/* ——— FAB (do not use .fab — that is Font Awesome Brands, including the Microsoft login icon) ——— */
 .btn-floating,
-.dz-demo-panel,
-.fab {
+.dz-demo-panel {
 	width: 56px;
 	height: 56px;
 	border-radius: 50%;

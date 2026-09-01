@@ -30,6 +30,7 @@
 		Applications: "Solicitudes",
 		"HR suite": "Suite de RH",
 		"HR dashboard": "Panel de RH",
+		"Time sheets": "Hojas de tiempo",
 		Expenses: "Gastos",
 		Playbooks: "Guías",
 		"User admin": "Admin. de usuarios",

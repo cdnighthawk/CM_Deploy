@@ -63,7 +63,7 @@
 		var b = (user.last_name || "").trim().charAt(0);
 		if (a && b) return (a + b).toUpperCase();
 		if (a) return a.toUpperCase();
-		var em = (user.email || "").trim();
+		var em = (user.email || user.username || "").trim();
 		if (em.length) return em.charAt(0).toUpperCase();
 		return "—";
 	}
@@ -102,18 +102,19 @@
 				});
 				var u = body.user;
 				var email = u.email || "";
+				var username = u.username || "";
 				var name = [u.first_name, u.last_name]
 					.filter(function (x) {
 						return x && String(x).trim();
 					})
 					.join(" ")
 					.trim();
-				if (!name) name = email || "—";
+				if (!name) name = email || username || "—";
 				document.querySelectorAll(".usis-header-session-name").forEach(function (el) {
 					el.textContent = name;
 				});
 				document.querySelectorAll(".usis-header-session-email").forEach(function (el) {
-					el.textContent = email || "—";
+					el.textContent = email || username || "—";
 				});
 				setHeaderInitials(headerInitials(u));
 			})

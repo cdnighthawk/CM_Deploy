@@ -5,10 +5,16 @@ import os
 
 import pytest
 
+os.environ["USIS_TESTING"] = "1"
 os.environ.setdefault("TAKEOFF_API_WRITES_ENABLED", "true")
 os.environ.setdefault("FLASK_ENV", "development")
 # Most tests call the API without a browser session; opt in to legacy dev-open mode.
 os.environ.setdefault("USIS_API_DEV_ALLOW_ANY", "1")
+# Keep Microsoft SSO off in tests unless a test sets these (local .env may have them).
+os.environ["MS_ENTRA_TENANT_ID"] = ""
+os.environ["MS_ENTRA_CLIENT_ID"] = ""
+os.environ["MS_ENTRA_CLIENT_SECRET"] = ""
+os.environ["MS_ENTRA_REDIRECT_URI"] = ""
 
 
 @pytest.fixture

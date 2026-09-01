@@ -1,7 +1,7 @@
 /**
  * Project-details tool strip — parents + a visible child row.
  * Parent click = default child. Submittals and RFIs are also parents (one click).
- * Child row follows the active parent; Submittals/RFIs still show the Buyout children.
+ * Child row follows the active parent; Submittals/RFIs still show the Purchasing children.
  */
 (function () {
 	"use strict";
@@ -10,10 +10,10 @@
 		job: "Contract pages",
 		files: "Files pages",
 		preconstruction: "Estimate pages",
-		field: "Field pages",
-		buyout: "Buyout pages",
-		submittals: "Buyout pages",
-		rfi: "Buyout pages",
+		field: "Construction pages",
+		buyout: "Purchasing pages",
+		submittals: "Purchasing pages",
+		rfi: "Purchasing pages",
 	};
 
 	var CHILD_GROUP = {

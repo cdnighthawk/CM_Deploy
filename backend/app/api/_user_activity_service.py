@@ -28,6 +28,8 @@ _MAX_UA = 500
 _SKIP_WRITE_PREFIXES = (
     "/api/v1/me/activity",
     "/api/v1/admin/activity",
+    "/api/v1/admin/client-errors",
+    "/api/v1/client-errors",
     "/api/v1/__debug",
     "/api/v1/auth/",
 )

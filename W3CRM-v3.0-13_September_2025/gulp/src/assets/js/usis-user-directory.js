@@ -36,6 +36,10 @@
 		activityUserId: "",
 		activityPeople: [],
 		activityFeed: [],
+		errorDays: 7,
+		errorKind: "",
+		errorItems: [],
+		errorTotal: 0,
 	};
 
 	function apiBase() {
@@ -963,6 +967,104 @@
 		loadActivity();
 	}
 
+	var ERROR_KIND_LABELS = {
+		connect: "Connect",
+		http_error: "HTTP 5xx",
+		server: "Server",
+		js_error: "Script",
+		unhandled: "Unhandled",
+	};
+
+	function setErrorDayButtons() {
+		document.querySelectorAll(".usis-ud-err-days").forEach(function (btn) {
+			var on = String(parseInt(btn.getAttribute("data-days") || "7", 10) || 7) === String(state.errorDays);
+			btn.classList.toggle("btn-primary", on);
+			btn.classList.toggle("btn-outline-secondary", !on);
+		});
+	}
+
+	function setErrorKindButtons() {
+		document.querySelectorAll(".usis-ud-err-kind").forEach(function (btn) {
+			var on = (btn.getAttribute("data-kind") || "") === state.errorKind;
+			btn.classList.toggle("btn-primary", on);
+			btn.classList.toggle("btn-outline-secondary", !on);
+		});
+	}
+
+	function renderErrors() {
+		var tb = document.getElementById("usis-ud-errors-body");
+		var meta = document.getElementById("usis-ud-errors-meta");
+		if (meta) {
+			meta.textContent = state.errorTotal
+				? state.errorTotal + " error" + (state.errorTotal === 1 ? "" : "s") + " in this range"
+				: "";
+		}
+		if (!tb) return;
+		var rows = state.errorItems || [];
+		if (!rows.length) {
+			tb.innerHTML = '<tr><td colspan="4" class="text-muted small">No connection or site errors in this range.</td></tr>';
+			return;
+		}
+		tb.innerHTML = rows
+			.map(function (ev) {
+				var kind = ERROR_KIND_LABELS[ev.kind] || ev.kind || "—";
+				var detail = esc(ev.message || "");
+				if (ev.url) {
+					detail += '<div class="small text-muted text-break">' + esc(ev.method ? ev.method + " " : "") + esc(ev.url) + "</div>";
+				}
+				if (ev.page) {
+					detail += '<div class="small text-muted text-break">Page: ' + esc(ev.page) + "</div>";
+				}
+				return (
+					"<tr><td class=\"text-nowrap\" title=\"" +
+					esc(fmtWhenTitle(ev.occurred_at || ev.created_at)) +
+					'">' +
+					esc(fmtWhen(ev.occurred_at || ev.created_at)) +
+					"</td><td>" +
+					esc(kind) +
+					"</td><td>" +
+					esc(ev.user_name || ev.user_email || "Anonymous") +
+					"</td><td>" +
+					detail +
+					"</td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function loadErrors() {
+		setErrorDayButtons();
+		setErrorKindButtons();
+		var qs = "?days=" + encodeURIComponent(state.errorDays || 7) + "&limit=200";
+		if (state.errorKind) qs += "&kind=" + encodeURIComponent(state.errorKind);
+		apiFetch("/api/v1/admin/client-errors" + qs)
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					showPageErr(authErrorMessage(res, res.body));
+					return;
+				}
+				state.errorItems = res.body.items || [];
+				state.errorTotal = res.body.total != null ? res.body.total : state.errorItems.length;
+				renderErrors();
+			})
+			.catch(function () {
+				showPageErr("Network error loading error log.");
+			});
+	}
+
+	function showErrorLogTab() {
+		var tab = document.getElementById("usis-ud-tab-errors");
+		if (tab && typeof bootstrap !== "undefined") {
+			bootstrap.Tab.getOrCreateInstance(tab).show();
+		}
+		loadErrors();
+	}
+
 	function userModal() {
 		var el = document.getElementById("usis-ud-modal-user");
 		if (!el || typeof bootstrap === "undefined") return null;
@@ -1311,6 +1413,24 @@
 				loadActivity();
 			});
 		}
+		var errorsTab = document.getElementById("usis-ud-tab-errors");
+		if (errorsTab) {
+			errorsTab.addEventListener("shown.bs.tab", function () {
+				loadErrors();
+			});
+		}
+		document.querySelectorAll(".usis-ud-err-days").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				state.errorDays = parseInt(btn.getAttribute("data-days") || "7", 10) || 7;
+				loadErrors();
+			});
+		});
+		document.querySelectorAll(".usis-ud-err-kind").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				state.errorKind = btn.getAttribute("data-kind") || "";
+				loadErrors();
+			});
+		});
 		document.querySelectorAll(".usis-ud-act-days").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				state.activityDays = parseInt(btn.getAttribute("data-days") || "7", 10) || 7;
@@ -1357,6 +1477,9 @@
 			if (err) showPageErr(err);
 			loadUsers(false);
 		});
+		if ((window.location.hash || "").replace(/^#/, "") === "errors") {
+			showErrorLogTab();
+		}
 	}
 
 	if (document.readyState === "loading") {

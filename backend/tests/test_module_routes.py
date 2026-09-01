@@ -16,6 +16,11 @@ def test_user_activity_admin_gated_page_view_exempt():
     assert resolve_modules("/api/v1/me/activity/page-view") is None
 
 
+def test_client_errors_post_exempt_admin_list_gated():
+    assert resolve_modules("/api/v1/client-errors") is None
+    assert resolve_modules("/api/v1/admin/client-errors") == ("user_admin",)
+
+
 def test_hr_me_self_service_routes_not_module_gated():
     assert resolve_modules("/api/v1/hr/me/hire-wizard") is None
     assert resolve_modules("/api/v1/hr/me/hire-application") is None

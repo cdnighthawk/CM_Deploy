@@ -533,6 +533,9 @@
 					<li class="nav-item" role="presentation">
 						<button class="nav-link" id="usis-ud-tab-activity" data-bs-toggle="pill" data-bs-target="#usis-ud-pane-activity" type="button" role="tab" aria-selected="false">Activity</button>
 					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" id="usis-ud-tab-errors" data-bs-toggle="pill" data-bs-target="#usis-ud-pane-errors" type="button" role="tab" aria-selected="false" data-i18n="Error log">Error log</button>
+					</li>
 				</ul>
 				<div class="tab-content">
 					<div class="tab-pane fade show active" id="usis-ud-pane-users" role="tabpanel">
@@ -657,6 +660,44 @@
 											</tr>
 										</thead>
 										<tbody id="usis-ud-activity-feed"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane fade" id="usis-ud-pane-errors" role="tabpanel">
+						<div class="card border-0 shadow-sm">
+							<div class="card-body">
+								<div class="d-flex flex-wrap gap-2 align-items-end justify-content-between mb-3">
+									<div>
+										<h6 class="mb-1">Website error log</h6>
+										<p class="text-muted small mb-0">Connection failures and similar site errors. Events stay in the browser until the API is reachable, then they appear here.</p>
+									</div>
+									<div class="d-flex flex-wrap gap-1" role="group" aria-label="Error log range">
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-err-days" data-days="1">Today</button>
+										<button type="button" class="btn btn-sm btn-primary usis-ud-err-days" data-days="7">7 days</button>
+										<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-err-days" data-days="30">30 days</button>
+									</div>
+								</div>
+								<div class="d-flex flex-wrap gap-1 mb-3" role="group" aria-label="Error kind">
+									<button type="button" class="btn btn-sm btn-primary usis-ud-err-kind" data-kind="">All</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-err-kind" data-kind="connect">Connect</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-err-kind" data-kind="http_error">HTTP 5xx</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-err-kind" data-kind="server">Server</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary usis-ud-err-kind" data-kind="js_error">Script</button>
+								</div>
+								<p class="text-muted small mb-2" id="usis-ud-errors-meta"></p>
+								<div class="table-responsive">
+									<table class="table table-sm align-middle mb-0">
+										<thead>
+											<tr>
+												<th>When</th>
+												<th>Kind</th>
+												<th>Person</th>
+												<th>What happened</th>
+											</tr>
+										</thead>
+										<tbody id="usis-ud-errors-body"></tbody>
 									</table>
 								</div>
 							</div>

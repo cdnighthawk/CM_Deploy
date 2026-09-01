@@ -13,7 +13,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, got_request_exception, jsonify, request
 from flask_cors import CORS
 
 from .config import client_debug_log_dev_open
@@ -194,6 +194,7 @@ def create_app(config_object: str | None = None) -> Flask:
             "/api/v1/auth/mobile/refresh",
             "/api/v1/auth/mobile/logout",
             "/api/v1/feedback/issues/confirm",
+            "/api/v1/client-errors",
         ):
             return None
         # Cursor debug: client logs to workspace NDJSON (dev only; see POST handler in api.v1).
@@ -256,6 +257,16 @@ def create_app(config_object: str | None = None) -> Flask:
         except Exception:
             app.logger.exception("user activity tracking failed")
         return response
+
+    def _persist_unhandled_exception(sender, exception, **extra) -> None:
+        try:
+            from .api._client_error_service import record_from_exception
+
+            record_from_exception(exception)
+        except Exception:
+            sender.logger.exception("failed to persist unhandled exception")
+
+    got_request_exception.connect(_persist_unhandled_exception, app)
 
     @app.get("/healthz")
     def healthz():

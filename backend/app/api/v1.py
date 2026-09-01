@@ -5490,6 +5490,9 @@ _auth_mobile.register_mobile_auth_routes(bp)
 from . import _user_activity_service as _user_activity_svc  # noqa: E402
 
 _user_activity_svc.register_activity_routes(bp)
+from . import _client_error_service as _client_error_svc  # noqa: E402
+
+_client_error_svc.register_client_error_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)

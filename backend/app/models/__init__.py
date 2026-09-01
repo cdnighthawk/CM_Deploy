@@ -45,6 +45,7 @@ from .hr import (
 )
 from .hr_dispatch import HrEmployeeDispatch
 from .ingest_error import IngestErrorEvent
+from .client_error import ClientErrorEvent
 from .invoice_delivery_method import InvoiceDeliveryMethod
 from .issue import Issue, IssueEvent
 from .material_order import ProjectMaterialOrder
@@ -193,6 +194,7 @@ __all__ = [
     "FieldPhoto",
     "HrEmployeeDispatch",
     "IngestErrorEvent",
+    "ClientErrorEvent",
     "InvoiceDeliveryMethod",
     "Issue",
     "IssueEvent",

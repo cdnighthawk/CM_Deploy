@@ -28,6 +28,8 @@
 		Playbooks: "Guías",
 		"User admin": "Admin. de usuarios",
 		Procurement: "Compras",
+		Purchasing: "Compras",
+		Construction: "Construcción",
 		Invoices: "Facturas",
 		"Invoice approvals": "Aprobación de facturas",
 		Reports: "Reportes",

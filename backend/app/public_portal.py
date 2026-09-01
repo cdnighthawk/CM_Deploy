@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 from flask import Blueprint, request
+from markupsafe import escape
 from sqlalchemy import select
 
+from .api._rfp_quotes_service import record_portal_quote
 from .extensions import db
 from .models import Rfp, RfpVendorQuote
 
@@ -28,25 +30,31 @@ body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background
 """
 
 
-def _rfp_by_token(token: str) -> Rfp | None:
+def _rfp_by_token(token: str) -> tuple[Rfp | None, RfpVendorQuote | None]:
     raw = (token or "").strip()
     if not raw:
-        return None
-    return db.session.scalar(select(Rfp).where(Rfp.public_token == raw))
+        return None, None
+    quote = db.session.scalar(select(RfpVendorQuote).where(RfpVendorQuote.invite_token == raw))
+    if quote is not None:
+        return db.session.get(Rfp, quote.rfp_id), quote
+    rfp = db.session.scalar(select(Rfp).where(Rfp.public_token == raw))
+    return rfp, None
 
 
 @public_bp.get("/public/rfp/<token>")
 def public_rfp_get(token: str):
-    r = _rfp_by_token(token)
+    r, quote = _rfp_by_token(token)
     if r is None:
         return "<p>RFP not found</p>", 404
     lines = list(r.line_items)
     rows = "".join(
-        f"<tr><td>{x.description}</td><td>{float(x.quantity)}</td><td>{x.unit}</td></tr>" for x in lines
+        f"<tr><td>{escape(x.description)}</td><td>{float(x.quantity)}</td><td>{escape(x.unit)}</td></tr>"
+        for x in lines
     )
     due = getattr(r, "due_at", None) or getattr(r, "due_date", None) or ""
+    vendor_val = escape(quote.vendor_label) if quote and quote.vendor_label else ""
     html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{r.title}</title>
+    <title>{escape(r.title)}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     {_PUBLIC_CHROME}</head>
     <body class="usis-public-rfp">
@@ -55,11 +63,11 @@ def public_rfp_get(token: str):
       <span class="usis-chip">RFP{(' · due ' + str(due)[:10]) if due else ''}</span>
     </header>
     <div class="wrap"><div class="card-like">
-    <h1>{r.title}</h1>
+    <h1>{escape(r.title)}</h1>
     <p class="muted mb-3">Submit a quote using the form below.</p>
     <table class="table table-sm"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th></tr></thead><tbody>{rows}</tbody></table>
     <form method="post" class="mt-3"><div class="mb-3"><label class="form-label">Vendor name</label>
-    <input name="vendor_label" class="form-control form-control-sm" required></div>
+    <input name="vendor_label" class="form-control form-control-sm" value="{vendor_val}" required></div>
     <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="3"></textarea></div>
     <button class="btn btn-primary" type="submit">Submit quote</button></form>
     </div></div></body></html>"""
@@ -68,14 +76,12 @@ def public_rfp_get(token: str):
 
 @public_bp.post("/public/rfp/<token>")
 def public_rfp_post(token: str):
-    r = _rfp_by_token(token)
+    r, quote = _rfp_by_token(token)
     if r is None:
         return "<p>RFP not found</p>", 404
     vendor = (request.form.get("vendor_label") or "Vendor").strip()[:255]
     notes = (request.form.get("notes") or "").strip() or None
-    q = RfpVendorQuote(rfp_id=r.id, vendor_label=vendor, notes=notes, line_prices={})
-    db.session.add(q)
-    db.session.commit()
+    record_portal_quote(r, quote, vendor_label=vendor, notes=notes)
     return (
         f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Quote received</title>

@@ -2,10 +2,11 @@
 
 USIS sends mail through **Microsoft Graph** using the same Entra app as Microsoft sign-in (`backend/app/api/_notifications.py`). SMTP remains a fallback if `MAIL_TRANSPORT=smtp`.
 
-There are two From addresses:
+From addresses:
 
 1. **Staff mail** — compose and RFI forward send as the **signed-in user's** `gousis.com` mailbox (appears in their Outlook Sent Items).
 2. **System mail** — password reset, user invites, playbooks, and HR letters send as **`MAIL_FROM`** (use `noreply@gousis.com`).
+3. **RFP quotes** — invitations send as **`quotes@gousis.com`** (`QUOTES_MAILBOX`) with Reply-To the same mailbox so vendor replies land there. AP invoices continue to use **`invoices@gousis.com`**.
 
 Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry-run**.
 
@@ -15,8 +16,8 @@ Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry
    - `Mail.Send` (compose + system mail)
    - `Mail.ReadWrite` (Inbox, Sent, read, delete on the website)
 2. Click **Grant admin consent** for the tenant.
-3. Create a **shared mailbox** `noreply@gousis.com` in Microsoft 365 admin (no extra license).
-4. Restrict the app with an Exchange **application access policy** so it can only access `@gousis.com` mailboxes plus `noreply@gousis.com`. See [exchange-application-access-policy.ps1](exchange-application-access-policy.ps1).
+3. Create shared mailboxes `noreply@gousis.com`, `quotes@gousis.com`, and `invoices@gousis.com` in Microsoft 365 admin (no extra license).
+4. Restrict the app with an Exchange **application access policy** so it can only access `@gousis.com` mailboxes plus those shared mailboxes. After creating a new mailbox, re-run [exchange-application-access-policy.ps1](exchange-application-access-policy.ps1) so the Graph app can Send As / read it.
 5. On Render set `MAIL_TRANSPORT=graph` and `MAIL_FROM=noreply@gousis.com`. Existing `MS_ENTRA_*` vars are reused.
 
 The website always uses the **signed-in user’s** mailbox address — never a mailbox chosen by the client. The access policy is the tenant-side limit.
@@ -29,6 +30,8 @@ Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, read, de
 |----------|----------|---------|--------|
 | `MAIL_TRANSPORT` | No | `graph` | `graph` (default when Entra is set), or `smtp` |
 | `MAIL_FROM` | Yes for system mail | `noreply@gousis.com` | Shared mailbox for password reset / invites |
+| `QUOTES_MAILBOX` | No | `quotes@gousis.com` | RFP invitations From / Reply-To and inbound quote ingest |
+| `INVOICE_MAILBOX` | No | `invoices@gousis.com` | AP invoice ingest |
 | `MAIL_ALLOWED_FROM_DOMAINS` | No | `gousis.com` | Staff send-as is limited to these domains |
 | `MS_ENTRA_TENANT_ID` / `CLIENT_ID` / `CLIENT_SECRET` | Yes for Graph | *(already on Render)* | Same app as Microsoft login |
 
@@ -64,6 +67,7 @@ Render does **not** provision Redis in `render.yaml`; for MVP, leave Celery unse
 
 | Flow | Trigger | Sends when SMTP configured? |
 |------|---------|-------------------------------|
+| **RFP invitations** | RFP detail **Send invitations** → `POST /api/v1/rfps/<id>/send` | Yes — from `quotes@gousis.com`; replies ingested by **Sync quotes mailbox** |
 | **Issue status (feedback)** | `Resolution:` comment or team close → `POST /api/webhooks/github` | Yes — employee then closes the issue to confirm |
 | **RFI notifications** | RFI create/update/forward; `POST /api/v1/rfis/<id>/email` | Yes (log row + SMTP; Celery if broker set) |
 | **Playbooks** | Checklist run start / reassignment | Yes (`send_plain_notification_email`) |

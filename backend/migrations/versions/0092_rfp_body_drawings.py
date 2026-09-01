@@ -1,7 +1,7 @@
 """RFP body narrative, takeoff links, drawings join, lump-sum quotes.
 
 Revision ID: 0092_rfp_body
-Revises: 0091_client_err
+Revises: 0090_rfp_quote
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0092_rfp_body"
-down_revision: Union[str, Sequence[str], None] = "0091_client_err"
+down_revision: Union[str, Sequence[str], None] = "0090_rfp_quote"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

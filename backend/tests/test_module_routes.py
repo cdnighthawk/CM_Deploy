@@ -81,3 +81,12 @@ def test_spec_section_delete_is_write_not_admin():
     assert http_method_min_level("POST", path) == "write"
     assert http_method_min_level("DELETE", "/api/v1/rfis/1ff506fd-fe21-4455-9dae-72697f0bd344") == "admin"
     assert http_method_min_level("DELETE") == "admin"
+
+
+def test_line_card_and_buy_channel_delete_is_write():
+    cid = "1ff506fd-fe21-4455-9dae-72697f0bd344"
+    rid = "9814519d-6bec-48cc-bb38-3e1e28e21bc8"
+    assert http_method_min_level("DELETE", f"/api/v1/companies/{cid}/line-card/{rid}") == "write"
+    assert http_method_min_level("DELETE", f"/api/v1/companies/{cid}/line-card/specs/102100") == "write"
+    assert http_method_min_level("DELETE", "/api/v1/csi-buy-channels/102800") == "write"
+    assert http_method_min_level("DELETE", f"/api/v1/companies/{cid}") == "admin"

@@ -19,12 +19,20 @@ from .commitment import Commitment, CommitmentBillAllocation, CommitmentLineItem
 from .company import Company, Contact
 from .company_cost_code import CompanyCostCode
 from .correspondence import CorrespondenceItem, CorrespondenceSource
+from .vendor_line_card import CsiBuyChannel, VendorLineCard
 from .corecon_transaction import CoreconTransaction
 from .document import Document, Drawing, DrawingAnnotation
 from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
 from .estimate import Estimate, EstimateLineItem
+from .estimate_spec_package import (
+    EstimateSpecMention,
+    EstimateSpecScan,
+    EstimateSpecSection,
+    EstimateSpecVendor,
+    SpecTradeMap,
+)
 from .estimator_script import (
     EstimateBidScope,
     EstimateBidScopeItem,
@@ -172,6 +180,7 @@ __all__ = [
     "CompanyCostCode",
     "Contact",
     "CorrespondenceItem",
+    "CsiBuyChannel",
     "CorrespondenceSource",
     "CoreconTransaction",
     "CostCode",
@@ -188,6 +197,11 @@ __all__ = [
     "EstimateBidScope",
     "EstimateBidScopeItem",
     "EstimateLineItem",
+    "EstimateSpecMention",
+    "EstimateSpecScan",
+    "EstimateSpecSection",
+    "EstimateSpecVendor",
+    "SpecTradeMap",
     "EstimatorScript",
     "EstimatorStandardSpec",
     "FieldPhoto",
@@ -301,6 +315,7 @@ __all__ = [
     "VendorInvoiceEvent",
     "VendorInvoiceFile",
     "VendorInvoiceLine",
+    "VendorLineCard",
     "AnticipatedCost",
     "CompanyInsurancePolicy",
     "CompanyLicense",

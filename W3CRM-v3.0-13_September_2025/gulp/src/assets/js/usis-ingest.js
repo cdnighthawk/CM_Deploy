@@ -69,6 +69,25 @@
 		if (kind === "error") window.alert(msg);
 	}
 
+	function maybeSpecPackageToast(item, body) {
+		try {
+			if (window.localStorage.getItem("usis.specPackage.ingestToast") !== "1") return;
+		} catch (e) {
+			return;
+		}
+		var kind = String((item && item.documentType) || (body && body.kind) || "").toLowerCase();
+		var name = String((item && item.file && item.file.name) || "").toLowerCase();
+		var isSpec =
+			kind === "specification" ||
+			/\bspec(?:ification)?s?\b/.test(name) ||
+			/project.?manual/.test(name) ||
+			/addend/.test(name);
+		if (!isSpec) return;
+		var project = state.project || {};
+		var job = project.project_number || project.name || "this job";
+		notify("info", "New spec on " + job + ". Analyze for the open estimate?");
+	}
+
 	function newBatchId() {
 		return window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
 	}
@@ -407,6 +426,7 @@
 				next.kind = body.kind || next.kind;
 				var doc = body.drawing || body.document || {};
 				next.note = body.duplicate ? "already stored" : doc.filename || "";
+				maybeSpecPackageToast(next, body);
 			})
 			.catch(function (err) {
 				next.status = "error";

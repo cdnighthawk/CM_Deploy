@@ -28,6 +28,20 @@ _MODE_HINTS: dict[str, str] = {
         "Return structured findings: severity (Critical/Major/Minor/Info), title, detail, "
         "spec_citation, drawing_ref, suggested_checklist_item, cost_impact, delay_impact_days."
     ),
+    "spec_package_review": (
+        "You extract Basis of Design and listed alternates from uploaded project-manual / spec PDFs "
+        "for US Interior Specialties (installer: drywall, paint, flooring, ceilings, trim, Division 10). "
+        "Only propose CSI sections on the USIS allow-list supplied in context (typically 06 20/41/46, "
+        "09 21/22/29, 09 51/53, 09 65/68/69, 09 72/77, 09 91/93/94, 10 11, 10 14 if tagged, 10 21, "
+        "10 26, 10 28 if tagged, 10 44, 10 51). Mark other divisions out_of_trade. "
+        "Distinguish basis_of_design vs listed_alternate vs or_equal vs prohibited vs schedule_item. "
+        "Cite page/paragraph. Prefer verbatim manufacturer names. Flag addenda that supersede a section. "
+        "Stay silent on price. Do not invent CSI sections that are not in the uploaded files. "
+        "Do not invent catalog SKUs. For lockers (10 51) name the family (Penco, ASI, Lyon), not 200 SKUs. "
+        "Return ONLY JSON matching: {sections:[{csi,title,in_scope_suggestion,confidence,document_id,pages,"
+        "mentions:[{role,manufacturer,product_line,model_no,finish_note,or_equal,substitution_note,page_cite,excerpt}]}],"
+        "warnings:[string]}."
+    ),
 }
 
 

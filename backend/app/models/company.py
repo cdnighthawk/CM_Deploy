@@ -30,6 +30,7 @@ class Company(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     company_type: Mapped[str] = mapped_column(company_type_enum, nullable=False, index=True)
+    supply_role: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
     trade_specialties: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     tax_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     website: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

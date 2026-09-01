@@ -112,6 +112,46 @@ def test_admin_create_invalid_email(client, no_dev_admin):
     assert r.status_code == 400
 
 
+def test_admin_create_username_only_user(client, no_dev_admin):
+    with client.application.app_context():
+        admin = User(email="adm_un_" + uuid.uuid4().hex[:8] + "@t.com", is_superuser=True)
+        db.session.add(admin)
+        db.session.flush()
+        aid = str(admin.id)
+        db.session.commit()
+    hdr = {"X-Usis-User-Id": aid}
+    username = "dev_" + uuid.uuid4().hex[:8]
+    missing = client.post(
+        "/api/v1/admin/users",
+        json={"first_name": "No", "last_name": "Id"},
+        headers=hdr,
+    )
+    assert missing.status_code == 400
+
+    no_pw = client.post(
+        "/api/v1/admin/users",
+        json={"username": username, "first_name": "Dev"},
+        headers=hdr,
+    )
+    assert no_pw.status_code == 400
+
+    r = client.post(
+        "/api/v1/admin/users",
+        json={
+            "username": username,
+            "first_name": "Dev",
+            "last_name": "Reviewer",
+            "password": "review-pw-1",
+        },
+        headers=hdr,
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    item = r.get_json()["item"]
+    assert item["email"] is None
+    assert item["username"] == username
+    assert item["has_password"] is True
+
+
 def test_admin_users_exclude_applicants_and_delete_staff(client, no_dev_admin):
     from app.permissions.applicant import assign_applicant_role
 

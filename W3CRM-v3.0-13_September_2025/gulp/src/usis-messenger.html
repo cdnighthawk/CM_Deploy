@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-messenger.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Messages" })
+			</div>
+			<div class="container-fluid">
+				<div class="usis-page-header mb-3">
+					<div class="usis-page-header__text">
+						<span class="usis-overline">USIS</span>
+						<h1 class="h5 mb-1" data-i18n="Messages">Messages</h1>
+						<p class="text-muted small mb-0">Send a chat message to anyone in the company. They will see it here.</p>
+					</div>
+				</div>
+				<div class="alert d-none py-2 px-3 mb-3" id="usis-msg-flash" role="status"></div>
+				<div class="usis-msg-shell card border-0 shadow-sm">
+					<aside class="usis-msg-list" id="usis-msg-list-pane" aria-label="Conversations">
+						<div class="usis-msg-list__search">
+							<label class="form-label small mb-1" for="usis-msg-people" data-i18n="New message">New message</label>
+							<input type="search" class="form-control form-control-sm" id="usis-msg-people" placeholder="Search people" data-i18n-placeholder="Search people" autocomplete="off">
+							<div class="usis-msg-people-results d-none" id="usis-msg-people-results" role="listbox"></div>
+						</div>
+						<div class="usis-msg-list__items" id="usis-msg-convos"></div>
+					</aside>
+					<section class="usis-msg-thread" id="usis-msg-thread-pane" aria-label="Conversation">
+						<header class="usis-msg-thread__head">
+							<button type="button" class="btn btn-sm btn-outline-secondary d-md-none me-2" id="usis-msg-back">Back</button>
+							<div class="flex-grow-1 min-w-0">
+								<div class="fw-semibold text-truncate" id="usis-msg-peer-name">Select someone to start a chat</div>
+								<div class="small text-muted text-truncate" id="usis-msg-peer-email"></div>
+							</div>
+						</header>
+						<div class="usis-msg-thread__body" id="usis-msg-bubbles">
+							<p class="text-muted small text-center mb-0 py-5" data-i18n="Select a person to start chatting.">Select a person to start chatting.</p>
+						</div>
+						<form class="usis-msg-thread__composer" id="usis-msg-form">
+							<label class="visually-hidden" for="usis-msg-input" data-i18n="Type a message">Type a message</label>
+							<textarea class="form-control form-control-sm" id="usis-msg-input" rows="2" placeholder="Type a message" data-i18n-placeholder="Type a message" disabled></textarea>
+							<button type="submit" class="btn btn-primary btn-sm" id="usis-msg-send" disabled data-i18n="Send">Send</button>
+						</form>
+					</section>
+				</div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+
+	@@include("elements/script.html")
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-messenger.js"></script>
+</body>
+</html>

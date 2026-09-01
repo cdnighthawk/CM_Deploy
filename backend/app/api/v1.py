@@ -10,7 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Mapping
 
-from flask import Blueprint, Response, current_app, jsonify, request
+from flask import Blueprint, Response, current_app, jsonify, request, send_file, stream_with_context
 from sqlalchemy import and_, func, literal, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
@@ -19,6 +19,7 @@ from werkzeug.utils import secure_filename
 from ..config import client_debug_log_dev_open
 from ..csi_catalog import public_catalog
 from ..extensions import db
+from ..services import desktop_app as desktop_app_svc
 from ..services import feedback as feedback_svc
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists
 from ..models import (
@@ -2823,6 +2824,26 @@ def create_company_cost_code():
         return _rfi_err(exc)
 
 
+@bp.post("/cost-codes/import")
+def import_company_cost_codes():
+    upload = request.files.get("file")
+    data = request.get_json(silent=True) or {}
+    try:
+        if upload is not None:
+            raw = upload.read()
+            text = raw.decode("utf-8-sig") if isinstance(raw, (bytes, bytearray)) else str(raw)
+            result = cost_code_svc.import_company_cost_codes_csv(text)
+        elif data.get("csv") is not None:
+            result = cost_code_svc.import_company_cost_codes_csv(str(data.get("csv") or ""))
+        else:
+            result = cost_code_svc.import_company_cost_codes(data.get("items") or [])
+        return _jsonify(result)
+    except UnicodeDecodeError:
+        return _jsonify({"error": "csv must be UTF-8"}), 400
+    except rfi_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
 @bp.patch("/cost-codes/<row_id>")
 def patch_company_cost_code(row_id: str):
     rid = _parse_uuid_param(row_id)
@@ -3317,6 +3338,64 @@ def admin_resend_user_invite(user_id: str):
     if result is None:
         return _jsonify({"error": "user not found"}), 404
     return _jsonify({**result, "entity": "directory_user_invite"})
+
+
+def _desktop_app_err(exc: desktop_app_svc.DesktopAppError):
+    return _jsonify({"error": exc.message}), exc.status
+
+
+@bp.get("/admin/desktop-app")
+def admin_desktop_app_latest():
+    try:
+        admin_users_svc._require_admin(current_user())
+        item = desktop_app_svc.latest_setup(current_app.config)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    except desktop_app_svc.DesktopAppError as exc:
+        return _desktop_app_err(exc)
+    return _jsonify({"item": desktop_app_svc.setup_public(item), "entity": "desktop_app"})
+
+
+@bp.get("/admin/desktop-app/download")
+def admin_desktop_app_download():
+    try:
+        admin_users_svc._require_admin(current_user())
+        item = desktop_app_svc.latest_setup(current_app.config)
+    except admin_users_svc.ApiError as exc:
+        return _admin_directory_err(exc)
+    except desktop_app_svc.DesktopAppError as exc:
+        return _desktop_app_err(exc)
+    if item.local_path:
+        return send_file(
+            item.local_path,
+            as_attachment=True,
+            download_name=item.filename,
+            mimetype="application/octet-stream",
+        )
+    headers = {
+        "Content-Disposition": f'attachment; filename="{item.filename}"',
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+    }
+    if item.size:
+        headers["Content-Length"] = str(item.size)
+    chunks = desktop_app_svc.iter_github_asset(current_app.config, item)
+    try:
+        first = next(chunks)
+    except StopIteration:
+        return _jsonify({"error": "Installer download was empty."}), 502
+    except desktop_app_svc.DesktopAppError as exc:
+        return _desktop_app_err(exc)
+
+    def _body():
+        yield first
+        yield from chunks
+
+    return Response(
+        stream_with_context(_body()),
+        mimetype="application/octet-stream",
+        headers=headers,
+    )
 
 
 def _project_membership_err(exc: project_members_svc.ApiError):

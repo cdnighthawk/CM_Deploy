@@ -15,7 +15,6 @@ from flask import (
     url_for,
 )
 from sqlalchemy import select
-from werkzeug.security import check_password_hash
 
 from .extensions import db
 from .models import User
@@ -213,12 +212,12 @@ def login():
         nxt = (request.args.get("next") or "").strip() or None
         return redirect(_redirect_to_shell_login(next_after_login=nxt))
 
-    email = (request.form.get("email") or "").strip().lower()
+    email = (request.form.get("email") or request.form.get("username") or "").strip().lower()
     password = request.form.get("password") or ""
     remember = request.form.get("remember")
     form_next = (request.form.get("next") or "").strip() or None
     if not email or not password:
-        flash("Email and password are required.", "danger")
+        flash("Email or username and password are required.", "danger")
         return redirect(
             _redirect_to_shell_login(
                 next_after_login=form_next,
@@ -226,9 +225,11 @@ def login():
             )
         )
 
-    u = db.session.scalar(select(User).where(User.email == email, User.is_active.is_(True)))
-    if u is None or not u.password_hash or not check_password_hash(u.password_hash, password):
-        flash("Invalid email or password.", "danger")
+    from .api._auth_mobile import authenticate_identifier_password
+
+    u = authenticate_identifier_password(email, password)
+    if u is None:
+        flash("Invalid email, username, or password.", "danger")
         return redirect(
             _redirect_to_shell_login(
                 next_after_login=form_next,

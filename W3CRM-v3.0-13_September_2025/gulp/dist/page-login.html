@@ -84,8 +84,8 @@
 					</div>
 					<form id="usis-login-form" method="post" action="">
 						<div class="mb-3">
-							<label class="form-label" for="usis-login-email" data-i18n="Email">Email</label>
-							<input type="email" class="form-control form-control-lg" id="usis-login-email" name="email" autocomplete="username" required placeholder="hello@example.com">
+							<label class="form-label" for="usis-login-email" data-i18n="Email or username">Email or username</label>
+							<input type="text" class="form-control form-control-lg" id="usis-login-email" name="email" autocomplete="username" required placeholder="email or username">
 						</div>
 						<div class="mb-3">
 							<label class="form-label" for="usis-login-password" data-i18n="Password">Password</label>
@@ -172,8 +172,8 @@
 			return (window.USISI18n && window.USISI18n.tr) ? window.USISI18n.tr(s) : s;
 		}
 		var LOGIN_ERR = {
-			required: t("Email and password are required."),
-			invalid: t("Invalid email or password. On Render, create a user with the bootstrap script or register first.")
+			required: t("Email or username and password are required."),
+			invalid: t("Invalid email, username, or password. On Render, create a user with the bootstrap script or register first.")
 		};
 		var MS_ERR = {
 			not_configured: "Microsoft sign-in is not enabled on this server.",

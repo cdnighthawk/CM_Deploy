@@ -339,6 +339,15 @@ class Config:
     GITHUB_FEEDBACK_REPO: str = (os.environ.get("GITHUB_FEEDBACK_REPO") or "CM_Deploy").strip() or "CM_Deploy"
     GITHUB_WEBHOOK_SECRET: str = (os.environ.get("GITHUB_WEBHOOK_SECRET") or "").strip()
 
+    # User admin → Install desktop app. Token needs Contents: Read on USIS_PDF_App.
+    # GITHUB_DESKTOP_TOKEN falls back to GITHUB_FEEDBACK_TOKEN when unset.
+    GITHUB_DESKTOP_OWNER: str = (
+        (os.environ.get("GITHUB_DESKTOP_OWNER") or "US-Interior-Specialties").strip() or "US-Interior-Specialties"
+    )
+    GITHUB_DESKTOP_REPO: str = (os.environ.get("GITHUB_DESKTOP_REPO") or "USIS_PDF_App").strip() or "USIS_PDF_App"
+    GITHUB_DESKTOP_TOKEN: str = (os.environ.get("GITHUB_DESKTOP_TOKEN") or "").strip()
+    GITHUB_DESKTOP_LOCAL_SETUP: str = (os.environ.get("GITHUB_DESKTOP_LOCAL_SETUP") or "").strip()
+
 
 def client_debug_log_dev_open() -> bool:
     """True when anonymous ``POST /api/v1/__debug/client-log`` is allowed (local dev only).

@@ -114,10 +114,26 @@
 		});
 	}
 
-	function refresh() {
-		var root = dropdownRoot();
-		if (!root) return;
-		fetch(apiBase() + "/api/v1/me/notifications", {
+	function setMessagesBadge(unread) {
+		var link = document.getElementById("usis-header-messages");
+		if (!link) return;
+		var badge = link.querySelector(".usis-msg-badge");
+		var n = Number(unread || 0);
+		if (!n) {
+			if (badge) badge.remove();
+			return;
+		}
+		if (!badge) {
+			badge = document.createElement("span");
+			badge.className = "usis-msg-badge badge bg-danger rounded-circle position-absolute";
+			link.classList.add("position-relative");
+			link.appendChild(badge);
+		}
+		badge.textContent = n > 9 ? "9+" : String(n);
+	}
+
+	function refreshMessagesBadge() {
+		fetch(apiBase() + "/api/v1/me/chat/unread-count", {
 			credentials: "include",
 			headers: { Accept: "application/json" },
 		})
@@ -126,9 +142,28 @@
 				return r.json();
 			})
 			.then(function (data) {
-				if (data) render(root, data);
+				if (data) setMessagesBadge(data.unread);
 			})
 			.catch(function () {});
+	}
+
+	function refresh() {
+		var root = dropdownRoot();
+		if (root) {
+			fetch(apiBase() + "/api/v1/me/notifications", {
+				credentials: "include",
+				headers: { Accept: "application/json" },
+			})
+				.then(function (r) {
+					if (!r.ok) return null;
+					return r.json();
+				})
+				.then(function (data) {
+					if (data) render(root, data);
+				})
+				.catch(function () {});
+		}
+		refreshMessagesBadge();
 	}
 
 	if (document.readyState === "loading") {

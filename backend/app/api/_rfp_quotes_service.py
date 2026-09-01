@@ -12,6 +12,7 @@ from uuid import UUID
 from flask import current_app
 from markupsafe import escape
 from sqlalchemy import func, select
+from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
@@ -31,6 +32,7 @@ _KEEP_EXT = frozenset(
     {".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".heic", ".xlsx", ".xls", ".doc", ".docx"}
 )
 _SKIP_INLINE_MAX = 20 * 1024
+_MAX_QUOTE_PDF = 25 * 1024 * 1024
 _TAG_RE = re.compile(r"\[RFP\s+([A-Za-z0-9_-]{6,32})\]", re.IGNORECASE)
 _PORTAL_RE = re.compile(r"/public/rfp/([A-Za-z0-9_-]{8,64})", re.IGNORECASE)
 
@@ -158,13 +160,21 @@ def serialize_quote(q: RfpVendorQuote) -> dict[str, Any]:
         "received_at": _iso(q.received_at),
         "mailbox": q.mailbox,
         "line_prices": q.line_prices,
-        "attachments": q.attachments or [],
         "lump_sum_amount": float(q.lump_sum_amount) if q.lump_sum_amount is not None else None,
         "vendor_exclusions": q.vendor_exclusions,
         "send_status": q.send_status,
         "notes": q.notes,
         "portal_path": f"/public/rfp/{q.invite_token}" if q.invite_token else None,
+        "attachments": [_quote_attachment_public(q, a) for a in (q.attachments or [])],
     }
+
+
+def _quote_attachment_public(q: RfpVendorQuote, att: Mapping[str, Any] | None) -> dict[str, Any]:
+    item = dict(att or {})
+    doc_id = item.get("document_id")
+    if doc_id:
+        item["file_url"] = f"/api/v1/rfps/{q.rfp_id}/quotes/{q.id}/attachments/{doc_id}"
+    return item
 
 
 def serialize_rfp(r: Rfp, *, staff: bool = True) -> dict[str, Any]:
@@ -675,6 +685,9 @@ def record_portal_quote(
     line_prices: Any | None = None,
     lump_sum_amount: Any | None = None,
     vendor_exclusions: str | None = None,
+    pdf_filename: str | None = None,
+    pdf_content_type: str | None = None,
+    pdf_bytes: bytes | None = None,
 ) -> RfpVendorQuote:
     from decimal import Decimal, InvalidOperation
 
@@ -682,6 +695,9 @@ def record_portal_quote(
 
     if rfp_closed(rfp):
         raise ApiError("This RFP is closed.", 403)
+    has_pdf = bool(pdf_bytes)
+    if has_pdf:
+        _assert_quote_pdf(pdf_filename or "", pdf_content_type or "", pdf_bytes or b"")
     row = quote or RfpVendorQuote(rfp_id=rfp.id)
     row.vendor_label = (vendor_label or row.vendor_label or "Vendor")[:255]
     row.notes = notes
@@ -714,6 +730,8 @@ def record_portal_quote(
             )
         row.line_prices = parsed
         row.lump_sum_amount = None
+        if not has_pdf and not any(p.get("unit_price") is not None for p in parsed):
+            raise ApiError("Enter unit prices or attach a PDF quote")
     else:
         try:
             row.lump_sum_amount = (
@@ -721,11 +739,21 @@ def record_portal_quote(
             )
         except (InvalidOperation, ValueError):
             raise ApiError("lump_sum_amount must be a number")
-        if row.lump_sum_amount is None:
-            raise ApiError("lump sum is required")
         row.line_prices = None
-    if quote is None:
+        if row.lump_sum_amount is None and not has_pdf:
+            raise ApiError("Enter a lump sum or attach a PDF quote")
+    if quote is None or row.id is None:
         db.session.add(row)
+    db.session.flush()
+    if has_pdf:
+        _append_quote_pdf(
+            rfp,
+            row,
+            filename=pdf_filename or "quote.pdf",
+            content_type=pdf_content_type or "application/pdf",
+            data=pdf_bytes or b"",
+            uploaded_by=None,
+        )
     _refresh_status(rfp)
     db.session.commit()
     return row
@@ -774,6 +802,132 @@ def _rfp_from_message(subject: str | None, body: str) -> tuple[Rfp | None, RfpVe
     return None, None
 
 
+def _assert_quote_pdf(filename: str, content_type: str, data: bytes) -> None:
+    if not data:
+        raise ApiError("empty PDF")
+    if len(data) > _MAX_QUOTE_PDF:
+        raise ApiError("PDF is too large (max 25 MB)")
+    name = (filename or "").lower()
+    ctype = (content_type or "").lower()
+    if not (name.endswith(".pdf") or "pdf" in ctype):
+        raise ApiError("only PDF quotes are accepted")
+    if not data.startswith(b"%PDF"):
+        raise ApiError("that file does not look like a PDF")
+
+
+def _append_quote_pdf(
+    rfp: Rfp,
+    quote: RfpVendorQuote,
+    *,
+    filename: str,
+    content_type: str,
+    data: bytes,
+    uploaded_by: UUID | None,
+) -> dict[str, Any]:
+    meta = _store_quote_attachment(
+        quote=quote,
+        rfp=rfp,
+        filename=filename,
+        content_type=content_type,
+        data=data,
+        uploaded_by=uploaded_by,
+    )
+    atts = list(quote.attachments or [])
+    atts.append(meta)
+    quote.attachments = atts
+    flag_modified(quote, "attachments")
+    return meta
+
+
+def attach_staff_quote_pdf(
+    rfp: Rfp,
+    *,
+    quote_id: UUID | None,
+    company_id: UUID | None,
+    filename: str,
+    content_type: str,
+    data: bytes,
+    uploaded_by: UUID | None,
+) -> dict[str, Any]:
+    from ._rfp_body_service import rfp_closed
+
+    if rfp_closed(rfp):
+        raise ApiError("This RFP is closed.", 403)
+    _assert_quote_pdf(filename, content_type, data)
+    quote: RfpVendorQuote | None = None
+    if quote_id is not None:
+        quote = db.session.get(RfpVendorQuote, quote_id)
+        if quote is None or quote.rfp_id != rfp.id:
+            raise ApiError("quote not found", 404)
+    elif company_id is not None:
+        quote = db.session.scalar(
+            select(RfpVendorQuote).where(
+                RfpVendorQuote.rfp_id == rfp.id,
+                RfpVendorQuote.vendor_company_id == company_id,
+            )
+        )
+        if quote is None:
+            company = db.session.get(Company, company_id)
+            if company is None or company.deleted_at is not None:
+                raise ApiError("vendor not found", 404)
+            quote = RfpVendorQuote(
+                rfp_id=rfp.id,
+                vendor_company_id=company.id,
+                vendor_label=(company.name or "Vendor")[:255],
+                invited_email=(company.email or None),
+                source="upload",
+            )
+            db.session.add(quote)
+            db.session.flush()
+    if quote is None:
+        raise ApiError("pick a vendor for this PDF")
+    if not (quote.source or "").strip():
+        quote.source = "upload"
+    quote.received_at = quote.received_at or _utcnow()
+    _append_quote_pdf(
+        rfp,
+        quote,
+        filename=filename,
+        content_type=content_type,
+        data=data,
+        uploaded_by=uploaded_by,
+    )
+    _refresh_status(rfp)
+    db.session.commit()
+    return {"item": serialize_quote(quote), "entity": "rfp_vendor_quote"}
+
+
+def quote_attachment_file(rfp: Rfp, quote_id: UUID, document_id: UUID):
+    from ..services.object_storage import UploadCategory, send_stored_file, stored_exists
+    from ..services.project_file_keys import document_object_candidates
+
+    quote = db.session.get(RfpVendorQuote, quote_id)
+    if quote is None or quote.rfp_id != rfp.id:
+        raise ApiError("quote not found", 404)
+    known = {str(a.get("document_id")) for a in (quote.attachments or []) if isinstance(a, Mapping)}
+    if str(document_id) not in known:
+        raise ApiError("attachment not found", 404)
+    row = db.session.get(Document, document_id)
+    if row is None:
+        raise ApiError("attachment not found", 404)
+    name = f"{row.id}"
+    for cand in document_object_candidates(row):
+        if stored_exists(UploadCategory.DOCUMENTS, cand):
+            name = cand
+            break
+    dl = (row.original_filename or row.title or "quote.pdf").replace('"', "")[:200]
+    mime = (row.mime_type or "application/pdf").strip() or "application/pdf"
+    resp = send_stored_file(
+        UploadCategory.DOCUMENTS,
+        name,
+        mimetype=mime,
+        download_name=dl or "quote.pdf",
+    )
+    if resp is None:
+        raise ApiError("file not found on server", 404)
+    return resp
+
+
 def _keep_attachment(name: str, content_type: str, size: int, is_inline: bool) -> bool:
     if is_inline and size and size < _SKIP_INLINE_MAX:
         return False
@@ -813,7 +967,12 @@ def _store_quote_attachment(
     )
     db.session.add(doc)
     db.session.flush()
-    save_upload(UploadCategory.DOCUMENTS, f"{doc.id}{ext}", data)
+    object_name = f"{doc.id}{ext}"
+    tags = dict(doc.tags or {})
+    tags["storage_object"] = object_name
+    doc.tags = tags
+    flag_modified(doc, "tags")
+    save_upload(UploadCategory.DOCUMENTS, object_name, data)
     return {
         "name": raw_name,
         "document_id": str(doc.id),

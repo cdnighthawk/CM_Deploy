@@ -25,8 +25,10 @@ from ..models import (
 from ._perms import current_user
 from ._rfi_service import ApiError, _parse_dt
 from ._rfp_quotes_service import (
+    attach_staff_quote_pdf,
     mailbox_ready,
     new_mail_tag,
+    quote_attachment_file,
     quotes_mailbox,
     serialize_rfp,
     send_invitations,
@@ -932,3 +934,74 @@ def register_extra_routes(bp: Blueprint) -> None:
         except ApiError as exc:
             return _jsonify({"error": exc.message}), exc.status
         return _jsonify({"item": serialize_rfp(clone), "entity": "rfp"}), 201
+
+    @bp.post("/rfps/<rfp_id>/quotes/<quote_id>/attachments")
+    def rfp_quote_upload_pdf(rfp_id: str, quote_id: str):
+        from ._rfp_body_service import load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        qid = _parse_uuid_param(quote_id)
+        if not rid or not qid:
+            return _jsonify({"error": "invalid id"}), 400
+        f = request.files.get("file")
+        if f is None or not getattr(f, "filename", None):
+            return _jsonify({"error": "missing file field (multipart form-data)"}), 400
+        data = f.read()
+        try:
+            r = load_rfp(rid)
+            return _jsonify(
+                attach_staff_quote_pdf(
+                    r,
+                    quote_id=qid,
+                    company_id=None,
+                    filename=f.filename or "quote.pdf",
+                    content_type=f.mimetype or "application/pdf",
+                    data=data,
+                    uploaded_by=current_user().id,
+                )
+            ), 201
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.post("/rfps/<rfp_id>/quote-pdf")
+    def rfp_quote_pdf_for_vendor(rfp_id: str):
+        from ._rfp_body_service import load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        f = request.files.get("file")
+        if f is None or not getattr(f, "filename", None):
+            return _jsonify({"error": "missing file field (multipart form-data)"}), 400
+        qid = _parse_uuid_param(request.form.get("quote_id") or "")
+        cid = _parse_uuid_param(request.form.get("company_id") or "")
+        data = f.read()
+        try:
+            r = load_rfp(rid)
+            return _jsonify(
+                attach_staff_quote_pdf(
+                    r,
+                    quote_id=qid,
+                    company_id=cid,
+                    filename=f.filename or "quote.pdf",
+                    content_type=f.mimetype or "application/pdf",
+                    data=data,
+                    uploaded_by=current_user().id,
+                )
+            ), 201
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.get("/rfps/<rfp_id>/quotes/<quote_id>/attachments/<document_id>")
+    def rfp_quote_attachment_file(rfp_id: str, quote_id: str, document_id: str):
+        from ._rfp_body_service import load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        qid = _parse_uuid_param(quote_id)
+        did = _parse_uuid_param(document_id)
+        if not rid or not qid or not did:
+            return _jsonify({"error": "invalid id"}), 400
+        try:
+            return quote_attachment_file(load_rfp(rid), qid, did)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status

@@ -685,6 +685,17 @@
 				<div class="card">
 					<div class="card-body">
 						<h2 class="h6 mb-3">Quotes</h2>
+						<div class="mb-3">
+							<label class="form-label small mb-1" for="usis-rfp-quote-vendor">Attach PDF to</label>
+							<select class="form-select form-select-sm mb-2" id="usis-rfp-quote-vendor">
+								<option value="">Add a vendor first</option>
+							</select>
+							<label class="d-block mb-0" id="usis-rfp-quote-drop" style="border:1.5px dashed #E3E8EE;border-radius:10px;padding:16px 12px;text-align:center;background:#fafbfc;cursor:pointer">
+								<input type="file" accept="application/pdf,.pdf" class="d-none" id="usis-rfp-quote-pdf">
+								<strong>Drop a vendor quote PDF here</strong>
+								<span class="text-muted small d-block" id="usis-rfp-quote-pdf-name">or click to browse · PDF only, max 25 MB</span>
+							</label>
+						</div>
 						<div class="table-responsive">
 							<table class="table table-sm mb-0">
 								<thead>

@@ -1,0 +1,840 @@
+/**
+ * RFP detail — body (takeoff / manual / narrative), drawings, quotes@ send.
+ */
+(function () {
+	"use strict";
+
+	var UNITS = ["SF", "LF", "SY", "EA", "LS", "HR", "GAL", "SQ"];
+	var state = {
+		id: null,
+		rfp: null,
+		bidders: [],
+		takeoff: null,
+		drawCandidates: [],
+		searchTimer: null,
+		frozen: false,
+	};
+
+	function $(id) {
+		return document.getElementById(id);
+	}
+
+	function esc(s) {
+		if (s == null || s === "") return "";
+		var d = document.createElement("div");
+		d.textContent = String(s);
+		return d.innerHTML;
+	}
+
+	function fetchJson(path, opts) {
+		if (window.USIS_API && typeof window.USIS_API.fetchJson === "function") {
+			return window.USIS_API.fetchJson(path, opts || {});
+		}
+		return fetch(path, Object.assign({ credentials: "include", headers: { Accept: "application/json" } }, opts || {})).then(
+			function (res) {
+				return res.json().then(function (j) {
+					if (!res.ok) throw new Error(j.error || res.statusText || String(res.status));
+					return j;
+				});
+			}
+		);
+	}
+
+	function flash(msg, kind) {
+		var el = $("usis-rfp-flash");
+		if (!el) return;
+		el.className = "alert py-2 px-3 mb-3 " + (kind === "error" ? "alert-danger" : kind === "warn" ? "alert-warning" : "alert-success");
+		el.textContent = msg || "";
+		el.classList.toggle("d-none", !msg);
+	}
+
+	function fmtWhen(iso) {
+		if (!iso) return "—";
+		var d = new Date(iso);
+		if (isNaN(d.getTime())) return esc(iso);
+		return d.toLocaleString();
+	}
+
+	function sourceLabel(src) {
+		if (src === "email") return "Email";
+		if (src === "portal") return "Portal";
+		return "Invited";
+	}
+
+	function lineSource() {
+		var el = document.querySelector("input[name='usis-rfp-source']:checked");
+		return el ? el.value : "manual";
+	}
+
+	function setFrozen(frozen) {
+		state.frozen = !!frozen;
+		document.querySelectorAll("#usis-rfp-title-input, #usis-rfp-due-input, #usis-rfp-scope, #usis-rfp-inclusions, #usis-rfp-exclusions, #usis-rfp-clarifications, #usis-rfp-src-takeoff, #usis-rfp-src-manual, #usis-rfp-src-narrative, #usis-rfp-add-line, #usis-rfp-attach, #usis-rfp-refresh-takeoff").forEach(function (el) {
+			if (el) el.disabled = state.frozen;
+		});
+	}
+
+	function applySourceUi() {
+		var src = lineSource();
+		var takeoff = $("usis-rfp-takeoff-panel");
+		var lines = $("usis-rfp-lines-panel");
+		var internal = $("usis-rfp-internal-lines");
+		if (takeoff) takeoff.classList.toggle("d-none", src !== "takeoff");
+		if (lines) lines.classList.toggle("d-none", src === "narrative");
+		if (internal) internal.classList.toggle("d-none", src !== "narrative");
+	}
+
+	function renderHeader(item) {
+		var title = $("usis-rfp-title-input");
+		if (title && document.activeElement !== title) title.value = item.title || "";
+		var status = $("usis-rfp-status");
+		if (status) {
+			status.innerHTML = window.USISUi ? window.USISUi.statusChip(item.status || "Draft") : esc(item.status || "Draft");
+		}
+		var due = $("usis-rfp-due-input");
+		if (due && document.activeElement !== due) due.value = item.due_at ? String(item.due_at).slice(0, 10) : "";
+		var mailbox = $("usis-rfp-mailbox");
+		if (mailbox) mailbox.textContent = item.from_header || item.quotes_mailbox || "quotes@gousis.com";
+		var tag = $("usis-rfp-mail-tag");
+		if (tag) tag.textContent = item.mail_tag ? "[RFP " + item.mail_tag + "]" : "";
+		var cmp = $("usis-rfp-compare-link");
+		if (cmp) cmp.href = "usis-rfp-compare.html?id=" + encodeURIComponent(item.id);
+		var src = item.line_source || "manual";
+		var radio = document.querySelector("input[name='usis-rfp-source'][value='" + src + "']");
+		if (radio) radio.checked = true;
+		["scope", "inclusions", "exclusions", "clarifications"].forEach(function (k) {
+			var el = $("usis-rfp-" + (k === "scope" ? "scope" : k));
+			if (el && document.activeElement !== el) el.value = item[k === "scope" ? "scope_of_work" : k] || "";
+		});
+		var cc = $("usis-rfp-cc-estimator");
+		if (cc) cc.checked = !!item.cc_estimator;
+		setFrozen(!!item.frozen);
+		applySourceUi();
+	}
+
+	function renderLines(item) {
+		var tb = $("usis-rfp-lines-body");
+		if (!tb) return;
+		var lines = item.line_items || [];
+		if (!lines.length) {
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted">No line items yet.</td></tr>';
+			return;
+		}
+		tb.innerHTML = lines
+			.map(function (ln) {
+				var unitOpts = UNITS.map(function (u) {
+					return "<option" + (ln.unit === u ? " selected" : "") + ">" + u + "</option>";
+				}).join("");
+				var badge = ln.source_kind === "takeoff" ? "Takeoff" : "Manual";
+				return (
+					"<tr data-line='" +
+					esc(ln.id) +
+					"'>" +
+					"<td><input class='form-control form-control-sm' data-f='csi_division' value='" +
+					esc(ln.csi_division) +
+					"'></td>" +
+					"<td><input class='form-control form-control-sm' data-f='description' value='" +
+					esc(ln.description) +
+					"'></td>" +
+					"<td><input class='form-control form-control-sm' data-f='quantity' type='number' step='any' value='" +
+					esc(ln.quantity == null ? "" : ln.quantity) +
+					"'></td>" +
+					"<td><select class='form-select form-select-sm' data-f='unit'>" +
+					unitOpts +
+					"</select></td>" +
+					"<td><input class='form-control form-control-sm' data-f='notes' value='" +
+					esc(ln.notes) +
+					"'></td>" +
+					"<td>" +
+					(window.USISUi ? window.USISUi.statusChip(badge) : esc(badge)) +
+					"</td>" +
+					"<td><button type='button' class='btn btn-link btn-sm p-0' data-del='" +
+					esc(ln.id) +
+					"'>Delete</button></td></tr>"
+				);
+			})
+			.join("");
+		tb.querySelectorAll("[data-del]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				if (state.frozen) return;
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/line-items/" + encodeURIComponent(btn.getAttribute("data-del")), {
+					method: "DELETE",
+				}).then(load);
+			});
+		});
+		tb.querySelectorAll("input,select").forEach(function (inp) {
+			inp.disabled = state.frozen;
+			inp.addEventListener("change", function () {
+				if (state.frozen) return;
+				var tr = inp.closest("tr");
+				var lid = tr.getAttribute("data-line");
+				var body = {};
+				tr.querySelectorAll("[data-f]").forEach(function (f) {
+					body[f.getAttribute("data-f")] = f.value;
+				});
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/line-items/" + encodeURIComponent(lid), {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(body),
+				}).catch(function (err) {
+					flash(err.message || String(err), "error");
+				});
+			});
+		});
+	}
+
+	function renderQuotes(item) {
+		var tb = $("usis-rfp-quotes-body");
+		if (!tb) return;
+		var quotes = item.quotes || [];
+		if (!quotes.length) {
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted">No invitations or quotes yet.</td></tr>';
+			return;
+		}
+		tb.innerHTML = quotes
+			.map(function (q) {
+				var atts = (q.attachments || [])
+					.map(function (a) {
+						return esc(a.name || "attachment");
+					})
+					.join(", ");
+				var lump = q.lump_sum_amount != null ? " · LS $" + q.lump_sum_amount : "";
+				return (
+					"<tr>" +
+					"<td>" +
+					esc(q.vendor_label) +
+					"</td>" +
+					"<td>" +
+					esc(q.invited_email || q.from_email || "") +
+					"</td>" +
+					"<td>" +
+					esc(sourceLabel(q.source)) +
+					"</td>" +
+					"<td>" +
+					fmtWhen(q.sent_at) +
+					"</td>" +
+					"<td>" +
+					fmtWhen(q.received_at) +
+					"</td>" +
+					"<td><div class='small'>" +
+					esc(q.notes || "") +
+					lump +
+					"</div>" +
+					(atts ? "<div class='text-muted small mt-1'>" + atts + "</div>" : "") +
+					"</td>" +
+					"<td>" +
+					(q.received_at
+						? "<button type='button' class='btn btn-sm btn-outline-primary' data-award='" +
+						  esc(q.id) +
+						  "'>Award</button>"
+						: "") +
+					"</td></tr>"
+				);
+			})
+			.join("");
+		tb.querySelectorAll("[data-award]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				if (!window.confirm("Award this vendor?")) return;
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/award", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ quote_id: btn.getAttribute("data-award") }),
+				})
+					.then(load)
+					.catch(function (err) {
+						flash(err.message || String(err), "error");
+					});
+			});
+		});
+	}
+
+	function renderBidders() {
+		var wrap = $("usis-rfp-bidder-chips");
+		if (!wrap) return;
+		if (!state.bidders.length) {
+			wrap.innerHTML = '<span class="text-muted small">Select vendors with an email on the company record.</span>';
+			return;
+		}
+		wrap.innerHTML = state.bidders
+			.map(function (b, i) {
+				var missing = b.missing_email;
+				return (
+					'<div class="form-check small mb-1">' +
+					'<input class="form-check-input" type="checkbox" data-sel="' +
+					i +
+					'" ' +
+					(b.selected !== false && !missing ? "checked" : "") +
+					" " +
+					(missing ? "disabled" : "") +
+					">" +
+					"<label class='form-check-label'>" +
+					esc(b.label) +
+					(b.email ? " &lt;" + esc(b.email) + "&gt;" : " <span class='text-danger'>no email</span>") +
+					(missing
+						? " <a href='" +
+						  esc(b.company_edit_url || "usis-companies.html?id=" + b.company_id) +
+						  "'>Add email on the vendor record</a>"
+						: "") +
+					' <button type="button" class="btn btn-link btn-sm p-0" data-remove="' +
+					i +
+					'">×</button></label></div>'
+				);
+			})
+			.join("");
+		wrap.querySelectorAll("[data-remove]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				state.bidders.splice(Number(btn.getAttribute("data-remove")), 1);
+				renderBidders();
+			});
+		});
+	}
+
+	function addBidder(row) {
+		var email = (row.email || "").trim().toLowerCase();
+		var exists = state.bidders.some(function (b) {
+			return b.company_id && row.company_id && b.company_id === row.company_id && b.email === email;
+		});
+		if (exists) return;
+		state.bidders.push({
+			company_id: row.company_id,
+			contact_id: row.contact_id || null,
+			email: email,
+			label: row.label,
+			missing_email: !email,
+			company_edit_url: row.company_edit_url,
+			selected: !!email,
+		});
+		renderBidders();
+	}
+
+	function selectedBidders() {
+		return state.bidders.filter(function (b, i) {
+			var box = document.querySelector("[data-sel='" + i + "']");
+			return b.email && (!box || box.checked);
+		});
+	}
+
+	function renderTakeoff() {
+		var data = state.takeoff || {};
+		var empty = $("usis-rfp-takeoff-empty");
+		var sel = $("usis-rfp-estimate");
+		if (empty) empty.classList.toggle("d-none", !!data.has_estimates);
+		if (sel) {
+			sel.innerHTML = (data.estimates || [])
+				.map(function (e) {
+					return (
+						"<option value='" +
+						esc(e.id) +
+						"'" +
+						(e.id === data.estimate_id ? " selected" : "") +
+						">" +
+						esc(e.name) +
+						" · " +
+						esc(e.status) +
+						" · " +
+						esc(e.line_count) +
+						" lines</option>"
+					);
+				})
+				.join("");
+		}
+		var filter = (($("usis-rfp-trade-filter") || {}).value || "").toLowerCase();
+		var tb = $("usis-rfp-takeoff-body");
+		if (!tb) return;
+		var lines = (data.lines || []).filter(function (ln) {
+			if (!filter) return true;
+			var blob = [ln.csi_division, ln.trade, ln.description, ln.notes].join(" ").toLowerCase();
+			return blob.indexOf(filter) >= 0;
+		});
+		tb.innerHTML = lines
+			.map(function (ln) {
+				return (
+					"<tr><td><input type='checkbox' data-tl='" +
+					esc(ln.id) +
+					"'" +
+					(ln.remaining ? " data-remaining='1'" : "") +
+					"></td><td>" +
+					esc(ln.csi_division) +
+					"</td><td>" +
+					esc(ln.trade) +
+					"</td><td>" +
+					esc(ln.description) +
+					"</td><td>" +
+					esc(ln.quantity) +
+					"</td><td>" +
+					esc(ln.unit) +
+					"</td><td>" +
+					esc(ln.room_area) +
+					"</td><td>" +
+					esc(ln.notes) +
+					"</td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function loadTakeoff(estimateId) {
+		var q = estimateId ? "?estimate_id=" + encodeURIComponent(estimateId) : "";
+		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/takeoff-candidates" + q).then(function (d) {
+			state.takeoff = d.item || d;
+			renderTakeoff();
+		});
+	}
+
+	function renderDrawings() {
+		var tb = $("usis-rfp-draw-body");
+		if (!tb) return;
+		var items = state.drawCandidates || [];
+		if (!items.length) {
+			tb.innerHTML = '<tr><td colspan="6" class="text-muted">No sheets on this job yet.</td></tr>';
+			return;
+		}
+		tb.innerHTML = items
+			.map(function (d, i) {
+				var id = d.drawing_id || d.document_id || i;
+				var cadNote = d.is_cad && !d.has_pdf ? " <span class='text-muted'>PDF rendition required</span>" : "";
+				return (
+					"<tr data-i='" +
+					i +
+					"'><td><input type='checkbox' data-draw='" +
+					i +
+					"'" +
+					(d.prechecked ? " checked" : "") +
+					"></td><td>" +
+					esc(d.sheet_number) +
+					"</td><td>" +
+					esc(d.sheet_title) +
+					cadNote +
+					"</td><td>" +
+					esc(d.discipline) +
+					"</td><td>" +
+					esc(d.revision) +
+					"</td><td><select class='form-select form-select-sm' data-deliv='" +
+					i +
+					"'>" +
+					"<option value='link'" +
+					(d.delivery === "link" ? " selected" : "") +
+					">Link</option>" +
+					"<option value='attach'" +
+					(d.delivery === "attach" ? " selected" : "") +
+					(d.is_cad && !d.has_pdf ? " disabled" : "") +
+					">Attach PDF</option>" +
+					"<option value='both'" +
+					(d.delivery === "both" ? " selected" : "") +
+					(d.is_cad && !d.has_pdf ? " disabled" : "") +
+					">Both</option></select></td></tr>"
+				);
+			})
+			.join("");
+	}
+
+	function loadDrawings() {
+		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/drawing-candidates").then(function (d) {
+			state.drawCandidates = (d.item && d.item.items) || [];
+			renderDrawings();
+		});
+	}
+
+	function collectDrawings() {
+		var out = [];
+		(state.drawCandidates || []).forEach(function (d, i) {
+			var box = document.querySelector("[data-draw='" + i + "']");
+			if (!box || !box.checked) return;
+			var del = document.querySelector("[data-deliv='" + i + "']");
+			out.push({
+				drawing_id: d.drawing_id,
+				document_id: d.document_id,
+				delivery: del ? del.value : "link",
+			});
+		});
+		return out;
+	}
+
+	function saveDrawings() {
+		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/drawings", {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ drawings: collectDrawings() }),
+		});
+	}
+
+	function saveDraft() {
+		if (state.frozen) {
+			flash("This RFP is frozen after Send. Clone to a new RFP to edit.", "warn");
+			return Promise.resolve();
+		}
+		var body = {
+			title: ($("usis-rfp-title-input") || {}).value,
+			due_at: ($("usis-rfp-due-input") || {}).value || null,
+			scope_of_work: ($("usis-rfp-scope") || {}).value,
+			inclusions: ($("usis-rfp-inclusions") || {}).value,
+			exclusions: ($("usis-rfp-exclusions") || {}).value,
+			clarifications: ($("usis-rfp-clarifications") || {}).value,
+			line_source: lineSource(),
+			confirm: true,
+			cc_estimator: !!(($("usis-rfp-cc-estimator") || {}).checked),
+		};
+		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id), {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+		})
+			.then(function () {
+				return saveDrawings();
+			})
+			.then(function () {
+				flash("Draft saved.", "success");
+				return load();
+			})
+			.catch(function (err) {
+				flash(err.message || String(err), "error");
+			});
+	}
+
+	function load() {
+		flash("");
+		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id)).then(function (d) {
+			state.rfp = d.item || d;
+			renderHeader(state.rfp);
+			renderLines(state.rfp);
+			renderQuotes(state.rfp);
+			if (lineSource() === "takeoff") loadTakeoff(state.rfp.source_estimate_id);
+			loadDrawings();
+			return state.rfp;
+		});
+	}
+
+	function searchVendors(q) {
+		var box = $("usis-rfp-vendor-results");
+		if (!box) return;
+		fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/vendors?q=" + encodeURIComponent(q || "")).then(function (d) {
+			var items = d.items || [];
+			if (!items.length) {
+				box.innerHTML = '<div class="list-group-item text-muted small">No companies match.</div>';
+				return;
+			}
+			box.innerHTML = items
+				.slice(0, 20)
+				.map(function (c) {
+					return (
+						'<button type="button" class="list-group-item list-group-item-action py-2" data-company="' +
+						esc(c.id) +
+						'">' +
+						esc(c.name) +
+						' <span class="text-muted small">' +
+						esc(c.company_type || "") +
+						(c.missing_email ? " · missing email" : "") +
+						"</span></button>"
+					);
+				})
+				.join("");
+			box.querySelectorAll("[data-company]").forEach(function (btn) {
+				btn.addEventListener("click", function () {
+					var cid = btn.getAttribute("data-company");
+					var row = items.find(function (c) {
+						return c.id === cid;
+					});
+					if (!row) return;
+					var contacts = (row.contacts || []).filter(function (ct) {
+						return ct.email;
+					});
+					if (contacts.length) {
+						contacts.forEach(function (ct) {
+							addBidder({
+								company_id: row.id,
+								contact_id: ct.id,
+								email: ct.email,
+								label: (ct.name || row.name) + " · " + row.name,
+								company_edit_url: row.company_edit_url,
+							});
+						});
+					} else {
+						addBidder({
+							company_id: row.id,
+							email: row.email || "",
+							label: row.name,
+							company_edit_url: row.company_edit_url,
+						});
+					}
+				});
+			});
+		});
+	}
+
+	function preview() {
+		return saveDraft().then(function () {
+			return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/email-preview").then(function (d) {
+				var rec = $("usis-rfp-preview-recipients");
+				if (rec) {
+					var list = (d.recipients || []).concat(
+						selectedBidders().map(function (b) {
+							return { email: b.email, vendor_label: b.label, ready: !!b.email, error: b.missing_email ? "Add email on the vendor record." : null, company_edit_url: b.company_edit_url };
+						})
+					);
+					if (!list.length) rec.innerHTML = '<p class="text-muted">No recipients yet.</p>';
+					else
+						rec.innerHTML = list
+							.map(function (r) {
+								return (
+									"<div class='mb-1'>" +
+									esc(r.vendor_label) +
+									" — " +
+									esc(r.email || "no email") +
+									(r.token_last4 ? " · token …" + esc(r.token_last4) : "") +
+									(r.ready ? "" : " <span class='text-danger'>" + esc(r.error || "blocked") + "</span>") +
+									(r.company_edit_url && !r.ready ? " <a href='" + esc(r.company_edit_url) + "'>Open company</a>" : "") +
+									"</div>"
+								);
+							})
+							.join("");
+				}
+				var msg = $("usis-rfp-preview-msg");
+				if (msg) {
+					msg.textContent =
+						"From: " +
+						(d.from_header || d.from) +
+						"\nReply-To: " +
+						(d.reply_to || "") +
+						"\nBCC: " +
+						(d.bcc || "—") +
+						"\nSubject: " +
+						(d.subject || "") +
+						"\n\n" +
+						(d.text || "");
+				}
+				if ((d.errors || []).length) flash(d.errors.join(" "), "error");
+				else if ((d.warnings || []).length) flash(d.warnings.join(" "), "warn");
+				var body = $("usis-rfp-email-body");
+				if (body) body.textContent = (d.subject ? d.subject + "\n\n" : "") + (d.text || d.html || "");
+				return d;
+			});
+		});
+	}
+
+	function sendInvites(selectedOnly) {
+		var bidders = selectedOnly ? selectedBidders() : state.bidders.filter(function (b) {
+			return b.email;
+		});
+		if (!bidders.length) {
+			flash("Add at least one vendor with an email address.", "error");
+			return;
+		}
+		var blocked = state.bidders.filter(function (b) {
+			return b.missing_email;
+		});
+		if (blocked.length && !selectedOnly) {
+			flash("Some vendors have no email. Add it on the company record.", "error");
+		}
+		var btn = $("usis-rfp-send");
+		if (btn) btn.disabled = true;
+		saveDraft()
+			.then(function () {
+				return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/send", {
+					method: "POST",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					body: JSON.stringify({
+						bidders: bidders.map(function (b) {
+							return {
+								company_id: b.company_id,
+								contact_id: b.contact_id,
+								email: b.email,
+								vendor_label: b.label,
+							};
+						}),
+						cc_estimator: !!(($("usis-rfp-cc-estimator") || {}).checked),
+					}),
+				});
+			})
+			.then(function (d) {
+				var sends = d.sends || [];
+				var dry = sends.some(function (s) {
+					return s.dry_run;
+				});
+				var failed = sends.filter(function (s) {
+					return !s.ok;
+				});
+				state.rfp = d.item || state.rfp;
+				renderHeader(state.rfp);
+				renderQuotes(state.rfp);
+				if (failed.length) {
+					flash("Some invitations failed: " + failed.map(function (s) { return s.error; }).join("; "), "error");
+				} else if (dry) {
+					flash("Invitations recorded (email dry-run — Graph is not sending yet).", "success");
+				} else {
+					flash("Invitations sent from quotes@gousis.com.", "success");
+				}
+			})
+			.catch(function (err) {
+				flash(err.message || String(err), "error");
+			})
+			.finally(function () {
+				if (btn) btn.disabled = false;
+			});
+	}
+
+	function syncMailbox() {
+		var btn = $("usis-rfp-sync");
+		if (btn) btn.disabled = true;
+		fetchJson("/api/v1/rfps/mailbox/sync", { method: "POST", headers: { Accept: "application/json" } })
+			.then(function (d) {
+				var item = d.item || {};
+				flash(
+					"Synced " +
+						(item.mailbox || "quotes@gousis.com") +
+						": " +
+						(item.updated || 0) +
+						" updated, " +
+						(item.created || 0) +
+						" new, " +
+						(item.unmatched || 0) +
+						" unmatched.",
+					"success"
+				);
+				return load();
+			})
+			.catch(function (err) {
+				flash(err.message || String(err), "error");
+			})
+			.finally(function () {
+				if (btn) btn.disabled = false;
+			});
+	}
+
+	document.addEventListener("DOMContentLoaded", function () {
+		state.id = new URLSearchParams(window.location.search).get("id");
+		if (!state.id) {
+			flash("Missing ?id= rfp uuid", "error");
+			return;
+		}
+		load().catch(function (err) {
+			flash(err.message || String(err), "error");
+		});
+		document.querySelectorAll("input[name='usis-rfp-source']").forEach(function (el) {
+			el.addEventListener("change", function () {
+				applySourceUi();
+				if (el.value === "takeoff") loadTakeoff();
+				saveDraft();
+			});
+		});
+		var search = $("usis-rfp-vendor-search");
+		if (search) {
+			search.addEventListener("input", function () {
+				clearTimeout(state.searchTimer);
+				state.searchTimer = setTimeout(function () {
+					searchVendors(search.value.trim());
+				}, 250);
+			});
+			searchVendors("");
+		}
+		var send = $("usis-rfp-send");
+		if (send) send.addEventListener("click", function () {
+			sendInvites(false);
+		});
+		var sendSel = $("usis-rfp-send-selected");
+		if (sendSel) sendSel.addEventListener("click", function () {
+			sendInvites(true);
+		});
+		var sync = $("usis-rfp-sync");
+		if (sync) sync.addEventListener("click", syncMailbox);
+		[$("usis-rfp-save"), $("usis-rfp-save-2")].forEach(function (btn) {
+			if (btn) btn.addEventListener("click", saveDraft);
+		});
+		var addLine = $("usis-rfp-add-line");
+		if (addLine) {
+			addLine.addEventListener("click", function () {
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/line-items", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ description: "New item", quantity: 1, unit: "EA" }),
+				}).then(load);
+			});
+		}
+		var est = $("usis-rfp-estimate");
+		if (est) est.addEventListener("change", function () {
+			loadTakeoff(est.value);
+		});
+		var filter = $("usis-rfp-trade-filter");
+		if (filter) filter.addEventListener("input", renderTakeoff);
+		var all = $("usis-rfp-takeoff-all");
+		if (all) {
+			all.addEventListener("change", function () {
+				document.querySelectorAll("[data-tl]").forEach(function (cb) {
+					cb.checked = all.checked;
+				});
+			});
+		}
+		var rem = $("usis-rfp-select-remaining");
+		if (rem) {
+			rem.addEventListener("click", function () {
+				document.querySelectorAll("[data-tl]").forEach(function (cb) {
+					cb.checked = cb.getAttribute("data-remaining") === "1";
+				});
+			});
+		}
+		var attach = $("usis-rfp-attach");
+		if (attach) {
+			attach.addEventListener("click", function () {
+				var ids = [];
+				document.querySelectorAll("[data-tl]:checked").forEach(function (cb) {
+					ids.push(cb.getAttribute("data-tl"));
+				});
+				var eid = ($("usis-rfp-estimate") || {}).value;
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/attach-takeoff", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ estimate_id: eid, takeoff_line_ids: ids }),
+				}).then(function (d) {
+					var a = d.attach || {};
+					var banner = $("usis-rfp-takeoff-banner");
+					if (banner) {
+						banner.classList.remove("d-none");
+						banner.textContent =
+							(a.attached || 0) +
+							" lines attached from Estimate " +
+							(a.estimate_name || "") +
+							". Internal pricing is not sent to vendors.";
+					}
+					return load();
+				});
+			});
+		}
+		var refresh = $("usis-rfp-refresh-takeoff");
+		if (refresh) {
+			refresh.addEventListener("click", function () {
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/refresh-takeoff", { method: "POST" }).then(load);
+			});
+		}
+		var arch = $("usis-rfp-draw-arch");
+		if (arch) {
+			arch.addEventListener("click", function () {
+				(state.drawCandidates || []).forEach(function (d, i) {
+					var disc = (d.discipline || "").toLowerCase();
+					var title = (d.sheet_title || "").toLowerCase();
+					var hit = /arch|finish|interior|a\d|a-/.test(disc + " " + title);
+					var box = document.querySelector("[data-draw='" + i + "']");
+					if (box && hit) box.checked = true;
+				});
+			});
+		}
+		var previewBtn = $("usis-rfp-email-preview");
+		if (previewBtn) {
+			previewBtn.addEventListener("click", function (ev) {
+				ev.preventDefault();
+				preview().then(function () {
+					var modalEl = $("usis-rfp-email-modal");
+					if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+						window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+					}
+				});
+			});
+		}
+		var clone = $("usis-rfp-clone");
+		if (clone) {
+			clone.addEventListener("click", function () {
+				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/clone", { method: "POST" }).then(function (d) {
+					var nid = d.item && d.item.id;
+					if (nid) window.location.href = "usis-rfp-detail.html?id=" + encodeURIComponent(nid);
+				});
+			});
+		}
+	});
+})();

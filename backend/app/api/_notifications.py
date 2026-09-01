@@ -329,6 +329,28 @@ def _serialize_attachment_meta(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def search_mailbox_messages(*, mailbox: str, query: str, top: int = 25) -> dict[str, Any]:
+    """Search a mailbox with Graph ``$search`` (KQL). Best-effort; caller handles errors."""
+    q = (query or "").strip()
+    if not q:
+        return {"mailbox": mailbox, "query": q, "items": []}
+    n = max(1, min(int(top or 25), 50))
+    safe = q.replace('"', " ").strip()
+    url = _user_mail_url(mailbox, "messages")
+    params = {
+        "$search": f'"{safe}"',
+        "$top": str(n),
+        "$select": _MAIL_LIST_SELECT,
+    }
+    payload = _graph_http("GET", url, params=params, headers={"ConsistencyLevel": "eventual"}) or {}
+    items = payload.get("value") or []
+    return {
+        "mailbox": mailbox,
+        "query": q,
+        "items": [_serialize_message_summary(x) for x in items if isinstance(x, dict)],
+    }
+
+
 def list_mailbox_messages(*, mailbox: str, folder: str, top: int = 50) -> dict[str, Any]:
     """List inbox or sent items for ``mailbox`` (must be the signed-in user)."""
     key = (folder or "inbox").strip().lower()
@@ -425,6 +447,35 @@ def graph_error_http(exc: GraphMailError) -> tuple[dict[str, object], int]:
     return {"ok": False, "error": str(exc)}, 502 if status >= 500 else status
 
 
+def _norm_addr_list(value: str | list[str] | tuple[str, ...] | None) -> list[str]:
+    if not value:
+        return []
+    if isinstance(value, str):
+        return [s.strip() for s in value.split(",") if s.strip() and "@" in s]
+    return [str(s).strip() for s in value if str(s).strip() and "@" in str(s)]
+
+
+def _graph_file_attachments(attachments: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for att in attachments or []:
+        raw = att.get("content") if isinstance(att, dict) else None
+        if raw is None and isinstance(att, dict):
+            raw = att.get("data")
+        if not isinstance(raw, (bytes, bytearray)):
+            continue
+        name = str((att.get("name") if isinstance(att, dict) else None) or "file.pdf")[:200]
+        ctype = str((att.get("content_type") if isinstance(att, dict) else None) or "application/pdf")
+        out.append(
+            {
+                "@odata.type": "#microsoft.graph.fileAttachment",
+                "name": name,
+                "contentType": ctype,
+                "contentBytes": base64.b64encode(bytes(raw)).decode("ascii"),
+            }
+        )
+    return out
+
+
 def _send_via_graph(
     *,
     subject: str,
@@ -432,6 +483,11 @@ def _send_via_graph(
     to: str,
     html_body: str | None = None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
+    bcc: str | list[str] | None = None,
+    cc: str | list[str] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+    from_name: str | None = None,
 ) -> None:
     import httpx
 
@@ -441,14 +497,26 @@ def _send_via_graph(
     token = _graph_access_token()
     content_type = "HTML" if html_body else "Text"
     content = html_body if html_body else body
-    payload = {
-        "message": {
-            "subject": subject,
-            "body": {"contentType": content_type, "content": content or ""},
-            "toRecipients": [{"emailAddress": {"address": to}}],
-        },
-        "saveToSentItems": True,
+    message: dict[str, Any] = {
+        "subject": subject,
+        "body": {"contentType": content_type, "content": content or ""},
+        "toRecipients": [{"emailAddress": {"address": to}}],
     }
+    if from_name:
+        message["from"] = {"emailAddress": {"address": sender, "name": from_name[:120]}}
+    reply = (reply_to or "").strip()
+    if reply:
+        message["replyTo"] = [{"emailAddress": {"address": reply}}]
+    bcc_addrs = _norm_addr_list(bcc)
+    if bcc_addrs:
+        message["bccRecipients"] = [{"emailAddress": {"address": a}} for a in bcc_addrs]
+    cc_addrs = _norm_addr_list(cc)
+    if cc_addrs:
+        message["ccRecipients"] = [{"emailAddress": {"address": a}} for a in cc_addrs]
+    files = _graph_file_attachments(attachments)
+    if files:
+        message["attachments"] = files
+    payload = {"message": message, "saveToSentItems": True}
     encoded = urllib.parse.quote(sender)
     url = f"https://graph.microsoft.com/v1.0/users/{encoded}/sendMail"
     with httpx.Client(timeout=30.0) as client:
@@ -468,13 +536,28 @@ def _deliver_email(
     to: str,
     html_body: str | None = None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
+    bcc: str | list[str] | None = None,
+    cc: str | list[str] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+    from_name: str | None = None,
 ) -> None:
+    kwargs = dict(
+        subject=subject,
+        body=body,
+        to=to,
+        html_body=html_body,
+        from_addr=from_addr,
+        reply_to=reply_to,
+        bcc=bcc,
+        cc=cc,
+        attachments=attachments,
+        from_name=from_name,
+    )
     if _graph_configured():
-        _send_via_graph(
-            subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr
-        )
+        _send_via_graph(**kwargs)
         return
-    _send_via_smtplib(subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr)
+    _send_via_smtplib(**kwargs)
 
 
 def _send_via_smtplib(
@@ -484,9 +567,15 @@ def _send_via_smtplib(
     to: str,
     html_body: str | None = None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
+    bcc: str | list[str] | None = None,
+    cc: str | list[str] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+    from_name: str | None = None,
 ) -> None:  # pragma: no cover - I/O
     import smtplib
     from email.message import EmailMessage
+    from email.utils import formataddr
 
     host = os.environ.get("MAIL_SERVER", "localhost")
     port = int(os.environ.get("MAIL_PORT") or "587")
@@ -497,11 +586,34 @@ def _send_via_smtplib(
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = sender
+    msg["From"] = formataddr(((from_name or "").strip(), sender)) if (from_name or "").strip() else sender
     msg["To"] = to
+    cc_addrs = _norm_addr_list(cc)
+    if cc_addrs:
+        msg["Cc"] = ", ".join(cc_addrs)
+    bcc_addrs = _norm_addr_list(bcc)
+    if bcc_addrs:
+        msg["Bcc"] = ", ".join(bcc_addrs)
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg.set_content(body)
     if html_body:
         msg.add_alternative(html_body, subtype="html")
+    for att in attachments or []:
+        raw = att.get("content") if isinstance(att, dict) else None
+        if raw is None and isinstance(att, dict):
+            raw = att.get("data")
+        if not isinstance(raw, (bytes, bytearray)):
+            continue
+        name = str((att.get("name") if isinstance(att, dict) else None) or "file.pdf")
+        ctype = str((att.get("content_type") if isinstance(att, dict) else None) or "application/pdf")
+        maintype, _, subtype = ctype.partition("/")
+        msg.add_attachment(
+            bytes(raw),
+            maintype=maintype or "application",
+            subtype=subtype or "octet-stream",
+            filename=name,
+        )
 
     with smtplib.SMTP(host, port, timeout=30) as s:
         if use_tls:
@@ -535,6 +647,11 @@ def send_html_notification_email(
     body: str,
     html_body: str | None,
     from_addr: str | None = None,
+    reply_to: str | None = None,
+    bcc: str | list[str] | None = None,
+    cc: str | list[str] | None = None,
+    attachments: list[dict[str, Any]] | None = None,
+    from_name: str | None = None,
 ) -> dict[str, object]:
     """Best-effort synchronous send with optional HTML alternative body."""
     if not to:
@@ -545,7 +662,16 @@ def send_html_notification_email(
 
     try:
         _deliver_email(
-            subject=subject, body=body, to=to, html_body=html_body, from_addr=from_addr
+            subject=subject,
+            body=body,
+            to=to,
+            html_body=html_body,
+            from_addr=from_addr,
+            reply_to=reply_to,
+            bcc=bcc,
+            cc=cc,
+            attachments=attachments,
+            from_name=from_name,
         )
         return {"sent": True, "dry_run": False, "error": None}
     except Exception as exc:  # pragma: no cover - I/O

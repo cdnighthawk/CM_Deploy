@@ -22,7 +22,17 @@ from ..models import (
     RfpLineItem,
     TakeoffLineItem,
 )
-from ._rfi_service import _parse_dt
+from ._perms import current_user
+from ._rfi_service import ApiError, _parse_dt
+from ._rfp_quotes_service import (
+    mailbox_ready,
+    new_mail_tag,
+    quotes_mailbox,
+    serialize_rfp,
+    send_invitations,
+    send_preview,
+    sync_quotes_mailbox,
+)
 from .v1 import (
     _apply_takeoff_payload,
     _decimal_from_json,
@@ -600,12 +610,16 @@ def register_extra_routes(bp: Blueprint) -> None:
                 "status": r.status,
                 "due_at": _iso(r.due_at),
                 "public_token": r.public_token,
+                "line_source": r.line_source or "manual",
+                "project_id": str(r.project_id) if r.project_id else None,
             }
 
         return _jsonify({"items": [pub(x) for x in rows], "entity": "rfps"})
 
     @bp.post("/rfps")
     def create_rfp():
+        from ._rfp_body_service import attach_takeoff, default_line_source
+
         data = request.get_json(silent=True)
         if not isinstance(data, Mapping):
             return _jsonify({"error": "expected JSON object body"}), 400
@@ -613,15 +627,69 @@ def register_extra_routes(bp: Blueprint) -> None:
         pj_id = _parse_uuid_param(str(data.get("project_id") or "").strip())
         title = str(data.get("title") or "RFP")[:500]
         token = secrets.token_urlsafe(32)[:64]
-        r = Rfp(lead_estimate_id=le_id, project_id=pj_id, title=title, public_token=token, status="Draft")
+        source = str(data.get("line_source") or "").strip().lower()
+        if source not in ("takeoff", "manual", "narrative"):
+            source = default_line_source(pj_id, le_id)
+        est_id = _parse_uuid_param(str(data.get("estimate_id") or data.get("source_estimate_id") or "").strip())
+        remaining = bool(data.get("remaining") or data.get("remaining_scopes"))
+        if remaining:
+            source = "takeoff"
+        r = Rfp(
+            lead_estimate_id=le_id,
+            project_id=pj_id,
+            title=title,
+            public_token=token,
+            mail_tag=new_mail_tag(),
+            status="Draft",
+            line_source=source,
+            source_estimate_id=est_id,
+            show_line_table=source != "narrative",
+            scope_of_work=(str(data.get("scope_of_work") or "").strip() or None),
+            inclusions=(str(data.get("inclusions") or "").strip() or None),
+            exclusions=(str(data.get("exclusions") or "").strip() or None),
+            clarifications=(str(data.get("clarifications") or "").strip() or None),
+            due_at=_parse_dt(data.get("due_at")),
+        )
         db.session.add(r)
         db.session.flush()
         if le_id:
             le = db.session.get(LeadEstimate, le_id)
             if le is not None:
                 le.primary_rfp_id = r.id
+        if remaining and est_id:
+            attach_takeoff(r, {"estimate_id": str(est_id), "remaining": True})
+        elif isinstance(data.get("takeoff_line_ids"), list) and est_id:
+            attach_takeoff(r, {"estimate_id": str(est_id), "takeoff_line_ids": data.get("takeoff_line_ids")})
         db.session.commit()
-        return _jsonify({"item": {"id": str(r.id), "public_token": r.public_token}, "entity": "rfp"}), 201
+        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"}), 201
+
+    @bp.get("/rfps/mailbox")
+    def rfp_mailbox_status():
+        return _jsonify(
+            {
+                "entity": "rfp_mailbox",
+                "item": {"mailbox": quotes_mailbox(), "graph_configured": mailbox_ready()},
+            }
+        )
+
+    @bp.post("/rfps/mailbox/sync")
+    def rfp_mailbox_sync():
+        from flask import current_app
+
+        from ._integration_bc import cron_secret_matches
+
+        cu = current_user()
+        if cu.user is None and not cron_secret_matches(request, current_app):
+            return _jsonify({"error": "authentication required"}), 401
+        try:
+            top = int(request.args.get("top") or 50)
+        except (TypeError, ValueError):
+            top = 50
+        try:
+            item = sync_quotes_mailbox(top=top, actor_user_id=cu.id)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"entity": "rfp_mailbox_sync", "item": item})
 
     @bp.get("/rfps/<rfp_id>")
     def get_rfp(rfp_id: str):
@@ -631,30 +699,7 @@ def register_extra_routes(bp: Blueprint) -> None:
         r = db.session.get(Rfp, rid)
         if r is None:
             return _jsonify({"error": "rfp not found"}), 404
-        lines = db.session.scalars(
-            select(RfpLineItem).where(RfpLineItem.rfp_id == rid).order_by(RfpLineItem.sort_order)
-        ).all()
-        return _jsonify(
-            {
-                "item": {
-                    "id": str(r.id),
-                    "title": r.title,
-                    "status": r.status,
-                    "due_at": _iso(r.due_at),
-                    "public_token": r.public_token,
-                    "line_items": [
-                        {
-                            "id": str(x.id),
-                            "description": x.description,
-                            "quantity": float(x.quantity),
-                            "unit": x.unit,
-                        }
-                        for x in lines
-                    ],
-                },
-                "entity": "rfp",
-            }
-        )
+        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
 
     @bp.get("/rfps/<rfp_id>/email-preview")
     def rfp_email_preview(rfp_id: str):
@@ -664,5 +709,226 @@ def register_extra_routes(bp: Blueprint) -> None:
         r = db.session.get(Rfp, rid)
         if r is None:
             return _jsonify({"error": "rfp not found"}), 404
-        html = f"<html><body><h2>{r.title}</h2><p>Vendor portal: /public/rfp/{r.public_token}</p></body></html>"
-        return _jsonify({"html": html, "entity": "rfp_email_preview"})
+        data = request.get_json(silent=True) if request.is_json else None
+        if not isinstance(data, Mapping):
+            data = {k: request.args.get(k) for k in request.args}
+        return _jsonify(send_preview(r, data if isinstance(data, Mapping) else {}))
+
+    @bp.post("/rfps/<rfp_id>/send")
+    def rfp_send(rfp_id: str):
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        try:
+            return _jsonify(
+                send_invitations(
+                    rid,
+                    data if isinstance(data, Mapping) else {},
+                    user_id=current_user().id,
+                )
+            )
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.patch("/rfps/<rfp_id>")
+    def patch_rfp(rfp_id: str):
+        from ._rfp_body_service import load_rfp, patch_rfp as apply_patch
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            r = apply_patch(load_rfp(rid), data, confirm_source=bool(data.get("confirm")))
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
+
+    @bp.post("/rfps/<rfp_id>/line-items")
+    def add_rfp_line(rfp_id: str):
+        from ._rfp_body_service import load_rfp, serialize_line, upsert_line
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            row = upsert_line(load_rfp(rid), data)
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_line(row), "entity": "rfp_line_item"}), 201
+
+    @bp.patch("/rfps/<rfp_id>/line-items/<line_id>")
+    def patch_rfp_line(rfp_id: str, line_id: str):
+        from ._rfp_body_service import load_rfp, serialize_line, upsert_line
+
+        rid = _parse_uuid_param(rfp_id)
+        lid = _parse_uuid_param(line_id)
+        if not rid or not lid:
+            return _jsonify({"error": "invalid id"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            row = upsert_line(load_rfp(rid), data, lid)
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_line(row), "entity": "rfp_line_item"})
+
+    @bp.delete("/rfps/<rfp_id>/line-items/<line_id>")
+    def delete_rfp_line(rfp_id: str, line_id: str):
+        from ._rfp_body_service import delete_line, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        lid = _parse_uuid_param(line_id)
+        if not rid or not lid:
+            return _jsonify({"error": "invalid id"}), 400
+        try:
+            delete_line(load_rfp(rid), lid)
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"ok": True, "entity": "rfp_line_item"})
+
+    @bp.get("/rfps/<rfp_id>/takeoff-candidates")
+    def rfp_takeoff_candidates(rfp_id: str):
+        from ._rfp_body_service import list_takeoff_candidates, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        eid = _parse_uuid_param((request.args.get("estimate_id") or "").strip())
+        try:
+            item = list_takeoff_candidates(load_rfp(rid), eid)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": item, "entity": "rfp_takeoff_candidates"})
+
+    @bp.post("/rfps/<rfp_id>/attach-takeoff")
+    def rfp_attach_takeoff(rfp_id: str):
+        from ._rfp_body_service import attach_takeoff, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            r = load_rfp(rid)
+            result = attach_takeoff(r, data)
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_rfp(r), "attach": result, "entity": "rfp"})
+
+    @bp.post("/rfps/<rfp_id>/refresh-takeoff")
+    def rfp_refresh_takeoff(rfp_id: str):
+        from ._rfp_body_service import load_rfp, refresh_takeoff
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        try:
+            r = load_rfp(rid)
+            result = refresh_takeoff(r)
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_rfp(r), "refresh": result, "entity": "rfp"})
+
+    @bp.get("/rfps/<rfp_id>/drawing-candidates")
+    def rfp_drawing_candidates(rfp_id: str):
+        from ._rfp_body_service import list_drawing_candidates, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        try:
+            item = list_drawing_candidates(load_rfp(rid))
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": item, "entity": "rfp_drawing_candidates"})
+
+    @bp.put("/rfps/<rfp_id>/drawings")
+    def rfp_put_drawings(rfp_id: str):
+        from ._rfp_body_service import load_rfp, replace_drawings
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            r = load_rfp(rid)
+            replace_drawings(r, data)
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
+
+    @bp.get("/rfps/<rfp_id>/vendors")
+    def rfp_vendors(rfp_id: str):
+        from ._rfp_body_service import load_rfp, vendor_directory
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        try:
+            r = load_rfp(rid)
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        q = (request.args.get("q") or "").strip()
+        trade = (request.args.get("trade") or "").strip()
+        return _jsonify({"items": vendor_directory(r, q=q, trade=trade), "entity": "rfp_vendors"})
+
+    @bp.get("/rfps/<rfp_id>/compare")
+    def rfp_compare(rfp_id: str):
+        from ._rfp_body_service import compare_table, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        try:
+            item = compare_table(load_rfp(rid))
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": item, "entity": "rfp_compare"})
+
+    @bp.post("/rfps/<rfp_id>/award")
+    def rfp_award(rfp_id: str):
+        from ._rfp_body_service import award_rfp, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            return _jsonify(award_rfp(load_rfp(rid), data, user_id=current_user().id))
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+
+    @bp.post("/rfps/<rfp_id>/clone")
+    def rfp_clone(rfp_id: str):
+        from ._rfp_body_service import clone_rfp, load_rfp
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        try:
+            clone = clone_rfp(load_rfp(rid))
+            db.session.commit()
+        except ApiError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_rfp(clone), "entity": "rfp"}), 201

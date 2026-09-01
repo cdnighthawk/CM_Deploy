@@ -668,6 +668,7 @@
 			'<button type="button" class="btn btn-sm btn-outline-secondary d-md-none" id="usis-est-takeoff-sort-filter">' +
 			'<i class="fa fa-filter me-1"></i> Sort &amp; Filter</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-est-takeoff-reset-view">Reset view</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-est-takeoff-rfp">Create RFP for remaining scopes</button>' +
 			'<button type="button" class="btn btn-sm usis-ai-review" id="usis-est-takeoff-firstpass">Run first-pass takeoff</button>' +
 			'<button type="button" class="btn btn-sm btn-primary" id="usis-est-takeoff-add">Add line</button></div></div>' +
 			'<p class="small mb-2" id="usis-est-takeoff-stepper"></p>' +
@@ -780,6 +781,39 @@
 					})
 					.then(function () {
 						firstPass.disabled = false;
+					});
+			});
+		}
+
+		var rfpBtn = document.getElementById("usis-est-takeoff-rfp");
+		if (rfpBtn) {
+			rfpBtn.addEventListener("click", function () {
+				var body = {
+					estimate_id: estimateKey,
+					remaining_scopes: true,
+					line_source: "takeoff",
+					title: "Remaining scopes",
+				};
+				if (projectId) body.project_id = projectId;
+				if (parentLeadKey) body.lead_estimate_id = parentLeadKey;
+				fetch(apiBase() + "/api/v1/rfps", {
+					method: "POST",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
+					body: JSON.stringify(body),
+				})
+					.then(function (res) {
+						return res.json().then(function (j) {
+							if (!res.ok) throw new Error(j.error || res.statusText);
+							return j;
+						});
+					})
+					.then(function (d) {
+						var nid = d.item && d.item.id;
+						if (nid) window.location.href = "../usis-rfp-detail.html?id=" + encodeURIComponent(nid);
+					})
+					.catch(function (e) {
+						notifyErr(e.message || e);
 					});
 			});
 		}

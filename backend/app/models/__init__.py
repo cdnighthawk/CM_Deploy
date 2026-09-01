@@ -110,7 +110,7 @@ from .rfi import (
     RfiSavedView,
 )
 from .rfi_lookups import CostCode, Location, ProjectStage, SpecSection, SubJob
-from .rfp import Rfp, RfpLineItem, RfpVendorQuote
+from .rfp import Rfp, RfpDrawing, RfpLineItem, RfpVendorQuote
 from .safety import DailyPretask
 from .safety_profile import CompanySafetyProfile, ProjectSafetyPacket, ProjectSafetyProfile
 from .safety_training import SafetyTrainingRecord
@@ -252,6 +252,7 @@ __all__ = [
     "ProjectScheduleItem",
     "ProjectStage",
     "Rfp",
+    "RfpDrawing",
     "RfpLineItem",
     "RfpVendorQuote",
     "SavedListFilter",

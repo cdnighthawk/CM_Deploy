@@ -31,6 +31,10 @@ body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background
 .usis-public-rfp .table{font-size:.8125rem}
 .usis-chip{display:inline-flex;align-items:center;height:24px;padding:0 .55rem;border:1px solid var(--usis-line);border-radius:999px;font-size:12px;font-weight:600;color:var(--usis-muted)}
 .usis-public-rfp a{color:var(--usis-primary)}
+.usis-drop{border:1.5px dashed var(--usis-line);border-radius:10px;padding:18px 12px;text-align:center;background:#fafbfc;cursor:pointer}
+.usis-drop.is-drag{border-color:var(--usis-primary);background:#eef5f7}
+.usis-drop strong{display:block;font-size:.9rem}
+
 </style>
 """
 
@@ -103,7 +107,7 @@ def public_rfp_get(token: str):
                 f"<td>{escape(x.description)}</td>"
                 f"<td>{'' if x.quantity is None else float(x.quantity)}</td>"
                 f"<td>{escape(x.unit)}</td>"
-                f"<td><input name='price_{x.id}' class='form-control form-control-sm' type='number' step='0.01' min='0' required></td>"
+                f"<td><input name='price_{x.id}' class='form-control form-control-sm' type='number' step='0.01' min='0'></td>"
                 "</tr>"
             )
             for x in lines
@@ -111,7 +115,7 @@ def public_rfp_get(token: str):
         pricing = f"""<table class="table table-sm"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Unit price</th></tr></thead><tbody>{rows}</tbody></table>"""
     else:
         pricing = """<div class="mb-3"><label class="form-label">Lump sum</label>
-        <input name="lump_sum_amount" class="form-control form-control-sm" type="number" step="0.01" min="0" required></div>
+        <input name="lump_sum_amount" class="form-control form-control-sm" type="number" step="0.01" min="0"></div>
         <div class="mb-3"><label class="form-label">Your exclusions</label>
         <textarea name="vendor_exclusions" class="form-control form-control-sm" rows="2"></textarea></div>"""
     due = getattr(r, "due_at", None) or ""
@@ -127,15 +131,48 @@ def public_rfp_get(token: str):
     </header>
     <div class="wrap"><div class="card-like">
     <h1>{escape(r.title)}</h1>
-    <p class="muted mb-3">Submit a quote using the form below.</p>
+    <p class="muted mb-3">Submit a quote using the form below. You can drop a PDF quote instead of filling prices.</p>
     {_narrative_html(r)}
     {_drawings_html(r, token)}
-    <form method="post" class="mt-3"><div class="mb-3"><label class="form-label">Vendor name</label>
+    <form method="post" enctype="multipart/form-data" class="mt-3"><div class="mb-3"><label class="form-label">Vendor name</label>
     <input name="vendor_label" class="form-control form-control-sm" value="{vendor_val}" required></div>
     {pricing}
+    <div class="mb-3"><label class="form-label">Quote PDF</label>
+    <label class="usis-drop d-block mb-0" id="usis-quote-drop">
+      <input name="quote_pdf" id="usis-quote-pdf" type="file" accept="application/pdf,.pdf" class="d-none">
+      <strong>Drop your quote PDF here</strong>
+      <span class="muted" id="usis-quote-pdf-name">or click to browse · PDF only</span>
+    </label></div>
     <div class="mb-3"><label class="form-label">Notes</label><textarea name="notes" class="form-control form-control-sm" rows="3"></textarea></div>
     <button class="btn btn-primary" type="submit">Submit quote</button></form>
-    </div></div></body></html>"""
+    </div></div>
+    <script>
+    (function(){{
+      var drop = document.getElementById("usis-quote-drop");
+      var input = document.getElementById("usis-quote-pdf");
+      var label = document.getElementById("usis-quote-pdf-name");
+      if (!drop || !input) return;
+      function show(file) {{
+        if (label) label.textContent = file && file.name ? file.name : "or click to browse · PDF only";
+      }}
+      drop.addEventListener("dragover", function (ev) {{ ev.preventDefault(); drop.classList.add("is-drag"); }});
+      drop.addEventListener("dragleave", function () {{ drop.classList.remove("is-drag"); }});
+      drop.addEventListener("drop", function (ev) {{
+        ev.preventDefault();
+        drop.classList.remove("is-drag");
+        var file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+        if (!file) return;
+        var ok = /pdf$/i.test(file.name || "") || (file.type || "") === "application/pdf";
+        if (!ok) {{ if (label) label.textContent = "PDF only"; return; }}
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        show(file);
+      }});
+      input.addEventListener("change", function () {{ show(input.files && input.files[0]); }});
+    }})();
+    </script>
+    </body></html>"""
     return html
 
 
@@ -154,6 +191,8 @@ def public_rfp_post(token: str):
     for key, val in request.form.items():
         if key.startswith("price_") and val not in (None, ""):
             line_prices.append({"line_id": key[6:], "unit_price": val})
+    pdf = request.files.get("quote_pdf")
+    pdf_bytes = pdf.read() if pdf is not None and getattr(pdf, "filename", None) else None
     try:
         record_portal_quote(
             r,
@@ -163,6 +202,9 @@ def public_rfp_post(token: str):
             line_prices=line_prices or None,
             lump_sum_amount=lump,
             vendor_exclusions=exclusions,
+            pdf_filename=(pdf.filename if pdf is not None else None),
+            pdf_content_type=(pdf.mimetype if pdf is not None else None),
+            pdf_bytes=pdf_bytes or None,
         )
     except ApiError as exc:
         if exc.status == 403:

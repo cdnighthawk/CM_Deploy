@@ -4,6 +4,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from io import BytesIO
 
 import pytest
 from sqlalchemy import select
@@ -312,3 +313,82 @@ def test_remaining_scopes_create(client, no_dev_admin):
     assert item["line_source"] == "takeoff"
     assert len(item["line_items"]) == 1
     assert item["line_items"][0]["description"] == "Paint"
+
+
+_PDF = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
+
+
+def test_portal_accepts_pdf_quote_without_prices(client, no_dev_admin):
+    ctx = _staff(client)
+    item = _create_rfp(
+        client,
+        ctx,
+        title="PDF only package",
+        line_source="narrative",
+        scope_of_work="Price corridor finishes from the attached quote.",
+    )
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={"bidders": [{"company_id": ctx["vid"], "email": ctx["email"]}]},
+        headers=ctx["hdr"],
+    )
+    assert sent.status_code == 200, sent.get_data(as_text=True)
+    token = sent.get_json()["item"]["quotes"][0]["invite_token"]
+    page = client.get(f"/public/rfp/{token}")
+    assert page.status_code == 200
+    assert b'name="quote_pdf"' in page.data
+    assert b"Drop your quote PDF here" in page.data
+    posted = client.post(
+        f"/public/rfp/{token}",
+        data={
+            "vendor_label": "Quote Vendor",
+            "quote_pdf": (BytesIO(_PDF), "vendor-quote.pdf"),
+        },
+    )
+    assert posted.status_code == 200, posted.get_data(as_text=True)
+    got = client.get(f"/api/v1/rfps/{item['id']}", headers=ctx["hdr"])
+    quote = got.get_json()["item"]["quotes"][0]
+    assert quote["received_at"]
+    assert quote["lump_sum_amount"] is None
+    assert quote["attachments"]
+    assert quote["attachments"][0]["name"] == "vendor-quote.pdf"
+    file_url = quote["attachments"][0]["file_url"]
+    assert file_url
+    dl = client.get(file_url, headers=ctx["hdr"])
+    assert dl.status_code == 200, dl.get_data(as_text=True)[:400]
+    assert dl.data.startswith(b"%PDF")
+
+
+def test_staff_quote_pdf_upload_and_reject_non_pdf(client, no_dev_admin):
+    ctx = _staff(client)
+    item = _create_rfp(client, ctx, title="Staff PDF", scope_of_work="Need a vendor PDF.")
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={"bidders": [{"company_id": ctx["vid"], "email": ctx["email"]}]},
+        headers=ctx["hdr"],
+    )
+    assert sent.status_code == 200, sent.get_data(as_text=True)
+    qid = sent.get_json()["item"]["quotes"][0]["id"]
+    bad = client.post(
+        f"/api/v1/rfps/{item['id']}/quotes/{qid}/attachments",
+        data={"file": (BytesIO(b"not a pdf"), "notes.txt")},
+        headers=ctx["hdr"],
+    )
+    assert bad.status_code == 400
+    ok = client.post(
+        f"/api/v1/rfps/{item['id']}/quotes/{qid}/attachments",
+        data={"file": (BytesIO(_PDF), "quote.pdf")},
+        headers=ctx["hdr"],
+    )
+    assert ok.status_code == 201, ok.get_data(as_text=True)
+    row = ok.get_json()["item"]
+    assert row["received_at"]
+    assert row["attachments"]
+    via_vendor = client.post(
+        f"/api/v1/rfps/{item['id']}/quote-pdf",
+        data={"company_id": ctx["vid"], "file": (BytesIO(_PDF), "second.pdf")},
+        headers=ctx["hdr"],
+    )
+    assert via_vendor.status_code == 201, via_vendor.get_data(as_text=True)
+    assert len(via_vendor.get_json()["item"]["attachments"]) >= 2
+

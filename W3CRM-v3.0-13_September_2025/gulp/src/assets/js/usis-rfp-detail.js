@@ -42,6 +42,20 @@
 		);
 	}
 
+	function apiUrl(path) {
+		if (window.USIS_API && typeof window.USIS_API.buildUrl === "function" && path.indexOf("/api/") === 0) {
+			return window.USIS_API.buildUrl(path);
+		}
+		return path;
+	}
+
+	function actorHeaders() {
+		if (window.USIS_API && typeof window.USIS_API.actorHeaders === "function") {
+			return window.USIS_API.actorHeaders();
+		}
+		return {};
+	}
+
 	function flash(msg, kind) {
 		var el = $("usis-rfp-flash");
 		if (!el) return;
@@ -60,6 +74,7 @@
 	function sourceLabel(src) {
 		if (src === "email") return "Email";
 		if (src === "portal") return "Portal";
+		if (src === "upload") return "PDF";
 		return "Invited";
 	}
 
@@ -267,19 +282,158 @@
 		});
 	}
 
+	function isPdfFile(file) {
+		if (!file) return false;
+		var name = (file.name || "").toLowerCase();
+		return name.slice(-4) === ".pdf" || (file.type || "") === "application/pdf";
+	}
+
+	function fillQuoteVendorSelect(item) {
+		var sel = $("usis-rfp-quote-vendor");
+		if (!sel) return;
+		var quotes = (item && item.quotes) || [];
+		var opts = [];
+		quotes.forEach(function (q) {
+			opts.push({ value: "q:" + q.id, label: q.vendor_label || "Vendor" });
+		});
+		(state.bidders || []).forEach(function (b) {
+			if (!b.company_id) return;
+			var already = quotes.some(function (q) {
+				return q.vendor_company_id === b.company_id;
+			});
+			if (!already) opts.push({ value: "c:" + b.company_id, label: (b.label || "Vendor") + " (new)" });
+		});
+		var prev = sel.value;
+		sel.innerHTML =
+			'<option value="">' +
+			(opts.length ? "Select a vendor" : "Add a vendor first") +
+			"</option>" +
+			opts
+				.map(function (o) {
+					return "<option value='" + esc(o.value) + "'>" + esc(o.label) + "</option>";
+				})
+				.join("");
+		if (opts.length === 1) sel.value = opts[0].value;
+		else if (
+			prev &&
+			[].some.call(sel.options, function (o) {
+				return o.value === prev;
+			})
+		) {
+			sel.value = prev;
+		}
+		var closed = item && (item.status === "Awarded" || item.status === "Closed");
+		sel.disabled = !!closed;
+		var input = $("usis-rfp-quote-pdf");
+		if (input) input.disabled = !!closed;
+		var drop = $("usis-rfp-quote-drop");
+		if (drop) drop.style.opacity = closed ? "0.55" : "";
+	}
+
+	function resolveQuoteTarget() {
+		var sel = $("usis-rfp-quote-vendor");
+		var val = sel ? sel.value : "";
+		if (val.indexOf("q:") === 0) return { quoteId: val.slice(2), companyId: null };
+		if (val.indexOf("c:") === 0) return { quoteId: null, companyId: val.slice(2) };
+		return { quoteId: null, companyId: null };
+	}
+
+	function uploadQuotePdf(file, quoteId, companyId) {
+		var fd = new FormData();
+		fd.append("file", file);
+		var url;
+		if (quoteId) {
+			url = "/api/v1/rfps/" + encodeURIComponent(state.id) + "/quotes/" + encodeURIComponent(quoteId) + "/attachments";
+		} else {
+			url = "/api/v1/rfps/" + encodeURIComponent(state.id) + "/quote-pdf";
+			if (companyId) fd.append("company_id", companyId);
+		}
+		return fetch(apiUrl(url), {
+			method: "POST",
+			credentials: "include",
+			headers: actorHeaders(),
+			body: fd,
+		}).then(function (res) {
+			return res.json().then(function (j) {
+				if (!res.ok) throw new Error(j.error || res.statusText || String(res.status));
+				return j;
+			});
+		});
+	}
+
+	function handleQuotePdfFile(file) {
+		if (!isPdfFile(file)) {
+			flash("Only PDF quotes are accepted", "error");
+			return;
+		}
+		var target = resolveQuoteTarget();
+		if (!target.quoteId && !target.companyId) {
+			flash("Select a vendor for this PDF", "error");
+			return;
+		}
+		var nameEl = $("usis-rfp-quote-pdf-name");
+		if (nameEl) nameEl.textContent = "Uploading " + file.name + "…";
+		uploadQuotePdf(file, target.quoteId, target.companyId)
+			.then(function () {
+				flash("Quote PDF saved", "ok");
+				if (nameEl) nameEl.textContent = "or click to browse · PDF only, max 25 MB";
+				return load();
+			})
+			.catch(function (err) {
+				flash(err.message || String(err), "error");
+				if (nameEl) nameEl.textContent = "or click to browse · PDF only, max 25 MB";
+			});
+	}
+
+	function bindQuoteDrop() {
+		var drop = $("usis-rfp-quote-drop");
+		var input = $("usis-rfp-quote-pdf");
+		if (!drop || !input || drop.getAttribute("data-bound") === "1") return;
+		drop.setAttribute("data-bound", "1");
+		drop.addEventListener("dragover", function (ev) {
+			ev.preventDefault();
+			drop.classList.add("is-drag");
+			drop.style.borderColor = "#1F4E5F";
+			drop.style.background = "#eef5f7";
+		});
+		drop.addEventListener("dragleave", function () {
+			drop.classList.remove("is-drag");
+			drop.style.borderColor = "#E3E8EE";
+			drop.style.background = "#fafbfc";
+		});
+		drop.addEventListener("drop", function (ev) {
+			ev.preventDefault();
+			drop.classList.remove("is-drag");
+			drop.style.borderColor = "#E3E8EE";
+			drop.style.background = "#fafbfc";
+			var file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+			if (file) handleQuotePdfFile(file);
+		});
+		input.addEventListener("change", function () {
+			var file = input.files && input.files[0];
+			if (file) handleQuotePdfFile(file);
+			input.value = "";
+		});
+	}
+
 	function renderQuotes(item) {
+		fillQuoteVendorSelect(item);
 		var tb = $("usis-rfp-quotes-body");
 		if (!tb) return;
 		var quotes = item.quotes || [];
 		if (!quotes.length) {
-			tb.innerHTML = '<tr><td colspan="7" class="text-muted">No invitations or quotes yet.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted">No invitations or quotes yet. Drop a vendor PDF above after selecting a vendor.</td></tr>';
 			return;
 		}
 		tb.innerHTML = quotes
 			.map(function (q) {
 				var atts = (q.attachments || [])
 					.map(function (a) {
-						return esc(a.name || "attachment");
+						var label = esc(a.name || "quote.pdf");
+						if (a.file_url) {
+							return "<a href='" + esc(apiUrl(a.file_url)) + "' target='_blank' rel='noopener'>" + label + "</a>";
+						}
+						return label;
 					})
 					.join(", ");
 				var lump = q.lump_sum_amount != null ? " · LS $" + q.lump_sum_amount : "";
@@ -304,9 +458,12 @@
 					esc(q.notes || "") +
 					lump +
 					"</div>" +
-					(atts ? "<div class='text-muted small mt-1'>" + atts + "</div>" : "") +
+					(atts ? "<div class='small mt-1'>" + atts + "</div>" : "") +
 					"</td>" +
-					"<td>" +
+					"<td class='text-nowrap'>" +
+					"<button type='button' class='btn btn-sm btn-outline-secondary me-1' data-attach='" +
+					esc(q.id) +
+					"'>PDF</button>" +
 					(q.received_at
 						? "<button type='button' class='btn btn-sm btn-outline-primary' data-award='" +
 						  esc(q.id) +
@@ -316,6 +473,14 @@
 				);
 			})
 			.join("");
+		tb.querySelectorAll("[data-attach]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var sel = $("usis-rfp-quote-vendor");
+				if (sel) sel.value = "q:" + btn.getAttribute("data-attach");
+				var input = $("usis-rfp-quote-pdf");
+				if (input && !input.disabled) input.click();
+			});
+		});
 		tb.querySelectorAll("[data-award]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				if (!window.confirm("Award this vendor?")) return;
@@ -333,6 +498,7 @@
 	}
 
 	function renderBidders() {
+		if (state.rfp) fillQuoteVendorSelect(state.rfp);
 		var wrap = $("usis-rfp-bidder-chips");
 		if (!wrap) return;
 		if (!state.bidders.length) {
@@ -995,6 +1161,7 @@
 			flash("Missing ?id= rfp uuid", "error");
 			return;
 		}
+		bindQuoteDrop();
 		loadCostCodes().then(function () {
 			return load();
 		}).catch(function (err) {

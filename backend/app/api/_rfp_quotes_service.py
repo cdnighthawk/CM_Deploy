@@ -242,14 +242,39 @@ def _load_rfp(rfp_id: uuid.UUID) -> Rfp:
 def _resolve_bidder_email(
     company: Company | None, contact: Contact | None, explicit: str | None
 ) -> str:
-    email = (explicit or "").strip().lower()
-    if not email and contact is not None:
-        email = (contact.email or "").strip().lower()
-    if not email and company is not None:
-        email = (company.email or "").strip().lower()
-    if not email or "@" not in email:
+    saved: set[str] = set()
+    if company is not None:
+        for raw in (getattr(company, "quote_email", None), company.email):
+            val = (raw or "").strip().lower()
+            if val and "@" in val:
+                saved.add(val)
+        for ct in list(
+            db.session.scalars(select(Contact).where(Contact.company_id == company.id)).all()
+        ):
+            val = (ct.email or "").strip().lower()
+            if val and "@" in val:
+                saved.add(val)
+    if contact is not None:
+        val = (contact.email or "").strip().lower()
+        if val and "@" in val:
+            saved.add(val)
+    preferred = ""
+    if company is not None:
+        preferred = (getattr(company, "quote_email", None) or "").strip().lower()
+        if not preferred:
+            preferred = (company.email or "").strip().lower()
+    if not preferred and contact is not None:
+        preferred = (contact.email or "").strip().lower()
+    explicit_email = (explicit or "").strip().lower()
+    if explicit_email:
+        if company is not None and saved and explicit_email not in saved:
+            raise ApiError("Add email on the vendor record.")
+        if "@" not in explicit_email:
+            raise ApiError("bidder is missing an email address")
+        return explicit_email[:255]
+    if not preferred or "@" not in preferred:
         raise ApiError("bidder is missing an email address")
-    return email[:255]
+    return preferred[:255]
 
 
 def _contact_label(contact: Contact | None, company: Company | None, fallback: str) -> str:
@@ -321,7 +346,15 @@ def _prewrap_text(label: str, text: str | None) -> str:
 
 def drawing_public_url(quote: RfpVendorQuote, row_id: uuid.UUID) -> str:
     token = ensure_invite_token(quote)
-    return f"{public_app_origin()}/public/rfp/{token}/drawings/{row_id}"
+    return f"{public_app_origin()}/public/rfp/{token}/files/{row_id}/download"
+
+
+def files_page_url(quote: RfpVendorQuote, *, redact_token: bool = False) -> str:
+    token = ensure_invite_token(quote)
+    origin = public_app_origin()
+    if redact_token and token:
+        return f"{origin}/public/rfp/…{token[-4:]}/files"
+    return f"{origin}/public/rfp/{token}/files"
 
 
 def build_invite_email(
@@ -335,6 +368,8 @@ def build_invite_email(
 
     ensure_mail_tag(rfp)
     portal = invite_portal_url(quote)
+    files_url = files_page_url(quote, redact_token=False)
+    files_display = files_page_url(quote, redact_token=redact_token)
     if redact_token and quote.invite_token:
         last4 = quote.invite_token[-4:]
         portal_display = f"{public_app_origin()}/public/rfp/…{last4}"
@@ -374,35 +409,29 @@ def build_invite_email(
     drawing_rows = db.session.scalars(
         select(RfpDrawing).where(RfpDrawing.rfp_id == rfp.id).order_by(RfpDrawing.sort_order)
     ).all()
-    draw_html_parts: list[str] = []
-    draw_text_parts: list[str] = []
-    attached_ids = attached_ids or set()
+    draw_labels: list[str] = []
     for row in drawing_rows:
         meta = serialize_drawing_row(row)
         label = " · ".join(p for p in (meta.get("sheet_number"), meta.get("sheet_title") or meta.get("filename")) if p)
-        link = drawing_public_url(quote, row.id)
-        badges = []
-        if str(row.id) in attached_ids or row.delivery in ("attach", "both"):
-            if str(row.id) in attached_ids:
-                badges.append("Attached")
-            else:
-                badges.append("Link")
-        else:
-            badges.append("Link")
-        badge = " / ".join(badges)
-        draw_html_parts.append(
-            f"<li>{escape(label or 'Drawing')} — {escape(badge)} — "
-            f"<a href='{escape(link)}'>Open sheet</a></li>"
-        )
-        draw_text_parts.append(f"- {label} ({badge}): {link}")
+        if label:
+            draw_labels.append(label)
     drawings_html = ""
     drawings_text = ""
-    if draw_html_parts:
+    files_cta_html = ""
+    files_cta_text = ""
+    if draw_labels:
         drawings_html = (
-            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Drawings</h3>"
-            f"<ul>{''.join(draw_html_parts)}</ul>"
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Drawings & specifications</h3>"
+            f"<ul>{''.join(f'<li>{escape(label)}</li>' for label in draw_labels)}</ul>"
         )
-        drawings_text = "Drawings:\n" + "\n".join(draw_text_parts) + "\n\n"
+        drawings_text = "Drawings & specifications:\n" + "\n".join(f"- {label}" for label in draw_labels) + "\n\n"
+        files_cta_html = (
+            "<p style='margin:20px 0'>"
+            f"<a href='{escape(files_url if not redact_token else files_display)}' style='display:inline-block;background:#1F4E5F;color:#fff;"
+            "text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:600'>"
+            "View drawings &amp; specifications</a></p>"
+        )
+        files_cta_text = f"View drawings & specifications: {files_display}\n\n"
     due_html = f"<p>Please respond by <strong>{escape(due)}</strong>.</p>" if due else ""
     due_text = f"Please respond by {due}.\n\n" if due else ""
     narrative_html = (
@@ -425,6 +454,7 @@ def build_invite_email(
         f"{narrative_html}"
         f"{line_table_html}"
         f"{drawings_html}"
+        f"{files_cta_html}"
         f"<p style='margin-top:16px'><a href='{escape(portal)}'>Open the vendor portal to submit your quote</a></p>"
         f"<p>You may also reply to this email. Send quotes to {escape(ident['from_address'])} "
         f"and keep <code>[RFP {escape(rfp.mail_tag)}]</code> in the subject.</p>"
@@ -438,6 +468,7 @@ def build_invite_email(
         f"{narrative_text}"
         f"{line_text}"
         f"{drawings_text}"
+        f"{files_cta_text}"
         f"Vendor portal: {portal_display}\n\n"
         f"You may also reply to this email. Keep [RFP {rfp.mail_tag}] in the subject.\n"
         f"Quotes mailbox: {ident['from_address']}\n"
@@ -446,17 +477,11 @@ def build_invite_email(
 
 
 def send_preview(rfp: Rfp, data: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    from ._notifications import _graph_configured
-    from ._rfp_body_service import attachment_plan, content_ready, vendor_directory
+    from ._rfp_body_service import content_ready
 
     payload = data if isinstance(data, Mapping) else {}
     ident = mail_identity()
     ok, errors, warnings = content_ready(rfp)
-    include_att = bool(payload.get("include_attachments", True))
-    plan = attachment_plan(rfp, include_attachments=include_att, graph_limit=_graph_configured())
-    if plan.get("warning"):
-        warnings.append(plan["warning"])
-    attached_ids = {str(row.id) for row, *_ in plan["attached"]}
     quote = db.session.scalars(
         select(RfpVendorQuote).where(RfpVendorQuote.rfp_id == rfp.id).order_by(RfpVendorQuote.created_at)
     ).first()
@@ -466,7 +491,7 @@ def send_preview(rfp: Rfp, data: Mapping[str, Any] | None = None) -> dict[str, A
         invite_token=rfp.public_token,
     )
     subject, text, html = build_invite_email(
-        rfp, preview_quote, attached_ids=attached_ids, redact_token=True
+        rfp, preview_quote, redact_token=True
     )
     recipients = []
     bidders = payload.get("bidders")
@@ -513,9 +538,11 @@ def send_preview(rfp: Rfp, data: Mapping[str, Any] | None = None) -> dict[str, A
     drawings = []
     from ._rfp_body_service import serialize_drawing_row as ser_d
 
-    for row in plan["all_rows"]:
+    for row in db.session.scalars(
+        select(RfpDrawing).where(RfpDrawing.rfp_id == rfp.id).order_by(RfpDrawing.sort_order)
+    ).all():
         item = ser_d(row)
-        item["will_attach"] = str(row.id) in attached_ids
+        item["will_attach"] = False
         drawings.append(item)
     return {
         "from": ident["from_address"],
@@ -529,7 +556,8 @@ def send_preview(rfp: Rfp, data: Mapping[str, Any] | None = None) -> dict[str, A
         "due_at": _iso(rfp.due_at),
         "recipients": recipients,
         "drawings": drawings,
-        "attach_bytes": plan["attach_bytes"],
+        "files_page_cta": files_page_url(preview_quote, redact_token=True),
+        "attach_bytes": 0,
         "warnings": warnings,
         "errors": errors,
         "ready": ok and any(r.get("ready") for r in recipients),
@@ -538,8 +566,7 @@ def send_preview(rfp: Rfp, data: Mapping[str, Any] | None = None) -> dict[str, A
 
 
 def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None, *, user_id: UUID | None = None) -> dict[str, Any]:
-    from ._notifications import _graph_configured
-    from ._rfp_body_service import attachment_plan, content_ready, freeze_drawings_on_send, log_send_audit
+    from ._rfp_body_service import content_ready, freeze_drawings_on_send, log_send_audit
 
     payload = data if isinstance(data, Mapping) else {}
     rfp = _load_rfp(rfp_id)
@@ -607,23 +634,17 @@ def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None, *, user_
     freeze_drawings_on_send(rfp)
     ident = mail_identity()
     mailbox = ident["from_address"]
-    include_att = bool(payload.get("include_attachments", True))
-    if payload.get("reminder"):
-        include_att = bool(payload.get("include_attachments"))
-    plan = attachment_plan(rfp, include_attachments=include_att, graph_limit=_graph_configured())
-    attached_ids = {str(row.id) for row, *_ in plan["attached"]}
-    mail_attachments = [
-        {"name": fname, "content_type": "application/pdf", "content": data}
-        for _row, data, fname in plan["attached"]
-    ]
     cc_addr = None
     if payload.get("cc_estimator") or rfp.cc_estimator:
         cc_addr = str(payload.get("cc_email") or "").strip() or None
     now = _utcnow()
     sent_ok = False
-    drawing_ids = [str(r.id) for r in plan["all_rows"]]
+    drawing_ids = [
+        str(r.id)
+        for r in db.session.scalars(select(RfpDrawing).where(RfpDrawing.rfp_id == rfp.id)).all()
+    ]
     for quote in ready:
-        subject, text, html = build_invite_email(rfp, quote, attached_ids=attached_ids)
+        subject, text, html = build_invite_email(rfp, quote)
         result = send_html_notification_email(
             to=quote.invited_email or "",
             subject=subject,
@@ -633,7 +654,7 @@ def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None, *, user_
             reply_to=mailbox,
             bcc=ident["bcc"],
             cc=cc_addr,
-            attachments=mail_attachments or None,
+            attachments=None,
             from_name=ident["from_name"],
         )
         ok_send = bool(result.get("sent") or result.get("dry_run"))
@@ -649,7 +670,7 @@ def send_invitations(rfp_id: uuid.UUID, data: Mapping[str, Any] | None, *, user_
                 quote=quote,
                 from_email=mailbox,
                 drawing_ids=drawing_ids,
-                attach_bytes=int(plan["attach_bytes"] or 0),
+                attach_bytes=0,
                 message_id=None,
                 user_id=user_id,
             )

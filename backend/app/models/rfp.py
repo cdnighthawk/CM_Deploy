@@ -55,6 +55,10 @@ class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
     clarifications: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     show_line_table: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     cc_estimator: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    last_send_batch: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    files_zip_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    files_zip_key: Mapped[Optional[str]] = mapped_column(String(700), nullable=True)
+    files_zip_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     line_items: Mapped[List["RfpLineItem"]] = relationship(
         back_populates="rfp", cascade="all, delete-orphan", order_by="RfpLineItem.sort_order"
@@ -156,5 +160,12 @@ class RfpDrawing(UUIDPKMixin, TimestampMixin, db.Model):
     frozen_pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     frozen_checksum: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     frozen_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    b2_bucket: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    b2_key: Mapped[Optional[str]] = mapped_column(String(700), nullable=True)
+    sha256: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    byte_size: Mapped[Optional[int]] = mapped_column("bytes", Integer, nullable=True)
+    content_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    original_filename: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    send_batch: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
 
     rfp = relationship("Rfp", back_populates="drawings")

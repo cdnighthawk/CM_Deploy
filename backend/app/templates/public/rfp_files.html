@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — Drawings & specifications</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--usis-primary:#1F4E5F;--usis-bg:#F4F6F8;--usis-paper:#fff;--usis-text:#1B242C;--usis-muted:#5C6B76;--usis-line:#E3E8EE}
+    body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background:var(--usis-bg);color:var(--usis-text);margin:0}
+    .usis-public-rfp-header{background:var(--usis-paper);border-bottom:1px solid var(--usis-line);padding:12px 16px}
+    .usis-public-rfp-header strong{font-size:1.125rem}
+    .usis-public-rfp .wrap{max-width:48rem;margin:0 auto;padding:24px 16px}
+    .usis-public-rfp .card-like{background:var(--usis-paper);border:1px solid var(--usis-line);border-radius:10px;padding:16px}
+    .usis-public-rfp h1{font-size:1.375rem;font-weight:650;margin:0 0 .35rem}
+    .usis-public-rfp .muted{color:var(--usis-muted);font-size:.8125rem}
+    .usis-public-rfp .table{font-size:.8125rem}
+    .usis-chip{display:inline-flex;align-items:center;height:24px;padding:0 .55rem;border:1px solid var(--usis-line);border-radius:999px;font-size:12px;font-weight:600;color:var(--usis-muted)}
+    .usis-public-rfp a{color:var(--usis-primary)}
+    .btn-primary{background:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px}
+    .btn-outline-primary{color:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px}
+    .btn-lg{min-height:48px}
+  </style>
+</head>
+<body class="usis-public-rfp">
+  <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
+    <strong>US Interior Specialties</strong>
+    <span class="usis-chip">RFP{% if due %} · due {{ due }}{% endif %}</span>
+  </header>
+  <div class="wrap">
+    <div class="card-like">
+      <h1>{{ title }}</h1>
+      <p class="muted mb-3">
+        {% if job %}{{ job }}{% endif %}
+        {% if vendor %} · {{ vendor }}{% endif %}
+      </p>
+      {% if rows %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr><th>Sheet</th><th>Title</th><th>Rev</th><th>Size</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>{{ row.sheet }}</td>
+              <td>{{ row.title }}</td>
+              <td>{{ row.rev }}</td>
+              <td>{{ row.size }}</td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-primary" href="{{ row.download_url }}">Download</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if rows|length > 1 %}
+      <form method="post" action="{{ zip_url }}" class="mb-3">
+        <button class="btn btn-outline-primary btn-lg w-100" type="submit">Download all (.zip)</button>
+      </form>
+      {% endif %}
+      {% else %}
+      <p class="muted">No drawings or specifications were included on this request.</p>
+      {% endif %}
+      <a class="btn btn-primary btn-lg w-100" href="{{ quote_url }}">Submit quote</a>
+    </div>
+  </div>
+</body>
+</html>

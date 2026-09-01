@@ -636,13 +636,14 @@
 		if (!tb) return;
 		var items = state.drawCandidates || [];
 		if (!items.length) {
-			tb.innerHTML = '<tr><td colspan="6" class="text-muted">No sheets on this job yet.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="7" class="text-muted">No sheets on this job yet.</td></tr>';
 			return;
 		}
 		tb.innerHTML = items
 			.map(function (d, i) {
-				var id = d.drawing_id || d.document_id || i;
 				var cadNote = d.is_cad && !d.has_pdf ? " <span class='text-muted'>PDF rendition required</span>" : "";
+				var size = d.bytes ? (d.bytes > 1048576 ? (d.bytes / 1048576).toFixed(1) + " MB" : Math.round(d.bytes / 1024) + " KB") : "—";
+				var updated = d.updated_at ? String(d.updated_at).slice(0, 10) : "—";
 				return (
 					"<tr data-i='" +
 					i +
@@ -659,20 +660,11 @@
 					esc(d.discipline) +
 					"</td><td>" +
 					esc(d.revision) +
-					"</td><td><select class='form-select form-select-sm' data-deliv='" +
-					i +
-					"'>" +
-					"<option value='link'" +
-					(d.delivery === "link" ? " selected" : "") +
-					">Link</option>" +
-					"<option value='attach'" +
-					(d.delivery === "attach" ? " selected" : "") +
-					(d.is_cad && !d.has_pdf ? " disabled" : "") +
-					">Attach PDF</option>" +
-					"<option value='both'" +
-					(d.delivery === "both" ? " selected" : "") +
-					(d.is_cad && !d.has_pdf ? " disabled" : "") +
-					">Both</option></select></td></tr>"
+					"</td><td>" +
+					esc(size) +
+					"</td><td>" +
+					esc(updated) +
+					"</td></tr>"
 				);
 			})
 			.join("");
@@ -690,11 +682,10 @@
 		(state.drawCandidates || []).forEach(function (d, i) {
 			var box = document.querySelector("[data-draw='" + i + "']");
 			if (!box || !box.checked) return;
-			var del = document.querySelector("[data-deliv='" + i + "']");
 			out.push({
 				drawing_id: d.drawing_id,
 				document_id: d.document_id,
-				delivery: del ? del.value : "link",
+				delivery: "link",
 			});
 		});
 		return out;

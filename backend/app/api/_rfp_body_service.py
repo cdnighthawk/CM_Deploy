@@ -1,8 +1,6 @@
 """RFP body: narrative, takeoff attach, drawings, award, compare, freeze."""
 from __future__ import annotations
 
-import hashlib
-import io
 import secrets
 import uuid
 from datetime import datetime, timezone
@@ -27,14 +25,13 @@ from ..models import (
     RfpVendorQuote,
     TakeoffLineItem,
 )
-from ..services.object_storage import UploadCategory, read_stored_bytes, save_upload, send_stored_file
+from ..services.object_storage import UploadCategory, read_stored_bytes, send_stored_file
 from ._rfi_service import ApiError, _iso, _parse_uuid
 
 RFP_UNITS = ("SF", "LF", "SY", "EA", "LS", "HR", "GAL", "SQ")
 OPEN_RFP_STATUSES = frozenset({"Draft", "Sent", "Partial", "Received"})
-VENDOR_COMPANY_TYPES = frozenset({"vendor", "subcontractor", "other"})
+VENDOR_COMPANY_TYPES = frozenset({"vendor", "subcontractor", "supplier", "other"})
 _CAD_EXT = frozenset({".dwg", ".rvt", ".dxf", ".ifc"})
-_GRAPH_ATTACH_MAX = 2_800_000
 
 
 def _utcnow() -> datetime:
@@ -120,23 +117,35 @@ def serialize_drawing_row(row: RfpDrawing, drawing: Drawing | None = None) -> di
         filename = (d.original_filename or d.sheet_number or d.title or "drawing.pdf")[:200]
     elif doc is not None:
         filename = (doc.original_filename or doc.title or "document.pdf")[:200]
+    size = row.byte_size or row.frozen_bytes
+    if size is None and d is not None:
+        size = d.file_size_bytes
+    elif size is None and doc is not None:
+        size = doc.file_size_bytes
     return {
         "id": str(row.id),
         "drawing_id": str(row.drawing_id) if row.drawing_id else None,
         "document_id": str(row.document_id) if row.document_id else None,
-        "delivery": row.delivery,
+        "delivery": "link",
         "include_on_portal": bool(row.include_on_portal),
         "sort_order": row.sort_order,
         "frozen_pdf_path": row.frozen_pdf_path,
         "frozen_bytes": row.frozen_bytes,
+        "b2_bucket": row.b2_bucket,
+        "b2_key": row.b2_key,
+        "sha256": row.sha256,
+        "bytes": size,
+        "content_type": row.content_type,
+        "original_filename": row.original_filename or filename,
+        "send_batch": row.send_batch,
         "sheet_number": d.sheet_number if d is not None else None,
         "sheet_title": (d.sheet_title or d.title) if d is not None else (doc.title if doc else None),
         "discipline": d.discipline if d is not None else None,
         "revision": d.revision if d is not None else None,
         "updated_at": _iso(d.updated_at) if d is not None else (_iso(doc.updated_at) if doc else None),
-        "filename": filename,
+        "filename": row.original_filename or filename,
         "is_cad": _is_cad(d or doc),
-        "has_pdf": bool(row.frozen_pdf_path) or _has_pdf_rendition(d or doc),
+        "has_pdf": bool(row.b2_key or row.frozen_pdf_path) or _has_pdf_rendition(d or doc),
     }
 
 
@@ -553,21 +562,25 @@ def list_drawing_candidates(rfp: Rfp) -> dict[str, Any]:
             ).all()
         )
     docs: list[Document] = []
-    if pid and not drawings:
+    if pid:
         docs = list(
             db.session.scalars(
                 select(Document).where(
                     Document.project_id == pid,
-                    Document.document_type.in_(("specification", "other")),
+                    Document.document_type.in_(("specification", "other", "contract")),
                 )
             ).all()
         )
         docs = [
             d
             for d in docs
-            if "draw" in (d.title or "").lower()
-            or "spec" in (d.title or "").lower()
-            or (d.original_filename or "").lower().endswith(".pdf")
+            if not isinstance(d, Drawing)
+            and (
+                "draw" in (d.title or "").lower()
+                or "spec" in (d.title or "").lower()
+                or "addend" in (d.title or "").lower()
+                or (d.original_filename or "").lower().endswith(".pdf")
+            )
         ]
     referenced = {x.drawing_id for x in all_line_items(rfp) if x.drawing_id}
     selected = {
@@ -587,10 +600,11 @@ def list_drawing_candidates(rfp: Rfp) -> dict[str, Any]:
                 "revision": d.revision,
                 "updated_at": _iso(d.updated_at),
                 "filename": d.original_filename or d.title,
+                "bytes": d.file_size_bytes,
                 "is_cad": _is_cad(d),
                 "has_pdf": _has_pdf_rendition(d),
                 "prechecked": d.id in referenced or sel is not None,
-                "delivery": sel.delivery if sel is not None else "link",
+                "delivery": "link",
             }
         )
     for doc in docs:
@@ -607,10 +621,11 @@ def list_drawing_candidates(rfp: Rfp) -> dict[str, Any]:
                 "revision": None,
                 "updated_at": _iso(doc.updated_at),
                 "filename": doc.original_filename or doc.title,
+                "bytes": doc.file_size_bytes,
                 "is_cad": _is_cad(doc),
                 "has_pdf": _has_pdf_rendition(doc),
                 "prechecked": sel is not None,
-                "delivery": sel.delivery if sel is not None else "link",
+                "delivery": "link",
             }
         )
     return {"items": items, "selected": [serialize_drawing_row(r) for r in selected.values()]}
@@ -633,12 +648,7 @@ def replace_drawings(rfp: Rfp, data: Mapping[str, Any]) -> list[RfpDrawing]:
         doc_id = _parse_uuid(item.get("document_id"))
         if not did and not doc_id:
             continue
-        delivery = str(item.get("delivery") or "link").strip().lower()
-        if delivery not in ("link", "attach", "both"):
-            delivery = "link"
-        obj = db.session.get(Drawing, did) if did else db.session.get(Document, doc_id)
-        if _is_cad(obj) and delivery in ("attach", "both"):
-            delivery = "link"
+        delivery = "link"
         row = RfpDrawing(
             rfp_id=rfp.id,
             drawing_id=did,
@@ -671,100 +681,38 @@ def _drawing_pdf_bytes(drawing: Drawing | None, document: Document | None = None
 
 
 def freeze_drawings_on_send(rfp: Rfp) -> None:
-    rows = db.session.scalars(select(RfpDrawing).where(RfpDrawing.rfp_id == rfp.id)).all()
-    for row in rows:
-        if row.frozen_pdf_path:
-            continue
-        drawing = db.session.get(Drawing, row.drawing_id) if row.drawing_id else None
-        document = db.session.get(Document, row.document_id) if row.document_id else None
-        if _is_cad(drawing or document):
-            continue
-        data, _fname = _drawing_pdf_bytes(drawing, document)
-        if not data:
-            continue
-        digest = hashlib.sha256(data).hexdigest()
-        object_name = f"rfp-snapshots/{rfp.id}/{row.id}.pdf"
-        save_upload(UploadCategory.DOCUMENTS, object_name, io.BytesIO(data))
-        row.frozen_pdf_path = object_name
-        row.frozen_checksum = digest
-        row.frozen_bytes = len(data)
-    db.session.flush()
+    from ..services.rfp_b2 import snapshot_on_send
+
+    snapshot_on_send(rfp)
 
 
-def attachment_plan(rfp: Rfp, *, include_attachments: bool = True, graph_limit: bool = False) -> dict[str, Any]:
-    """Decide which sheets attach vs link, applying the size cap (largest-first drop)."""
-    from flask import current_app
-
-    max_mb = 18
-    try:
-        max_mb = int(current_app.config.get("RFP_MAIL_MAX_ATTACH_MB") or 18)
-    except (TypeError, ValueError, RuntimeError):
-        max_mb = 18
-    cap = max(1, max_mb) * 1024 * 1024
+def attachment_plan(rfp: Rfp, *, include_attachments: bool = False, graph_limit: bool = False) -> dict[str, Any]:
+    """Plan-set PDFs are never attached to SMTP. Kept for preview shape compatibility."""
     rows = list(
         db.session.scalars(
             select(RfpDrawing).where(RfpDrawing.rfp_id == rfp.id).order_by(RfpDrawing.sort_order)
         ).all()
     )
-    attach_candidates: list[tuple[RfpDrawing, bytes, str, int]] = []
-    link_only: list[RfpDrawing] = []
-    for row in rows:
-        want_attach = include_attachments and row.delivery in ("attach", "both")
-        drawing = db.session.get(Drawing, row.drawing_id) if row.drawing_id else None
-        document = db.session.get(Document, row.document_id) if row.document_id else None
-        if _is_cad(drawing or document):
-            link_only.append(row)
-            continue
-        data, fname = _drawing_pdf_bytes(drawing, document)
-        if row.frozen_pdf_path:
-            frozen = read_stored_bytes(UploadCategory.DOCUMENTS, row.frozen_pdf_path)
-            if frozen:
-                data = frozen
-        if not data or not want_attach:
-            link_only.append(row)
-            continue
-        if not (fname or "").lower().endswith(".pdf") and not (data[:5] == b"%PDF-" or data[:4] == b"%PDF"):
-            link_only.append(row)
-            continue
-        if graph_limit and len(data) > _GRAPH_ATTACH_MAX:
-            link_only.append(row)
-            continue
-        attach_candidates.append((row, data, fname if fname.lower().endswith(".pdf") else f"{fname}.pdf", len(data)))
-    attach_candidates.sort(key=lambda t: t[3], reverse=True)
-    attached: list[tuple[RfpDrawing, bytes, str]] = []
-    used = 0
-    overflow: list[RfpDrawing] = []
-    keep: list[tuple[RfpDrawing, bytes, str, int]] = []
-    for item in reversed(attach_candidates):
-        if used + item[3] <= cap:
-            keep.append(item)
-            used += item[3]
-        else:
-            overflow.append(item[0])
-    for item in keep:
-        attached.append((item[0], item[1], item[2]))
-    for row in overflow:
-        link_only.append(row)
-    warning = None
-    if overflow:
-        warning = (
-            f"{len(attached)} sheet(s) will be attached ({used / (1024 * 1024):.1f} MB). "
-            f"{len(overflow)} sheet(s) over the cap will be links only."
-        )
-    elif attached:
-        warning = f"{len(attached)} sheet(s) will be attached ({used / (1024 * 1024):.1f} MB)."
     return {
-        "attached": attached,
-        "link_rows": link_only + [r for r, *_ in attached if r.delivery in ("link", "both") or True],
+        "attached": [],
+        "link_rows": rows,
         "all_rows": rows,
-        "attach_bytes": used,
-        "warning": warning,
-        "overflow_ids": [str(r.id) for r in overflow],
+        "attach_bytes": 0,
+        "warning": None,
+        "overflow_ids": [],
     }
 
 
 def drawing_download_bytes(row: RfpDrawing) -> tuple[bytes | None, str]:
-    if row.frozen_pdf_path:
+    from ..services.object_storage import read_raw_bytes
+    from ..services.rfp_b2 import snap_key_for_row
+
+    rel = snap_key_for_row(row)
+    if rel:
+        data = read_raw_bytes(rel)
+        if data:
+            return data, row.original_filename or f"{row.id}.pdf"
+    if row.frozen_pdf_path and not rel:
         data = read_stored_bytes(UploadCategory.DOCUMENTS, row.frozen_pdf_path)
         if data:
             return data, f"{row.id}.pdf"
@@ -816,7 +764,7 @@ def vendor_directory(rfp: Rfp, *, q: str = "", trade: str = "") -> list[dict[str
                 select(Contact).where(Contact.company_id == c.id).order_by(Contact.is_primary.desc())
             ).all()
         )
-        email = (c.email or "").strip()
+        email = (getattr(c, "quote_email", None) or "").strip() or (c.email or "").strip()
         primary = next((ct for ct in contacts if ct.is_primary and (ct.email or "").strip()), None)
         if primary is not None:
             email = (primary.email or email).strip()
@@ -893,7 +841,7 @@ def clone_rfp(rfp: Rfp) -> Rfp:
                 rfp_id=clone.id,
                 drawing_id=dr.drawing_id,
                 document_id=dr.document_id,
-                delivery=dr.delivery,
+                delivery="link",
                 include_on_portal=dr.include_on_portal,
                 sort_order=dr.sort_order,
             )

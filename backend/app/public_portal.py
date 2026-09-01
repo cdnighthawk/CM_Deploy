@@ -1,15 +1,23 @@
 """Public vendor-facing RFP routes (no /api/v1 prefix)."""
 from __future__ import annotations
 
-from flask import Blueprint, Response, request
+from uuid import UUID
+
+from flask import Blueprint, redirect, render_template, request
 from markupsafe import escape
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from .api._rfi_service import ApiError
-from .api._rfp_body_service import drawing_download_bytes, rfp_closed, serialize_drawing_row, visible_line_items
+from .api._rfp_body_service import rfp_closed, serialize_drawing_row, visible_line_items
 from .api._rfp_quotes_service import record_portal_quote
 from .extensions import db
-from .models import Rfp, RfpDrawing, RfpVendorQuote
+from .models import Company, Project, Rfp, RfpDrawing, RfpVendorQuote
+from .services.rfp_b2 import (
+    authorized_download_response,
+    enqueue_zip,
+    log_download,
+    zip_download_response,
+)
 
 public_bp = Blueprint("public_portal", __name__)
 
@@ -28,6 +36,7 @@ body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background
 .usis-public-rfp .prewrap{white-space:pre-wrap}
 .usis-public-rfp .form-control,.usis-public-rfp .form-select{font-size:.8125rem;border-radius:8px}
 .usis-public-rfp .btn-primary{background:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px;width:100%}
+.usis-public-rfp .btn-outline-primary{color:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px}
 .usis-public-rfp .table{font-size:.8125rem}
 .usis-chip{display:inline-flex;align-items:center;height:24px;padding:0 .55rem;border:1px solid var(--usis-line);border-radius:999px;font-size:12px;font-weight:600;color:var(--usis-muted)}
 .usis-public-rfp a{color:var(--usis-primary)}
@@ -75,21 +84,37 @@ def _narrative_html(r: Rfp) -> str:
     return "".join(parts)
 
 
+def _invitation_blocked(r: Rfp, quote: RfpVendorQuote | None) -> bool:
+    if rfp_closed(r):
+        return True
+    if quote is not None and (quote.send_status or "").lower() in ("revoked", "cancelled", "canceled"):
+        return True
+    return False
+
+
+def _fmt_size(n: int | None) -> str:
+    if not n:
+        return "—"
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f" {n / 1024:.0f} KB".strip()
+    return f"{n / (1024 * 1024):.1f} MB"
+
+
 def _drawings_html(r: Rfp, token: str) -> str:
-    rows = db.session.scalars(
-        select(RfpDrawing)
+    n = db.session.scalar(
+        select(func.count())
+        .select_from(RfpDrawing)
         .where(RfpDrawing.rfp_id == r.id, RfpDrawing.include_on_portal.is_(True))
-        .order_by(RfpDrawing.sort_order)
-    ).all()
-    if not rows:
+    ) or 0
+    if int(n) < 1:
         return ""
-    items = []
-    for row in rows:
-        meta = serialize_drawing_row(row)
-        label = " — ".join(p for p in (meta.get("sheet_number"), meta.get("sheet_title") or meta.get("filename")) if p)
-        href = f"/public/rfp/{escape(token)}/drawings/{row.id}"
-        items.append(f"<li><a href='{href}'>{escape(label or 'Drawing')}</a> <span class='muted'>Open / download</span></li>")
-    return "<h2>Drawings</h2><ul>" + "".join(items) + "</ul>"
+    href = f"/public/rfp/{escape(token)}/files"
+    return (
+        "<p class='mt-3 mb-0'><a class='btn btn-outline-primary w-100' href='"
+        f"{href}'>Drawings &amp; specifications</a></p>"
+    )
 
 
 @public_bp.get("/public/rfp/<token>")
@@ -97,7 +122,7 @@ def public_rfp_get(token: str):
     r, quote = _rfp_by_token(token)
     if r is None:
         return "<p>RFP not found</p>", 404
-    if rfp_closed(r):
+    if _invitation_blocked(r, quote):
         return _closed_page(r)
     lines = visible_line_items(r)
     if lines:
@@ -181,7 +206,7 @@ def public_rfp_post(token: str):
     r, quote = _rfp_by_token(token)
     if r is None:
         return "<p>RFP not found</p>", 404
-    if rfp_closed(r):
+    if _invitation_blocked(r, quote):
         return _closed_page(r)
     vendor = (request.form.get("vendor_label") or "Vendor").strip()[:255]
     notes = (request.form.get("notes") or "").strip() or None
@@ -223,15 +248,63 @@ def public_rfp_post(token: str):
     )
 
 
-@public_bp.get("/public/rfp/<token>/drawings/<row_id>")
-def public_rfp_drawing(token: str, row_id: str):
-    r, _quote = _rfp_by_token(token)
+@public_bp.get("/public/rfp/<token>/files")
+def public_rfp_files(token: str):
+    r, quote = _rfp_by_token(token)
     if r is None:
         return "<p>RFP not found</p>", 404
-    if rfp_closed(r):
-        return "<p>Download is no longer available.</p>", 403
-    from uuid import UUID
+    if _invitation_blocked(r, quote):
+        html, status = _closed_page(r)
+        return html, status
+    rows_db = db.session.scalars(
+        select(RfpDrawing)
+        .where(RfpDrawing.rfp_id == r.id, RfpDrawing.include_on_portal.is_(True))
+        .order_by(RfpDrawing.sort_order)
+    ).all()
+    rows = []
+    for row in rows_db:
+        meta = serialize_drawing_row(row)
+        rows.append(
+            {
+                "sheet": meta.get("sheet_number") or "—",
+                "title": meta.get("sheet_title") or meta.get("filename") or "File",
+                "rev": meta.get("revision") or "—",
+                "size": _fmt_size(meta.get("bytes")),
+                "download_url": f"/public/rfp/{token}/files/{row.id}/download",
+            }
+        )
+    job = ""
+    if r.project_id:
+        proj = db.session.get(Project, r.project_id)
+        if proj is not None:
+            job = proj.name or ""
+    vendor = ""
+    if quote is not None:
+        vendor = quote.vendor_label or ""
+        if quote.vendor_company_id:
+            co = db.session.get(Company, quote.vendor_company_id)
+            if co is not None:
+                vendor = co.name or vendor
+    due = str(r.due_at)[:10] if r.due_at else ""
+    return render_template(
+        "public/rfp_files.html",
+        title=r.title or "RFP",
+        job=job,
+        vendor=vendor,
+        due=due,
+        rows=rows,
+        zip_url=f"/public/rfp/{token}/files/zip",
+        quote_url=f"/public/rfp/{token}",
+    )
 
+
+@public_bp.get("/public/rfp/<token>/files/<row_id>/download")
+def public_rfp_file_download(token: str, row_id: str):
+    r, quote = _rfp_by_token(token)
+    if r is None:
+        return "<p>RFP not found</p>", 404
+    if _invitation_blocked(r, quote):
+        return "<p>Download is no longer available.</p>", 403
     try:
         rid = UUID(str(row_id))
     except ValueError:
@@ -239,18 +312,49 @@ def public_rfp_drawing(token: str, row_id: str):
     row = db.session.get(RfpDrawing, rid)
     if row is None or row.rfp_id != r.id or not row.include_on_portal:
         return "<p>Drawing not found</p>", 404
-    data, fname = drawing_download_bytes(row)
-    if not data:
-        return "<p>File not found</p>", 404
-    safe = (fname or "drawing.pdf").replace('"', "")
-    return Response(
-        data,
-        mimetype="application/pdf",
-        headers={
-            "Content-Length": str(len(data)),
-            "Content-Disposition": f'inline; filename="{safe}"',
-        },
+    result = authorized_download_response(row)
+    failed = isinstance(result, tuple) and len(result) == 2 and int(result[1]) >= 400
+    if not failed:
+        log_download(
+            rfp=r,
+            row=row,
+            company_id=quote.vendor_company_id if quote is not None else None,
+            bytes_count=row.byte_size or row.frozen_bytes,
+            ip=request.headers.get("X-Forwarded-For", request.remote_addr),
+        )
+    return result
+
+
+@public_bp.post("/public/rfp/<token>/files/zip")
+def public_rfp_files_zip_enqueue(token: str):
+    r, quote = _rfp_by_token(token)
+    if r is None:
+        return "<p>RFP not found</p>", 404
+    if _invitation_blocked(r, quote):
+        return "<p>Download is no longer available.</p>", 403
+    result = enqueue_zip(r)
+    if result.get("status") == "ready":
+        return redirect(f"/public/rfp/{token}/files/zip", code=302)
+    return (
+        "<p>Preparing zip… <a href='/public/rfp/"
+        f"{escape(token)}/files/zip'>Download when ready</a></p>",
+        202,
     )
+
+
+@public_bp.get("/public/rfp/<token>/files/zip")
+def public_rfp_files_zip_get(token: str):
+    r, quote = _rfp_by_token(token)
+    if r is None:
+        return "<p>RFP not found</p>", 404
+    if _invitation_blocked(r, quote):
+        return "<p>Download is no longer available.</p>", 403
+    return zip_download_response(r)
+
+
+@public_bp.get("/public/rfp/<token>/drawings/<row_id>")
+def public_rfp_drawing(token: str, row_id: str):
+    return redirect(f"/public/rfp/{token}/files/{row_id}/download", code=302)
 
 
 @public_bp.post("/api/public/submittals/<token>")

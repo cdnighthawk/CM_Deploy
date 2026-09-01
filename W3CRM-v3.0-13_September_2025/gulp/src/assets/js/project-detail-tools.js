@@ -953,6 +953,10 @@
 		if (subCreate) {
 			subCreate.setAttribute("href", "construction/submittal-create.html?project_id=" + encodeURIComponent(pid));
 		}
+		var poCreate = document.getElementById("usis-po-open-create");
+		if (poCreate) {
+			poCreate.setAttribute("href", "construction/purchase-order-create.html?project_id=" + encodeURIComponent(pid));
+		}
 		var pricing = document.getElementById("usis-pricing-open");
 		if (pricing)
 			pricing.setAttribute(

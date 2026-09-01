@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 
+	<base href="../">
+
 	<!-- Title -->
 	<title>USIS</title>
 	
@@ -37,7 +39,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/usis-all-pages-index.html">
+	<link rel="canonical" href="https://www.usiscm.com/purchase-order-create.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -56,6 +58,94 @@
 
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-po-form { max-width: 1320px; }
+		.usis-po-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.25rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-po-form .form-label .req { color: var(--usis-error, #c92a2a); margin-left: 0.15rem; }
+		.usis-po-form .text-muted { font-size: 0.78rem; }
+		.usis-po-page-title { font-size: 1.5rem; font-weight: 700; margin: 0.35rem 0 1rem; }
+		.usis-po-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 0.75rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-po-banner i { margin-top: 0.15rem; }
+		.usis-po-section {
+			background: #fff;
+			border: 1px solid var(--usis-divider, #e9ecef);
+			border-radius: 0.5rem;
+			padding: 0.7rem 1.15rem 1.15rem;
+			margin-bottom: 1rem;
+		}
+		.usis-po-section-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			width: 100%;
+			background: none;
+			border: 0;
+			padding: 0.2rem 0 0.75rem;
+			font-weight: 700;
+			font-size: 1.02rem;
+			color: inherit;
+			text-align: left;
+		}
+		.usis-po-section-toggle .usis-po-chevron {
+			width: 0.9rem;
+			font-size: 0.7rem;
+			transition: transform 0.15s ease;
+		}
+		.usis-po-section-toggle.collapsed .usis-po-chevron { transform: rotate(-90deg); }
+		.usis-po-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1rem 1.25rem;
+			align-items: start;
+		}
+		@media (max-width: 1199.98px) {
+			.usis-po-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		}
+		@media (max-width: 575.98px) {
+			.usis-po-grid { grid-template-columns: 1fr; }
+		}
+		.usis-po-field { min-width: 0; }
+		.usis-po-field--span2 { grid-column: span 2; }
+		.usis-po-field--span4 { grid-column: 1 / -1; }
+		@media (max-width: 1199.98px) {
+			.usis-po-field--span2 { grid-column: 1 / -1; }
+		}
+		.usis-po-readonly {
+			min-height: 2rem;
+			padding: 0.4rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+		}
+		.usis-po-project-card { font-size: 0.75rem; line-height: 1.4; }
+		.usis-po-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.15rem 0 1.5rem;
+		}
+		.usis-po-req-note { color: var(--usis-error, #c92a2a); font-size: 0.8rem; }
+		.usis-po-form-footer .btn { min-width: 7rem; }
+		.usis-combobox-menu { z-index: 20; max-height: 12rem; overflow: auto; }
+	</style>
 
 </head>
 <body>
@@ -445,6 +535,9 @@
 							<li>
 								<a href="usis-companies.html">Companies</a>
 							</li>
+							<li>
+								<a href="usis-cost-codes.html">Cost codes</a>
+							</li>
 							<li data-usis-module="playbooks">
 								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
 							</li>
@@ -479,7 +572,7 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="All pages (tour)">All pages (tour)</h1></li>
+						<li><h1 data-i18n="New Purchase Order">New Purchase Order</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -498,7 +591,7 @@
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="All pages (tour)">All pages (tour)</span>
+							<span data-i18n="New Purchase Order">New Purchase Order</span>
 
 						</li>
 					</ol>
@@ -507,195 +600,252 @@
 			</div>
 
 			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-0 shadow-none mb-0 bg-light">
+				<div class="card border-info shadow-none mb-0">
 					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-							<h6 class="mb-0">USIS — page index</h6>
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+							<div class="me-2">
+								<h6 class="mb-1" data-i18n="Construction — New Purchase Order">Construction — New Purchase Order</h6>
+							</div>
 							<div class="text-nowrap small">
-								<a href="user.html">Prev</a><span class="text-muted mx-1">|</span><a href="usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="usis-crm-bid-detail.html">Next</a>
+								<a href="construction/submittal-create.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="construction/project-detail.html">Next</a>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="container-fluid">
-				<div class="card mb-3 border-0 bg-light">
-					<div class="card-body py-3">
-						<h5 class="card-title mb-0">Site map</h5>
-					</div>
-				</div>
-				<h5 class="mt-2">USIS product &amp; hubs</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="usis-crm-bid-detail.html"><strong>USIS CRM Bid Detail</strong></a></li>
-					<li class="mb-2"><a href="usis-calendar.html"><strong>USIS Calendar</strong></a> <span class="text-muted small">— Procurement, project schedule, RFIs, submittals, RFPs, milestones.</span></li>
-					<li class="mb-2"><a href="usis-dashboard.html"><strong>USIS Dashboard</strong></a></li>
-					<li class="mb-2"><a href="usis-dashboard-dark.html"><strong>USIS Dark Dashboard</strong></a> <span class="text-muted small">— W3CRM dark-theme KPI layout (charts, widgets, maps).</span></li>
-					<li class="mb-2"><a href="usis-documents-hub.html"><strong>USIS Documents Hub</strong></a></li>
-					<li class="mb-2"><a href="usis-ingest.html"><strong>USIS Mass ingest</strong></a> <span class="text-muted small">— Queue a folder of drawings and documents onto a job.</span></li>
-					<li class="mb-2"><a href="usis-email.html"><strong>USIS Email</strong></a> <span class="text-muted small">— Outlook inbox, sent, and compose for the signed-in user.</span></li>
-					<li class="mb-2"><a href="usis-invoices.html"><strong>USIS Vendor invoices</strong></a> <span class="text-muted small">— invoices@gousis.com intake, job routing, payment approval.</span></li>
-					<li class="mb-2"><a href="usis-invoice-approvals.html"><strong>USIS Invoice approvals</strong></a></li>
-					<li class="mb-2"><a href="usis-invoice-detail.html"><strong>USIS Invoice detail</strong></a></li>
-					<li class="mb-2"><a href="core-hr.html"><strong>Core HR (USIS landing)</strong></a></li>
-					<li class="mb-2"><a href="apply.html"><strong>Careers — apply (public)</strong></a> <span class="text-muted small">— Entry point for candidates.</span></li>
-					<li class="mb-2"><a href="usis-hr-hire.html"><strong>USIS HR — hire wizard</strong></a></li>
-					<li class="mb-2"><a href="usis-hr-dashboard.html"><strong>USIS HR Dashboard</strong></a></li>
-					<li class="mb-2"><a href="usis-hr-employee.html"><strong>USIS HR — employee</strong></a></li>
-					<li class="mb-2"><a href="usis-hr-quickbooks-employee-reference.html"><strong>USIS HR — QuickBooks employee reference</strong></a></li>
-					<li class="mb-2"><a href="usis-hr.html"><strong>USIS HR</strong></a></li>
-					<li class="mb-2"><a href="usis-leads.html"><strong>USIS Leads</strong></a></li>
-					<li class="mb-2"><a href="usis-playbook-run.html"><strong>USIS Playbook run</strong></a></li>
-					<li class="mb-2"><a href="usis-playbooks.html"><strong>USIS Playbooks</strong></a></li>
-					<li class="mb-2"><a href="usis-workflows.html"><strong>USIS Workflows</strong></a> <span class="text-muted small">— Amendable process definitions (drawing review / takeoff first pass).</span></li>
-					<li class="mb-2"><a href="usis-user-directory.html"><strong>USIS User admin</strong></a></li>
-					<li class="mb-2"><a href="usis-rfp-compare.html"><strong>USIS Rfp Compare</strong></a></li>
-					<li class="mb-2"><a href="usis-rfp-detail.html"><strong>USIS Rfp Detail</strong></a></li>
-					<li class="mb-2"><a href="usis-rfp-list.html"><strong>USIS Rfp List</strong></a></li>
-					<li class="mb-2"><a href="usis-safety.html"><strong>USIS Safety</strong></a></li>
-					<li class="mb-2"><a href="usis-daily-pretask.html"><strong>USIS Daily pretask</strong></a> <span class="text-muted small">— Appendix E pre-task safety plan.</span></li>
-					<li class="mb-2"><a href="usis-safety-company.html"><strong>USIS Company safety programs</strong></a> <span class="text-muted small">— IIPP, WVPP, heat, HazCom.</span></li>
-				</ul>
-				<h5 class="mt-2">Construction</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="construction/add-quotation.html"><strong>Construction — Add Quotation</strong></a></li>
-					<li class="mb-2"><a href="construction/attendance.html"><strong>Construction — Attendance</strong></a></li>
-					<li class="mb-2"><a href="construction/contact-us.html"><strong>Construction — Contact Us</strong></a></li>
-					<li class="mb-2"><a href="construction/construction-pricing.html"><strong>Construction — Pricing</strong></a></li>
-					<li class="mb-2"><a href="construction/drawing-viewer.html"><strong>Construction — Drawing Viewer</strong></a></li>
-					<li class="mb-2"><a href="construction/edit-quotation.html"><strong>Construction — Edit Quotation</strong></a></li>
-					<li class="mb-2"><a href="construction/estimate-detail.html"><strong>Construction — Estimate Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/estimate.html"><strong>Construction — Estimate</strong></a></li>
-					<li class="mb-2"><a href="construction/estimate_legacy.html"><strong>Construction — Estimate Legacy</strong></a></li>
-					<li class="mb-2"><a href="construction/files.html"><strong>Construction — Files</strong></a></li>
-					<li class="mb-2"><a href="construction/finance.html"><strong>Construction — Finance</strong></a></li>
-					<li class="mb-2"><a href="construction/index.html"><strong>Construction — Index</strong></a></li>
-					<li class="mb-2"><a href="construction/lead-detail.html"><strong>Construction — Lead Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/leads.html"><strong>Construction — Leads</strong></a></li>
-					<li class="mb-2"><a href="construction/lead-goldenstate-planroom.html"><strong>Construction — Leads Golden State Planroom</strong></a></li>
-					<li class="mb-2"><a href="construction/material.html"><strong>Construction — Material</strong></a></li>
-					<li class="mb-2"><a href="construction/door-schedule.html"><strong>Construction — Door schedule</strong></a> <span class="text-muted small">(requires <code>?id=</code> lead)</span></li>
-					<li class="mb-2"><a href="construction/mom-detail.html"><strong>Construction — Mom Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/mom.html"><strong>Construction — Mom</strong></a></li>
-					<li class="mb-2"><a href="construction/overview.html"><strong>Construction — Overview</strong></a></li>
-					<li class="mb-2"><a href="construction/party.html"><strong>Construction — Party</strong></a></li>
-					<li class="mb-2"><a href="construction/project-detail.html"><strong>Construction — Project Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/projects.html"><strong>Construction — Projects</strong></a></li>
-					<li class="mb-2"><a href="construction/quotation.html"><strong>Construction — Quotation</strong></a></li>
-					<li class="mb-2"><a href="construction/purchase-order-create.html"><strong>Construction — Purchase Order Create</strong></a></li>
-					<li class="mb-2"><a href="reports.html"><strong>Reports</strong></a> <span class="text-muted small">— Power BI and operational reports.</span></li>
-					<li class="mb-2"><a href="construction/rfi-create.html"><strong>Construction — RFI Create</strong></a></li>
-					<li class="mb-2"><a href="construction/rfi-detail.html"><strong>Construction — RFI Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/rfis.html"><strong>Construction — RFIS</strong></a></li>
-					<li class="mb-2"><a href="construction/services.html"><strong>Construction — Services</strong></a></li>
-					<li class="mb-2"><a href="construction/submittal-create.html"><strong>Construction — Submittal Create</strong></a></li>
-					<li class="mb-2"><a href="construction/submittal-detail.html"><strong>Construction — Submittal Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/task.html"><strong>Construction — Task</strong></a></li>
-					<li class="mb-2"><a href="construction/time-sheet.html"><strong>Construction — Time Sheet</strong></a></li>
-					<li class="mb-2"><a href="construction/timesheet-detail.html"><strong>Construction — Timesheet Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/todo-detail.html"><strong>Construction — Todo Detail</strong></a></li>
-					<li class="mb-2"><a href="construction/todo.html"><strong>Construction — Todo</strong></a></li>
-					<li class="mb-2"><a href="construction/transaction.html"><strong>Construction — Transaction</strong></a></li>
-				</ul>
-				<h5 class="mt-2">Authentication &amp; careers</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="apply.html"><strong>Careers — apply (public)</strong></a> <span class="text-muted small">— Public landing for job candidates; no login required. Apply → register → hire wizard.</span></li>
-					<li class="mb-2"><a href="page-error-400.html"><strong>Page Error 400</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-403.html"><strong>Page Error 403</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-404.html"><strong>Page Error 404</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-500.html"><strong>Page Error 500</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-error-503.html"><strong>Page Error 503</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-forgot-password.html"><strong>Page Forgot Password</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-lock-screen.html"><strong>Page Lock Screen</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-login.html"><strong>Page Login</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-					<li class="mb-2"><a href="page-register.html"><strong>Page Register</strong></a> <span class="text-muted small">— Authentication or lock-screen template. USIS may replace branding and wire to your identity provider.</span></li>
-				</ul>
-				<h5 class="mt-2">E-commerce demos</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="ecom-checkout.html"><strong>E-commerce Checkout</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-customers.html"><strong>E-commerce Customers</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-invoice.html"><strong>E-commerce Invoice</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-detail.html"><strong>E-commerce Product Detail</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-grid.html"><strong>E-commerce Product Grid</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-list.html"><strong>E-commerce Product List</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-					<li class="mb-2"><a href="ecom-product-order.html"><strong>E-commerce Product Order</strong></a> <span class="text-muted small">— E-commerce demo template. Reference for catalog and checkout UI patterns.</span></li>
-				</ul>
-				<h5 class="mt-2">CMS</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="cms/add-blog.html"><strong>Add Blog</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/add-email.html"><strong>Add Email</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/blog-category.html"><strong>Blog Category</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/blog.html"><strong>Blog</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/content-add.html"><strong>Content Add</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/content.html"><strong>Content</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/email-template.html"><strong>Email Template</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-					<li class="mb-2"><a href="cms/menu.html"><strong>Menu</strong></a> <span class="text-muted small">— CMS / blog admin template. Reference for content editing shells.</span></li>
-				</ul>
-				<h5 class="mt-2">AI kit</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="aikit/auto-write.html"><strong>Auto Write</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/chatbot.html"><strong>Chatbot</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/fine-tune-models.html"><strong>Fine Tune Models</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/import.html"><strong>Import</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/prompt.html"><strong>Prompt</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/repurpose.html"><strong>Repurpose</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/rss.html"><strong>Rss</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/scheduled.html"><strong>Scheduled</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-					<li class="mb-2"><a href="aikit/setting.html"><strong>Setting</strong></a> <span class="text-muted small">— AI kit demo pages. Reference for AI-related settings and prompts.</span></li>
-				</ul>
-				<h5 class="mt-2">Account</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="account/activity.html"><strong>Activity</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/api-keys.html"><strong>API Keys</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/billing.html"><strong>Billing</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/logs.html"><strong>Logs</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/overview.html"><strong>Overview</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/referrals.html"><strong>Referrals</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/security.html"><strong>Security</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/settings.html"><strong>Settings</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-					<li class="mb-2"><a href="account/statements.html"><strong>Statements</strong></a> <span class="text-muted small">— End-user account settings template (billing, security, API keys).</span></li>
-				</ul>
-				<h5 class="mt-2">Profile</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="profile/activity.html"><strong>Activity</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/campaigns.html"><strong>Campaigns</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/documents.html"><strong>Documents</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/followers.html"><strong>Followers</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/overview.html"><strong>Overview</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/projects-details.html"><strong>Projects Details</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-					<li class="mb-2"><a href="profile/projects.html"><strong>Projects</strong></a> <span class="text-muted small">— User profile and social-style profile template.</span></li>
-				</ul>
-				<h5 class="mt-2">Other template pages</h5>
-				<ul class="list-unstyled">
-					<li class="mb-2"><a href="add-role.html"><strong>Add Role</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="app-calender.html"><strong>App Calender</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="app-profile-2.html"><strong>App Profile 2</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="app-profile.html"><strong>App Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="blog.html"><strong>Blog</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="chat.html"><strong>Chat</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="contacts.html"><strong>Contacts</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="core-hr.html"><strong>Core HR</strong></a> <span class="text-muted small">— <strong>USIS HR landing</strong> (employee directory + template chrome). Linked from deznav HR.</span></li>
-					<li class="mb-2"><a href="customer-profile.html"><strong>Customer Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="customer.html"><strong>Customer</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="edit-profile.html"><strong>Edit Profile</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="email-compose.html"><strong>Email Compose</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="email-inbox.html"><strong>Email Inbox</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="email-read.html"><strong>Email Read</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="employee.html"><strong>Employee</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="empty-page.html"><strong>Empty Page</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="finance.html"><strong>Finance</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="index-2.html"><strong>Index 2</strong></a> <span class="text-muted small">— Original template dark dashboard (classic shell); prefer <a href="usis-dashboard-dark.html">USIS Dark Dashboard</a>.</span></li>
-					<li class="mb-2"><a href="index.html"><strong>Index</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="manage-client.html"><strong>Manage Client</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="performance.html"><strong>Performance</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="post-details.html"><strong>Post Details</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="project.html"><strong>Project</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="task-summary.html"><strong>Task Summary</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="task.html"><strong>Task</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="user-roles.html"><strong>User Roles</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-					<li class="mb-2"><a href="user.html"><strong>User</strong></a> <span class="text-muted small">— General W3CRM dashboard or utility page. Use as a layout reference or retire if unused.</span></li>
-				</ul>
-			</div>
 
+			<div class="container-fluid usis-po-form">
+				<form id="usis-po-form" autocomplete="off" novalidate>
+					<input type="hidden" id="usis-po-vendor-id" value="">
+					<input type="hidden" id="usis-po-issued-by-id" value="">
+					<input type="hidden" id="usis-po-authorized-by-id" value="">
+
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+						<h1 class="usis-po-page-title mb-0" data-i18n="New Purchase Order">New Purchase Order</h1>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-light" id="usis-po-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-outline-secondary" id="usis-po-btn-draft" data-i18n="Create as Draft">Create as Draft</button>
+							<button type="button" class="btn btn-primary" id="usis-po-btn-create" data-i18n="Create">Create</button>
+						</div>
+					</div>
+
+					<div class="alert alert-danger d-none" id="usis-po-error" role="alert"></div>
+
+					<div class="usis-po-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Draft purchase order. PO # and vendor are required. Line items can be added now or after the PO is saved.">Draft purchase order. PO # and vendor are required. Line items can be added now or after the PO is saved.</span>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-general" aria-expanded="true" aria-controls="usis-po-sec-general">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-general">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-po-project"><span data-i18n="Project">Project</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-po-project" required>
+										<option value="">Loading…</option>
+									</select>
+									<div class="usis-po-project-card text-muted mt-1 d-none" id="usis-po-project-card">
+										<strong id="usis-po-proj-number">—</strong>
+										<span id="usis-po-proj-name">—</span>
+										<span class="mx-1">·</span>
+										<span id="usis-po-proj-type-status">—</span>
+										<div>
+											<span id="usis-po-proj-address">—</span>
+										</div>
+									</div>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-ref"><span data-i18n="PO #">PO #</span><span class="req">*</span></label>
+									<input class="form-control form-control-sm" id="usis-po-ref" maxlength="80" placeholder="PO-1001" required>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-issue-date" data-i18n="Issue date">Issue date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-issue-date">
+								</div>
+
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-po-title"><span data-i18n="PO subject">PO subject</span><span class="req">*</span></label>
+									<input class="form-control form-control-sm" id="usis-po-title" maxlength="500" placeholder="e.g. Drywall package" required>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-status" data-i18n="Status">Status</label>
+									<select class="form-select form-select-sm" id="usis-po-status">
+										<option value="draft">draft</option>
+										<option value="pending_submission">pending_submission</option>
+										<option value="pending">pending</option>
+										<option value="not_approved">not_approved</option>
+										<option value="approved">approved</option>
+									</select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-status-date" data-i18n="Status date">Status date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-status-date">
+								</div>
+
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-type" data-i18n="PO type">PO type</label>
+									<select class="form-select form-select-sm" id="usis-po-type"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-reminder-date" data-i18n="Reminder date">Reminder date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-reminder-date">
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-currency" data-i18n="Currency">Currency</label>
+									<input class="form-control form-control-sm" id="usis-po-currency" maxlength="8" value="USD">
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" data-i18n="Created By">Created By</label>
+									<div class="usis-po-readonly" id="usis-po-created-by-display">—</div>
+								</div>
+
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-po-notes" data-i18n="Notes">Notes</label>
+									<textarea class="form-control form-control-sm" id="usis-po-notes" rows="3" placeholder="Optional header notes"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-vendor" aria-expanded="true" aria-controls="usis-po-sec-vendor">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Vendor Information">Vendor Information</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-vendor">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2 position-relative">
+									<label class="form-label" for="usis-po-vendor-q"><span data-i18n="Company">Company</span><span class="req">*</span></label>
+									<input type="search" class="form-control form-control-sm" id="usis-po-vendor-q" autocomplete="off" placeholder="Type vendor name…">
+									<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-po-vendor-menu"></div>
+									<p class="text-muted small mb-0 mt-1 d-none" id="usis-po-vendor-dir-hint"></p>
+									<button type="button" class="btn btn-link btn-sm p-0 d-none" id="usis-po-vendor-add-dir">Add to project directory</button>
+								</div>
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-po-vendor-contact" data-i18n="Contact">Contact</label>
+									<select class="form-select form-select-sm" id="usis-po-vendor-contact"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-po-vendor-address" data-i18n="Vendor address">Vendor address</label>
+									<textarea class="form-control form-control-sm" id="usis-po-vendor-address" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-issued" aria-expanded="true" aria-controls="usis-po-sec-issued">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Issued &amp; Authorized By">Issued &amp; Authorized By</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-issued">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2 position-relative">
+									<label class="form-label" for="usis-po-issued-by-q" data-i18n="Issued by">Issued by</label>
+									<input type="search" class="form-control form-control-sm" id="usis-po-issued-by-q" autocomplete="off" placeholder="Search users…">
+									<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-po-issued-by-menu"></div>
+								</div>
+								<div class="usis-po-field usis-po-field--span2 position-relative">
+									<label class="form-label" for="usis-po-authorized-by-q" data-i18n="Authorized by">Authorized by</label>
+									<input type="search" class="form-control form-control-sm" id="usis-po-authorized-by-q" autocomplete="off" placeholder="Search users…">
+									<div class="list-group position-absolute w-100 shadow-sm d-none usis-combobox-menu" id="usis-po-authorized-by-menu"></div>
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-po-issued-address" data-i18n="Company address">Company address</label>
+									<textarea class="form-control form-control-sm" id="usis-po-issued-address" rows="2"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-ship" aria-expanded="true" aria-controls="usis-po-sec-ship">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Ship To Address">Ship To Address</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-ship">
+							<textarea class="form-control form-control-sm" id="usis-po-ship-to" rows="2" placeholder="Job site / ship-to"></textarea>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-defaults" aria-expanded="true" aria-controls="usis-po-sec-defaults">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Default Line Item Values">Default Line Item Values</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-defaults">
+							<div class="usis-po-grid">
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-delivery" data-i18n="Delivery date">Delivery date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-po-def-delivery">
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-cc" data-i18n="Cost code">Cost code</label>
+									<select class="form-select form-select-sm" id="usis-po-def-cc"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-tax" data-i18n="Tax code">Tax code</label>
+									<select class="form-select form-select-sm" id="usis-po-def-tax"><option value="">—</option></select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-po-def-resource" data-i18n="Resource">Resource</label>
+									<select class="form-select form-select-sm" id="usis-po-def-resource">
+										<option value="">—</option>
+										<option value="material">Material</option>
+										<option value="labor">Labor</option>
+										<option value="equipment">Equipment</option>
+										<option value="subcontractor">Subcontractor</option>
+										<option value="other">Other</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-po-sec-lines" aria-expanded="true" aria-controls="usis-po-sec-lines">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="PO Items">PO Items</span>
+						</button>
+						<div class="collapse show" id="usis-po-sec-lines">
+							<p class="text-muted small mb-2">New lines pick up the default cost code, tax, resource, and delivery date above.</p>
+							<div class="table-responsive mb-2">
+								<table class="table table-sm table-bordered align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th>Item #</th>
+											<th>Description</th>
+											<th>Qty</th>
+											<th>Unit</th>
+											<th>Unit price</th>
+											<th>Cost code</th>
+											<th>Tax</th>
+											<th>Resource</th>
+											<th>Delivery</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="usis-po-lines-tbody"></tbody>
+								</table>
+							</div>
+							<button type="button" class="btn btn-outline-primary btn-sm mb-0" id="usis-po-line-add">+ Add line</button>
+						</div>
+					</div>
+
+					<div class="usis-po-form-footer">
+						<div class="usis-po-req-note" data-i18n="* required fields">* required fields</div>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-outline-secondary" id="usis-po-cancel-footer" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-outline-secondary" id="usis-po-btn-draft-footer" data-i18n="Create as Draft">Create as Draft</button>
+							<button type="button" class="btn btn-primary" id="usis-po-btn-create-footer" data-i18n="Create">Create</button>
+						</div>
+					</div>
+				</form>
+			</div>
 		</main>
 
 		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
@@ -733,7 +883,6 @@
 			</div>
 		</div>
 		<!-- End - Footer -->
-
 	</div>
 
 	<script src="assets/js/usis-auth-links.js"></script>
@@ -762,6 +911,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/purchase-order-create.js"></script>
 
 </body>
 </html>

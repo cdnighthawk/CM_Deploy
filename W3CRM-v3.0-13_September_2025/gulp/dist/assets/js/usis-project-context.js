@@ -78,6 +78,18 @@
     }
   }
 
+  function stampPoLinks(projectId) {
+    if (!projectId) return;
+    var a = document.getElementById("usis-po-open-create");
+    if (a) {
+      a.setAttribute(
+        "href",
+        "construction/purchase-order-create.html?project_id=" + encodeURIComponent(projectId)
+      );
+      a.classList.remove("d-none");
+    }
+  }
+
   function apiBase() {
     if (typeof global.usisApiBase === "function") {
       return global.usisApiBase();
@@ -238,6 +250,7 @@
     } catch (e) {}
     stampRfiLinks(id);
     stampSubmittalLinks(id);
+    stampPoLinks(id);
     var issuesLink = document.getElementById("usis-issue-open-log");
     if (issuesLink) {
       issuesLink.setAttribute("href", "construction/issues.html?project_id=" + encodeURIComponent(id));

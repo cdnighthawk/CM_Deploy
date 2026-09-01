@@ -37,7 +37,9 @@
     { "path": "construction/rfis.html", "in_nav": "flow" },
     { "path": "construction/rfi-create.html", "in_nav": "flow" },
     { "path": "construction/rfi-detail.html", "in_nav": "flow" },
+    { "path": "construction/submittal-create.html", "in_nav": "flow" },
     { "path": "construction/submittal-detail.html", "in_nav": "flow" },
+    { "path": "construction/purchase-order-create.html", "in_nav": "flow" },
     { "path": "construction/specs-viewer.html", "in_nav": "flow" },
     { "path": "construction/construction-pricing.html", "in_nav": "flow" },
     { "path": "construction/material.html", "in_nav": "flow" }

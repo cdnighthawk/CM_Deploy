@@ -27,6 +27,7 @@
 		Expenses: "Gastos",
 		Playbooks: "Guías",
 		"User admin": "Admin. de usuarios",
+		"Error log": "Registro de errores",
 		Procurement: "Compras",
 		Purchasing: "Compras",
 		Construction: "Construcción",

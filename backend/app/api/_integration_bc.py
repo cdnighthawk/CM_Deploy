@@ -37,6 +37,80 @@ from ..models.lead_estimate import LeadEstimate
 
 log = logging.getLogger(__name__)
 
+
+def _clip_bc_text(value: object, n: int = 800) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return text[:n]
+
+
+def _httpx_failure_extra(exc: httpx.HTTPStatusError) -> dict:
+    extra: dict = {"exception": type(exc).__name__}
+    resp = exc.response
+    if resp is None:
+        extra["bc_url"] = str(getattr(exc, "request", None) and exc.request.url)[:1000] or None
+        return extra
+    extra["http_status"] = resp.status_code
+    try:
+        extra["bc_url"] = _clip_bc_text(str(resp.request.url), 1000)
+    except Exception:
+        extra["bc_url"] = None
+    try:
+        extra["bc_body"] = _clip_bc_text(resp.text, 800)
+    except Exception:
+        extra["bc_body"] = None
+    return extra
+
+
+def _log_bc_failure(
+    message: str,
+    *,
+    status: int | None = None,
+    url: str | None = None,
+    method: str | None = None,
+    extra: dict | None = None,
+    exc: BaseException | None = None,
+) -> None:
+    payload = dict(extra or {})
+    if exc is not None:
+        payload.setdefault("exception", type(exc).__name__)
+        if isinstance(exc, httpx.HTTPStatusError):
+            payload.update({k: v for k, v in _httpx_failure_extra(exc).items() if v is not None})
+            if status is None and exc.response is not None:
+                status = exc.response.status_code
+            if url is None and exc.response is not None:
+                try:
+                    url = str(exc.response.request.url)
+                except Exception:
+                    url = None
+            if method is None and exc.response is not None:
+                try:
+                    method = exc.response.request.method
+                except Exception:
+                    method = None
+        elif not payload.get("exception_message"):
+            payload["exception_message"] = _clip_bc_text(exc, 500)
+    if status is not None:
+        payload.setdefault("http_status", status)
+    try:
+        from ._client_error_service import record_integration_failure
+
+        record_integration_failure(
+            integration="buildingconnected",
+            message=message,
+            url=url,
+            method=method,
+            status=status,
+            extra=payload,
+            kind="bc",
+        )
+    except Exception:
+        log.exception("failed to persist BuildingConnected connection error")
+
+
 BC_OAUTH_STATE_KEY = "bc_oauth_state"
 _SYNC_LOCK = threading.Lock()
 _SYNC_RUNNING = False
@@ -463,14 +537,30 @@ def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
                         skipped,
                         errors,
                     )
-                except Exception:
+                except Exception as retry_exc:
                     db.session.rollback()
                     log.exception("BuildingConnected background sync failed after 401 retry")
+                    _log_bc_failure(
+                        f"BuildingConnected background sync failed after 401 retry: {retry_exc}",
+                        status=401,
+                        extra={"action": "sync", "full": full},
+                        exc=retry_exc,
+                    )
             else:
                 log.exception("BuildingConnected background sync HTTP error")
-        except Exception:
+                _log_bc_failure(
+                    f"BuildingConnected background sync HTTP error: {exc}",
+                    extra={"action": "sync", "full": full},
+                    exc=exc,
+                )
+        except Exception as exc:
             db.session.rollback()
             log.exception("BuildingConnected background sync failed")
+            _log_bc_failure(
+                f"BuildingConnected background sync failed: {exc}",
+                extra={"action": "sync", "full": full},
+                exc=exc,
+            )
         finally:
             with _SYNC_LOCK:
                 _SYNC_RUNNING = False
@@ -487,6 +577,11 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         )
         scopes = str(current_app.config.get("AUTODESK_OAUTH_SCOPES") or "data:read data:write")
         if not cid:
+            _log_bc_failure(
+                "BuildingConnected OAuth start failed: AUTODESK_CLIENT_ID is not set",
+                status=503,
+                extra={"action": "oauth_start"},
+            )
             return _bc_oauth_browser_page(
                 ok=False,
                 close=False,
@@ -508,11 +603,25 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
     def bc_oauth_callback():
         err = (request.args.get("error") or "").strip()
         if err:
+            _log_bc_failure(
+                f"BuildingConnected OAuth rejected by Autodesk: {err}",
+                status=400,
+                extra={
+                    "action": "oauth_callback",
+                    "oauth_error": err,
+                    "oauth_error_description": (request.args.get("error_description") or "")[:500],
+                },
+            )
             return _bc_oauth_browser_page(ok=False, message=err, status=400)
         code = (request.args.get("code") or "").strip()
         state = (request.args.get("state") or "").strip()
         expected = session.pop(BC_OAUTH_STATE_KEY, None)
         if not code or not state or expected != state:
+            _log_bc_failure(
+                "BuildingConnected OAuth callback failed: invalid or missing OAuth state/code",
+                status=400,
+                extra={"action": "oauth_callback"},
+            )
             return _bc_oauth_browser_page(
                 ok=False, message="invalid or missing OAuth state/code", status=400
             )
@@ -523,6 +632,11 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
             + "/api/v1/integrations/buildingconnected/oauth/callback"
         )
         if not cid or not sec:
+            _log_bc_failure(
+                "BuildingConnected OAuth callback failed: Autodesk client is not fully configured",
+                status=503,
+                extra={"action": "oauth_callback"},
+            )
             return _bc_oauth_browser_page(
                 ok=False,
                 close=False,
@@ -538,6 +652,12 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         except Exception as exc:
             db.session.rollback()
             log.warning("BuildingConnected OAuth callback failed: %s", exc)
+            _log_bc_failure(
+                f"BuildingConnected OAuth token exchange failed: {exc}",
+                status=400,
+                extra={"action": "oauth_callback"},
+                exc=exc,
+            )
             return _bc_oauth_browser_page(ok=False, message=str(exc), status=400)
         return _bc_oauth_browser_page(
             ok=True, message="BuildingConnected is connected. You can return to Leads."
@@ -559,6 +679,12 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
             access = _ensure_access_token()
         except Exception as exc:
             log.warning("BuildingConnected sync auth failed: %s", exc)
+            _log_bc_failure(
+                f"BuildingConnected sync auth failed: {exc}",
+                status=401,
+                extra={"action": "sync"},
+                exc=exc,
+            )
             return jsonify({"error": str(exc), "entity": "buildingconnected_sync"}), 401
         want_full = (request.args.get("full") or "").strip().lower() in ("1", "true", "yes")
         if not _sync_inline():
@@ -625,13 +751,29 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 except Exception as exc2:
                     db.session.rollback()
                     log.warning("BuildingConnected sync failed after 401 retry: %s", exc2)
+                    _log_bc_failure(
+                        f"BuildingConnected sync failed after 401 retry: {exc2}",
+                        status=401,
+                        extra={"action": "sync"},
+                        exc=exc2,
+                    )
                     return jsonify({"error": str(exc2), "entity": "buildingconnected_sync"}), 502
             else:
                 log.warning("BuildingConnected sync HTTP error: %s", exc)
+                _log_bc_failure(
+                    f"BuildingConnected sync HTTP error: {exc}",
+                    extra={"action": "sync"},
+                    exc=exc,
+                )
                 return jsonify({"error": str(exc), "entity": "buildingconnected_sync"}), 502
         except Exception as exc:
             db.session.rollback()
             log.warning("BuildingConnected sync failed: %s", exc)
+            _log_bc_failure(
+                f"BuildingConnected sync failed: {exc}",
+                extra={"action": "sync"},
+                exc=exc,
+            )
             return jsonify({"error": str(exc), "entity": "buildingconnected_sync"}), 502
         log.info(
             "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s",
@@ -661,6 +803,22 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
         )
 
     def _bc_write_error_response(exc: BcWriteError):
+        if exc.status in (401, 403) or (exc.status or 0) >= 500:
+            details = exc.extra.get("details") if isinstance(exc.extra, dict) else None
+            extra: dict = {"action": "write"}
+            if details is not None:
+                if isinstance(details, str):
+                    extra["details"] = details[:800]
+                else:
+                    try:
+                        extra["details"] = json.dumps(details)[:800]
+                    except Exception:
+                        extra["details"] = str(details)[:800]
+            _log_bc_failure(
+                exc.message,
+                status=exc.status,
+                extra=extra,
+            )
         body = {"error": exc.message, "entity": "buildingconnected_write"}
         body.update(exc.extra)
         lowered = exc.message.lower()

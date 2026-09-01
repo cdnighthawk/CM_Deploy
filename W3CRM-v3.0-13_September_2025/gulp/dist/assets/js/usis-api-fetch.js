@@ -102,6 +102,10 @@
 		return typeof url === "string" && url.indexOf("/api/v1/client-errors") !== -1;
 	}
 
+	function isBcUrl(url) {
+		return typeof url === "string" && url.toLowerCase().indexOf("buildingconnected") !== -1;
+	}
+
 	function requestUrl(input) {
 		if (typeof input === "string") return input;
 		if (input && typeof input.url === "string") return input.url;
@@ -231,24 +235,31 @@
 			if (isLogUrl(url)) return orig.call(this, input, init);
 			return orig.call(this, input, init).then(
 				function (res) {
-					if (shouldLogStatus(res.status)) {
+					var bc = isBcUrl(url);
+					var logHttp = bc
+						? res.status === 401 || res.status >= 500
+						: shouldLogStatus(res.status);
+					if (logHttp) {
 						reportError({
-							kind: res.status >= 500 ? "http_error" : "connect",
+							kind: bc ? "bc" : res.status >= 500 ? "http_error" : "connect",
 							message: "HTTP " + res.status + (res.statusText ? " " + res.statusText : ""),
 							url: url,
 							method: requestMethod(input, init),
 							status: res.status,
+							extra: bc ? { integration: "buildingconnected" } : undefined,
 						});
 					}
 					return res;
 				},
 				function (err) {
 					if (isConnectError(err)) {
+						var bc = isBcUrl(url);
 						reportError({
-							kind: "connect",
+							kind: bc ? "bc" : "connect",
 							message: err && err.message ? err.message : "Failed to fetch",
 							url: url,
 							method: requestMethod(input, init),
+							extra: bc ? { integration: "buildingconnected" } : undefined,
 						});
 					}
 					throw err;

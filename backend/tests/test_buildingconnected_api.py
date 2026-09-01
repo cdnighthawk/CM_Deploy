@@ -6,13 +6,14 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import OperationalError
 
 from app.api import _integration_bc
 from app.extensions import db
 from app.integrations.buildingconnected_client import BuildingConnectedClient, next_cursor_state
 from app.models.buildingconnected_oauth import BuildingConnectedOAuthToken
+from app.models.client_error import ClientErrorEvent
 from app.models.lead_estimate import LeadEstimate
 
 
@@ -31,12 +32,70 @@ def _skip_if_no_bc_table(flask_app):
             pytest.skip(f"buildingconnected_oauth_tokens missing (run flask db upgrade): {exc}")
 
 
+def _skip_if_no_error_table(flask_app):
+    with flask_app.app_context():
+        try:
+            db.session.execute(select(ClientErrorEvent.id).limit(1))
+        except OperationalError as exc:
+            pytest.skip(f"client_error_events missing (run flask db upgrade): {exc}")
+
+
 def test_bc_oauth_start_missing_config_returns_503(client, flask_app):
+    _skip_if_no_error_table(flask_app)
     flask_app.config["AUTODESK_CLIENT_ID"] = None
     flask_app.config["AUTODESK_OAUTH_REDIRECT_URI"] = None
     r = client.get("/api/v1/integrations/buildingconnected/oauth/start")
     assert r.status_code == 503
     assert b"AUTODESK_CLIENT_ID" in r.data
+    with flask_app.app_context():
+        row = db.session.scalar(
+            select(ClientErrorEvent)
+            .where(ClientErrorEvent.kind == "bc")
+            .where(ClientErrorEvent.message.contains("AUTODESK_CLIENT_ID is not set"))
+            .order_by(ClientErrorEvent.created_at.desc())
+        )
+        assert row is not None
+        assert (row.extra or {}).get("integration") == "buildingconnected"
+        assert (row.extra or {}).get("action") == "oauth_start"
+
+
+def test_bc_oauth_autodesk_error_is_recorded(client, flask_app):
+    _skip_if_no_error_table(flask_app)
+    desc = "user denied " + uuid.uuid4().hex[:10]
+    r = client.get(
+        "/api/v1/integrations/buildingconnected/oauth/callback"
+        f"?error=access_denied&error_description={desc}",
+        follow_redirects=False,
+    )
+    assert r.status_code == 400
+    with flask_app.app_context():
+        row = db.session.scalar(
+            select(ClientErrorEvent)
+            .where(ClientErrorEvent.kind == "bc")
+            .where(ClientErrorEvent.message.contains("access_denied"))
+            .order_by(ClientErrorEvent.created_at.desc())
+        )
+        assert row is not None
+        extra = row.extra or {}
+        assert extra.get("integration") == "buildingconnected"
+        assert extra.get("oauth_error") == "access_denied"
+        assert desc in (extra.get("oauth_error_description") or "")
+
+
+def test_bc_sync_disabled_does_not_record_error(client, flask_app):
+    _skip_if_no_error_table(flask_app)
+    flask_app.config["BUILDINGCONNECTED_SYNC_ENABLED"] = False
+    with flask_app.app_context():
+        before = db.session.scalar(
+            select(func.count()).select_from(ClientErrorEvent).where(ClientErrorEvent.kind == "bc")
+        )
+    r = client.post("/api/v1/integrations/buildingconnected/sync")
+    assert r.status_code == 403
+    with flask_app.app_context():
+        after = db.session.scalar(
+            select(func.count()).select_from(ClientErrorEvent).where(ClientErrorEvent.kind == "bc")
+        )
+    assert after == before
 
 
 def test_bc_oauth_start_redirects_when_configured(client, flask_app):

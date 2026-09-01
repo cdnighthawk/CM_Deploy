@@ -968,6 +968,7 @@
 	}
 
 	var ERROR_KIND_LABELS = {
+		bc: "BC",
 		connect: "Connect",
 		http_error: "HTTP 5xx",
 		server: "Server",
@@ -1014,6 +1015,35 @@
 				}
 				if (ev.page) {
 					detail += '<div class="small text-muted text-break">Page: ' + esc(ev.page) + "</div>";
+				}
+				var extra = ev.extra && typeof ev.extra === "object" ? ev.extra : {};
+				var bcUrl = extra.bc_url;
+				var bcBody = extra.bc_body;
+				var oauthDesc = extra.oauth_error_description;
+				var excMsg = extra.exception_message;
+				var details = extra.details;
+				if (bcUrl && bcUrl !== ev.url) {
+					detail += '<div class="small text-muted text-break">' + esc(String(bcUrl)) + "</div>";
+				}
+				if (oauthDesc) {
+					detail += '<div class="small text-muted text-break">' + esc(String(oauthDesc).slice(0, 400)) + "</div>";
+				}
+				if (excMsg) {
+					detail += '<div class="small text-muted text-break">' + esc(String(excMsg).slice(0, 400)) + "</div>";
+				}
+				if (bcBody) {
+					detail += '<div class="small text-muted text-break">' + esc(String(bcBody).slice(0, 400)) + "</div>";
+				}
+				if (details) {
+					var d = typeof details === "string" ? details : "";
+					if (!d) {
+						try {
+							d = JSON.stringify(details);
+						} catch (e) {
+							d = String(details);
+						}
+					}
+					detail += '<div class="small text-muted text-break">' + esc(d.slice(0, 400)) + "</div>";
 				}
 				return (
 					"<tr><td class=\"text-nowrap\" title=\"" +

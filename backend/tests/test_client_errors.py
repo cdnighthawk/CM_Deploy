@@ -60,6 +60,28 @@ def test_anonymous_can_post_connect_error(client, no_dev_admin):
         assert row.page == "/construction/projects.html"
 
 
+def test_anonymous_can_post_bc_error(client, no_dev_admin):
+    marker = "BuildingConnected sync failed " + uuid.uuid4().hex
+    r = client.post(
+        "/api/v1/client-errors",
+        json={
+            "kind": "bc",
+            "message": marker,
+            "url": "/api/v1/integrations/buildingconnected/sync",
+            "method": "POST",
+            "status": 401,
+            "extra": {"integration": "buildingconnected", "action": "sync"},
+        },
+    )
+    assert r.status_code == 200, r.get_data(as_text=True)
+    assert r.get_json()["stored"] == 1
+    with client.application.app_context():
+        row = db.session.scalar(select(ClientErrorEvent).where(ClientErrorEvent.message == marker))
+        assert row is not None
+        assert row.kind == "bc"
+        assert row.http_status == 401
+
+
 def test_duplicate_connect_error_is_skipped(client, no_dev_admin):
     payload = {
         "kind": "connect",
@@ -86,6 +108,16 @@ def test_admin_can_list_client_errors(client, no_dev_admin):
     assert listed.status_code == 200, listed.get_data(as_text=True)
     items = listed.get_json()["items"]
     assert any(marker in (x.get("message") or "") for x in items)
+
+    bc_marker = "BC oauth " + uuid.uuid4().hex
+    client.post(
+        "/api/v1/client-errors",
+        json={"kind": "bc", "message": bc_marker, "url": "/api/v1/integrations/buildingconnected/oauth/start"},
+        headers=hdr,
+    )
+    bc_listed = client.get("/api/v1/admin/client-errors?kind=bc", headers=hdr)
+    assert bc_listed.status_code == 200, bc_listed.get_data(as_text=True)
+    assert any(bc_marker in (x.get("message") or "") for x in bc_listed.get_json()["items"])
 
 
 def test_client_error_list_requires_admin(client, no_dev_admin):

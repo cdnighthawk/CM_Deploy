@@ -17,7 +17,7 @@ from ..models.client_error import ClientErrorEvent
 from ._admin_users_service import ApiError, _iso, _require_admin
 from ._perms import CurrentUser
 
-ALLOWED_KINDS = frozenset({"connect", "http_error", "js_error", "unhandled", "server"})
+ALLOWED_KINDS = frozenset({"connect", "http_error", "js_error", "unhandled", "server", "bc"})
 ALLOWED_SOURCES = frozenset({"browser", "server"})
 
 _MAX_MESSAGE = 2000
@@ -286,6 +286,91 @@ def record_from_exception(exc: BaseException) -> None:
             current_app.logger.exception("failed to persist server error event")
         except RuntimeError:
             pass
+
+
+def record_integration_failure(
+    *,
+    integration: str,
+    message: str,
+    url: str | None = None,
+    method: str | None = None,
+    status: int | None = None,
+    extra: dict[str, Any] | None = None,
+    kind: str = "bc",
+) -> None:
+    """Best-effort persist of a third-party connection failure. Never raises."""
+    payload_extra: dict[str, Any] = {"integration": (integration or "").strip() or "unknown"}
+    if extra:
+        payload_extra.update(extra)
+    try:
+        cu_user_id = None
+        page = None
+        ua = None
+        ip = _client_ip()
+        if has_request_context():
+            from ._perms import current_user
+
+            try:
+                u = current_user().user
+                cu_user_id = u.id if u is not None else None
+            except Exception:
+                cu_user_id = None
+            if not url:
+                url = _clip(request.path, _MAX_URL)
+            if not method:
+                method = _clip(request.method, _MAX_METHOD)
+            page = _clip(request.headers.get("Referer"), _MAX_PAGE)
+            ua = _clip(request.headers.get("User-Agent"), _MAX_UA)
+        fields = _normalize_event(
+            {
+                "source": "server",
+                "kind": kind if kind in ALLOWED_KINDS else "bc",
+                "message": message,
+                "url": url,
+                "method": method,
+                "status": status,
+                "page": page,
+                "extra": payload_extra,
+            },
+            default_source="server",
+        )
+        if fields is None:
+            return
+        row = _insert(fields, user_id=cu_user_id, ip=ip, ua=ua)
+        if row is not None:
+            db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        try:
+            fields = _normalize_event(
+                {
+                    "source": "server",
+                    "kind": kind if kind in ALLOWED_KINDS else "bc",
+                    "message": message,
+                    "url": url,
+                    "method": method,
+                    "status": status,
+                    "extra": payload_extra,
+                },
+                default_source="server",
+            )
+            if fields is None:
+                return
+            row = _insert(fields, user_id=None, ip=_client_ip(), ua=None)
+            if row is not None:
+                db.session.commit()
+        except Exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            try:
+                current_app.logger.exception("failed to persist integration error event")
+            except RuntimeError:
+                pass
 
 
 def _event_public(row: ClientErrorEvent, user: User | None = None) -> dict[str, Any]:

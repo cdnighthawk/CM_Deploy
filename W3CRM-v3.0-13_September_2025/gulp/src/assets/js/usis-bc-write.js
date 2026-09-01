@@ -36,6 +36,19 @@
 		window.alert(message);
 	}
 
+	function reportBcError(message, extra) {
+		if (!window.USIS_API || typeof window.USIS_API.reportError !== "function") return;
+		extra = extra || {};
+		window.USIS_API.reportError({
+			kind: "bc",
+			message: message || "BuildingConnected connection failed",
+			url: extra.url || "",
+			method: extra.method || "",
+			status: extra.status,
+			extra: Object.assign({ integration: "buildingconnected" }, extra),
+		});
+	}
+
 	function oauthStartUrl() {
 		return apiBase() + "/api/v1/integrations/buildingconnected/oauth/start";
 	}
@@ -60,7 +73,9 @@
 			"popup=yes,width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
 		);
 		if (!popup) {
-			notify("error", "Pop-up blocked. Allow pop-ups for this site, then click Reconnect BC again.");
+			var blocked = "Pop-up blocked. Allow pop-ups for this site, then click Reconnect BC again.";
+			notify("error", blocked);
+			reportBcError(blocked, { action: "oauth_popup" });
 			return false;
 		}
 		try {
@@ -90,7 +105,9 @@
 			notify("success", "BuildingConnected reconnected. Try Will Bid again.");
 			return;
 		}
-		notify("error", data.error || "BuildingConnected reconnect failed.");
+		var failMsg = data.error || "BuildingConnected reconnect failed.";
+		notify("error", failMsg);
+		reportBcError(failMsg, { action: "oauth_popup" });
 	});
 
 	function ensureModal() {
@@ -183,7 +200,11 @@
 			body: JSON.stringify(body),
 		}).then(function (r) {
 			return r.json().then(function (j) {
-				if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+				if (!r.ok) {
+					var err = new Error((j && j.error) || "HTTP " + r.status);
+					err.status = r.status;
+					throw err;
+				}
 				return j;
 			});
 		});
@@ -197,7 +218,11 @@
 			body: JSON.stringify(Object.assign({ ids: ids, async: true }, body)),
 		}).then(function (r) {
 			return r.json().then(function (j) {
-				if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+				if (!r.ok) {
+					var err = new Error((j && j.error) || "HTTP " + r.status);
+					err.status = r.status;
+					throw err;
+				}
 				return j;
 			});
 		});
@@ -309,6 +334,7 @@
 				})
 				.catch(function (err) {
 					var msg = err.message || "BuildingConnected update failed";
+					reportBcError(msg, { action: "write", status: err && err.status });
 					if (isReconnectError(msg)) offerReconnect(msg);
 					else notify("error", msg);
 				})

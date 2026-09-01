@@ -25,6 +25,19 @@
 		window.alert(message);
 	}
 
+	function reportBcError(message, extra) {
+		if (!window.USIS_API || typeof window.USIS_API.reportError !== "function") return;
+		extra = extra || {};
+		window.USIS_API.reportError({
+			kind: "bc",
+			message: message || "BuildingConnected connection failed",
+			url: extra.url || apiBase() + "/api/v1/integrations/buildingconnected/sync",
+			method: extra.method || "POST",
+			status: extra.status,
+			extra: Object.assign({ integration: "buildingconnected", action: "sync" }, extra),
+		});
+	}
+
 	function parseBody(r) {
 		return r.text().then(function (text) {
 			var j = {};
@@ -33,12 +46,16 @@
 					j = JSON.parse(text);
 				} catch (e) {
 					if (!r.ok && r.status !== 202) {
-						throw new Error(text.slice(0, 180) || "HTTP " + r.status);
+						var bad = new Error(text.slice(0, 180) || "HTTP " + r.status);
+						bad.status = r.status;
+						throw bad;
 					}
 				}
 			}
 			if (!r.ok && r.status !== 202) {
-				throw new Error((j && (j.error || j.message)) || "HTTP " + r.status);
+				var err = new Error((j && (j.error || j.message)) || "HTTP " + r.status);
+				err.status = r.status;
+				throw err;
 			}
 			return j;
 		});
@@ -77,7 +94,9 @@
 				}
 			})
 			.catch(function (err) {
-				notify("error", (err && err.message) || "BuildingConnected sync failed.");
+				var msg = (err && err.message) || "BuildingConnected sync failed.";
+				notify("error", msg);
+				reportBcError(msg, { status: err && err.status });
 			})
 			.finally(function () {
 				if (btn) {

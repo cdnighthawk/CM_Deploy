@@ -255,9 +255,13 @@
 		var form = document.getElementById("usis-leads-f-office-form");
 		if (label) {
 			if (officeState.configured && officeState.label) {
-				label.textContent = "From your office in " + officeState.label + ". Jobs without a mapped site are hidden.";
+				label.innerHTML =
+					"From your office in " +
+					esc(officeState.label) +
+					'. Jobs without a mapped site are hidden. <a href="../usis-company-settings.html">Manage offices</a>';
 			} else if (officeState.configured) {
-				label.textContent = "From your saved office. Jobs without a mapped site are hidden.";
+				label.innerHTML =
+					'From your saved office. Jobs without a mapped site are hidden. <a href="../usis-company-settings.html">Manage offices</a>';
 			} else {
 				label.textContent = "Save your office city or ZIP to filter by distance. Jobs without a mapped site are hidden.";
 			}

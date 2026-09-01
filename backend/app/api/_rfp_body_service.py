@@ -26,6 +26,7 @@ from ..models import (
     TakeoffLineItem,
 )
 from ..services.object_storage import UploadCategory, read_stored_bytes, send_stored_file
+from ._perms import CurrentUser
 from ._rfi_service import ApiError, _iso, _parse_uuid
 
 RFP_UNITS = ("SF", "LF", "SY", "EA", "LS", "HR", "GAL", "SQ")
@@ -850,28 +851,18 @@ def clone_rfp(rfp: Rfp) -> Rfp:
     return clone
 
 
-def award_rfp(rfp: Rfp, data: Mapping[str, Any], *, user_id: UUID | None) -> dict[str, Any]:
+def award_rfp(
+    rfp: Rfp, data: Mapping[str, Any], *, user_id: UUID | None, cu: CurrentUser | None = None
+) -> dict[str, Any]:
+    from ._rfp_award_po import create_draft_po_from_quote, quote_unit_prices
+
     qid = _parse_uuid(data.get("quote_id") or data.get("vendor_quote_id"))
     if not qid:
         raise ApiError("quote_id is required")
     quote = db.session.get(RfpVendorQuote, qid)
     if quote is None or quote.rfp_id != rfp.id:
         raise ApiError("quote not found", 404)
-    prices = quote.line_prices if isinstance(quote.line_prices, list) else []
-    price_by_line: dict[str, Decimal] = {}
-    if isinstance(quote.line_prices, dict):
-        for k, v in quote.line_prices.items():
-            if isinstance(v, Mapping) and v.get("unit_price") is not None:
-                price_by_line[str(k)] = _as_decimal(v.get("unit_price")) or Decimal("0")
-            elif v is not None:
-                price_by_line[str(k)] = _as_decimal(v) or Decimal("0")
-    for item in prices:
-        if not isinstance(item, Mapping):
-            continue
-        lid = str(item.get("line_id") or "")
-        up = item.get("unit_price")
-        if lid and up is not None:
-            price_by_line[lid] = _as_decimal(up) or Decimal("0")
+    price_by_line = quote_unit_prices(quote)
     updated = 0
     for ln in visible_line_items(rfp) or all_line_items(rfp):
         if not ln.source_takeoff_line_id:
@@ -889,6 +880,10 @@ def award_rfp(rfp: Rfp, data: Mapping[str, Any], *, user_id: UUID | None) -> dic
             continue
         eli.vendor_quote = unit_price
         updated += 1
+    if cu is None:
+        raise ApiError("authentication required", 401)
+    commitment = create_draft_po_from_quote(rfp, quote, cu)
+    rfp.awarded_quote_id = quote.id
     rfp.status = "Awarded"
     db.session.add(
         AuditLog(
@@ -896,11 +891,25 @@ def award_rfp(rfp: Rfp, data: Mapping[str, Any], *, user_id: UUID | None) -> dic
             entity_type="rfp",
             entity_id=rfp.id,
             action="award",
-            changes={"quote_id": str(quote.id), "vendor_label": quote.vendor_label, "lines_updated": updated},
+            changes={
+                "quote_id": str(quote.id),
+                "vendor_label": quote.vendor_label,
+                "lines_updated": updated,
+                "commitment_id": commitment.get("id"),
+                "reference_number": commitment.get("reference_number"),
+            },
         )
     )
     db.session.commit()
-    return {"item": {"id": str(rfp.id), "status": rfp.status, "awarded_quote_id": str(quote.id), "takeoff_updated": updated}}
+    return {
+        "item": {
+            "id": str(rfp.id),
+            "status": rfp.status,
+            "awarded_quote_id": str(quote.id),
+            "takeoff_updated": updated,
+            "commitment": commitment,
+        }
+    }
 
 
 def compare_table(rfp: Rfp) -> dict[str, Any]:

@@ -39,6 +39,12 @@ class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     public_token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     mail_tag: Mapped[Optional[str]] = mapped_column(String(16), nullable=True, unique=True, index=True)
+    awarded_quote_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("rfp_vendor_quotes.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     line_source: Mapped[str] = mapped_column(
         String(20), nullable=False, default="manual", server_default="manual"
@@ -70,7 +76,10 @@ class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
         back_populates="rfp", cascade="all, delete-orphan", order_by="RfpLineItem.sort_order"
     )
     vendor_quotes: Mapped[List["RfpVendorQuote"]] = relationship(
-        back_populates="rfp", cascade="all, delete-orphan"
+        back_populates="rfp", cascade="all, delete-orphan", foreign_keys="RfpVendorQuote.rfp_id"
+    )
+    awarded_quote: Mapped[Optional["RfpVendorQuote"]] = relationship(
+        "RfpVendorQuote", foreign_keys=[awarded_quote_id], post_update=True
     )
     drawings: Mapped[List["RfpDrawing"]] = relationship(
         back_populates="rfp", cascade="all, delete-orphan", order_by="RfpDrawing.sort_order"
@@ -145,7 +154,7 @@ class RfpVendorQuote(UUIDPKMixin, TimestampMixin, db.Model):
     attachments: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    rfp = relationship("Rfp", back_populates="vendor_quotes")
+    rfp = relationship("Rfp", back_populates="vendor_quotes", foreign_keys=[rfp_id])
 
 
 class RfpDrawing(UUIDPKMixin, TimestampMixin, db.Model):

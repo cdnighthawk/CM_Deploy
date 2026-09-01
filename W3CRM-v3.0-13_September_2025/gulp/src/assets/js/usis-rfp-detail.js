@@ -85,7 +85,7 @@
 
 	function setFrozen(frozen) {
 		state.frozen = !!frozen;
-		document.querySelectorAll("#usis-rfp-title-input, #usis-rfp-due-input, #usis-rfp-scope, #usis-rfp-inclusions, #usis-rfp-exclusions, #usis-rfp-clarifications, #usis-rfp-src-takeoff, #usis-rfp-src-manual, #usis-rfp-src-narrative, #usis-rfp-add-line, #usis-rfp-attach, #usis-rfp-refresh-takeoff").forEach(function (el) {
+		document.querySelectorAll("#usis-rfp-title-input, #usis-rfp-due-input, #usis-rfp-scope, #usis-rfp-inclusions, #usis-rfp-exclusions, #usis-rfp-clarifications, #usis-rfp-src-takeoff, #usis-rfp-src-manual, #usis-rfp-src-narrative, #usis-rfp-add-line, #usis-rfp-attach, #usis-rfp-refresh-takeoff, #usis-rfp-ship-kind, #usis-rfp-ship-office, #usis-rfp-install").forEach(function (el) {
 			if (el) el.disabled = state.frozen;
 		});
 	}
@@ -124,8 +124,80 @@
 		});
 		var cc = $("usis-rfp-cc-estimator");
 		if (cc) cc.checked = !!item.cc_estimator;
+		renderShipping(item);
 		setFrozen(!!item.frozen);
 		applySourceUi();
+	}
+
+	function renderShipping(item) {
+		var ship = (item && item.job_shipping) || {};
+		var kind = $("usis-rfp-ship-kind");
+		if (kind && document.activeElement !== kind) kind.value = ship.ship_to_kind === "office" ? "office" : "jobsite";
+		var wrap = $("usis-rfp-ship-office-wrap");
+		if (wrap) wrap.classList.toggle("d-none", (kind && kind.value) !== "office");
+		var officeSel = $("usis-rfp-ship-office");
+		if (officeSel) {
+			var offices = ship.offices || [];
+			var selected = ship.ship_to_office_id || "";
+			var html = "";
+			offices.forEach(function (o) {
+				var label = o.label || o.name || "Office";
+				if (o.address) label += " — " + o.address;
+				html +=
+					'<option value="' +
+					esc(o.id) +
+					'"' +
+					(o.id === selected ? " selected" : "") +
+					">" +
+					esc(label) +
+					"</option>";
+			});
+			if (!offices.length) {
+				html = '<option value="">No offices yet — add them in Company settings</option>';
+			}
+			if (document.activeElement !== officeSel) officeSel.innerHTML = html;
+		}
+		var addr = $("usis-rfp-ship-address");
+		if (addr) addr.textContent = ship.shipping_address || "No shipping address on file.";
+		var install = $("usis-rfp-install");
+		if (install && document.activeElement !== install) {
+			install.value = (ship.expected_install_date_explicit || ship.expected_install_date || "").slice(0, 10);
+		}
+		var jobLink = $("usis-rfp-job-link");
+		if (jobLink) {
+			if (item && item.project_id) {
+				jobLink.href = "construction/project-detail.html?id=" + encodeURIComponent(item.project_id);
+				jobLink.classList.remove("d-none");
+			} else {
+				jobLink.classList.add("d-none");
+			}
+		}
+	}
+
+	function saveJobShipping() {
+		if (!state.id || state.frozen) return Promise.resolve();
+		if (!state.rfp || !state.rfp.project_id) {
+			flash("This RFP is not linked to a job, so shipping cannot be saved.", "warn");
+			return Promise.resolve();
+		}
+		var kind = ($("usis-rfp-ship-kind") || {}).value || "jobsite";
+		var body = {
+			ship_to_kind: kind,
+			ship_to_office_id: kind === "office" ? ($("usis-rfp-ship-office") || {}).value || null : null,
+			expected_install_date: ($("usis-rfp-install") || {}).value || null,
+		};
+		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/job-shipping", {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+		})
+			.then(function (d) {
+				state.rfp = d.item || state.rfp;
+				renderShipping(state.rfp);
+			})
+			.catch(function (err) {
+				flash(err.message || String(err), "error");
+			});
 	}
 
 	function loadCostCodes() {
@@ -416,6 +488,13 @@
 		});
 	}
 
+	function poDetailHref(item) {
+		var c = item && item.commitment;
+		var pid = (c && c.project_id) || (item && item.project_id);
+		if (!pid) return "";
+		return "construction/project-detail.html?id=" + encodeURIComponent(pid);
+	}
+
 	function renderQuotes(item) {
 		fillQuoteVendorSelect(item);
 		var tb = $("usis-rfp-quotes-body");
@@ -437,6 +516,24 @@
 					})
 					.join(", ");
 				var lump = q.lump_sum_amount != null ? " · LS $" + q.lump_sum_amount : "";
+				var awardedId = item.awarded_quote_id;
+				var cmt = item.commitment;
+				var poHref = poDetailHref(item);
+				var actions =
+					"<button type='button' class='btn btn-sm btn-outline-secondary me-1' data-attach='" +
+					esc(q.id) +
+					"'>PDF</button>";
+				if (cmt && awardedId && q.id === awardedId && poHref) {
+					actions +=
+						"<a class='btn btn-sm btn-primary' href='" +
+						esc(poHref) +
+						"'>Open PO</a>";
+				} else if (q.received_at && (!item.status || item.status !== "Awarded" || !cmt)) {
+					actions +=
+						"<button type='button' class='btn btn-sm btn-outline-primary' data-award='" +
+						esc(q.id) +
+						"'>Award</button>";
+				}
 				return (
 					"<tr>" +
 					"<td>" +
@@ -461,14 +558,7 @@
 					(atts ? "<div class='small mt-1'>" + atts + "</div>" : "") +
 					"</td>" +
 					"<td class='text-nowrap'>" +
-					"<button type='button' class='btn btn-sm btn-outline-secondary me-1' data-attach='" +
-					esc(q.id) +
-					"'>PDF</button>" +
-					(q.received_at
-						? "<button type='button' class='btn btn-sm btn-outline-primary' data-award='" +
-						  esc(q.id) +
-						  "'>Award</button>"
-						: "") +
+					actions +
 					"</td></tr>"
 				);
 			})
@@ -483,13 +573,22 @@
 		});
 		tb.querySelectorAll("[data-award]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
-				if (!window.confirm("Award this vendor?")) return;
+				if (!window.confirm("Award this vendor and create a draft purchase order?")) return;
 				fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id) + "/award", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ quote_id: btn.getAttribute("data-award") }),
 				})
-					.then(load)
+					.then(function (body) {
+						var c = body && body.item && body.item.commitment;
+						return load().then(function () {
+							if (c && c.reference_number) {
+								flash("Draft PO " + c.reference_number + " created.", "success");
+							} else {
+								flash("Vendor awarded.", "success");
+							}
+						});
+					})
 					.catch(function (err) {
 						flash(err.message || String(err), "error");
 					});
@@ -721,6 +820,9 @@
 			body: JSON.stringify(body),
 		})
 			.then(function () {
+				return saveJobShipping();
+			})
+			.then(function () {
 				return saveDrawings();
 			})
 			.then(function () {
@@ -736,6 +838,10 @@
 		flash("");
 		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id)).then(function (d) {
 			state.rfp = d.item || d;
+			if (state.rfp && state.rfp.project_id && window.USISProjectContext &&
+					typeof window.USISProjectContext.setProjectId === "function") {
+				window.USISProjectContext.setProjectId(state.rfp.project_id);
+			}
 			renderHeader(state.rfp);
 			renderLines(state.rfp);
 			renderQuotes(state.rfp);
@@ -1204,6 +1310,17 @@
 		if (sync) sync.addEventListener("click", syncMailbox);
 		[$("usis-rfp-save"), $("usis-rfp-save-2")].forEach(function (btn) {
 			if (btn) btn.addEventListener("click", saveDraft);
+		});
+		["usis-rfp-ship-kind", "usis-rfp-ship-office", "usis-rfp-install"].forEach(function (id) {
+			var el = $(id);
+			if (!el) return;
+			el.addEventListener("change", function () {
+				if (id === "usis-rfp-ship-kind") {
+					var wrap = $("usis-rfp-ship-office-wrap");
+					if (wrap) wrap.classList.toggle("d-none", el.value !== "office");
+				}
+				saveJobShipping();
+			});
 		});
 		var addLine = $("usis-rfp-add-line");
 		if (addLine) {

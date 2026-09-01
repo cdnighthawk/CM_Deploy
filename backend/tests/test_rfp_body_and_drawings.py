@@ -10,7 +10,20 @@ import pytest
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import Company, Contact, Drawing, Estimate, EstimateLineItem, Project, Role, TakeoffLineItem, User, UserRole
+from app.models import (
+    Commitment,
+    Company,
+    Contact,
+    Drawing,
+    Estimate,
+    EstimateLineItem,
+    Project,
+    Role,
+    RfpVendorQuote,
+    TakeoffLineItem,
+    User,
+    UserRole,
+)
 
 
 @pytest.fixture
@@ -234,10 +247,174 @@ def test_award_writes_takeoff_vendor_quote(client, no_dev_admin):
         headers=ctx["hdr"],
     )
     assert awarded.status_code == 200, awarded.get_data(as_text=True)
+    body = awarded.get_json()["item"]
+    assert body["status"] == "Awarded"
+    assert body["awarded_quote_id"] == quote_id
+    cmt = body["commitment"]
+    assert cmt is not None
+    assert cmt["reference_number"] == "PO-001"
+    assert cmt["status"] == "draft"
+    assert cmt["project_id"] == ctx["pid"]
     with client.application.app_context():
         row = db.session.get(EstimateLineItem, eli_id)
         assert row is not None
         assert row.vendor_quote == Decimal("9.25")
+        po = db.session.get(Commitment, uuid.UUID(cmt["id"]))
+        assert po is not None
+        assert po.rfp_id == uuid.UUID(item["id"])
+        assert po.vendor_company_id == uuid.UUID(ctx["vid"])
+        assert po.commitment_kind == "purchase_order"
+        lines = list(po.line_items)
+        assert len(lines) == 1
+        assert lines[0].unit_cost == Decimal("9.25")
+        assert lines[0].quantity == Decimal("10")
+        assert lines[0].rfp_line_item_id is not None
+        assert str(lines[0].takeoff_line_item_id) == tid
+        assert lines[0].estimate_line_item_id == eli_id
+    again = client.post(
+        f"/api/v1/rfps/{item['id']}/award",
+        json={"quote_id": quote_id},
+        headers=ctx["hdr"],
+    )
+    assert again.status_code == 200, again.get_data(as_text=True)
+    assert again.get_json()["item"]["commitment"]["id"] == cmt["id"]
+    got = client.get(f"/api/v1/rfps/{item['id']}", headers=ctx["hdr"])
+    assert got.get_json()["item"]["awarded_quote_id"] == quote_id
+    assert got.get_json()["item"]["commitment"]["id"] == cmt["id"]
+
+
+def test_award_lump_sum_creates_ls_po_line(client, no_dev_admin):
+    ctx = _staff(client)
+    item = _create_rfp(
+        client,
+        ctx,
+        title="Lump sum finishes",
+        line_source="narrative",
+        scope_of_work="Install corridor finishes per finish schedule.",
+    )
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={"bidders": [{"company_id": ctx["vid"], "email": ctx["email"]}]},
+        headers=ctx["hdr"],
+    )
+    assert sent.status_code == 200, sent.get_data(as_text=True)
+    token = sent.get_json()["item"]["quotes"][0]["invite_token"]
+    posted = client.post(
+        f"/public/rfp/{token}",
+        data={"vendor_label": "Quote Vendor", "lump_sum_amount": "12400", "vendor_exclusions": "Overtime"},
+    )
+    assert posted.status_code == 200
+    quote_id = client.get(f"/api/v1/rfps/{item['id']}", headers=ctx["hdr"]).get_json()["item"]["quotes"][0]["id"]
+    awarded = client.post(
+        f"/api/v1/rfps/{item['id']}/award",
+        json={"quote_id": quote_id},
+        headers=ctx["hdr"],
+    )
+    assert awarded.status_code == 200, awarded.get_data(as_text=True)
+    cmt = awarded.get_json()["item"]["commitment"]
+    with client.application.app_context():
+        po = db.session.get(Commitment, uuid.UUID(cmt["id"]))
+        assert po is not None
+        lines = list(po.line_items)
+        assert len(lines) == 1
+        assert lines[0].unit == "LS"
+        assert lines[0].quantity == Decimal("1")
+        assert lines[0].unit_cost == Decimal("12400")
+        assert "Overtime" in (po.notes or "")
+
+
+def test_award_requires_project(client, no_dev_admin):
+    ctx = _staff(client)
+    item = _create_rfp(client, ctx, title="No job yet", line_source="narrative", scope_of_work="Price only.")
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={"bidders": [{"company_id": ctx["vid"], "email": ctx["email"]}]},
+        headers=ctx["hdr"],
+    )
+    assert sent.status_code == 200, sent.get_data(as_text=True)
+    token = sent.get_json()["item"]["quotes"][0]["invite_token"]
+    client.post(f"/public/rfp/{token}", data={"vendor_label": "V", "lump_sum_amount": "100"})
+    quote_id = client.get(f"/api/v1/rfps/{item['id']}", headers=ctx["hdr"]).get_json()["item"]["quotes"][0]["id"]
+    with client.application.app_context():
+        from app.models import Rfp
+
+        rfp = db.session.get(Rfp, uuid.UUID(item["id"]))
+        assert rfp is not None
+        rfp.project_id = None
+        rfp.lead_estimate_id = None
+        db.session.commit()
+    awarded = client.post(
+        f"/api/v1/rfps/{item['id']}/award",
+        json={"quote_id": quote_id},
+        headers=ctx["hdr"],
+    )
+    assert awarded.status_code == 400
+    assert "project" in (awarded.get_json().get("error") or "").lower()
+
+
+def test_award_requires_vendor_company(client, no_dev_admin):
+    ctx = _staff(client)
+    item = _create_rfp(client, ctx, title="Unlinked quote", line_source="narrative", scope_of_work="Price only.")
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={"bidders": [{"company_id": ctx["vid"], "email": ctx["email"]}]},
+        headers=ctx["hdr"],
+    )
+    token = sent.get_json()["item"]["quotes"][0]["invite_token"]
+    client.post(f"/public/rfp/{token}", data={"vendor_label": "V", "lump_sum_amount": "50"})
+    quote_id = client.get(f"/api/v1/rfps/{item['id']}", headers=ctx["hdr"]).get_json()["item"]["quotes"][0]["id"]
+    with client.application.app_context():
+        q = db.session.get(RfpVendorQuote, uuid.UUID(quote_id))
+        assert q is not None
+        q.vendor_company_id = None
+        db.session.commit()
+    awarded = client.post(
+        f"/api/v1/rfps/{item['id']}/award",
+        json={"quote_id": quote_id},
+        headers=ctx["hdr"],
+    )
+    assert awarded.status_code == 400
+    assert "vendor" in (awarded.get_json().get("error") or "").lower()
+
+
+def test_award_rejects_different_quote_when_po_exists(client, no_dev_admin):
+    ctx = _staff(client)
+    other = _staff(client)
+    item = _create_rfp(client, ctx, title="Two bidders", line_source="narrative", scope_of_work="Price only.")
+    sent = client.post(
+        f"/api/v1/rfps/{item['id']}/send",
+        json={
+            "bidders": [
+                {"company_id": ctx["vid"], "email": ctx["email"]},
+                {"company_id": other["vid"], "email": other["email"]},
+            ]
+        },
+        headers=ctx["hdr"],
+    )
+    assert sent.status_code == 200, sent.get_data(as_text=True)
+    quotes = sent.get_json()["item"]["quotes"]
+    assert len(quotes) == 2
+    for q in quotes:
+        posted = client.post(
+            f"/public/rfp/{q['invite_token']}",
+            data={"vendor_label": q.get("vendor_label") or "V", "lump_sum_amount": "80"},
+        )
+        assert posted.status_code == 200
+    got = client.get(f"/api/v1/rfps/{item['id']}", headers=ctx["hdr"]).get_json()["item"]["quotes"]
+    first, second = got[0]["id"], got[1]["id"]
+    awarded = client.post(
+        f"/api/v1/rfps/{item['id']}/award",
+        json={"quote_id": first},
+        headers=ctx["hdr"],
+    )
+    assert awarded.status_code == 200, awarded.get_data(as_text=True)
+    blocked = client.post(
+        f"/api/v1/rfps/{item['id']}/award",
+        json={"quote_id": second},
+        headers=ctx["hdr"],
+    )
+    assert blocked.status_code == 400
+    assert "different" in (blocked.get_json().get("error") or "").lower()
 
 
 def test_drawing_token_link_and_freeze(client, no_dev_admin):

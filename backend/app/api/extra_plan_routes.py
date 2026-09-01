@@ -18,6 +18,7 @@ from ..models import (
     Estimate,
     EstimateLineItem,
     LeadEstimate,
+    Project,
     Rfp,
     RfpLineItem,
     TakeoffLineItem,
@@ -704,6 +705,31 @@ def register_extra_routes(bp: Blueprint) -> None:
             return _jsonify({"error": "rfp not found"}), 404
         return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
 
+    @bp.patch("/rfps/<rfp_id>/job-shipping")
+    def patch_rfp_job_shipping(rfp_id: str):
+        from ._office_location import OfficeLocationError, apply_job_shipping
+
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        r = db.session.get(Rfp, rid)
+        if r is None:
+            return _jsonify({"error": "rfp not found"}), 404
+        if r.project_id is None:
+            return _jsonify({"error": "This RFP is not linked to a job."}), 400
+        project = db.session.get(Project, r.project_id)
+        if project is None:
+            return _jsonify({"error": "project not found"}), 404
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            return _jsonify({"error": "expected JSON object body"}), 400
+        try:
+            apply_job_shipping(project, data)
+            db.session.commit()
+        except OfficeLocationError as exc:
+            return _jsonify({"error": exc.message}), exc.status
+        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
+
     @bp.get("/rfps/<rfp_id>/email-preview")
     def rfp_email_preview(rfp_id: str):
         rid = _parse_uuid_param(rfp_id)
@@ -918,7 +944,8 @@ def register_extra_routes(bp: Blueprint) -> None:
         if not isinstance(data, Mapping):
             return _jsonify({"error": "expected JSON object body"}), 400
         try:
-            return _jsonify(award_rfp(load_rfp(rid), data, user_id=current_user().id))
+            cu = current_user()
+            return _jsonify(award_rfp(load_rfp(rid), data, user_id=cu.id, cu=cu))
         except ApiError as exc:
             return _jsonify({"error": exc.message}), exc.status
 

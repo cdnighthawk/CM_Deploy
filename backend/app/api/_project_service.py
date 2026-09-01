@@ -114,6 +114,15 @@ def patch_project(project_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]
         p.contract_date = _parse_date(data.get("contract_date"))
     if "start_date" in data:
         p.start_date = _parse_date(data.get("start_date"))
+    if "expected_install_date" in data:
+        p.expected_install_date = _parse_date(data.get("expected_install_date"))
+    if "ship_to_kind" in data or "ship_to_office_id" in data:
+        from ._office_location import OfficeLocationError, apply_job_shipping
+
+        try:
+            apply_job_shipping(p, data)
+        except OfficeLocationError as exc:
+            raise ApiError(exc.message, exc.status) from exc
     if "substantial_completion_date" in data:
         p.substantial_completion_date = _parse_date(data.get("substantial_completion_date"))
     if "closeout_date" in data:

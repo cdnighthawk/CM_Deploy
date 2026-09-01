@@ -11,6 +11,7 @@
 	var lastContractItems = [];
 	var lastPrimeContractValueNum = null;
 	var invoiceMethods = [];
+	var lastOffices = [];
 	var INVOICE_ADD_NEW = "__add_new__";
 
 	function metaApiBase() {
@@ -1296,6 +1297,56 @@
 		wrap.classList.toggle("d-none", !show);
 	}
 
+	function fillShipOfficeSelect(selectedId) {
+		var sel = document.getElementById("usis-proj-edit-ship-office");
+		if (!sel) return;
+		var html = '<option value="">— Select office —</option>';
+		lastOffices.forEach(function (o) {
+			var id = o.id || "";
+			var label = o.label || o.name || "Office";
+			if (o.address) label += " — " + o.address;
+			html +=
+				'<option value="' +
+				esc(id) +
+				'"' +
+				(id === selectedId ? " selected" : "") +
+				">" +
+				esc(label) +
+				"</option>";
+		});
+		sel.innerHTML = html;
+		if (!lastOffices.length) {
+			sel.innerHTML = '<option value="">No offices yet — add them in Company settings</option>';
+		}
+	}
+
+	function toggleShipOfficeField() {
+		var kind = document.getElementById("usis-proj-edit-ship-kind");
+		var wrap = document.getElementById("usis-proj-edit-ship-office-wrap");
+		if (!wrap) return;
+		wrap.classList.toggle("d-none", !kind || kind.value !== "office");
+	}
+
+	function loadOffices(cb) {
+		fetch(apiBase() + "/api/v1/office-locations", {
+			credentials: "include",
+			headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				lastOffices = res.ok && res.body && res.body.items ? res.body.items : [];
+				if (cb) cb(null);
+			})
+			.catch(function () {
+				lastOffices = [];
+				if (cb) cb("Could not load offices.");
+			});
+	}
+
 	function setEditErr(msg) {
 		var el = document.getElementById("usis-proj-edit-err");
 		if (!el) return;
@@ -1318,6 +1369,8 @@
 		document.getElementById("usis-proj-edit-sage").value = item.sage_project_id || "";
 		document.getElementById("usis-proj-edit-textura").value = item.textura_project_id || "";
 		document.getElementById("usis-proj-edit-addr1").value = item.address_line1 || "";
+		var addr2 = document.getElementById("usis-proj-edit-addr2");
+		if (addr2) addr2.value = item.address_line2 || "";
 		document.getElementById("usis-proj-edit-city").value = item.city || "";
 		document.getElementById("usis-proj-edit-state").value = item.state || "";
 		document.getElementById("usis-proj-edit-zip").value = item.postal_code || "";
@@ -1325,6 +1378,14 @@
 			item.contract_value != null ? String(item.contract_value) : "";
 		document.getElementById("usis-proj-edit-contract-date").value = isoToInputDate(item.contract_date);
 		document.getElementById("usis-proj-edit-start").value = isoToInputDate(item.start_date);
+		var install = document.getElementById("usis-proj-edit-install");
+		if (install) install.value = isoToInputDate(item.expected_install_date);
+		var shipKind = document.getElementById("usis-proj-edit-ship-kind");
+		if (shipKind) shipKind.value = item.ship_to_kind === "office" ? "office" : "jobsite";
+		loadOffices(function () {
+			fillShipOfficeSelect(item.ship_to_office_id || "");
+			toggleShipOfficeField();
+		});
 		document.getElementById("usis-proj-edit-substantial").value = isoToInputDate(item.substantial_completion_date);
 		document.getElementById("usis-proj-edit-closeout").value = isoToInputDate(item.closeout_date);
 		document.getElementById("usis-proj-edit-retention").value =
@@ -1405,12 +1466,21 @@
 			sage_project_id: document.getElementById("usis-proj-edit-sage").value.trim() || null,
 			textura_project_id: document.getElementById("usis-proj-edit-textura").value.trim() || null,
 			address_line1: document.getElementById("usis-proj-edit-addr1").value.trim() || null,
+			address_line2: document.getElementById("usis-proj-edit-addr2")
+				? document.getElementById("usis-proj-edit-addr2").value.trim() || null
+				: null,
 			city: document.getElementById("usis-proj-edit-city").value.trim() || null,
 			state: document.getElementById("usis-proj-edit-state").value.trim() || null,
 			postal_code: document.getElementById("usis-proj-edit-zip").value.trim() || null,
 			contract_value: document.getElementById("usis-proj-edit-contract-value").value.trim() || null,
 			contract_date: document.getElementById("usis-proj-edit-contract-date").value || null,
 			start_date: document.getElementById("usis-proj-edit-start").value || null,
+			expected_install_date: (document.getElementById("usis-proj-edit-install") || {}).value || null,
+			ship_to_kind: (document.getElementById("usis-proj-edit-ship-kind") || {}).value || "jobsite",
+			ship_to_office_id:
+				((document.getElementById("usis-proj-edit-ship-kind") || {}).value === "office"
+					? (document.getElementById("usis-proj-edit-ship-office") || {}).value
+					: "") || null,
 			substantial_completion_date: document.getElementById("usis-proj-edit-substantial").value || null,
 			closeout_date: document.getElementById("usis-proj-edit-closeout").value || null,
 			retention_percentage: document.getElementById("usis-proj-edit-retention").value.trim() || null,
@@ -1476,6 +1546,8 @@
 		if (saveBtn) saveBtn.addEventListener("click", saveProjectEdit);
 		var methodSel = document.getElementById("usis-proj-edit-invoice-method");
 		if (methodSel) methodSel.addEventListener("change", onInvoiceMethodChange);
+		var shipKind = document.getElementById("usis-proj-edit-ship-kind");
+		if (shipKind) shipKind.addEventListener("change", toggleShipOfficeField);
 	}
 
 	function renderJobMap(merged) {
@@ -1569,9 +1641,23 @@
 			} else {
 				appendFieldRow(pub, "Location", '<span class="text-muted">No location on file.</span>');
 			}
+			var ship = item.job_shipping || {};
+			appendFieldRow(
+				pub,
+				"Ship to",
+				fmtDash(ship.shipping_label || (item.ship_to_kind === "office" ? "Office" : "Jobsite"))
+			);
+			appendFieldRow(
+				pub,
+				"Shipping address",
+				ship.shipping_address
+					? '<div class="small" style="white-space:pre-wrap;">' + esc(ship.shipping_address) + "</div>"
+					: '<span class="text-muted">No shipping address on file.</span>'
+			);
 			appendDateRow(pub, "Job walk", lead.job_walk_at);
 			appendDateRow(pub, "RFIs due", lead.rfis_due_at);
 			appendDateRow(pub, "Expected start", item.start_date || lead.expected_start_at);
+			appendDateRow(pub, "Expected install date", item.expected_install_date || ship.expected_install_date_explicit);
 			appendDateRow(pub, "Expected finish", item.substantial_completion_date || lead.expected_finish_at);
 			appendFieldRow(
 				pub,

@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import Company, LeadEstimate, SavedListFilter, User
+from app.models import Company, CompanyOffice, LeadEstimate, SavedListFilter, User
 from app.api._serializers import haversine_miles, location_coords
 
 
@@ -282,9 +282,30 @@ def test_location_coords_and_haversine():
     assert 15 < miles < 30
 
 
+def _sync_default_office_coords(company: Company) -> None:
+    rows = list(
+        db.session.scalars(select(CompanyOffice).where(CompanyOffice.company_id == company.id)).all()
+    )
+    if not rows:
+        return
+    default = next((o for o in rows if o.is_default), rows[0])
+    for office in rows:
+        office.is_default = office.id == default.id
+        office.city = company.city
+        office.state = company.state
+        office.postal_code = company.postal_code
+        office.latitude = company.latitude
+        office.longitude = company.longitude
+
+
 def _office_self(flask_app, **kwargs):
     with flask_app.app_context():
-        row = db.session.scalar(select(Company).where(Company.company_type == "self", Company.deleted_at.is_(None)))
+        row = db.session.scalar(
+            select(Company)
+            .where(Company.company_type == "self", Company.deleted_at.is_(None))
+            .order_by(Company.created_at.asc())
+            .limit(1)
+        )
         created = False
         if row is None:
             row = Company(name="USIS Office Test", company_type="self", country="US")
@@ -301,6 +322,8 @@ def _office_self(flask_app, **kwargs):
         }
         for k, v in kwargs.items():
             setattr(row, k, v)
+        db.session.flush()
+        _sync_default_office_coords(row)
         db.session.commit()
         snapshot["id"] = str(row.id)
         return snapshot
@@ -319,6 +342,7 @@ def _restore_office(flask_app, snapshot):
             row.postal_code = snapshot["postal_code"]
             row.latitude = snapshot["latitude"]
             row.longitude = snapshot["longitude"]
+            _sync_default_office_coords(row)
         db.session.commit()
 
 

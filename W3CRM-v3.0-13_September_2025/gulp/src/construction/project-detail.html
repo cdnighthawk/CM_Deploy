@@ -1277,8 +1277,12 @@
 							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-sage" maxlength="100">
 						</div>
 						<div class="col-12">
-							<label class="form-label small mb-0" for="usis-proj-edit-addr1">Address line 1</label>
+							<label class="form-label small mb-0" for="usis-proj-edit-addr1">Jobsite address line 1</label>
 							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-addr1" maxlength="255">
+						</div>
+						<div class="col-12">
+							<label class="form-label small mb-0" for="usis-proj-edit-addr2">Jobsite address line 2</label>
+							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-addr2" maxlength="255">
 						</div>
 						<div class="col-md-5">
 							<label class="form-label small mb-0" for="usis-proj-edit-city">City</label>
@@ -1292,6 +1296,21 @@
 							<label class="form-label small mb-0" for="usis-proj-edit-zip">ZIP</label>
 							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-zip" maxlength="20">
 						</div>
+						<div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">Shipping</h6>
+							<p class="text-muted small mb-2">RFPs use this destination. Choose the jobsite or one of your offices.</p>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label small mb-0" for="usis-proj-edit-ship-kind">Ship to</label>
+							<select class="form-select form-select-sm" id="usis-proj-edit-ship-kind">
+								<option value="jobsite">Jobsite</option>
+								<option value="office">Office</option>
+							</select>
+						</div>
+						<div class="col-md-6" id="usis-proj-edit-ship-office-wrap">
+							<label class="form-label small mb-0" for="usis-proj-edit-ship-office">Office</label>
+							<select class="form-select form-select-sm" id="usis-proj-edit-ship-office"></select>
+							<p class="text-muted small mb-0 mt-1">Manage offices in <a href="../usis-company-settings.html">Company settings</a>.</p>
+						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-proj-edit-contract-value">Contract value</label>
 							<input type="text" class="form-control form-control-sm" id="usis-proj-edit-contract-value" inputmode="decimal">
@@ -1303,6 +1322,10 @@
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-proj-edit-start">Start date</label>
 							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-start">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label small mb-0" for="usis-proj-edit-install">Expected install date</label>
+							<input type="date" class="form-control form-control-sm" id="usis-proj-edit-install">
 						</div>
 						<div class="col-md-4">
 							<label class="form-label small mb-0" for="usis-proj-edit-substantial">Substantial completion</label>

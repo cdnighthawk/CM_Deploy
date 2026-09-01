@@ -11,7 +11,7 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
-	<link href="assets/css/usis-ui.css?v=20260831c" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260901a" rel="stylesheet">
 	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
@@ -402,35 +402,71 @@
 
 						<!-- Drawings (Procore-style log) -->
 						<div class="tab-pane fade" id="proj-pane-drawings" role="tabpanel" aria-labelledby="proj-tab-drawings" tabindex="0">
-							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-								<div>
-									<h5 class="mb-0" data-i18n="Drawings">Drawings</h5>
-									<p class="text-muted small mb-0">Current set and sheet metadata (project-scoped).</p>
+							<div class="usis-draw-log">
+								<div class="usis-draw-log__head">
+									<div>
+										<h4 class="usis-draw-log__title" data-i18n="Drawings">Drawings</h4>
+										<p class="usis-draw-log__sub" data-i18n="View, manage, and upload all of your drawings from the Drawings log.">View, manage, and upload all of your drawings from the Drawings log.</p>
+									</div>
+									<div class="usis-draw-log__actions">
+										<button type="button" class="btn btn-outline-secondary btn-sm usis-draw-export" data-i18n="Export">Export</button>
+										<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-modal-drawing-create" data-i18n="Upload">Upload</button>
+									</div>
 								</div>
-								<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#usis-modal-drawing-create">+ Upload / add</button>
+								<nav class="usis-draw-log__tabs" aria-label="Drawings views">
+									<button type="button" class="usis-draw-log__tab is-active" data-usis-draw-view="current" aria-current="page" data-i18n="Current Drawings">Current Drawings</button>
+									<button type="button" class="usis-draw-log__tab" data-usis-draw-view="sets" data-i18n="Drawing Sets">Drawing Sets</button>
+								</nav>
+								<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading drawings…</div>
+								<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
+								<div class="usis-draw-log__current">
+									<div class="usis-draw-log__bar">
+										<div class="usis-draw-log__search">
+											<svg class="usis-draw-log__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+											<input type="search" class="form-control form-control-sm" id="usis-search-drawings" placeholder="Search" data-i18n-placeholder="Search" autocomplete="off">
+										</div>
+										<button type="button" class="usis-draw-log__all-filters" aria-expanded="false">
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+											<span data-i18n="All Filters">All Filters</span>
+										</button>
+										<div class="usis-draw-log__chips d-none"></div>
+										<div class="usis-draw-log__bar-end">
+											<div class="usis-draw-log__set">
+												<label class="usis-draw-log__set-label" for="usis-filter-drawing-set" data-i18n="Set">Set</label>
+												<select class="form-select form-select-sm" id="usis-filter-drawing-set" aria-label="Set">
+													<option value="">Current</option>
+												</select>
+											</div>
+											<div class="usis-draw-log__layouts" role="group" aria-label="View">
+												<button type="button" class="usis-draw-log__layout is-active" data-usis-draw-layout="list" title="List view" data-i18n-title="List view" aria-pressed="true">
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+												</button>
+												<button type="button" class="usis-draw-log__layout" data-usis-draw-layout="grid" title="Thumbnail view" data-i18n-title="Thumbnail view" aria-pressed="false">
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+												</button>
+											</div>
+										</div>
+									</div>
+									<div class="usis-draw-log__filter-panel d-none">
+										<div class="usis-sheet-filter">
+											<label class="form-label small text-muted mb-0" for="usis-filter-drawing-discipline" data-i18n="Discipline">Discipline</label>
+											<select class="form-select form-select-sm" id="usis-filter-drawing-discipline">
+												<option value="">All disciplines</option>
+											</select>
+										</div>
+									</div>
+									<div class="usis-draw-group-toolbar d-flex flex-wrap align-items-center gap-2 mb-2">
+										<button type="button" class="btn btn-link btn-sm p-0 usis-draw-expand-all">Expand all</button>
+										<span class="text-muted">·</span>
+										<button type="button" class="btn btn-link btn-sm p-0 usis-draw-collapse-all">Collapse all</button>
+									</div>
+									<div id="usis-grid-drawings" class="usis-draw-log__table border rounded overflow-hidden bg-white"></div>
+									<div class="usis-draw-log__cards d-none"></div>
+								</div>
+								<div class="usis-draw-log__sets d-none">
+									<div class="usis-draw-sets-table-wrap border rounded overflow-hidden bg-white"></div>
+								</div>
 							</div>
-							<div class="alert alert-light border py-2 mb-2 d-none" data-usis-loading>Loading drawings…</div>
-							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-error role="alert"></div>
-							<div class="usis-tool-toolbar mb-2">
-								<div class="usis-sheet-filter">
-									<label class="form-label small text-muted mb-0" for="usis-filter-drawing-discipline">Discipline</label>
-									<select class="form-select form-select-sm" id="usis-filter-drawing-discipline">
-										<option value="">All disciplines</option>
-									</select>
-								</div>
-								<div class="usis-sheet-filter">
-									<label class="form-label small text-muted mb-0" for="usis-filter-drawing-set">Set</label>
-									<select class="form-select form-select-sm" id="usis-filter-drawing-set">
-										<option value="">Current</option>
-									</select>
-								</div>
-								<button type="button" class="btn btn-sm btn-outline-primary usis-drawing-set-current text-nowrap" title="Latest revision of each sheet">Current</button>
-								<div class="usis-sheet-search">
-									<label class="form-label small text-muted mb-0" for="usis-search-drawings">Search</label>
-									<input type="search" class="form-control form-control-sm" id="usis-search-drawings" placeholder="Sheet #, title, set, discipline…" autocomplete="off">
-								</div>
-							</div>
-							<div id="usis-grid-drawings" class="border rounded overflow-hidden bg-white"></div>
 						</div>
 
 						<div class="tab-pane fade" id="proj-pane-specs" role="tabpanel" aria-labelledby="proj-tab-specs" tabindex="0">
@@ -2176,7 +2212,8 @@
 	<script src="assets/js/project-detail-wave1.js?v=20260831c"></script>
 	<script src="assets/js/project-detail-wave2.js?v=20260831c"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
-	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
+	<script src="assets/js/usis-drawings-log.js?v=20260901a"></script>
+	<script src="assets/js/project-detail-tools.js?v=20260901a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js"></script>
 	<script src="assets/js/project-detail-procurement.js?v=20260901a"></script>

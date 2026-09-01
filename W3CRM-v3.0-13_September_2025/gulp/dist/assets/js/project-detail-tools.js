@@ -122,9 +122,16 @@
 		return data && data.series_id ? String(data.series_id) : "";
 	}
 
+	function drawingsLogPane() {
+		return document.querySelector("#proj-pane-drawings .usis-draw-log") || document.getElementById("proj-pane-drawings");
+	}
+
 	function drawingDownloadBtn() {
+		var pane = drawingsLogPane();
+		var bar = pane && pane.querySelector(".usis-draw-group-toolbar");
+		if (bar) return bar.querySelector(".usis-draw-download");
 		var grid = document.getElementById("usis-grid-drawings");
-		var bar = grid && grid.previousElementSibling;
+		bar = grid && grid.previousElementSibling;
 		return bar && bar.classList.contains("usis-draw-group-toolbar")
 			? bar.querySelector(".usis-draw-download")
 			: null;
@@ -161,6 +168,17 @@
 		return { url: url, name: name };
 	}
 
+	function downloadDrawingJobs(jobs, emptyMsg) {
+		if (window.USISUi && typeof USISUi.downloadFiles === "function") {
+			USISUi.downloadFiles(jobs, { emptyMsg: emptyMsg });
+			return;
+		}
+		if (!jobs.length && window.USISNotify) window.USISNotify.error(emptyMsg);
+		jobs.forEach(function (job) {
+			window.open(job.url, "_blank", "noopener");
+		});
+	}
+
 	function downloadSelectedDrawings() {
 		var jobs = filterDrawingSheetsClient(cache.drawingSheets)
 			.filter(function (s) {
@@ -168,13 +186,20 @@
 			})
 			.map(drawingFileJob)
 			.filter(Boolean);
-		if (window.USISUi && typeof USISUi.downloadFiles === "function") {
-			USISUi.downloadFiles(jobs, { emptyMsg: "Selected drawings have no file to download." });
-			return;
+		downloadDrawingJobs(jobs, "Selected drawings have no file to download.");
+	}
+
+	function exportDrawings() {
+		var rows = filterDrawingSheetsClient(cache.drawingSheets);
+		if (drawingSelected.size) {
+			rows = rows.filter(function (s) {
+				return drawingSelected.has(drawingRowId(s));
+			});
 		}
-		jobs.forEach(function (job) {
-			window.open(job.url, "_blank", "noopener");
-		});
+		downloadDrawingJobs(
+			rows.map(drawingFileJob).filter(Boolean),
+			"No drawing files to export."
+		);
 	}
 
 	function drawingCheckboxColumn() {
@@ -236,7 +261,8 @@
 
 	function ensureDrawingGroupToolbar(gridEl) {
 		if (!gridEl || !gridEl.parentNode) return;
-		var bar = gridEl.previousElementSibling;
+		var pane = drawingsLogPane();
+		var bar = (pane && pane.querySelector(".usis-draw-group-toolbar")) || gridEl.previousElementSibling;
 		if (!bar || !bar.classList.contains("usis-draw-group-toolbar")) {
 			bar = document.createElement("div");
 			bar.className = "usis-draw-group-toolbar d-flex flex-wrap align-items-center gap-2 mb-2";
@@ -245,12 +271,21 @@
 				'<span class="text-muted">·</span>' +
 				'<button type="button" class="btn btn-link btn-sm p-0 usis-draw-collapse-all">Collapse all</button>';
 			gridEl.parentNode.insertBefore(bar, gridEl);
-			bar.querySelector(".usis-draw-expand-all").addEventListener("click", function () {
-				if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", true);
-			});
-			bar.querySelector(".usis-draw-collapse-all").addEventListener("click", function () {
-				if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", false);
-			});
+		}
+		if (bar.dataset.usisBound !== "1") {
+			bar.dataset.usisBound = "1";
+			var ex = bar.querySelector(".usis-draw-expand-all");
+			var col = bar.querySelector(".usis-draw-collapse-all");
+			if (ex) {
+				ex.addEventListener("click", function () {
+					if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", true);
+				});
+			}
+			if (col) {
+				col.addEventListener("click", function () {
+					if (drawingsTabulator) setDrawingGroupsOpen(drawingsTabulator, activeProjectId || "", false);
+				});
+			}
 		}
 		if (!bar.querySelector(".usis-draw-download")) {
 			var dl = document.createElement("button");
@@ -453,6 +488,7 @@
 
 	function ensureCurrentDrawingsButton(setSel) {
 		if (!setSel) return;
+		if (setSel.closest(".usis-draw-log")) return;
 		var toolbar = setSel.closest(".usis-tool-toolbar");
 		var btn = toolbar && toolbar.querySelector(".usis-drawing-set-current");
 		if (!btn) {
@@ -579,7 +615,29 @@
 		return out;
 	}
 
-	function buildOrRefreshDrawingsTabulator() {
+	function drawingsLogOpts() {
+		return {
+			getPid: function () {
+				return activeProjectId || "";
+			},
+			viewerHref: drawingViewerHref,
+			checkboxColumn: drawingCheckboxColumn(),
+			selected: drawingSelected,
+			onToggleSelect: function (id, on) {
+				if (!id) return;
+				if (on) drawingSelected.add(id);
+				else drawingSelected.delete(id);
+				updateDrawingDownloadBtn();
+			},
+			onSelectSet: function (name) {
+				if (window.USISDrawingsLog) USISDrawingsLog.selectSetIn(drawingsLogPane(), name);
+			},
+			onExport: exportDrawings,
+			onChange: applyDrawingFilter,
+		};
+	}
+
+	function buildDrawingsTable() {
 		var el = document.getElementById("usis-grid-drawings");
 		if (!el) return;
 		var rows = filterDrawingSheetsClient(cache.drawingSheets);
@@ -589,44 +647,31 @@
 			return;
 		}
 		var pid = activeProjectId || "";
-		var cols = [
-			drawingCheckboxColumn(),
-			{
-				title: "Sheet #",
-				field: "sheet_number",
-				headerFilter: "input",
-				minWidth: 100,
-				widthGrow: 1,
-				editor: "input",
-				formatter: drawingNameLinkFormatter("sheet_number", pid),
-			},
-			{
-				title: "Title",
-				field: "sheet_title",
-				headerFilter: "input",
-				minWidth: 160,
-				widthGrow: 2,
-				editor: "input",
-				formatter: drawingNameLinkFormatter("sheet_title", pid),
-			},
-			{ title: "Discipline", field: "discipline", visible: false },
-			{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 140, widthGrow: 1 },
-			{ title: "Issues", field: "revision_count", hozAlign: "right", width: 90 },
-			{
-				title: "Updated",
-				field: "current_revision",
-				width: 170,
-				formatter: function (cell) {
-					var cr = cell.getValue();
-					if (!cr || !cr.updated_at) return "—";
-					try {
-						return esc(new Date(cr.updated_at).toLocaleString());
-					} catch (e) {
-						return esc(cr.updated_at);
-					}
-				},
-			},
-		];
+		var cols =
+			window.USISDrawingsLog && typeof USISDrawingsLog.columns === "function"
+				? USISDrawingsLog.columns(drawingsLogOpts())
+				: [
+						drawingCheckboxColumn(),
+						{
+							title: "Sheet #",
+							field: "sheet_number",
+							minWidth: 100,
+							widthGrow: 1,
+							editor: "input",
+							formatter: drawingNameLinkFormatter("sheet_number", pid),
+						},
+						{
+							title: "Title",
+							field: "sheet_title",
+							minWidth: 160,
+							widthGrow: 2,
+							editor: "input",
+							formatter: drawingNameLinkFormatter("sheet_title", pid),
+						},
+						{ title: "Discipline", field: "discipline", visible: false },
+						{ title: "Set", field: "drawing_set", minWidth: 140, widthGrow: 1 },
+						{ title: "Issues", field: "revision_count", hozAlign: "right", width: 90 },
+				  ];
 		rows.sort(function (a, b) {
 			var da = drawingDisciplineGroup(a).toLowerCase();
 			var db = drawingDisciplineGroup(b).toLowerCase();
@@ -767,7 +812,16 @@
 	}
 
 	function applyDrawingFilter() {
-		buildOrRefreshDrawingsTabulator();
+		var pane = drawingsLogPane();
+		if (window.USISDrawingsLog && pane && pane.querySelector && pane.querySelector(".usis-draw-log__tabs")) {
+			USISDrawingsLog.refresh(pane, Object.assign(drawingsLogOpts(), {
+				rows: filterDrawingSheetsClient(cache.drawingSheets),
+				allSheets: cache.drawingSheets,
+				buildTable: buildDrawingsTable,
+			}));
+			return;
+		}
+		buildDrawingsTable();
 	}
 
 	function applyRfiFilter() {
@@ -801,6 +855,9 @@
 		var ds = document.getElementById("usis-filter-drawing-set");
 		if (dd) dd.addEventListener("change", applyDrawingFilter);
 		if (ds) ds.addEventListener("change", applyDrawingFilter);
+		if (window.USISDrawingsLog) {
+			USISDrawingsLog.wire(drawingsLogPane(), drawingsLogOpts());
+		}
 		var r1 = document.getElementById("usis-search-rfis");
 		var r2 = document.getElementById("usis-filter-rfi-status");
 		if (r1) r1.addEventListener("input", applyRfiFilter);

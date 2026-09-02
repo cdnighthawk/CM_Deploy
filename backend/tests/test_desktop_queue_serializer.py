@@ -41,6 +41,46 @@ def test_desktop_queue_item_maps_cloud_estimate_fields():
     assert item["total"] == 1250.5
 
 
+def test_lead_estimate_public_includes_zip():
+    from app.api._serializers import lead_estimate_public
+
+    row = SimpleNamespace(
+        id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        external_id="ext-1",
+        project_id=None,
+        name="Wheeler",
+        number="26-101",
+        trade_name="Signage",
+        submission_state="WILL_SUBMIT",
+        source="buildingconnected",
+        workflow_bucket="WILL_SUBMIT",
+        is_archived=False,
+        is_parent=True,
+        external_parent_id=None,
+        members=None,
+        due_at=datetime(2026, 8, 30, 17, 0, tzinfo=timezone.utc),
+        bc_updated_at=None,
+        client={"company": {"name": "Hoffman"}},
+        location={"city": "Boise", "state": "ID", "zip": "83702"},
+        crm_stage=None,
+        market_sector=None,
+        expected_start_at=None,
+        final_value=None,
+        rom=None,
+        win_probability=None,
+        primary_estimate_id=None,
+        primary_rfp_id=None,
+        estimate_locked_at=None,
+        estimate_approved_at=None,
+        estimate_approved_by_user_id=None,
+    )
+    item = lead_estimate_public(row)
+    assert item["city"] == "Boise"
+    assert item["state"] == "ID"
+    assert item["zip"] == "83702"
+    assert item["company_name"] == "Hoffman"
+
+
 def test_claims_email_prefers_work_account():
     assert claims_email({"preferred_username": "rodrigo@gousis.com"}) == "rodrigo@gousis.com"
 

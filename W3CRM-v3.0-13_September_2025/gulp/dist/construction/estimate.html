@@ -61,50 +61,7 @@
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<!-- End - Style CSS -->
 	<style>
-		#usis-estimate-table { font-size: 0.8125rem; table-layout: fixed; }
-		#usis-estimate-table thead th,
-		#usis-estimate-table tbody td {
-			padding: 0.2rem 0.45rem;
-			vertical-align: middle;
-			line-height: 1.25;
-		}
-		#usis-estimate-table thead th { font-weight: 600; }
 		#usis-estimate-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
-		#usis-estimate-table th.usis-est-col-lead,
-		#usis-estimate-table td.usis-est-col-lead {
-			width: 22%;
-			max-width: 22%;
-			white-space: normal;
-			word-break: break-word;
-			overflow-wrap: break-word;
-		}
-		#usis-estimate-table th.usis-est-col-trade,
-		#usis-estimate-table td.usis-est-col-trade {
-			white-space: normal;
-			word-break: break-word;
-			overflow-wrap: break-word;
-		}
-		#usis-estimate-table th.usis-est-col-company,
-		#usis-estimate-table td.usis-est-col-company,
-		#usis-estimate-table th.usis-est-col-city,
-		#usis-estimate-table td.usis-est-col-city {
-			white-space: normal;
-			word-break: break-word;
-			overflow-wrap: break-word;
-			overflow: hidden;
-		}
-		#usis-estimate-table th.usis-est-col-company,
-		#usis-estimate-table td.usis-est-col-company {
-			width: 14%;
-			max-width: 14%;
-		}
-		#usis-estimate-table th.usis-est-col-city,
-		#usis-estimate-table td.usis-est-col-city {
-			width: 10%;
-			max-width: 10%;
-		}
-		#usis-estimate-table th.usis-bulk-col,
-		#usis-estimate-table td.usis-bulk-col { width: 28px; max-width: 28px; }
 	</style>
 
 </head>
@@ -216,6 +173,10 @@
 						<ul class="navbar-nav header-right">
 							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
 								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
+									<a href="usis-time-live.html" class="btn btn-sm btn-outline-secondary px-2" id="usis-header-time" title="Time" aria-label="Time">
+										<i class="icon feather icon-clock"></i>
+										<span class="d-none d-lg-inline ms-1" data-i18n="Time">Time</span>
+									</a>
 									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
 										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
 											<i class="icon feather icon-mail"></i>
@@ -448,6 +409,22 @@
 							</li>
 						</ul>
 					</li>
+					<li id="usis-time-nav">
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-clock"></i>
+							<span class="nav-text" data-i18n="Time">Time</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="usis-time-live.html" data-i18n="Live">Live</a></li>
+							<li><a href="usis-time-me.html" data-i18n="My Time">My Time</a></li>
+							<li><a href="usis-time-cards.html" data-i18n="Time cards">Time cards</a></li>
+							<li><a href="usis-time-events.html" data-i18n="Event log">Event log</a></li>
+							<li><a href="usis-time-exceptions.html" data-i18n="Exceptions">Exceptions</a></li>
+							<li><a href="usis-time-payroll.html" data-i18n="Payroll period">Payroll period</a></li>
+							<li><a href="usis-time-map.html" data-i18n="Map">Map</a></li>
+							<li><a href="usis-time-settings.html" data-i18n="Settings">Settings</a></li>
+						</ul>
+					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
 							<i class="icon feather icon-mail"></i>
@@ -472,8 +449,8 @@
 							<li data-usis-module="hr">
 								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
 							</li>
-							<li data-usis-module="hrms">
-								<a href="construction/time-sheet.html" data-i18n="Time sheets">Time sheets</a>
+							<li>
+								<a href="usis-time-live.html" data-i18n="Time">Time</a>
 							</li>
 							<li data-usis-module="hrms">
 								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
@@ -598,30 +575,40 @@
 			<div class="container-fluid">
 
 				<div class="col-xl-12">
-					<ul class="nav nav-pills flex-wrap gap-1 mb-3" id="usis-est-board-tabs" role="tablist">
-						<li class="nav-item" role="presentation">
-							<a class="nav-link active" href="construction/estimate.html" data-usis-est-tab="will_submit" data-i18n="Estimate">Estimate</a>
-						</li>
-						<li class="nav-item" role="presentation">
-							<a class="nav-link" href="construction/estimate.html?tab=submitted" data-usis-est-tab="submitted" data-i18n="Submitted">Submitted</a>
-						</li>
-					</ul>
+					<div class="usis-est-toolbar">
+						<div class="usis-est-folder-tabs" id="usis-est-board-tabs" role="tablist">
+							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=lead" data-usis-est-tab="lead" role="tab" aria-selected="false">
+								<i class="fa fa-th-large" aria-hidden="true"></i>
+								<span data-i18n="Lead">Lead</span>
+								<span class="usis-est-folder-count" data-usis-est-count="lead"></span>
+							</a>
+							<a class="usis-est-folder-tab active" href="construction/estimate.html" data-usis-est-tab="will_submit" role="tab" aria-selected="true">
+								<i class="fa fa-file-alt" aria-hidden="true"></i>
+								<span data-i18n="Estimate">Estimate</span>
+								<span class="usis-est-folder-count" data-usis-est-count="will_submit"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=submitted" data-usis-est-tab="submitted" role="tab" aria-selected="false">
+								<i class="fa fa-briefcase" aria-hidden="true"></i>
+								<span data-i18n="Submitted">Submitted</span>
+								<span class="usis-est-folder-count" data-usis-est-count="submitted"></span>
+							</a>
+						</div>
+						<div class="usis-est-toolbar-search">
+							<i class="flaticon-381-search-2 usis-est-search-icon" aria-hidden="true"></i>
+							<input type="search" id="usis-est-table-filter" placeholder="Search name, number, trade..." autocomplete="off" aria-label="Search name, number, trade">
+						</div>
+						<button type="button" class="btn btn-outline-secondary usis-est-filters-btn" id="usis-est-sort-filter" title="Sort and filter columns">
+							<i class="fa fa-filter" aria-hidden="true"></i>
+							<span data-i18n="Filters">Filters</span>
+							<i class="fa fa-chevron-down" aria-hidden="true"></i>
+						</button>
+					</div>
 				</div>
 
-				<!-- Start - Filtering -->
 				<div class="col-xl-12">
-					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
-						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
-							<div class="input-group message-search-area width200 w-xs-100">
-								<input type="text" class="form-control border-end-0" id="usis-est-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
-								<div class="input-group-append">
-									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-est-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
-								</div>
-							</div>
-							<span class="small text-muted align-self-center d-none d-sm-inline" id="usis-est-filter-count" aria-live="polite"></span>
-							<button type="button" class="btn btn-outline-secondary btn-sm d-md-none" id="usis-est-sort-filter" title="Sort and filter columns">
-								<i class="fa fa-filter me-1"></i> Sort &amp; Filter
-							</button>
+					<div class="usis-est-actions">
+						<div class="d-flex flex-wrap align-items-center gap-2">
+							<span class="small text-muted" id="usis-est-filter-count" aria-live="polite"></span>
 							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-est-reset-view" title="Clear header filters, sort, and hidden columns">
 								Reset view
 							</button>
@@ -642,7 +629,6 @@
 						</div>
 					</div>
 				</div>
-				<!-- End - Filtering -->
 
 				<div class="usis-bulk-bar d-none" id="usis-est-bulk-bar" role="region" aria-live="polite">
 					<span id="usis-est-bulk-count" class="fw-semibold me-1">0 selected</span>
@@ -654,25 +640,22 @@
 
 				<!-- Start - Estimates table -->
 				<div class="col-xl-12">
-					<div class="card m-0 table-hover text-nowrap overflow-auto">
-						<table class="table table-sm m-0" id="usis-estimate-table">
+					<div class="usis-est-list-card">
+						<table class="table usis-est-bc-table" id="usis-estimate-table">
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-est-check-all" aria-label="Select all visible estimates"></th>
-									<th class="text-nowrap" data-sort-key="number">Project #</th>
-									<th class="usis-est-col-lead" data-sort-key="name">Lead</th>
-									<th class="text-nowrap usis-est-col-trade" data-sort-key="trade_name">Trade invited</th>
-									<th class="usis-est-col-company" data-sort-key="company_name">Company</th>
-									<th class="usis-est-col-city" data-sort-key="city">City</th>
-									<th class="text-nowrap" data-sort-key="state">State</th>
-									<th class="text-nowrap" data-sort-key="due_at">Bid due date</th>
-									<th class="text-center text-nowrap" data-sort-key="estimator">Estimator</th>
+									<th class="usis-est-col-name" data-sort-key="name">Name</th>
+									<th class="text-nowrap" data-sort-key="number">Number</th>
+									<th class="text-nowrap" data-sort-key="due_at">Due date</th>
+									<th data-sort-key="company_name">Client</th>
+									<th data-sort-key="location">Location</th>
 									<th class="text-end text-nowrap">Action</th>
 								</tr>
 							</thead>
 							<tbody id="usis-estimate-tbody">
 								<tr>
-									<td colspan="10" class="text-muted">Loading estimates from API…</td>
+									<td colspan="7" class="text-muted">Loading estimates from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -779,7 +762,7 @@
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js"></script>
+<script src="assets/js/usis-nav-access.js?v=20260901c"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/js/usis-ui.js?v=20260829f"></script>
@@ -809,7 +792,7 @@
 	<script src="assets/js/usis-bc-write.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>
-	<script src="assets/js/usis-estimate-board.js?v=20260830c"></script>
+	<script src="assets/js/usis-estimate-board.js?v=20260902a"></script>
 	
 </body>
 </html>

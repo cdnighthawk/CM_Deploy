@@ -150,7 +150,8 @@ def desktop_queue_item(row: LeadEstimate) -> dict[str, Any]:
 
 
 def lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
-    city, state = location_bits(row.location)
+    loc = row.location if isinstance(row.location, Mapping) else {}
+    city, state = location_bits(loc)
     return {
         "id": str(row.id),
         "external_id": row.external_id,
@@ -170,6 +171,7 @@ def lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
         "company_name": client_company_name(row.client),
         "city": city,
         "state": state,
+        "zip": _loc_text(loc, "zip", "postalCode", "zipcode", "zipCode"),
         "crm_stage": row.crm_stage,
         "market_sector": row.market_sector,
         "expected_start_at": iso(row.expected_start_at),

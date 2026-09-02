@@ -41,6 +41,17 @@ from .estimator_script import (
     EstimatorStandardSpec,
 )
 from .field_ops import DailyReport, FieldPhoto, TimeEntry, TimePunch
+from .timekeeping import (
+    EmployeeTimeProfile,
+    ProjectGeofence,
+    ProjectTimeCostCode,
+    TimeBreadcrumb,
+    TimeCostCode,
+    TimeFlag,
+    TimecardDay,
+    TimecardPeriod,
+    TimecardPeriodEmployee,
+)
 from .hr import (
     HrEmployeeDocument,
     HrEmployeePayScale,
@@ -313,6 +324,15 @@ __all__ = [
     "TakeoffLineItem",
     "TimeEntry",
     "TimePunch",
+    "TimeCostCode",
+    "ProjectTimeCostCode",
+    "EmployeeTimeProfile",
+    "ProjectGeofence",
+    "TimeBreadcrumb",
+    "TimeFlag",
+    "TimecardDay",
+    "TimecardPeriod",
+    "TimecardPeriodEmployee",
     "User",
     "UserActivityEvent",
     "UserRole",

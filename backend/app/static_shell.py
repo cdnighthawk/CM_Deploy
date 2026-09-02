@@ -18,6 +18,15 @@ _CAREER_PATH_REDIRECTS: dict[str, str] = {
     "/jobs": "/apply.html",
     "/hiring": "/apply.html",
     "/hire": "/apply/application.html",
+    "/time": "/usis-time-live.html",
+    "/time/live": "/usis-time-live.html",
+    "/time/me": "/usis-time-me.html",
+    "/time/cards": "/usis-time-cards.html",
+    "/time/events": "/usis-time-events.html",
+    "/time/exceptions": "/usis-time-exceptions.html",
+    "/time/payroll": "/usis-time-payroll.html",
+    "/time/map": "/usis-time-map.html",
+    "/time/settings": "/usis-time-settings.html",
 }
 
 # Case-insensitive aliases (marketing links often use ``Apply.html``).

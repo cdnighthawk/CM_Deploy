@@ -139,6 +139,35 @@ def register_field_routes(bp: Blueprint) -> None:
         except FieldApiError as exc:
             return _err(exc)
 
+    @bp.get("/projects/<project_id>/geofence")
+    def get_project_geofence_v1(project_id: str):
+        from ._time_office import get_geofence
+        from ._time_service import TimeApiError
+
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        try:
+            return jsonify(get_geofence(pid, current_user()))
+        except TimeApiError as exc:
+            return jsonify({"error": exc.message}), exc.status
+
+    @bp.put("/projects/<project_id>/geofence")
+    def put_project_geofence_v1(project_id: str):
+        from ._time_office import put_geofence
+        from ._time_service import TimeApiError
+
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"error": "JSON body required"}), 400
+        try:
+            return jsonify(put_geofence(pid, data, current_user()))
+        except TimeApiError as exc:
+            return jsonify({"error": exc.message}), exc.status
+
     @bp.get("/time-clock/me")
     def get_time_clock_me():
         try:

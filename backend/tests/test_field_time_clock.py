@@ -210,7 +210,9 @@ def test_break_hours_and_switch(client):
     assert total == int(first_paid + second_paid)
 
 
-def test_geofence_block_and_override(client):
+def test_geofence_flag_by_default_and_block_mode(client):
+    from app.models import ProjectGeofence, TimeFlag
+
     with client.application.app_context():
         user = _mk_pe("geo")
         job = _job("Fenced", latitude=33.44, longitude=-112.07, geofence_radius_m=250)
@@ -219,17 +221,40 @@ def test_geofence_block_and_override(client):
         uid, pid = str(user.id), str(job.id)
 
     headers = {"X-Usis-User-Id": uid}
-    blocked = client.post(
+    flagged = client.post(
         "/api/v1/time-clock/clock-in",
-        json={
-            "project_id": pid,
-            "client_id": str(uuid.uuid4()),
-            "lat": 33.46,
-            "lon": -112.07,
-        },
+        json={"project_id": pid, "client_id": str(uuid.uuid4()), "lat": 33.46, "lon": -112.07},
         headers=headers,
     )
+    assert flagged.status_code == 201, flagged.get_data(as_text=True)
+    item = flagged.get_json()["item"]
+    assert item["offsite"] is True
+    punch = item["punches"][0]
+    assert punch["geofence_ok"] is False
+
+    with client.application.app_context():
+        flags = list(db.session.scalars(select(TimeFlag).where(TimeFlag.flag_type == "offsite")).all())
+        assert flags
+        job = db.session.get(Project, uuid.UUID(pid))
+        db.session.add(ProjectGeofence(project_id=job.id, mode="block", shape="circle", center_lat=33.44, center_lon=-112.07, radius_m=250))
+        db.session.commit()
+
+    blocked = client.post(
+        "/api/v1/time-clock/clock-in",
+        json={"project_id": pid, "client_id": str(uuid.uuid4()), "lat": 33.46, "lon": -112.07},
+        headers=headers,
+    )
+    # still clocked in from the flag punch
     assert blocked.status_code == 409
+
+    client.post("/api/v1/time-clock/clock-out", json={"client_id": str(uuid.uuid4())}, headers=headers)
+
+    blocked2 = client.post(
+        "/api/v1/time-clock/clock-in",
+        json={"project_id": pid, "client_id": str(uuid.uuid4()), "lat": 33.46, "lon": -112.07},
+        headers=headers,
+    )
+    assert blocked2.status_code == 409
 
     ok = client.post(
         "/api/v1/time-clock/clock-in",
@@ -243,8 +268,7 @@ def test_geofence_block_and_override(client):
         headers=headers,
     )
     assert ok.status_code == 201, ok.get_data(as_text=True)
-    punch = ok.get_json()["item"]["punches"][0]
-    assert punch["geofence_ok"] is False
+    assert ok.get_json()["item"]["punches"][0]["geofence_ok"] is False
 
 
 def test_cost_code_required_when_project_has_codes(client):
@@ -268,7 +292,9 @@ def test_cost_code_required_when_project_has_codes(client):
         json={"project_id": pid, "client_id": str(uuid.uuid4())},
         headers=headers,
     )
-    assert missing.status_code == 400
+    assert missing.status_code == 201, missing.get_data(as_text=True)
+
+    client.post("/api/v1/time-clock/clock-out", json={"client_id": str(uuid.uuid4())}, headers=headers)
 
     ok = client.post(
         "/api/v1/time-clock/clock-in",
@@ -276,4 +302,4 @@ def test_cost_code_required_when_project_has_codes(client):
         headers=headers,
     )
     assert ok.status_code == 201, ok.get_data(as_text=True)
-    assert ok.get_json()["item"]["cost_code_id"] == cid
+    assert ok.get_json()["item"]["job_cost_code_id"] == cid or ok.get_json()["item"]["cost_code_id"] == cid

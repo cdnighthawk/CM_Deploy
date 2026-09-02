@@ -273,6 +273,34 @@
 			});
 	}
 
+	function prefillDailyLog() {
+		var dateEl = document.getElementById("usis-dailylog-date");
+		var box = document.getElementById("usis-dailylog-manpower");
+		var st = document.getElementById("usis-dailylog-status");
+		if (!box || !projectId()) return;
+		var day = (dateEl && dateEl.value) || "";
+		if (!day) {
+			var d = new Date();
+			day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+		}
+		fetchJson("/api/time/projects/" + encodeURIComponent(projectId()) + "/manpower-prefill?date=" + encodeURIComponent(day))
+			.then(function (data) {
+				var items = data.items || [];
+				if (!items.length) {
+					if (st) st.textContent = "No punches on " + day + " to prefill.";
+					return;
+				}
+				var lines = items.map(function (it) {
+					return (it.company || "USIS") + " — " + (it.count || 1) + " — " + (it.notes || "");
+				});
+				box.value = lines.join("\n");
+				if (st) st.textContent = "Prefill from " + items.length + " punch" + (items.length === 1 ? "" : "es") + ". Save to keep.";
+			})
+			.catch(function () {
+				if (st) st.textContent = "Could not prefill from punches.";
+			});
+	}
+
 	function saveDailyLog() {
 		if (!dailyReportId) {
 			loadDailyLog();
@@ -357,6 +385,8 @@
 		}
 		var saveDl = document.getElementById("usis-dailylog-save");
 		if (saveDl) saveDl.addEventListener("click", saveDailyLog);
+		var prefillDl = document.getElementById("usis-dailylog-prefill");
+		if (prefillDl) prefillDl.addEventListener("click", prefillDailyLog);
 		var dateEl = document.getElementById("usis-dailylog-date");
 		if (dateEl) dateEl.addEventListener("change", loadDailyLog);
 		var addScoBtn = document.getElementById("usis-sco-add");

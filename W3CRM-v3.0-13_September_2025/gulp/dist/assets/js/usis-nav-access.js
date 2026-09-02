@@ -23,6 +23,42 @@
 		return "";
 	}
 
+	function insertTimeNav() {
+		var menu = document.querySelector(".deznav #menu");
+		if (!menu || document.getElementById("usis-time-nav")) return;
+		var path = (window.location.pathname || "").replace(/\\/g, "/");
+		var prefix = path.indexOf("/construction/") >= 0 ? "../" : "";
+		var li = document.createElement("li");
+		li.id = "usis-time-nav";
+		li.innerHTML =
+			'<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">' +
+			'<i class="icon feather icon-clock"></i>' +
+			'<span class="nav-text" data-i18n="Time">Time</span></a>' +
+			"<ul aria-expanded=\"false\">" +
+			'<li><a href="' + prefix + 'usis-time-live.html">Live</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-me.html">My Time</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-cards.html">Time cards</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-events.html">Event log</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-exceptions.html">Exceptions</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-payroll.html">Payroll period</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-map.html">Map</a></li>' +
+			'<li><a href="' + prefix + 'usis-time-settings.html">Settings</a></li>' +
+			"</ul>";
+		var safety = null;
+		menu.querySelectorAll(":scope > li").forEach(function (item) {
+			if ((item.textContent || "").indexOf("Safety") >= 0 && !safety) safety = item;
+		});
+		if (safety && safety.nextSibling) menu.insertBefore(li, safety.nextSibling);
+		else menu.appendChild(li);
+	}
+
+	function hideDemoTimeSheets() {
+		document.querySelectorAll('.deznav a[href*="time-sheet.html"]').forEach(function (a) {
+			var item = a.closest("li");
+			if (item) item.style.display = "none";
+		});
+	}
+
 	function applyNav(modules) {
 		if (!modules) return;
 		document.querySelectorAll("[data-usis-module]").forEach(function (li) {
@@ -88,8 +124,14 @@
 	}
 
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", refresh);
+		document.addEventListener("DOMContentLoaded", function () {
+			insertTimeNav();
+			hideDemoTimeSheets();
+			refresh();
+		});
 	} else {
+		insertTimeNav();
+		hideDemoTimeSheets();
 		refresh();
 	}
 })();

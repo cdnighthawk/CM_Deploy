@@ -129,6 +129,22 @@ def get_or_create_daily_report(project_id: uuid.UUID, report_date: date, cu: Cur
             created_by_user_id=cu.id,
         )
         db.session.add(row)
+        db.session.flush()
+        try:
+            from ._time_office import manpower_prefill
+
+            pref = manpower_prefill(project_id, report_date, cu)
+            items = pref.get("items") or []
+            if items:
+                sections = dict(row.sections or {})
+                if not sections.get("manpower"):
+                    sections["manpower"] = items
+                    row.sections = sections
+                    from sqlalchemy.orm.attributes import flag_modified
+
+                    flag_modified(row, "sections")
+        except Exception:
+            pass
         db.session.commit()
         db.session.refresh(row)
     return {"item": daily_report_public(row), "entity": "daily_report"}

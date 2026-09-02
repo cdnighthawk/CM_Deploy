@@ -630,6 +630,7 @@
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-punch">Punchlist</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-incidents">Incidents</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-time" data-i18n="Time">Time</button>
 							</div>
 						</nav>
 						</div>
@@ -681,6 +682,9 @@
 							</li>
 							<li class="nav-item" role="presentation">
 								<button class="nav-link" id="proj-tab-safety" data-bs-toggle="pill" data-bs-target="#proj-pane-safety" type="button" role="tab" aria-controls="proj-pane-safety" aria-selected="false" data-i18n="Safety">Safety</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="proj-tab-time" data-bs-toggle="pill" data-bs-target="#proj-pane-time" type="button" role="tab" aria-controls="proj-pane-time" aria-selected="false" data-i18n="Time">Time</button>
 							</li>
 							<li class="nav-item" role="presentation">
 								<button class="nav-link" id="proj-tab-correspondence" data-bs-toggle="pill" data-bs-target="#proj-pane-correspondence" type="button" role="tab" aria-controls="proj-pane-correspondence" aria-selected="false">Correspondence</button>
@@ -1614,8 +1618,11 @@
 									<textarea class="form-control form-control-sm" id="usis-dailylog-work" rows="2"></textarea>
 								</div>
 								<div class="col-12">
-									<label class="form-label small">Workforce (one per line: company — count — notes)</label>
-									<textarea class="form-control form-control-sm" id="usis-dailylog-manpower" rows="3"></textarea>
+									<div class="d-flex justify-content-between align-items-center">
+										<label class="form-label small mb-0">Workforce (one per line: company — count — notes)</label>
+										<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-dailylog-prefill">Prefill from punches</button>
+									</div>
+									<textarea class="form-control form-control-sm mt-1" id="usis-dailylog-manpower" rows="3"></textarea>
 								</div>
 								<div class="col-md-6">
 									<label class="form-label small">Equipment</label>
@@ -1698,6 +1705,11 @@
 						<div class="tab-pane fade" id="proj-pane-safety" role="tabpanel" aria-labelledby="proj-tab-safety" tabindex="0">
 							<div id="usis-proj-safety-root">
 								<p class="text-muted small mb-0">Loading project safety profile…</p>
+							</div>
+						</div>
+						<div class="tab-pane fade" id="proj-pane-time" role="tabpanel" aria-labelledby="proj-tab-time" tabindex="0">
+							<div id="usis-proj-time-root">
+								<p class="text-muted small mb-0">Loading Field Time…</p>
 							</div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-correspondence" role="tabpanel" aria-labelledby="proj-tab-correspondence" tabindex="0">
@@ -2710,7 +2722,7 @@
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js"></script>
+<script src="assets/js/usis-nav-access.js?v=20260901c"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
 	<script src="assets/js/usis-ui.js?v=20260829f"></script>
@@ -2733,7 +2745,7 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js?v=20260830b"></script>
-	<script src="assets/js/project-detail-wave1.js?v=20260831c"></script>
+	<script src="assets/js/project-detail-wave1.js?v=20260901a"></script>
 	<script src="assets/js/project-detail-wave2.js?v=20260831c"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
@@ -2744,7 +2756,8 @@
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js?v=20260831d"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260901a"></script>
+	<script src="assets/js/usis-time-app.js?v=20260901a"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

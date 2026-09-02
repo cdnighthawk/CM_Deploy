@@ -23,6 +23,105 @@
 		return "";
 	}
 
+	function timePrefix() {
+		var baseEl = document.querySelector("base");
+		var baseHref = baseEl ? (baseEl.getAttribute("href") || "") : "";
+		if (baseHref.indexOf("..") >= 0) return "";
+		var path = (window.location.pathname || "").replace(/\\/g, "/");
+		return path.indexOf("/construction/") >= 0 ? "../" : "";
+	}
+
+	function insertTimeNav() {
+		var menu = document.getElementById("menu") || document.querySelector(".deznav ul.metismenu");
+		if (!menu) return;
+		if (!document.getElementById("usis-time-nav")) {
+			var prefix = timePrefix();
+			var li = document.createElement("li");
+			li.id = "usis-time-nav";
+			li.innerHTML =
+				'<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">' +
+				'<i class="icon feather icon-clock"></i>' +
+				'<span class="nav-text" data-i18n="Time">Time</span></a>' +
+				"<ul aria-expanded=\"false\">" +
+				'<li><a href="' + prefix + 'usis-time-live.html">Live</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-me.html">My Time</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-cards.html">Time cards</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-events.html">Event log</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-exceptions.html">Exceptions</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-payroll.html">Payroll period</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-map.html">Map</a></li>' +
+				'<li><a href="' + prefix + 'usis-time-settings.html">Settings</a></li>' +
+				"</ul>";
+			var safety = null;
+			var items = menu.children;
+			var i;
+			for (i = 0; i < items.length; i++) {
+				var label = items[i].querySelector(":scope > a .nav-text");
+				if (label && (label.textContent || "").trim() === "Safety") {
+					safety = items[i];
+					break;
+				}
+			}
+			if (safety && safety.nextSibling) menu.insertBefore(li, safety.nextSibling);
+			else menu.appendChild(li);
+		}
+		retargetDemoTimeSheets();
+		insertHrTimeShortcut();
+		insertHeaderTime();
+	}
+
+	function insertHrTimeShortcut() {
+		var menu = document.getElementById("menu") || document.querySelector(".deznav ul.metismenu");
+		if (!menu) return;
+		var hr = null;
+		var items = menu.children;
+		var i;
+		for (i = 0; i < items.length; i++) {
+			var label = items[i].querySelector(":scope > a .nav-text");
+			if (label && (label.textContent || "").trim() === "HR") {
+				hr = items[i];
+				break;
+			}
+		}
+		if (!hr) return;
+		var ul = hr.querySelector(":scope > ul");
+		if (!ul) return;
+		if (ul.querySelector('a[href*="usis-time-"]')) return;
+		var li = document.createElement("li");
+		li.innerHTML = '<a href="' + timePrefix() + 'usis-time-live.html" data-i18n="Time">Time</a>';
+		ul.appendChild(li);
+	}
+
+	function retargetDemoTimeSheets() {
+		var prefix = timePrefix();
+		document.querySelectorAll('.deznav a[href*="time-sheet.html"]').forEach(function (a) {
+			a.setAttribute("href", prefix + "usis-time-live.html");
+			a.textContent = "Time";
+			a.setAttribute("data-i18n", "Time");
+			var item = a.closest("li");
+			if (item) {
+				item.style.display = "";
+				item.removeAttribute("aria-hidden");
+			}
+		});
+	}
+
+	function insertHeaderTime() {
+		if (document.getElementById("usis-header-time")) return;
+		var toolbar = document.getElementById("usis-header-toolbar");
+		if (!toolbar) return;
+		var a = document.createElement("a");
+		a.id = "usis-header-time";
+		a.className = "btn btn-sm btn-outline-secondary px-2";
+		a.href = timePrefix() + "usis-time-live.html";
+		a.setAttribute("title", "Time");
+		a.setAttribute("aria-label", "Time");
+		a.innerHTML =
+			'<i class="icon feather icon-clock"></i>' +
+			'<span class="d-none d-lg-inline ms-1" data-i18n="Time">Time</span>';
+		toolbar.insertBefore(a, toolbar.firstChild);
+	}
+
 	function applyNav(modules) {
 		if (!modules) return;
 		document.querySelectorAll("[data-usis-module]").forEach(function (li) {
@@ -88,8 +187,13 @@
 	}
 
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", refresh);
+		document.addEventListener("DOMContentLoaded", function () {
+			insertTimeNav();
+			refresh();
+		});
 	} else {
+		insertTimeNav();
 		refresh();
 	}
+	window.addEventListener("load", insertTimeNav);
 })();

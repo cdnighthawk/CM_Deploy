@@ -173,6 +173,7 @@ def create_app(config_object: str | None = None) -> Flask:
     from .api.submittals_bp import submittals_bp, workflows_bp
     from .api.purchase_orders_bp import purchase_orders_bp
     from .api.correspondence_bp import correspondence_bp
+    from .api.time_bp import bp as time_bp
 
     app.register_blueprint(v1_bp)
     app.register_blueprint(ai_bp)
@@ -181,6 +182,7 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(workflows_bp)
     app.register_blueprint(purchase_orders_bp)
     app.register_blueprint(correspondence_bp)
+    app.register_blueprint(time_bp)
     app.register_blueprint(hrms_bp)
     app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
@@ -199,6 +201,7 @@ def create_app(config_object: str | None = None) -> Flask:
             or path.startswith("/api/workflows")
             or path.startswith("/api/purchase-orders")
             or path.startswith("/api/correspondence")
+            or path.startswith("/api/time")
         )
 
     @app.before_request

@@ -50,6 +50,7 @@
 		"proj-tab-punch": "field",
 		"proj-tab-incidents": "field",
 		"proj-tab-safety": "field",
+		"proj-tab-time": "field",
 	};
 
 	function projectId() {

@@ -2,6 +2,24 @@
 
 Shared contract for the native Android field app (`FinishWorksField`) and the Expo client in `mobile/`. Website login (`POST /auth/login`, session cookie) is **not** used by field apps.
 
+## Timekeeping mapping (Slice 0)
+
+Office Time (`/time/*`, `/api/time`) and FinishWorks Field share the same punch rows. Do not invent a second User/employee table.
+
+| Concept | Repo home |
+|---------|-----------|
+| Employee | `User` in `backend/app/models/auth.py` |
+| Project + lat/lon/radius | `Project.latitude`, `Project.longitude`, `Project.geofence_radius_m` |
+| Shift interval | `TimeEntry` (`started_at` / `ended_at`, status `open` / `on_break` / `closed`) |
+| Punch event | `TimePunch` (append-only). Idempotency column is `client_id`; JSON aliases **`local_id`** |
+| Sage / JCC | `CostCode` / `rfi_cost_codes`. Field `GET /api/v1/projects/:id/cost-codes` still returns these |
+| Labor buckets | `TimeCostCode` / `time_cost_codes` — optional punch field. Policy `require_cost_code = false` |
+| Daily log manpower | `DailyReport.sections.manpower`; prefill `GET /api/time/projects/:id/manpower-prefill?date=` |
+| Payroll CSV | Documents Hub via `save_upload(UploadCategory.DOCUMENTS)` |
+| Workflow | Shared engine, `process_key = timecard` (`capture → employee_sign → supervisor_approve → payroll_lock → exported`) |
+
+Shared punch JSON: `POST /api/time/punch` with `{action, project_id, cost_code_id?, at?, lat, lon, acc, local_id, note, override_geofence?}`. Field aliases: `POST /api/v1/time-clock/clock-in|clock-out|break-start|break-end|switch`. Accept `local_id` **or** `client_id`. Default geofence mode is **flag** (save + `TimeFlag`); **block** returns 409 unless `override_geofence`. GPS never auto clock-in/out. Map pins are people currently on the clock only.
+
 Android chrome uses the website tokens from `usis-ui.css`: primary `#1F4E5F`, paper `#FFFFFF`, page `#F4F6F8`.
 
 **Production base:** `https://www.usiscm.com`  
@@ -210,7 +228,7 @@ Compress on device before upload (max edge 2560px, JPEG ~0.72). Retry with WorkM
 
 ## Time clock (field)
 
-Self clock-in/out with GPS, optional punch photo, breaks, and mid-day job/cost-code switch. One open entry per user. `client_id` is a device-generated UUID; replaying it returns the existing row.
+Self clock-in/out with GPS, optional punch photo, breaks, and mid-day job/cost-code switch. One open entry per user. Replay the same `local_id` / `client_id` to return the existing row. Website office uses the same service at `/api/time`.
 
 | Method | Path |
 |--------|------|
@@ -221,30 +239,40 @@ Self clock-in/out with GPS, optional punch photo, breaks, and mid-day job/cost-c
 | POST | `/api/v1/time-clock/break-end` |
 | POST | `/api/v1/time-clock/switch` |
 | GET | `/api/v1/projects/:id/cost-codes` |
+| GET/PUT | `/api/v1/projects/:id/geofence` |
+| POST | `/api/time/punch` |
+| GET | `/api/time/me` |
 
-Clock-in / clock-out / switch body:
+Clock-in / clock-out / switch / `/api/time/punch` body:
 
 ```json
 {
+  "action": "clock_in",
   "project_id": "<uuid>",
   "entry_id": "<uuid or client_id>",
   "cost_code_id": "<uuid or null>",
   "occurred_at": "<iso>",
+  "at": "<iso>",
   "lat": 33.44,
   "lon": -112.07,
   "accuracy_m": 12.5,
+  "acc": 12.5,
   "note": "",
   "client_id": "<uuid>",
+  "local_id": "<uuid>",
   "new_entry_client_id": "<uuid>",
   "photo_id": "<uuid or null>",
   "override_geofence": false
 }
 ```
 
-`cost_code_id` is required when the project has any active cost codes.
-If the project has `latitude`/`longitude` and the punch is outside `geofence_radius_m`, the server returns **409** unless `override_geofence` is true (`geofence_ok` is then stored as false).
+`action` is required on `/api/time/punch` (`clock_in` | `clock_out` | `break_start` | `break_end` | `switch`). Field routes encode the action in the path.
 
-`GET /time-clock/me` → `{open, today[], items[]}` for the last 7 days. Each entry includes `punches[]` and `paid_seconds` (shift length minus breaks).
+`cost_code_id` is **optional** (`require_cost_code = false`). Sage JCC (`rfi_cost_codes`) and Time labor buckets (`time_cost_codes`) are different libraries.
+
+Geofence default is **flag**: punch is saved and an `offsite` / `gps_denied` flag is opened. Mode **block** returns **409** unless `override_geofence` is true. GPS never auto clock-in/out.
+
+`GET /time-clock/me` and `GET /api/time/me` → `{open, today[], items[], status, hours, sign_ready, …}`. Each entry includes `punches[]`, `paid_seconds`, `local_id`, and `client_id`.
 
 ---
 

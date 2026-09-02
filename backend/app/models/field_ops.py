@@ -95,7 +95,23 @@ class FieldPhoto(UUIDPKMixin, TimestampMixin, db.Model):
 
 
 TIME_ENTRY_STATUSES = ("open", "on_break", "closed")
-TIME_PUNCH_KINDS = ("clock_in", "clock_out", "break_start", "break_end", "switch")
+TIME_PUNCH_KINDS = (
+    "clock_in",
+    "clock_out",
+    "break_start",
+    "break_end",
+    "switch",
+    "manual_add",
+    "edit",
+    "split",
+    "delete_void",
+    "sign",
+    "unsign",
+    "approve",
+    "lock",
+)
+TIME_ENTRY_SOURCES = ("mobile", "supervisor_mobile", "web", "office_edit", "kiosk")
+TIME_ENTRY_TYPES = ("work", "break_unpaid", "break_paid", "travel")
 DEFAULT_GEOFENCE_RADIUS_M = 250
 
 
@@ -145,21 +161,60 @@ class TimeEntry(UUIDPKMixin, TimestampMixin, db.Model):
         ForeignKey("field_photos.id", ondelete="SET NULL"),
         nullable=True,
     )
+    time_cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("time_cost_codes.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    equipment_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    entry_type: Mapped[str] = mapped_column(String(20), nullable=False, default="work", server_default="work")
+    source: Mapped[str] = mapped_column(String(40), nullable=False, default="mobile", server_default="mobile")
+    punched_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    device_start_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    device_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    start_lat: Mapped[Optional[float]] = mapped_column(Numeric(10, 7), nullable=True)
+    start_lon: Mapped[Optional[float]] = mapped_column(Numeric(10, 7), nullable=True)
+    start_acc: Mapped[Optional[float]] = mapped_column(Numeric(8, 2), nullable=True)
+    end_lat: Mapped[Optional[float]] = mapped_column(Numeric(10, 7), nullable=True)
+    end_lon: Mapped[Optional[float]] = mapped_column(Numeric(10, 7), nullable=True)
+    end_acc: Mapped[Optional[float]] = mapped_column(Numeric(8, 2), nullable=True)
+    gps_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    offsite: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    pending_flags: Mapped[Optional[list[Any]]] = mapped_column(JSONB, nullable=True)
+    locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    voided: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    void_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    device_label: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
 
     punches = relationship("TimePunch", back_populates="entry", cascade="all, delete-orphan")
 
 
 class TimePunch(UUIDPKMixin, TimestampMixin, db.Model):
-    """Immutable clock event (in, out, break, switch)."""
+    """Append-only clock event (in, out, break, switch, office edit)."""
 
     __tablename__ = "time_punches"
     __table_args__ = (UniqueConstraint("client_id", name="uq_time_punches_client_id"),)
 
-    entry_id: Mapped[uuid.UUID] = mapped_column(
+    entry_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("time_entries.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
+    )
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    project_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True
+    )
+    cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfi_cost_codes.id", ondelete="SET NULL"), nullable=True
+    )
+    time_cost_code_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("time_cost_codes.id", ondelete="SET NULL"), nullable=True
     )
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -175,5 +230,12 @@ class TimePunch(UUIDPKMixin, TimestampMixin, db.Model):
     )
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     client_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    performed_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    payload_json: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    device_label: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     entry = relationship("TimeEntry", back_populates="punches")

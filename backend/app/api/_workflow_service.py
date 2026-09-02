@@ -27,6 +27,7 @@ PROCESS_PURCHASE_ORDER = "purchase_order"
 PROCESS_DRAWING_REVIEW = "drawing_review"
 PROCESS_TAKEOFF = "takeoff"
 PROCESS_ESTIMATOR_SCOPE = "estimator_scope"
+PROCESS_TIMECARD = "timecard"
 
 DEFAULT_QUEUES = (
     ("intake", "Intake / completeness"),
@@ -39,6 +40,70 @@ DEFAULT_PO_QUEUES = (
     ("receiving", "Receiving"),
     ("ap", "Accounts payable"),
 )
+
+DEFAULT_TIMECARD_QUEUES = (
+    ("employee", "Employee"),
+    ("supervisor", "Field supervisor"),
+    ("payroll", "Payroll"),
+)
+
+DEFAULT_TIMECARD_STEPS: list[dict[str, Any]] = [
+    {
+        "step_key": "capture",
+        "label": "Punches recorded",
+        "sort_order": 1,
+        "queue_key": None,
+        "required_actions": [],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"action": "system", "auto_complete": True},
+    },
+    {
+        "step_key": "employee_sign",
+        "label": "Employee attests day / period",
+        "sort_order": 2,
+        "queue_key": "employee",
+        "required_actions": ["approve"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"auto_complete": False},
+    },
+    {
+        "step_key": "supervisor_approve",
+        "label": "Field supervisor",
+        "sort_order": 3,
+        "queue_key": "supervisor",
+        "required_actions": ["approve"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"auto_complete": False},
+    },
+    {
+        "step_key": "payroll_lock",
+        "label": "Payroll reviews flags + locks",
+        "sort_order": 4,
+        "queue_key": "payroll",
+        "required_actions": ["approve"],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"auto_complete": False},
+    },
+    {
+        "step_key": "exported",
+        "label": "CSV generated",
+        "sort_order": 5,
+        "queue_key": "payroll",
+        "required_actions": [],
+        "on_approve_status": None,
+        "entry_condition": None,
+        "skippable": False,
+        "automation": {"action": "system", "auto_complete": True},
+    },
+]
 
 DEFAULT_PO_STEPS: list[dict[str, Any]] = [
     {
@@ -447,6 +512,12 @@ PROCESS_SEEDS: dict[str, dict[str, Any]] = {
         "description": "Decide which specs we bid (USIS standard set, or every spec in a GC bid package), then queue spec scripts.",
         "queues": DEFAULT_AI_QUEUES,
         "steps": DEFAULT_ESTIMATOR_SCOPE_STEPS,
+    },
+    PROCESS_TIMECARD: {
+        "name": "Timecard (default)",
+        "description": "Capture punches, employee sign, supervisor approve, payroll lock, export.",
+        "queues": DEFAULT_TIMECARD_QUEUES,
+        "steps": DEFAULT_TIMECARD_STEPS,
     },
 }
 

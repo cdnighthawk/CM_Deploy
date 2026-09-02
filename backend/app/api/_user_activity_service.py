@@ -51,6 +51,7 @@ _WRITE_LABELS: tuple[tuple[str, str], ...] = (
     ("/api/v1/daily-reports", "a daily report"),
     ("/api/v1/daily-pretasks", "a pretask"),
     ("/api/v1/time-clock", "time clock"),
+    ("/api/time", "time"),
     ("/api/v1/photos", "a photo"),
     ("/api/v1/safety", "safety"),
     ("/api/v1/hr/", "HR"),

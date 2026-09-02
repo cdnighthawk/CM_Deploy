@@ -275,6 +275,207 @@
 		return "—";
 	}
 
+	var rfpLeadId = null;
+	var rfpBound = false;
+
+	function submissionNorm(item) {
+		return String((item && item.submission_state) || "")
+			.trim()
+			.toLowerCase()
+			.replace(/_/g, "")
+			.replace(/-/g, "");
+	}
+
+	function boardFromItem(item) {
+		try {
+			var from = (new URLSearchParams(window.location.search).get("from") || "").toLowerCase();
+			if (from === "lead" || from === "leads") return "lead";
+			if (from === "submitted") return "submitted";
+			if (from === "estimate") return "estimate";
+		} catch (e) {
+			/* keep item state */
+		}
+		var raw = submissionNorm(item);
+		if (raw === "submitted") return "submitted";
+		if (raw === "undecided" || raw === "notresponding" || raw === "") return "lead";
+		return "estimate";
+	}
+
+	function boardMeta(board) {
+		if (board === "submitted") {
+			return {
+				label: "Submitted",
+				href: "construction/estimate.html?tab=submitted",
+				back: "Back to Submitted",
+			};
+		}
+		if (board === "lead") {
+			return {
+				label: "Lead",
+				href: "construction/estimate.html?tab=lead",
+				back: "Back to Leads",
+			};
+		}
+		return {
+			label: "Estimate",
+			href: "construction/estimate.html",
+			back: "Back to Estimate",
+		};
+	}
+
+	function applyOpportunityCrumbs(item) {
+		var meta = boardMeta(boardFromItem(item));
+		var name = (item && item.name && String(item.name).trim()) || "Untitled opportunity";
+
+		var h1 = document.querySelector(".page-title h1");
+		if (h1) {
+			h1.textContent = meta.label;
+			h1.setAttribute("data-i18n", meta.label);
+		}
+
+		var projectsLi = document.getElementById("usis-projects-crumb");
+		if (projectsLi) {
+			var listLink = projectsLi.querySelector("a");
+			if (listLink) {
+				listLink.textContent = meta.label;
+				listLink.setAttribute("href", meta.href);
+				listLink.setAttribute("data-i18n", meta.label);
+			}
+			projectsLi.classList.remove("d-none");
+		}
+
+		var projectLi = document.getElementById("usis-project-crumb");
+		if (projectLi) projectLi.classList.add("d-none");
+
+		var active = document.querySelector(".page-title .breadcrumb-item.active");
+		if (active) {
+			var labelEl = active.querySelector("span, a") || active;
+			labelEl.textContent = name;
+			if (labelEl.removeAttribute) labelEl.removeAttribute("data-i18n");
+		}
+
+		var back = document.getElementById("usis-lead-back-link");
+		if (back) {
+			back.setAttribute("href", meta.href);
+			back.innerHTML = "&larr; " + esc(meta.back);
+		}
+	}
+
+	function showRfpError(msg) {
+		var err = document.getElementById("usis-lead-rfp-err");
+		if (!err) return;
+		if (!msg) {
+			err.textContent = "";
+			err.classList.add("d-none");
+			return;
+		}
+		err.textContent = msg;
+		err.classList.remove("d-none");
+	}
+
+	function loadLeadRfps() {
+		var tb = document.getElementById("usis-lead-rfp-tbody");
+		if (!tb) return;
+		if (!rfpLeadId) {
+			tb.innerHTML = '<tr><td colspan="4" class="text-muted">Open this page from a lead to load RFPs.</td></tr>';
+			return;
+		}
+		showRfpError("");
+		tb.innerHTML = '<tr><td colspan="4" class="text-muted">Loading…</td></tr>';
+		fetch(apiBase() + "/api/v1/rfps?lead_estimate_id=" + encodeURIComponent(rfpLeadId), {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					if (!r.ok) throw new Error(j.error || r.status);
+					return j;
+				});
+			})
+			.then(function (data) {
+				var rows = data.items || [];
+				if (!rows.length) {
+					tb.innerHTML = '<tr><td colspan="4" class="text-muted">No RFPs yet. Create a draft to send to vendors.</td></tr>';
+					return;
+				}
+				tb.innerHTML = rows
+					.map(function (x) {
+						var src =
+							x.line_source === "takeoff" ? "Takeoff" : x.line_source === "narrative" ? "Scope" : "Items";
+						var title = esc(x.title) || "Untitled RFP";
+						var statusHtml = window.USISUi ? window.USISUi.statusChip(x.status) : esc(x.status);
+						var srcHtml = window.USISUi ? window.USISUi.statusChip(src) : esc(src);
+						return (
+							"<tr><td>" +
+							'<a href="usis-rfp-detail.html?id=' +
+							encodeURIComponent(x.id) +
+							'">' +
+							title +
+							"</a></td><td>" +
+							statusHtml +
+							"</td><td>" +
+							srcHtml +
+							"</td><td><code class=\"small\">" +
+							esc(x.public_token) +
+							"</code></td></tr>"
+						);
+					})
+					.join("");
+			})
+			.catch(function (e) {
+				tb.innerHTML = "";
+				showRfpError(e.message || String(e));
+			});
+	}
+
+	function createLeadRfp() {
+		if (!rfpLeadId) {
+			showRfpError("Open this page from a lead to create an RFP.");
+			return;
+		}
+		showRfpError("");
+		fetch(apiBase() + "/api/v1/rfps", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ lead_estimate_id: rfpLeadId }),
+		})
+			.then(function (r) {
+				return r.json().then(function (j) {
+					if (!r.ok) throw new Error(j.error || r.status);
+					return j;
+				});
+			})
+			.then(function (data) {
+				var id = data && (data.id || (data.item && data.item.id));
+				if (id) {
+					window.location.href = "usis-rfp-detail.html?id=" + encodeURIComponent(id);
+					return;
+				}
+				loadLeadRfps();
+			})
+			.catch(function (e) {
+				showRfpError(e.message || String(e));
+			});
+	}
+
+	function bindRfpTab() {
+		if (rfpBound) return;
+		rfpBound = true;
+		var btn = document.getElementById("usis-lead-rfp-new");
+		if (btn) {
+			btn.addEventListener("click", function () {
+				createLeadRfp();
+			});
+		}
+		var tab = document.getElementById("lead-tab-rfp");
+		if (tab) {
+			tab.addEventListener("shown.bs.tab", function () {
+				loadLeadRfps();
+			});
+		}
+	}
+
 	function renderCrmToolbar(item) {
 		var el = document.getElementById("usis-crm-toolbar");
 		if (!el || !item || !item.id) return;
@@ -291,23 +492,8 @@
 		var lockTitle = item.estimate_locked_at
 			? "Takeoff may be read-only while locked."
 			: "Open takeoff grid for this estimate.";
-		var stages = ["New Lead", "Invited", "Estimating", "Submitted", "Awarded", "Lost"];
-		var stage = item.crm_stage || "New Lead";
-		var opts = stages
-			.map(function (s) {
-				return '<option value="' + esc(s) + '"' + (s === stage ? " selected" : "") + ">" + esc(s) + "</option>";
-			})
-			.join("");
 		el.innerHTML =
 			'<div class="card border-0 shadow-sm"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">' +
-			'<label class="small mb-0 text-muted text-uppercase">CRM</label>' +
-			'<select class="form-select form-select-sm" style="max-width:13rem" id="usis-crm-stage">' +
-			opts +
-			"</select>" +
-			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-crm-save-stage">Save stage</button>' +
-			'<button type="button" class="btn btn-sm btn-outline-danger" id="usis-crm-wnb">Will Not Bid</button>' +
-			'<button type="button" class="btn btn-sm btn-outline-success" id="usis-crm-will-bid">Will Bid</button>' +
-			'<button type="button" class="btn btn-sm btn-success" id="usis-crm-award">Award (new project)</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-crm-ai">AI feasibility</button>' +
 			'<button type="button" class="btn btn-sm btn-outline-dark" id="usis-crm-open-estimates">Estimates</button>' +
 			'<a class="btn btn-sm btn-outline-dark" href="' +
@@ -318,10 +504,16 @@
 			'<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer" href="' +
 			quoteHref +
 			'" title="Print / save PDF from browser">Quote report</a>' +
-			'<a class="btn btn-sm btn-outline-dark" href="usis-rfp-list.html?lead_estimate_id=' +
-			encodeURIComponent(item.id) +
-			'">RFP list</a>' +
-			"</div></div>";
+			'<div class="dropdown ms-auto">' +
+			'<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More actions" title="More actions">' +
+			'<i class="fa-solid fa-ellipsis-vertical"></i>' +
+			"</button>" +
+			'<ul class="dropdown-menu dropdown-menu-end">' +
+			'<li><button type="button" class="dropdown-item text-danger" id="usis-crm-wnb">Will Not Bid</button></li>' +
+			'<li><button type="button" class="dropdown-item text-success" id="usis-crm-will-bid">Will Bid</button></li>' +
+			'<li><hr class="dropdown-divider"></li>' +
+			'<li><button type="button" class="dropdown-item" id="usis-crm-award">Award (new project)</button></li>' +
+			"</ul></div></div></div>";
 		var idForApi = item.id;
 		var openEstimates = document.getElementById("usis-crm-open-estimates");
 		if (openEstimates) {
@@ -332,30 +524,6 @@
 					return;
 				}
 				if (tab) tab.click();
-			});
-		}
-		var sel = document.getElementById("usis-crm-stage");
-		var save = document.getElementById("usis-crm-save-stage");
-		if (save && sel) {
-			save.addEventListener("click", function () {
-				fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(idForApi), {
-					method: "PATCH",
-					headers: { "Content-Type": "application/json", Accept: "application/json" },
-					credentials: "include",
-					body: JSON.stringify({ crm_stage: sel.value }),
-				})
-					.then(function (res) {
-						return res.json().then(function (j) {
-							if (!res.ok) throw new Error(j.error || res.status);
-							return j;
-						});
-					})
-					.then(function () {
-						if (window.USISNotify) window.USISNotify.success("Stage saved");
-					})
-					.catch(function (e) {
-						if (window.USISNotify) window.USISNotify.error(String(e.message || e));
-					});
 			});
 		}
 		var wnb = document.getElementById("usis-crm-wnb");
@@ -462,6 +630,13 @@
 
 		setJobStatus(document.getElementById("usis-job-status"), item);
 
+		applyOpportunityCrumbs(item);
+		rfpLeadId = item.id || null;
+		var rfpFull = document.getElementById("usis-lead-rfp-open-full");
+		if (rfpFull && rfpLeadId) {
+			rfpFull.setAttribute("href", "usis-rfp-list.html?lead_estimate_id=" + encodeURIComponent(rfpLeadId));
+		}
+		bindRfpTab();
 		renderCrmToolbar(item);
 
 		var pub = document.getElementById("usis-job-public-tbody");

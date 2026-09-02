@@ -71,7 +71,7 @@
 				</div>
 				<div class="col-xl-12 mb-3">
 					<p class="text-muted mb-1 small" id="usis-lead-detail-idline"></p>
-					<a href="construction/leads.html" class="small">&larr; Back to Leads</a>
+					<a href="construction/estimate.html" class="small" id="usis-lead-back-link">&larr; Back to Estimate</a>
 				</div>
 
 				<div class="col-xl-12 mb-3">
@@ -90,6 +90,9 @@
 						</li>
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="lead-tab-estimates" data-bs-toggle="pill" data-bs-target="#lead-pane-estimates" type="button" role="tab" aria-controls="lead-pane-estimates" aria-selected="false">Estimates</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="lead-tab-rfp" data-bs-toggle="pill" data-bs-target="#lead-pane-rfp" type="button" role="tab" aria-controls="lead-pane-rfp" aria-selected="false">RFP</button>
 						</li>
 					</ul>
 				</div>
@@ -289,6 +292,34 @@
 								</div>
 							</div>
 						</div>
+						<div class="tab-pane fade" id="lead-pane-rfp" role="tabpanel" aria-labelledby="lead-tab-rfp" tabindex="0">
+							<div id="usis-lead-rfp-root">
+								<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+									<div>
+										<h5 class="mb-0">RFP</h5>
+										<p class="text-muted small mb-0">Vendor requests for this job. Draft, send, and track RFPs here.</p>
+									</div>
+									<div class="d-flex flex-wrap gap-1">
+										<button type="button" class="btn btn-primary btn-sm" id="usis-lead-rfp-new">New RFP draft</button>
+										<a class="btn btn-outline-secondary btn-sm" id="usis-lead-rfp-open-full" href="usis-rfp-list.html">Full RFP list</a>
+									</div>
+								</div>
+								<div class="alert alert-danger py-2 mb-2 d-none" id="usis-lead-rfp-err" role="alert"></div>
+								<div class="table-responsive">
+									<table class="table table-hover table-sm align-middle mb-0" id="usis-lead-rfp-table">
+										<thead class="table-light">
+											<tr>
+												<th>Title</th>
+												<th>Status</th>
+												<th>Source</th>
+												<th>Token</th>
+											</tr>
+										</thead>
+										<tbody id="usis-lead-rfp-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -407,7 +438,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/js/usis-project-doc-panels.js?v=20260830a"></script>
-	<script src="assets/js/lead-detail-job.js"></script>
+	<script src="assets/js/lead-detail-job.js?v=20260902a"></script>
 	<script src="assets/js/lead-detail-panels.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>

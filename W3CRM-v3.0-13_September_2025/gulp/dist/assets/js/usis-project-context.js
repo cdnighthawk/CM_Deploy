@@ -118,6 +118,10 @@
     );
   }
 
+  function isLeadOpportunityPage() {
+    return /(^|\/)lead-detail\.html$/i.test(global.location.pathname || "");
+  }
+
   function setProjectsCrumbVisible(on) {
     var li = document.getElementById("usis-projects-crumb");
     if (!li) return;
@@ -169,6 +173,7 @@
   }
 
   function applyCrumb(item, projectId) {
+    if (isLeadOpportunityPage()) return;
     ensureCrumbs();
     var li = document.getElementById("usis-project-crumb");
     var link = document.getElementById("usis-project-crumb-link");
@@ -239,7 +244,8 @@
   function apply(id, opts) {
     if (!id) return;
     opts = opts || {};
-    var showCrumb = opts.showCrumb !== false && !isCompanyWideListPage();
+    var showCrumb =
+      opts.showCrumb !== false && !isCompanyWideListPage() && !isLeadOpportunityPage();
     if (crumbState.projectId && crumbState.projectId !== id) {
       crumbState.item = null;
       crumbState.inflight = null;

@@ -55,6 +55,8 @@ def replace_drawing_file(d: Drawing, pdf_bytes: bytes) -> int:
     if sz == 0:
         raise DrawingUploadError("empty upload", 400)
     tags["storage_object"] = obj_name
+    tags.pop("file_pending", None)
+    tags.pop("storage_error", None)
     tags["content_hash"] = hashlib.sha256(pdf_bytes).hexdigest()
     d.tags = tags
     d.file_url = f"/api/v1/drawings/{d.id}/file"
@@ -64,9 +66,10 @@ def replace_drawing_file(d: Drawing, pdf_bytes: bytes) -> int:
 
 
 class DrawingUploadError(Exception):
-    def __init__(self, message: str, status: int = 400):
+    def __init__(self, message: str, status: int = 400, drawing: Drawing | None = None):
         self.message = message
         self.status = status
+        self.drawing = drawing
 
 
 def _page_pdf_bytes(reader: PdfReader, page_index: int) -> bytes:
@@ -82,6 +85,46 @@ def _base_name(raw_filename: str) -> str:
     if name.lower().endswith(".pdf"):
         name = name[:-4]
     return name[:200] or "drawing"
+
+
+def _pending_drawing_row(
+    project_id: uuid.UUID | None,
+    sheet_number: str | None,
+    drawing_set: str | None,
+    revision: str,
+) -> Drawing | None:
+    """Reuse a row whose B2 write failed so a retry does not create a duplicate."""
+    sn = (sheet_number or "").strip()
+    if project_id is None or not sn:
+        return None
+    q = (
+        select(Drawing)
+        .where(Drawing.project_id == project_id, Drawing.sheet_number == sn)
+        .order_by(Drawing.created_at.desc(), Drawing.id.desc())
+    )
+    dset = (drawing_set or "").strip()
+    rev = (revision or "").strip()
+    for row in db.session.scalars(q):
+        tags = row.tags if isinstance(row.tags, dict) else {}
+        if not tags.get("file_pending"):
+            continue
+        if dset and (row.drawing_set or "").strip() != dset:
+            continue
+        if rev and (row.revision or "").strip() != rev:
+            continue
+        return row
+    return None
+
+
+def _mark_file_pending(d: Drawing, obj_name: str, message: str) -> None:
+    tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+    tags["storage_object"] = obj_name
+    tags["file_pending"] = True
+    tags["storage_error"] = (message or "")[:400]
+    d.tags = tags
+    d.file_url = f"/api/v1/drawings/{d.id}/file"
+    d.file_size_bytes = 0
+    d.mime_type = "application/pdf"
 
 
 def _existing_series_id(project_id: uuid.UUID | None, sheet_number: str | None) -> uuid.UUID | None:
@@ -131,36 +174,48 @@ def _create_drawing_row(
         if not orig.lower().endswith(".pdf"):
             orig += ".pdf"
 
-    series_id = _existing_series_id(project_id, sn)
-    d = Drawing(
-        project_id=project_id,
-        title=title[:500],
-        sheet_number=(sn[:50] if sn else None),
-        sheet_title=title[:500],
-        discipline=(labels["discipline"][:50] if labels["discipline"] else None),
-        drawing_set=(labels["drawing_set"][:120] if labels["drawing_set"] else None),
-        revision=(labels["revision"] or revision or "0")[:50],
-        mime_type="application/pdf",
-        original_filename=orig[:500],
-        drawing_series_id=series_id,
-    )
-    db.session.add(d)
-    db.session.flush()
+    pending = _pending_drawing_row(project_id, sn, labels["drawing_set"] or drawing_set, labels["revision"] or revision)
+    if pending is not None:
+        d = pending
+    else:
+        series_id = _existing_series_id(project_id, sn)
+        d = Drawing(
+            project_id=project_id,
+            title=title[:500],
+            sheet_number=(sn[:50] if sn else None),
+            sheet_title=title[:500],
+            discipline=(labels["discipline"][:50] if labels["discipline"] else None),
+            drawing_set=(labels["drawing_set"][:120] if labels["drawing_set"] else None),
+            revision=(labels["revision"] or revision or "0")[:50],
+            mime_type="application/pdf",
+            original_filename=orig[:500],
+            drawing_series_id=series_id,
+        )
+        db.session.add(d)
+        db.session.flush()
 
     obj_name = drawing_storage_relpath(d)
     try:
         sz = save_upload(UploadCategory.DRAWINGS, obj_name, io.BytesIO(pdf_bytes))
     except StorageError as exc:
-        raise DrawingUploadError(exc.message, exc.status) from exc
+        _mark_file_pending(d, obj_name, exc.message)
+        from ..api._drawing_hygiene import apply_hygiene
+
+        apply_hygiene(d)
+        raise DrawingUploadError(exc.message, exc.status, drawing=d) from exc
     except OSError as exc:
-        raise DrawingUploadError(f"could not save file: {exc}", 500) from exc
+        _mark_file_pending(d, obj_name, f"could not save file: {exc}")
+        raise DrawingUploadError(f"could not save file: {exc}", 500, drawing=d) from exc
 
     if sz == 0:
         delete_stored(UploadCategory.DRAWINGS, obj_name)
-        raise DrawingUploadError("empty upload", 400)
+        raise DrawingUploadError("empty upload", 400, drawing=d)
 
     tags = dict(d.tags) if isinstance(d.tags, dict) else {}
     tags["storage_object"] = obj_name
+    tags.pop("file_pending", None)
+    tags.pop("storage_error", None)
+    tags["content_hash"] = hashlib.sha256(pdf_bytes).hexdigest()
     d.tags = tags
     d.file_url = f"/api/v1/drawings/{d.id}/file"
     d.file_size_bytes = int(sz)

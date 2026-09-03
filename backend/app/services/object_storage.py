@@ -12,10 +12,16 @@ office PCs that do not have B2 credentials.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import json
 import time
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 
 from flask import Response, current_app, send_file
 
@@ -32,7 +38,11 @@ class StorageError(Exception):
         self.status = status
 
 
-_PUT_ATTEMPTS = 4
+# Keep S3 attempts inside gunicorn --timeout (see render.yaml). SSL drops usually
+# fail fast; a hung put must not run past the worker timeout or the client sees 502.
+_PUT_ATTEMPTS = 3
+_S3_CONNECT_TIMEOUT = 15
+_S3_READ_TIMEOUT = 40
 
 
 class UploadCategory(StrEnum):
@@ -314,6 +324,53 @@ def copy_b2_object(src_key: str, dest_key: str) -> bool:
         return False
 
 
+def presigned_put_url(
+    category: UploadCategory,
+    object_name: str,
+    *,
+    ttl: int = 3600,
+    content_type: str | None = None,
+) -> str | None:
+    """Short-lived PUT URL so a client can write the object without Render proxying bytes."""
+    if not b2_enabled():
+        return None
+    params: dict = {
+        "Bucket": current_app.config["B2_BUCKET_NAME"],
+        "Key": object_key(category, object_name),
+    }
+    if content_type:
+        params["ContentType"] = content_type
+    try:
+        return _s3_client().generate_presigned_url(
+            "put_object",
+            Params=params,
+            ExpiresIn=max(30, int(ttl or 3600)),
+            HttpMethod="PUT",
+        )
+    except Exception as exc:
+        current_app.logger.warning("b2 presign put failed key=%s err=%s", object_name, exc)
+        return None
+
+
+def native_upload_session(category: UploadCategory, object_name: str) -> dict | None:
+    """One-shot native B2 upload URL (b2_get_upload_url) for a client POST of the file bytes."""
+    if not b2_enabled():
+        return None
+    key = object_key(category, object_name)
+    try:
+        info = _b2_get_upload_url()
+    except Exception as exc:
+        current_app.logger.warning("b2 native upload url failed key=%s err=%s", key, exc)
+        return None
+    return {
+        "mode": "b2_native",
+        "url": info["uploadUrl"],
+        "authorization": info["authorizationToken"],
+        "file_name": key,
+        "sha1_header": "X-Bz-Content-Sha1",
+    }
+
+
 def presigned_get_url(
     rel: str,
     *,
@@ -391,9 +448,10 @@ def _s3_client():
         region_name="us-east-1",
         config=Config(
             signature_version="s3v4",
-            retries={"max_attempts": 4, "mode": "standard"},
-            connect_timeout=30,
-            read_timeout=180,
+            s3={"addressing_style": "path"},
+            retries={"max_attempts": 2, "mode": "standard"},
+            connect_timeout=_S3_CONNECT_TIMEOUT,
+            read_timeout=_S3_READ_TIMEOUT,
         ),
     )
 
@@ -458,6 +516,7 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
     if content_type:
         extra["ContentType"] = content_type
     last: BaseException | None = None
+    ssl_dropped = False
     for attempt in range(_PUT_ATTEMPTS):
         try:
             _s3_client().put_object(
@@ -476,14 +535,105 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
                     503,
                 ) from exc
             if _is_ssl_drop(exc) and attempt + 1 < _PUT_ATTEMPTS:
+                ssl_dropped = True
                 time.sleep(1.5 * (2**attempt))
                 continue
             if _is_ssl_drop(exc):
-                raise StorageError(
-                    "Backblaze B2 closed the upload connection (SSL EOF). "
-                    "Usually a full 10 GB free-tier cap or a dropped Render-to-B2 link.",
-                    503,
-                ) from exc
+                ssl_dropped = True
+                break
             raise
+    if ssl_dropped:
+        try:
+            _put_native_b2(key, payload, content_type=content_type)
+            current_app.logger.warning("b2 s3 put dropped; native upload succeeded key=%s", key)
+            return
+        except Exception as native_exc:
+            current_app.logger.warning("b2 native upload failed key=%s err=%s", key, native_exc)
+            raise StorageError(
+                "Backblaze B2 closed the upload connection (SSL EOF). "
+                "Render could not finish writing the file to B2.",
+                503,
+            ) from last
     if last is not None:
         raise last
+
+
+def _b2_authorize() -> dict:
+    key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
+    secret = (current_app.config.get("B2_APPLICATION_KEY") or "").strip()
+    token = base64.b64encode(f"{key_id}:{secret}".encode()).decode()
+    req = Request(
+        "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
+        headers={"Authorization": f"Basic {token}"},
+        method="GET",
+    )
+    with urlopen(req, timeout=_S3_CONNECT_TIMEOUT) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _b2_bucket_id(auth: dict) -> str:
+    allowed = auth.get("allowed") or {}
+    bucket_id = (allowed.get("bucketId") or "").strip()
+    if bucket_id:
+        return bucket_id
+    want = (current_app.config.get("B2_BUCKET_NAME") or "").strip()
+    body = json.dumps({"accountId": auth.get("accountId")}).encode()
+    req = Request(
+        f"{auth['apiUrl']}/b2api/v2/b2_list_buckets",
+        data=body,
+        headers={
+            "Authorization": auth["authorizationToken"],
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urlopen(req, timeout=_S3_CONNECT_TIMEOUT) as resp:
+        payload = json.loads(resp.read().decode())
+    for bucket in payload.get("buckets") or []:
+        if bucket.get("bucketName") == want:
+            return str(bucket.get("bucketId") or "")
+    raise StorageError("Backblaze B2 bucket was not found for this application key.", 500)
+
+
+def _b2_get_upload_url() -> dict:
+    auth = _b2_authorize()
+    bucket_id = _b2_bucket_id(auth)
+    body = json.dumps({"bucketId": bucket_id}).encode()
+    req = Request(
+        f"{auth['apiUrl']}/b2api/v2/b2_get_upload_url",
+        data=body,
+        headers={
+            "Authorization": auth["authorizationToken"],
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urlopen(req, timeout=_S3_CONNECT_TIMEOUT) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> None:
+    info = _b2_get_upload_url()
+    sha1 = hashlib.sha1(payload).hexdigest()
+    headers = {
+        "Authorization": info["authorizationToken"],
+        "X-Bz-File-Name": quote(key, safe="/"),
+        "Content-Type": (content_type or "application/octet-stream"),
+        "X-Bz-Content-Sha1": sha1,
+    }
+    req = Request(info["uploadUrl"], data=payload, headers=headers, method="POST")
+    try:
+        with urlopen(req, timeout=_S3_READ_TIMEOUT) as resp:
+            resp.read()
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", "replace")[:240]
+        blob = raw.lower()
+        if "storage_cap" in blob or "cap exceeded" in blob or "cap_exceeded" in blob:
+            raise StorageError(
+                "Backblaze B2 storage cap exceeded. "
+                "In B2, open Caps & Alerts and raise or remove the daily storage cap.",
+                503,
+            ) from exc
+        raise StorageError(f"Backblaze B2 native upload failed ({exc.code}).", 503) from exc
+    except URLError as exc:
+        raise StorageError("Backblaze B2 native upload connection failed.", 503) from exc

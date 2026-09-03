@@ -147,6 +147,25 @@ def _ingest_upload(kind: str):
     try:
         body, status = handle_ingest_upload(request.files.get("file"), metadata, kind=kind)
         db.session.commit()
+    except DrawingUploadError as exc:
+        if exc.drawing is not None:
+            db.session.commit()
+            return (
+                jsonify(
+                    {
+                        "error": exc.message,
+                        "drawing_id": str(exc.drawing.id),
+                        "file_pending": True,
+                    }
+                ),
+                exc.status,
+            )
+        db.session.rollback()
+        row = _record_bearer_failure(metadata, kind, exc.message, exc.status, exc)
+        payload = {"error": exc.message}
+        if row is not None:
+            payload["error_id"] = str(row.id)
+        return jsonify(payload), exc.status
     except IngestError as exc:
         db.session.rollback()
         row = _record_bearer_failure(metadata, kind, exc.message, exc.status, exc)

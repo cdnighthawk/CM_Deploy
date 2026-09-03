@@ -410,3 +410,105 @@ def test_pin_sheet_to_set_uses_matching_revision():
     assert pinned["sheet_title"] == "Plan BCK-1"
     assert pinned["current_revision"]["id"] == "old"
     assert _pin_sheet_to_set(sheet, "BCK-3") is None
+
+
+def test_drawing_row_kept_when_storage_fails_and_retry_reuses_it(client):
+    from unittest.mock import patch
+
+    from app.services.object_storage import StorageError
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawPend-" + uuid.uuid4().hex[:8], number="P" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    data = {
+        "file": (io.BytesIO(payload), "G0-000.1.pdf"),
+        "sheet_number": "G0-000.1",
+        "drawing_set": "Bid Set",
+        "revision": "0",
+        "split_pages": "false",
+    }
+    with patch(
+        "app.services.drawing_upload.save_upload",
+        side_effect=StorageError("Backblaze B2 closed the upload connection (SSL EOF).", 503),
+    ):
+        r = client.post(
+            f"/api/v1/projects/{pid}/drawings",
+            data=data,
+            content_type="multipart/form-data",
+        )
+    assert r.status_code == 503, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["file_pending"] is True
+    did = body["item"]["id"]
+    assert did
+
+    with client.application.app_context():
+        row = db.session.get(Drawing, uuid.UUID(did))
+        assert row is not None
+        assert (row.tags or {}).get("file_pending") is True
+        assert row.file_size_bytes == 0
+
+    retry = {
+        "file": (io.BytesIO(payload), "G0-000.1.pdf"),
+        "sheet_number": "G0-000.1",
+        "drawing_set": "Bid Set",
+        "revision": "0",
+        "split_pages": "false",
+    }
+    with patch("app.services.drawing_upload.save_upload", return_value=2048):
+        r2 = client.post(
+            f"/api/v1/projects/{pid}/drawings",
+            data=retry,
+            content_type="multipart/form-data",
+        )
+    assert r2.status_code == 201, r2.get_data(as_text=True)
+    assert r2.get_json()["item"]["id"] == did
+    with client.application.app_context():
+        rows = db.session.query(Drawing).filter_by(project_id=uuid.UUID(pid)).all()
+        assert len(rows) == 1
+        assert rows[0].file_size_bytes == 2048
+        assert not (rows[0].tags or {}).get("file_pending")
+
+
+def test_put_drawing_file_replaces_pdf(client):
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawPut-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data={"file": (io.BytesIO(payload), "A1.pdf"), "split_pages": "false"},
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    did = r.get_json()["item"]["id"]
+
+    r2 = client.put(
+        f"/api/v1/drawings/{did}/file",
+        data={"file": (io.BytesIO(payload), "A1.pdf")},
+        content_type="multipart/form-data",
+    )
+    assert r2.status_code == 200, r2.get_data(as_text=True)
+    assert r2.get_json()["item"]["id"] == did
+    file_r = client.get(f"/api/v1/drawings/{did}/file")
+    assert file_r.status_code == 200
+    assert b"%PDF" in file_r.data

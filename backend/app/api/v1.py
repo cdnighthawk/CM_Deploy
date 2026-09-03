@@ -626,6 +626,7 @@ def _drawing_public(d: Drawing) -> dict[str, Any]:
         "label_status": d.label_status,
         "sheet_function": d.sheet_function,
         "hygiene": drawing_hygiene.hygiene_public(d),
+        "file_pending": bool((d.tags or {}).get("file_pending")) if isinstance(d.tags, dict) else False,
         "created_at": _iso(d.created_at),
         "updated_at": _iso(d.updated_at),
     }
@@ -1912,6 +1913,39 @@ def get_drawing_pdf_file(drawing_id: str):
     return resp
 
 
+@bp.put("/drawings/<drawing_id>/file")
+def put_drawing_pdf_file(drawing_id: str):
+    """Attach or replace the PDF for an existing drawing row (B2 retry / backfill)."""
+    from ..services.drawing_upload import DrawingUploadError, replace_drawing_file
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    f = request.files.get("file")
+    if f is None or not getattr(f, "filename", None):
+        return _jsonify({"error": "missing file field (multipart form-data)"}), 400
+    payload = f.read()
+    if not payload:
+        return _jsonify({"error": "empty upload"}), 400
+    max_bytes = 52_428_800
+    if len(payload) > max_bytes:
+        return _jsonify({"error": "file too large (max 50MB)"}), 400
+    try:
+        replace_drawing_file(row, payload)
+        db.session.commit()
+    except DrawingUploadError as exc:
+        db.session.rollback()
+        return _jsonify({"error": exc.message}), exc.status
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("drawing file replace failed for %s", drawing_id)
+        return _jsonify({"error": "drawing file replace failed"}), 500
+    return _jsonify({"item": _drawing_public(row), "entity": "drawing"}), 200
+
+
 @bp.post("/projects/<project_id>/drawings")
 def upload_project_drawing(project_id: str):
     """Multipart upload: field ``file`` (PDF). Multi-page PDFs split into one sheet per page by default."""
@@ -1957,6 +1991,26 @@ def upload_project_drawing(project_id: str):
             drawing_public_fn=_drawing_public,
         )
     except DrawingUploadError as exc:
+        if exc.drawing is not None:
+            db.session.commit()
+            item = _drawing_public(exc.drawing)
+            body: dict = {"error": exc.message, "item": item, "entity": "drawing", "file_pending": True}
+            from ..services.object_storage import UploadCategory, native_upload_session, presigned_put_url
+            from ..services.project_file_keys import preferred_drawing_object_name
+
+            obj_name = preferred_drawing_object_name(exc.drawing)
+            native = native_upload_session(UploadCategory.DRAWINGS, obj_name)
+            if native:
+                body["upload"] = native
+            else:
+                put_url = presigned_put_url(
+                    UploadCategory.DRAWINGS,
+                    obj_name,
+                    content_type="application/pdf",
+                )
+                if put_url:
+                    body["upload"] = {"mode": "s3_presigned_put", "url": put_url}
+            return _jsonify(body), exc.status
         db.session.rollback()
         return _jsonify({"error": exc.message}), exc.status
     except Exception as exc:

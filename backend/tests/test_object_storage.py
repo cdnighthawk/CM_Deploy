@@ -89,6 +89,7 @@ def test_b2_enabled_when_all_vars_set(flask_app):
             "B2_APPLICATION_KEY": "secret",
             "B2_BUCKET_NAME": "usis-cm",
             "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "B2_PREFIX": None,
         }
     )
     with flask_app.app_context():
@@ -199,9 +200,10 @@ def test_b2_put_retries_ssl_eof_then_succeeds(mock_client_factory, _sleep, flask
         assert mock_s3.put_object.call_count == 3
 
 
+@patch("app.services.object_storage._put_native_b2", side_effect=Exception("native fail"))
 @patch("app.services.object_storage.time.sleep", return_value=None)
 @patch("app.services.object_storage._s3_client")
-def test_b2_put_ssl_eof_exhausted_raises_storage_error(mock_client_factory, _sleep, flask_app):
+def test_b2_put_ssl_eof_exhausted_raises_storage_error(mock_client_factory, _sleep, _native, flask_app):
     mock_s3 = MagicMock()
     mock_s3.put_object.side_effect = Exception(
         "SSL validation failed for https://s3.example/key EOF occurred in violation of protocol"
@@ -218,9 +220,36 @@ def test_b2_put_ssl_eof_exhausted_raises_storage_error(mock_client_factory, _sle
     with flask_app.app_context():
         from app.services.object_storage import StorageError, UploadCategory, save_upload
 
-        with pytest.raises(StorageError, match="storage cap|SSL EOF"):
+        with pytest.raises(StorageError, match="SSL EOF"):
             save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
-        assert mock_s3.put_object.call_count == 4
+        assert mock_s3.put_object.call_count == 3
+        _native.assert_called_once()
+
+
+@patch("app.services.object_storage._put_native_b2")
+@patch("app.services.object_storage.time.sleep", return_value=None)
+@patch("app.services.object_storage._s3_client")
+def test_b2_put_ssl_eof_falls_back_to_native(mock_client_factory, _sleep, mock_native, flask_app):
+    mock_s3 = MagicMock()
+    mock_s3.put_object.side_effect = Exception(
+        "SSL validation failed for https://s3.example/key EOF occurred in violation of protocol"
+    )
+    mock_client_factory.return_value = mock_s3
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, save_upload
+
+        sz = save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        assert sz == 8
+        mock_native.assert_called_once()
+        assert mock_native.call_args.args[0].endswith("documents/spec.pdf")
 
 
 @patch("app.services.object_storage._s3_client")
@@ -233,6 +262,7 @@ def test_b2_save_upload_calls_put_object(mock_client_factory, flask_app):
             "B2_APPLICATION_KEY": "s",
             "B2_BUCKET_NAME": "usis-bucket",
             "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "B2_PREFIX": None,
         }
     )
     with flask_app.app_context():

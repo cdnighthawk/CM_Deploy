@@ -20,7 +20,7 @@ services:
       pip install -r requirements.txt
     # Redeploy trigger: application page redirect fix (2026-05-23)
     preDeployCommand: flask db upgrade
-    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180
     healthCheckPath: /healthz
     disk:
       name: usis-instance

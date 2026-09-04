@@ -2072,7 +2072,7 @@ def create_drawing_upload_session(drawing_id: str):
         return _jsonify({"error": "drawing not found"}), 404
     native = native_upload_hint_for_drawing(row)
     if not native:
-        return _jsonify({"error": "native B2 upload URL unavailable"}), 503
+        return _jsonify({"error": "B2 client upload URL unavailable"}), 503
     return _jsonify({"upload": native, "item": _drawing_public(row), "entity": "drawing"}), 200
 
 

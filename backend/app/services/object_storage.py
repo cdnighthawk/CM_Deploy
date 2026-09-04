@@ -574,6 +574,15 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
         raise last
 
 
+def _b2_http_json(req: Request, timeout: int) -> dict:
+    try:
+        with urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode())
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", "replace")[:240]
+        raise StorageError(f"B2 HTTP {exc.code}: {raw}", 503) from exc
+
+
 def _b2_authorize() -> dict:
     key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
     secret = (current_app.config.get("B2_APPLICATION_KEY") or "").strip()
@@ -583,8 +592,7 @@ def _b2_authorize() -> dict:
         headers={"Authorization": f"Basic {token}"},
         method="GET",
     )
-    with urlopen(req, timeout=_S3_CONNECT_TIMEOUT) as resp:
-        return json.loads(resp.read().decode())
+    return _b2_http_json(req, _S3_CONNECT_TIMEOUT)
 
 
 def _b2_bucket_id(auth: dict) -> str:
@@ -603,8 +611,7 @@ def _b2_bucket_id(auth: dict) -> str:
         },
         method="POST",
     )
-    with urlopen(req, timeout=_S3_CONNECT_TIMEOUT) as resp:
-        payload = json.loads(resp.read().decode())
+    payload = _b2_http_json(req, _S3_CONNECT_TIMEOUT)
     for bucket in payload.get("buckets") or []:
         if bucket.get("bucketName") == want:
             return str(bucket.get("bucketId") or "")
@@ -624,8 +631,7 @@ def _b2_get_upload_url() -> dict:
         },
         method="POST",
     )
-    with urlopen(req, timeout=_S3_CONNECT_TIMEOUT) as resp:
-        return json.loads(resp.read().decode())
+    return _b2_http_json(req, _S3_CONNECT_TIMEOUT)
 
 
 def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> None:

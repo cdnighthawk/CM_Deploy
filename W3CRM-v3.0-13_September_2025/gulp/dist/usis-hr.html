@@ -165,6 +165,10 @@
 						<ul class="navbar-nav header-right">
 							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
 								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
+									<a href="usis-time-live.html" class="btn btn-sm btn-outline-secondary px-2" id="usis-header-time" title="Time" aria-label="Time">
+										<i class="icon feather icon-clock"></i>
+										<span class="d-none d-lg-inline ms-1" data-i18n="Time">Time</span>
+									</a>
 									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
 										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
 											<i class="icon feather icon-mail"></i>
@@ -397,6 +401,22 @@
 							</li>
 						</ul>
 					</li>
+					<li id="usis-time-nav">
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-clock"></i>
+							<span class="nav-text" data-i18n="Time">Time</span>
+						</a>
+						<ul aria-expanded="false">
+							<li><a href="usis-time-live.html" data-i18n="Live">Live</a></li>
+							<li><a href="usis-time-me.html" data-i18n="My Time">My Time</a></li>
+							<li><a href="usis-time-cards.html" data-i18n="Time cards">Time cards</a></li>
+							<li><a href="usis-time-events.html" data-i18n="Event log">Event log</a></li>
+							<li><a href="usis-time-exceptions.html" data-i18n="Exceptions">Exceptions</a></li>
+							<li><a href="usis-time-payroll.html" data-i18n="Payroll period">Payroll period</a></li>
+							<li><a href="usis-time-map.html" data-i18n="Map">Map</a></li>
+							<li><a href="usis-time-settings.html" data-i18n="Settings">Settings</a></li>
+						</ul>
+					</li>
 					<li>
 						<a href="usis-email.html" aria-expanded="false">
 							<i class="icon feather icon-mail"></i>
@@ -421,8 +441,8 @@
 							<li data-usis-module="hr">
 								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
 							</li>
-							<li data-usis-module="hrms">
-								<a href="construction/time-sheet.html" data-i18n="Time sheets">Time sheets</a>
+							<li>
+								<a href="usis-time-live.html" data-i18n="Time">Time</a>
 							</li>
 							<li data-usis-module="hrms">
 								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
@@ -603,7 +623,7 @@
 									<div class="card-body">
 										<h6 class="fw-semibold">Time sheets</h6>
 										<p class="text-muted small mb-2">Weekly cards, hours, and payroll prep. Also under HR in the left nav.</p>
-										<a href="construction/time-sheet.html" class="btn btn-outline-primary btn-sm">Open time sheets</a>
+										<a href="usis-time-cards.html" class="btn btn-outline-primary btn-sm">Open time cards</a>
 									</div>
 								</div>
 							</div>

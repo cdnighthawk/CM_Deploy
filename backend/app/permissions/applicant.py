@@ -20,7 +20,6 @@ APPLICANT_PUBLIC_SHELL_PAGES: frozenset[str] = frozenset(
         "page-register.html",
         "page-forgot-password.html",
         "page-reset-password.html",
-        "page-lock-screen.html",
         "usis-hr-hire.html",
         "usis-issue-confirm.html",
     }

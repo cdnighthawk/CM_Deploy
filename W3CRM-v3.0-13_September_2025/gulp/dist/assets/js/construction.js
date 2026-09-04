@@ -250,7 +250,7 @@ var onSite = function(){
                 }
 
                 // Redirect to detail page
-                window.location.href = 'construction/timesheet-detail.html';
+                window.location.href = 'usis-time-cards.html';
             });
         });
     }
@@ -293,7 +293,7 @@ var onSite = function(){
                 }
 
                 // Redirect to detail page
-                window.location.href = 'construction/mom-detail.html';
+                window.location.href = 'construction/project-detail.html';
             });
         });
     }
@@ -388,7 +388,7 @@ var onSite = function(){
                 }
 
                 // Redirect to detail page
-                window.location.href = 'construction/todo-detail.html';
+                window.location.href = 'construction/issues.html';
             });
         });
     }
@@ -483,8 +483,7 @@ var onSite = function(){
                     return;
                 }
 
-                // ✅ Redirect to construction/transaction.html
-                window.location.href = "construction/transaction.html";
+                window.location.href = "construction/project-detail.html";
             });
         });
     }

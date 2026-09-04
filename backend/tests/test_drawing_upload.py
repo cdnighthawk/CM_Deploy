@@ -480,6 +480,118 @@ def test_drawing_row_kept_when_storage_fails_and_retry_reuses_it(client):
         assert not (rows[0].tags or {}).get("file_pending")
 
 
+def test_drawing_storage_failure_hands_native_b2_not_s3_presign(client):
+    """After Render→S3 fails, the desktop must get a native B2 upload URL."""
+    from unittest.mock import patch
+
+    from app.services.object_storage import StorageError
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawNative-" + uuid.uuid4().hex[:8], number="P" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    native = {
+        "mode": "b2_native",
+        "url": "https://pod-000-1000-00.backblaze.com/b2api/v2/b2_upload_file/...",
+        "authorization": "tok",
+        "file_name": "drawings/sheet.pdf",
+        "sha1_header": "X-Bz-Content-Sha1",
+    }
+    data = {
+        "file": (io.BytesIO(payload), "G0-000.2.pdf"),
+        "sheet_number": "G0-000.2",
+        "drawing_set": "Bid Set",
+        "revision": "0",
+        "split_pages": "false",
+    }
+    with (
+        patch(
+            "app.services.drawing_upload.save_upload",
+            side_effect=StorageError(
+                "Backblaze B2 closed the S3-compatible upload connection.",
+                503,
+            ),
+        ),
+        patch(
+            "app.services.object_storage.native_upload_session",
+            return_value=native,
+        ) as mock_native,
+        patch(
+            "app.services.object_storage.presigned_put_url",
+            return_value="https://s3.us-west-004.backblazeb2.com/usis-cm/broken",
+        ) as mock_presign,
+    ):
+        r = client.post(
+            f"/api/v1/projects/{pid}/drawings",
+            data=data,
+            content_type="multipart/form-data",
+        )
+    assert r.status_code == 503, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["upload"]["mode"] == "b2_native"
+    assert "pod-" in body["upload"]["url"]
+    assert body["upload"].get("authorization") == "tok"
+    mock_native.assert_called_once()
+    mock_presign.assert_not_called()
+
+
+def test_drawing_storage_failure_does_not_fall_back_to_s3_presign(client):
+    """If native B2 session cannot be issued, do not hand the desktop an S3 PUT."""
+    from unittest.mock import patch
+
+    from app.services.object_storage import StorageError
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawNoS3-" + uuid.uuid4().hex[:8], number="P" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    data = {
+        "file": (io.BytesIO(payload), "G0-000.3.pdf"),
+        "sheet_number": "G0-000.3",
+        "drawing_set": "Bid Set",
+        "revision": "0",
+        "split_pages": "false",
+    }
+    with (
+        patch(
+            "app.services.drawing_upload.save_upload",
+            side_effect=StorageError("could not save file: ConnectionClosedError", 500),
+        ),
+        patch("app.services.object_storage.native_upload_session", return_value=None),
+        patch(
+            "app.services.object_storage.presigned_put_url",
+            return_value="https://s3.us-west-004.backblazeb2.com/usis-cm/broken",
+        ) as mock_presign,
+    ):
+        r = client.post(
+            f"/api/v1/projects/{pid}/drawings",
+            data=data,
+            content_type="multipart/form-data",
+        )
+    assert r.status_code == 500, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body.get("upload") is None
+    mock_presign.assert_not_called()
+
+
 def test_put_drawing_file_replaces_pdf(client):
     writer = PdfWriter()
     writer.add_blank_page(width=200, height=200)

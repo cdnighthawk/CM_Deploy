@@ -1995,21 +1995,20 @@ def upload_project_drawing(project_id: str):
             db.session.commit()
             item = _drawing_public(exc.drawing)
             body: dict = {"error": exc.message, "item": item, "entity": "drawing", "file_pending": True}
-            from ..services.object_storage import UploadCategory, native_upload_session, presigned_put_url
+            from ..services.object_storage import UploadCategory, native_upload_session
             from ..services.project_file_keys import preferred_drawing_object_name
 
             obj_name = preferred_drawing_object_name(exc.drawing)
+            # Desktop PUT must use native B2 (api.backblazeb2.com), not a
+            # presigned S3 URL — B2's S3 gateway is what just failed.
             native = native_upload_session(UploadCategory.DRAWINGS, obj_name)
             if native:
                 body["upload"] = native
             else:
-                put_url = presigned_put_url(
-                    UploadCategory.DRAWINGS,
+                current_app.logger.warning(
+                    "b2 native upload session unavailable after storage failure drawing=%s",
                     obj_name,
-                    content_type="application/pdf",
                 )
-                if put_url:
-                    body["upload"] = {"mode": "s3_presigned_put", "url": put_url}
             return _jsonify(body), exc.status
         db.session.rollback()
         return _jsonify({"error": exc.message}), exc.status

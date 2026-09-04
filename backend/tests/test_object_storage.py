@@ -220,7 +220,7 @@ def test_b2_put_ssl_eof_exhausted_raises_storage_error(mock_client_factory, _sle
     with flask_app.app_context():
         from app.services.object_storage import StorageError, UploadCategory, save_upload
 
-        with pytest.raises(StorageError, match="SSL EOF"):
+        with pytest.raises(StorageError, match="S3-compatible upload connection"):
             save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
         assert mock_s3.put_object.call_count == 3
         _native.assert_called_once()
@@ -250,6 +250,67 @@ def test_b2_put_ssl_eof_falls_back_to_native(mock_client_factory, _sleep, mock_n
         assert sz == 8
         mock_native.assert_called_once()
         assert mock_native.call_args.args[0].endswith("documents/spec.pdf")
+
+
+class ConnectionClosedError(Exception):
+    """Stand-in for botocore.exceptions.ConnectionClosedError."""
+
+
+@patch("app.services.object_storage._put_native_b2")
+@patch("app.services.object_storage.time.sleep", return_value=None)
+@patch("app.services.object_storage._s3_client")
+def test_b2_put_connection_closed_falls_back_to_native(mock_client_factory, _sleep, mock_native, flask_app):
+    """S3 ConnectionClosedError must retry native B2 instead of HTTP 500."""
+    mock_s3 = MagicMock()
+    mock_s3.put_object.side_effect = ConnectionClosedError(
+        "Connection was closed before we received a valid response from endpoint URL: "
+        '"https://s3.us-west-004.backblazeb2.com".'
+    )
+    mock_client_factory.return_value = mock_s3
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, save_upload
+
+        sz = save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        assert sz == 8
+        mock_native.assert_called_once()
+        assert mock_s3.put_object.call_count == 3
+
+
+@patch("app.services.object_storage._put_native_b2", side_effect=Exception("native fail"))
+@patch("app.services.object_storage.time.sleep", return_value=None)
+@patch("app.services.object_storage._s3_client")
+def test_b2_put_connection_closed_without_native_raises_storage_error(
+    mock_client_factory, _sleep, _native, flask_app
+):
+    mock_s3 = MagicMock()
+    mock_s3.put_object.side_effect = ConnectionClosedError(
+        "Connection was closed before we received a valid response from endpoint URL: "
+        '"https://s3.us-west-004.backblazeb2.com".'
+    )
+    mock_client_factory.return_value = mock_s3
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import StorageError, UploadCategory, save_upload
+
+        with pytest.raises(StorageError, match="S3-compatible upload connection"):
+            save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        assert mock_s3.put_object.call_count == 3
+        _native.assert_called_once()
 
 
 @patch("app.services.object_storage._s3_client")

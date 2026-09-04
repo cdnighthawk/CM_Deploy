@@ -150,6 +150,10 @@
 		if (filter) filter.addEventListener("change", loadList);
 		loadMailbox();
 		loadList();
+		setInterval(function () {
+			loadMailbox();
+			loadList();
+		}, 5 * 60 * 1000);
 	}
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire);

@@ -6,10 +6,10 @@ blueprints. All model definitions live under ``app.models``.
 from __future__ import annotations
 
 import os
+import sys
 import uuid
 from datetime import timedelta
 from pathlib import Path
-
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -19,9 +19,14 @@ from flask_cors import CORS
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
+def _running_under_pytest() -> bool:
+    """True only inside pytest, not ``flask run`` that inherited ``USIS_TESTING``."""
+    return "pytest" in sys.modules or bool(os.environ.get("PYTEST_CURRENT_TEST"))
+
+
 def _load_dotenv_if_not_testing() -> None:
     """Load ``backend/.env``. Under pytest, keep DB creds but isolate SSO/redirects."""
-    testing = os.environ.get("USIS_TESTING", "").strip() in ("1", "true", "yes")
+    testing = _running_under_pytest()
     load_dotenv(_BACKEND_DIR / ".env", override=not testing)
     if not testing:
         return
@@ -231,6 +236,7 @@ def create_app(config_object: str | None = None) -> Flask:
             "/api/v1/integrations/buildingconnected/sync",
             "/api/v1/integrations/calendar-reminders/run",
             "/api/v1/rfps/mailbox/sync",
+            "/api/v1/ap/mailbox/sync",
         ):
             from .api._integration_bc import cron_secret_matches
 
@@ -310,6 +316,9 @@ def create_app(config_object: str | None = None) -> Flask:
 
     register_static_shell(app)
     _apply_production_middleware(app)
+    from .ap._sync_loop import start_invoice_mailbox_sync_loop
+
+    start_invoice_mailbox_sync_loop(app)
 
     if os.environ.get("USIS_BOOTSTRAP_LEADS_ON_STARTUP", "true").strip().lower() in (
         "0",

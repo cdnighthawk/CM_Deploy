@@ -169,3 +169,47 @@ def test_reject_requires_reason(client, flask_app):
     r_ok = client.post(f"/api/v1/ap/invoices/{invoice_id}/reject", json={"reason": "Wrong job"}, headers=h)
     assert r_ok.status_code == 200
     assert r_ok.get_json()["item"]["status"] == "rejected"
+
+
+def test_mailbox_sync_requires_graph(client):
+    r = client.post("/api/v1/ap/mailbox/sync")
+    assert r.status_code == 503
+    assert "Graph" in (r.get_json().get("error") or "")
+
+
+def test_mailbox_sync_cron_secret(client, flask_app, monkeypatch):
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    flask_app.config["BC_SYNC_CRON_SECRET"] = "inv-cron-secret"
+    monkeypatch.setattr(
+        "app.ap._invoice_service.sync_invoice_mailbox",
+        lambda **kw: {
+            "mailbox": "invoices@gousis.com",
+            "created": 1,
+            "skipped": 0,
+            "scanned": 1,
+            "errors": [],
+        },
+    )
+    denied = client.post("/api/v1/ap/mailbox/sync")
+    assert denied.status_code == 401
+    ok = client.post("/api/v1/ap/mailbox/sync", headers={"X-Cron-Secret": "inv-cron-secret"})
+    assert ok.status_code == 200, ok.get_data(as_text=True)
+    assert ok.get_json()["item"]["created"] == 1
+
+
+def test_mailbox_sync_graph_403(client, monkeypatch):
+    from app.api._notifications import GraphMailError
+    from app.ap import _mailbox as ap_mail
+
+    monkeypatch.setenv("MS_ENTRA_TENANT_ID", "tenant-id")
+    monkeypatch.setenv("MS_ENTRA_CLIENT_ID", "client-id")
+    monkeypatch.setenv("MS_ENTRA_CLIENT_SECRET", "client-secret")
+
+    def boom(**kwargs):
+        raise GraphMailError(403, "Access denied")
+
+    monkeypatch.setattr(ap_mail, "list_mailbox_messages", boom)
+    r = client.post("/api/v1/ap/mailbox/sync")
+    assert r.status_code == 403
+    err = r.get_json().get("error") or ""
+    assert "Mail.ReadWrite" in err

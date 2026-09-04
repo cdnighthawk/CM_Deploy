@@ -441,19 +441,18 @@ def void_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -
     return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
 
 
-def sync_mailbox(cu: CurrentUser) -> dict[str, Any]:
-    if not _can_write(cu):
+def sync_mailbox(cu: CurrentUser, *, as_cron: bool = False) -> dict[str, Any]:
+    if not as_cron and not _can_write(cu):
         raise InvoiceError("forbidden", 403)
+    from ..api._notifications import GraphMailError, graph_error_http
+
     try:
-        result = sync_invoice_mailbox(actor_user_id=cu.id)
+        result = sync_invoice_mailbox(actor_user_id=None if as_cron else cu.id)
     except RuntimeError as exc:
         raise InvoiceError(str(exc), 503) from exc
-    except Exception as exc:
-        from ..api._notifications import GraphMailError
-
-        if isinstance(exc, GraphMailError):
-            raise InvoiceError(str(exc), 502) from exc
-        raise
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        raise InvoiceError(str(body.get("error") or exc), int(status)) from exc
     db.session.commit()
     return result
 

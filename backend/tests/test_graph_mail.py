@@ -24,6 +24,17 @@ def test_graph_configured_with_entra_creds(monkeypatch):
     assert mail._mail_configured() is True
 
 
+def test_mailbox_ready_when_send_transport_is_smtp(monkeypatch):
+    from app.api import _notifications as mail
+    from app.ap._mailbox import mailbox_ready
+
+    _graph_env(monkeypatch)
+    monkeypatch.setenv("MAIL_TRANSPORT", "smtp")
+    assert mail._graph_configured() is False
+    assert mail._graph_credentials_present() is True
+    assert mailbox_ready() is True
+
+
 def test_system_mail_not_configured_without_from(monkeypatch):
     from app.api import _notifications as mail
 

@@ -43,9 +43,9 @@ def invoice_mailbox() -> str:
 
 
 def mailbox_ready() -> bool:
-    from ..api._notifications import _graph_configured
+    from ..api._notifications import _graph_credentials_present
 
-    return _graph_configured()
+    return _graph_credentials_present()
 
 
 def _parse_dt(raw: Any) -> datetime | None:
@@ -313,18 +313,22 @@ def sync_invoice_mailbox(*, top: int = 50, actor_user_id: UUID | None = None) ->
             skipped += 1
             continue
         try:
-            detail = get_mailbox_message(mailbox=mailbox, message_id=mid)
-            invoice = ingest_graph_message(detail, mailbox=mailbox, actor_user_id=actor_user_id)
-            if invoice is None:
-                skipped += 1
-                continue
-            created += 1
-            try:
-                mark_mailbox_message_read(mailbox=mailbox, message_id=mid, is_read=True)
-            except GraphMailError:
-                pass
+            with db.session.begin_nested():
+                detail = get_mailbox_message(mailbox=mailbox, message_id=mid)
+                invoice = ingest_graph_message(detail, mailbox=mailbox, actor_user_id=actor_user_id)
+                if invoice is None:
+                    skipped += 1
+                    continue
+                created += 1
+                try:
+                    mark_mailbox_message_read(mailbox=mailbox, message_id=mid, is_read=True)
+                except GraphMailError:
+                    pass
         except GraphMailError as exc:
             errors.append(str(exc))
+        except Exception as exc:
+            current_app.logger.exception("Invoice mailbox ingest failed for %s", mid)
+            errors.append(f"{mid}: {exc}")
     return {
         "mailbox": mailbox,
         "scanned": len(listing.get("items") or []),

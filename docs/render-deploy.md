@@ -15,6 +15,7 @@ Single HTTPS web service: Gulp-built UI + Flask API + PostgreSQL. Session cookie
    - PostgreSQL `usis-cm-db`
    - Web service `usis-cm` (Python 3.12)
    - Cron job `usis-calendar-reminders` (daily 14:00 UTC; needs `BC_SYNC_CRON_SECRET`)
+   - Cron job `usis-invoice-mailbox-sync` (every 5 minutes; same `BC_SYNC_CRON_SECRET`)
    - Persistent disk on `backend/instance` (uploads; optional if using B2 — see [backblaze-b2.md](backblaze-b2.md))
 
 ## 2. Secrets (Dashboard → usis-cm → Environment)

@@ -1,6 +1,7 @@
 """Sage CM Wave 2 list/create/patch/delete plus inbox, companies, and timecards."""
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -94,6 +95,18 @@ def _next_number(model, project_id: uuid.UUID, prefix: str) -> str:
     return f"{prefix}-{int(n) + 1:03d}"
 
 
+def _next_punch_number(project_id: uuid.UUID) -> str:
+    rows = db.session.scalars(select(PunchlistItem.number).where(PunchlistItem.project_id == project_id)).all()
+    max_n = 0
+    for num in rows:
+        if not num:
+            continue
+        match = re.search(r"(\d+)$", str(num).strip())
+        if match:
+            max_n = max(max_n, int(match.group(1)))
+    return str(max_n + 1)
+
+
 def _parse_date(raw: Any) -> date | None:
     if raw is None or raw == "":
         return None
@@ -156,7 +169,10 @@ def list_project_kind(project_id: uuid.UUID, kind: str, cu: CurrentUser) -> dict
         raise ApiError("unknown kind", 400)
     model, entity, _prefix = spec
     rows = db.session.scalars(select(model).where(model.project_id == project_id).order_by(model.created_at.desc())).all()
-    return {"entity": entity, "items": [serialize_row(r) for r in rows]}
+    out: dict[str, Any] = {"entity": entity, "items": [serialize_row(r) for r in rows]}
+    if kind == "punchlist":
+        out["next_number"] = _next_punch_number(project_id)
+    return out
 
 
 def create_project_kind(project_id: uuid.UUID, kind: str, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
@@ -176,8 +192,19 @@ def create_project_kind(project_id: uuid.UUID, kind: str, data: Mapping[str, Any
         raise ApiError("subject or title is required")
     if kind == "po-change-orders" and not getattr(row, "commitment_id", None):
         raise ApiError("commitment_id is required")
+    if kind == "punchlist":
+        if getattr(row, "distribution_user_ids", None) is None:
+            row.distribution_user_ids = []
+        if getattr(row, "attachments", None) is None:
+            row.attachments = []
+        ids = []
+        for raw in row.distribution_user_ids or []:
+            uid = _parse_uuid(raw.get("id") if isinstance(raw, Mapping) else raw)
+            if uid:
+                ids.append(str(uid))
+        row.distribution_user_ids = ids
     if hasattr(row, "number") and not getattr(row, "number", None):
-        row.number = _next_number(model, project_id, prefix)
+        row.number = _next_punch_number(project_id) if kind == "punchlist" else _next_number(model, project_id, prefix)
     db.session.add(row)
     db.session.commit()
     return {"item": serialize_row(row), "entity": entity}

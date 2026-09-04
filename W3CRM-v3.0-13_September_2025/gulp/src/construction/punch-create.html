@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "punch-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-punch-form { max-width: 1040px; }
+		.usis-punch-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.28rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-punch-form .form-label .req { color: #e03131; margin-left: 0.2rem; }
+		.usis-punch-form .form-control,
+		.usis-punch-form .form-select {
+			min-height: 2.45rem;
+			font-size: 0.9rem;
+			border-color: #ced4da;
+			border-radius: 0.25rem;
+		}
+		.usis-punch-crumbs {
+			margin-bottom: 0.1rem;
+			font-size: 0.82rem;
+			color: #6c757d;
+		}
+		.usis-punch-crumbs a { color: inherit; text-decoration: none; }
+		.usis-punch-crumbs a:hover { text-decoration: underline; }
+		.usis-punch-page-title { font-size: 1.65rem; font-weight: 700; margin: 0.15rem 0 1.2rem; letter-spacing: -0.01em; }
+		.usis-punch-section { margin-bottom: 1.5rem; }
+		.usis-punch-section-title {
+			font-size: 1.05rem;
+			font-weight: 700;
+			margin: 0 0 0.95rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 1px solid #dee2e6;
+		}
+		.usis-punch-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 0.95rem 2rem;
+			align-items: start;
+		}
+		@media (max-width: 767.98px) {
+			.usis-punch-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+		}
+		.usis-punch-field { min-width: 0; }
+		.usis-punch-field--location { max-width: 78%; }
+		@media (max-width: 767.98px) {
+			.usis-punch-field--location { max-width: none; }
+		}
+		.usis-punch-people {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.3rem;
+			min-height: 2.45rem;
+			padding: 0.2rem 0.4rem;
+			border: 1px solid #ced4da;
+			border-radius: 0.25rem;
+			background: #fff;
+		}
+		.usis-punch-people:focus-within { border-color: #86b7fe; box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15); }
+		.usis-punch-people .form-select {
+			border: 0;
+			box-shadow: none;
+			min-height: 1.9rem;
+			flex: 1 1 8rem;
+			padding: 0.15rem 1.75rem 0.15rem 0.15rem;
+			background-color: transparent;
+		}
+		.usis-punch-people .form-select:focus { box-shadow: none; }
+		.usis-punch-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+		.usis-punch-chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.4rem;
+			background: #e9ecef;
+			color: #212529;
+			border-radius: 0.2rem;
+			padding: 0.12rem 0.35rem 0.12rem 0.55rem;
+			font-size: 0.82rem;
+			line-height: 1.3;
+		}
+		.usis-punch-chip-x {
+			border: 0;
+			background: transparent;
+			color: inherit;
+			padding: 0 0.2rem;
+			line-height: 1;
+			font-size: 1.05rem;
+			cursor: pointer;
+			opacity: 0.55;
+		}
+		.usis-punch-chip-x:hover { opacity: 1; }
+		.usis-punch-rte-toolbar {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.1rem;
+			padding: 0.3rem 0.4rem;
+			border: 1px solid #ced4da;
+			border-bottom: 0;
+			border-radius: 0.25rem 0.25rem 0 0;
+			background: #f8f9fa;
+		}
+		.usis-punch-rte-toolbar .btn {
+			--bs-btn-padding-y: 0.18rem;
+			--bs-btn-padding-x: 0.42rem;
+			--bs-btn-font-size: 0.78rem;
+			min-width: 1.8rem;
+			color: #495057;
+		}
+		.usis-punch-rte-toolbar select {
+			max-width: 5.5rem;
+			font-size: 0.78rem;
+			min-height: 1.7rem;
+			padding: 0.1rem 0.3rem;
+		}
+		.usis-punch-rte-toolbar input[type="color"] {
+			width: 1.7rem;
+			height: 1.55rem;
+			padding: 0;
+			border: 1px solid #ced4da;
+			border-radius: 0.15rem;
+			background: #fff;
+		}
+		.usis-punch-rte {
+			min-height: 12rem;
+			border: 1px solid #ced4da;
+			border-radius: 0 0 0.25rem 0.25rem;
+			padding: 0.7rem 0.8rem;
+			background: #fff;
+			outline: none;
+			font-size: 0.9rem;
+		}
+		.usis-punch-rte:empty:before {
+			content: attr(data-placeholder);
+			color: #adb5bd;
+		}
+		#usis-punch-attach-drop {
+			min-height: 9.5rem;
+			border: 2px dashed #ced4da;
+			border-radius: 0.25rem;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.45rem;
+			padding: 1.5rem;
+			text-align: center;
+			color: #6c757d;
+			background: #f4f6f8;
+			cursor: pointer;
+		}
+		#usis-punch-attach-drop.is-drag {
+			background: #e8eef1;
+			border-color: var(--usis-primary, #1c7ed6);
+			color: var(--usis-primary, #1c7ed6);
+		}
+		#usis-punch-attach-drop .usis-punch-attach-icon { font-size: 2rem; opacity: 0.4; }
+		.usis-punch-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.55rem 0 1.5rem;
+			border-top: 1px solid #dee2e6;
+		}
+		.usis-punch-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-punch-req-note .req { color: #e03131; }
+		.usis-punch-form-footer .btn { min-width: 6.5rem; }
+		.usis-punch-form-footer .btn-light {
+			background: #f1f3f5;
+			border-color: #dee2e6;
+		}
+		.usis-punch-attach-file {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.5rem;
+			padding: 0.35rem 0.5rem;
+			border: 1px solid #e9ecef;
+			border-radius: 0.3rem;
+			font-size: 0.82rem;
+			background: #fff;
+		}
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New Punch List Item",
+				})
+			</div>
+
+			<div class="container-fluid usis-punch-form">
+				<form id="usis-punch-form" autocomplete="off" novalidate>
+					<div class="alert alert-danger d-none" id="usis-punch-error" role="alert"></div>
+
+					<nav class="usis-punch-crumbs" aria-label="Punch list">
+						<a id="usis-punch-crumb-list" href="construction/project-detail.html" data-i18n="Punch List">Punch List</a>
+						<span class="mx-1">›</span>
+						<span data-i18n="New Punch List Item">New Punch List Item</span>
+					</nav>
+					<h1 class="usis-punch-page-title" data-i18n="New Punch List Item">New Punch List Item</h1>
+
+					<section class="usis-punch-section">
+						<h2 class="usis-punch-section-title" data-i18n="General Information">General Information</h2>
+						<div class="usis-punch-grid">
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-title"><span data-i18n="Title">Title</span><span class="req">*</span></label>
+								<input type="text" class="form-control" id="usis-punch-title" maxlength="500" required>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-number"><span data-i18n="Number">Number</span><span class="req">*</span></label>
+								<input type="text" class="form-control" id="usis-punch-number" maxlength="40" required>
+							</div>
+
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-manager"><span data-i18n="Punch Item Manager">Punch Item Manager</span><span class="req">*</span></label>
+								<div class="usis-punch-people" data-people="manager">
+									<div class="usis-punch-chips" id="usis-punch-manager-chips"></div>
+									<select class="form-select" id="usis-punch-manager">
+										<option value="" data-i18n="Select a Person">Select a Person</option>
+									</select>
+								</div>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-type" data-i18n="Type">Type</label>
+								<select class="form-select" id="usis-punch-type">
+									<option value="" data-i18n="Select Type">Select Type</option>
+									<option value="Deficiency">Deficiency</option>
+									<option value="Incomplete Work">Incomplete Work</option>
+									<option value="Quality">Quality</option>
+									<option value="Safety">Safety</option>
+									<option value="Commissioning">Commissioning</option>
+									<option value="Warranty">Warranty</option>
+								</select>
+							</div>
+
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-approver"><span data-i18n="Final Approver">Final Approver</span><span class="req">*</span></label>
+								<div class="usis-punch-people" data-people="approver">
+									<div class="usis-punch-chips" id="usis-punch-approver-chips"></div>
+									<select class="form-select" id="usis-punch-approver">
+										<option value="" data-i18n="Select a Person">Select a Person</option>
+									</select>
+								</div>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-dist" data-i18n="Distribution List">Distribution List</label>
+								<div class="usis-punch-people" data-people="dist">
+									<div class="usis-punch-chips" id="usis-punch-dist-chips"></div>
+									<select class="form-select" id="usis-punch-dist">
+										<option value="" data-i18n="Select a Person">Select a Person</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="usis-punch-field usis-punch-field--location">
+								<label class="form-label" for="usis-punch-location" data-i18n="Location">Location</label>
+								<select class="form-select" id="usis-punch-location">
+									<option value="" data-i18n="Select a Location">Select a Location</option>
+								</select>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-priority" data-i18n="Priority">Priority</label>
+								<select class="form-select" id="usis-punch-priority">
+									<option value="" data-i18n="Select Priority">Select Priority</option>
+									<option value="low">Low</option>
+									<option value="medium">Medium</option>
+									<option value="high">High</option>
+									<option value="urgent">Urgent</option>
+								</select>
+							</div>
+
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-trade" data-i18n="Trade">Trade</label>
+								<select class="form-select" id="usis-punch-trade">
+									<option value="" data-i18n="Select Trade">Select Trade</option>
+									<option value="Ceiling">Ceiling</option>
+									<option value="Concrete">Concrete</option>
+									<option value="Doors &amp; Hardware">Doors &amp; Hardware</option>
+									<option value="Drywall">Drywall</option>
+									<option value="Electrical">Electrical</option>
+									<option value="Fire Protection">Fire Protection</option>
+									<option value="Flooring">Flooring</option>
+									<option value="Glazing">Glazing</option>
+									<option value="HVAC">HVAC</option>
+									<option value="Insulation">Insulation</option>
+									<option value="Masonry">Masonry</option>
+									<option value="Painting">Painting</option>
+									<option value="Plumbing">Plumbing</option>
+									<option value="Roofing">Roofing</option>
+									<option value="Steel">Steel</option>
+									<option value="Waterproofing">Waterproofing</option>
+									<option value="Other">Other</option>
+								</select>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-reference" data-i18n="Reference">Reference</label>
+								<input type="text" class="form-control" id="usis-punch-reference" maxlength="500">
+							</div>
+
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-schedule" data-i18n="Schedule Impact">Schedule Impact</label>
+								<select class="form-select" id="usis-punch-schedule">
+									<option value="" data-i18n="Select Schedule Impact">Select Schedule Impact</option>
+									<option value="yes" data-i18n="Yes">Yes</option>
+									<option value="yes_unknown" data-i18n="Yes (Unknown)">Yes (Unknown)</option>
+									<option value="no" data-i18n="No">No</option>
+									<option value="tbd" data-i18n="TBD">TBD</option>
+									<option value="na" data-i18n="N/A">N/A</option>
+								</select>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-punch-cost" data-i18n="Cost Impact">Cost Impact</label>
+								<select class="form-select" id="usis-punch-cost">
+									<option value="" data-i18n="Select Cost Impact">Select Cost Impact</option>
+									<option value="yes" data-i18n="Yes">Yes</option>
+									<option value="yes_unknown" data-i18n="Yes (Unknown)">Yes (Unknown)</option>
+									<option value="no" data-i18n="No">No</option>
+									<option value="tbd" data-i18n="TBD">TBD</option>
+									<option value="na" data-i18n="N/A">N/A</option>
+								</select>
+							</div>
+						</div>
+					</section>
+
+					<section class="usis-punch-section">
+						<h2 class="usis-punch-section-title" data-i18n="Description">Description</h2>
+						<div class="usis-punch-rte-toolbar" role="toolbar" aria-label="Description formatting">
+							<button type="button" class="btn btn-light" data-cmd="bold" title="Bold"><b>B</b></button>
+							<button type="button" class="btn btn-light" data-cmd="italic" title="Italic"><i>I</i></button>
+							<button type="button" class="btn btn-light" data-cmd="underline" title="Underline"><u>U</u></button>
+							<button type="button" class="btn btn-light" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+							<button type="button" class="btn btn-light" data-cmd="justifyLeft" title="Align left"><i class="fa fa-align-left" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="justifyCenter" title="Align center"><i class="fa fa-align-center" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="justifyRight" title="Align right"><i class="fa fa-align-right" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="justifyFull" title="Justify"><i class="fa fa-align-justify" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="insertUnorderedList" title="Bulleted list"><i class="fa fa-list-ul" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="insertOrderedList" title="Numbered list"><i class="fa fa-list-ol" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="outdent" title="Outdent"><i class="fa fa-outdent" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="indent" title="Indent"><i class="fa fa-indent" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="removeFormat" title="Clear formatting"><i class="fa fa-eraser" aria-hidden="true"></i></button>
+							<select id="usis-punch-font-size" title="Font size" aria-label="Font size">
+								<option value="2">10pt</option>
+								<option value="3" selected>12pt</option>
+								<option value="4">14pt</option>
+								<option value="5">18pt</option>
+							</select>
+							<input type="color" id="usis-punch-fore-color" title="Text color" value="#212529" aria-label="Text color">
+							<input type="color" id="usis-punch-hilite-color" title="Highlight color" value="#ffff00" aria-label="Highlight color">
+							<button type="button" class="btn btn-light" id="usis-punch-link" title="Insert link"><i class="fa fa-link" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" id="usis-punch-insert-image" title="Insert image"><i class="fa fa-image" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" id="usis-punch-insert-table" title="Insert table"><i class="fa fa-table" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="undo" title="Undo"><i class="fa fa-undo" aria-hidden="true"></i></button>
+							<button type="button" class="btn btn-light" data-cmd="redo" title="Redo"><i class="fa fa-redo" aria-hidden="true"></i></button>
+						</div>
+						<div class="usis-punch-rte" id="usis-punch-description" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder=""></div>
+						<input type="file" class="d-none" id="usis-punch-rte-image" accept="image/*">
+					</section>
+
+					<section class="usis-punch-section">
+						<h2 class="usis-punch-section-title" data-i18n="Attachments">Attachments</h2>
+						<div id="usis-punch-attach-drop" tabindex="0" role="button" aria-label="Attach files or drag and drop">
+							<i class="fa fa-image usis-punch-attach-icon" aria-hidden="true"></i>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-punch-attach-btn" data-i18n="Attach Files">Attach Files</button>
+							<span class="small" data-i18n="or Drag &amp; Drop">or Drag &amp; Drop</span>
+						</div>
+						<input type="file" class="d-none" id="usis-punch-attach-file" multiple>
+						<div class="mt-2 d-flex flex-column gap-1" id="usis-punch-attach-list"></div>
+					</section>
+
+					<div class="usis-punch-form-footer">
+						<div class="usis-punch-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<a class="btn btn-link text-secondary text-decoration-none" id="usis-punch-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-light" id="usis-punch-save" data-i18n="Save">Save</button>
+							<button type="submit" class="btn btn-primary" id="usis-punch-save-new" data-i18n="Save &amp; Create New">Save &amp; Create New</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/punch-create.js?v=20260904b"></script>
+
+</body>
+</html>

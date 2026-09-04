@@ -63,16 +63,38 @@ def test_wave2_punch_and_company(client, no_dev_admin):
     r = client.post(
         f"/api/v1/projects/{pid}/wave2/punchlist",
         headers=hdr,
-        json={"title": "Touch up paint", "location": "Lobby"},
+        json={
+            "title": "Touch up paint",
+            "location": "Lobby",
+            "punch_type": "Deficiency",
+            "priority": "high",
+            "trade": "Painting",
+            "reference": "Walk 4/12",
+            "schedule_impact": "no",
+            "cost_impact": "tbd",
+            "description": "<p>Touch up lobby paint at elevator.</p>",
+            "manager_user_id": uid,
+            "final_approver_user_id": uid,
+            "distribution_user_ids": [uid],
+        },
     )
     assert r.status_code == 201, r.get_data(as_text=True)
     item = r.get_json()["item"]
     assert item["title"] == "Touch up paint"
     assert item["number"]
+    assert item["punch_type"] == "Deficiency"
+    assert item["priority"] == "high"
+    assert item["trade"] == "Painting"
+    assert item["manager_user_id"] == uid
+    assert item["final_approver_user_id"] == uid
+    assert item["distribution_user_ids"] == [uid]
+    assert item["schedule_impact"] == "no"
 
     listed = client.get(f"/api/v1/projects/{pid}/wave2/punchlist", headers=hdr)
     assert listed.status_code == 200
-    assert listed.get_json()["items"][0]["id"] == item["id"]
+    body = listed.get_json()
+    assert body["items"][0]["id"] == item["id"]
+    assert str(body["next_number"]).isdigit()
 
     c = client.post("/api/v1/companies", headers=hdr, json={"name": "Acme Drywall", "company_type": "subcontractor"})
     assert c.status_code == 201, c.get_data(as_text=True)

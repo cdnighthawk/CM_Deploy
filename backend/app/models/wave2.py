@@ -52,6 +52,21 @@ class PunchlistItem(UUIDPKMixin, TimestampMixin, db.Model):
     inspection_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     completed_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    punch_type: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    priority: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    trade: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    schedule_impact: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    cost_impact: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    manager_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    final_approver_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    distribution_user_ids: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    attachments: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
 class WorkOrder(UUIDPKMixin, TimestampMixin, db.Model):

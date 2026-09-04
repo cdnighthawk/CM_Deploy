@@ -66,6 +66,18 @@
     });
   }
 
+  function stampPunchLinks(projectId) {
+    if (!projectId) return;
+    var a = document.getElementById("usis-punch-gc-add");
+    if (a) {
+      a.setAttribute(
+        "href",
+        "construction/punch-create.html?project_id=" + encodeURIComponent(projectId)
+      );
+      a.classList.remove("d-none");
+    }
+  }
+
   function stampSubmittalLinks(projectId) {
     if (!projectId) return;
     var a = document.getElementById("usis-submittal-open-create");
@@ -249,6 +261,7 @@
       global.sessionStorage.setItem(KEY, id);
     } catch (e) {}
     stampRfiLinks(id);
+    stampPunchLinks(id);
     stampSubmittalLinks(id);
     stampPoLinks(id);
     var issuesLink = document.getElementById("usis-issue-open-log");

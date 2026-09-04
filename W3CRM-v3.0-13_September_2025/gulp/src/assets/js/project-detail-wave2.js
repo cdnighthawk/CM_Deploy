@@ -6,7 +6,7 @@
 	"use strict";
 
 	var KINDS = [
-		{ kind: "punchlist", titleKey: "title", extra: "location", heading: "New GC punch item", submit: "Add item" },
+		{ kind: "punchlist", titleKey: "title", extra: "location", heading: "New GC punch item", submit: "Add item", customCreate: true },
 		{ kind: "work-orders", titleKey: "subject", extra: "amount", heading: "New work order", submit: "Add work order" },
 		{ kind: "meetings", titleKey: "subject", extra: "meeting_date", heading: "New meeting", submit: "Add meeting" },
 		{ kind: "safety-incidents", titleKey: "subject", extra: "severity", heading: "New safety incident", submit: "Add incident" },
@@ -55,18 +55,50 @@
 		return x.toLocaleString(undefined, { style: "currency", currency: "USD" });
 	}
 
+	function punchHref() {
+		var pid = projectId();
+		if (!pid) return "construction/punch-create.html";
+		return "construction/punch-create.html?project_id=" + encodeURIComponent(pid);
+	}
+
 	function loadKind(cfg) {
 		var tbody = document.getElementById("usis-w2-" + cfg.kind);
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/wave2/" + cfg.kind))
 			.then(function (data) {
 				var items = data.items || [];
+				var cols = cfg.kind === "punchlist" ? 7 : 5;
 				if (!items.length) {
-					tbody.innerHTML = '<tr><td colspan="5" class="text-muted">None yet.</td></tr>';
+					tbody.innerHTML = '<tr><td colspan="' + cols + '" class="text-muted">None yet.</td></tr>';
 					return;
 				}
 				tbody.innerHTML = items
 					.map(function (it) {
+						var del =
+							'<button type="button" class="btn btn-link btn-sm p-0 usis-w2-del" data-kind="' +
+							esc(cfg.kind) +
+							'" data-id="' +
+							esc(it.id) +
+							'">Delete</button>';
+						if (cfg.kind === "punchlist") {
+							return (
+								"<tr><td>" +
+								esc(it.number || "") +
+								"</td><td>" +
+								esc(it.title || "") +
+								"</td><td>" +
+								esc(it.status || "") +
+								"</td><td>" +
+								esc(it.punch_type || "") +
+								"</td><td>" +
+								esc(it.location || "") +
+								"</td><td>" +
+								esc(it.priority || "") +
+								"</td><td>" +
+								del +
+								"</td></tr>"
+							);
+						}
 						var extra = it[cfg.extra];
 						if (cfg.extra === "amount") extra = money(extra);
 						return (
@@ -78,17 +110,16 @@
 							esc(it.status || "") +
 							"</td><td>" +
 							esc(extra == null ? "" : extra) +
-							'</td><td><button type="button" class="btn btn-link btn-sm p-0 usis-w2-del" data-kind="' +
-							esc(cfg.kind) +
-							'" data-id="' +
-							esc(it.id) +
-							'">Delete</button></td></tr>'
+							"</td><td>" +
+							del +
+							"</td></tr>"
 						);
 					})
 					.join("");
 			})
 			.catch(function () {
-				tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Could not load.</td></tr>';
+				var cols = cfg.kind === "punchlist" ? 7 : 5;
+				tbody.innerHTML = '<tr><td colspan="' + cols + '" class="text-muted">Could not load.</td></tr>';
 			});
 	}
 
@@ -519,11 +550,13 @@
 		loadPhotos();
 		loadOpenItems();
 		loadCrewPunch();
+		var punchAdd = document.getElementById("usis-punch-gc-add");
+		if (punchAdd) punchAdd.setAttribute("href", punchHref());
 		document.querySelectorAll("[data-usis-wave2-add]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				var kind = btn.getAttribute("data-usis-wave2-add");
 				var cfg = KINDS.filter(function (k) {
-					return k.kind === kind;
+					return k.kind === kind && !k.customCreate;
 				})[0];
 				if (cfg) addKind(cfg);
 			});

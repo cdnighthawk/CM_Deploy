@@ -456,12 +456,20 @@ def _s3_client():
     )
 
 
-def _is_ssl_drop(exc: BaseException) -> bool:
+def _is_s3_compat_drop(exc: BaseException) -> bool:
+    """B2's S3 gateway dropped the socket. Native B2 (api.backblazeb2.com) may still work.
+
+    Covers SSL EOF *and* boto ``ConnectionClosedError`` ("Connection was closed
+    before we received a valid response"). Those are different doors than native B2.
+    """
+    name = type(exc).__name__
+    if name in {"SSLError", "SSLEOFError", "ConnectionClosedError"}:
+        return True
     text = str(exc).lower()
     return (
         "eof occurred in violation" in text
         or "ssl validation failed" in text
-        or type(exc).__name__ in {"SSLError", "SSLEOFError"}
+        or "connection was closed before we received a valid response" in text
     )
 
 
@@ -516,7 +524,7 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
     if content_type:
         extra["ContentType"] = content_type
     last: BaseException | None = None
-    ssl_dropped = False
+    s3_dropped = False
     for attempt in range(_PUT_ATTEMPTS):
         try:
             _s3_client().put_object(
@@ -534,15 +542,15 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
                     "In B2, open Caps & Alerts and raise or remove the daily storage cap.",
                     503,
                 ) from exc
-            if _is_ssl_drop(exc) and attempt + 1 < _PUT_ATTEMPTS:
-                ssl_dropped = True
+            if _is_s3_compat_drop(exc) and attempt + 1 < _PUT_ATTEMPTS:
+                s3_dropped = True
                 time.sleep(1.5 * (2**attempt))
                 continue
-            if _is_ssl_drop(exc):
-                ssl_dropped = True
+            if _is_s3_compat_drop(exc):
+                s3_dropped = True
                 break
             raise
-    if ssl_dropped:
+    if s3_dropped:
         try:
             _put_native_b2(key, payload, content_type=content_type)
             current_app.logger.warning("b2 s3 put dropped; native upload succeeded key=%s", key)
@@ -550,8 +558,8 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
         except Exception as native_exc:
             current_app.logger.warning("b2 native upload failed key=%s err=%s", key, native_exc)
             raise StorageError(
-                "Backblaze B2 closed the upload connection (SSL EOF). "
-                "Render could not finish writing the file to B2.",
+                "Backblaze B2 closed the S3-compatible upload connection. "
+                "Render could not finish writing the file to B2 via S3.",
                 503,
             ) from last
     if last is not None:

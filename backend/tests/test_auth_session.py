@@ -39,7 +39,7 @@ def test_auth_status_dev_bypass(client, monkeypatch):
 def test_login_get_redirects_to_shell_template(client):
     r = client.get(
         "/auth/login",
-        headers={"Referer": "http://127.0.0.1:3000/construction/index.html"},
+        headers={"Referer": "http://127.0.0.1:3000/construction/projects.html"},
         follow_redirects=False,
     )
     assert r.status_code == 302

@@ -35,6 +35,13 @@ _CASE_INSENSITIVE_HTML_REDIRECTS: dict[str, str] = {
 }
 
 
+@static_shell_bp.route("/construction/index.html")
+@static_shell_bp.route("/construction", strict_slashes=False)
+def redirect_legacy_construction_index():
+    """Old W3CRM demo dashboard; real jobs live on the projects list."""
+    return redirect("/construction/projects.html", code=302)
+
+
 def resolve_static_root() -> Path | None:
     """Return absolute path to ``gulp/dist`` or None if missing."""
     raw = (os.environ.get("USIS_STATIC_ROOT") or "").strip()
@@ -93,6 +100,9 @@ def serve_static(subpath: str):
         home = root / "usis-dashboard-dark.html"
         if home.is_file():
             return redirect("/usis-dashboard-dark.html", code=302)
+
+    if req_path in ("/construction/index.html", "/construction"):
+        return redirect("/construction/projects.html", code=302)
 
     # Dev-open mode may skip the home page, but never skip the login form.
     # Reviewer/username logins need /page-login.html to stay reachable.

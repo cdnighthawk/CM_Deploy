@@ -228,13 +228,6 @@
       "category": "construction_demo"
     },
     {
-      "path": "construction/index.html",
-      "order": 28,
-      "title": "Construction — Index",
-      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
-      "category": "construction_demo"
-    },
-    {
       "path": "construction/lead-detail.html",
       "order": 29,
       "title": "Construction — Lead Detail",

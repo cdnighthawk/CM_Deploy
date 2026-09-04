@@ -327,11 +327,20 @@ function browserSyncServe(callback) {
               res.end();
               return;
             }
+            if (
+              pathOnly === "/construction/index.html" ||
+              pathOnly === "/construction" ||
+              pathOnly === "/construction/"
+            ) {
+              res.writeHead(302, { Location: "/construction/projects.html" });
+              res.end();
+              return;
+            }
             next();
           },
         ],
       },
-      startPath: "/construction/index.html",
+      startPath: "/construction/projects.html",
       notify: true,
     },
     function (err) {

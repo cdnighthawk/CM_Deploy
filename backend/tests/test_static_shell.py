@@ -55,6 +55,22 @@ def test_apply_html_case_insensitive_redirect(client, static_root):
     assert r.headers.get("Location") == "/apply.html"
 
 
+def test_construction_index_redirects_to_projects(client, static_root):
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    r = client.get("/construction/index.html")
+    assert r.status_code == 302
+    assert r.headers.get("Location") == "/construction/projects.html"
+
+
+def test_construction_dir_redirects_to_projects(client, static_root):
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    r = client.get("/construction")
+    assert r.status_code == 302
+    assert r.headers.get("Location") == "/construction/projects.html"
+
+
 def test_apply_page_served(client, static_root):
     if static_root is None:
         pytest.skip("gulp/dist not present")

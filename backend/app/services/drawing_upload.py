@@ -48,10 +48,30 @@ def delete_drawing_objects(d: Drawing) -> None:
 
 
 def native_upload_hint_for_drawing(d: Drawing) -> dict | None:
-    """Mint a native B2 upload URL for this drawing's object key, or None."""
-    from .object_storage import native_upload_session
+    """Mint a client-side B2 write URL for this drawing, or None.
 
-    return native_upload_session(UploadCategory.DRAWINGS, preferred_drawing_object_name(d))
+    Prefer a native ``b2_get_upload_url`` session. If Render cannot reach that
+    API, sign an S3 PUT so the office PC still writes the bytes (Render does
+    not proxy the PDF).
+    """
+    from .object_storage import native_upload_session, presigned_put_url
+
+    name = preferred_drawing_object_name(d)
+    native = native_upload_session(UploadCategory.DRAWINGS, name)
+    if native:
+        return native
+    url = presigned_put_url(
+        UploadCategory.DRAWINGS,
+        name,
+        content_type="application/pdf",
+    )
+    if not url:
+        return None
+    return {
+        "mode": "s3_presigned_put",
+        "url": url,
+        "file_name": name,
+    }
 
 
 def ack_drawing_file(

@@ -544,8 +544,8 @@ def test_drawing_storage_failure_hands_native_b2_not_s3_presign(client):
     mock_presign.assert_not_called()
 
 
-def test_drawing_storage_failure_does_not_fall_back_to_s3_presign(client):
-    """If native B2 session cannot be issued, do not hand the desktop an S3 PUT."""
+def test_drawing_storage_failure_falls_back_to_s3_presign(client):
+    """If native B2 session cannot be issued, sign an S3 PUT for the desktop."""
     from unittest.mock import patch
 
     from app.services.object_storage import StorageError
@@ -557,7 +557,7 @@ def test_drawing_storage_failure_does_not_fall_back_to_s3_presign(client):
     payload = buf.getvalue()
 
     with client.application.app_context():
-        p = Project(name="DrawNoS3-" + uuid.uuid4().hex[:8], number="P" + uuid.uuid4().hex[:6])
+        p = Project(name="DrawS3-" + uuid.uuid4().hex[:8], number="P" + uuid.uuid4().hex[:6])
         db.session.add(p)
         db.session.flush()
         pid = str(p.id)
@@ -578,7 +578,7 @@ def test_drawing_storage_failure_does_not_fall_back_to_s3_presign(client):
         patch("app.services.object_storage.native_upload_session", return_value=None),
         patch(
             "app.services.object_storage.presigned_put_url",
-            return_value="https://s3.us-west-004.backblazeb2.com/usis-cm/broken",
+            return_value="https://s3.us-west-004.backblazeb2.com/usis-cm/sheet.pdf?X-Amz-Signature=x",
         ) as mock_presign,
     ):
         r = client.post(
@@ -588,8 +588,9 @@ def test_drawing_storage_failure_does_not_fall_back_to_s3_presign(client):
         )
     assert r.status_code == 500, r.get_data(as_text=True)
     body = r.get_json()
-    assert body.get("upload") is None
-    mock_presign.assert_not_called()
+    assert body["upload"]["mode"] == "s3_presigned_put"
+    assert "X-Amz-Signature" in body["upload"]["url"]
+    mock_presign.assert_called_once()
 
 
 def test_put_drawing_file_replaces_pdf(client):
@@ -676,3 +677,41 @@ def test_drawing_upload_session_and_ack_file(client):
         assert row is not None
         assert row.file_size_bytes == len(payload)
         assert not (row.tags or {}).get("file_pending")
+
+
+def test_drawing_upload_session_falls_back_to_s3_presign(client):
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawSessS3-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data={"file": (io.BytesIO(payload), "A1.pdf"), "split_pages": "false"},
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    did = r.get_json()["item"]["id"]
+
+    from unittest.mock import patch
+
+    with (
+        patch("app.services.object_storage.native_upload_session", return_value=None),
+        patch(
+            "app.services.object_storage.presigned_put_url",
+            return_value="https://s3.us-west-004.backblazeb2.com/bucket/key.pdf?X-Amz-Signature=x",
+        ),
+    ):
+        sess = client.post(f"/api/v1/drawings/{did}/upload-session")
+    assert sess.status_code == 200, sess.get_data(as_text=True)
+    upload = sess.get_json()["upload"]
+    assert upload["mode"] == "s3_presigned_put"
+    assert "X-Amz-Signature" in upload["url"]

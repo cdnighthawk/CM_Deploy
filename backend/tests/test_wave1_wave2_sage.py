@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import Project, Role, User, UserRole
+from app.models import Project, ProjectMember, Role, User, UserRole
 
 
 @pytest.fixture
@@ -90,3 +90,42 @@ def test_wave2_punch_and_company(client, no_dev_admin):
     assert open_items.status_code == 200
     kinds = {row["kind"] for row in open_items.get_json()["items"]}
     assert "punch" in kinds
+
+
+def test_crew_punch_is_separate_from_gc_punchlist(client, no_dev_admin):
+    with client.application.app_context():
+        uid, pid = _user_and_project()
+        db.session.add(ProjectMember(user_id=uuid.UUID(uid), project_id=uuid.UUID(pid)))
+        db.session.commit()
+    hdr = {"X-Usis-User-Id": uid}
+
+    gc = client.post(
+        f"/api/v1/projects/{pid}/wave2/punchlist",
+        headers=hdr,
+        json={"title": "Owner walk paint", "location": "Lobby"},
+    )
+    assert gc.status_code == 201, gc.get_data(as_text=True)
+
+    crew = client.post(
+        f"/api/v1/projects/{pid}/issues",
+        headers=hdr,
+        json={"title": "Corner bead ding", "room": "214", "source_type": "crew_punch"},
+    )
+    assert crew.status_code == 201, crew.get_data(as_text=True)
+    issue = crew.get_json()["issue"]
+    assert issue["source_type"] == "crew_punch"
+    assert issue["room"] == "214"
+
+    listed = client.get(f"/api/v1/projects/{pid}/issues?source_type=crew_punch", headers=hdr)
+    assert listed.status_code == 200
+    items = listed.get_json()["items"]
+    assert len(items) == 1
+    assert items[0]["id"] == issue["id"]
+
+    punch_issues = client.get(f"/api/v1/projects/{pid}/issues?source_type=punch", headers=hdr)
+    assert punch_issues.status_code == 200
+    assert punch_issues.get_json()["items"] == []
+
+    gc_list = client.get(f"/api/v1/projects/{pid}/wave2/punchlist", headers=hdr)
+    assert gc_list.status_code == 200
+    assert gc_list.get_json()["items"][0]["title"] == "Owner walk paint"

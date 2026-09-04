@@ -6,6 +6,7 @@
 		ai_review: "AI Review",
 		rfi: "RFI",
 		punch: "Punch",
+		crew_punch: "Crew punch",
 		field: "Field",
 		safety: "Safety",
 		manual: "Manual",

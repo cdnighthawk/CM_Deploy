@@ -6,7 +6,7 @@
 	"use strict";
 
 	var KINDS = [
-		{ kind: "punchlist", titleKey: "title", extra: "location", heading: "New punch item", submit: "Add item" },
+		{ kind: "punchlist", titleKey: "title", extra: "location", heading: "New GC punch item", submit: "Add item" },
 		{ kind: "work-orders", titleKey: "subject", extra: "amount", heading: "New work order", submit: "Add work order" },
 		{ kind: "meetings", titleKey: "subject", extra: "meeting_date", heading: "New meeting", submit: "Add meeting" },
 		{ kind: "safety-incidents", titleKey: "subject", extra: "severity", heading: "New safety incident", submit: "Add incident" },
@@ -305,6 +305,167 @@
 			});
 	}
 
+	function crewEls() {
+		return {
+			root: document.getElementById("usis-modal-crew-punch"),
+			form: document.getElementById("usis-crew-punch-form"),
+			err: document.getElementById("usis-crew-punch-err"),
+			title: document.getElementById("usis-crew-punch-title"),
+			room: document.getElementById("usis-crew-punch-room"),
+			notes: document.getElementById("usis-crew-punch-notes"),
+			photo: document.getElementById("usis-crew-punch-photo"),
+			submit: document.getElementById("usis-crew-punch-submit"),
+			tbody: document.getElementById("usis-punch-crew-tbody"),
+		};
+	}
+
+	function setCrewErr(msg) {
+		var el = crewEls().err;
+		if (!el) return;
+		if (msg) {
+			el.textContent = String(msg);
+			el.classList.remove("d-none");
+		} else {
+			el.textContent = "";
+			el.classList.add("d-none");
+		}
+	}
+
+	function crewIssuePath() {
+		return pidPath("/issues?source_type=crew_punch");
+	}
+
+	function loadCrewPunch() {
+		var tbody = crewEls().tbody;
+		if (!tbody || !projectId()) return;
+		fetchJson(crewIssuePath())
+			.then(function (data) {
+				var items = data.items || [];
+				if (!items.length) {
+					tbody.innerHTML = '<tr><td colspan="5" class="text-muted">None yet.</td></tr>';
+					return;
+				}
+				tbody.innerHTML = items
+					.map(function (it) {
+						var closed = it.status === "Resolved" || it.status === "Closed";
+						var action = closed
+							? ""
+							: '<button type="button" class="btn btn-link btn-sm p-0 usis-punch-crew-resolve" data-id="' +
+							  esc(it.id) +
+							  '">Resolve</button>';
+						return (
+							"<tr><td>" +
+							esc(it.title || "") +
+							"</td><td>" +
+							esc(it.room || it.sheet_number || "") +
+							"</td><td>" +
+							esc(it.status || "") +
+							"</td><td>" +
+							esc(it.description || "") +
+							"</td><td>" +
+							action +
+							"</td></tr>"
+						);
+					})
+					.join("");
+			})
+			.catch(function () {
+				tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Could not load.</td></tr>';
+			});
+	}
+
+	function openCrewModal() {
+		var els = crewEls();
+		if (!els.root || !window.bootstrap || !window.bootstrap.Modal) {
+			window.alert("Create dialog is missing. Reload the page.");
+			return;
+		}
+		setCrewErr("");
+		if (els.title) els.title.value = "";
+		if (els.room) els.room.value = "";
+		if (els.notes) els.notes.value = "";
+		if (els.photo) els.photo.value = "";
+		window.bootstrap.Modal.getOrCreateInstance(els.root).show();
+		if (els.title) els.title.focus();
+	}
+
+	function uploadCrewPhoto(file) {
+		var fd = new FormData();
+		fd.append("file", file);
+		fd.append("album", "Crew punch");
+		var headers = Object.assign({}, window.USIS_API.actorHeaders());
+		return fetch(window.USIS_API.apiBase() + pidPath("/photos"), {
+			method: "POST",
+			credentials: "include",
+			headers: headers,
+			body: fd,
+		}).then(function (res) {
+			return res.json().then(function (data) {
+				if (!res.ok) throw new Error((data && (data.error || data.message)) || "Photo upload failed.");
+				return (data.item && data.item.id) || (data.id || "");
+			});
+		});
+	}
+
+	function submitCrewCreate(ev) {
+		if (ev) ev.preventDefault();
+		var els = crewEls();
+		var title = ((els.title && els.title.value) || "").trim();
+		var room = ((els.room && els.room.value) || "").trim();
+		if (!title) {
+			setCrewErr("Issue is required.");
+			if (els.title) els.title.focus();
+			return;
+		}
+		if (!room) {
+			setCrewErr("Room is required.");
+			if (els.room) els.room.focus();
+			return;
+		}
+		var notes = ((els.notes && els.notes.value) || "").trim();
+		var file = els.photo && els.photo.files && els.photo.files[0];
+		if (els.submit) els.submit.disabled = true;
+		setCrewErr("");
+		var photoStep = file ? uploadCrewPhoto(file) : Promise.resolve("");
+		photoStep
+			.then(function (photoId) {
+				var body = {
+					title: title,
+					room: room,
+					source_type: "crew_punch",
+				};
+				if (notes) body.description = notes;
+				if (photoId) body.photo_id = photoId;
+				return fetchJson(pidPath("/issues"), { method: "POST", body: body });
+			})
+			.then(function () {
+				if (els.root && window.bootstrap && window.bootstrap.Modal) {
+					window.bootstrap.Modal.getOrCreateInstance(els.root).hide();
+				}
+				loadCrewPunch();
+			})
+			.catch(function (err) {
+				var msg = (err && (err.body || err.message)) || "Could not create.";
+				if (typeof msg === "object") msg = (msg.error || msg.message) || JSON.stringify(msg);
+				setCrewErr(msg);
+			})
+			.finally(function () {
+				if (els.submit) els.submit.disabled = false;
+			});
+	}
+
+	function resolveCrewItem(id) {
+		if (!id) return;
+		fetchJson("/api/v1/issues/" + encodeURIComponent(id) + "/status", {
+			method: "PATCH",
+			body: { status: "Resolved" },
+		})
+			.then(loadCrewPunch)
+			.catch(function () {
+				window.alert("Could not resolve.");
+			});
+	}
+
 	function loadOpenItems() {
 		var tbody = document.getElementById("usis-openitems-tbody");
 		if (!tbody || !projectId()) return;
@@ -357,6 +518,7 @@
 		KINDS.forEach(loadKind);
 		loadPhotos();
 		loadOpenItems();
+		loadCrewPunch();
 		document.querySelectorAll("[data-usis-wave2-add]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				var kind = btn.getAttribute("data-usis-wave2-add");
@@ -368,6 +530,12 @@
 		});
 		var form = document.getElementById("usis-wave2-create-form");
 		if (form) form.addEventListener("submit", submitCreate);
+		var crewAdd = document.getElementById("usis-punch-crew-add");
+		if (crewAdd) crewAdd.addEventListener("click", openCrewModal);
+		var crewForm = document.getElementById("usis-crew-punch-form");
+		if (crewForm) crewForm.addEventListener("submit", submitCrewCreate);
+		var crewTab = document.getElementById("usis-punch-subtab-crew");
+		if (crewTab) crewTab.addEventListener("shown.bs.tab", loadCrewPunch);
 		var modalRoot = document.getElementById("usis-modal-wave2-create");
 		if (modalRoot) {
 			modalRoot.addEventListener("shown.bs.modal", function () {
@@ -378,6 +546,8 @@
 		document.body.addEventListener("click", function (e) {
 			var btn = e.target.closest(".usis-w2-del");
 			if (btn) delKind(btn.getAttribute("data-kind"), btn.getAttribute("data-id"));
+			var resolveBtn = e.target.closest(".usis-punch-crew-resolve");
+			if (resolveBtn) resolveCrewItem(resolveBtn.getAttribute("data-id"));
 		});
 		var up = document.getElementById("usis-photo-upload");
 		if (up) up.addEventListener("click", uploadPhoto);

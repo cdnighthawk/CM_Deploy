@@ -24,6 +24,8 @@ The website always uses the **signed-in user’s** mailbox address — never a m
 
 Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, read, delete, and compose. That page calls `GET/PATCH/DELETE /api/v1/mail/messages` and `POST /api/v1/messages/email`.
 
+**AP invoices:** `POST /api/v1/ap/mailbox/sync` reads `invoices@gousis.com`. The web process also polls that mailbox every 5 minutes (`INVOICE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`). Production has a Render cron (`usis-invoice-mailbox-sync`) that POSTs the same route with `X-Cron-Secret`.
+
 ## Environment variables
 
 | Variable | Required | Example | Notes |
@@ -32,6 +34,7 @@ Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, read, de
 | `MAIL_FROM` | Yes for system mail | `noreply@gousis.com` | Shared mailbox for password reset / invites |
 | `QUOTES_MAILBOX` | No | `quotes@gousis.com` | RFP invitations From / Reply-To and inbound quote ingest |
 | `INVOICE_MAILBOX` | No | `invoices@gousis.com` | AP invoice ingest |
+| `INVOICE_MAILBOX_SYNC_INTERVAL_SEC` | No | `300` | In-process poll of `invoices@`; `0` disables (Render cron still runs) |
 | `MAIL_ALLOWED_FROM_DOMAINS` | No | `gousis.com` | Staff send-as is limited to these domains |
 | `MS_ENTRA_TENANT_ID` / `CLIENT_ID` / `CLIENT_SECRET` | Yes for Graph | *(already on Render)* | Same app as Microsoft login |
 

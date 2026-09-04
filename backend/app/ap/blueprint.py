@@ -63,7 +63,15 @@ def ap_mailbox_status():
 
 @ap_bp.post("/mailbox/sync")
 def ap_mailbox_sync():
-    return _handle(lambda: jsonify({"entity": "ap_mailbox_sync", "item": sync_mailbox(current_user())}))
+    from flask import current_app
+
+    from ..api._integration_bc import cron_secret_matches
+
+    cu = current_user()
+    as_cron = cron_secret_matches(request, current_app)
+    return _handle(
+        lambda: jsonify({"entity": "ap_mailbox_sync", "item": sync_mailbox(cu, as_cron=as_cron)})
+    )
 
 
 @ap_bp.get("/lookups/vendors")

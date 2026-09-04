@@ -69,16 +69,31 @@ def _mail_from() -> str:
     return (os.environ.get("MAIL_FROM") or "").strip()
 
 
+def _entra_setting(name: str) -> str:
+    val = (os.environ.get(name) or "").strip()
+    if val:
+        return val
+    try:
+        return str(current_app.config.get(name) or "").strip()
+    except RuntimeError:
+        return ""
+
+
+def _graph_credentials_present() -> bool:
+    """True when the Entra app registration can call Microsoft Graph."""
+    return bool(
+        _entra_setting("MS_ENTRA_TENANT_ID")
+        and _entra_setting("MS_ENTRA_CLIENT_ID")
+        and _entra_setting("MS_ENTRA_CLIENT_SECRET")
+    )
+
+
 def _graph_configured() -> bool:
-    """True when the Entra app can call Graph sendMail (any mailbox)."""
+    """True when Graph can send mail (credentials present and transport is not SMTP)."""
     transport = (os.environ.get("MAIL_TRANSPORT") or "auto").strip().lower()
     if transport == "smtp":
         return False
-    return bool(
-        (os.environ.get("MS_ENTRA_TENANT_ID") or "").strip()
-        and (os.environ.get("MS_ENTRA_CLIENT_ID") or "").strip()
-        and (os.environ.get("MS_ENTRA_CLIENT_SECRET") or "").strip()
-    )
+    return _graph_credentials_present()
 
 
 def _allowed_from_domains() -> set[str]:
@@ -245,18 +260,29 @@ def _graph_access_token() -> str:
 
     import httpx
 
-    tenant = (os.environ.get("MS_ENTRA_TENANT_ID") or "").strip()
+    tenant = _entra_setting("MS_ENTRA_TENANT_ID")
     url = f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
     data = {
-        "client_id": (os.environ.get("MS_ENTRA_CLIENT_ID") or "").strip(),
-        "client_secret": (os.environ.get("MS_ENTRA_CLIENT_SECRET") or "").strip(),
+        "client_id": _entra_setting("MS_ENTRA_CLIENT_ID"),
+        "client_secret": _entra_setting("MS_ENTRA_CLIENT_SECRET"),
         "scope": "https://graph.microsoft.com/.default",
         "grant_type": "client_credentials",
     }
-    with httpx.Client(timeout=30.0) as client:
-        response = client.post(url, data=data)
-        response.raise_for_status()
-        payload = response.json()
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(url, data=data)
+            response.raise_for_status()
+            payload = response.json()
+    except httpx.HTTPStatusError as exc:
+        body = ""
+        if exc.response is not None:
+            body = (exc.response.text or "")[:300]
+        raise GraphMailError(
+            int(exc.response.status_code if exc.response is not None else 502),
+            f"Graph token {exc.response.status_code if exc.response is not None else 502}: {body}",
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise GraphMailError(502, f"Graph token request failed: {exc}") from exc
     token = str(payload["access_token"])
     _graph_token_cache["token"] = token
     _graph_token_cache["expires_at"] = now + int(payload.get("expires_in") or 3600)

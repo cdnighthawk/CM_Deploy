@@ -303,6 +303,9 @@ class Config:
     AP_INVOICE_UPLOAD_FOLDER: str | None = (os.environ.get("AP_INVOICE_UPLOAD_FOLDER") or "").strip() or None
     FIELD_PHOTO_UPLOAD_FOLDER: str | None = (os.environ.get("FIELD_PHOTO_UPLOAD_FOLDER") or "").strip() or None
     INVOICE_MAILBOX: str = (os.environ.get("INVOICE_MAILBOX") or "invoices@gousis.com").strip()
+    INVOICE_MAILBOX_SYNC_INTERVAL_SEC: int = int(
+        (os.environ.get("INVOICE_MAILBOX_SYNC_INTERVAL_SEC") or "300").strip() or "300"
+    )
     QUOTES_MAILBOX: str = (os.environ.get("QUOTES_MAILBOX") or "quotes@gousis.com").strip()
     QUOTES_FROM_NAME: str = (os.environ.get("QUOTES_FROM_NAME") or "US Interior Specialties").strip()
     RFP_MAIL_BCC_SELF: bool = (os.environ.get("RFP_MAIL_BCC_SELF") or "true").strip().lower() not in (

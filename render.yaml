@@ -88,6 +88,22 @@ services:
         value: invoices@gousis.com
 
   - type: cron
+    name: usis-invoice-mailbox-sync
+    runtime: python
+    plan: starter
+    rootDir: backend
+    schedule: "*/5 * * * *"
+    buildCommand: echo skip
+    startCommand: python scripts/trigger_invoice_mailbox_sync.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: BC_SYNC_CRON_SECRET
+        sync: false
+      - key: INVOICE_MAILBOX_SYNC_URL
+        value: https://www.usiscm.com/api/v1/ap/mailbox/sync
+
+  - type: cron
     name: usis-calendar-reminders
     runtime: python
     plan: starter

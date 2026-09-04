@@ -86,9 +86,9 @@ def mail_identity() -> dict[str, Any]:
 
 
 def mailbox_ready() -> bool:
-    from ._notifications import _graph_configured
+    from ._notifications import _graph_credentials_present
 
-    return _graph_configured()
+    return _graph_credentials_present()
 
 
 def new_mail_tag() -> str:

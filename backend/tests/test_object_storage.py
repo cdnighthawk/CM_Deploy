@@ -177,12 +177,14 @@ def test_b2_send_stored_file_sets_content_length(mock_client_factory, flask_app)
         assert resp.headers.get("Content-Length") == str(len(payload))
 
 
+@patch("app.services.object_storage._put_native_b2")
 @patch("app.services.object_storage.time.sleep", return_value=None)
 @patch("app.services.object_storage._s3_client")
-def test_b2_put_retries_ssl_eof_then_succeeds(mock_client_factory, _sleep, flask_app):
+def test_b2_put_ssl_eof_fails_fast_to_native(mock_client_factory, _sleep, mock_native, flask_app):
+    """Do not burn remaining S3 read-timeouts after the gateway drops the socket."""
     mock_s3 = MagicMock()
     ssl_err = Exception("SSL validation failed for https://s3.example/key EOF occurred in violation of protocol")
-    mock_s3.put_object.side_effect = [ssl_err, ssl_err, None]
+    mock_s3.put_object.side_effect = ssl_err
     mock_client_factory.return_value = mock_s3
     flask_app.config.update(
         {
@@ -197,7 +199,8 @@ def test_b2_put_retries_ssl_eof_then_succeeds(mock_client_factory, _sleep, flask
 
         sz = save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
         assert sz == 8
-        assert mock_s3.put_object.call_count == 3
+        assert mock_s3.put_object.call_count == 1
+        mock_native.assert_called_once()
 
 
 @patch("app.services.object_storage._put_native_b2", side_effect=Exception("native fail"))
@@ -222,7 +225,7 @@ def test_b2_put_ssl_eof_exhausted_raises_storage_error(mock_client_factory, _sle
 
         with pytest.raises(StorageError, match="S3-compatible upload connection"):
             save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
-        assert mock_s3.put_object.call_count == 3
+        assert mock_s3.put_object.call_count == 1
         _native.assert_called_once()
 
 
@@ -281,7 +284,7 @@ def test_b2_put_connection_closed_falls_back_to_native(mock_client_factory, _sle
         sz = save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
         assert sz == 8
         mock_native.assert_called_once()
-        assert mock_s3.put_object.call_count == 3
+        assert mock_s3.put_object.call_count == 1
 
 
 @patch("app.services.object_storage._put_native_b2", side_effect=Exception("native fail"))
@@ -309,7 +312,7 @@ def test_b2_put_connection_closed_without_native_raises_storage_error(
 
         with pytest.raises(StorageError, match="S3-compatible upload connection"):
             save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
-        assert mock_s3.put_object.call_count == 3
+        assert mock_s3.put_object.call_count == 1
         _native.assert_called_once()
 
 
@@ -414,3 +417,25 @@ def test_b2_enabled_does_not_read_nas(mock_client_factory, flask_app, tmp_path):
                 mimetype="application/pdf",
                 download_name="A1.pdf",
             ) is None
+
+
+@patch("app.services.object_storage.time.sleep", return_value=None)
+@patch("app.services.object_storage._b2_get_upload_url")
+def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, flask_app):
+    mock_get_url.side_effect = [RuntimeError("b2 busy"), {"uploadUrl": "https://pod.example/up", "authorizationToken": "tok"}]
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, native_upload_session
+
+        session = native_upload_session(UploadCategory.DRAWINGS, "sheet.pdf")
+        assert session is not None
+        assert session["mode"] == "b2_native"
+        assert session["url"] == "https://pod.example/up"
+        assert mock_get_url.call_count == 2

@@ -624,3 +624,55 @@ def test_put_drawing_file_replaces_pdf(client):
     file_r = client.get(f"/api/v1/drawings/{did}/file")
     assert file_r.status_code == 200
     assert b"%PDF" in file_r.data
+
+
+def test_drawing_upload_session_and_ack_file(client):
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    buf = io.BytesIO()
+    writer.write(buf)
+    payload = buf.getvalue()
+
+    with client.application.app_context():
+        p = Project(name="DrawSess-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    r = client.post(
+        f"/api/v1/projects/{pid}/drawings",
+        data={"file": (io.BytesIO(payload), "A1.pdf"), "split_pages": "false"},
+        content_type="multipart/form-data",
+    )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    did = r.get_json()["item"]["id"]
+
+    native = {
+        "mode": "b2_native",
+        "url": "https://pod-000.backblaze.com/b2api/v2/b2_upload_file",
+        "authorization": "tok",
+        "file_name": "drawings/A1.pdf",
+        "sha1_header": "X-Bz-Content-Sha1",
+    }
+    from unittest.mock import patch
+
+    with patch(
+        "app.services.object_storage.native_upload_session",
+        return_value=native,
+    ):
+        sess = client.post(f"/api/v1/drawings/{did}/upload-session")
+    assert sess.status_code == 200, sess.get_data(as_text=True)
+    assert sess.get_json()["upload"]["mode"] == "b2_native"
+
+    ack = client.post(
+        f"/api/v1/drawings/{did}/ack-file",
+        json={"byte_size": len(payload), "content_hash": "abc"},
+    )
+    assert ack.status_code == 200, ack.get_data(as_text=True)
+    assert ack.get_json()["item"]["file_pending"] is False
+    with client.application.app_context():
+        row = db.session.get(Drawing, uuid.UUID(did))
+        assert row is not None
+        assert row.file_size_bytes == len(payload)
+        assert not (row.tags or {}).get("file_pending")

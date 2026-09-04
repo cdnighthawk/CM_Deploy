@@ -1937,8 +1937,15 @@ def put_drawing_pdf_file(drawing_id: str):
         replace_drawing_file(row, payload)
         db.session.commit()
     except DrawingUploadError as exc:
+        from ..services.drawing_upload import native_upload_hint_for_drawing
+
+        hint = native_upload_hint_for_drawing(row)
+        item = _drawing_public(row)
         db.session.rollback()
-        return _jsonify({"error": exc.message}), exc.status
+        body: dict = {"error": exc.message, "entity": "drawing", "item": item}
+        if hint:
+            body["upload"] = hint
+        return _jsonify(body), exc.status
     except Exception:
         db.session.rollback()
         current_app.logger.exception("drawing file replace failed for %s", drawing_id)
@@ -1993,22 +2000,23 @@ def upload_project_drawing(project_id: str):
     except DrawingUploadError as exc:
         if exc.drawing is not None:
             db.session.commit()
-            item = _drawing_public(exc.drawing)
-            body: dict = {"error": exc.message, "item": item, "entity": "drawing", "file_pending": True}
-            from ..services.object_storage import UploadCategory, native_upload_session
-            from ..services.project_file_keys import preferred_drawing_object_name
+            from ..services.drawing_upload import native_upload_hint_for_drawing
 
-            obj_name = preferred_drawing_object_name(exc.drawing)
-            # Desktop PUT must use native B2 (api.backblazeb2.com), not a
-            # presigned S3 URL — B2's S3 gateway is what just failed.
-            native = native_upload_session(UploadCategory.DRAWINGS, obj_name)
+            item = _drawing_public(exc.drawing)
+            body: dict = {
+                "entity": "drawing",
+                "file_pending": True,
+                "item": item,
+            }
+            native = native_upload_hint_for_drawing(exc.drawing)
             if native:
                 body["upload"] = native
             else:
                 current_app.logger.warning(
                     "b2 native upload session unavailable after storage failure drawing=%s",
-                    obj_name,
+                    exc.drawing.id,
                 )
+            body["error"] = exc.message
             return _jsonify(body), exc.status
         db.session.rollback()
         return _jsonify({"error": exc.message}), exc.status
@@ -2023,7 +2031,20 @@ def upload_project_drawing(project_id: str):
     db.session.commit()
     if result.get("split"):
         return _jsonify(result), 201
-    return _jsonify({"item": result["item"], "entity": "drawing"}), 201
+    item = result["item"]
+    body: dict = {"item": item, "entity": "drawing"}
+    try:
+        from ..services.drawing_upload import native_upload_hint_for_drawing
+
+        did = uuid.UUID(str(item.get("id") or ""))
+        row = db.session.get(Drawing, did)
+        if row is not None:
+            native = native_upload_hint_for_drawing(row)
+            if native:
+                body["upload"] = native
+    except (ValueError, TypeError):
+        pass
+    return _jsonify(body), 201
 
 
 def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tuple[bool, str | None]:
@@ -2034,6 +2055,58 @@ def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tupl
         return True, None
     text = str(raw).strip()[:max_len]
     return True, (text or None)
+
+
+@bp.post("/drawings/<drawing_id>/upload-session")
+def create_drawing_upload_session(drawing_id: str):
+    """Mint a one-shot native B2 URL so the desktop can PUT the PDF without Render."""
+    from ..services.drawing_upload import native_upload_hint_for_drawing
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "drawing not found"}), 404
+    native = native_upload_hint_for_drawing(row)
+    if not native:
+        return _jsonify({"error": "native B2 upload URL unavailable"}), 503
+    return _jsonify({"upload": native, "item": _drawing_public(row), "entity": "drawing"}), 200
+
+
+@bp.post("/drawings/<drawing_id>/ack-file")
+def ack_drawing_stored_file(drawing_id: str):
+    """Clear file_pending after the client wrote the object to B2 (native upload)."""
+    from ..services.drawing_upload import DrawingUploadError, ack_drawing_file
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "drawing not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    try:
+        raw_size = payload.get("byte_size")
+        if raw_size is None:
+            raw_size = payload.get("byteSize")
+        byte_size = int(raw_size) if raw_size is not None else None
+    except (TypeError, ValueError):
+        return _jsonify({"error": "byte_size must be an integer"}), 400
+    content_hash = str(payload.get("content_hash") or payload.get("contentHash") or "").strip() or None
+    try:
+        ack_drawing_file(row, byte_size=byte_size, content_hash=content_hash)
+        db.session.commit()
+    except DrawingUploadError as exc:
+        db.session.rollback()
+        return _jsonify({"error": exc.message}), exc.status
+    return _jsonify({"item": _drawing_public(row), "entity": "drawing"}), 200
 
 
 @bp.patch("/drawings/<drawing_id>")

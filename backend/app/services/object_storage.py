@@ -353,22 +353,32 @@ def presigned_put_url(
 
 
 def native_upload_session(category: UploadCategory, object_name: str) -> dict | None:
-    """One-shot native B2 upload URL (b2_get_upload_url) for a client POST of the file bytes."""
+    """One-shot native B2 upload URL (b2_get_upload_url) for a client POST of the file bytes.
+
+    Retry a few times: Render's S3 gateway is the flaky door, but ``b2_get_upload_url``
+    can still 5xx under load. The desktop needs this URL more than Render needs to
+    PUT the bytes itself.
+    """
     if not b2_enabled():
         return None
     key = object_key(category, object_name)
-    try:
-        info = _b2_get_upload_url()
-    except Exception as exc:
-        current_app.logger.warning("b2 native upload url failed key=%s err=%s", key, exc)
-        return None
-    return {
-        "mode": "b2_native",
-        "url": info["uploadUrl"],
-        "authorization": info["authorizationToken"],
-        "file_name": key,
-        "sha1_header": "X-Bz-Content-Sha1",
-    }
+    last: BaseException | None = None
+    for attempt in range(3):
+        try:
+            info = _b2_get_upload_url()
+            return {
+                "mode": "b2_native",
+                "url": info["uploadUrl"],
+                "authorization": info["authorizationToken"],
+                "file_name": key,
+                "sha1_header": "X-Bz-Content-Sha1",
+            }
+        except Exception as exc:
+            last = exc
+            if attempt + 1 < 3:
+                time.sleep(0.4 * (2**attempt))
+    current_app.logger.warning("b2 native upload url failed key=%s err=%s", key, last)
+    return None
 
 
 def presigned_get_url(
@@ -542,11 +552,9 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
                     "In B2, open Caps & Alerts and raise or remove the daily storage cap.",
                     503,
                 ) from exc
-            if _is_s3_compat_drop(exc) and attempt + 1 < _PUT_ATTEMPTS:
-                s3_dropped = True
-                time.sleep(1.5 * (2**attempt))
-                continue
             if _is_s3_compat_drop(exc):
+                # Do not spend remaining S3 read-timeouts — that is how clients
+                # see Cloudflare/Render HTML 502 before Flask can return a native URL.
                 s3_dropped = True
                 break
             raise

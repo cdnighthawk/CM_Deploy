@@ -13,7 +13,14 @@ from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import Drawing
-from ..services.object_storage import StorageError, UploadCategory, delete_stored, save_upload, stored_exists
+from ..services.object_storage import (
+    StorageError,
+    UploadCategory,
+    delete_stored,
+    save_upload,
+    stored_exists,
+    stored_size,
+)
 from ..services.drawing_label import label_drawing
 from ..services.project_file_keys import (
     drawing_object_candidates,
@@ -38,6 +45,45 @@ def resolve_drawing_object_name(d: Drawing) -> str | None:
 def delete_drawing_objects(d: Drawing) -> None:
     for name in drawing_object_candidates(d):
         delete_stored(UploadCategory.DRAWINGS, name)
+
+
+def native_upload_hint_for_drawing(d: Drawing) -> dict | None:
+    """Mint a native B2 upload URL for this drawing's object key, or None."""
+    from .object_storage import native_upload_session
+
+    return native_upload_session(UploadCategory.DRAWINGS, preferred_drawing_object_name(d))
+
+
+def ack_drawing_file(
+    d: Drawing,
+    *,
+    byte_size: int | None = None,
+    content_hash: str | None = None,
+) -> int:
+    """Mark a drawing as stored after the client wrote the object (native B2).
+
+    Prefer HEAD of B2 when that works. If the S3 gateway is still dropping,
+    trust the client's byte size so ingest can clear ``file_pending``.
+    """
+    obj_name = preferred_drawing_object_name(d)
+    sz = stored_size(UploadCategory.DRAWINGS, obj_name)
+    if not sz:
+        if byte_size and int(byte_size) > 0:
+            sz = int(byte_size)
+        else:
+            raise DrawingUploadError("file not found in storage", 404)
+    tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+    tags["storage_object"] = obj_name
+    tags.pop("file_pending", None)
+    tags.pop("storage_error", None)
+    digest = (content_hash or "").strip().lower()
+    if digest:
+        tags["content_hash"] = digest
+    d.tags = tags
+    d.file_url = f"/api/v1/drawings/{d.id}/file"
+    d.file_size_bytes = int(sz)
+    d.mime_type = "application/pdf"
+    return int(sz)
 
 
 def replace_drawing_file(d: Drawing, pdf_bytes: bytes) -> int:

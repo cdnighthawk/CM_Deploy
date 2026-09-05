@@ -95,9 +95,11 @@
 								'<div class="card border-0 shadow-sm mb-3" data-invoice-id="' +
 								X.esc(row.id) +
 								'"><div class="card-body"><div class="d-flex flex-wrap justify-content-between align-items-start gap-2">' +
-								"<div><div class=\"fw-semibold\">" +
+								'<div><div class="fw-semibold"><a href="usis-invoice-detail.html?id=' +
+								encodeURIComponent(row.id) +
+								'">' +
 								X.esc(row.vendor_name || row.from_name || row.subject || "Invoice") +
-								"</div><div class=\"small text-muted\">" +
+								"</a></div><div class=\"small text-muted\">" +
 								X.esc(row.project_number || row.project_name || "No job") +
 								" · " +
 								X.esc(row.invoice_number || "No invoice #") +

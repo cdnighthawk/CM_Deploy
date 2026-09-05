@@ -55,7 +55,9 @@
 						.map(function (row) {
 							var vendor = row.vendor_name || row.from_name || row.from_email || "—";
 							var job = row.project_number || row.project_name || "Unassigned";
-							var vendorCell = X.esc(vendor);
+							var detailHref = "usis-invoice-detail.html?id=" + encodeURIComponent(row.id);
+							var vendorCell =
+								'<a href="' + detailHref + '">' + X.esc(vendor) + "</a>";
 							if (row.subject && row.subject !== vendor) {
 								vendorCell += '<div class="small text-muted">' + X.esc(row.subject) + "</div>";
 							}
@@ -71,13 +73,14 @@
 								window.USISUi && window.USISUi.rowMenu
 									? window.USISUi.rowMenu({
 											id: row.id,
-											editHref: "usis-invoice-detail.html?id=" + encodeURIComponent(row.id),
+											editLabel: "Open",
+											editHref: detailHref,
 											createTarget: "#usis-ap-new",
 											deleteClass: "usis-ap-del",
 											extras: extras,
 										})
-									: '<a class="btn btn-sm btn-outline-primary py-0" href="usis-invoice-detail.html?id=' +
-										encodeURIComponent(row.id) +
+									: '<a class="btn btn-sm btn-outline-primary py-0" href="' +
+										detailHref +
 										'">Open</a>';
 							return (
 								'<tr data-id="' +

@@ -15,6 +15,14 @@
 		deleted: "Deleted Items",
 	};
 	var AVATAR_COLORS = ["#c239b3", "#0078d4", "#5c2e91", "#ca5010", "#498205", "#038387", "#8764b8", "#004e8c"];
+	var ICONS = {
+		inbox: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M2.5 5.75A2.25 2.25 0 0 1 4.75 3.5h10.5A2.25 2.25 0 0 1 17.5 5.75v8.5A2.25 2.25 0 0 1 15.25 16.5H4.75A2.25 2.25 0 0 1 2.5 14.25v-8.5Zm1.5 0v.66l6 3.6 6-3.6v-.66a.75.75 0 0 0-.75-.75H4.75a.75.75 0 0 0-.75.75Zm13 2.34-5.72 3.43a1.75 1.75 0 0 1-1.56 0L4 8.09v6.16c0 .41.34.75.75.75h10.5c.41 0 .75-.34.75-.75V8.09Z"/></svg>',
+		drafts: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M14.06 3.44a1.5 1.5 0 0 1 2.12 2.12l-8.5 8.5-3.18.79a.75.75 0 0 1-.91-.91l.79-3.18 8.5-8.5Z"/></svg>',
+		sent: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M2.72 2.05a.75.75 0 0 0-1.01.96l2.4 6.24H9.25a.75.75 0 0 1 0 1.5H4.11l-2.4 6.24a.75.75 0 0 0 1.01.96l15.5-7.25a.75.75 0 0 0 0-1.4L2.72 2.05Z"/></svg>',
+		deleted: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M8.5 4h3a1.5 1.5 0 0 0-3 0ZM7 4a2.5 2.5 0 0 1 5 0h4.25a.75.75 0 0 1 0 1.5h-.84l-.9 9.07A2.75 2.75 0 0 1 11.77 17H8.23a2.75 2.75 0 0 1-2.74-2.43L4.59 5.5H3.75a.75.75 0 0 1 0-1.5H7Z"/></svg>',
+		folder: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M2.5 5.75A2.25 2.25 0 0 1 4.75 3.5h3.06c.4 0 .78.16 1.06.44l.83.83h5.55A2.25 2.25 0 0 1 17.5 7.02v7.23A2.25 2.25 0 0 1 15.25 16.5H4.75A2.25 2.25 0 0 1 2.5 14.25v-8.5Z"/></svg>',
+		chevron: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.7 5.8a.75.75 0 0 1 1.06 0L8 8.04l2.24-2.24a.75.75 0 1 1 1.06 1.06l-2.77 2.77a.75.75 0 0 1-1.06 0L4.7 6.86a.75.75 0 0 1 0-1.06Z"/></svg>',
+	};
 
 	function api() {
 		return window.USIS_API;
@@ -113,13 +121,233 @@
 		return AVATAR_COLORS[n % AVATAR_COLORS.length];
 	}
 
+	function httpUrl(url) {
+		var s = String(url || "").trim();
+		if (!s) return "";
+		try {
+			var u = new URL(s);
+			if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+			return u.href;
+		} catch (e) {
+			return "";
+		}
+	}
+
+	function tagAttr(tag, name) {
+		var re = new RegExp("\\b" + name + "\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)", "i");
+		var m = String(tag || "").match(re);
+		if (!m) return "";
+		return m[1].replace(/^['"]|['"]$/g, "");
+	}
+
+	function embedFallback(url) {
+		var href = httpUrl(url);
+		if (!href) return "";
+		var label = /docusign\.(com|net)/i.test(href) ? "Review document in DocuSign" : "Open linked content";
+		return (
+			'<p style="margin:12px 0"><a href="' +
+			esc(href) +
+			'" target="_blank" rel="noopener noreferrer">' +
+			esc(label) +
+			"</a></p>"
+		);
+	}
+
+	function forceOpenOutside(tagName, attrs) {
+		var a = attrs || "";
+		if (/\btarget\s*=/i.test(a)) {
+			a = a.replace(/\btarget\s*=\s*(['"]?)[^'"\s>]*\1/i, ' target="_blank"');
+		} else {
+			a += ' target="_blank"';
+		}
+		if (!/\brel\s*=/i.test(a)) a += ' rel="noopener noreferrer"';
+		return "<" + tagName + a + ">";
+	}
+
+	function extractActionLinks(html) {
+		var seen = {};
+		var links = [];
+		var re = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+		var m;
+		while ((m = re.exec(String(html || "")))) {
+			var href = httpUrl(m[1]);
+			if (!href || seen[href]) continue;
+			var text = String(m[2] || "")
+				.replace(/<[^>]+>/g, " ")
+				.replace(/\s+/g, " ")
+				.trim();
+			var docusign = /docusign\.(com|net)/i.test(href);
+			var review = /review\s+document/i.test(text);
+			if (!docusign && !review) continue;
+			seen[href] = true;
+			links.push({
+				href: href,
+				label: docusign ? "Review document in DocuSign" : text || "Open linked content",
+			});
+		}
+		return links;
+	}
+
+	function prepareMailHtml(raw) {
+		var html = String(raw || "");
+		html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+		html = html.replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, "");
+		html = html.replace(/<iframe\b[^>]*(?:\/>|>[\s\S]*?<\/iframe>|>)/gi, function (tag) {
+			return embedFallback(tagAttr(tag, "src"));
+		});
+		html = html.replace(/<(object|embed|frame)\b[^>]*>/gi, function (tag) {
+			return embedFallback(tagAttr(tag, "src") || tagAttr(tag, "data"));
+		});
+		html = html.replace(/<a\b([^>]*)>/gi, function (_, attrs) {
+			var rawHref = tagAttr("<a" + attrs + ">", "href");
+			if (rawHref && !httpUrl(rawHref) && !/^mailto:/i.test(rawHref)) {
+				attrs = attrs.replace(/\bhref\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/i, ' href="#"');
+			}
+			return forceOpenOutside("a", attrs);
+		});
+		html = html.replace(/<form\b([^>]*)>/gi, function (_, attrs) {
+			return forceOpenOutside("form", attrs);
+		});
+		html = html.replace(/<\/iframe/gi, "&lt;/iframe");
+		var headBits =
+			'<meta charset="utf-8"><meta name="referrer" content="no-referrer">' +
+			'<base target="_blank">' +
+			"<style>html,body{margin:0;padding:8px 12px;background:#fff;color:#242424;" +
+			"font-family:'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.45}" +
+			"img{max-width:100%;height:auto}a{color:#0f6cbd}noscript{display:none!important}</style>";
+		if (/<head[\s>]/i.test(html)) {
+			html = html.replace(/<head([^>]*)>/i, "<head$1>" + headBits);
+		} else if (/<html[\s>]/i.test(html)) {
+			html = html.replace(/<html([^>]*)>/i, "<html$1><head>" + headBits + "</head>");
+		} else {
+			html = "<!DOCTYPE html><html><head>" + headBits + "</head><body>" + html + "</body></html>";
+		}
+		return html;
+	}
+
 	function displayName(m) {
 		var from = (m.from && (m.from.name || m.from.address)) || "";
-		if (folder === "sent") {
+		if (isSentFolder()) {
 			var to0 = (m.to && m.to[0]) || {};
 			from = to0.name || to0.address || from;
 		}
 		return from;
+	}
+
+	function isSentFolder() {
+		var key = String(folder || "").toLowerCase();
+		return key === "sent" || key === "sentitems";
+	}
+
+	function folderIcon(node) {
+		var well = String((node && (node.well_known || node.key)) || "").toLowerCase();
+		if (well === "inbox") return ICONS.inbox;
+		if (well === "drafts") return ICONS.drafts;
+		if (well === "sent" || well === "sentitems") return ICONS.sent;
+		if (well === "deleted" || well === "deleteditems") return ICONS.deleted;
+		return ICONS.folder;
+	}
+
+	function folderId(node) {
+		return (node && (node.key || node.id)) || "";
+	}
+
+	function rememberTitles(nodes) {
+		(nodes || []).forEach(function (n) {
+			var id = folderId(n);
+			if (id && n.name) FOLDER_TITLES[id] = n.name;
+			rememberTitles(n.children);
+		});
+	}
+
+	function renderFolderNode(node, depth) {
+		var id = folderId(node);
+		var kids = (node && node.children) || [];
+		var unread = node.unread
+			? '<span class="usis-ol-folder-unread">' + esc(String(node.unread)) + "</span>"
+			: "";
+		var toggle = kids.length
+			? '<button type="button" class="usis-ol-folder-toggle" data-toggle-folder="' +
+			  esc(id) +
+			  '" aria-label="Toggle ' +
+			  esc(node.name || "folder") +
+			  '" aria-expanded="true">' +
+			  ICONS.chevron +
+			  "</button>"
+			: '<span class="usis-ol-folder-toggle is-leaf" aria-hidden="true"></span>';
+		var html =
+			'<div class="usis-ol-folder-block"><div class="usis-ol-folder-row" style="padding-left:' +
+			(depth * 12) +
+			'px">' +
+			toggle +
+			'<button type="button" class="usis-ol-folder" data-folder="' +
+			esc(id) +
+			'" data-name="' +
+			esc(node.name || "") +
+			'" title="' +
+			esc(node.name || "") +
+			'">' +
+			folderIcon(node) +
+			'<span class="usis-ol-folder-name">' +
+			esc(node.name || "Folder") +
+			"</span>" +
+			unread +
+			"</button></div>";
+		if (kids.length) {
+			html +=
+				'<div class="usis-ol-folder-children">' +
+				kids
+					.map(function (child) {
+						return renderFolderNode(child, depth + 1);
+					})
+					.join("") +
+				"</div>";
+		}
+		return html + "</div>";
+	}
+
+	function markActiveFolder() {
+		document.querySelectorAll("[data-folder]").forEach(function (btn) {
+			btn.classList.toggle("is-active", btn.getAttribute("data-folder") === folder);
+		});
+	}
+
+	function bindFolderNav() {
+		document.querySelectorAll("[data-folder]").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				setFolder(btn.getAttribute("data-folder"), btn.getAttribute("data-name"));
+			});
+		});
+		document.querySelectorAll("[data-toggle-folder]").forEach(function (btn) {
+			btn.addEventListener("click", function (ev) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				var block = btn.closest(".usis-ol-folder-block");
+				if (!block) return;
+				var collapsed = block.classList.toggle("is-collapsed");
+				btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+			});
+		});
+	}
+
+	function loadFolders() {
+		var nav = document.getElementById("usis-mail-folders");
+		if (!nav || !api()) return;
+		api()
+			.fetchJson("/api/v1/mail/folders")
+			.then(function (data) {
+				var items = (data && data.items) || [];
+				if (!items.length) return;
+				rememberTitles(items);
+				nav.innerHTML = items
+					.map(function (n) {
+						return renderFolderNode(n, 0);
+					})
+					.join("");
+				bindFolderNav();
+				markActiveFolder();
+			})
+			.catch(function () {});
 	}
 
 	function loadMe() {
@@ -136,15 +364,13 @@
 			.catch(function () {});
 	}
 
-	function setFolder(next) {
+	function setFolder(next, name) {
 		folder = next;
 		selectedId = null;
 		selectedMeta = null;
-		document.querySelectorAll("[data-folder]").forEach(function (btn) {
-			btn.classList.toggle("is-active", btn.getAttribute("data-folder") === folder);
-		});
+		markActiveFolder();
 		var title = document.getElementById("usis-mail-folder-title");
-		if (title) title.textContent = FOLDER_TITLES[folder] || "Inbox";
+		if (title) title.textContent = name || FOLDER_TITLES[folder] || "Mail";
 		var search = document.getElementById("usis-mail-search");
 		if (search) search.value = "";
 		showCompose(false);
@@ -182,7 +408,7 @@
 			.map(function (m) {
 				var from = displayName(m);
 				var cls = "usis-ol-row";
-				if (!m.is_read && folder === "inbox") cls += " is-unread";
+				if (!m.is_read) cls += " is-unread";
 				if (m.id === selectedId) cls += " is-on";
 				return (
 					'<button type="button" class="' +
@@ -303,13 +529,32 @@
 						);
 					})
 					.join("");
-				pane.innerHTML = attachments ? '<div class="usis-ol-files">' + attachments + "</div>" : "";
+				var bodyHtml = String(m.body_content || "");
+				var actionLinks =
+					(m.body_type || "").toLowerCase() === "html" ? extractActionLinks(bodyHtml) : [];
+				var actionBar = actionLinks
+					.map(function (link) {
+						return (
+							'<a class="usis-ol-mail-action" href="' +
+							esc(link.href) +
+							'" target="_blank" rel="noopener noreferrer">' +
+							esc(link.label) +
+							"</a>"
+						);
+					})
+					.join("");
+				pane.innerHTML =
+					(attachments ? '<div class="usis-ol-files">' + attachments + "</div>" : "") +
+					(actionBar ? '<div class="usis-ol-mail-actions">' + actionBar + "</div>" : "");
 				if ((m.body_type || "").toLowerCase() === "html") {
 					var frame = document.createElement("iframe");
-					frame.setAttribute("sandbox", "");
+					frame.setAttribute(
+						"sandbox",
+						"allow-popups allow-popups-to-escape-sandbox allow-forms"
+					);
 					frame.setAttribute("referrerpolicy", "no-referrer");
 					frame.setAttribute("title", "Message body");
-					frame.srcdoc = String(m.body_content || "").replace(/<\/iframe/gi, "&lt;/iframe");
+					frame.srcdoc = prepareMailHtml(bodyHtml);
 					pane.appendChild(frame);
 				} else {
 					var pre = document.createElement("pre");
@@ -320,7 +565,7 @@
 					pre.textContent = m.body_content || "";
 					pane.appendChild(pre);
 				}
-				if (!m.is_read && folder === "inbox") {
+				if (!m.is_read) {
 					api()
 						.fetchJson("/api/v1/mail/messages/" + encodeURIComponent(id), {
 							method: "PATCH",
@@ -395,7 +640,7 @@
 				});
 				showCompose(false);
 				showEmpty();
-				if (folder === "sent") loadList();
+				if (isSentFolder()) loadList();
 			})
 			.catch(function (err) {
 				var N = notify();
@@ -409,12 +654,9 @@
 
 	document.addEventListener("DOMContentLoaded", function () {
 		loadMe();
+		bindFolderNav();
+		loadFolders();
 		loadList();
-		document.querySelectorAll("[data-folder]").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				setFolder(btn.getAttribute("data-folder"));
-			});
-		});
 		var composeBtn = document.getElementById("usis-mail-compose-btn");
 		if (composeBtn)
 			composeBtn.addEventListener("click", function () {

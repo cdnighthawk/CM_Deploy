@@ -97,9 +97,18 @@
 							esc(row.csi_title || "") +
 							"</td><td>" +
 							esc(buyLabel(row.buy_from)) +
-							'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm text-danger p-0" data-buy-del="' +
-							esc(row.csi_spec_section) +
-							'">Remove</button></td></tr>'
+							'</td><td class="text-end">' +
+							(window.USISUi && window.USISUi.rowMenu
+								? window.USISUi.rowMenu({
+										id: row.csi_spec_section,
+										createTarget: "#usis-buy-add",
+										deleteClass: "",
+										deleteData: { "buy-del": row.csi_spec_section },
+									})
+								: '<button type="button" class="btn btn-link btn-sm text-danger p-0" data-buy-del="' +
+									esc(row.csi_spec_section) +
+									'">Remove</button>') +
+							"</td></tr>"
 						);
 					})
 					.join("");
@@ -116,7 +125,7 @@
 				var tbody = $("usis-co-tbody");
 				var items = data.items || [];
 				if (!items.length) {
-					tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No companies.</td></tr>';
+					tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No companies.</td></tr>';
 					return;
 				}
 				tbody.innerHTML = items
@@ -133,6 +142,15 @@
 							esc(c.company_type || "") +
 							"</td><td>" +
 							esc(roleLabel(c.supply_role)) +
+							'</td><td class="text-end">' +
+							(window.USISUi && window.USISUi.rowMenu
+								? window.USISUi.rowMenu({
+										id: c.id,
+										editClass: "usis-co-select",
+										createTarget: "#usis-co-add",
+										deleteClass: "usis-co-del",
+									})
+								: "") +
 							"</td></tr>"
 						);
 					})
@@ -140,7 +158,7 @@
 			})
 			.catch(function () {
 				var tbody = $("usis-co-tbody");
-				if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-muted">Could not load companies.</td></tr>';
+				if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Could not load companies.</td></tr>';
 			});
 	}
 
@@ -318,6 +336,23 @@
 		var tbody = $("usis-co-tbody");
 		if (tbody) {
 			tbody.addEventListener("click", function (e) {
+				var del = e.target.closest(".usis-co-del");
+				if (del) {
+					e.preventDefault();
+					e.stopPropagation();
+					var id = del.getAttribute("data-id");
+					if (!id || !window.confirm("Delete this company?")) return;
+					fetchJson("/api/v1/companies/" + encodeURIComponent(id), { method: "DELETE" })
+						.then(function () {
+							if (selectedId === id) selectedId = "";
+							loadCompanies();
+							loadDetail();
+						})
+						.catch(function () {
+							window.alert("Could not delete company.");
+						});
+					return;
+				}
 				var tr = e.target.closest("tr[data-id]");
 				if (!tr) return;
 				selectedId = tr.getAttribute("data-id");

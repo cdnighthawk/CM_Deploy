@@ -145,7 +145,16 @@
 					esc(it.description || "") +
 					"</td><td>" +
 					esc(it.units || "") +
-					'</td><td><button type="button" class="btn btn-link btn-sm p-0 usis-cc-del">Delete</button></td></tr>'
+					'</td><td class="text-end">' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: it.id,
+								editClass: "usis-cc-edit",
+								deleteClass: "usis-cc-del",
+								createTarget: "#usis-cc-add",
+							})
+						: '<button type="button" class="btn btn-link btn-sm p-0 usis-cc-del">Delete</button>') +
+					"</td></tr>"
 				);
 			})
 			.join("");
@@ -269,6 +278,7 @@
 		if (tbody) {
 			tbody.addEventListener("click", function (e) {
 				var del = e.target.closest(".usis-cc-del");
+				var edit = e.target.closest(".usis-cc-edit");
 				var tr = e.target.closest("tr[data-id]");
 				if (del) {
 					e.preventDefault();
@@ -279,6 +289,17 @@
 						.catch(function () {
 							window.alert("Could not delete cost code.");
 						});
+					return;
+				}
+				if (edit) {
+					e.preventDefault();
+					e.stopPropagation();
+					if (!tr) return;
+					var foundEdit = null;
+					items.forEach(function (it) {
+						if (String(it.id) === String(tr.getAttribute("data-id"))) foundEdit = it;
+					});
+					if (foundEdit) openForm(foundEdit);
 					return;
 				}
 				if (!tr) return;

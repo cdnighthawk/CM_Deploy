@@ -38,11 +38,34 @@
 			return;
 		}
 		items.forEach(function (row) {
-			var fileBtn = opts.showFile && row.unfiled
-				? '<button type="button" class="btn btn-link btn-sm p-0 usis-corr-file" data-id="' +
-					esc(row.id) +
-					'">File to project</button>'
-				: "";
+			var extras = [];
+			if (row.downloadUrl) {
+				extras.push({ label: "Download", href: row.downloadUrl });
+			}
+			if (opts.showFile && row.unfiled) {
+				extras.push({
+					label: "File to project",
+					className: "usis-corr-file",
+					data: { id: row.id },
+				});
+			}
+			var menu =
+				window.USISUi && window.USISUi.rowMenu
+					? window.USISUi.rowMenu({
+							id: row.id,
+							editHref: row.downloadUrl || undefined,
+							createHref: "usis-email.html",
+							deleteClass: "usis-corr-del",
+							extras: extras,
+						})
+					: '<a class="btn btn-sm btn-outline-secondary" href="' +
+						esc(row.downloadUrl) +
+						'">Download</a> ' +
+						(opts.showFile && row.unfiled
+							? '<button type="button" class="btn btn-link btn-sm p-0 usis-corr-file" data-id="' +
+								esc(row.id) +
+								'">File to project</button>'
+							: "");
 			var tr = document.createElement("tr");
 			tr.innerHTML =
 				"<td>" +
@@ -54,10 +77,8 @@
 				"</td><td>" +
 				(opts.showProject ? esc(row.projectName || (row.unfiled ? "Unfiled" : "—")) + "</td><td>" : "") +
 				esc(row.attachmentCount || 0) +
-				'</td><td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="' +
-				esc(row.downloadUrl) +
-				'">Download</a> ' +
-				fileBtn +
+				'</td><td class="text-end text-nowrap">' +
+				menu +
 				"</td>";
 			tb.appendChild(tr);
 		});
@@ -71,6 +92,20 @@
 				})
 					.then(function () {
 						loadHub();
+					})
+					.catch(function (e) {
+						if (window.USISNotify) window.USISNotify.error(e.message || String(e));
+					});
+			});
+		});
+		tb.querySelectorAll(".usis-corr-del").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var id = btn.getAttribute("data-id");
+				if (!id || !window.confirm("Delete this correspondence item?")) return;
+				fetchJson("/api/correspondence/" + encodeURIComponent(id), { method: "DELETE" })
+					.then(function () {
+						if (document.getElementById("usis-corr-tbody")) loadHub();
+						else loadProject();
 					})
 					.catch(function (e) {
 						if (window.USISNotify) window.USISNotify.error(e.message || String(e));

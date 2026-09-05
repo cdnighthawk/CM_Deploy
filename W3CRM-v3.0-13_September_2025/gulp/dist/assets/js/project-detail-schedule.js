@@ -212,13 +212,15 @@
 					"<td>" +
 					esc(it.crew_label || "—") +
 					"</td>" +
-					'<td class="text-nowrap">' +
-					'<button type="button" class="btn btn-outline-secondary btn-sm py-0 usis-sched-edit" data-id="' +
-					escAttr(it.id) +
-					'">Edit</button> ' +
-					'<button type="button" class="btn btn-outline-danger btn-sm py-0 usis-sched-del" data-id="' +
-					escAttr(it.id) +
-					'">Delete</button>' +
+					'<td class="text-end">' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: it.id,
+								editClass: "usis-sched-edit",
+								deleteClass: "usis-sched-del",
+								createTarget: "#usis-sched-btn-add",
+							})
+						: "") +
 					"</td>" +
 					"</tr>"
 			);

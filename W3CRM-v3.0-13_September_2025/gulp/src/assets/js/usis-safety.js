@@ -70,9 +70,16 @@
 					"<td>" +
 					statusChip(row.status) +
 					"</td>" +
-					'<td class="text-end"><a class="btn btn-sm btn-outline-primary" href="' +
-					href +
-					'">Open</a></td>' +
+					'<td class="text-end">' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: row.id,
+								editHref: href,
+								createHref: "usis-daily-pretask.html",
+								deleteClass: "usis-safety-del",
+							})
+						: '<a class="btn btn-sm btn-outline-primary" href="' + href + '">Open</a>') +
+					"</td>" +
 					"</tr>"
 				);
 			})

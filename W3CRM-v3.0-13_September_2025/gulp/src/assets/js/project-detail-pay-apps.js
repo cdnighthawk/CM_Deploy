@@ -198,6 +198,7 @@
 							"\">" +
 							escapeHtml(statusLabel(row.status)) +
 							(row.textura_invoice_id ? " <span class=\"badge bg-info-subtle text-info border\" title=\"Synced from Textura\">Textura</span>" : "") +
+							(row.import_source === "sage_cm" ? " <span class=\"badge bg-secondary-subtle text-secondary border\" title=\"Imported from Sage CM\">Sage CM</span>" : "") +
 							"</span></td><td>" +
 							escapeHtml(isoToDateInput(row.paid_at) || "—") +
 							"</td><td class=\"text-end font-monospace\">" +
@@ -206,7 +207,16 @@
 							escapeHtml(row.architect_certified_amount || "—") +
 							"</td><td class=\"text-end\">" +
 							(row.line_count != null ? row.line_count : "—") +
-							"</td><td class=\"text-end\"><button type=\"button\" class=\"btn btn-sm btn-outline-primary usis-inv-open\">Open</button></td></tr>"
+							"</td><td class=\"text-end\">" +
+							(window.USISUi && window.USISUi.rowMenu
+								? window.USISUi.rowMenu({
+										id: row.id,
+										editClass: "usis-inv-open",
+										deleteClass: "usis-inv-del-app",
+										createTarget: "#usis-inv-new-app",
+									})
+								: '<button type="button" class="btn btn-sm btn-outline-primary usis-inv-open">Open</button>') +
+							"</td></tr>"
 						);
 					})
 					.join("");
@@ -534,6 +544,21 @@
 		var reg = document.getElementById("usis-inv-tbody-register");
 		if (reg) {
 			reg.addEventListener("click", function (ev) {
+				var del = ev.target.closest(".usis-inv-del-app");
+				if (del) {
+					var trDel = del.closest("tr");
+					var delId = trDel && trDel.getAttribute("data-pay-app-id");
+					if (!delId || !window.confirm("Delete this payment application?")) return;
+					fetchJson("DELETE", "/api/v1/projects/" + encodeURIComponent(projectId) + "/pay-applications/" + encodeURIComponent(delId), null)
+						.then(function () {
+							toastOk("Payment application deleted.");
+							return loadRegister();
+						})
+						.catch(function (err) {
+							toastErr(err.message || String(err));
+						});
+					return;
+				}
 				var btn = ev.target.closest(".usis-inv-open");
 				if (!btn) return;
 				var tr = btn.closest("tr");

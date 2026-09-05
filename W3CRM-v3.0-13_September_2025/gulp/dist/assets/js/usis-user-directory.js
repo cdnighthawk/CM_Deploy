@@ -366,19 +366,30 @@
 		}
 		tb.innerHTML = rows
 			.map(function (u) {
+				var menuItems = {
+					id: u.id,
+					editClass: "usis-ud-edit",
+					createTarget: "#usis-ud-add",
+					remove: u.id !== state.meId,
+					deleteClass: "usis-ud-delete",
+					extras: [
+						{ label: "Activity", className: "usis-ud-activity", data: { id: u.id } },
+					],
+				};
 				var actions =
-					'<button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-edit" data-id="' +
-					esc(u.id) +
-					'">Edit</button>' +
-					' <button type="button" class="btn btn-sm btn-outline-secondary py-0 usis-ud-activity" data-id="' +
-					esc(u.id) +
-					'">Activity</button>';
-				if (u.id !== state.meId) {
-					actions +=
-						' <button type="button" class="btn btn-sm btn-outline-danger py-0 usis-ud-delete" data-id="' +
-						esc(u.id) +
-						'">Delete</button>';
-				}
+					window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu(menuItems)
+						: '<button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-edit" data-id="' +
+							esc(u.id) +
+							'">Edit</button>' +
+							' <button type="button" class="btn btn-sm btn-outline-secondary py-0 usis-ud-activity" data-id="' +
+							esc(u.id) +
+							'">Activity</button>' +
+							(u.id !== state.meId
+								? ' <button type="button" class="btn btn-sm btn-outline-danger py-0 usis-ud-delete" data-id="' +
+									esc(u.id) +
+									'">Delete</button>'
+								: "");
 				return (
 					"<tr>" +
 					"<td>" +
@@ -432,9 +443,17 @@
 					esc(r.name) +
 					"</td><td>" +
 					esc(r.description || "—") +
-					'</td><td><button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-role-edit" data-id="' +
-					esc(r.id) +
-					'">Edit</button></td></tr>'
+					'</td><td class="text-end">' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: r.id,
+								editClass: "usis-ud-role-edit",
+								createTarget: "#usis-ud-role-add",
+							})
+						: '<button type="button" class="btn btn-sm btn-outline-primary py-0 usis-ud-role-edit" data-id="' +
+							esc(r.id) +
+							'">Edit</button>') +
+					"</td></tr>"
 				);
 			})
 			.join("");

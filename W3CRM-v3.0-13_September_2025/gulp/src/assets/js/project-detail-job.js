@@ -263,11 +263,28 @@
 				var badge = row.is_primary
 					? '<span class="badge text-bg-primary">Primary</span>'
 					: "";
-				var delBtn = row.is_primary
-					? ""
-					: '<button type="button" class="btn btn-link btn-sm text-danger p-0 usis-ca-c-del" data-id="' +
-						esc(row.id) +
-						'">Delete</button>';
+				if (row.import_source === "sage_cm") {
+					badge +=
+						(badge ? " " : "") +
+						'<span class="badge bg-secondary-subtle text-secondary border" title="Imported from Sage CM">Sage CM</span>';
+				}
+				var menu =
+					window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: row.id,
+								editClass: "usis-ca-c-edit",
+								deleteClass: "usis-ca-c-del",
+								createTarget: "#usis-ca-contract-add",
+								remove: !row.is_primary,
+							})
+						: '<button type="button" class="btn btn-link btn-sm p-0 me-2 usis-ca-c-edit" data-id="' +
+							esc(row.id) +
+							'">Edit</button>' +
+							(row.is_primary
+								? ""
+								: '<button type="button" class="btn btn-link btn-sm text-danger p-0 usis-ca-c-del" data-id="' +
+									esc(row.id) +
+									'">Delete</button>');
 				return (
 					"<tr>" +
 					"<td>" +
@@ -286,10 +303,7 @@
 					badge +
 					"</td>" +
 					'<td class="text-nowrap text-end">' +
-					'<button type="button" class="btn btn-link btn-sm p-0 me-2 usis-ca-c-edit" data-id="' +
-					esc(row.id) +
-					'">Edit</button>' +
-					delBtn +
+					menu +
 					"</td>" +
 					"</tr>"
 				);

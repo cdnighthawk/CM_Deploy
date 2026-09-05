@@ -196,7 +196,7 @@
 	function renderTable() {
 		var tb = document.getElementById("usis-issue-tbody");
 		if (!state.items.length) {
-			tb.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">' + t("No issues yet.") + "</td></tr>";
+			tb.innerHTML = '<tr><td colspan="8" class="text-muted text-center py-4">' + t("No issues yet.") + "</td></tr>";
 			return;
 		}
 		tb.innerHTML = state.items
@@ -219,13 +219,43 @@
 					(issue.sheet_number ? " · " + esc(issue.sheet_number) : "") +
 					"</td><td>" +
 					esc(issue.assignee_name || "—") +
+					'</td><td class="text-end" onclick="event.stopPropagation();">' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: issue.id,
+								editClass: "usis-issue-row-edit",
+								deleteClass: "usis-issue-row-del",
+								createTarget: "#usis-issue-new",
+							})
+						: "") +
 					"</td></tr>"
 				);
 			})
 			.join("");
 		tb.querySelectorAll("tr[data-id]").forEach(function (row) {
-			row.addEventListener("click", function () {
+			row.addEventListener("click", function (ev) {
+				if (ev.target.closest(".usis-row-menu")) return;
 				openIssue(row.getAttribute("data-id"));
+			});
+		});
+		tb.querySelectorAll(".usis-issue-row-edit").forEach(function (btn) {
+			btn.addEventListener("click", function (ev) {
+				ev.stopPropagation();
+				openIssue(btn.getAttribute("data-id"));
+			});
+		});
+		tb.querySelectorAll(".usis-issue-row-del").forEach(function (btn) {
+			btn.addEventListener("click", function (ev) {
+				ev.stopPropagation();
+				var id = btn.getAttribute("data-id");
+				if (!id || !window.confirm("Delete this issue?")) return;
+				fetchJson("/api/v1/issues/" + encodeURIComponent(id), { method: "DELETE" })
+					.then(function () {
+						return load();
+					})
+					.catch(function (err) {
+						window.alert((err && err.message) || "Could not delete issue.");
+					});
 			});
 		});
 	}

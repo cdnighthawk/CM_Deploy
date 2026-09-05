@@ -555,14 +555,40 @@
 				fulfill +
 				'<td class="text-end">' +
 				esc(row.total_amount != null ? row.total_amount : "—") +
-				'</td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-c-open" data-id="' +
-				esc(row.id) +
-				'">Edit</button></td>';
+				'</td><td class="text-end">' +
+				(window.USISUi && window.USISUi.rowMenu
+					? window.USISUi.rowMenu({
+							id: row.id,
+							editClass: "usis-c-open",
+							deleteClass: "usis-c-del",
+							createTarget: isPo ? "#usis-po-open-create" : ".usis-procurement-new-sub",
+						})
+					: '<button type="button" class="btn btn-link btn-sm p-0 usis-c-open" data-id="' +
+						esc(row.id) +
+						'">Edit</button>') +
+				"</td>";
 			tb.appendChild(tr);
 		});
 		tb.querySelectorAll(".usis-c-open").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				openEditModal(btn.getAttribute("data-id"));
+			});
+		});
+		tb.querySelectorAll(".usis-c-del").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var cid = btn.getAttribute("data-id");
+				if (!cid || !window.confirm("Delete this " + kindLabel(kindFilter).toLowerCase() + "?")) return;
+				fetchEmpty(
+					"DELETE",
+					"/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments/" + encodeURIComponent(cid)
+				)
+					.then(function () {
+						toastOk(kindLabel(kindFilter) + " deleted.");
+						return loadCommitmentsList();
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
 			});
 		});
 	}
@@ -630,13 +656,42 @@
 				'</td><td><code class="small">' +
 				esc(x.public_token) +
 				'</code></td><td class="text-end text-nowrap">' +
-				'<a class="btn btn-sm btn-outline-primary" href="../usis-rfp-detail.html?id=' +
-				encodeURIComponent(x.id) +
-				'">Open detail</a> ' +
-				'<a class="btn btn-sm btn-outline-secondary" href="' +
-				esc(vendorHref) +
-				'" target="_blank" rel="noopener">Vendor portal</a></td>';
+				(window.USISUi && window.USISUi.rowMenu
+					? window.USISUi.rowMenu({
+							id: x.id,
+							editHref: "../usis-rfp-detail.html?id=" + encodeURIComponent(x.id),
+							createTarget: "#usis-proc-rfp-new",
+							deleteClass: "usis-proc-rfp-del",
+							extras: [
+								{
+									label: "Vendor portal",
+									href: vendorHref,
+									target: "_blank",
+								},
+							],
+						})
+					: '<a class="btn btn-sm btn-outline-primary" href="../usis-rfp-detail.html?id=' +
+						encodeURIComponent(x.id) +
+						'">Open detail</a> ' +
+						'<a class="btn btn-sm btn-outline-secondary" href="' +
+						esc(vendorHref) +
+						'" target="_blank" rel="noopener">Vendor portal</a>') +
+				"</td>";
 			tb.appendChild(tr);
+		});
+		tb.querySelectorAll(".usis-proc-rfp-del").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var rid = btn.getAttribute("data-id");
+				if (!rid || !window.confirm("Delete this RFP draft?")) return;
+				fetchEmpty("DELETE", "/api/v1/rfps/" + encodeURIComponent(rid))
+					.then(function () {
+						toastOk("RFP deleted.");
+						return loadRfpMiniList();
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
+			});
 		});
 	}
 	function loadRfpMiniList() {
@@ -708,14 +763,40 @@
 				esc(row.tracking_number || "—") +
 				"</td><td><span class=\"badge bg-light text-dark border\">" +
 				esc(row.status || "draft") +
-				'</span></td><td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-mat-edit" data-id="' +
-				esc(row.id) +
-				'">Edit</button></td>';
+				'</span></td><td class="text-end">' +
+				(window.USISUi && window.USISUi.rowMenu
+					? window.USISUi.rowMenu({
+							id: row.id,
+							editClass: "usis-mat-edit",
+							deleteClass: "usis-mat-del",
+							createTarget: "#usis-proc-materials-new",
+						})
+					: '<button type="button" class="btn btn-link btn-sm p-0 usis-mat-edit" data-id="' +
+						esc(row.id) +
+						'">Edit</button>') +
+				"</td>";
 			tb.appendChild(tr);
 		});
 		tb.querySelectorAll(".usis-mat-edit").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				openMaterialOrderPrompt(btn.getAttribute("data-id"));
+			});
+		});
+		tb.querySelectorAll(".usis-mat-del").forEach(function (btn) {
+			btn.addEventListener("click", function () {
+				var oid = btn.getAttribute("data-id");
+				if (!oid || !window.confirm("Delete this material order?")) return;
+				fetchEmpty(
+					"DELETE",
+					"/api/v1/projects/" + encodeURIComponent(projectId) + "/material-orders/" + encodeURIComponent(oid)
+				)
+					.then(function () {
+						toastOk("Material order deleted.");
+						return loadMaterialOrders();
+					})
+					.catch(function (e) {
+						toastErr(e.message || String(e));
+					});
 			});
 		});
 	}

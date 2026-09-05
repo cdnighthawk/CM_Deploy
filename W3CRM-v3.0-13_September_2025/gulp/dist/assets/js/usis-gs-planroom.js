@@ -128,6 +128,17 @@
 			'<td class="usis-gs-col-dist text-nowrap">' + formatDistanceMiles(row.distance_miles) + "</td>" +
 			"<td>" + projectNameCell(row) + "</td>" +
 			'<td class="text-nowrap text-end">' + formatMoney(row.estimate_high) + "</td>" +
+			'<td class="text-end">' +
+			(window.USISUi && window.USISUi.rowMenu
+				? window.USISUi.rowMenu({
+						id: row.plan_number || row.name,
+						editHref: /^https:\/\/login\.onlineplanservice\.com\//i.test(String(row.project_url || ""))
+							? String(row.project_url)
+							: undefined,
+						createTarget: "#usis-gs-import-btn",
+					})
+				: "") +
+			"</td>" +
 			"</tr>"
 		);
 	}
@@ -165,10 +176,10 @@
 			if (filterCount) filterCount.textContent = "";
 			if (q) {
 				tbody.innerHTML =
-					'<tr><td colspan="8" class="text-muted">No rows match your filter. Clear the search box to see all loaded jobs (or reload if the list is empty).</td></tr>';
+					'<tr><td colspan="9" class="text-muted">No rows match your filter. Clear the search box to see all loaded jobs (or reload if the list is empty).</td></tr>';
 			} else {
 				tbody.innerHTML =
-					'<tr><td colspan="8" class="text-muted">No Golden State planroom jobs match this view.</td></tr>';
+					'<tr><td colspan="9" class="text-muted">No Golden State planroom jobs match this view.</td></tr>';
 			}
 			if (autoFilter) autoFilter.paint();
 			return;
@@ -181,7 +192,7 @@
 		}
 		if (!filtered.length) {
 			tbody.innerHTML =
-				'<tr><td colspan="8" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
+				'<tr><td colspan="9" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
 		} else {
 			var rows = autoFilter ? autoFilter.sort(filtered) : filtered;
 			tbody.innerHTML = rows.map(renderRow).join("");
@@ -210,7 +221,7 @@
 		if (!tbody) return;
 		isFetching = true;
 		loadError = null;
-		tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Loading…</td></tr>';
+		tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Loading…</td></tr>';
 		var params = new URLSearchParams();
 		params.set("limit", "2000");
 		params.set("sort", "fit_score");
@@ -234,7 +245,7 @@
 				isFetching = false;
 				loadError = err.message;
 				tbody.innerHTML =
-					'<tr><td colspan="8" class="text-danger">Could not load planroom leads: ' +
+					'<tr><td colspan="9" class="text-danger">Could not load planroom leads: ' +
 					esc(err.message) +
 					".</td></tr>";
 			});

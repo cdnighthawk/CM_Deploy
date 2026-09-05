@@ -75,15 +75,40 @@
 						'">' +
 						esc(row.supplier_confirm_status || "none") +
 						"</span></td>" +
-						'<td class="text-end"><button type="button" class="btn btn-link btn-sm p-0 usis-order-open" data-id="' +
-						esc(row.commitment_id) +
-						'">Open</button></td>';
+						'<td class="text-end">' +
+						(window.USISUi && window.USISUi.rowMenu
+							? window.USISUi.rowMenu({
+									id: row.commitment_id,
+									editClass: "usis-order-open",
+									createTarget: "#usis-po-open-create",
+									deleteClass: "usis-order-del",
+								})
+							: '<button type="button" class="btn btn-link btn-sm p-0 usis-order-open" data-id="' +
+								esc(row.commitment_id) +
+								'">Open</button>') +
+						"</td>";
 					tb.appendChild(tr);
 				});
 				tb.querySelectorAll(".usis-order-open").forEach(function (btn) {
 					btn.addEventListener("click", function () {
 						var cid = btn.getAttribute("data-id");
 						if (window.usisOpenCommitmentEdit) window.usisOpenCommitmentEdit(cid);
+					});
+				});
+				tb.querySelectorAll(".usis-order-del").forEach(function (btn) {
+					btn.addEventListener("click", function () {
+						var cid = btn.getAttribute("data-id");
+						if (!cid || !window.confirm("Delete this purchase order?")) return;
+						window.USIS_API.fetchJson(
+							"/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments/" + encodeURIComponent(cid),
+							{ method: "DELETE" }
+						)
+							.then(function () {
+								loadBoard();
+							})
+							.catch(function (e) {
+								toastErr(e.message || String(e));
+							});
 					});
 				});
 			})

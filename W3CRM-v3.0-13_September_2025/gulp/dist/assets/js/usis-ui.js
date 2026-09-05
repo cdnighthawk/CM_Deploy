@@ -249,6 +249,116 @@
 		});
 	}
 
+	function dataAttrs(obj) {
+		if (!obj) return "";
+		return Object.keys(obj)
+			.map(function (k) {
+				var v = obj[k];
+				if (v == null || v === "") return "";
+				var name = String(k).replace(/_/g, "-");
+				return " data-" + name + '="' + esc(v) + '"';
+			})
+			.join("");
+	}
+
+	function rowMenuHtml(items) {
+		var lis = (items || [])
+			.map(function (it) {
+				if (!it || !it.label) return "";
+				var cls =
+					"dropdown-item" +
+					(it.danger ? " text-danger" : "") +
+					(it.className ? " " + it.className : "");
+				var extra = dataAttrs(it.data);
+				if (it.href) {
+					return (
+						'<a class="' +
+						cls +
+						'" href="' +
+						esc(it.href) +
+						'"' +
+						(it.target ? ' target="' + esc(it.target) + '" rel="noopener"' : "") +
+						extra +
+						">" +
+						esc(it.label) +
+						"</a>"
+					);
+				}
+				return (
+					'<button type="button" class="' +
+					cls +
+					'"' +
+					extra +
+					">" +
+					esc(it.label) +
+					"</button>"
+				);
+			})
+			.join("");
+		return (
+			'<div class="dropdown custom-dropdown mb-0 tbl-orders-style usis-row-menu">' +
+			'<button type="button" class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" aria-label="Row actions">' +
+			'<i class="fa-solid fa-ellipsis-vertical"></i></button>' +
+			'<div class="dropdown-menu dropdown-menu-end">' +
+			lis +
+			"</div></div>"
+		);
+	}
+
+	function rowMenu(opts) {
+		opts = opts || {};
+		var items = [];
+		var editData = Object.assign({}, opts.editData || {});
+		if (opts.id != null && opts.id !== "" && editData.id == null) editData.id = opts.id;
+		items.push({
+			label: opts.editLabel || "Edit",
+			className: opts.editClass || "",
+			href: opts.editHref || "",
+			data: editData,
+		});
+		var createData = Object.assign({}, opts.createData || {});
+		if (opts.createTarget && !createData.target) createData.target = opts.createTarget;
+		items.push({
+			label: opts.createLabel || "New",
+			className: opts.createClass || "usis-row-new",
+			href: opts.createHref || "",
+			data: createData,
+		});
+		if (opts.extras && opts.extras.length) {
+			items = items.concat(opts.extras);
+		}
+		if (opts.remove !== false) {
+			var deleteData = Object.assign({}, opts.deleteData || {});
+			if (opts.id != null && opts.id !== "" && deleteData.id == null) deleteData.id = opts.id;
+			items.push({
+				label: opts.deleteLabel || "Delete",
+				className: opts.deleteClass || "usis-row-del",
+				danger: true,
+				data: deleteData,
+			});
+		}
+		return rowMenuHtml(items);
+	}
+
+	function bindRowMenuNew() {
+		if (global.document.__usisRowMenuNewBound) return;
+		global.document.__usisRowMenuNewBound = true;
+		global.document.addEventListener(
+			"click",
+			function (ev) {
+				var btn = ev.target && ev.target.closest && ev.target.closest(".usis-row-new");
+				if (!btn) return;
+				var sel = btn.getAttribute("data-target");
+				if (!sel) return;
+				var el = global.document.querySelector(sel);
+				if (!el) return;
+				ev.preventDefault();
+				el.click();
+			},
+			true
+		);
+	}
+
 	global.USISUi = {
 		statusChip: statusChip,
 		severityChip: severityChip,
@@ -258,7 +368,11 @@
 		restyleAiButtons: restyleAiButtons,
 		safeFilename: safeFilename,
 		downloadFiles: downloadFiles,
+		rowMenu: rowMenu,
+		rowMenuHtml: rowMenuHtml,
 	};
+
+	bindRowMenuNew();
 
 	if (global.document.readyState === "loading") {
 		global.document.addEventListener("DOMContentLoaded", function () {

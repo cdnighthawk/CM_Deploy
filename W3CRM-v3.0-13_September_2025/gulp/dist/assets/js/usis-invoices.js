@@ -55,16 +55,26 @@
 						.map(function (row) {
 							var vendor = row.vendor_name || row.from_name || row.from_email || "—";
 							var job = row.project_number || row.project_name || "Unassigned";
-							var actions =
-								'<a class="btn btn-sm btn-outline-primary py-0" href="usis-invoice-detail.html?id=' +
-								encodeURIComponent(row.id) +
-								'">Open</a>';
+							var extras = [];
 							if (row.can_approve) {
-								actions +=
-									' <button type="button" class="btn btn-sm btn-success py-0 usis-ap-approve" data-invoice-id="' +
-									X.esc(row.id) +
-									'">Approve</button>';
+								extras.push({
+									label: "Approve",
+									className: "usis-ap-approve",
+									data: { "invoice-id": row.id },
+								});
 							}
+							var actions =
+								window.USISUi && window.USISUi.rowMenu
+									? window.USISUi.rowMenu({
+											id: row.id,
+											editHref: "usis-invoice-detail.html?id=" + encodeURIComponent(row.id),
+											createTarget: "#usis-ap-new",
+											deleteClass: "usis-ap-del",
+											extras: extras,
+										})
+									: '<a class="btn btn-sm btn-outline-primary py-0" href="usis-invoice-detail.html?id=' +
+										encodeURIComponent(row.id) +
+										'">Open</a>';
 							return (
 								"<tr><td>" +
 								X.statusBadge(row.status) +
@@ -99,6 +109,19 @@
 								})
 								.catch(function (err) {
 									btn.disabled = false;
+									setStatus(err.message || String(err), true);
+								});
+						});
+					});
+					tb.querySelectorAll(".usis-ap-del").forEach(function (btn) {
+						btn.addEventListener("click", function () {
+							var id = btn.getAttribute("data-id");
+							if (!id || !window.confirm("Delete this invoice?")) return;
+							X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(id), { method: "DELETE" })
+								.then(function () {
+									loadList();
+								})
+								.catch(function (err) {
 									setStatus(err.message || String(err), true);
 								});
 						});

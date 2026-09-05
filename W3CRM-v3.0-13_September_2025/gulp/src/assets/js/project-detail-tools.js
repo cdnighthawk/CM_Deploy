@@ -626,6 +626,25 @@
 					}
 				},
 			},
+			{
+				title: "",
+				field: "id",
+				width: 52,
+				hozAlign: "right",
+				headerSort: false,
+				formatter: function (cell) {
+					var data = cell.getRow().getData();
+					var cr = data.current_revision;
+					var href = cr && cr.id ? drawingViewerHref(pid, cr.id) : "";
+					if (!(window.USISUi && window.USISUi.rowMenu)) return "";
+					return window.USISUi.rowMenu({
+						id: cr && cr.id ? cr.id : data.id,
+						editHref: href || undefined,
+						createTarget: '[data-bs-target="#usis-modal-drawing-create"]',
+						deleteClass: "usis-proj-drawing-del",
+					});
+				},
+			},
 		];
 		rows.sort(function (a, b) {
 			var da = drawingDisciplineGroup(a).toLowerCase();
@@ -684,6 +703,18 @@
 			var mgr = row.rfi_manager ? esc(row.rfi_manager.name) : "—";
 			var status = '<span class="text-uppercase small fw-semibold">' + esc(row.status) + "</span>";
 			var due = row.due_at ? esc(new Date(row.due_at).toLocaleDateString()) : "—";
+			var createHref = (document.getElementById("usis-rfi-open-create") || {}).getAttribute
+				? document.getElementById("usis-rfi-open-create").getAttribute("href")
+				: "construction/rfi-create.html";
+			var menu =
+				window.USISUi && window.USISUi.rowMenu
+					? window.USISUi.rowMenu({
+							id: row.id,
+							editHref: detail,
+							createHref: createHref || "construction/rfi-create.html",
+							deleteClass: "usis-proj-rfi-del",
+						})
+					: '<a class="btn btn-link btn-sm" href="' + detail + '">Open</a>';
 			tr.innerHTML =
 				'<td><a class="link-primary text-decoration-none" href="' + detail + '">' + esc(num) + "</a></td>" +
 				'<td><a class="text-decoration-none text-black fw-semibold" href="' + detail + '">' + esc(row.subject) + "</a></td>" +
@@ -692,7 +723,7 @@
 				"<td>" + assignees + "</td>" +
 				"<td>" + mgr + "</td>" +
 				"<td>" + due + "</td>" +
-				'<td class="text-end"><a class="btn btn-link btn-sm" href="' + detail + '">Open</a></td>';
+				'<td class="text-end">' + menu + "</td>";
 			tbody.appendChild(tr);
 		});
 	}
@@ -728,6 +759,18 @@
 				'">' +
 				esc(row.title) +
 				"</a>";
+			var createHref = (document.getElementById("usis-submittal-open-create") || {}).getAttribute
+				? document.getElementById("usis-submittal-open-create").getAttribute("href")
+				: "construction/submittal-create.html";
+			var menu =
+				window.USISUi && window.USISUi.rowMenu
+					? window.USISUi.rowMenu({
+							id: row.id,
+							editHref: detail,
+							createHref: createHref || "construction/submittal-create.html",
+							deleteClass: "usis-proj-sub-del",
+						})
+					: '<a class="btn btn-link btn-sm py-0" href="' + detail + '">Open</a>';
 			tr.innerHTML =
 				"<td>" +
 				esc(row.number) +
@@ -759,9 +802,9 @@
 				esc(row.response ? String(row.response).slice(0, 80) : "") +
 				'</td><td class="text-end">' +
 				fileCell +
-				'</td><td class="text-end"><a class="btn btn-link btn-sm py-0" href="' +
-				detail +
-				'">Open</a></td>';
+				'</td><td class="text-end">' +
+				menu +
+				"</td>";
 			tbody.appendChild(tr);
 		});
 	}
@@ -971,6 +1014,53 @@
 		activeProjectId = pid;
 		updateRfiLinks(pid);
 		loadAll(pid);
+		document.body.addEventListener("click", function (ev) {
+			var rfiDel = ev.target.closest(".usis-proj-rfi-del");
+			if (rfiDel) {
+				var id = rfiDel.getAttribute("data-id");
+				if (!id || !window.confirm("Move this RFI to the recycle bin?")) return;
+				fetchJsonBody("DELETE", "/api/v1/rfis/" + encodeURIComponent(id), null)
+					.then(function () {
+						return loadAll(activeProjectId);
+					})
+					.catch(function (err) {
+						window.alert(err.message || "Could not delete RFI.");
+					});
+				return;
+			}
+			var subDel = ev.target.closest(".usis-proj-sub-del");
+			if (subDel) {
+				var sid = subDel.getAttribute("data-id");
+				if (!sid || !window.confirm("Delete this submittal?")) return;
+				fetchJsonBody(
+					"DELETE",
+					"/api/v1/projects/" + encodeURIComponent(activeProjectId) + "/submittals/" + encodeURIComponent(sid),
+					null
+				)
+					.then(function () {
+						return loadAll(activeProjectId);
+					})
+					.catch(function (err) {
+						window.alert(err.message || "Could not delete submittal.");
+					});
+				return;
+			}
+			var drDel = ev.target.closest(".usis-proj-drawing-del");
+			if (drDel) {
+				var did = drDel.getAttribute("data-id");
+				if (!did || !window.confirm("Delete this drawing sheet (all revisions)?")) return;
+				fetchJsonBody("POST", "/api/v1/drawings/" + encodeURIComponent(did) + "/delete", {
+					confirm: true,
+					scope: "series",
+				})
+					.then(function () {
+						return loadAll(activeProjectId);
+					})
+					.catch(function (err) {
+						window.alert(err.message || "Could not delete drawing.");
+					});
+			}
+		});
 	}
 
 	if (document.readyState === "loading") {

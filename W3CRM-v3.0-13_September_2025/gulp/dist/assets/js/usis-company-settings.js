@@ -68,12 +68,20 @@
 					(o.is_default ? '<span class="badge bg-primary">Default</span>' : "") +
 					"</td>" +
 					'<td class="text-end text-nowrap">' +
-					'<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-co-edit="' +
-					esc(o.id) +
-					'">Edit</button>' +
-					'<button type="button" class="btn btn-sm btn-outline-danger" data-co-del="' +
-					esc(o.id) +
-					'">Remove</button>' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: o.id,
+								editData: { "co-edit": o.id },
+								createTarget: "#usis-co-add",
+								deleteData: { "co-del": o.id },
+								deleteClass: "",
+							})
+						: '<button type="button" class="btn btn-sm btn-outline-secondary me-1" data-co-edit="' +
+							esc(o.id) +
+							'">Edit</button>' +
+							'<button type="button" class="btn btn-sm btn-outline-danger" data-co-del="' +
+							esc(o.id) +
+							'">Remove</button>') +
 					"</td>" +
 					"</tr>"
 				);

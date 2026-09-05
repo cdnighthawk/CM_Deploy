@@ -74,12 +74,23 @@
 				}
 				tbody.innerHTML = items
 					.map(function (it) {
-						var del =
-							'<button type="button" class="btn btn-link btn-sm p-0 usis-w2-del" data-kind="' +
-							esc(cfg.kind) +
-							'" data-id="' +
-							esc(it.id) +
-							'">Delete</button>';
+						var createTarget =
+							cfg.kind === "punchlist"
+								? "#usis-punch-gc-add"
+								: '[data-usis-wave2-add="' + cfg.kind + '"]';
+						var menu =
+							window.USISUi && window.USISUi.rowMenu
+								? window.USISUi.rowMenu({
+										id: it.id,
+										createTarget: createTarget,
+										deleteClass: "usis-w2-del",
+										deleteData: { kind: cfg.kind, id: it.id },
+									})
+								: '<button type="button" class="btn btn-link btn-sm p-0 usis-w2-del" data-kind="' +
+									esc(cfg.kind) +
+									'" data-id="' +
+									esc(it.id) +
+									'">Delete</button>';
 						if (cfg.kind === "punchlist") {
 							return (
 								"<tr><td>" +
@@ -95,7 +106,7 @@
 								"</td><td>" +
 								esc(it.priority || "") +
 								"</td><td>" +
-								del +
+								menu +
 								"</td></tr>"
 							);
 						}
@@ -111,7 +122,7 @@
 							"</td><td>" +
 							esc(extra == null ? "" : extra) +
 							"</td><td>" +
-							del +
+							menu +
 							"</td></tr>"
 						);
 					})
@@ -378,12 +389,23 @@
 				}
 				tbody.innerHTML = items
 					.map(function (it) {
-						var closed = it.status === "Resolved" || it.status === "Closed";
-						var action = closed
-							? ""
-							: '<button type="button" class="btn btn-link btn-sm p-0 usis-punch-crew-resolve" data-id="' +
-							  esc(it.id) +
-							  '">Resolve</button>';
+						var extras =
+							it.status === "Resolved" || it.status === "Closed"
+								? []
+								: [{ label: "Resolve", className: "usis-punch-crew-resolve", data: { id: it.id } }];
+						var menu =
+							window.USISUi && window.USISUi.rowMenu
+								? window.USISUi.rowMenu({
+										id: it.id,
+										createTarget: "#usis-punch-crew-add",
+										deleteClass: "usis-punch-crew-del",
+										extras: extras,
+									})
+								: extras.length
+									? '<button type="button" class="btn btn-link btn-sm p-0 usis-punch-crew-resolve" data-id="' +
+										esc(it.id) +
+										'">Resolve</button>'
+									: "";
 						return (
 							"<tr><td>" +
 							esc(it.title || "") +
@@ -394,7 +416,7 @@
 							"</td><td>" +
 							esc(it.description || "") +
 							"</td><td>" +
-							action +
+							menu +
 							"</td></tr>"
 						);
 					})
@@ -581,6 +603,16 @@
 			if (btn) delKind(btn.getAttribute("data-kind"), btn.getAttribute("data-id"));
 			var resolveBtn = e.target.closest(".usis-punch-crew-resolve");
 			if (resolveBtn) resolveCrewItem(resolveBtn.getAttribute("data-id"));
+			var crewDel = e.target.closest(".usis-punch-crew-del");
+			if (crewDel) {
+				var cid = crewDel.getAttribute("data-id");
+				if (!cid || !window.confirm("Delete this crew punch item?")) return;
+				fetchJson("/api/v1/issues/" + encodeURIComponent(cid), { method: "DELETE" })
+					.then(loadCrewPunch)
+					.catch(function (err) {
+						window.alert((err && err.message) || "Could not delete item.");
+					});
+			}
 		});
 		var up = document.getElementById("usis-photo-upload");
 		if (up) up.addEventListener("click", uploadPhoto);

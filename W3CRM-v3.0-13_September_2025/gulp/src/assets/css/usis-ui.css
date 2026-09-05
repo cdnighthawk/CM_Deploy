@@ -2647,3 +2647,22 @@ body.usis-sv-open {
 [data-bs-theme="dark"] .usis-est-bc-table tbody tr:hover {
 	background: rgba(255, 255, 255, 0.04);
 }
+
+.usis-row-menu {
+	display: inline-flex;
+	vertical-align: middle;
+}
+.usis-row-menu > .btn {
+	border: 0;
+	background: transparent;
+	color: inherit;
+	min-width: 1.75rem;
+	padding: 0.15rem 0.35rem;
+}
+.usis-row-menu > .btn:hover,
+.usis-row-menu > .btn:focus {
+	background: rgba(0, 0, 0, 0.06);
+}
+.usis-row-menu .dropdown-menu {
+	z-index: 1080;
+}

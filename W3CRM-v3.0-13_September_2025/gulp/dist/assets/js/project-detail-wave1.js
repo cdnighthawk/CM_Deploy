@@ -112,19 +112,34 @@
 			});
 	}
 
-	function renderChangeRows(tbody, items, cols, convert) {
+	function renderChangeRows(tbody, items, cols, convert, kind) {
 		if (!tbody) return;
 		if (!items || !items.length) {
 			tbody.innerHTML = emptyRow(cols, "None yet.");
 			return;
 		}
+		var createTarget =
+			kind === "cpr" ? "#usis-ca-cpr-add" : kind === "sco" ? "#usis-sco-add" : "#usis-ca-co-add";
+		var delClass =
+			kind === "cpr" ? "usis-cpr-del" : kind === "sco" ? "usis-sco-del" : "usis-co-del";
 		tbody.innerHTML = items
 			.map(function (it) {
-				var extra = convert
-					? '<td><button type="button" class="btn btn-link btn-sm p-0 usis-cpr-to-co" data-id="' +
-						esc(it.id) +
-						'">To prime CO</button></td>'
-					: "";
+				var extras = convert
+					? [{ label: "To prime CO", className: "usis-cpr-to-co", data: { id: it.id } }]
+					: [];
+				var menu =
+					window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: it.id,
+								createTarget: createTarget,
+								deleteClass: delClass,
+								extras: extras,
+							})
+						: convert
+							? '<button type="button" class="btn btn-link btn-sm p-0 usis-cpr-to-co" data-id="' +
+								esc(it.id) +
+								'">To prime CO</button>'
+							: "";
 				return (
 					"<tr><td>" +
 					esc(it.number || "") +
@@ -134,9 +149,9 @@
 					esc(it.status || "") +
 					"</td><td class=\"text-end\">" +
 					money(it.amount) +
-					"</td>" +
-					extra +
-					"</tr>"
+					'</td><td class="text-end">' +
+					menu +
+					"</td></tr>"
 				);
 			})
 			.join("");
@@ -147,7 +162,7 @@
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/cprs"))
 			.then(function (data) {
-				renderChangeRows(tbody, data.items || [], 5, true);
+				renderChangeRows(tbody, data.items || [], 5, true, "cpr");
 			})
 			.catch(function () {
 				tbody.innerHTML = emptyRow(5, "Could not load CPRs.");
@@ -159,10 +174,10 @@
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/change-orders"))
 			.then(function (data) {
-				renderChangeRows(tbody, data.items || [], 4, false);
+				renderChangeRows(tbody, data.items || [], 5, false, "co");
 			})
 			.catch(function () {
-				tbody.innerHTML = emptyRow(4, "Could not load change orders.");
+				tbody.innerHTML = emptyRow(5, "Could not load change orders.");
 			});
 	}
 
@@ -336,10 +351,10 @@
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/scos"))
 			.then(function (data) {
-				renderChangeRows(tbody, data.items || [], 4, false);
+				renderChangeRows(tbody, data.items || [], 5, false, "sco");
 			})
 			.catch(function () {
-				tbody.innerHTML = emptyRow(4, "Could not load SCOs.");
+				tbody.innerHTML = emptyRow(5, "Could not load SCOs.");
 			});
 	}
 
@@ -381,6 +396,44 @@
 			cprBody.addEventListener("click", function (e) {
 				var btn = e.target.closest(".usis-cpr-to-co");
 				if (btn) cprToCo(btn.getAttribute("data-id"));
+				var del = e.target.closest(".usis-cpr-del");
+				if (del) {
+					var id = del.getAttribute("data-id");
+					if (!id || !window.confirm("Delete this CPR?")) return;
+					fetchJson(pidPath("/cprs/" + encodeURIComponent(id)), { method: "DELETE" })
+						.then(loadCprs)
+						.catch(function (err) {
+							window.alert((err && err.body) || "Could not delete CPR.");
+						});
+				}
+			});
+		}
+		var coBody = document.getElementById("usis-ca-co-tbody");
+		if (coBody) {
+			coBody.addEventListener("click", function (e) {
+				var del = e.target.closest(".usis-co-del");
+				if (!del) return;
+				var id = del.getAttribute("data-id");
+				if (!id || !window.confirm("Delete this change order?")) return;
+				fetchJson(pidPath("/change-orders/" + encodeURIComponent(id)), { method: "DELETE" })
+					.then(loadCos)
+					.catch(function (err) {
+						window.alert((err && err.body) || "Could not delete change order.");
+					});
+			});
+		}
+		var scoBody = document.getElementById("usis-sco-tbody");
+		if (scoBody) {
+			scoBody.addEventListener("click", function (e) {
+				var del = e.target.closest(".usis-sco-del");
+				if (!del) return;
+				var id = del.getAttribute("data-id");
+				if (!id || !window.confirm("Delete this SCO?")) return;
+				fetchJson(pidPath("/scos/" + encodeURIComponent(id)), { method: "DELETE" })
+					.then(loadScos)
+					.catch(function (err) {
+						window.alert((err && err.body) || "Could not delete SCO.");
+					});
 			});
 		}
 		var saveDl = document.getElementById("usis-dailylog-save");

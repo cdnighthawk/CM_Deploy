@@ -1,7 +1,10 @@
 """Hire packets, form templates, and encrypted PII tables.
 
 Revision ID: 0103_hiring
-Revises: 0102_field_punch
+Revises: 0101_punch_procore
+
+0102_field_punch is not on origin; hiring was chained to it locally and
+Render's ``flask db upgrade`` could not find that revision.
 """
 from __future__ import annotations
 
@@ -12,7 +15,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0103_hiring"
-down_revision: Union[str, Sequence[str], None] = "0102_field_punch"
+down_revision: Union[str, Sequence[str], None] = "0101_punch_procore"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -80,7 +80,9 @@
 										encodeURIComponent(row.id) +
 										'">Open</a>';
 							return (
-								"<tr><td>" +
+								'<tr data-id="' +
+								X.esc(row.id) +
+								'"><td>' +
 								X.statusBadge(row.status) +
 								"</td><td>" +
 								vendorCell +
@@ -98,38 +100,6 @@
 							);
 						})
 						.join("");
-					tb.querySelectorAll(".usis-ap-approve").forEach(function (btn) {
-						btn.addEventListener("click", function () {
-							var id = btn.getAttribute("data-invoice-id");
-							if (!id) return;
-							btn.disabled = true;
-							X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(id) + "/approve", {
-								method: "POST",
-								headers: { "Content-Type": "application/json" },
-								body: "{}",
-							})
-								.then(function () {
-									loadList();
-								})
-								.catch(function (err) {
-									btn.disabled = false;
-									setStatus(err.message || String(err), true);
-								});
-						});
-					});
-					tb.querySelectorAll(".usis-ap-del").forEach(function (btn) {
-						btn.addEventListener("click", function () {
-							var id = btn.getAttribute("data-id");
-							if (!id || !window.confirm("Delete this invoice?")) return;
-							X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(id), { method: "DELETE" })
-								.then(function () {
-									loadList();
-								})
-								.catch(function (err) {
-									setStatus(err.message || String(err), true);
-								});
-						});
-					});
 				}
 				setStatus(items.length + " invoice(s).");
 				refreshPendingCount();
@@ -186,6 +156,55 @@
 			});
 	}
 
+	function bindRowActions() {
+		var tb = document.getElementById("usis-ap-body");
+		if (!tb || tb.getAttribute("data-ap-actions")) return;
+		tb.setAttribute("data-ap-actions", "1");
+		tb.addEventListener(
+			"click",
+			function (ev) {
+				var del = ev.target.closest(".usis-ap-del");
+				if (del && tb.contains(del)) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					var delId =
+						del.getAttribute("data-id") ||
+						(del.closest("tr") && del.closest("tr").getAttribute("data-id"));
+					if (!delId || !window.confirm("Delete this invoice?")) return;
+					X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(delId), { method: "DELETE" })
+						.then(function () {
+							loadList();
+						})
+						.catch(function (err) {
+							setStatus(err.message || String(err), true);
+						});
+					return;
+				}
+				var appr = ev.target.closest(".usis-ap-approve");
+				if (appr && tb.contains(appr)) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					var apprId = appr.getAttribute("data-invoice-id");
+					if (!apprId) return;
+					appr.disabled = true;
+					X.apiFetch("/api/v1/ap/invoices/" + encodeURIComponent(apprId) + "/approve", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: "{}",
+					})
+						.then(function () {
+							loadList();
+						})
+						.catch(function (err) {
+							appr.disabled = false;
+							setStatus(err.message || String(err), true);
+						});
+				}
+			},
+			true
+		);
+	}
+
 	function wire() {
 		var syncBtn = document.getElementById("usis-ap-sync");
 		var newBtn = document.getElementById("usis-ap-new");
@@ -193,6 +212,7 @@
 		if (syncBtn) syncBtn.addEventListener("click", syncMailbox);
 		if (newBtn) newBtn.addEventListener("click", createManual);
 		if (filter) filter.addEventListener("change", loadList);
+		bindRowActions();
 		loadMailbox();
 		loadList();
 		setInterval(function () {

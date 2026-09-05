@@ -10,6 +10,7 @@ from ._invoice_service import InvoiceError
 from ._invoice_service import (
     approve_invoice,
     create_invoice,
+    delete_invoice,
     get_invoice,
     list_approvals,
     list_commitments,
@@ -151,6 +152,11 @@ def ap_invoice_paid(invoice_id: uuid.UUID):
 def ap_invoice_void(invoice_id: uuid.UUID):
     data = request.get_json(silent=True) or {}
     return _handle(lambda: jsonify({"entity": "vendor_invoice", "item": void_invoice(current_user(), invoice_id, data)}))
+
+
+@ap_bp.delete("/invoices/<uuid:invoice_id>")
+def ap_invoice_delete(invoice_id: uuid.UUID):
+    return _handle(lambda: jsonify({"entity": "vendor_invoice", "item": delete_invoice(current_user(), invoice_id)}))
 
 
 @ap_bp.post("/invoices/<uuid:invoice_id>/files")

@@ -77,3 +77,38 @@ def test_apply_page_served(client, static_root):
     r = client.get("/apply.html")
     assert r.status_code == 200
     assert b"apply" in r.data.lower() or b"career" in r.data.lower()
+
+
+def test_duplicate_hubs_redirect(client, static_root):
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    r = client.get("/usis-dashboard.html")
+    assert r.status_code == 302
+    assert r.headers.get("Location") == "/usis-dashboard-dark.html"
+    r = client.get("/usis-hr.html")
+    assert r.status_code == 302
+    assert r.headers.get("Location") == "/usis-hr-dashboard.html"
+    r = client.get("/usis-leads.html")
+    assert r.status_code == 302
+    assert r.headers.get("Location") == "/construction/leads.html"
+
+
+def test_leftover_template_pages_are_branded_404(client, static_root):
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    r = client.get("/ecom-product-grid.html")
+    assert r.status_code == 404
+    assert b"That page is not in USIS CM" in r.data or b"US Interior Specialties" in r.data
+    r = client.get("/construction/quotation.html")
+    assert r.status_code == 404
+    r = client.get("/usis-all-pages-index.html")
+    assert r.status_code == 404
+
+
+def test_live_usis_pages_still_served(client, static_root):
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    r = client.get("/page-login.html")
+    assert r.status_code == 200
+    r = client.get("/construction/projects.html")
+    assert r.status_code == 200

@@ -46,10 +46,7 @@
 				'<li><a href="' + prefix + 'usis-time-live.html">Live</a></li>' +
 				'<li><a href="' + prefix + 'usis-time-me.html">My Time</a></li>' +
 				'<li><a href="' + prefix + 'usis-time-cards.html">Time cards</a></li>' +
-				'<li><a href="' + prefix + 'usis-time-events.html">Event log</a></li>' +
-				'<li><a href="' + prefix + 'usis-time-exceptions.html">Exceptions</a></li>' +
 				'<li><a href="' + prefix + 'usis-time-payroll.html">Payroll period</a></li>' +
-				'<li><a href="' + prefix + 'usis-time-map.html">Map</a></li>' +
 				'<li><a href="' + prefix + 'usis-time-settings.html">Settings</a></li>' +
 				"</ul>";
 			var safety = null;
@@ -66,30 +63,28 @@
 			else menu.appendChild(li);
 		}
 		retargetDemoTimeSheets();
-		insertHrTimeShortcut();
-		insertHeaderTime();
+		insertPeopleNav();
 	}
 
-	function insertHrTimeShortcut() {
+	function insertPeopleNav() {
 		var menu = document.getElementById("menu") || document.querySelector(".deznav ul.metismenu");
 		if (!menu) return;
-		var hr = null;
-		var items = menu.children;
-		var i;
-		for (i = 0; i < items.length; i++) {
-			var label = items[i].querySelector(":scope > a .nav-text");
-			if (label && (label.textContent || "").trim() === "HR") {
-				hr = items[i];
-				break;
-			}
-		}
-		if (!hr) return;
-		var ul = hr.querySelector(":scope > ul");
-		if (!ul) return;
-		if (ul.querySelector('a[href*="usis-time-"]')) return;
+		if (document.getElementById("usis-people-nav")) return;
+		var prefix = timePrefix();
 		var li = document.createElement("li");
-		li.innerHTML = '<a href="' + timePrefix() + 'usis-time-live.html" data-i18n="Time">Time</a>';
-		ul.appendChild(li);
+		li.id = "usis-people-nav";
+		li.setAttribute("data-usis-module", "hr");
+		li.innerHTML =
+			'<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">' +
+			'<i class="icon feather icon-users"></i>' +
+			'<span class="nav-text" data-i18n="People">People</span></a>' +
+			"<ul aria-expanded=\"false\">" +
+			'<li data-usis-module="hr"><a href="' + prefix + 'usis-people-hiring.html">Hiring</a></li>' +
+			'<li data-usis-module="hr"><a href="' + prefix + 'usis-people-directory.html">Directory</a></li>' +
+			"</ul>";
+		var timeNav = document.getElementById("usis-time-nav");
+		if (timeNav && timeNav.nextSibling) menu.insertBefore(li, timeNav.nextSibling);
+		else menu.appendChild(li);
 	}
 
 	function retargetDemoTimeSheets() {
@@ -104,22 +99,6 @@
 				item.removeAttribute("aria-hidden");
 			}
 		});
-	}
-
-	function insertHeaderTime() {
-		if (document.getElementById("usis-header-time")) return;
-		var toolbar = document.getElementById("usis-header-toolbar");
-		if (!toolbar) return;
-		var a = document.createElement("a");
-		a.id = "usis-header-time";
-		a.className = "btn btn-sm btn-outline-secondary px-2";
-		a.href = timePrefix() + "usis-time-live.html";
-		a.setAttribute("title", "Time");
-		a.setAttribute("aria-label", "Time");
-		a.innerHTML =
-			'<i class="icon feather icon-clock"></i>' +
-			'<span class="d-none d-lg-inline ms-1" data-i18n="Time">Time</span>';
-		toolbar.insertBefore(a, toolbar.firstChild);
 	}
 
 	function applyNav(modules) {

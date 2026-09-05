@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Blueprint, abort, redirect, send_from_directory, session
+from flask import Blueprint, abort, make_response, redirect, send_from_directory, session
 
 static_shell_bp = Blueprint("static_shell", __name__)
 
@@ -27,12 +27,85 @@ _CAREER_PATH_REDIRECTS: dict[str, str] = {
     "/time/payroll": "/usis-time-payroll.html",
     "/time/map": "/usis-time-map.html",
     "/time/settings": "/usis-time-settings.html",
+    "/people": "/usis-people-hiring.html",
+    "/people/hiring": "/usis-people-hiring.html",
+    "/people/directory": "/usis-people-directory.html",
 }
 
 # Case-insensitive aliases (marketing links often use ``Apply.html``).
 _CASE_INSENSITIVE_HTML_REDIRECTS: dict[str, str] = {
     "/apply.html": "/apply.html",
 }
+
+# Duplicate USIS shells → the page staff should actually use.
+_PRODUCT_HTML_REDIRECTS: dict[str, str] = {
+    "/usis-dashboard.html": "/usis-dashboard-dark.html",
+    "/usis-leads.html": "/construction/leads.html",
+    "/usis-hr.html": "/usis-hr-dashboard.html",
+    "/core-hr.html": "/usis-hr-dashboard.html",
+    "/usis-hrms-home.html": "/usis-hr-dashboard.html",
+}
+
+# W3CRM leftover templates. Live USIS pages are not in this set.
+_DEMO_HTML_PREFIXES: tuple[str, ...] = (
+    "ecom-",
+    "aikit/",
+    "cms/",
+    "account/",
+    "profile/",
+    "essentials/",
+)
+
+_DEMO_HTML_EXACT: frozenset[str] = frozenset(
+    {
+        "index-2.html",
+        "blog.html",
+        "chat.html",
+        "contacts.html",
+        "customer.html",
+        "customer-profile.html",
+        "employee.html",
+        "empty-page.html",
+        "finance.html",
+        "manage-client.html",
+        "performance.html",
+        "post-details.html",
+        "project.html",
+        "task.html",
+        "task-summary.html",
+        "user.html",
+        "user-roles.html",
+        "add-role.html",
+        "edit-profile.html",
+        "app-calender.html",
+        "app-profile.html",
+        "app-profile-2.html",
+        "email-inbox.html",
+        "email-read.html",
+        "email-compose.html",
+        "usis-all-pages-index.html",
+        "construction/add-quotation.html",
+        "construction/attendance.html",
+        "construction/contact-us.html",
+        "construction/edit-quotation.html",
+        "construction/estimate_legacy.html",
+        "construction/files.html",
+        "construction/finance.html",
+        "construction/mom.html",
+        "construction/mom-detail.html",
+        "construction/overview.html",
+        "construction/party.html",
+        "construction/quotation.html",
+        "construction/reports.html",
+        "construction/services.html",
+        "construction/task.html",
+        "construction/time-sheet.html",
+        "construction/timesheet-detail.html",
+        "construction/todo.html",
+        "construction/todo-detail.html",
+        "construction/transaction.html",
+    }
+)
 
 
 @static_shell_bp.route("/construction/index.html")
@@ -80,6 +153,29 @@ def _redirect_applicant_from_internal_html(rel: str):
     return redirect(APPLICANT_APPLICATION_PATH, code=302)
 
 
+def _html_rel(rel: str) -> str:
+    return (rel or "").replace("\\", "/").lstrip("/").lower()
+
+
+def _is_demo_shell_html(rel: str) -> bool:
+    name = _html_rel(rel)
+    if not name.endswith(".html"):
+        return False
+    if name in _DEMO_HTML_EXACT:
+        return True
+    return any(name.startswith(prefix) for prefix in _DEMO_HTML_PREFIXES)
+
+
+def branded_404():
+    """USIS 404 page when the static shell exists; otherwise Flask's default."""
+    root = resolve_static_root()
+    if root is not None and (root / "page-error-404.html").is_file():
+        resp = make_response(send_from_directory(root, "page-error-404.html"))
+        resp.status_code = 404
+        return resp
+    abort(404)
+
+
 @static_shell_bp.route("/", defaults={"subpath": ""})
 @static_shell_bp.route("/<path:subpath>")
 def serve_static(subpath: str):
@@ -95,6 +191,10 @@ def serve_static(subpath: str):
             "Static UI not found. Set USIS_STATIC_ROOT or run gulp build "
             "(W3CRM-v3.0-13_September_2025/gulp/dist).",
         )
+
+    product_target = _PRODUCT_HTML_REDIRECTS.get(req_path.lower())
+    if product_target:
+        return redirect(product_target, code=302)
 
     if req_path == "/index.html":
         home = root / "usis-dashboard-dark.html"
@@ -126,7 +226,7 @@ def serve_static(subpath: str):
         index = root / "index.html"
         if index.is_file():
             return send_from_directory(root, "index.html")
-        abort(404)
+        return branded_404()
 
     career_target = _CAREER_PATH_REDIRECTS.get(req_path)
     if career_target:
@@ -141,9 +241,11 @@ def serve_static(subpath: str):
     try:
         candidate.relative_to(root)
     except ValueError:
-        abort(404)
+        return branded_404()
 
     if candidate.is_file():
+        if _is_demo_shell_html(rel):
+            return branded_404()
         blocked = _redirect_applicant_from_internal_html(rel)
         if blocked is not None:
             return blocked
@@ -157,12 +259,18 @@ def serve_static(subpath: str):
     if not rel.endswith(".html"):
         html_candidate = root / f"{rel}.html"
         if html_candidate.is_file():
-            blocked = _redirect_applicant_from_internal_html(f"{rel}.html")
+            html_rel = f"{rel}.html"
+            product_html = _PRODUCT_HTML_REDIRECTS.get("/" + _html_rel(html_rel))
+            if product_html:
+                return redirect(product_html, code=302)
+            if _is_demo_shell_html(html_rel):
+                return branded_404()
+            blocked = _redirect_applicant_from_internal_html(html_rel)
             if blocked is not None:
                 return blocked
-            return send_from_directory(root, f"{rel}.html")
+            return send_from_directory(root, html_rel)
 
-    abort(404)
+    return branded_404()
 
 
 def register_static_shell(app) -> None:

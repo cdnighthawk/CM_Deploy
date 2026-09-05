@@ -35,7 +35,6 @@
 						</p>
 						<div class="d-flex flex-wrap gap-2 mb-3">
 							<a class="btn btn-primary btn-lg" id="usis-apply-cta" href="page-register.html?next=apply/application.html">Apply now</a>
-							<a class="btn btn-outline-primary btn-lg" id="usis-apply-signin" href="page-login.html?next=apply/application.html">Sign in</a>
 							<a class="btn btn-outline-secondary btn-lg d-none usis-logout-link" id="usis-apply-signout" href="#">Sign out</a>
 							<a class="btn btn-outline-primary btn-lg d-none" id="usis-apply-register-alt" href="page-register.html?next=apply/application.html">Create a different account</a>
 						</div>
@@ -92,7 +91,6 @@
 			if (el) el.setAttribute("href", href);
 		}
 		setHref("usis-apply-cta", registerHref);
-		setHref("usis-apply-signin", loginHref);
 		setHref("usis-apply-register-alt", registerHref);
 		setHref("usis-public-sign-in", loginHref);
 		function apiBase() {
@@ -113,8 +111,6 @@
 					cta.textContent = "Continue your application";
 					cta.setAttribute("href", hireNext);
 				}
-				var signIn = document.getElementById("usis-apply-signin");
-				if (signIn) signIn.classList.add("d-none");
 				var signOut = document.getElementById("usis-apply-signout");
 				if (signOut) signOut.classList.remove("d-none");
 				var regAlt = document.getElementById("usis-apply-register-alt");

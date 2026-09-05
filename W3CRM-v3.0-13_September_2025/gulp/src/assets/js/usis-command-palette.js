@@ -101,13 +101,35 @@
     }, 200);
   }
 
+  function bindHeaderSearch() {
+    var form = document.getElementById("usis-header-search-form");
+    var input = document.getElementById("usis-header-search-input");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        open();
+      });
+    }
+    if (input) {
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          open();
+        }
+      });
+    }
+  }
+
   function init() {
+    if (global.__USISCommandPaletteBound) return;
+    global.__USISCommandPaletteBound = true;
     document.addEventListener("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
         open();
       }
     });
+    bindHeaderSearch();
   }
 
   global.USISCommandPalette = { init: init, open: open };

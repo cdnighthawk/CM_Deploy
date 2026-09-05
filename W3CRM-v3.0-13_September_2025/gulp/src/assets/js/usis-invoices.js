@@ -61,6 +61,14 @@
 							if (row.subject && row.subject !== vendor) {
 								vendorCell += '<div class="small text-muted">' + X.esc(row.subject) + "</div>";
 							}
+							if (row.reminder_count) {
+								vendorCell +=
+									'<div class="small text-info">Also received ' +
+									X.esc(String(row.reminder_count)) +
+									" more time" +
+									(row.reminder_count === 1 ? "" : "s") +
+									"</div>";
+							}
 							var extras = [];
 							if (row.can_approve) {
 								extras.push({
@@ -125,16 +133,18 @@
 				var extra = item.truncated ? " More mail remains; auto-sync will continue." : "";
 				var errN = (item.errors && item.errors.length) || 0;
 				var updated = item.updated || 0;
+				var dups = item.duplicates || 0;
 				setStatus(
 					"Synced " +
 						(item.created || 0) +
 						" new invoice(s)" +
 						(updated ? "; updated " + updated + " forwarded invoice(s)" : "") +
+						(dups ? "; matched " + dups + " reminder(s) to invoices already on file" : "") +
 						"; skipped " +
 						(item.skipped || 0) +
 						"." +
 						extra,
-					errN > 0 && !(item.created || 0) && !updated
+					errN > 0 && !(item.created || 0) && !updated && !dups
 				);
 				loadList();
 			})

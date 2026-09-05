@@ -77,3 +77,49 @@ def test_extract_skips_internal_forwarded_from():
     )
     origin = extract_forwarded_origin("FW: Invoice", body, skip_domains={"gousis.com"})
     assert origin["email"] == "harmony@ddh.net"
+
+
+def test_extract_invoice_number_from_filename_not_oice():
+    from app.ap._parse import extract_invoice_fields
+
+    parsed = extract_invoice_fields("Invoice_PDFA08EC316.pdf", None)
+    assert parsed["invoice_number"] == "PDFA08EC316"
+
+
+def test_extract_invoice_date_from_pdf_text():
+    from app.ap._parse import extract_invoice_fields, normalize_invoice_number
+
+    parsed = extract_invoice_fields(
+        None,
+        "Invoice number 4412\nInvoice date 09/01/2026\nDue date September 30, 2026\nAmount due: $88.50",
+        include_dates=True,
+    )
+    assert parsed["invoice_number"] == "4412"
+    assert parsed["invoice_date"] == "2026-09-01"
+    assert parsed["due_date"] == "2026-09-30"
+    assert parsed["amount"] == "88.50"
+    assert normalize_invoice_number("INV-4412") == "4412"
+    assert normalize_invoice_number("4412") == "4412"
+
+
+def test_extract_pdf_text_reads_invoice_fields():
+    from app.ap._parse import extract_invoice_fields, extract_pdf_text, merge_invoice_fields
+
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+    except ImportError:
+        return
+    import io
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    c.drawString(72, 720, "Invoice number PDF-9901")
+    c.drawString(72, 700, "Invoice date 08/15/2026")
+    c.drawString(72, 680, "Amount due: $125.00")
+    c.save()
+    text = extract_pdf_text(buf.getvalue())
+    assert "PDF-9901" in text
+    parsed = merge_invoice_fields({}, extract_invoice_fields(None, text, include_dates=True))
+    assert parsed["invoice_number"] == "PDF-9901"
+    assert parsed["amount"] == "125.00"

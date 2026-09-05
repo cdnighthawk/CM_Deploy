@@ -116,11 +116,16 @@
 		}
 		wrap.innerHTML = events
 			.map(function (ev) {
+				var extra = "";
+				var details = ev.details || {};
+				if (details.subject) extra += " · " + details.subject;
+				if (details.match && details.match.length) extra += " · matched " + details.match.join(", ");
 				return (
 					'<div class="small mb-2"><strong>' +
 					X.esc((ev.action || "").replace(/_/g, " ")) +
 					"</strong> · " +
 					X.esc((ev.created_at || "").replace("T", " ").slice(0, 16)) +
+					X.esc(extra) +
 					"</div>"
 				);
 			})
@@ -172,6 +177,23 @@
 				rejectNote.classList.remove("d-none");
 			} else {
 				rejectNote.classList.add("d-none");
+			}
+		}
+		var reminderNote = document.getElementById("usis-apd-reminder-note");
+		if (reminderNote) {
+			var n = item.reminder_count || 0;
+			if (n) {
+				var when = (item.last_reminder_at || "").replace("T", " ").slice(0, 16);
+				reminderNote.textContent =
+					"This invoice was emailed again " +
+					n +
+					" more time" +
+					(n === 1 ? "" : "s") +
+					(when ? " (last " + when + ")" : "") +
+					". USIS matched the attachment and invoice number to this record instead of creating a duplicate.";
+				reminderNote.classList.remove("d-none");
+			} else {
+				reminderNote.classList.add("d-none");
 			}
 		}
 	}

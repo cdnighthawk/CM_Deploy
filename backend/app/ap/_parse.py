@@ -1,13 +1,15 @@
-"""Heuristic extraction of invoice fields from email subject/body."""
+"""Heuristic extraction of invoice fields from email subject/body and PDF text."""
 from __future__ import annotations
 
 import html as html_lib
+import io
 import re
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 _INVOICE_NO_RE = re.compile(
-    r"(?:invoice|inv)(?:\s*(?:number|no|#|num))?\s*[:#-]?\s*([A-Z0-9][-A-Z0-9/]{1,30})",
+    r"(?:invoice|inv)\b(?:\s*(?:number|no|#|num))?\s*[:#-]?\s*([A-Z0-9][-A-Z0-9/]{1,30})",
     re.IGNORECASE,
 )
 _PO_RE = re.compile(
@@ -25,6 +27,26 @@ _AMOUNT_RE = re.compile(
 _TOTAL_AMOUNT_RE = re.compile(
     r"(?:total|amount\s+due|balance\s+due|invoice\s+total)\s*[:#-]?\s*\$?\s*"
     r"([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})|[0-9]+\.[0-9]{2})",
+    re.IGNORECASE,
+)
+_INVOICE_DATE_RE = re.compile(
+    r"(?:invoice\s*date|date\s*of\s*invoice|inv(?:oice)?\s*date)\s*[:#-]?\s*"
+    r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|"
+    r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
+    r"\s+\d{1,2},?\s+\d{4})",
+    re.IGNORECASE,
+)
+_DUE_DATE_RE = re.compile(
+    r"(?:due\s*date|payment\s*due|pay\s*by)\s*[:#-]?\s*"
+    r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|"
+    r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
+    r"\s+\d{1,2},?\s+\d{4})",
+    re.IGNORECASE,
+)
+_FILE_INV_RE = re.compile(
+    r"(?:invoice|inv|bill)[-_ ]+#?([A-Z0-9][-A-Z0-9]{1,30})",
     re.IGNORECASE,
 )
 _EMAIL = r"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}"
@@ -133,13 +155,95 @@ def extract_forwarded_origin(
     }
 
 
-def extract_invoice_fields(subject: str | None, body: str | None) -> dict[str, Any]:
-    """Pull invoice number, amount, PO, and job tokens from email text."""
+def normalize_invoice_number(raw: str | None) -> str:
+    s = re.sub(r"[\s_]+", "", (raw or "").strip().upper())
+    s = re.sub(r"^(INVOICE|INV|BILL)[-#]*", "", s)
+    return s.strip("-#/")
+
+
+def _parse_date_token(raw: str) -> str | None:
+    token = (raw or "").strip()
+    if not token:
+        return None
+    token = token.replace(".", "/")
+    for fmt in (
+        "%m/%d/%Y",
+        "%m/%d/%y",
+        "%d/%m/%Y",
+        "%d/%m/%y",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%B %d, %Y",
+        "%B %d %Y",
+        "%b %d, %Y",
+        "%b %d %Y",
+    ):
+        try:
+            return datetime.strptime(token, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def extract_pdf_text(data: bytes, *, max_pages: int = 8) -> str:
+    """Best-effort text from an invoice PDF (native text; not OCR)."""
+    if not data or data[:4] != b"%PDF":
+        return ""
+    try:
+        import fitz
+
+        doc = fitz.open(stream=data, filetype="pdf")
+        try:
+            n = min(max_pages, doc.page_count)
+            parts = [doc[i].get_text() or "" for i in range(n)]
+        finally:
+            doc.close()
+        text = "\n".join(parts).strip()
+        if len(text) >= 12:
+            return text
+    except Exception:
+        pass
+    try:
+        from pypdf import PdfReader
+
+        reader = PdfReader(io.BytesIO(data))
+        parts = [(page.extract_text() or "") for page in reader.pages[:max_pages]]
+        return "\n".join(parts).strip()
+    except Exception:
+        return ""
+
+
+def merge_invoice_fields(email_fields: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:
+    """Overlay PDF (or filename) fields onto email-parsed fields. Extra wins when present."""
+    out = dict(email_fields or {})
+    for key in ("invoice_number", "po_number", "amount", "invoice_date", "due_date"):
+        val = extra.get(key)
+        if val:
+            out[key] = val
+    jobs = list(out.get("job_tokens") or [])
+    seen = {t.lower() for t in jobs}
+    for token in extra.get("job_tokens") or []:
+        if token and token.lower() not in seen:
+            jobs.append(token)
+            seen.add(token.lower())
+    out["job_tokens"] = jobs
+    sample = extra.get("text_sample")
+    if sample:
+        out["pdf_sample"] = str(sample)[:800]
+    return out
+
+
+def extract_invoice_fields(subject: str | None, body: str | None, *, include_dates: bool = False) -> dict[str, Any]:
+    """Pull invoice number, amount, PO, and job tokens from email or PDF text."""
     text = "\n".join(p for p in ((subject or "").strip(), _plain_text(body or "")) if p)
     invoice_number = None
     m = _INVOICE_NO_RE.search(text)
     if m:
         invoice_number = m.group(1).strip(" .-")
+    if not invoice_number:
+        m = _FILE_INV_RE.search(text)
+        if m:
+            invoice_number = m.group(1).strip(" .-")
 
     po_number = None
     m = _PO_RE.search(text)
@@ -162,12 +266,24 @@ def extract_invoice_fields(subject: str | None, body: str | None) -> dict[str, A
         if amounts:
             amount = max(amounts)
 
+    invoice_date = None
+    due_date = None
+    if include_dates:
+        m = _INVOICE_DATE_RE.search(text)
+        if m:
+            invoice_date = _parse_date_token(m.group(1))
+        m = _DUE_DATE_RE.search(text)
+        if m:
+            due_date = _parse_date_token(m.group(1))
+
     origin = extract_forwarded_origin(subject, body)
     return {
         "invoice_number": invoice_number,
         "po_number": po_number,
         "job_tokens": job_tokens,
         "amount": str(amount) if amount is not None else None,
+        "invoice_date": invoice_date,
+        "due_date": due_date,
         "text_sample": text[:800],
         "forwarded": origin,
     }

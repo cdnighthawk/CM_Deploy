@@ -348,15 +348,16 @@ def test_ingest_uses_original_vendor_on_forwarded_mail(flask_app):
         db.session.add(vendor)
         db.session.commit()
         vendor_id = vendor.id
+        inv_no = f"ADS{unique[-4:].upper()}18"
         detail = {
             "id": f"graph-fw-{uuid.uuid4().hex}",
-            "subject": f"FW: Invoice 15318 from Accurate Door Solutions {unique}",
+            "subject": f"FW: Invoice {inv_no} from Accurate Door Solutions {unique}",
             "from": {"address": "charles@gousis.com", "name": "Charles Dossett"},
             "preview": "From: Harmony King <harmony@ddh.net>",
             "body_content": (
                 "From: Harmony King &lt;harmony@ddh.net&gt;\n"
                 "Sent: Friday, June 5, 2026 7:35 AM\n"
-                "Amount Due: $247,711.00\n"
+                f"Amount Due: $247,711.00\n"
             ),
             "attachments": [],
             "received": "2026-09-05T14:26:18Z",
@@ -369,7 +370,7 @@ def test_ingest_uses_original_vendor_on_forwarded_mail(flask_app):
         assert row.from_email == "harmony@ddh.net"
         assert row.from_name == f"Accurate Door Solutions {unique}"
         assert row.vendor_company_id == vendor_id
-        assert row.invoice_number == "15318"
+        assert row.invoice_number == inv_no
         assert row.amount == Decimal("247711.00")
 
 
@@ -378,9 +379,10 @@ def test_employee_forward_without_fw_prefix_uses_original_sender(flask_app):
     from app.models.vendor_invoice import VendorInvoice
 
     with flask_app.app_context():
+        inv_no = f"FW{uuid.uuid4().hex[:8].upper()}"
         detail = {
             "id": f"graph-fw-{uuid.uuid4().hex}",
-            "subject": "Invoice 15318 from Accurate Door Solutions, Inc.",
+            "subject": f"Invoice {inv_no} from Accurate Door Solutions, Inc.",
             "from": {"address": "portega@gousis.com", "name": "Pamela Ortega"},
             "preview": "",
             "body_content": (
@@ -398,3 +400,166 @@ def test_employee_forward_without_fw_prefix_uses_original_sender(flask_app):
         assert row is not None
         assert row.from_email == "harmony@ddh.net"
         assert row.from_name == "Accurate Door Solutions, Inc."
+
+
+def _invoice_pdf_bytes(text: str) -> bytes:
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+    except ImportError:
+        return b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n" + text.encode("utf-8")
+    import io as _io
+
+    buf = _io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    y = 720
+    for line in text.split("\n"):
+        c.drawString(72, y, line[:90])
+        y -= 16
+    c.save()
+    return buf.getvalue()
+
+
+def test_ingest_matches_weekly_reminder_to_existing_invoice(flask_app):
+    from sqlalchemy import func, select
+
+    from app.ap._mailbox import ingest_graph_message
+    from app.models.vendor_invoice import VendorInvoice
+
+    with flask_app.app_context():
+        unique = uuid.uuid4().hex[:8]
+        vendor = Company(
+            name=f"Weekly Vendor {unique}",
+            company_type="vendor",
+            email=f"ap-{unique}@vendor.test",
+        )
+        db.session.add(vendor)
+        db.session.commit()
+        inv_no = f"WV{unique.upper()}"
+        first = {
+            "id": f"graph-new-{uuid.uuid4().hex}",
+            "subject": f"Invoice {inv_no}",
+            "from": {"address": f"ap-{unique}@vendor.test", "name": f"Weekly Vendor {unique}"},
+            "preview": "",
+            "body_content": f"Invoice {inv_no}. Amount due: $1,500.00",
+            "attachments": [],
+            "received": "2026-09-01T12:00:00Z",
+        }
+        original = ingest_graph_message(first, mailbox="invoices@gousis.com")
+        db.session.commit()
+        assert original is not None
+        original_id = original.id
+
+        reminder = {
+            "id": f"graph-rem-{uuid.uuid4().hex}",
+            "subject": f"Reminder: Invoice {inv_no} is still unpaid",
+            "from": {"address": f"ap-{unique}@vendor.test", "name": f"Weekly Vendor {unique}"},
+            "preview": "",
+            "body_content": f"Invoice {inv_no}. Amount due: $1,500.00",
+            "attachments": [],
+            "received": "2026-09-08T12:00:00Z",
+        }
+        matched = ingest_graph_message(reminder, mailbox="invoices@gousis.com")
+        db.session.commit()
+        assert matched is not None
+        assert matched.id == original_id
+        row = db.session.get(VendorInvoice, original_id)
+        assert row is not None
+        assert (row.parse_meta or {}).get("reminder_count") == 1
+        count = db.session.scalar(
+            select(func.count()).select_from(VendorInvoice).where(VendorInvoice.invoice_number == inv_no)
+        )
+        assert count == 1
+
+
+def test_ingest_matches_same_pdf_attachment(flask_app):
+    from app.ap._mailbox import ingest_graph_message
+    from app.models.vendor_invoice import VendorInvoice
+
+    with flask_app.app_context():
+        unique = uuid.uuid4().hex[:8]
+        inv_no = f"PDF{unique.upper()}"
+        pdf = _invoice_pdf_bytes(f"Invoice number {inv_no}\nInvoice date 09/01/2026\nAmount due: $88.00")
+        first = {
+            "id": f"graph-pdf-{uuid.uuid4().hex}",
+            "subject": "Your invoice is attached",
+            "from": {"address": f"bills-{unique}@vendor.test", "name": "PDF Vendor"},
+            "preview": "",
+            "body_content": "Please see attached.",
+            "attachments": [
+                {
+                    "id": "att-1",
+                    "name": f"Invoice_{inv_no}.pdf",
+                    "content_type": "application/pdf",
+                    "size": len(pdf),
+                    "is_inline": False,
+                    "content_bytes": pdf,
+                }
+            ],
+            "received": "2026-09-01T12:00:00Z",
+        }
+        original = ingest_graph_message(first, mailbox="invoices@gousis.com")
+        db.session.commit()
+        assert original is not None
+        assert original.invoice_number == inv_no
+        original_id = original.id
+
+        reminder = {
+            "id": f"graph-pdf2-{uuid.uuid4().hex}",
+            "subject": "Weekly copy of your invoice",
+            "from": {"address": f"bills-{unique}@vendor.test", "name": "PDF Vendor"},
+            "preview": "",
+            "body_content": "Attached again.",
+            "attachments": [
+                {
+                    "id": "att-2",
+                    "name": f"Invoice_{inv_no}.pdf",
+                    "content_type": "application/pdf",
+                    "size": len(pdf),
+                    "is_inline": False,
+                    "content_bytes": pdf,
+                }
+            ],
+            "received": "2026-09-08T12:00:00Z",
+        }
+        matched = ingest_graph_message(reminder, mailbox="invoices@gousis.com")
+        db.session.commit()
+        assert matched is not None
+        assert matched.id == original_id
+        row = db.session.get(VendorInvoice, original_id)
+        assert (row.parse_meta or {}).get("reminder_count") == 1
+        assert row.parse_meta.get("attachment_sha256")
+
+
+def test_ingest_different_invoice_numbers_stay_separate(flask_app):
+    from app.ap._mailbox import ingest_graph_message
+
+    with flask_app.app_context():
+        unique = uuid.uuid4().hex[:8]
+        first = ingest_graph_message(
+            {
+                "id": f"graph-a-{uuid.uuid4().hex}",
+                "subject": f"Invoice A{unique.upper()}",
+                "from": {"address": f"split-{unique}@vendor.test", "name": "Split Co"},
+                "preview": "",
+                "body_content": f"Invoice A{unique.upper()}. Amount due: $10.00",
+                "attachments": [],
+                "received": "2026-09-01T12:00:00Z",
+            },
+            mailbox="invoices@gousis.com",
+        )
+        second = ingest_graph_message(
+            {
+                "id": f"graph-b-{uuid.uuid4().hex}",
+                "subject": f"Invoice B{unique.upper()}",
+                "from": {"address": f"split-{unique}@vendor.test", "name": "Split Co"},
+                "preview": "",
+                "body_content": f"Invoice B{unique.upper()}. Amount due: $10.00",
+                "attachments": [],
+                "received": "2026-09-02T12:00:00Z",
+            },
+            mailbox="invoices@gousis.com",
+        )
+        db.session.commit()
+        assert first is not None and second is not None
+        assert first.id != second.id

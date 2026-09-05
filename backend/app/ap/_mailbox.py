@@ -5,7 +5,7 @@ import os
 import re
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -25,6 +25,14 @@ from ..extensions import db
 from ..models import Commitment, Company, Contact, Document, Project
 from ..models.vendor_invoice import VendorInvoice, VendorInvoiceFile
 from ..services.object_storage import UploadCategory, save_upload
+from ._dedupe import (
+    file_sha256,
+    find_duplicate_invoice,
+    message_already_recorded,
+    parse_attachments,
+    record_duplicate_email,
+    remember_attachment_hashes,
+)
 from ._parse import (
     extract_forwarded_origin,
     extract_invoice_fields,
@@ -203,7 +211,7 @@ def _store_attachment(
     data: bytes,
     is_primary: bool,
     uploaded_by: UUID | None,
-) -> None:
+) -> str:
     raw_name = secure_filename(filename or "attachment") or "attachment"
     ext = ""
     if "." in raw_name:
@@ -232,6 +240,9 @@ def _store_attachment(
             content_type=(content_type or "")[:120] or None,
         )
     )
+    digest = file_sha256(data)
+    remember_attachment_hashes(invoice, [digest])
+    return digest
 
 
 def _message_fields(detail: dict[str, Any]) -> dict[str, Any]:
@@ -324,6 +335,101 @@ def _enrich_from_detail(invoice: VendorInvoice, detail: dict[str, Any]) -> bool:
     return changed
 
 
+def _iso_date(raw: Any) -> date | None:
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(str(raw).strip()[:10])
+    except ValueError:
+        return None
+
+
+def _collect_attachments(detail: dict[str, Any], *, mailbox: str, message_id: str) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for att in detail.get("attachments") or []:
+        if not isinstance(att, dict):
+            continue
+        name = str(att.get("name") or "attachment")
+        ctype = str(att.get("content_type") or "")
+        size = int(att.get("size") or 0)
+        if not _keep_attachment(name, ctype, size, bool(att.get("is_inline"))):
+            continue
+        if size and size > _ATTACH_MAX_BYTES:
+            continue
+        att_id = str(att.get("id") or "")
+        data = att.get("content_bytes")
+        fname = name
+        ftype = ctype
+        if not isinstance(data, (bytes, bytearray)):
+            if not att_id:
+                continue
+            try:
+                data, fname, ftype = download_mailbox_attachment(
+                    mailbox=mailbox, message_id=message_id, attachment_id=att_id
+                )
+            except GraphMailError:
+                continue
+            except Exception:
+                current_app.logger.exception("Invoice attachment download failed for %s", message_id)
+                continue
+        payload = bytes(data or b"")
+        if not payload:
+            continue
+        out.append(
+            {
+                "name": fname or name,
+                "content_type": ftype or ctype,
+                "data": payload,
+                "sha256": file_sha256(payload),
+            }
+        )
+    return out
+
+
+def _apply_attachment_scan(fields: dict[str, Any], files: list[dict[str, Any]]) -> None:
+    from ._parse import merge_invoice_fields
+
+    extra = parse_attachments(files)
+    if not extra:
+        return
+    merged = merge_invoice_fields(fields["parsed"], extra)
+    merged["forwarded"] = fields["parsed"].get("forwarded")
+    merged["envelope_from"] = fields["parsed"].get("envelope_from")
+    merged["envelope_from_name"] = fields["parsed"].get("envelope_from_name")
+    fields["parsed"] = merged
+    if merged.get("amount"):
+        try:
+            fields["amount"] = Decimal(str(merged["amount"]))
+        except Exception:
+            pass
+
+
+def _save_kept_files(
+    invoice: VendorInvoice,
+    files: list[dict[str, Any]],
+    *,
+    actor_user_id: UUID | None,
+    skip_hashes: set[str] | None = None,
+) -> int:
+    stored = 0
+    skip = skip_hashes or set()
+    has_primary = any(x.is_primary for x in (invoice.files or []))
+    for item in files:
+        digest = str(item.get("sha256") or "")
+        if digest and digest in skip:
+            continue
+        _store_attachment(
+            invoice=invoice,
+            filename=str(item.get("name") or "attachment"),
+            content_type=str(item.get("content_type") or ""),
+            data=item["data"],
+            is_primary=not has_primary and stored == 0,
+            uploaded_by=actor_user_id,
+        )
+        stored += 1
+    return stored
+
+
 def ingest_graph_message(
     detail: dict[str, Any],
     *,
@@ -338,8 +444,50 @@ def ingest_graph_message(
         existing = db.session.scalar(select(VendorInvoice).where(VendorInvoice.graph_message_id == mid))
     if existing is not None:
         return existing if _enrich_from_detail(existing, detail) else None
+    if message_already_recorded(mid):
+        return None
 
     fields = _message_fields(detail)
+    files = _collect_attachments(detail, mailbox=mailbox, message_id=mid)
+    _apply_attachment_scan(fields, files)
+
+    hashes = [str(f.get("sha256") or "") for f in files if f.get("sha256")]
+    duplicate, reasons = find_duplicate_invoice(
+        invoice_number=fields["parsed"].get("invoice_number"),
+        vendor_id=fields["vendor_id"],
+        from_email=fields["from_email"],
+        amount=fields["amount"],
+        hashes=hashes,
+    )
+    if duplicate is not None:
+        from ._events import record_event
+
+        known = {str(h) for h in ((duplicate.parse_meta or {}).get("attachment_sha256") or []) if h}
+        added = _save_kept_files(duplicate, files, actor_user_id=actor_user_id, skip_hashes=known)
+        record_duplicate_email(
+            duplicate,
+            graph_message_id=mid,
+            subject=fields["subject"],
+            from_email=fields["from_email"],
+            received_at=_parse_dt(detail.get("received")),
+            match_reasons=reasons,
+            parsed=fields["parsed"],
+        )
+        record_event(
+            duplicate,
+            actor_user_id,
+            "duplicate_received",
+            {
+                "source": "email",
+                "mailbox": mailbox,
+                "subject": fields["subject"],
+                "from_email": fields["from_email"],
+                "match": reasons,
+                "attachment_count": added,
+            },
+        )
+        return duplicate
+
     commitment_id, commitment_project_id = _match_commitment(
         fields["parsed"].get("po_number"), fields["vendor_id"]
     )
@@ -363,6 +511,8 @@ def ingest_graph_message(
         project_id=project_id,
         commitment_id=commitment_id,
         invoice_number=fields["parsed"].get("invoice_number"),
+        invoice_date=_iso_date(fields["parsed"].get("invoice_date")),
+        due_date=_iso_date(fields["parsed"].get("due_date")),
         amount=fields["amount"],
         po_number=fields["parsed"].get("po_number"),
         parse_meta=fields["parsed"],
@@ -371,38 +521,7 @@ def ingest_graph_message(
     )
     db.session.add(invoice)
     db.session.flush()
-
-    attachments = [a for a in (detail.get("attachments") or []) if isinstance(a, dict)]
-    stored = 0
-    for att in attachments:
-        name = str(att.get("name") or "attachment")
-        ctype = str(att.get("content_type") or "")
-        size = int(att.get("size") or 0)
-        if not _keep_attachment(name, ctype, size, bool(att.get("is_inline"))):
-            continue
-        if size and size > _ATTACH_MAX_BYTES:
-            continue
-        att_id = str(att.get("id") or "")
-        if not att_id:
-            continue
-        try:
-            data, fname, ftype = download_mailbox_attachment(
-                mailbox=mailbox, message_id=mid, attachment_id=att_id
-            )
-            _store_attachment(
-                invoice=invoice,
-                filename=fname or name,
-                content_type=ftype or ctype,
-                data=data,
-                is_primary=stored == 0,
-                uploaded_by=actor_user_id,
-            )
-            stored += 1
-        except GraphMailError:
-            continue
-        except Exception:
-            current_app.logger.exception("Invoice attachment store failed for %s", mid)
-            continue
+    stored = _save_kept_files(invoice, files, actor_user_id=actor_user_id)
 
     from ._events import record_event
 
@@ -416,6 +535,7 @@ def ingest_graph_message(
             "attachment_count": stored,
             "auto_project": bool(project_id),
             "auto_vendor": bool(fields["vendor_id"]),
+            "scanned_pdf": bool(fields["parsed"].get("pdf_sample")),
         },
     )
     return invoice
@@ -456,6 +576,7 @@ def sync_invoice_mailbox(
             "scanned": 0,
             "created": 0,
             "updated": 0,
+            "duplicates": 0,
             "skipped": 0,
             "errors": [],
             "busy": True,
@@ -486,6 +607,7 @@ def _sync_invoice_mailbox_locked(
     listing = list_mailbox_messages(mailbox=mailbox, folder="inbox", top=top)
     created = 0
     updated = 0
+    duplicates = 0
     skipped = 0
     truncated = False
     errors: list[str] = []
@@ -499,6 +621,9 @@ def _sync_invoice_mailbox_locked(
             continue
         existing = db.session.scalar(select(VendorInvoice).where(VendorInvoice.graph_message_id == mid))
         if existing is not None and not _should_enrich(existing):
+            skipped += 1
+            continue
+        if existing is None and message_already_recorded(mid):
             skipped += 1
             continue
         if created >= limit_new and not (existing is not None and _should_enrich(existing)):
@@ -515,6 +640,12 @@ def _sync_invoice_mailbox_locked(
                     continue
                 if existing is not None:
                     updated += 1
+                elif str(invoice.graph_message_id or "") != mid:
+                    duplicates += 1
+                    try:
+                        mark_mailbox_message_read(mailbox=mailbox, message_id=mid, is_read=True)
+                    except GraphMailError:
+                        pass
                 else:
                     created += 1
                     try:
@@ -533,6 +664,7 @@ def _sync_invoice_mailbox_locked(
         "scanned": len(listing.get("items") or []),
         "created": created,
         "updated": updated,
+        "duplicates": duplicates,
         "skipped": skipped,
         "errors": errors,
         "busy": False,

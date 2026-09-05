@@ -181,6 +181,8 @@ def serialize_invoice(invoice: VendorInvoice, cu: CurrentUser, *, include_events
         "rejection_reason": invoice.rejection_reason,
         "paid_at": invoice.paid_at.isoformat() if invoice.paid_at else None,
         "payment_ref": invoice.payment_ref,
+        "reminder_count": int((invoice.parse_meta or {}).get("reminder_count") or 0),
+        "last_reminder_at": (invoice.parse_meta or {}).get("last_reminder_at"),
         "files": [_serialize_file(f) for f in files],
         "created_at": invoice.created_at.isoformat() if invoice.created_at else None,
         "can_submit": _can_write(cu) and invoice.status in EDITABLE_STATUSES,

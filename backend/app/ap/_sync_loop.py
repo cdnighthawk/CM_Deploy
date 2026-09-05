@@ -46,7 +46,7 @@ def start_invoice_mailbox_sync_loop(app: Flask) -> None:
                     else:
                         result = sync_invoice_mailbox(actor_user_id=None)
                         db.session.commit()
-                        if result.get("created") or result.get("errors"):
+                        if result.get("created") or result.get("duplicates") or result.get("errors"):
                             app.logger.info("invoice mailbox auto-sync %s", result)
             except Exception:
                 try:

@@ -11,6 +11,7 @@
 	<!-- Start - Style CSS -->
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260905b" rel="stylesheet">
 	<!-- End - Style CSS -->
 	<style>
 		#usis-projects-table { font-size: 0.8125rem; }
@@ -24,6 +25,13 @@
 		#usis-projects-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
 		#usis-projects-table th.usis-bulk-col,
 		#usis-projects-table td.usis-bulk-col { width: 28px; max-width: 28px; }
+		#usis-projects-table.usis-hide-city th:nth-child(4),
+		#usis-projects-table.usis-hide-city td:nth-child(4),
+		#usis-projects-table.usis-hide-state th:nth-child(5),
+		#usis-projects-table.usis-hide-state td:nth-child(5),
+		#usis-projects-table.usis-hide-type th:nth-child(7),
+		#usis-projects-table.usis-hide-type td:nth-child(7) { display: none; }
+		#usis-projects-tbody tr[data-id] { cursor: pointer; }
 	</style>
 
 </head>
@@ -52,36 +60,24 @@
 				
 			</div>
 
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-info shadow-none mb-0">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-							<div class="me-2">
-								<h6 class="mb-1" data-i18n="Construction — Projects">Construction — Projects</h6>
-								
-							</div>
-							<div class="text-nowrap small">
-								<a href="project-detail.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="punch-create.html">Next</a>
-							</div>
-						</div>
-						
-					</div>
-				</div>
-			</div>
-
 			<div class="container-fluid">
 
 				<div class="col-xl-12">
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<p class="small text-muted mb-0 d-none" id="usis-projects-scope-hint"></p>
+						<div class="usis-seg" id="usis-projects-status-chips" role="tablist">
+							<button type="button" class="btn btn-sm nav-link active" data-status="active" aria-selected="true">Active</button>
+							<button type="button" class="btn btn-sm nav-link" data-status="complete" aria-selected="false">Complete</button>
+							<button type="button" class="btn btn-sm nav-link" data-status="all" aria-selected="false">All</button>
+						</div>
 						<div class="input-group message-search-area width200 w-xs-100">
 							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state" data-i18n-placeholder="Filter by #, name, city, or state">
 							<div class="input-group-append">
 								<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-projects-filter-clear" aria-label="Clear filter"><i class="flaticon-381-search-2"></i></button>
 							</div>
 						</div>
-						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Reload project list">
-							<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Reload from API">Reload from API</span>
+						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Refresh project list">
+							<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Refresh">Refresh</span>
 						</button>
 					</div>
 				</div>
@@ -156,6 +152,7 @@
 		var tbody = document.getElementById("usis-projects-tbody");
 		var filterInput = document.getElementById("usis-projects-filter");
 		var lastItems = [];
+		var statusFilter = "active";
 
 		function t(key) {
 			return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
@@ -191,10 +188,10 @@
 			var numInner = pidEnc
 				? '<a class="link-primary text-decoration-none" href="' + detailHref + '">' + num + "</a>"
 				: num;
-			var city = esc(row.city || "—");
-			var stAbbr = esc(row.state || "—");
-			var st = esc(row.status || "—");
-			var pt = esc(row.project_type || "—");
+			var st = esc(humanizeStatus(row.status));
+			var pt = esc(humanizeStatus(row.project_type));
+			var cityCell = row.city ? esc(row.city) : '<span class="text-muted">—</span>';
+			var stAbbr = row.state ? esc(row.state) : '<span class="text-muted">—</span>';
 			var jobBtn = jobHref
 				? '<a class="btn btn-square btn-sm btn-outline-primary rounded" href="' +
 					jobHref +
@@ -218,7 +215,7 @@
 				bulk +
 				'<td class="text-nowrap">' + numInner + "</td>" +
 				"<td>" + nameInner + "</td>" +
-				'<td class="text-nowrap">' + city + "</td>" +
+				'<td class="text-nowrap">' + cityCell + "</td>" +
 				'<td class="text-nowrap">' + stAbbr + "</td>" +
 				'<td class="text-nowrap">' + st + "</td>" +
 				'<td class="text-nowrap">' + pt + "</td>" +
@@ -227,12 +224,42 @@
 			);
 		}
 
+		function humanizeStatus(raw) {
+			var s = String(raw == null ? "" : raw).replace(/_/g, " ").trim();
+			if (!s) return "—";
+			return s.replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+		}
+
+		function matchesStatus(row) {
+			var st = String(row.status || "").toLowerCase();
+			if (statusFilter === "all") return true;
+			if (statusFilter === "complete") return st === "complete" || st === "completed";
+			return st !== "complete" && st !== "completed" && st !== "archived" && st !== "cancelled" && st !== "canceled";
+		}
+
+		function updateColumnVisibility(rows) {
+			var table = document.getElementById("usis-projects-table");
+			if (!table) return;
+			var hasCity = rows.some(function (r) { return String(r.city || "").trim(); });
+			var hasState = rows.some(function (r) { return String(r.state || "").trim(); });
+			var types = {};
+			rows.forEach(function (r) {
+				var t = String(r.project_type || "").trim().toLowerCase();
+				if (t) types[t] = true;
+			});
+			var typeKeys = Object.keys(types);
+			table.classList.toggle("usis-hide-city", !hasCity);
+			table.classList.toggle("usis-hide-state", !hasState);
+			table.classList.toggle("usis-hide-type", typeKeys.length <= 1);
+		}
+
 		function applyFilter() {
 			if (!tbody || !lastItems.length) return;
 			var q = (filterInput && filterInput.value || "").trim().toLowerCase();
-			var rows = lastItems;
+			var rows = lastItems.filter(matchesStatus);
+			updateColumnVisibility(rows);
 			if (q) {
-				rows = lastItems.filter(function (r) {
+				rows = rows.filter(function (r) {
 					var n = (r.number || "").toLowerCase();
 					var nm = (r.name || "").toLowerCase();
 					var c = (r.city || "").toLowerCase();
@@ -408,6 +435,30 @@
 			clr.addEventListener("click", function () {
 				if (filterInput) filterInput.value = "";
 				applyFilter();
+			});
+		}
+		var chips = document.getElementById("usis-projects-status-chips");
+		if (chips) {
+			chips.addEventListener("click", function (e) {
+				var b = e.target.closest("[data-status]");
+				if (!b) return;
+				chips.querySelectorAll("[data-status]").forEach(function (el) {
+					el.classList.toggle("active", el === b);
+					el.setAttribute("aria-selected", el === b ? "true" : "false");
+				});
+				statusFilter = b.getAttribute("data-status") || "active";
+				applyFilter();
+			});
+		}
+		if (tbody) {
+			tbody.addEventListener("click", function (e) {
+				if (e.target.closest("a, button, input, .dropdown, label")) return;
+				var tr = e.target.closest("tr[data-id]");
+				if (!tr) return;
+				var a = tr.querySelector("a.link-primary");
+				if (a && a.getAttribute("href") && a.getAttribute("href") !== "javascript:void(0);") {
+					window.location.href = a.getAttribute("href");
+				}
 			});
 		}
 	})();

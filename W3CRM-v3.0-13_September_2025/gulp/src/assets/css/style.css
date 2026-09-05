@@ -14269,6 +14269,11 @@ body.usis-has-bottomnav .footer {
   display: none !important;
 }
 
+/* Page title already names the screen — do not repeat it as the last crumb. */
+.page-title .breadcrumb > .breadcrumb-item.active {
+  display: none;
+}
+
 /* Hide template vendor docs promo in sidebar footer. */
 .deznav-footer {
   display: none !important;

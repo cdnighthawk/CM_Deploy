@@ -116,9 +116,6 @@
 							</a>
 						</div>
 						<div id="usis-login-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>
-						<p class="text-center small mt-3 mb-0">
-							<span data-i18n="Need a staff account?">Need a staff account?</span> <a class="btn-link text-primary" id="usis-login-register-link" href="page-register.html" data-i18n="Create one">Create one</a>
-						</p>
 					</form>
 					<div class="card border-primary shadow-sm mt-4 mb-0">
 						<div class="card-body text-center py-4">
@@ -127,7 +124,7 @@
 						</div>
 					</div>
 					</div>
-					<div id="usis-login-applicant" class="d-none">
+					<div id="usis-login-applicant" class="d-none" hidden aria-hidden="true">
 						<div class="text-center mb-4">
 							<div class="brand-logo mb-3">
 								<img class="usis-login-logo img-fluid" style="max-height:5rem;width:auto;object-fit:contain;"
@@ -173,7 +170,7 @@
 		}
 		var LOGIN_ERR = {
 			required: t("Email or username and password are required."),
-			invalid: t("Invalid email, username, or password. On Render, create a user with the bootstrap script or register first.")
+			invalid: t("Invalid email, username, or password. Ask an administrator if you need a staff account.")
 		};
 		var MS_ERR = {
 			not_configured: "Microsoft sign-in is not enabled on this server.",
@@ -202,7 +199,11 @@
 			var staff = document.getElementById("usis-login-staff");
 			var applicant = document.getElementById("usis-login-applicant");
 			if (staff) staff.classList.add("d-none");
-			if (applicant) applicant.classList.remove("d-none");
+			if (applicant) {
+				applicant.classList.remove("d-none");
+				applicant.removeAttribute("hidden");
+				applicant.setAttribute("aria-hidden", "false");
+			}
 			var emailEl = document.getElementById("usis-login-applicant-email");
 			if (emailEl && user && user.email) emailEl.textContent = user.email;
 			fetch(apiBase() + "/api/v1/hr/me/hire-wizard", { credentials: "include", headers: { Accept: "application/json" } })
@@ -216,11 +217,6 @@
 					if (cont) cont.setAttribute("href", window.USISHireCore.resumeStepUrl(w));
 				})
 				.catch(function () {});
-		}
-		var reg = document.getElementById("usis-login-register-link");
-		if (reg) {
-			var nxt = new URLSearchParams(window.location.search).get("next") || "";
-			reg.href = "page-register.html" + (nxt ? "?next=" + encodeURIComponent(nxt) : "");
 		}
 		fetch(apiBase() + "/api/v1/auth/status", { credentials: "include", headers: { Accept: "application/json" } })
 			.then(function (r) { return r.json(); })

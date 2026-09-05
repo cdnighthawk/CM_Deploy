@@ -8,6 +8,7 @@
 
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260905c" rel="stylesheet">
 
 </head>
 <body>
@@ -32,7 +33,7 @@
 			<div class="container-fluid">
 				<div class="usis-page-header pt-0">
 					<div class="usis-page-header__text">
-						<p class="text-muted small mb-0">RFPs, submittals, POs, and hours.</p>
+						<p class="text-muted small mb-0">Work that needs a decision.</p>
 					</div>
 				</div>
 			</div>
@@ -41,44 +42,47 @@
 
 				<div class="row g-3 mb-3">
 					<div class="col-xl-3 col-sm-6">
-						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
-							<div class="usis-kpi__label">Open RFPs</div>
-							<div class="usis-kpi__value" id="usis-dash-open-rfps">—</div>
-							<p class="text-muted small mb-0"><a href="usis-rfp-list.html">RFP list</a></p>
-						</div></div>
+						<a class="card mb-0 usis-kpi text-decoration-none text-body h-100" href="usis-rfp-list.html">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Open RFPs</div>
+								<div class="usis-kpi__value" id="usis-dash-open-rfps">—</div>
+								<p class="text-muted small mb-0">Open list</p>
+							</div>
+						</a>
 					</div>
 					<div class="col-xl-3 col-sm-6">
-						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
-							<div class="usis-kpi__label">QC aging &gt; 48h</div>
-							<div class="usis-kpi__value" id="usis-dash-qc-aging">—</div>
-						</div></div>
+						<a class="card mb-0 usis-kpi text-decoration-none text-body h-100" href="usis-submittal-register.html?overdue=1">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">QC aging &gt; 48h</div>
+								<div class="usis-kpi__value" id="usis-dash-qc-aging">—</div>
+								<p class="text-muted small mb-0">Open register</p>
+							</div>
+						</a>
 					</div>
+					<div class="col-xl-3 col-sm-6">
+						<a class="card mb-0 usis-kpi text-decoration-none text-body h-100" href="usis-submittal-register.html?overdue=1">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Submittals overdue</div>
+								<div class="usis-kpi__value" id="usis-dash-sub-overdue">—</div>
+								<p class="text-muted small mb-0">Open register</p>
+							</div>
+						</a>
+					</div>
+					<div class="col-xl-3 col-sm-6">
+						<a class="card mb-0 usis-kpi text-decoration-none text-body h-100" href="usis-procurement.html">
+							<div class="card-body p-3">
+								<div class="usis-kpi__label">Unreleased blocking POs</div>
+								<div class="usis-kpi__value" id="usis-dash-sub-block">—</div>
+								<p class="text-muted small mb-0"><span id="usis-dash-po-transit">—</span> POs in transit</p>
+							</div>
+						</a>
+					</div>
+				</div>
+				<div class="row g-3 mb-3 d-none" id="usis-dash-kpi-secondary">
 					<div class="col-xl-3 col-sm-6">
 						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
 							<div class="usis-kpi__label">AI critical</div>
 							<div class="usis-kpi__value" id="usis-dash-ai-critical">—</div>
-						</div></div>
-					</div>
-					<div class="col-xl-3 col-sm-6">
-						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
-							<div class="usis-kpi__label">POs in transit</div>
-							<div class="usis-kpi__value" id="usis-dash-po-transit">—</div>
-							<p class="text-muted small mb-0"><span id="usis-dash-po-late">—</span> late vs ship date</p>
-						</div></div>
-					</div>
-				</div>
-				<div class="row g-3 mb-3">
-					<div class="col-xl-3 col-sm-6">
-						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
-							<div class="usis-kpi__label">Submittals overdue</div>
-							<div class="usis-kpi__value" id="usis-dash-sub-overdue">—</div>
-							<p class="text-muted small mb-0"><a href="usis-submittal-register.html?overdue=1">Open register</a></p>
-						</div></div>
-					</div>
-					<div class="col-xl-3 col-sm-6">
-						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
-							<div class="usis-kpi__label">In QC &gt; 48 hours</div>
-							<div class="usis-kpi__value" id="usis-dash-sub-qc48">—</div>
 						</div></div>
 					</div>
 					<div class="col-xl-3 col-sm-6">
@@ -90,13 +94,49 @@
 					</div>
 					<div class="col-xl-3 col-sm-6">
 						<div class="card mb-0 usis-kpi"><div class="card-body p-3">
-							<div class="usis-kpi__label">Unreleased blocking POs</div>
-							<div class="usis-kpi__value" id="usis-dash-sub-block">—</div>
+							<div class="usis-kpi__label">POs late vs ship date</div>
+							<div class="usis-kpi__value" id="usis-dash-po-late">—</div>
 						</div></div>
 					</div>
 				</div>
 
-				<div class="row mt-3">
+				<div class="row g-3 mb-3" id="usis-dash-queues">
+					<div class="col-lg-4">
+						<div class="card h-100 mb-0">
+							<div class="card-header py-2 d-flex justify-content-between align-items-center">
+								<h4 class="card-title mb-0">Open RFPs</h4>
+								<a class="small" href="usis-rfp-list.html">View all</a>
+							</div>
+							<div class="list-group list-group-flush" id="usis-dash-queue-rfps">
+								<div class="list-group-item text-muted small">Loading…</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-4">
+						<div class="card h-100 mb-0">
+							<div class="card-header py-2 d-flex justify-content-between align-items-center">
+								<h4 class="card-title mb-0">Overdue submittals</h4>
+								<a class="small" href="usis-submittal-register.html?overdue=1">View all</a>
+							</div>
+							<div class="list-group list-group-flush" id="usis-dash-queue-subs">
+								<div class="list-group-item text-muted small">Loading…</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-4">
+						<div class="card h-100 mb-0">
+							<div class="card-header py-2 d-flex justify-content-between align-items-center">
+								<h4 class="card-title mb-0">Blocking POs</h4>
+								<a class="small" href="usis-procurement.html">View all</a>
+							</div>
+							<div class="list-group list-group-flush" id="usis-dash-queue-pos">
+								<div class="list-group-item text-muted small">Loading…</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="row mt-3 is-empty" id="usis-hours-project-wrap">
 					<div class="col-12">
 						<div class="card overflow-hidden mb-0">
 							<div class="card-header border-0 pb-0 flex-wrap">
@@ -107,6 +147,7 @@
 									<button class="btn btn-sm nav-link active" data-period="month" type="button" role="tab" aria-selected="true">Month</button>
 									<button class="btn btn-sm nav-link" data-period="year" type="button" role="tab" aria-selected="false">Year</button>
 								</div>
+								<p id="usis-hours-project-empty-line" class="small text-muted mb-0 w-100 d-none">No hours this period.</p>
 							</div>
 							<div class="card-body p-0 position-relative">
 								<div id="usis-hours-project-loading" class="text-center text-muted small py-5 d-none">Loading hours…</div>
@@ -152,7 +193,7 @@
 	@@include("elements/script.html")
 
 	<script src="assets/vendor/apexcharts/dist/apexcharts.min.js"></script>
-	<script src="assets/js/usis-dashboard-hours-by-project.js"></script>
+	<script src="assets/js/usis-dashboard-hours-by-project.js?v=20260905c"></script>
 
 	<script src="assets/vendor/i18n/i18n.js"></script>
 	<script src="assets/js/translator.js"></script>
@@ -164,7 +205,7 @@
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-submittal-dashboard.js"></script>
-	<script src="assets/js/usis-dashboard-ops.js"></script>
+	<script src="assets/js/usis-dashboard-ops.js?v=20260905b"></script>
 
 </body>
 </html>

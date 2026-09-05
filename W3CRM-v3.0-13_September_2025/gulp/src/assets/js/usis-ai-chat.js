@@ -236,6 +236,8 @@
 		if (!box) {
 			box = document.createElement("div");
 			box.className = "chatbox";
+			box.setAttribute("hidden", "hidden");
+			box.setAttribute("aria-hidden", "true");
 			box.innerHTML = '<div class="chatbox-close"></div>';
 			document.body.appendChild(box);
 		}
@@ -561,7 +563,11 @@
 
 	function openBox() {
 		ensureChatbox();
-		if (state.els.box) state.els.box.classList.add("active");
+		if (state.els.box) {
+			state.els.box.classList.add("active");
+			state.els.box.removeAttribute("hidden");
+			state.els.box.setAttribute("aria-hidden", "false");
+		}
 		refreshStatus();
 		if (!state.historyLoaded) {
 			state.historyLoaded = true;
@@ -573,7 +579,11 @@
 	}
 
 	function closeBox() {
-		if (state.els.box) state.els.box.classList.remove("active");
+		if (state.els.box) {
+			state.els.box.classList.remove("active");
+			state.els.box.setAttribute("hidden", "hidden");
+			state.els.box.setAttribute("aria-hidden", "true");
+		}
 	}
 
 	function setSending(on) {

@@ -36,6 +36,14 @@
 		if (el) el.classList.toggle("d-none", !show);
 	}
 
+	function setHoursExpanded(hasData) {
+		var wrap = document.getElementById("usis-hours-project-wrap");
+		if (wrap) wrap.classList.toggle("is-empty", !hasData);
+		setVisible("usis-hours-project-empty-line", !hasData);
+		setVisible("usis-hours-project-empty", false);
+		setVisible("usisHoursByProjectChart", hasData);
+	}
+
 	function setKpis(summary) {
 		summary = summary || {};
 		var total = document.getElementById("usis-hours-kpi-total");
@@ -173,12 +181,10 @@
 				var items = data.projects || [];
 				setKpis(data.summary);
 				if (!items.length) {
-					setVisible("usis-hours-project-empty", true);
-					if (chart) {
-						chart.updateOptions({ xaxis: { categories: [] }, series: [{ name: "Hours logged", type: "column", data: [] }] });
-					}
+					setHoursExpanded(false);
 					return;
 				}
+				setHoursExpanded(true);
 				var labels = items.map(function (p) {
 					return truncateLabel(p.project_name, 28);
 				});
@@ -189,15 +195,9 @@
 			})
 			.catch(function (err) {
 				setVisible("usis-hours-project-loading", false);
-				setVisible("usis-hours-project-empty", true);
-				var empty = document.getElementById("usis-hours-project-empty");
-				if (empty) {
-					var body = empty.querySelector(".usis-empty__body");
-					var title = empty.querySelector(".usis-empty__title");
-					if (title) title.textContent = "Could not load hours";
-					if (body) body.textContent = err.message || "Could not load project hours.";
-					else empty.textContent = err.message || "Could not load project hours.";
-				}
+				setHoursExpanded(false);
+				var line = document.getElementById("usis-hours-project-empty-line");
+				if (line) line.textContent = err.message || "Could not load project hours.";
 			});
 	}
 

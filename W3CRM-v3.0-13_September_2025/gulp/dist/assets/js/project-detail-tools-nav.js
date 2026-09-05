@@ -1,24 +1,16 @@
 /**
- * Project-details tool strip — parents + a visible child row.
- * Parent click = default child. Submittals and RFIs are also parents (one click).
- * Child row follows the active parent; Submittals/RFIs still show the Purchasing children.
+ * Project-details tool strip — five parents + a visible child row.
+ * Parent click = default child. Hidden tabs stay in the page so deep links still work.
  */
 (function () {
 	"use strict";
 
 	var PARENT_LABEL = {
-		job: "Contract pages",
+		job: "Job pages",
 		files: "Files pages",
 		preconstruction: "Estimate pages",
-		field: "Construction pages",
-		buyout: "Purchasing pages",
-		submittals: "Purchasing pages",
-		rfi: "Purchasing pages",
-	};
-
-	var CHILD_GROUP = {
-		submittals: "buyout",
-		rfi: "buyout",
+		field: "Field pages",
+		buyout: "Buyout pages",
 	};
 
 	var TAB_TO_PARENT = {
@@ -29,12 +21,13 @@
 		"proj-tab-invoicing": "job",
 		"proj-tab-drawings": "files",
 		"proj-tab-specs": "files",
+		"proj-tab-photos": "files",
 		"proj-tab-estimate": "preconstruction",
 		"proj-tab-takeoff": "preconstruction",
 		"proj-tab-procurement": "buyout",
 		"proj-tab-order": "buyout",
-		"proj-tab-submittals": "submittals",
-		"proj-tab-rfi": "rfi",
+		"proj-tab-submittals": "buyout",
+		"proj-tab-rfi": "buyout",
 		"proj-tab-correspondence": "buyout",
 		"proj-tab-transmittals": "buyout",
 		"proj-tab-anticipated": "buyout",
@@ -42,7 +35,6 @@
 		"proj-tab-subinv": "buyout",
 		"proj-tab-schedule": "field",
 		"proj-tab-tasks": "field",
-		"proj-tab-photos": "field",
 		"proj-tab-dailylog": "field",
 		"proj-tab-meetings": "field",
 		"proj-tab-wo": "field",
@@ -75,10 +67,9 @@
 			var on = parents[i].getAttribute("data-usis-parent") === parentKey;
 			parents[i].classList.toggle("usis-project-tool--active", on);
 		}
-		var groupKey = CHILD_GROUP[parentKey] || parentKey;
 		var groups = stack.querySelectorAll(".usis-project-subtools__group");
 		for (i = 0; i < groups.length; i++) {
-			groups[i].hidden = groups[i].getAttribute("data-usis-parent") !== groupKey;
+			groups[i].hidden = groups[i].getAttribute("data-usis-parent") !== parentKey;
 		}
 		var sub = stack.querySelector(".usis-project-subtools");
 		if (sub) sub.setAttribute("aria-label", PARENT_LABEL[parentKey] || "Project pages");
@@ -119,6 +110,8 @@
 		}
 		var current = document.querySelector(".usis-project-tools-tablist .nav-link.active");
 		if (current) setActive(current.id);
+		var tab = new URLSearchParams(window.location.search).get("tab");
+		if (tab === "punch") showTab("proj-tab-punch");
 	}
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

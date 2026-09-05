@@ -11,7 +11,7 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
-	<link href="assets/css/usis-ui.css?v=20260905a" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260905b" rel="stylesheet">
 	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
@@ -70,22 +70,8 @@
 			
 			<div class="page-title">
 				@@include("../elements/breadcrumb.html", {
-					"fileName": "Active project",
-					"fileHref": "construction/projects.html",
+					"fileName": "Project",
 				})
-			</div>
-
-			<div id="usis-site-guide-root" class="container-fluid mb-3 px-0">
-				<div class="card border-0 shadow-none mb-0 bg-light">
-					<div class="card-body py-2">
-						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-							<h6 class="mb-0" data-i18n="Project detail">Project detail</h6>
-							<div class="text-nowrap small">
-								<a href="projects.html">Prev</a><span class="text-muted mx-1">|</span><a href="../usis-all-pages-index.html">Index</a><span class="text-muted mx-1">|</span><a href="projects.html">Next</a>
-							</div>
-						</div>
-					</div>
-				</div>
 			</div>
 
 			<div class="container-fluid">
@@ -122,13 +108,10 @@
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals">Transmittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-anticipated">Anticipated costs</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-punch">Punchlist</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>

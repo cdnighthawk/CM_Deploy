@@ -103,6 +103,9 @@ def test_leftover_template_pages_are_branded_404(client, static_root):
     assert r.status_code == 404
     r = client.get("/usis-all-pages-index.html")
     assert r.status_code == 404
+    missing = client.get("/this-page-does-not-exist.html")
+    assert missing.status_code == 404
+    assert b"That page is not in USIS CM" in missing.data or b"US Interior Specialties" in missing.data
 
 
 def test_live_usis_pages_still_served(client, static_root):

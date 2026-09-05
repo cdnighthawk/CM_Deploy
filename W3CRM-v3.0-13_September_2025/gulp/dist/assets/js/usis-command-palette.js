@@ -25,13 +25,13 @@
       '<div class="modal-dialog modal-dialog-centered modal-lg">' +
       '<div class="modal-content">' +
       '<div class="modal-header py-2">' +
-      '<h5 class="modal-title">Command palette</h5>' +
+      '<h5 class="modal-title">Search</h5>' +
       '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>' +
       '</div>' +
       '<div class="modal-body">' +
       '<input type="search" class="form-control form-control-lg mb-2" id="usis-cmd-q" placeholder="Search projects, leads, documents… (Ctrl+K)" autocomplete="off">' +
       '<div id="usis-cmd-results" class="list-group small"></div>' +
-      '<p class="text-muted small mb-0 mt-2">AI chat routes can plug in here when <code>/api/v1/ai/*</code> is available.</p>' +
+      '<p class="text-muted small mb-0 mt-2">Search jobs, leads, and pages. Ctrl+K opens this from any screen.</p>' +
       "</div>" +
       "</div>" +
       "</div>";
@@ -78,17 +78,28 @@
       });
   }
 
-  function open() {
+  function headerQuery() {
+    var input = document.getElementById("usis-header-search-input");
+    return input ? String(input.value || "").trim() : "";
+  }
+
+  function open(seedQuery) {
     if (typeof global.bootstrap === "undefined" || !global.bootstrap.Modal) return;
     var el = ensureModal();
     var modal = global.bootstrap.Modal.getOrCreateInstance(el);
     modal.show();
+    var seed = seedQuery == null ? headerQuery() : String(seedQuery || "").trim();
     setTimeout(function () {
       var input = document.getElementById("usis-cmd-q");
       var out = document.getElementById("usis-cmd-results");
       if (input) {
-        input.value = "";
+        input.value = seed;
         input.focus();
+        if (seed) {
+          try {
+            input.setSelectionRange(seed.length, seed.length);
+          } catch (e) {}
+        }
         input.oninput = function () {
           var q = (input.value || "").trim();
           if (q.length < 2) {
@@ -97,17 +108,41 @@
           }
           runSearch(q, out);
         };
+        if (seed.length >= 2) runSearch(seed, out);
+        else if (out) out.innerHTML = '<div class="list-group-item text-muted">Type at least 2 characters…</div>';
       }
     }, 200);
   }
 
+  function bindHeaderSearch() {
+    var form = document.getElementById("usis-header-search-form");
+    var input = document.getElementById("usis-header-search-input");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        open(headerQuery());
+      });
+    }
+    if (input) {
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          open(headerQuery());
+        }
+      });
+    }
+  }
+
   function init() {
+    if (global.__USISCommandPaletteBound) return;
+    global.__USISCommandPaletteBound = true;
     document.addEventListener("keydown", function (e) {
       if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
         open();
       }
     });
+    bindHeaderSearch();
   }
 
   global.USISCommandPalette = { init: init, open: open };

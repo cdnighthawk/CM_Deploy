@@ -189,10 +189,10 @@ var W3Crm = function(){
 	
 	var handleChatbox = function() {
 		jQuery('.btn-chatbox').on('click',function(){
-			jQuery('.chatbox').addClass('active');
+			jQuery('.chatbox').removeAttr('hidden').removeAttr('aria-hidden').addClass('active');
 		});
 		jQuery('.chatbox-close').on('click',function(){
-			jQuery('.chatbox').removeClass('active');
+			jQuery('.chatbox').removeClass('active').attr('hidden', 'hidden').attr('aria-hidden', 'true');
 		});
 	}
 	

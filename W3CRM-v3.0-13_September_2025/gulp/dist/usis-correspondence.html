@@ -88,7 +88,7 @@
 		</div>
 		<!-- End - Nav Header -->
 		<!-- Start - Sidebar Chat Box  -->
-		<div class="chatbox usis-ai-chatbox">
+		<div class="chatbox usis-ai-chatbox" hidden aria-hidden="true">
 			<div class="chatbox-close"></div>
 			<div class="usis-ai-chat" data-usis-ai-chat="1">
 				<div class="usis-ai-chat__header">
@@ -146,70 +146,38 @@
 				<nav class="navbar navbar-expand">
 					<div class="collapse navbar-collapse justify-content-between">
 						<div class="header-left">
-							<form>
+							<form id="usis-header-search-form" action="#" role="search">
 								<div class="header-search input-group">
 									<span class="input-group-text">
-										<button class="bg-transparent border-0" aria-label="Header Search">
+										<button type="submit" class="bg-transparent border-0" aria-label="Search">
 											<svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
 												<circle cx="8.78605" cy="8.78605" r="8.23951" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 												<path d="M14.5168 14.9447L17.7471 18.1667" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
 										</button>
 									</span>
-									<input type="text" class="form-control" placeholder="Search" data-i18n-placeholder="Search">
+									<input type="search" class="form-control" id="usis-header-search-input" placeholder="Search (Ctrl+K)" data-i18n-placeholder="Search (Ctrl+K)" autocomplete="off">
 								</div>
 							</form>	
 						</div>
 						<ul class="navbar-nav header-right">
-							<li class="nav-item align-self-center me-2 pe-md-2 border-end">
-								<div class="d-flex align-items-center gap-1 flex-wrap" id="usis-header-toolbar" role="toolbar" aria-label="USIS quick tools">
-									<div class="btn-group btn-group-sm" role="group" aria-label="Email and chat">
-										<a href="usis-email.html" class="btn btn-outline-secondary px-2" title="Email" aria-label="Email">
-											<i class="icon feather icon-mail"></i>
-											<span class="d-none d-lg-inline ms-1">Email</span>
-										</a>
-										<a href="usis-messenger.html" class="btn btn-outline-secondary px-2" id="usis-header-messages" title="Messages" aria-label="Messages">
-											<i class="icon feather icon-message-circle"></i>
-											<span class="d-none d-lg-inline ms-1" data-i18n="Messages">Messages</span>
-										</a>
-										<button type="button" class="btn btn-outline-secondary px-2 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
-											<i class="icon feather icon-message-square"></i>
-											<span class="d-none d-lg-inline ms-1">Chat</span>
-										</button>
-									</div>
-								</div>
-							</li>
 							<li class="nav-item align-self-center">
-								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 d-inline-flex align-items-center gap-1 usis-report-problem-btn" data-usis-report-problem title="Report a problem" aria-label="Report a problem" data-i18n-title="Report a problem" data-i18n-aria="Report a problem">
-									<i class="icon feather icon-alert-circle" aria-hidden="true"></i>
-									<span class="d-none d-lg-inline fs-6" data-i18n="Report a problem">Report a problem</span>
+								<button type="button" class="nav-link border-0 bg-transparent px-2 py-1 btn-chatbox" title="Open AI assistant" aria-label="Open AI assistant">
+									<i class="icon feather icon-message-square" aria-hidden="true"></i>
 								</button>
 							</li>
-							<li class="nav-item">
-								<select class="selectpicker form-select i18n-select" id="langSwitcher">
-									<option value="en_GB" title="English" data-content="<img src='assets/images/flags/gb-eng.svg' alt=''> English">English</option>
-									<option value="pt_BR" title="Portuguese" data-content="<img src='assets/images/flags/pt.svg' alt=''> Português">Português</option>
-									<option value="fr_FR" title="French" data-content="<img src='assets/images/flags/fr.svg' alt=''> Français">Français</option>
-									<option value="de_DE" title="German" data-content="<img src='assets/images/flags/de.svg' alt=''> Deutsch">Deutsch</option>
-									<option value="it_IT" title="Italian" data-content="<img src='assets/images/flags/it.svg' alt=''> Italiano">Italiano</option>
-									<option value="jp_JP" title="Japanese" data-content="<img src='assets/images/flags/jp.svg' alt=''> 日本語">日本語</option>
-									<option value="es_ES" title="Spanish" data-content="<img src='assets/images/flags/es.svg' alt=''> Español">Español</option>
-									<option value="ar_TN" title="Arabic" data-content="<img src='assets/images/flags/arab.svg' alt=''> العربية">العربية</option>
-									<option value="tr_TR" title="Turkish" data-content="<img src='assets/images/flags/tr.svg' alt=''> Türkçe">Türkçe</option>
-								</select>
-							</li>
-							<li class="nav-item dropdown notification_dropdown">
+							<li class="nav-item dropdown notification_dropdown d-none" id="usis-header-bell-item">
 								<div class="dropdown">
-									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notification Dropdown">
+									<button class="nav-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
 										<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 											<path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
 											<path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
 										</svg>
 									</button>
 									<div class="dropdown-menu dropdown-menu-end py-0">
-										<div class="dz-scroll p-2" style="height: 380px;">
-								<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
-							<a class="d-block text-center p-3 border-top" href="javascript:void(0);"><span data-i18n="See all notifications">See all notifications</span> <i class="fa fa-arrow-right"></i></a>
+										<div class="dz-scroll p-2" id="usis-header-bell-list" style="max-height: 380px;">
+											<p class="text-muted small text-center mb-0 py-5" data-i18n="No notifications.">No notifications.</p>
+										</div>
 									</div>
 								</div>
 							</li>
@@ -246,10 +214,16 @@
 										<a class="dropdown-item" href="usis-profile.html">
 											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 15.3462C8.11714 15.3462 4.81429 15.931 4.81429 18.2729C4.81429 20.6148 8.09619 21.2205 11.9848 21.2205C15.8524 21.2205 19.1543 20.6348 19.1543 18.2938C19.1543 15.9529 15.8733 15.3462 11.9848 15.3462Z" stroke="var(--bs-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.38857 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
+												<path fill-rule="evenodd" clip-rule="evenodd" d="M11.9848 12.0059C14.5229 12.0059 16.58 9.94779 16.58 7.40969C16.58 4.8716 14.5229 2.81445 11.9848 2.81445C9.44667 2.81445 7.38857 4.8716 7.40969C7.38 9.93922 9.42381 11.9973 11.9524 12.0059H11.9848Z" stroke="var(--bs-primary)" stroke-width="1.42857" stroke-linecap="round" stroke-linejoin="round"/>
 											</svg>
 											<span class="ms-2" data-i18n="My profile">My profile</span>
 										</a>
+									</li>
+									<li>
+										<button type="button" class="dropdown-item usis-report-problem-btn" data-usis-report-problem>
+											<i class="icon feather icon-alert-circle me-2" aria-hidden="true"></i>
+											<span data-i18n="Report a problem">Report a problem</span>
+										</button>
 									</li>
 									<li data-usis-profile-lang="1">
 										<div class="px-3 py-2">
@@ -334,6 +308,7 @@
 			</div>
 		</div>
 		<!-- End - Header -->
+
 		<!-- Start - Sidebar Navigation -->
 		<div class="deznav">
 			<div class="deznav-scroll">
@@ -352,7 +327,7 @@
 						</a>
 						<ul aria-expanded="false">
 							<li data-usis-module="estimate">
-								<a href="construction/estimate.html" data-i18n="Estimate">Estimate</a>
+								<a href="construction/estimate.html" data-i18n="Board">Board</a>
 							</li>
 							<li data-usis-module="estimate">
 								<a href="construction/estimate.html?tab=submitted" data-i18n="Submitted">Submitted</a>
@@ -365,17 +340,22 @@
 							</li>
 						</ul>
 					</li>
-					<li data-usis-module="projects">
-						<a href="construction/projects.html" aria-expanded="false">
+					<li>
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-layers"></i>
 							<span class="nav-text" data-i18n="Projects">Projects</span>
 						</a>
-					</li>
-					<li data-usis-module="projects">
-						<a href="usis-calendar.html" aria-expanded="false">
-							<i class="icon feather icon-calendar"></i>
-							<span class="nav-text" data-i18n="Calendar">Calendar</span>
-						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="projects">
+								<a href="construction/projects.html" data-i18n="All projects">All projects</a>
+							</li>
+							<li data-usis-module="projects">
+								<a href="usis-calendar.html" data-i18n="Calendar">Calendar</a>
+							</li>
+							<li data-usis-module="projects">
+								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
+							</li>
+						</ul>
 					</li>
 					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
@@ -394,35 +374,41 @@
 							</li>
 						</ul>
 					</li>
-					<li>
-						<a href="usis-email.html" aria-expanded="false">
-							<i class="icon feather icon-mail"></i>
-							<span class="nav-text" data-i18n="Email">Email</span>
+					<li id="usis-time-nav">
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-clock"></i>
+							<span class="nav-text" data-i18n="Time">Time</span>
 						</a>
+						<ul aria-expanded="false">
+							<li><a href="usis-time-live.html" data-i18n="Live">Live</a></li>
+							<li><a href="usis-time-me.html" data-i18n="My Time">My Time</a></li>
+							<li><a href="usis-time-cards.html" data-i18n="Time cards">Time cards</a></li>
+							<li><a href="usis-time-payroll.html" data-i18n="Payroll period">Payroll period</a></li>
+							<li><a href="usis-time-settings.html" data-i18n="Settings">Settings</a></li>
+						</ul>
 					</li>
-					<li>
-						<a href="usis-messenger.html" aria-expanded="false">
-							<i class="icon feather icon-message-circle"></i>
-							<span class="nav-text" data-i18n="Messages">Messages</span>
+					<li id="usis-people-nav" data-usis-module="hr">
+						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+							<i class="icon feather icon-users"></i>
+							<span class="nav-text" data-i18n="People">People</span>
 						</a>
+						<ul aria-expanded="false">
+							<li data-usis-module="hr"><a href="usis-people-directory.html" data-i18n="Directory">Directory</a></li>
+							<li data-usis-module="hr"><a href="usis-people-hiring.html" data-i18n="Hiring">Hiring</a></li>
+							<li data-usis-module="hr"><a href="usis-hr-applications.html" data-i18n="Applications">Applications</a></li>
+						</ul>
 					</li>
 					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-user-check"></i>
-							<span class="nav-text" data-i18n="HR">HR</span>
+							<i class="icon feather icon-mail"></i>
+							<span class="nav-text" data-i18n="Inbox">Inbox</span>
 						</a>
 						<ul aria-expanded="false">
-							<li data-usis-module="hr">
-								<a href="usis-hr-dashboard.html" data-i18n="HR dashboard">HR dashboard</a>
+							<li>
+								<a href="usis-email.html" data-i18n="Email">Email</a>
 							</li>
-							<li data-usis-module="hr">
-								<a href="usis-hr-applications.html" data-i18n="Applications">Applications</a>
-							</li>
-							<li data-usis-module="hrms">
-								<a href="construction/time-sheet.html" data-i18n="Time sheets">Time sheets</a>
-							</li>
-							<li data-usis-module="hrms">
-								<a href="usis-hrms-home.html" data-i18n="HR suite">HR suite</a>
+							<li>
+								<a href="usis-messenger.html" data-i18n="Messages">Messages</a>
 							</li>
 						</ul>
 					</li>
@@ -452,13 +438,13 @@
 							<li data-usis-module="user_admin">
 								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
 							</li>
-							<li>
+							<li data-usis-module="user_admin">
 								<a href="usis-companies.html">Companies</a>
 							</li>
-							<li>
+							<li data-usis-module="user_admin">
 								<a href="usis-company-settings.html">Company settings</a>
 							</li>
-							<li>
+							<li data-usis-module="user_admin">
 								<a href="usis-cost-codes.html">Cost codes</a>
 							</li>
 							<li data-usis-module="playbooks">
@@ -469,18 +455,6 @@
 							</li>
 							<li data-usis-module="reports">
 								<a href="reports.html" data-i18n="Reports">Reports</a>
-							</li>
-							<li data-usis-module="documents">
-								<a href="usis-documents-hub.html" data-i18n="Documents">Documents</a>
-							</li>
-							<li data-usis-module="documents">
-								<a href="usis-ingest.html" data-i18n="Ingest">Ingest</a>
-							</li>
-							<li data-usis-module="documents">
-								<a href="usis-correspondence.html">Correspondence</a>
-							</li>
-							<li data-usis-module="projects">
-								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
 							</li>
 						</ul>
 					</li>
@@ -567,31 +541,27 @@
 
 		</main>
 
-		<!-- USIS mobile bottom nav (Plan 1) — visible below md -->
+		<!-- USIS mobile bottom nav — visible below md -->
 <nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
 		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
 		<span class="fs-11">Home</span>
 	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/leads.html">
-		<i class="icon feather icon-users d-block fs-5 mb-0"></i>
-		<span class="fs-11">Leads</span>
-	</a>
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
 		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
 		<span class="fs-11">Projects</span>
 	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/estimate.html">
-		<i class="icon feather icon-file-text d-block fs-5 mb-0"></i>
-		<span class="fs-11">Estimate</span>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-time-live.html">
+		<i class="icon feather icon-clock d-block fs-5 mb-0"></i>
+		<span class="fs-11">Time</span>
 	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/issues.html">
-		<i class="icon feather icon-alert-triangle d-block fs-5 mb-0"></i>
-		<span class="fs-11">Issues</span>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-safety.html">
+		<i class="icon feather icon-shield d-block fs-5 mb-0"></i>
+		<span class="fs-11">Safety</span>
 	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/drawing-viewer.html">
-		<i class="icon feather icon-image d-block fs-5 mb-0"></i>
-		<span class="fs-11">Drawings</span>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-email.html">
+		<i class="icon feather icon-mail d-block fs-5 mb-0"></i>
+		<span class="fs-11">Inbox</span>
 	</a>
 </nav>
 
@@ -611,10 +581,12 @@
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js"></script>
+<script src="assets/js/usis-nav-access.js?v=20260905b"></script>
+	<script src="assets/js/usis-command-palette.js?v=20260905b"></script>
+	<script src="assets/js/usis-header-bell.js?v=20260905b"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js?v=20260829f"></script>
+	<script src="assets/js/usis-ui.js?v=20260905a"></script>
 	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

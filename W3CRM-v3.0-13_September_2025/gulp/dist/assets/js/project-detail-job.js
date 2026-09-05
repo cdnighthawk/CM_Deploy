@@ -1258,7 +1258,9 @@
 		var n = pane.querySelector("[data-usis-error]");
 		if (!n) return;
 		if (msg) {
-			n.textContent = msg;
+			n.innerHTML =
+				esc(msg) +
+				' <a class="alert-link" href="construction/projects.html">Back to Projects</a>';
 			n.classList.remove("d-none");
 		} else {
 			n.textContent = "";
@@ -1598,6 +1600,11 @@
 		var jobNumber = item.number || lead.number;
 		var title = document.getElementById("usis-proj-job-title");
 		if (title) title.textContent = jobNumber ? jobNumber + " | " + jobName : jobName;
+		var pageH1 = document.querySelector(".page-title h1");
+		if (pageH1) pageH1.textContent = jobNumber ? jobNumber + " — " + jobName : jobName;
+		try {
+			document.title = (jobNumber ? jobNumber + " — " : "") + jobName + " · USIS";
+		} catch (e) {}
 
 		var sub = document.getElementById("usis-proj-job-subtitle");
 		if (sub) {
@@ -1862,7 +1869,7 @@
 		setJobPaneError("");
 		if (!pid) {
 			setJobPaneLoading(false);
-			setJobPaneError("No project id in the URL — open this page from the Projects table.");
+			setJobPaneError("No project was selected. Open a job from the Projects list.");
 			return;
 		}
 		setJobPaneLoading(true);
@@ -1873,9 +1880,23 @@
 		})
 			.then(function (res) {
 				if (!res.ok) {
-					return res.text().then(function (t) {
-						throw new Error(res.status + " " + (t || res.statusText));
-					});
+					return res.json().then(
+						function (j) {
+							var raw = j && j.error ? String(j.error) : "";
+							var msg =
+								"This project could not be found. It may have been removed, or the link is out of date.";
+							if (res.status === 403) msg = "You do not have access to this project.";
+							else if (res.status === 401) msg = "Sign in to open this project.";
+							else if (res.status >= 500) msg = "The project could not be loaded. Try again in a moment.";
+							else if (raw && res.status !== 400 && res.status !== 404) msg = raw;
+							throw new Error(msg);
+						},
+						function () {
+							throw new Error(
+								"This project could not be found. It may have been removed, or the link is out of date."
+							);
+						}
+					);
 				}
 				return res.json();
 			})

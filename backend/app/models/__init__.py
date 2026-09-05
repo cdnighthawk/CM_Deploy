@@ -63,6 +63,20 @@ from .hr import (
     HrPolicyAcknowledgment,
     HrTrainingAssignment,
 )
+from .hiring import (
+    FormTemplate,
+    HireArtifact,
+    HireCompanySetting,
+    HireDirectDeposit,
+    HireEmergencyContact,
+    HireI9,
+    HireI9Document,
+    HireNoticeAck,
+    HirePacket,
+    HirePerson,
+    HireSignature,
+    HireTaxElection,
+)
 from .hr_dispatch import HrEmployeeDispatch
 from .ingest_error import IngestErrorEvent
 from .invoice_delivery_method import InvoiceDeliveryMethod
@@ -236,6 +250,18 @@ __all__ = [
     "HrPolicyAcknowledgment",
     "HrTrainingAssignment",
     "HrmsAuditLog",
+    "FormTemplate",
+    "HireArtifact",
+    "HireCompanySetting",
+    "HireDirectDeposit",
+    "HireEmergencyContact",
+    "HireI9",
+    "HireI9Document",
+    "HireNoticeAck",
+    "HirePacket",
+    "HirePerson",
+    "HireSignature",
+    "HireTaxElection",
     "HrmsEmployeeProfile",
     "HrmsExpenseLine",
     "HrmsExpenseReport",

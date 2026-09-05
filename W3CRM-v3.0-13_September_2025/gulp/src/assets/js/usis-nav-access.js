@@ -78,9 +78,10 @@
 			'<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">' +
 			'<i class="icon feather icon-users"></i>' +
 			'<span class="nav-text" data-i18n="People">People</span></a>' +
-			"<ul aria-expanded=\"false\">" +
-			'<li data-usis-module="hr"><a href="' + prefix + 'usis-people-hiring.html">Hiring</a></li>' +
+			'<ul aria-expanded="false">' +
 			'<li data-usis-module="hr"><a href="' + prefix + 'usis-people-directory.html">Directory</a></li>' +
+			'<li data-usis-module="hr"><a href="' + prefix + 'usis-people-hiring.html">Hiring</a></li>' +
+			'<li data-usis-module="hr"><a href="' + prefix + 'usis-hr-applications.html">Applications</a></li>' +
 			"</ul>";
 		var timeNav = document.getElementById("usis-time-nav");
 		if (timeNav && timeNav.nextSibling) menu.insertBefore(li, timeNav.nextSibling);

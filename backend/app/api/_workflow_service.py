@@ -28,6 +28,7 @@ PROCESS_DRAWING_REVIEW = "drawing_review"
 PROCESS_TAKEOFF = "takeoff"
 PROCESS_ESTIMATOR_SCOPE = "estimator_scope"
 PROCESS_TIMECARD = "timecard"
+PROCESS_NEW_HIRE = "new_hire"
 
 DEFAULT_QUEUES = (
     ("intake", "Intake / completeness"),
@@ -40,6 +41,25 @@ DEFAULT_PO_QUEUES = (
     ("receiving", "Receiving"),
     ("ap", "Accounts payable"),
 )
+
+DEFAULT_HIRE_QUEUES = (
+    ("hr", "HR"),
+    ("employee", "New hire"),
+    ("payroll", "Payroll"),
+)
+
+DEFAULT_HIRE_STEPS: list[dict[str, Any]] = [
+    {"step_key": "draft", "label": "HR draft", "sort_order": 1, "queue_key": "hr", "required_actions": ["create"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "invite_sent", "label": "Invite sent", "sort_order": 2, "queue_key": "hr", "required_actions": [], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"action": "system", "auto_complete": True}},
+    {"step_key": "employee_in_progress", "label": "Employee in progress", "sort_order": 3, "queue_key": "employee", "required_actions": ["save"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "employee_signed", "label": "Employee signed", "sort_order": 4, "queue_key": "employee", "required_actions": ["sign"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "hr_review", "label": "HR review", "sort_order": 5, "queue_key": "hr", "required_actions": ["approve"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "i9_section2", "label": "I-9 Section 2", "sort_order": 6, "queue_key": "hr", "required_actions": ["sign"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "ready_for_payroll", "label": "Ready for payroll", "sort_order": 7, "queue_key": "hr", "required_actions": ["link_user"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "payroll_setup", "label": "Payroll setup", "sort_order": 8, "queue_key": "payroll", "required_actions": ["de34", "qb"], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"auto_complete": False}},
+    {"step_key": "closed", "label": "Closed", "sort_order": 9, "queue_key": "hr", "required_actions": [], "on_approve_status": None, "entry_condition": None, "skippable": False, "automation": {"action": "system", "auto_complete": True}},
+    {"step_key": "void", "label": "Void", "sort_order": 10, "queue_key": "hr", "required_actions": ["void"], "on_approve_status": None, "entry_condition": None, "skippable": True, "automation": {"auto_complete": False}},
+]
 
 DEFAULT_TIMECARD_QUEUES = (
     ("employee", "Employee"),
@@ -518,6 +538,12 @@ PROCESS_SEEDS: dict[str, dict[str, Any]] = {
         "description": "Capture punches, employee sign, supervisor approve, payroll lock, export.",
         "queues": DEFAULT_TIMECARD_QUEUES,
         "steps": DEFAULT_TIMECARD_STEPS,
+    },
+    PROCESS_NEW_HIRE: {
+        "name": "New hire packet (default)",
+        "description": "HR invite → employee packet → I-9 Section 2 → payroll setup. Frozen at invite.",
+        "queues": DEFAULT_HIRE_QUEUES,
+        "steps": DEFAULT_HIRE_STEPS,
     },
 }
 

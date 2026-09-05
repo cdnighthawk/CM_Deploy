@@ -30,6 +30,7 @@ _CAREER_PATH_REDIRECTS: dict[str, str] = {
     "/people": "/usis-people-hiring.html",
     "/people/hiring": "/usis-people-hiring.html",
     "/people/directory": "/usis-people-directory.html",
+    "/people/packet": "/usis-people-hire-detail.html",
 }
 
 # Case-insensitive aliases (marketing links often use ``Apply.html``).

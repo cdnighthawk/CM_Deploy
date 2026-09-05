@@ -179,6 +179,7 @@ def create_app(config_object: str | None = None) -> Flask:
     from .api.purchase_orders_bp import purchase_orders_bp
     from .api.correspondence_bp import correspondence_bp
     from .api.time_bp import bp as time_bp
+    from .api.hires_bp import bp as hires_bp
 
     app.register_blueprint(v1_bp)
     app.register_blueprint(ai_bp)
@@ -188,6 +189,7 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(purchase_orders_bp)
     app.register_blueprint(correspondence_bp)
     app.register_blueprint(time_bp)
+    app.register_blueprint(hires_bp)
     app.register_blueprint(hrms_bp)
     app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
@@ -207,6 +209,7 @@ def create_app(config_object: str | None = None) -> Flask:
             or path.startswith("/api/purchase-orders")
             or path.startswith("/api/correspondence")
             or path.startswith("/api/time")
+            or path.startswith("/api/hires")
         )
 
     @app.before_request
@@ -237,6 +240,7 @@ def create_app(config_object: str | None = None) -> Flask:
             "/api/v1/integrations/calendar-reminders/run",
             "/api/v1/rfps/mailbox/sync",
             "/api/v1/ap/mailbox/sync",
+            "/api/hires/reminders/run",
         ):
             from .api._integration_bc import cron_secret_matches
 
@@ -315,6 +319,15 @@ def create_app(config_object: str | None = None) -> Flask:
     from .static_shell import register_static_shell
 
     register_static_shell(app)
+
+    @app.errorhandler(404)
+    def _branded_html_404(_err):
+        path = request.path or ""
+        if path.startswith("/api/"):
+            return jsonify({"error": "not found"}), 404
+        from .static_shell import branded_404
+
+        return branded_404()
     _apply_production_middleware(app)
     from .ap._sync_loop import start_invoice_mailbox_sync_loop
 

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-people-directory.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/vendor/datatables/css/jquery.dataTables.min.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
+</head>
+<body data-people-page="directory">
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "People — Directory" })
+			</div>
+			<div class="container-fluid">
+				<div id="usis-directory-root"></div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/vendor/datatables/js/jquery.dataTables.bundle.min.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-people-hiring.js?v=20260905c"></script>
+</body>
+</html>

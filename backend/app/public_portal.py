@@ -426,3 +426,29 @@ def public_submittal_form(token: str):
     <textarea name="notes" class="form-control form-control-sm" rows="3"></textarea></div>
     <button class="btn btn-primary" type="submit">Upload package</button></form>
     </div></div></body></html>"""
+
+
+@public_bp.get("/public/hire/<token>")
+def public_hire_get(token: str):
+    import os
+
+    from .api._hire_service import HireApiError, packet_by_token
+
+    if os.environ.get("FLASK_ENV", "").strip().lower() == "production" and not request.is_secure:
+        return "<p>HTTPS required</p>", 403
+    try:
+        packet_by_token(token)
+    except HireApiError as exc:
+        if "closed" in (exc.message or "").lower():
+            html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Packet closed</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+            {_PUBLIC_CHROME}</head>
+            <body class="usis-public-rfp"><div class="wrap"><div class="card-like">
+            <h1>Packet closed</h1>
+            <p class="muted mb-0">This new-hire packet is closed. Contact HR.</p>
+            </div></div></body></html>"""
+            return html, 404
+        return "<p>Packet not found</p>", 404
+    return render_template("public/hire.html", token=token)
+

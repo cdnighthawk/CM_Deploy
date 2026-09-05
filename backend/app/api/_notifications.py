@@ -44,8 +44,45 @@ _MAIL_DETAIL_SELECT = (
 _MAIL_FOLDERS = {
     "inbox": "inbox",
     "sent": "sentitems",
+    "sentitems": "sentitems",
     "drafts": "drafts",
     "deleted": "deleteditems",
+    "deleteditems": "deleteditems",
+    "junk": "junkemail",
+    "junkemail": "junkemail",
+    "archive": "archive",
+    "outbox": "outbox",
+    "clutter": "clutter",
+    "conversationhistory": "conversationhistory",
+}
+_MAIL_FOLDER_SELECT = (
+    "id,displayName,parentFolderId,childFolderCount,"
+    "unreadItemCount,totalItemCount,wellKnownName,isHidden"
+)
+_WELL_KNOWN_FOLDER_KEY = {
+    "inbox": "inbox",
+    "drafts": "drafts",
+    "sentitems": "sent",
+    "deleteditems": "deleted",
+}
+_WELL_KNOWN_FOLDER_ORDER = {
+    "inbox": 0,
+    "drafts": 1,
+    "sentitems": 2,
+    "deleteditems": 3,
+    "junkemail": 4,
+    "archive": 5,
+    "outbox": 6,
+}
+_FOLDER_DISPLAY_TO_WELL = {
+    "inbox": "inbox",
+    "drafts": "drafts",
+    "sent items": "sentitems",
+    "deleted items": "deleteditems",
+    "junk email": "junkemail",
+    "archive": "archive",
+    "outbox": "outbox",
+    "conversation history": "conversationhistory",
 }
 _GRAPH_ROOT = _GRAPH_BASE
 _MAIL_LIST_FIELDS = _MAIL_LIST_SELECT
@@ -355,6 +392,106 @@ def _serialize_attachment_meta(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _is_graph_folder_id(value: str) -> bool:
+    if len(value) < 8 or len(value) > 512:
+        return False
+    allowed = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=_-")
+    return all(ch in allowed for ch in value)
+
+
+def _resolve_mail_folder(folder: str) -> str:
+    """Map a UI folder key or Graph folder id to a Graph mailFolders segment."""
+    raw = (folder or "inbox").strip()
+    if not raw:
+        return "inbox"
+    mapped = _MAIL_FOLDERS.get(raw.lower())
+    if mapped:
+        return mapped
+    if _is_graph_folder_id(raw):
+        return raw
+    raise GraphMailError(400, "folder must be a mailbox folder name or id")
+
+
+def _graph_paged(url: str, params: dict[str, str] | None = None, *, limit: int = 500) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    next_url: str | None = url
+    next_params = params
+    while next_url:
+        payload = _graph_http("GET", next_url, params=next_params) or {}
+        batch = payload.get("value") or []
+        items.extend(x for x in batch if isinstance(x, dict))
+        if len(items) >= limit:
+            return items[:limit]
+        next_url = str(payload.get("@odata.nextLink") or "") or None
+        next_params = None
+    return items
+
+
+def _folder_well_known(item: dict[str, Any]) -> str:
+    well = str(item.get("wellKnownName") or "").strip().lower()
+    if well:
+        return well
+    name = str(item.get("displayName") or "").strip().lower()
+    return _FOLDER_DISPLAY_TO_WELL.get(name, "")
+
+
+def _folder_sort_key(item: dict[str, Any]) -> tuple[int, int, str]:
+    well = _folder_well_known(item)
+    if well in _WELL_KNOWN_FOLDER_ORDER:
+        return (0, _WELL_KNOWN_FOLDER_ORDER[well], "")
+    return (1, 0, str(item.get("displayName") or "").lower())
+
+
+def _serialize_mail_folder(item: dict[str, Any], *, children: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    well = _folder_well_known(item)
+    return {
+        "id": item.get("id"),
+        "name": item.get("displayName") or "",
+        "well_known": well or None,
+        "key": _WELL_KNOWN_FOLDER_KEY.get(well),
+        "unread": int(item.get("unreadItemCount") or 0),
+        "total": int(item.get("totalItemCount") or 0),
+        "children": children or [],
+    }
+
+
+def _list_child_mail_folders(*, mailbox: str, folder_id: str, depth: int, max_depth: int) -> list[dict[str, Any]]:
+    if depth >= max_depth or not folder_id:
+        return []
+    url = _user_mail_url(mailbox, "mailFolders", folder_id, "childFolders")
+    params = {"$top": "100", "$select": _MAIL_FOLDER_SELECT}
+    try:
+        kids = [k for k in _graph_paged(url, params) if not k.get("isHidden")]
+    except GraphMailError:
+        return []
+    kids.sort(key=_folder_sort_key)
+    return [_folder_tree_node(mailbox, child, depth + 1, max_depth) for child in kids]
+
+
+def _folder_tree_node(mailbox: str, item: dict[str, Any], depth: int, max_depth: int) -> dict[str, Any]:
+    children: list[dict[str, Any]] = []
+    if int(item.get("childFolderCount") or 0) > 0:
+        children = _list_child_mail_folders(
+            mailbox=mailbox,
+            folder_id=str(item.get("id") or ""),
+            depth=depth,
+            max_depth=max_depth,
+        )
+    return _serialize_mail_folder(item, children=children)
+
+
+def list_mailbox_folders(*, mailbox: str) -> dict[str, Any]:
+    """All mail folders for ``mailbox``, including nested subfolders."""
+    url = _user_mail_url(mailbox, "mailFolders")
+    params = {"$top": "100", "$select": _MAIL_FOLDER_SELECT}
+    roots = [item for item in _graph_paged(url, params) if not item.get("isHidden")]
+    roots.sort(key=_folder_sort_key)
+    return {
+        "mailbox": mailbox,
+        "items": [_folder_tree_node(mailbox, item, 0, 8) for item in roots],
+    }
+
+
 def search_mailbox_messages(*, mailbox: str, query: str, top: int = 25) -> dict[str, Any]:
     """Search a mailbox with Graph ``$search`` (KQL). Best-effort; caller handles errors."""
     q = (query or "").strip()
@@ -378,11 +515,9 @@ def search_mailbox_messages(*, mailbox: str, query: str, top: int = 25) -> dict[
 
 
 def list_mailbox_messages(*, mailbox: str, folder: str, top: int = 50) -> dict[str, Any]:
-    """List inbox or sent items for ``mailbox`` (must be the signed-in user)."""
-    key = (folder or "inbox").strip().lower()
-    folder_id = _MAIL_FOLDERS.get(key)
-    if folder_id is None:
-        raise GraphMailError(400, "folder must be inbox, sent, drafts, or deleted")
+    """List messages in a well-known folder or Graph folder id for ``mailbox``."""
+    raw = (folder or "inbox").strip()
+    folder_id = _resolve_mail_folder(raw)
     n = max(1, min(int(top or 50), 100))
     url = _user_mail_url(mailbox, "mailFolders", folder_id, "messages")
     params = {
@@ -393,7 +528,7 @@ def list_mailbox_messages(*, mailbox: str, folder: str, top: int = 50) -> dict[s
     payload = _graph_http("GET", url, params=params) or {}
     items = payload.get("value") or []
     return {
-        "folder": key,
+        "folder": raw or "inbox",
         "mailbox": mailbox,
         "items": [_serialize_message_summary(x) for x in items if isinstance(x, dict)],
     }

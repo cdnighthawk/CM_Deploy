@@ -22,7 +22,7 @@ Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry
 
 The website always uses the **signed-in user’s** mailbox address — never a mailbox chosen by the client. The access policy is the tenant-side limit.
 
-Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, read, delete, and compose. That page calls `GET/PATCH/DELETE /api/v1/mail/messages` and `POST /api/v1/messages/email`.
+Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom folders and subfolders, read, delete, and compose. That page calls `GET /api/v1/mail/folders`, `GET/PATCH/DELETE /api/v1/mail/messages`, and `POST /api/v1/messages/email`.
 
 **AP invoices:** `POST /api/v1/ap/mailbox/sync` reads `invoices@gousis.com`. The web process also polls that mailbox every 5 minutes (`INVOICE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`). Production has a Render cron (`usis-invoice-mailbox-sync`) that POSTs the same route with `X-Cron-Secret`.
 

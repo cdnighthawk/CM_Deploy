@@ -2677,15 +2677,30 @@ def _session_mailbox():
     return email, None
 
 
+@bp.get("/mail/folders")
+def list_mail_folders():
+    """All Outlook folders (including nested subfolders) for the signed-in user."""
+    from ._notifications import GraphMailError, graph_error_http, list_mailbox_folders
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    try:
+        return _jsonify(list_mailbox_folders(mailbox=mailbox))
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+
+
 @bp.get("/mail/messages")
 def list_mail_messages():
-    """Inbox or Sent for the signed-in user's Outlook mailbox."""
+    """Messages in a folder of the signed-in user's Outlook mailbox."""
     from ._notifications import GraphMailError, graph_error_http, list_mailbox_messages
 
     mailbox, err = _session_mailbox()
     if err is not None:
         return err
-    folder = (request.args.get("folder") or "inbox").strip().lower()
+    folder = (request.args.get("folder") or "inbox").strip()
     try:
         top = int(request.args.get("top") or 50)
     except (TypeError, ValueError):
@@ -5697,6 +5712,9 @@ _user_activity_svc.register_activity_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)
+from . import _field_punch_routes as _field_punch_routes_mod  # noqa: E402
+
+_field_punch_routes_mod.register_field_punch_routes(bp)
 from . import _safety_routes as _safety_routes_mod  # noqa: E402
 
 _safety_routes_mod.register_safety_routes(bp)

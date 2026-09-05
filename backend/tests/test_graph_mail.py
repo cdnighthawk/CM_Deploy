@@ -277,3 +277,106 @@ def test_delete_mailbox_uses_session_user(client, monkeypatch):
     assert captured
     assert captured[0][0] == "DELETE"
     assert "charles%40gousis.com" in captured[0][1] or "charles@gousis.com" in captured[0][1]
+
+
+def test_list_mailbox_folders_includes_nested_children(client, monkeypatch):
+    from app.api import _notifications as mail
+    from app.api import v1 as v1_mod
+
+    staff = "charles@gousis.com"
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user(staff))
+    captured: list[str] = []
+
+    def fake_http(method, url, **kwargs):
+        captured.append(url)
+        if url.rstrip("/").endswith("/mailFolders") or "/mailFolders?" in url:
+            return {
+                "value": [
+                    {
+                        "id": "fid-inbox",
+                        "displayName": "Inbox",
+                        "wellKnownName": "inbox",
+                        "childFolderCount": 1,
+                        "unreadItemCount": 3,
+                        "totalItemCount": 10,
+                        "isHidden": False,
+                    },
+                    {
+                        "id": "fid-jobs",
+                        "displayName": "Jobs",
+                        "childFolderCount": 0,
+                        "unreadItemCount": 0,
+                        "totalItemCount": 2,
+                        "isHidden": False,
+                    },
+                    {
+                        "id": "fid-sent",
+                        "displayName": "Sent Items",
+                        "wellKnownName": "sentitems",
+                        "childFolderCount": 0,
+                        "unreadItemCount": 0,
+                        "totalItemCount": 4,
+                        "isHidden": False,
+                    },
+                ]
+            }
+        if "childFolders" in url:
+            return {
+                "value": [
+                    {
+                        "id": "fid-sub",
+                        "displayName": "Job 25270",
+                        "childFolderCount": 0,
+                        "unreadItemCount": 1,
+                        "totalItemCount": 5,
+                        "isHidden": False,
+                    }
+                ]
+            }
+        raise AssertionError(f"unexpected Graph URL {url}")
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    r = client.get("/api/v1/mail/folders")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["mailbox"] == staff
+    names = [item["name"] for item in body["items"]]
+    assert names[:2] == ["Inbox", "Sent Items"]
+    inbox = body["items"][0]
+    assert inbox["key"] == "inbox"
+    assert inbox["children"][0]["name"] == "Job 25270"
+    assert inbox["children"][0]["id"] == "fid-sub"
+    assert any("childFolders" in url for url in captured)
+    assert all("victim@" not in url for url in captured)
+
+
+def test_list_mailbox_accepts_graph_folder_id(client, monkeypatch):
+    from app.api import _notifications as mail
+    from app.api import v1 as v1_mod
+
+    staff = "charles@gousis.com"
+    folder_id = "AAMkAGI2THVhYzE3LTI1M2YtNDYwNi1i"
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user(staff))
+    captured: list[str] = []
+
+    def fake_http(method, url, **kwargs):
+        captured.append(url)
+        return {"value": []}
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    r = client.get("/api/v1/mail/messages", query_string={"folder": folder_id})
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["folder"] == folder_id
+    assert captured
+    assert folder_id in captured[0] or "AAMkAGI2THVhYzE3LTI1M2YtNDYwNi1i" in captured[0]
+
+
+def test_list_mailbox_rejects_invalid_folder(client, monkeypatch):
+    from app.api import v1 as v1_mod
+
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user("charles@gousis.com"))
+    r = client.get("/api/v1/mail/messages", query_string={"folder": "../users"})
+    assert r.status_code == 400
+    err = (r.get_json() or {}).get("error") or ""
+    assert "folder must be" in err

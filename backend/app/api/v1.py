@@ -5712,9 +5712,6 @@ _user_activity_svc.register_activity_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)
-from . import _field_punch_routes as _field_punch_routes_mod  # noqa: E402
-
-_field_punch_routes_mod.register_field_punch_routes(bp)
 from . import _safety_routes as _safety_routes_mod  # noqa: E402
 
 _safety_routes_mod.register_safety_routes(bp)

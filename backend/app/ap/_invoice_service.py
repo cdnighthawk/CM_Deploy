@@ -88,7 +88,14 @@ def _can_write(cu: CurrentUser) -> bool:
     return has_module_access(cu, "ap", "write") or cu.is_dev_admin
 
 
-def _can_view(cu: CurrentUser, invoice: VendorInvoice) -> bool:
+def _is_deleted(invoice: VendorInvoice) -> bool:
+    meta = invoice.parse_meta if isinstance(invoice.parse_meta, dict) else {}
+    return bool(meta.get("deleted"))
+
+
+def _can_view(cu: CurrentUser, invoice: VendorInvoice, *, include_deleted: bool = False) -> bool:
+    if not include_deleted and _is_deleted(invoice):
+        return False
     if not has_module_access(cu, "ap", "read") and not cu.is_dev_admin:
         return False
     if invoice.project_id is None:
@@ -439,6 +446,24 @@ def void_invoice(cu: CurrentUser, invoice_id: uuid.UUID, data: dict[str, Any]) -
     record_event(invoice, cu.id, "voided", {"reason": reason or None})
     db.session.commit()
     return serialize_invoice(_load(invoice.id) or invoice, cu, include_events=True)
+
+
+def delete_invoice(cu: CurrentUser, invoice_id: uuid.UUID) -> dict[str, Any]:
+    if not _can_write(cu):
+        raise InvoiceError("forbidden", 403)
+    invoice = _load(invoice_id)
+    if invoice is None or not _can_view(cu, invoice, include_deleted=True):
+        raise InvoiceError("invoice not found", 404)
+    if _is_deleted(invoice):
+        return {"id": str(invoice.id), "deleted": True}
+    if invoice.status == STATUS_PAID:
+        raise InvoiceError("paid invoices cannot be deleted")
+    meta = dict(invoice.parse_meta or {})
+    meta["deleted"] = True
+    invoice.parse_meta = meta
+    record_event(invoice, cu.id, "deleted", {})
+    db.session.commit()
+    return {"id": str(invoice.id), "deleted": True}
 
 
 def sync_mailbox(cu: CurrentUser, *, as_cron: bool = False) -> dict[str, Any]:

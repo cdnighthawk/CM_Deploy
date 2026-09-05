@@ -171,6 +171,54 @@ def test_reject_requires_reason(client, flask_app):
     assert r_ok.get_json()["item"]["status"] == "rejected"
 
 
+def test_delete_invoice_hides_row_and_blocks_paid(client, flask_app):
+    with flask_app.app_context():
+        project = Project(
+            name=f"ApDel-{uuid.uuid4().hex[:8]}",
+            status="active",
+            project_type="commercial",
+        )
+        user = User(
+            email=f"ap_del_{uuid.uuid4().hex[:8]}@usis.local",
+            first_name="Dana",
+            last_name="Delete",
+            is_active=True,
+            is_superuser=True,
+        )
+        db.session.add_all([project, user])
+        db.session.commit()
+        ids = {"project_id": str(project.id), "user_id": str(user.id)}
+    h = _headers(ids["user_id"])
+    created = client.post(
+        "/api/v1/ap/invoices",
+        json={"subject": "Junk bill", "project_id": ids["project_id"], "amount": "9.00"},
+        headers=h,
+    )
+    assert created.status_code == 200, created.get_data(as_text=True)
+    invoice_id = created.get_json()["item"]["id"]
+
+    gone = client.delete(f"/api/v1/ap/invoices/{invoice_id}", headers=h)
+    assert gone.status_code == 200, gone.get_data(as_text=True)
+    assert gone.get_json()["item"]["deleted"] is True
+    assert client.get(f"/api/v1/ap/invoices/{invoice_id}", headers=h).status_code == 404
+    listed = client.get("/api/v1/ap/invoices", headers=h)
+    assert listed.status_code == 200
+    assert invoice_id not in [row["id"] for row in listed.get_json().get("items") or []]
+
+    paid = client.post(
+        "/api/v1/ap/invoices",
+        json={"subject": "Keep paid", "project_id": ids["project_id"], "amount": "11.00"},
+        headers=h,
+    )
+    paid_id = paid.get_json()["item"]["id"]
+    assert client.post(f"/api/v1/ap/invoices/{paid_id}/submit", headers=h).status_code == 200
+    assert client.post(f"/api/v1/ap/invoices/{paid_id}/approve", headers=h).status_code == 200
+    assert client.post(f"/api/v1/ap/invoices/{paid_id}/mark-paid", json={}, headers=h).status_code == 200
+    blocked = client.delete(f"/api/v1/ap/invoices/{paid_id}", headers=h)
+    assert blocked.status_code == 400
+    assert "paid" in (blocked.get_json().get("error") or "").lower()
+
+
 def test_mailbox_sync_requires_graph(client):
     r = client.post("/api/v1/ap/mailbox/sync")
     assert r.status_code == 503

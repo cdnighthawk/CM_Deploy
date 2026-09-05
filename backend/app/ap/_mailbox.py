@@ -282,11 +282,13 @@ def _message_fields(detail: dict[str, Any]) -> dict[str, Any]:
 
 
 def _should_enrich(invoice: VendorInvoice) -> bool:
+    meta = invoice.parse_meta if isinstance(invoice.parse_meta, dict) else {}
+    if meta.get("deleted"):
+        return False
     if invoice.source != "email" or invoice.status not in {"received", "routed"}:
         return False
     if _is_internal_address(invoice.from_email):
         return True
-    meta = invoice.parse_meta if isinstance(invoice.parse_meta, dict) else {}
     forwarded = meta.get("forwarded") if isinstance(meta, dict) else None
     if isinstance(forwarded, dict) and forwarded.get("email"):
         return False

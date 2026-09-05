@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import os
 import re
+import threading
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
@@ -23,12 +25,18 @@ from ..extensions import db
 from ..models import Commitment, Company, Contact, Document, Project
 from ..models.vendor_invoice import VendorInvoice, VendorInvoiceFile
 from ..services.object_storage import UploadCategory, save_upload
-from ._parse import extract_invoice_fields
+from ._parse import (
+    extract_forwarded_origin,
+    extract_invoice_fields,
+    looks_like_forward,
+    normalize_org_name,
+)
 
 _KEEP_EXT = frozenset(
     {".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".webp", ".heic", ".xlsx", ".xls", ".doc", ".docx"}
 )
-_SKIP_INLINE_MAX = 20 * 1024
+_ATTACH_MAX_BYTES = 20 * 1024 * 1024
+_SYNC_LOCK = threading.Lock()
 
 
 def invoice_mailbox() -> str:
@@ -63,9 +71,29 @@ def _parse_dt(raw: Any) -> datetime | None:
     return dt
 
 
+def _internal_domains() -> set[str]:
+    domains = {"gousis.com"}
+    try:
+        raw = str(current_app.config.get("MAIL_ALLOWED_FROM_DOMAINS") or "")
+        domains.update(p.strip().lower() for p in raw.split(",") if p.strip())
+    except RuntimeError:
+        pass
+    mailbox = invoice_mailbox().lower()
+    if "@" in mailbox:
+        domains.add(mailbox.rsplit("@", 1)[-1])
+    return {d for d in domains if d}
+
+
+def _is_internal_address(email: str | None) -> bool:
+    addr = (email or "").strip().lower()
+    if "@" not in addr:
+        return False
+    return addr.rsplit("@", 1)[-1] in _internal_domains()
+
+
 def _match_vendor(from_email: str | None, from_name: str | None) -> UUID | None:
     email = (from_email or "").strip().lower()
-    if email:
+    if email and not _is_internal_address(email):
         contact = db.session.scalar(
             select(Contact).where(func.lower(Contact.email) == email).limit(1)
         )
@@ -82,15 +110,27 @@ def _match_vendor(from_email: str | None, from_name: str | None) -> UUID | None:
 
     name = (from_name or "").strip()
     if len(name) >= 3:
+        types = ("vendor", "subcontractor", "other", "gc")
         rows = db.session.scalars(
             select(Company).where(
                 Company.deleted_at.is_(None),
-                Company.company_type.in_(("vendor", "subcontractor", "other")),
+                Company.company_type.in_(types),
                 func.lower(Company.name) == name.lower(),
-            )
+            ).limit(2)
         ).all()
-        if len(rows) == 1:
+        if rows:
             return rows[0].id
+        needle = normalize_org_name(name)
+        if len(needle) >= 4:
+            candidates = db.session.scalars(
+                select(Company).where(
+                    Company.deleted_at.is_(None),
+                    Company.company_type.in_(types),
+                ).limit(2000)
+            ).all()
+            hits = [c for c in candidates if normalize_org_name(c.name) == needle]
+            if hits:
+                return hits[0].id
     return None
 
 
@@ -144,7 +184,7 @@ def _match_commitment(po_number: str | None, vendor_id: UUID | None) -> tuple[UU
 
 
 def _keep_attachment(name: str, content_type: str, size: int, is_inline: bool) -> bool:
-    if is_inline and size and size < _SKIP_INLINE_MAX:
+    if is_inline:
         return False
     ext = ""
     if "." in (name or ""):
@@ -194,35 +234,116 @@ def _store_attachment(
     )
 
 
-def ingest_graph_message(
-    detail: dict[str, Any],
-    *,
-    mailbox: str,
-    actor_user_id: UUID | None = None,
-) -> VendorInvoice | None:
-    mid = str(detail.get("id") or "").strip()
-    if not mid:
-        return None
-    existing = db.session.scalar(select(VendorInvoice).where(VendorInvoice.graph_message_id == mid))
-    if existing is not None:
-        return None
-
+def _message_fields(detail: dict[str, Any]) -> dict[str, Any]:
     from_info = detail.get("from") or {}
-    from_email = (from_info.get("address") or "").strip() or None
-    from_name = (from_info.get("name") or "").strip() or None
+    envelope_email = (from_info.get("address") or "").strip() or None
+    envelope_name = (from_info.get("name") or "").strip() or None
     subject = (detail.get("subject") or "").strip() or None
     body = str(detail.get("body_content") or "")
     preview = (detail.get("preview") or "")[:2000] or None
     parsed = extract_invoice_fields(subject, body)
+    origin = extract_forwarded_origin(subject, body, skip_domains=_internal_domains())
+    parsed["forwarded"] = origin
+    parsed["envelope_from"] = envelope_email
+    parsed["envelope_from_name"] = envelope_name
+
+    from_email = envelope_email
+    from_name = envelope_name
+    has_origin = bool(origin.get("email") or origin.get("company") or origin.get("name"))
+    employee_forward = _is_internal_address(envelope_email) and has_origin
+    if employee_forward or (origin.get("is_forward") and has_origin):
+        if origin.get("email"):
+            from_email = str(origin["email"])
+        from_name = origin.get("company") or origin.get("name") or from_name
+
     vendor_id = _match_vendor(from_email, from_name)
+    if vendor_id is None and origin.get("company"):
+        vendor_id = _match_vendor(None, str(origin["company"]))
+    if vendor_id is None and origin.get("name"):
+        vendor_id = _match_vendor(from_email, str(origin["name"]))
+
     amount = None
     if parsed.get("amount"):
         try:
             amount = Decimal(str(parsed["amount"]))
         except Exception:
             amount = None
-    commitment_id, commitment_project_id = _match_commitment(parsed.get("po_number"), vendor_id)
-    project_id = commitment_project_id or _match_project(list(parsed.get("job_tokens") or []), subject)
+    return {
+        "from_email": from_email,
+        "from_name": from_name,
+        "subject": subject,
+        "body": body,
+        "preview": preview,
+        "parsed": parsed,
+        "vendor_id": vendor_id,
+        "amount": amount,
+        "origin": origin,
+    }
+
+
+def _should_enrich(invoice: VendorInvoice) -> bool:
+    if invoice.source != "email" or invoice.status not in {"received", "routed"}:
+        return False
+    if _is_internal_address(invoice.from_email):
+        return True
+    meta = invoice.parse_meta if isinstance(invoice.parse_meta, dict) else {}
+    forwarded = meta.get("forwarded") if isinstance(meta, dict) else None
+    if isinstance(forwarded, dict) and forwarded.get("email"):
+        return False
+    return looks_like_forward(invoice.subject, invoice.body_preview)
+
+
+def _enrich_from_detail(invoice: VendorInvoice, detail: dict[str, Any]) -> bool:
+    fields = _message_fields(detail)
+    changed = False
+    if fields["from_email"] and fields["from_email"] != invoice.from_email:
+        invoice.from_email = fields["from_email"]
+        changed = True
+    if fields["from_name"] and fields["from_name"] != invoice.from_name:
+        invoice.from_name = fields["from_name"]
+        changed = True
+    if invoice.vendor_company_id is None and fields["vendor_id"] is not None:
+        invoice.vendor_company_id = fields["vendor_id"]
+        changed = True
+    if invoice.invoice_number is None and fields["parsed"].get("invoice_number"):
+        invoice.invoice_number = fields["parsed"].get("invoice_number")
+        changed = True
+    if invoice.amount is None and fields["amount"] is not None:
+        invoice.amount = fields["amount"]
+        changed = True
+    if invoice.po_number is None and fields["parsed"].get("po_number"):
+        invoice.po_number = fields["parsed"].get("po_number")
+        changed = True
+    meta = dict(invoice.parse_meta or {})
+    meta.update(fields["parsed"])
+    invoice.parse_meta = meta
+    if not invoice.body_preview:
+        invoice.body_preview = fields["preview"] or (fields["parsed"].get("text_sample") or "")[:2000] or None
+    return changed
+
+
+def ingest_graph_message(
+    detail: dict[str, Any],
+    *,
+    mailbox: str,
+    actor_user_id: UUID | None = None,
+    existing: VendorInvoice | None = None,
+) -> VendorInvoice | None:
+    mid = str(detail.get("id") or "").strip()
+    if not mid:
+        return None
+    if existing is None:
+        existing = db.session.scalar(select(VendorInvoice).where(VendorInvoice.graph_message_id == mid))
+    if existing is not None:
+        return existing if _enrich_from_detail(existing, detail) else None
+
+    fields = _message_fields(detail)
+    commitment_id, commitment_project_id = _match_commitment(
+        fields["parsed"].get("po_number"), fields["vendor_id"]
+    )
+    project_id = commitment_project_id or _match_project(
+        list(fields["parsed"].get("job_tokens") or []), fields["subject"]
+    )
     status = "routed" if project_id else "received"
     now = datetime.now(timezone.utc)
 
@@ -231,18 +352,18 @@ def ingest_graph_message(
         source="email",
         graph_message_id=mid,
         mailbox=mailbox,
-        from_email=from_email,
-        from_name=from_name,
-        subject=subject,
-        body_preview=preview or (parsed.get("text_sample") or "")[:2000] or None,
+        from_email=fields["from_email"],
+        from_name=fields["from_name"],
+        subject=fields["subject"],
+        body_preview=fields["preview"] or (fields["parsed"].get("text_sample") or "")[:2000] or None,
         received_at=_parse_dt(detail.get("received")) or now,
-        vendor_company_id=vendor_id,
+        vendor_company_id=fields["vendor_id"],
         project_id=project_id,
         commitment_id=commitment_id,
-        invoice_number=parsed.get("invoice_number"),
-        amount=amount,
-        po_number=parsed.get("po_number"),
-        parse_meta=parsed,
+        invoice_number=fields["parsed"].get("invoice_number"),
+        amount=fields["amount"],
+        po_number=fields["parsed"].get("po_number"),
+        parse_meta=fields["parsed"],
         routed_at=now if project_id else None,
         routed_by_user_id=actor_user_id if project_id else None,
     )
@@ -257,6 +378,8 @@ def ingest_graph_message(
         size = int(att.get("size") or 0)
         if not _keep_attachment(name, ctype, size, bool(att.get("is_inline"))):
             continue
+        if size and size > _ATTACH_MAX_BYTES:
+            continue
         att_id = str(att.get("id") or "")
         if not att_id:
             continue
@@ -264,17 +387,20 @@ def ingest_graph_message(
             data, fname, ftype = download_mailbox_attachment(
                 mailbox=mailbox, message_id=mid, attachment_id=att_id
             )
+            _store_attachment(
+                invoice=invoice,
+                filename=fname or name,
+                content_type=ftype or ctype,
+                data=data,
+                is_primary=stored == 0,
+                uploaded_by=actor_user_id,
+            )
+            stored += 1
         except GraphMailError:
             continue
-        _store_attachment(
-            invoice=invoice,
-            filename=fname or name,
-            content_type=ftype or ctype,
-            data=data,
-            is_primary=stored == 0,
-            uploaded_by=actor_user_id,
-        )
-        stored += 1
+        except Exception:
+            current_app.logger.exception("Invoice attachment store failed for %s", mid)
+            continue
 
     from ._events import record_event
 
@@ -287,13 +413,34 @@ def ingest_graph_message(
             "mailbox": mailbox,
             "attachment_count": stored,
             "auto_project": bool(project_id),
-            "auto_vendor": bool(vendor_id),
+            "auto_vendor": bool(fields["vendor_id"]),
         },
     )
     return invoice
 
 
-def sync_invoice_mailbox(*, top: int = 50, actor_user_id: UUID | None = None) -> dict[str, Any]:
+def _sync_limits(max_new: int | None, budget_sec: float | None) -> tuple[int, float]:
+    cfg_new = 8
+    cfg_budget = 70.0
+    try:
+        cfg_new = int(current_app.config.get("INVOICE_MAILBOX_SYNC_MAX_NEW") or 8)
+        cfg_budget = float(current_app.config.get("INVOICE_MAILBOX_SYNC_BUDGET_SEC") or 70)
+    except (RuntimeError, TypeError, ValueError):
+        pass
+    if max_new is not None:
+        cfg_new = int(max_new)
+    if budget_sec is not None:
+        cfg_budget = float(budget_sec)
+    return max(1, cfg_new), max(5.0, cfg_budget)
+
+
+def sync_invoice_mailbox(
+    *,
+    top: int = 50,
+    actor_user_id: UUID | None = None,
+    max_new: int | None = None,
+    budget_sec: float | None = None,
+) -> dict[str, Any]:
     mailbox = invoice_mailbox()
     if not mailbox_ready():
         raise RuntimeError(
@@ -301,38 +448,91 @@ def sync_invoice_mailbox(*, top: int = 50, actor_user_id: UUID | None = None) ->
             "MS_ENTRA_CLIENT_ID, and MS_ENTRA_CLIENT_SECRET, and grant Mail.Read "
             f"on {mailbox}."
         )
+    if not _SYNC_LOCK.acquire(blocking=False):
+        return {
+            "mailbox": mailbox,
+            "scanned": 0,
+            "created": 0,
+            "updated": 0,
+            "skipped": 0,
+            "errors": [],
+            "busy": True,
+            "truncated": False,
+        }
+    try:
+        return _sync_invoice_mailbox_locked(
+            mailbox=mailbox,
+            top=top,
+            actor_user_id=actor_user_id,
+            max_new=max_new,
+            budget_sec=budget_sec,
+        )
+    finally:
+        _SYNC_LOCK.release()
+
+
+def _sync_invoice_mailbox_locked(
+    *,
+    mailbox: str,
+    top: int,
+    actor_user_id: UUID | None,
+    max_new: int | None,
+    budget_sec: float | None,
+) -> dict[str, Any]:
+    limit_new, limit_sec = _sync_limits(max_new, budget_sec)
+    deadline = time.monotonic() + limit_sec
     listing = list_mailbox_messages(mailbox=mailbox, folder="inbox", top=top)
     created = 0
+    updated = 0
     skipped = 0
+    truncated = False
     errors: list[str] = []
-    for item in listing.get("items") or []:
+    items = listing.get("items") or []
+    for idx, item in enumerate(items):
+        if time.monotonic() >= deadline:
+            truncated = True
+            break
         mid = str(item.get("id") or "")
         if not mid:
             continue
-        if db.session.scalar(select(VendorInvoice.id).where(VendorInvoice.graph_message_id == mid)):
+        existing = db.session.scalar(select(VendorInvoice).where(VendorInvoice.graph_message_id == mid))
+        if existing is not None and not _should_enrich(existing):
             skipped += 1
             continue
+        if created >= limit_new and not (existing is not None and _should_enrich(existing)):
+            truncated = True
+            break
         try:
             with db.session.begin_nested():
                 detail = get_mailbox_message(mailbox=mailbox, message_id=mid)
-                invoice = ingest_graph_message(detail, mailbox=mailbox, actor_user_id=actor_user_id)
+                invoice = ingest_graph_message(
+                    detail, mailbox=mailbox, actor_user_id=actor_user_id, existing=existing
+                )
                 if invoice is None:
                     skipped += 1
                     continue
-                created += 1
-                try:
-                    mark_mailbox_message_read(mailbox=mailbox, message_id=mid, is_read=True)
-                except GraphMailError:
-                    pass
+                if existing is not None:
+                    updated += 1
+                else:
+                    created += 1
+                    try:
+                        mark_mailbox_message_read(mailbox=mailbox, message_id=mid, is_read=True)
+                    except GraphMailError:
+                        pass
         except GraphMailError as exc:
             errors.append(str(exc))
         except Exception as exc:
             current_app.logger.exception("Invoice mailbox ingest failed for %s", mid)
             errors.append(f"{mid}: {exc}")
+        if created >= limit_new and idx + 1 < len(items):
+            truncated = True
     return {
         "mailbox": mailbox,
         "scanned": len(listing.get("items") or []),
         "created": created,
+        "updated": updated,
         "skipped": skipped,
         "errors": errors,
+        "busy": False,
+        "truncated": truncated,
     }

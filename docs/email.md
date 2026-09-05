@@ -24,7 +24,7 @@ The website always uses the **signed-in user’s** mailbox address — never a m
 
 Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom folders and subfolders, read, delete, and compose. That page calls `GET /api/v1/mail/folders`, `GET/PATCH/DELETE /api/v1/mail/messages`, and `POST /api/v1/messages/email`.
 
-**AP invoices:** `POST /api/v1/ap/mailbox/sync` reads `invoices@gousis.com`. The web process also polls that mailbox every 5 minutes (`INVOICE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`). Production has a Render cron (`usis-invoice-mailbox-sync`) that POSTs the same route with `X-Cron-Secret`.
+**AP invoices:** `POST /api/v1/ap/mailbox/sync` reads `invoices@gousis.com`. Vendors can send there directly, or staff can forward a vendor invoice from their own inbox — USIS treats the original From:/subject as the vendor, not the employee who forwarded it. Each request ingests a small batch (default 8 new messages, 70 seconds) so Cloudflare/Render do not return HTML 502. The web process also polls that mailbox every 5 minutes (`INVOICE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`). Production has a Render cron (`usis-invoice-mailbox-sync`) that POSTs the same route with `X-Cron-Secret`.
 
 ## Environment variables
 
@@ -35,6 +35,8 @@ Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom f
 | `QUOTES_MAILBOX` | No | `quotes@gousis.com` | RFP invitations From / Reply-To and inbound quote ingest |
 | `INVOICE_MAILBOX` | No | `invoices@gousis.com` | AP invoice ingest |
 | `INVOICE_MAILBOX_SYNC_INTERVAL_SEC` | No | `300` | In-process poll of `invoices@`; `0` disables (Render cron still runs) |
+| `INVOICE_MAILBOX_SYNC_MAX_NEW` | No | `8` | New messages ingested per sync request |
+| `INVOICE_MAILBOX_SYNC_BUDGET_SEC` | No | `70` | Stop ingest before the site gateway times out |
 | `MAIL_ALLOWED_FROM_DOMAINS` | No | `gousis.com` | Staff send-as is limited to these domains |
 | `MS_ENTRA_TENANT_ID` / `CLIENT_ID` / `CLIENT_SECRET` | Yes for Graph | *(already on Render)* | Same app as Microsoft login |
 

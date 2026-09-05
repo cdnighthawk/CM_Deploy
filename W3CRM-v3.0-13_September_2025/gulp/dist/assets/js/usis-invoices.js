@@ -55,6 +55,10 @@
 						.map(function (row) {
 							var vendor = row.vendor_name || row.from_name || row.from_email || "—";
 							var job = row.project_number || row.project_name || "Unassigned";
+							var vendorCell = X.esc(vendor);
+							if (row.subject && row.subject !== vendor) {
+								vendorCell += '<div class="small text-muted">' + X.esc(row.subject) + "</div>";
+							}
 							var extras = [];
 							if (row.can_approve) {
 								extras.push({
@@ -79,7 +83,7 @@
 								"<tr><td>" +
 								X.statusBadge(row.status) +
 								"</td><td>" +
-								X.esc(vendor) +
+								vendorCell +
 								"</td><td>" +
 								X.esc(row.invoice_number || "—") +
 								"</td><td>" +
@@ -140,7 +144,25 @@
 		X.apiFetch("/api/v1/ap/mailbox/sync", { method: "POST" })
 			.then(function (data) {
 				var item = data.item || {};
-				setStatus("Synced " + (item.created || 0) + " new invoice(s); skipped " + (item.skipped || 0) + ".");
+				if (item.busy) {
+					setStatus("Mailbox sync is already running. New invoices will show up shortly.");
+					loadList();
+					return;
+				}
+				var extra = item.truncated ? " More mail remains; auto-sync will continue." : "";
+				var errN = (item.errors && item.errors.length) || 0;
+				var updated = item.updated || 0;
+				setStatus(
+					"Synced " +
+						(item.created || 0) +
+						" new invoice(s)" +
+						(updated ? "; updated " + updated + " forwarded invoice(s)" : "") +
+						"; skipped " +
+						(item.skipped || 0) +
+						"." +
+						extra,
+					errN > 0 && !(item.created || 0) && !updated
+				);
 				loadList();
 			})
 			.catch(function (err) {

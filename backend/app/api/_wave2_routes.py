@@ -48,6 +48,17 @@ def register_wave2_routes(bp: Blueprint) -> None:
         except ApiError as exc:
             return _err(exc)
 
+    @bp.get("/projects/<project_id>/wave2/<kind>/<row_id>")
+    def get_wave2(project_id: str, kind: str, row_id: str):
+        pid = _parse_uuid_param(project_id)
+        rid = _parse_uuid_param(row_id)
+        if not pid or not rid:
+            return _jsonify({"error": "invalid id"}), 400
+        try:
+            return _jsonify(wave2_svc.get_project_kind(pid, kind, rid, current_user()))
+        except ApiError as exc:
+            return _err(exc)
+
     @bp.patch("/projects/<project_id>/wave2/<kind>/<row_id>")
     def patch_wave2(project_id: str, kind: str, row_id: str):
         pid = _parse_uuid_param(project_id)

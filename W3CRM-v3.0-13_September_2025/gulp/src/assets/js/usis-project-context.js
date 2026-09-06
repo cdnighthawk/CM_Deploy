@@ -102,6 +102,24 @@
     }
   }
 
+  function stampWave1DocLinks(projectId) {
+    if (!projectId) return;
+    var map = [
+      ["usis-ca-cpr-add", "construction/cpr-create.html"],
+      ["usis-ca-co-add", "construction/prime-co-create.html"],
+      ["usis-sco-add", "construction/sco-create.html"],
+      ["usis-meeting-add", "construction/meeting-create.html"],
+      ["usis-poco-add", "construction/po-co-create.html"],
+      ["usis-subinv-add", "construction/sub-invoice-create.html"],
+    ];
+    map.forEach(function (pair) {
+      var el = document.getElementById(pair[0]);
+      if (!el) return;
+      el.setAttribute("href", pair[1] + "?project_id=" + encodeURIComponent(projectId));
+      el.classList.remove("d-none");
+    });
+  }
+
   function apiBase() {
     if (typeof global.usisApiBase === "function") {
       return global.usisApiBase();
@@ -264,6 +282,7 @@
     stampPunchLinks(id);
     stampSubmittalLinks(id);
     stampPoLinks(id);
+    stampWave1DocLinks(id);
     var issuesLink = document.getElementById("usis-issue-open-log");
     if (issuesLink) {
       issuesLink.setAttribute("href", "construction/issues.html?project_id=" + encodeURIComponent(id));

@@ -112,6 +112,10 @@
 		if (current) setActive(current.id);
 		var tab = new URLSearchParams(window.location.search).get("tab");
 		if (tab === "punch") showTab("proj-tab-punch");
+		if (tab === "meetings") showTab("proj-tab-meetings");
+		if (tab === "contract") showTab("proj-tab-contract");
+		if (tab === "procurement") showTab("proj-tab-procurement");
+		if (tab === "subinv") showTab("proj-tab-subinv");
 	}
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

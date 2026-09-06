@@ -115,13 +115,41 @@
 	function renderChangeRows(tbody, items, cols, convert, kind) {
 		if (!tbody) return;
 		if (!items || !items.length) {
-			tbody.innerHTML = emptyRow(cols, "None yet.");
+			var emptyMsg =
+				kind === "cpr"
+					? "No change proposal requests."
+					: kind === "sco"
+						? "No subcontract change orders."
+						: "No prime change orders.";
+			if (window.USISUi && window.USISUi.emptyState) {
+				tbody.innerHTML =
+					'<tr><td colspan="' +
+					cols +
+					'">' +
+					window.USISUi.emptyState({ title: emptyMsg, body: "" }) +
+					"</td></tr>";
+			} else {
+				tbody.innerHTML = emptyRow(cols, emptyMsg);
+			}
 			return;
 		}
 		var createTarget =
 			kind === "cpr" ? "#usis-ca-cpr-add" : kind === "sco" ? "#usis-sco-add" : "#usis-ca-co-add";
 		var delClass =
 			kind === "cpr" ? "usis-cpr-del" : kind === "sco" ? "usis-sco-del" : "usis-co-del";
+		var chip = function (st) {
+			return window.USISUi && window.USISUi.statusChip ? window.USISUi.statusChip(st || "") : esc(st || "");
+		};
+		var openHref = function (it) {
+			var pid = projectId();
+			var page =
+				kind === "cpr"
+					? "construction/cpr-create.html"
+					: kind === "sco"
+						? "construction/sco-create.html"
+						: "construction/prime-co-create.html";
+			return page + "?project_id=" + encodeURIComponent(pid) + "&id=" + encodeURIComponent(it.id);
+		};
 		tbody.innerHTML = items
 			.map(function (it) {
 				var extras = convert
@@ -135,20 +163,80 @@
 								deleteClass: delClass,
 								extras: extras,
 							})
-						: convert
-							? '<button type="button" class="btn btn-link btn-sm p-0 usis-cpr-to-co" data-id="' +
-								esc(it.id) +
-								'">To prime CO</button>'
-							: "";
+						: "";
+				var open = '<a class="text-decoration-none" href="' + esc(openHref(it)) + '">';
+				if (kind === "cpr") {
+					return (
+						"<tr>" +
+						"<td>" +
+						open +
+						esc(it.number || "") +
+						"</a></td><td>" +
+						open +
+						esc(it.subject || it.title || "") +
+						"</a></td><td>" +
+						esc(it.origin || "") +
+						"</td><td>" +
+						esc(it.impacted_company_name || "") +
+						"</td><td>" +
+						chip(it.status) +
+						"</td><td>" +
+						esc(it.status_date || "") +
+						'</td><td class="text-end">' +
+						money(it.amount) +
+						"</td><td>" +
+						esc(it.source_tm_ticket_id ? "T&M" : "—") +
+						"</td><td>" +
+						esc(it.prime_co_number || "—") +
+						'</td><td class="text-end">' +
+						menu +
+						"</td></tr>"
+					);
+				}
+				if (kind === "sco") {
+					return (
+						"<tr>" +
+						"<td>" +
+						open +
+						esc(it.number || "") +
+						"</a></td><td>" +
+						esc(it.subcontract_number || "") +
+						"</td><td>" +
+						esc(it.vendor_name || "") +
+						"</td><td>" +
+						open +
+						esc(it.subject || "") +
+						"</a></td><td>" +
+						chip(it.status) +
+						"</td><td>" +
+						esc(it.status_date || "") +
+						'</td><td class="text-end">' +
+						money(it.amount) +
+						'</td><td class="text-end">' +
+						menu +
+						"</td></tr>"
+					);
+				}
 				return (
-					"<tr><td>" +
+					"<tr>" +
+					"<td>" +
+					open +
 					esc(it.number || "") +
-					"</td><td>" +
+					"</a></td><td>" +
+					open +
 					esc(it.subject || it.title || "") +
+					"</a></td><td>" +
+					chip(it.status) +
 					"</td><td>" +
-					esc(it.status || "") +
-					"</td><td class=\"text-end\">" +
+					esc(it.status_date || "") +
+					'</td><td class="text-end">' +
 					money(it.amount) +
+					"</td><td>" +
+					esc(it.contract_number || "") +
+					"</td><td>" +
+					esc(it.gc_company_name || "USIS") +
+					"</td><td>" +
+					(it.revises_contract || it.approved_revises_contract ? "Yes" : "No") +
 					'</td><td class="text-end">' +
 					menu +
 					"</td></tr>"
@@ -162,7 +250,7 @@
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/cprs"))
 			.then(function (data) {
-				renderChangeRows(tbody, data.items || [], 5, true, "cpr");
+				renderChangeRows(tbody, data.items || [], 10, true, "cpr");
 			})
 			.catch(function () {
 				tbody.innerHTML = emptyRow(5, "Could not load CPRs.");
@@ -174,7 +262,7 @@
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/change-orders"))
 			.then(function (data) {
-				renderChangeRows(tbody, data.items || [], 5, false, "co");
+				renderChangeRows(tbody, data.items || [], 9, false, "co");
 			})
 			.catch(function () {
 				tbody.innerHTML = emptyRow(5, "Could not load change orders.");
@@ -182,45 +270,30 @@
 	}
 
 	function addCpr() {
-		var subject = window.prompt("CPR subject");
-		if (!subject) return;
-		var amount = window.prompt("Amount (optional)") || "0";
-		fetchJson(pidPath("/cprs"), {
-			method: "POST",
-			body: {
-				subject: subject.trim(),
-				items: [{ description: subject.trim(), quantity: 1, unit_price: amount }],
-			},
-		})
-			.then(loadCprs)
-			.catch(function (err) {
-				window.alert((err && err.body) || "Could not create CPR.");
-			});
+		var pid = projectId();
+		if (!pid) return;
+		window.location.href = "construction/cpr-create.html?project_id=" + encodeURIComponent(pid);
 	}
 
 	function addCo() {
-		var subject = window.prompt("Prime CO subject");
-		if (!subject) return;
-		var amount = window.prompt("Amount (optional)") || "0";
-		fetchJson(pidPath("/change-orders"), {
-			method: "POST",
-			body: {
-				subject: subject.trim(),
-				status: "draft",
-				items: [{ description: subject.trim(), quantity: 1, unit_price: amount }],
-			},
-		})
-			.then(loadCos)
-			.catch(function (err) {
-				window.alert((err && err.body) || "Could not create change order.");
-			});
+		var pid = projectId();
+		if (!pid) return;
+		window.location.href = "construction/prime-co-create.html?project_id=" + encodeURIComponent(pid);
 	}
 
 	function cprToCo(cprId) {
-		fetchJson(pidPath("/change-orders"), { method: "POST", body: { cpr_id: cprId } })
-			.then(function () {
+		fetchJson(pidPath("/cprs/" + encodeURIComponent(cprId) + "/convert-to-prime-co"), { method: "POST", body: {} })
+			.then(function (data) {
 				loadCos();
 				loadCprs();
+				var co = data && data.item;
+				if (co && co.id) {
+					window.location.href =
+						"construction/prime-co-create.html?project_id=" +
+						encodeURIComponent(projectId()) +
+						"&id=" +
+						encodeURIComponent(co.id);
+				}
 			})
 			.catch(function (err) {
 				window.alert((err && err.body) || "Could not convert CPR.");
@@ -351,7 +424,7 @@
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/scos"))
 			.then(function (data) {
-				renderChangeRows(tbody, data.items || [], 5, false, "sco");
+				renderChangeRows(tbody, data.items || [], 8, false, "sco");
 			})
 			.catch(function () {
 				tbody.innerHTML = emptyRow(5, "Could not load SCOs.");
@@ -359,23 +432,9 @@
 	}
 
 	function addSco() {
-		var commitmentId = window.prompt("Subcontract commitment UUID");
-		if (!commitmentId) return;
-		var subject = window.prompt("SCO subject");
-		if (!subject) return;
-		var amount = window.prompt("Amount (optional)") || "0";
-		fetchJson(pidPath("/scos"), {
-			method: "POST",
-			body: {
-				commitment_id: commitmentId.trim(),
-				subject: subject.trim(),
-				items: [{ description: subject.trim(), quantity: 1, unit_price: amount }],
-			},
-		})
-			.then(loadScos)
-			.catch(function (err) {
-				window.alert((err && err.body) || "Could not create SCO.");
-			});
+		var pid = projectId();
+		if (!pid) return;
+		window.location.href = "construction/sco-create.html?project_id=" + encodeURIComponent(pid);
 	}
 
 	function onReady() {

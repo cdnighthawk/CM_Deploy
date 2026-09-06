@@ -6,7 +6,7 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,6 +22,21 @@ if TYPE_CHECKING:
     from .rfi_lookups import CostCode
 
 CHANGE_STATUSES = ("draft", "pending_submission", "pending", "not_approved", "approved")
+CPR_STATUSES = (
+    "draft",
+    "submitted",
+    "under_review",
+    "accepted",
+    "rejected",
+    "converted",
+    "void",
+    "pending_submission",
+    "pending",
+    "not_approved",
+    "approved",
+)
+PRIME_CO_STATUSES = ("draft", "submitted", "approved", "void", "pending_submission", "pending", "not_approved")
+SCO_STATUSES = ("draft", "issued", "approved", "void", "pending_submission", "pending", "not_approved")
 
 
 class ChangeProposalRequest(UUIDPKMixin, TimestampMixin, db.Model):
@@ -41,6 +56,11 @@ class ChangeProposalRequest(UUIDPKMixin, TimestampMixin, db.Model):
     response_due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     impacted_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("companies.id", ondelete="SET NULL"), nullable=True
+    )
+    origin: Mapped[Optional[str]] = mapped_column(String(40), nullable=True, default="other", server_default="other")
+    source_tm_ticket_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    source_rfi_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rfis.id", ondelete="SET NULL"), nullable=True
     )
     schedule_impact_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -95,6 +115,14 @@ class OwnerChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
     issue_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     schedule_impact_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    approved_revises_contract: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    contract_value_applied: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    source_tm_ticket_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    gc_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("companies.id", ondelete="SET NULL"), nullable=True
+    )
     created_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -144,6 +172,7 @@ class SubcontractChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
     status_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     issue_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    value_applied: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     created_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

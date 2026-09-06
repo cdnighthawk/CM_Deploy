@@ -8,12 +8,12 @@
 	var KINDS = [
 		{ kind: "punchlist", titleKey: "title", extra: "location", heading: "New GC punch item", submit: "Add item", customCreate: true },
 		{ kind: "work-orders", titleKey: "subject", extra: "amount", heading: "New work order", submit: "Add work order" },
-		{ kind: "meetings", titleKey: "subject", extra: "meeting_date", heading: "New meeting", submit: "Add meeting" },
+		{ kind: "meetings", titleKey: "subject", extra: "meeting_date", heading: "New meeting", submit: "Add meeting", customCreate: true },
 		{ kind: "safety-incidents", titleKey: "subject", extra: "severity", heading: "New safety incident", submit: "Add incident" },
 		{ kind: "transmittals", titleKey: "subject", extra: "due_date", heading: "New transmittal", submit: "Add transmittal" },
 		{ kind: "anticipated-costs", titleKey: "subject", extra: "amount", heading: "New anticipated cost", submit: "Add cost" },
-		{ kind: "po-change-orders", titleKey: "subject", extra: "amount", needCommitment: true, heading: "New PO change order", submit: "Add PO CO" },
-		{ kind: "sub-invoices", titleKey: "subject", extra: "amount", heading: "New sub invoice", submit: "Add sub invoice" },
+		{ kind: "po-change-orders", titleKey: "subject", extra: "amount", needCommitment: true, heading: "New PO change order", submit: "Add PO CO", customCreate: true },
+		{ kind: "sub-invoices", titleKey: "subject", extra: "amount", heading: "New sub invoice", submit: "Add sub invoice", customCreate: true },
 		{ kind: "qc-checklists", titleKey: "subject", extra: "review_date", heading: "New QC checklist", submit: "Add checklist" },
 	];
 
@@ -61,15 +61,43 @@
 		return "construction/punch-create.html?project_id=" + encodeURIComponent(pid);
 	}
 
+	function docHref(page, id) {
+		var pid = projectId();
+		var href = "construction/" + page;
+		if (!pid) return href;
+		href += "?project_id=" + encodeURIComponent(pid);
+		if (id) href += "&id=" + encodeURIComponent(id);
+		return href;
+	}
+
+	function chip(st) {
+		return window.USISUi && window.USISUi.statusChip ? window.USISUi.statusChip(st || "") : esc(st || "");
+	}
+
+	function emptyCell(cols, title) {
+		if (window.USISUi && window.USISUi.emptyState) {
+			return '<tr><td colspan="' + cols + '">' + window.USISUi.emptyState({ title: title, body: "" }) + "</td></tr>";
+		}
+		return '<tr><td colspan="' + cols + '" class="text-muted">' + esc(title) + "</td></tr>";
+	}
+
 	function loadKind(cfg) {
 		var tbody = document.getElementById("usis-w2-" + cfg.kind);
 		if (!tbody || !projectId()) return;
 		fetchJson(pidPath("/wave2/" + cfg.kind))
 			.then(function (data) {
 				var items = data.items || [];
-				var cols = cfg.kind === "punchlist" ? 7 : 5;
+				var cols = cfg.kind === "punchlist" ? 7 : cfg.kind === "meetings" ? 10 : cfg.kind === "sub-invoices" ? 10 : cfg.kind === "po-change-orders" ? 7 : 5;
 				if (!items.length) {
-					tbody.innerHTML = '<tr><td colspan="' + cols + '" class="text-muted">None yet.</td></tr>';
+					var emptyTitle =
+						cfg.kind === "meetings"
+							? "No meetings."
+							: cfg.kind === "po-change-orders"
+								? "No PO change orders."
+								: cfg.kind === "sub-invoices"
+									? "No sub invoices."
+									: "None yet.";
+					tbody.innerHTML = emptyCell(cols, emptyTitle);
 					return;
 				}
 				tbody.innerHTML = items
@@ -77,7 +105,13 @@
 						var createTarget =
 							cfg.kind === "punchlist"
 								? "#usis-punch-gc-add"
-								: '[data-usis-wave2-add="' + cfg.kind + '"]';
+								: cfg.kind === "meetings"
+									? "#usis-meeting-add"
+									: cfg.kind === "po-change-orders"
+										? "#usis-poco-add"
+										: cfg.kind === "sub-invoices"
+											? "#usis-subinv-add"
+											: '[data-usis-wave2-add="' + cfg.kind + '"]';
 						var menu =
 							window.USISUi && window.USISUi.rowMenu
 								? window.USISUi.rowMenu({
@@ -105,6 +139,88 @@
 								esc(it.location || "") +
 								"</td><td>" +
 								esc(it.priority || "") +
+								"</td><td>" +
+								menu +
+								"</td></tr>"
+							);
+						}
+						if (cfg.kind === "meetings") {
+							var mhref = docHref("meeting-create.html", it.id);
+							return (
+								"<tr><td><a href=\"" +
+								esc(mhref) +
+								"\">" +
+								esc(it.number || "") +
+								"</a></td><td>" +
+								esc(it.meeting_type || "") +
+								"</td><td><a href=\"" +
+								esc(mhref) +
+								"\">" +
+								esc(it.subject || "") +
+								"</a></td><td>" +
+								esc(it.meeting_date || "") +
+								"</td><td>" +
+								esc(it.time_range || ((it.start_time || "") + (it.end_time ? "–" + it.end_time : ""))) +
+								"</td><td>" +
+								esc(it.location || "") +
+								"</td><td>" +
+								esc(it.facilitator_name || "") +
+								"</td><td>" +
+								chip(it.status) +
+								"</td><td>" +
+								esc(it.attendee_count != null ? it.attendee_count : "") +
+								"</td><td>" +
+								menu +
+								"</td></tr>"
+							);
+						}
+						if (cfg.kind === "po-change-orders") {
+							var phref = docHref("po-co-create.html", it.id);
+							return (
+								"<tr><td><a href=\"" +
+								esc(phref) +
+								"\">" +
+								esc(it.number || "") +
+								"</a></td><td>" +
+								esc(it.po_number || "") +
+								"</td><td><a href=\"" +
+								esc(phref) +
+								"\">" +
+								esc(it.subject || "") +
+								"</a></td><td>" +
+								chip(it.status) +
+								"</td><td>" +
+								esc(it.status_date || "") +
+								'</td><td class="text-end">' +
+								money(it.amount) +
+								"</td><td>" +
+								menu +
+								"</td></tr>"
+							);
+						}
+						if (cfg.kind === "sub-invoices") {
+							var shref = docHref("sub-invoice-create.html", it.id);
+							return (
+								"<tr><td><a href=\"" +
+								esc(shref) +
+								"\">" +
+								esc(it.number || "") +
+								"</a></td><td>" +
+								esc(it.subcontract_number || "") +
+								"</td><td>" +
+								esc(it.vendor_name || "") +
+								"</td><td>" +
+								esc(it.period || "") +
+								"</td><td>" +
+								chip(it.status) +
+								'</td><td class="text-end">' +
+								money(it.this_period) +
+								'</td><td class="text-end">' +
+								money(it.retainage) +
+								'</td><td class="text-end">' +
+								money(it.previous_to_date) +
+								'</td><td class="text-end">' +
+								money(it.amount_due) +
 								"</td><td>" +
 								menu +
 								"</td></tr>"

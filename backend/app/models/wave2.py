@@ -121,6 +121,9 @@ class PurchaseOrderChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     items: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    applied: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    amount_applied: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    line_snapshot: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
 class SubInvoice(UUIDPKMixin, TimestampMixin, db.Model):
@@ -138,8 +141,14 @@ class SubInvoice(UUIDPKMixin, TimestampMixin, db.Model):
     approved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     status_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     invoice_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    period_start: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    period_end: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     retainage: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    retainage_pct: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
+    this_period: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    previous_to_date: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    amount_due: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     lines: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
@@ -154,8 +163,15 @@ class Meeting(UUIDPKMixin, TimestampMixin, db.Model):
     subject: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     status: Mapped[str] = mapped_column(String(40), nullable=False, default="scheduled")
     meeting_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    meeting_type: Mapped[Optional[str]] = mapped_column(String(40), nullable=True, default="other")
+    start_time: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    end_time: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    facilitator_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    minutes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     attendees: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     items: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 

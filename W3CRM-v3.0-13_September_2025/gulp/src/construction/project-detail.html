@@ -112,11 +112,12 @@
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-punch">Punchlist</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-time" data-i18n="Time">Time</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>
 							</div>
 						</nav>
 						</div>
@@ -609,7 +610,7 @@
 									<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 										<p class="text-muted small mb-0">Change orders against purchase orders on this job. Each PO CO must link to an existing PO.</p>
 										<div class="d-flex flex-wrap gap-1">
-											<button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="po-change-orders">+ PO CO</button>
+											<a class="btn btn-outline-primary btn-sm d-none" id="usis-poco-add">+ PO CO</a>
 										</div>
 									</div>
 									<div class="table-responsive">
@@ -617,8 +618,10 @@
 											<thead class="table-light">
 												<tr>
 													<th>#</th>
+													<th>PO number</th>
 													<th>Subject</th>
 													<th>Status</th>
+													<th>Status date</th>
 													<th class="text-end">Amount</th>
 													<th class="text-end"></th>
 												</tr>
@@ -655,12 +658,12 @@
 									</div>
 									<div class="d-flex justify-content-between align-items-center mt-4 mb-2">
 										<h6 class="mb-0">Subcontract change orders</h6>
-										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-sco-add">+ SCO</button>
+										<a class="btn btn-outline-primary btn-sm d-none" id="usis-sco-add">+ SCO</a>
 									</div>
 									<div class="table-responsive">
 										<table class="table table-sm table-hover mb-0">
-											<thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead>
-											<tbody id="usis-sco-tbody"><tr><td colspan="5" class="text-muted">Loading…</td></tr></tbody>
+											<thead class="table-light"><tr><th>#</th><th>Subcontract</th><th>Vendor</th><th>Subject</th><th>Status</th><th>Status date</th><th class="text-end">Amount</th><th></th></tr></thead>
+											<tbody id="usis-sco-tbody"><tr><td colspan="8" class="text-muted">Loading…</td></tr></tbody>
 										</table>
 									</div>
 								</div>
@@ -974,14 +977,14 @@
 									<div class="card border-0 shadow-sm h-100">
 										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
 											<span>Change orders (prime)</span>
-											<button type="button" class="btn btn-primary btn-sm" id="usis-ca-co-add">+ New prime CO</button>
+											<a class="btn btn-primary btn-sm d-none" id="usis-ca-co-add">+ New prime CO</a>
 										</div>
 										<div class="card-body small">
 											<p class="text-muted mb-2">Owner-facing prime CO log. Approved + status date revises the owner contract.</p>
 											<div class="table-responsive">
 												<table class="table table-hover table-sm align-middle mb-0">
-													<thead class="table-light"><tr><th>#</th><th>Title</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead>
-													<tbody id="usis-ca-co-tbody"><tr><td colspan="5" class="text-muted">Loading…</td></tr></tbody>
+													<thead class="table-light"><tr><th>#</th><th>Title</th><th>Status</th><th>Status date</th><th class="text-end">Amount</th><th>Contract</th><th>Parties</th><th>Revises contract?</th><th></th></tr></thead>
+													<tbody id="usis-ca-co-tbody"><tr><td colspan="9" class="text-muted">Loading…</td></tr></tbody>
 												</table>
 											</div>
 										</div>
@@ -991,14 +994,14 @@
 									<div class="card border-0 shadow-sm h-100">
 										<div class="card-header bg-white py-2 fw-semibold border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
 											<span>Change proposal requests</span>
-											<button type="button" class="btn btn-primary btn-sm" id="usis-ca-cpr-add">+ New CPR</button>
+											<a class="btn btn-primary btn-sm d-none" id="usis-ca-cpr-add">+ New CPR</a>
 										</div>
 										<div class="card-body small">
 											<p class="text-muted mb-2">Price a potential change with a vendor, then convert to a prime CO.</p>
 											<div class="table-responsive">
 												<table class="table table-hover table-sm align-middle mb-0">
-													<thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead>
-													<tbody id="usis-ca-cpr-tbody"><tr><td colspan="5" class="text-muted">Loading…</td></tr></tbody>
+													<thead class="table-light"><tr><th>#</th><th>Subject</th><th>Origin</th><th>Vendor/GC</th><th>Status</th><th>Status date</th><th class="text-end">Amount</th><th>Linked T&amp;M</th><th>Prime CO</th><th></th></tr></thead>
+													<tbody id="usis-ca-cpr-tbody"><tr><td colspan="10" class="text-muted">Loading…</td></tr></tbody>
 												</table>
 											</div>
 										</div>
@@ -1178,8 +1181,8 @@
 							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-work-orders"></tbody></table></div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-meetings" role="tabpanel">
-							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Meetings</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="meetings">+ Meeting</button></div>
-							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="usis-w2-meetings"></tbody></table></div>
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Meetings</h5><a class="btn btn-primary btn-sm d-none" id="usis-meeting-add">+ Meeting</a></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Type</th><th>Subject</th><th>Date</th><th>Start–End</th><th>Location</th><th>Facilitator</th><th>Status</th><th>Attendees</th><th></th></tr></thead><tbody id="usis-w2-meetings"></tbody></table></div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-incidents" role="tabpanel">
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Safety incidents</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="safety-incidents">+ Incident</button></div>
@@ -1194,9 +1197,9 @@
 							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-anticipated-costs"></tbody></table></div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-subinv" role="tabpanel">
-							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Sub invoices</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="sub-invoices">+ Sub invoice</button></div>
+							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Sub invoices</h5><a class="btn btn-primary btn-sm d-none" id="usis-subinv-add">+ Sub invoice</a></div>
 							<p class="text-muted small">Sage-style sub invoice log. Owner G702 pay apps stay on Invoicing; vendor AP email bills stay on Invoices.</p>
-							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subject</th><th>Status</th><th class="text-end">Amount</th><th></th></tr></thead><tbody id="usis-w2-sub-invoices"></tbody></table></div>
+							<div class="table-responsive"><table class="table table-sm table-hover mb-0"><thead class="table-light"><tr><th>#</th><th>Subcontract</th><th>Vendor</th><th>Period</th><th>Status</th><th class="text-end">This period</th><th class="text-end">Retainage</th><th class="text-end">Previous-to-date</th><th class="text-end">Amount due</th><th></th></tr></thead><tbody id="usis-w2-sub-invoices"></tbody></table></div>
 						</div>
 						<div class="tab-pane fade" id="proj-pane-qc" role="tabpanel">
 							<div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">QC checklists</h5><button type="button" class="btn btn-primary btn-sm" data-usis-wave2-add="qc-checklists">+ Checklist</button></div>
@@ -2244,8 +2247,8 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260829g"></script>
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js?v=20260830b"></script>
-	<script src="assets/js/project-detail-wave1.js?v=20260901a"></script>
-	<script src="assets/js/project-detail-wave2.js?v=20260904b"></script>
+	<script src="assets/js/project-detail-wave1.js?v=20260905a"></script>
+	<script src="assets/js/project-detail-wave2.js?v=20260905a"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
@@ -2255,7 +2258,7 @@
 	<script src="assets/js/usis-correspondence.js"></script>
 	<script src="assets/js/project-detail-pay-apps.js"></script>
 	<script src="assets/js/project-takeoff.js"></script>
-	<script src="assets/js/project-detail-tools-nav.js?v=20260904a"></script>
+	<script src="assets/js/project-detail-tools-nav.js?v=20260905a"></script>
 	<script src="assets/js/usis-time-app.js?v=20260901a"></script>
 	<script>
 	(function () {

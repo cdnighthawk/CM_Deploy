@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "cpr-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-cpr-form { max-width: 1320px; --usis-primary: #1F4E5F; }
+		.usis-cpr-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.25rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-cpr-form .form-label .req { color: var(--usis-error, #c92a2a); margin-left: 0.15rem; }
+		.usis-cpr-form .text-muted { font-size: 0.78rem; }
+		.usis-cpr-page-title { font-size: 1.5rem; font-weight: 700; margin: 0.35rem 0 1rem; }
+		.usis-cpr-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 0.75rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: #163845;
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-cpr-banner i { margin-top: 0.15rem; }
+		.usis-cpr-section {
+			background: #fff;
+			border: 1px solid var(--usis-divider, #e9ecef);
+			border-radius: 0.5rem;
+			padding: 0.7rem 1.15rem 1.15rem;
+			margin-bottom: 1rem;
+		}
+		.usis-cpr-section-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			width: 100%;
+			background: none;
+			border: 0;
+			padding: 0.2rem 0 0.75rem;
+			font-weight: 700;
+			font-size: 1.02rem;
+			color: inherit;
+			text-align: left;
+		}
+		.usis-cpr-section-toggle .usis-cpr-chevron {
+			width: 0.9rem;
+			font-size: 0.7rem;
+			transition: transform 0.15s ease;
+		}
+		.usis-cpr-section-toggle.collapsed .usis-cpr-chevron { transform: rotate(-90deg); }
+		.usis-cpr-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1rem 1.25rem;
+			align-items: start;
+		}
+		@media (max-width: 1199.98px) {
+			.usis-cpr-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		}
+		@media (max-width: 575.98px) {
+			.usis-cpr-grid { grid-template-columns: 1fr; }
+		}
+		.usis-cpr-field { min-width: 0; }
+		.usis-cpr-field--span2 { grid-column: span 2; }
+		.usis-cpr-field--span4 { grid-column: 1 / -1; }
+		@media (max-width: 1199.98px) {
+			.usis-cpr-field--span2 { grid-column: 1 / -1; }
+		}
+		.usis-cpr-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.15rem 0 1.5rem;
+		}
+		.usis-cpr-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-cpr-req-note .req { color: var(--usis-error, #c92a2a); }
+		.usis-cpr-form .btn-primary {
+			background-color: #1F4E5F;
+			border-color: #1F4E5F;
+		}
+		.usis-cpr-form .btn-primary:hover,
+		.usis-cpr-form .btn-primary:focus {
+			background-color: #163845;
+			border-color: #163845;
+		}
+		.usis-cpr-form .btn-outline-primary {
+			color: #1F4E5F;
+			border-color: #1F4E5F;
+		}
+		.usis-cpr-form .btn-outline-primary:hover,
+		.usis-cpr-form .btn-outline-primary:focus {
+			background-color: #1F4E5F;
+			border-color: #1F4E5F;
+			color: #fff;
+		}
+		.usis-cpr-form-footer .btn { min-width: 7rem; }
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New Change Proposal Request",
+				})
+			</div>
+
+			<div class="container-fluid usis-cpr-form">
+				<form id="usis-cpr-form" autocomplete="off" novalidate>
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+						<h1 class="usis-cpr-page-title mb-0" id="usis-cpr-page-title" data-i18n="New Change Proposal Request">New Change Proposal Request</h1>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-light" id="usis-cpr-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<span class="d-none" id="usis-cpr-convert-wrap">
+								<button type="button" class="btn btn-outline-primary" id="usis-cpr-convert" disabled data-i18n="Create prime CO from this CPR">Create prime CO from this CPR</button>
+							</span>
+							<button type="button" class="btn btn-primary" id="usis-cpr-save" data-i18n="Save">Save</button>
+						</div>
+					</div>
+
+					<div class="alert alert-danger d-none" id="usis-cpr-error" role="alert"></div>
+
+					<div class="usis-cpr-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span>A CPR is a priced request, not an executed contract change. Converting creates a Prime CO and does not move contract value.</span>
+					</div>
+
+					<div class="usis-cpr-section">
+						<button type="button" class="usis-cpr-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-cpr-sec-general" aria-expanded="true" aria-controls="usis-cpr-sec-general">
+							<i class="fa fa-chevron-down usis-cpr-chevron" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-cpr-sec-general">
+							<div class="usis-cpr-grid">
+								<div class="usis-cpr-field usis-cpr-field--span2">
+									<label class="form-label" for="usis-cpr-subject"><span data-i18n="Subject">Subject</span><span class="req">*</span></label>
+									<input class="form-control form-control-sm" id="usis-cpr-subject" maxlength="500" required>
+								</div>
+								<div class="usis-cpr-field">
+									<label class="form-label" for="usis-cpr-origin"><span data-i18n="Origin">Origin</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-cpr-origin" required>
+										<option value="tm_ticket">T&amp;M ticket</option>
+										<option value="rfi">RFI</option>
+										<option value="field_condition">Field condition</option>
+										<option value="gc_request">GC request</option>
+										<option value="other" selected>Other</option>
+									</select>
+								</div>
+								<div class="usis-cpr-field">
+									<label class="form-label" for="usis-cpr-number" data-i18n="CPR #">CPR #</label>
+									<input class="form-control form-control-sm" id="usis-cpr-number" readonly placeholder="Assigned on save">
+								</div>
+
+								<div class="usis-cpr-field">
+									<label class="form-label" for="usis-cpr-status"><span data-i18n="Status">Status</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-cpr-status" required>
+										<option value="draft" selected>Draft</option>
+										<option value="submitted">Submitted</option>
+										<option value="under_review">Under review</option>
+										<option value="accepted">Accepted</option>
+										<option value="rejected">Rejected</option>
+										<option value="converted">Converted</option>
+										<option value="void">Void</option>
+									</select>
+								</div>
+								<div class="usis-cpr-field">
+									<label class="form-label" for="usis-cpr-status-date" data-i18n="Status date">Status date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-cpr-status-date">
+								</div>
+								<div class="usis-cpr-field">
+									<label class="form-label" for="usis-cpr-needed-by" data-i18n="Needed by">Needed by</label>
+									<input type="date" class="form-control form-control-sm" id="usis-cpr-needed-by">
+								</div>
+								<div class="usis-cpr-field">
+									<label class="form-label" for="usis-cpr-company" data-i18n="Vendor / GC">Vendor / GC</label>
+									<select class="form-select form-select-sm" id="usis-cpr-company">
+										<option value="">—</option>
+									</select>
+								</div>
+
+								<div class="usis-cpr-field usis-cpr-field--span4">
+									<label class="form-label" for="usis-cpr-notes" data-i18n="Narrative">Narrative</label>
+									<textarea class="form-control form-control-sm" id="usis-cpr-notes" rows="3" placeholder="Scope / notes for this priced request"></textarea>
+								</div>
+							</div>
+							<p class="text-muted small mb-0 mt-2 d-none" id="usis-cpr-prime-co-note"></p>
+						</div>
+					</div>
+
+					<div class="usis-cpr-section">
+						<button type="button" class="usis-cpr-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-cpr-sec-lines" aria-expanded="true" aria-controls="usis-cpr-sec-lines">
+							<i class="fa fa-chevron-down usis-cpr-chevron" aria-hidden="true"></i>
+							<span data-i18n="Proposed items">Proposed items</span>
+						</button>
+						<div class="collapse show" id="usis-cpr-sec-lines">
+							<p class="text-muted small mb-2">At least one line is required. A single lump-sum line is allowed. Document total is the sum of qty × unit price.</p>
+							<div class="table-responsive mb-2">
+								<table class="table table-sm table-bordered align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th style="width:3rem;">#</th>
+											<th>Description</th>
+											<th style="width:6.5rem;">Qty</th>
+											<th style="width:6rem;">Unit</th>
+											<th style="width:8rem;">Unit price</th>
+											<th class="text-end" style="width:8rem;">Extension</th>
+											<th style="width:2.5rem;"></th>
+										</tr>
+									</thead>
+									<tbody id="usis-doc-lines"></tbody>
+									<tfoot>
+										<tr>
+											<th colspan="5" class="text-end">Document total</th>
+											<th class="text-end" id="usis-doc-total">$0.00</th>
+											<th></th>
+										</tr>
+									</tfoot>
+								</table>
+							</div>
+							<button type="button" class="btn btn-outline-primary btn-sm mb-0" id="usis-doc-line-add">+ Add line</button>
+						</div>
+					</div>
+
+					<div class="usis-cpr-form-footer">
+						<div class="usis-cpr-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2">
+							<a class="btn btn-outline-secondary" id="usis-cpr-cancel-footer" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-primary" id="usis-cpr-save-footer" data-i18n="Save">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-document-lines.js"></script>
+	<script src="assets/js/cpr-create.js"></script>
+
+</body>
+</html>

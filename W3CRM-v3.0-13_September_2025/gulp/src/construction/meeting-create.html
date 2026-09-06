@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "meeting-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-punch-form { max-width: 1040px; }
+		.usis-punch-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.28rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-punch-form .form-label .req { color: #e03131; margin-left: 0.2rem; }
+		.usis-punch-form .form-control,
+		.usis-punch-form .form-select {
+			min-height: 2.45rem;
+			font-size: 0.9rem;
+			border-color: #ced4da;
+			border-radius: 0.25rem;
+		}
+		.usis-punch-crumbs {
+			margin-bottom: 0.1rem;
+			font-size: 0.82rem;
+			color: #6c757d;
+		}
+		.usis-punch-crumbs a { color: inherit; text-decoration: none; }
+		.usis-punch-crumbs a:hover { text-decoration: underline; }
+		.usis-punch-page-title { font-size: 1.65rem; font-weight: 700; margin: 0.15rem 0 1.2rem; letter-spacing: -0.01em; }
+		.usis-punch-section { margin-bottom: 1.5rem; }
+		.usis-punch-section-title {
+			font-size: 1.05rem;
+			font-weight: 700;
+			margin: 0 0 0.95rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 1px solid #dee2e6;
+		}
+		.usis-punch-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 0.95rem 2rem;
+			align-items: start;
+		}
+		@media (max-width: 767.98px) {
+			.usis-punch-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+		}
+		.usis-punch-field { min-width: 0; }
+		.usis-punch-field--location { max-width: 78%; }
+		@media (max-width: 767.98px) {
+			.usis-punch-field--location { max-width: none; }
+		}
+		.usis-punch-form textarea.form-control { min-height: 6.5rem; }
+		.usis-punch-form .table .form-control,
+		.usis-punch-form .table .form-select {
+			min-height: 2.1rem;
+			font-size: 0.85rem;
+		}
+		.usis-punch-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.55rem 0 1.5rem;
+			border-top: 1px solid #dee2e6;
+		}
+		.usis-punch-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-punch-req-note .req { color: #e03131; }
+		.usis-punch-form-footer .btn { min-width: 6.5rem; }
+		.usis-punch-form-footer .btn-light {
+			background: #f1f3f5;
+			border-color: #dee2e6;
+		}
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New Meeting",
+				})
+			</div>
+
+			<div class="container-fluid usis-punch-form">
+				<form id="usis-meeting-form" autocomplete="off" novalidate>
+					<div class="alert alert-danger d-none" id="usis-meeting-error" role="alert"></div>
+
+					<nav class="usis-punch-crumbs" aria-label="Meetings">
+						<a id="usis-meeting-crumb-list" href="construction/project-detail.html" data-i18n="Meetings">Meetings</a>
+						<span class="mx-1">›</span>
+						<span id="usis-meeting-crumb-current" data-i18n="New Meeting">New Meeting</span>
+					</nav>
+					<h1 class="usis-punch-page-title" id="usis-meeting-page-title" data-i18n="New Meeting">New Meeting</h1>
+
+					<section class="usis-punch-section">
+						<h2 class="usis-punch-section-title" data-i18n="General Information">General Information</h2>
+						<div class="usis-punch-grid">
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-type"><span data-i18n="Type">Type</span><span class="req">*</span></label>
+								<select class="form-select" id="usis-meeting-type" required>
+									<option value="" data-i18n="Select Type">Select Type</option>
+									<option value="oac">OAC</option>
+									<option value="coordination">Coordination</option>
+									<option value="safety">Safety</option>
+									<option value="precon">Precon</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-subject"><span data-i18n="Subject">Subject</span><span class="req">*</span></label>
+								<input type="text" class="form-control" id="usis-meeting-subject" maxlength="500" required>
+							</div>
+
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-date"><span data-i18n="Date">Date</span><span class="req">*</span></label>
+								<input type="date" class="form-control" id="usis-meeting-date" required>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-status"><span data-i18n="Status">Status</span><span class="req">*</span></label>
+								<select class="form-select" id="usis-meeting-status" required>
+									<option value="scheduled" data-i18n="Scheduled">Scheduled</option>
+									<option value="completed" data-i18n="Completed">Completed</option>
+									<option value="canceled" data-i18n="Canceled">Canceled</option>
+								</select>
+							</div>
+
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-start" data-i18n="Start time">Start time</label>
+								<input type="time" class="form-control" id="usis-meeting-start" step="60">
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-end" data-i18n="End time">End time</label>
+								<input type="time" class="form-control" id="usis-meeting-end" step="60">
+							</div>
+
+							<div class="usis-punch-field usis-punch-field--location">
+								<label class="form-label" for="usis-meeting-location" data-i18n="Location">Location</label>
+								<input type="text" class="form-control" id="usis-meeting-location" maxlength="255">
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-facilitator" data-i18n="Facilitator">Facilitator</label>
+								<select class="form-select" id="usis-meeting-facilitator">
+									<option value="" data-i18n="Select a person">Select a person</option>
+								</select>
+							</div>
+						</div>
+						<div class="usis-punch-field mt-3">
+							<label class="form-label" for="usis-meeting-notes" data-i18n="Notes">Notes</label>
+							<textarea class="form-control" id="usis-meeting-notes" rows="4"></textarea>
+						</div>
+						<div class="usis-punch-field mt-3">
+							<label class="form-label" for="usis-meeting-minutes" data-i18n="Minutes">Minutes</label>
+							<textarea class="form-control" id="usis-meeting-minutes" rows="5"></textarea>
+						</div>
+					</section>
+
+					<section class="usis-punch-section">
+						<h2 class="usis-punch-section-title" data-i18n="Attendees">Attendees</h2>
+						<div class="usis-punch-grid mb-3">
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-add-person" data-i18n="Add from people">Add from people</label>
+								<select class="form-select" id="usis-meeting-add-person">
+									<option value="" data-i18n="Add from people">Add from people</option>
+								</select>
+							</div>
+							<div class="usis-punch-field">
+								<label class="form-label" for="usis-meeting-add-company" data-i18n="Add from companies">Add from companies</label>
+								<select class="form-select" id="usis-meeting-add-company">
+									<option value="" data-i18n="Add from companies">Add from companies</option>
+								</select>
+							</div>
+						</div>
+						<div class="table-responsive">
+							<table class="table table-sm align-middle mb-0">
+								<thead class="table-light">
+									<tr>
+										<th data-i18n="Name">Name</th>
+										<th data-i18n="Company">Company</th>
+										<th data-i18n="Role">Role</th>
+										<th class="text-center" data-i18n="Present">Present</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-meeting-attendees"></tbody>
+							</table>
+						</div>
+					</section>
+
+					<section class="usis-punch-section">
+						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+							<h2 class="usis-punch-section-title mb-0 flex-grow-1" data-i18n="Agenda">Agenda</h2>
+							<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-meeting-add-agenda" data-i18n="Add item">Add item</button>
+						</div>
+						<div class="table-responsive mt-3">
+							<table class="table table-sm align-middle mb-0">
+								<thead class="table-light">
+									<tr>
+										<th style="width:2.5rem;">#</th>
+										<th data-i18n="Topic">Topic</th>
+										<th data-i18n="Owner">Owner</th>
+										<th data-i18n="Due date">Due date</th>
+										<th class="text-center" data-i18n="Done">Done</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-meeting-agenda"></tbody>
+							</table>
+						</div>
+					</section>
+
+					<div class="usis-punch-form-footer">
+						<div class="usis-punch-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<a class="btn btn-link text-secondary text-decoration-none" id="usis-meeting-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-light" id="usis-meeting-save" data-i18n="Save">Save</button>
+							<button type="submit" class="btn btn-primary" id="usis-meeting-save-new" data-i18n="Save &amp; Create New">Save &amp; Create New</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/meeting-create.js?v=20260905a"></script>
+
+</body>
+</html>

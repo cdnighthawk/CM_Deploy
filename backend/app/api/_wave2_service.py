@@ -7,11 +7,15 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping, Type
 
+from flask import request
 from sqlalchemy import func, or_, select
 
 from ..extensions import db
 from ..models import (
     AnticipatedCost,
+    AuditLog,
+    Commitment,
+    CommitmentLineItem,
     Company,
     CompanyInsurancePolicy,
     CompanyLicense,
@@ -31,6 +35,7 @@ from ..models import (
     Submittal,
     TimeEntry,
     Transmittal,
+    User,
     WorkOrder,
     WorkflowAmountRule,
     WorkflowInstance,
@@ -38,6 +43,285 @@ from ..models import (
 )
 from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError
+
+MEETING_TYPES = frozenset({"oac", "coordination", "safety", "precon", "other"})
+MEETING_STATUSES = frozenset({"scheduled", "completed", "canceled"})
+POCO_STATUSES = frozenset({"draft", "issued", "approved", "void"})
+SUBINV_STATUSES = frozenset({"draft", "received", "approved", "rejected", "paid"})
+
+
+def _audit(
+    cu: CurrentUser,
+    entity_type: str,
+    entity_id: uuid.UUID,
+    action: str,
+    message: str,
+    changes: dict[str, Any] | None = None,
+) -> None:
+    db.session.add(
+        AuditLog(
+            user_id=cu.id if cu else None,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            action=action,
+            message=message,
+            changes=changes,
+            ip_address=(request.remote_addr or "")[:45] if request else None,
+            user_agent=(request.user_agent.string or "")[:500] if request else None,
+        )
+    )
+
+
+def _user_display_name(u: User | None) -> str | None:
+    if u is None:
+        return None
+    name = " ".join(p for p in (u.first_name, u.last_name) if p).strip()
+    return name or u.email
+
+
+def _dec(raw: Any, default: str = "0") -> Decimal:
+    if raw is None or raw == "":
+        return Decimal(default)
+    try:
+        return Decimal(str(raw).replace(",", "").strip())
+    except (InvalidOperation, ValueError):
+        return Decimal(default)
+
+
+def _poco_amount(items: Any) -> Decimal:
+    total = Decimal("0")
+    if not isinstance(items, list):
+        return total
+    for raw in items:
+        if not isinstance(raw, Mapping):
+            continue
+        if raw.get("line_total") not in (None, ""):
+            total += _dec(raw.get("line_total"))
+            continue
+        qty = _dec(raw.get("quantity"))
+        price = _dec(raw.get("unit_price", raw.get("unit_cost")))
+        total += (qty * price).quantize(Decimal("0.01"))
+    return total.quantize(Decimal("0.01"))
+
+
+def _snapshot_po_lines(comm: Commitment) -> list[dict[str, Any]]:
+    out = []
+    for li in list(comm.line_items or []):
+        out.append(
+            {
+                "id": str(li.id),
+                "description": li.description,
+                "quantity": float(li.quantity),
+                "unit": li.unit,
+                "unit_cost": float(li.unit_cost),
+                "line_total": float(li.line_total),
+                "sort_order": li.sort_order,
+                "cost_code_id": str(li.cost_code_id) if li.cost_code_id else None,
+            }
+        )
+    return out
+
+
+def _recompute_po_total(comm: Commitment) -> None:
+    total = sum((li.line_total or Decimal("0")) for li in list(comm.line_items or []))
+    comm.total_amount = Decimal(str(total)).quantize(Decimal("0.01"))
+
+
+def _apply_poco_deltas(row: PurchaseOrderChangeOrder) -> None:
+    comm = db.session.get(Commitment, row.commitment_id)
+    if comm is None:
+        raise ApiError("purchase order not found", 404)
+    if not row.applied:
+        row.line_snapshot = _snapshot_po_lines(comm)
+        for raw in row.items or []:
+            if not isinstance(raw, Mapping):
+                continue
+            action = str(raw.get("action") or "change").strip().lower()
+            parent_id = _parse_uuid(raw.get("parent_po_line_id") or raw.get("commitment_line_id"))
+            qty = _dec(raw.get("quantity"))
+            price = _dec(raw.get("unit_price", raw.get("unit_cost")))
+            desc = str(raw.get("description") or "").strip()[:500]
+            unit = str(raw.get("unit") or "EA").strip()[:50] or "EA"
+            if action == "add" or parent_id is None:
+                li = CommitmentLineItem(
+                    commitment_id=comm.id,
+                    description=desc or "PO CO line",
+                    quantity=qty,
+                    unit=unit,
+                    unit_cost=price,
+                    line_total=(qty * price).quantize(Decimal("0.01")),
+                    sort_order=len(list(comm.line_items or [])),
+                )
+                db.session.add(li)
+            else:
+                li = db.session.get(CommitmentLineItem, parent_id)
+                if li is None or li.commitment_id != comm.id:
+                    continue
+                if action == "delete":
+                    db.session.delete(li)
+                else:
+                    if desc:
+                        li.description = desc
+                    li.quantity = qty
+                    li.unit = unit
+                    li.unit_cost = price
+                    li.line_total = (qty * price).quantize(Decimal("0.01"))
+        db.session.flush()
+        _recompute_po_total(comm)
+        row.applied = True
+        row.amount_applied = _poco_amount(row.items)
+    # TODO(workflow_engine_cursor.md): process_key=purchase_order spend-auth if revised total crosses a band.
+
+
+def _reverse_poco_deltas(row: PurchaseOrderChangeOrder) -> None:
+    if not row.applied:
+        return
+    comm = db.session.get(Commitment, row.commitment_id)
+    if comm is None:
+        row.applied = False
+        row.amount_applied = None
+        return
+    for li in list(comm.line_items or []):
+        db.session.delete(li)
+    db.session.flush()
+    for i, raw in enumerate(row.line_snapshot or []):
+        if not isinstance(raw, Mapping):
+            continue
+        qty = _dec(raw.get("quantity"))
+        price = _dec(raw.get("unit_cost", raw.get("unit_price")))
+        db.session.add(
+            CommitmentLineItem(
+                commitment_id=comm.id,
+                description=str(raw.get("description") or "")[:500],
+                quantity=qty,
+                unit=str(raw.get("unit") or "EA")[:50],
+                unit_cost=price,
+                line_total=_dec(raw.get("line_total"), str((qty * price).quantize(Decimal("0.01")))),
+                sort_order=int(raw.get("sort_order") or i),
+                cost_code_id=_parse_uuid(raw.get("cost_code_id")),
+            )
+        )
+    db.session.flush()
+    _recompute_po_total(comm)
+    row.applied = False
+    row.amount_applied = None
+
+
+def _previous_to_date(project_id: uuid.UUID, commitment_id: uuid.UUID | None, exclude_id: uuid.UUID | None) -> Decimal:
+    if not commitment_id:
+        return Decimal("0")
+    rows = db.session.scalars(
+        select(SubInvoice).where(
+            SubInvoice.project_id == project_id,
+            SubInvoice.commitment_id == commitment_id,
+            SubInvoice.status.in_(("approved", "paid")),
+        )
+    ).all()
+    total = Decimal("0")
+    for r in rows:
+        if exclude_id and r.id == exclude_id:
+            continue
+        total += Decimal(str(r.this_period if r.this_period is not None else r.amount or 0))
+    return total.quantize(Decimal("0.01"))
+
+
+def _finalize_sub_invoice(row: SubInvoice) -> None:
+    lines = row.lines if isinstance(row.lines, list) else []
+    this_period = Decimal("0")
+    if lines:
+        for raw in lines:
+            if not isinstance(raw, Mapping):
+                continue
+            this_period += _dec(raw.get("this_period", raw.get("amount", raw.get("line_total"))))
+    elif row.this_period is not None:
+        this_period = Decimal(str(row.this_period))
+    elif row.amount is not None:
+        this_period = Decimal(str(row.amount))
+    row.this_period = this_period.quantize(Decimal("0.01"))
+    if row.retainage_pct is None and row.commitment_id:
+        comm = db.session.get(Commitment, row.commitment_id)
+        if comm is not None and comm.retention_percentage is not None:
+            row.retainage_pct = Decimal(str(comm.retention_percentage))
+    pct = Decimal(str(row.retainage_pct or 0))
+    retainage_this = (row.this_period * pct / Decimal("100")).quantize(Decimal("0.01"))
+    row.retainage = retainage_this
+    row.previous_to_date = _previous_to_date(row.project_id, row.commitment_id, row.id)
+    row.amount_due = (row.this_period - retainage_this).quantize(Decimal("0.01"))
+    row.amount = row.this_period
+    if row.status == "approved":
+        row.approved = True
+    elif row.status in ("rejected", "draft", "received"):
+        row.approved = False
+
+
+def _finalize_poco(row: PurchaseOrderChangeOrder) -> None:
+    if isinstance(row.items, list):
+        for raw in row.items:
+            if isinstance(raw, dict) and raw.get("line_total") in (None, ""):
+                qty = _dec(raw.get("quantity"))
+                price = _dec(raw.get("unit_price", raw.get("unit_cost")))
+                raw["line_total"] = float((qty * price).quantize(Decimal("0.01")))
+    row.amount = _poco_amount(row.items)
+    st = (row.status or "draft").strip()
+    if st not in POCO_STATUSES:
+        raise ApiError("invalid status")
+    if st == "approved":
+        _apply_poco_deltas(row)
+    elif st == "void":
+        _reverse_poco_deltas(row)
+
+
+def _enrich_kind(kind: str, row, out: dict[str, Any]) -> dict[str, Any]:
+    if kind == "meetings":
+        fac = db.session.get(User, row.facilitator_user_id) if getattr(row, "facilitator_user_id", None) else None
+        attendees = row.attendees if isinstance(row.attendees, list) else []
+        out["facilitator_name"] = _user_display_name(fac)
+        out["attendee_count"] = len(attendees)
+        out["agenda_count"] = len(row.items) if isinstance(row.items, list) else 0
+        start = row.start_time or ""
+        end = row.end_time or ""
+        out["time_range"] = f"{start}–{end}".strip("–") if (start or end) else ""
+    elif kind == "po-change-orders":
+        comm = db.session.get(Commitment, row.commitment_id) if row.commitment_id else None
+        out["po_number"] = (comm.reference_number or comm.title) if comm else None
+        out["po_title"] = comm.title if comm else None
+        vendor = db.session.get(Company, comm.vendor_company_id) if comm else None
+        out["vendor_name"] = vendor.name if vendor else None
+        out["amount"] = float(row.amount) if row.amount is not None else float(_poco_amount(row.items))
+        out["applied"] = bool(getattr(row, "applied", False))
+    elif kind == "sub-invoices":
+        comm = db.session.get(Commitment, row.commitment_id) if row.commitment_id else None
+        out["subcontract_number"] = (comm.reference_number or comm.title) if comm else None
+        vendor = db.session.get(Company, comm.vendor_company_id) if comm else None
+        out["vendor_name"] = vendor.name if vendor else None
+        out["retainage_pct"] = float(row.retainage_pct) if row.retainage_pct is not None else None
+        out["this_period"] = float(row.this_period) if row.this_period is not None else None
+        out["previous_to_date"] = float(row.previous_to_date) if row.previous_to_date is not None else None
+        out["amount_due"] = float(row.amount_due) if row.amount_due is not None else None
+        if row.period_start and row.period_end:
+            out["period"] = f"{row.period_start.isoformat()} – {row.period_end.isoformat()}"
+        else:
+            out["period"] = None
+        if comm:
+            out["sov"] = [
+                {
+                    "id": str(li.id),
+                    "description": li.description,
+                    "quantity": float(li.quantity),
+                    "unit": li.unit,
+                    "unit_cost": float(li.unit_cost),
+                    "line_total": float(li.line_total),
+                }
+                for li in list(comm.line_items or [])
+            ]
+        else:
+            out["sov"] = []
+    return out
+
+
+def serialize_kind_row(kind: str, row) -> dict[str, Any]:
+    return _enrich_kind(kind, row, serialize_row(row))
+
 
 PROJECT_KINDS: dict[str, tuple[Type, str, str]] = {
     "transmittals": (Transmittal, "transmittals", "TRN"),
@@ -169,10 +453,23 @@ def list_project_kind(project_id: uuid.UUID, kind: str, cu: CurrentUser) -> dict
         raise ApiError("unknown kind", 400)
     model, entity, _prefix = spec
     rows = db.session.scalars(select(model).where(model.project_id == project_id).order_by(model.created_at.desc())).all()
-    out: dict[str, Any] = {"entity": entity, "items": [serialize_row(r) for r in rows]}
+    out: dict[str, Any] = {"entity": entity, "items": [serialize_kind_row(kind, r) for r in rows]}
     if kind == "punchlist":
         out["next_number"] = _next_punch_number(project_id)
     return out
+
+
+def get_project_kind(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
+    if not _can_view(cu):
+        raise ApiError("forbidden", 403)
+    spec = PROJECT_KINDS.get(kind)
+    if spec is None:
+        raise ApiError("unknown kind", 400)
+    model, entity, _prefix = spec
+    row = db.session.get(model, row_id)
+    if row is None or row.project_id != project_id:
+        raise ApiError("not found", 404)
+    return {"item": serialize_kind_row(kind, row), "entity": entity}
 
 
 def create_project_kind(project_id: uuid.UUID, kind: str, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
@@ -192,6 +489,33 @@ def create_project_kind(project_id: uuid.UUID, kind: str, data: Mapping[str, Any
         raise ApiError("subject or title is required")
     if kind == "po-change-orders" and not getattr(row, "commitment_id", None):
         raise ApiError("commitment_id is required")
+    if kind == "sub-invoices" and not getattr(row, "commitment_id", None):
+        raise ApiError("commitment_id is required")
+    if kind == "meetings":
+        mt = (row.meeting_type or "other").strip() or "other"
+        if mt not in MEETING_TYPES:
+            raise ApiError("invalid meeting type")
+        row.meeting_type = mt
+        st = (row.status or "scheduled").strip() or "scheduled"
+        if st not in MEETING_STATUSES:
+            raise ApiError("invalid status")
+        row.status = st
+        if not isinstance(row.attendees, list):
+            row.attendees = []
+        if not isinstance(row.items, list):
+            row.items = []
+    if kind == "po-change-orders":
+        if not isinstance(row.items, list) or not row.items:
+            raise ApiError("at least one line item is required")
+        _finalize_poco(row)
+    if kind == "sub-invoices":
+        st = (row.status or "draft").strip()
+        if st not in SUBINV_STATUSES:
+            raise ApiError("invalid status")
+        row.status = st
+        if not isinstance(row.lines, list):
+            row.lines = []
+        _finalize_sub_invoice(row)
     if kind == "punchlist":
         if getattr(row, "distribution_user_ids", None) is None:
             row.distribution_user_ids = []
@@ -206,8 +530,9 @@ def create_project_kind(project_id: uuid.UUID, kind: str, data: Mapping[str, Any
     if hasattr(row, "number") and not getattr(row, "number", None):
         row.number = _next_punch_number(project_id) if kind == "punchlist" else _next_number(model, project_id, prefix)
     db.session.add(row)
+    _audit(cu, entity, row.id, "create", f"Created {kind} {getattr(row, 'number', '') or row.id}")
     db.session.commit()
-    return {"item": serialize_row(row), "entity": entity}
+    return {"item": serialize_kind_row(kind, row), "entity": entity}
 
 
 def patch_project_kind(
@@ -222,9 +547,19 @@ def patch_project_kind(
     row = db.session.get(model, row_id)
     if row is None or row.project_id != project_id:
         raise ApiError("not found", 404)
+    before_status = getattr(row, "status", None)
     _apply_fields(row, data)
+    if kind == "po-change-orders":
+        _finalize_poco(row)
+    if kind == "sub-invoices":
+        _finalize_sub_invoice(row)
+    if kind == "meetings" and row.meeting_type and row.meeting_type not in MEETING_TYPES:
+        raise ApiError("invalid meeting type")
+    after_status = getattr(row, "status", None)
+    if before_status != after_status:
+        _audit(cu, entity, row.id, "status", f"{kind} {getattr(row, 'number', '')} {before_status} → {after_status}")
     db.session.commit()
-    return {"item": serialize_row(row), "entity": entity}
+    return {"item": serialize_kind_row(kind, row), "entity": entity}
 
 
 def delete_project_kind(project_id: uuid.UUID, kind: str, row_id: uuid.UUID, cu: CurrentUser) -> None:

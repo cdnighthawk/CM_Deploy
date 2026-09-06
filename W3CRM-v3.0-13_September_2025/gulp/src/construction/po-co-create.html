@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "po-co-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-poco-form { max-width: 1320px; }
+		.usis-poco-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.28rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-poco-form .form-label .req { color: #e03131; margin-left: 0.2rem; }
+		.usis-poco-form .form-control,
+		.usis-poco-form .form-select {
+			min-height: 2.45rem;
+			font-size: 0.9rem;
+			border-color: #ced4da;
+			border-radius: 0.25rem;
+		}
+		.usis-poco-form .form-control-sm,
+		.usis-poco-form .form-select-sm { min-height: 2rem; font-size: 0.82rem; }
+		.usis-poco-crumbs {
+			margin-bottom: 0.1rem;
+			font-size: 0.82rem;
+			color: #6c757d;
+		}
+		.usis-poco-crumbs a { color: inherit; text-decoration: none; }
+		.usis-poco-crumbs a:hover { text-decoration: underline; }
+		.usis-poco-page-title { font-size: 1.65rem; font-weight: 700; margin: 0.15rem 0 1.2rem; letter-spacing: -0.01em; }
+		.usis-poco-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 1rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-poco-banner i { margin-top: 0.15rem; }
+		.usis-poco-section { margin-bottom: 1.5rem; }
+		.usis-poco-section-title {
+			font-size: 1.05rem;
+			font-weight: 700;
+			margin: 0 0 0.95rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 1px solid #dee2e6;
+		}
+		.usis-poco-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 0.95rem 2rem;
+			align-items: start;
+		}
+		@media (max-width: 767.98px) {
+			.usis-poco-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+		}
+		.usis-poco-field { min-width: 0; }
+		.usis-poco-field--span2 { grid-column: 1 / -1; }
+		.usis-poco-readonly {
+			min-height: 2.45rem;
+			padding: 0.55rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+		}
+		.usis-poco-empty {
+			padding: 1.1rem 1.15rem;
+			border: 1px dashed #ced4da;
+			border-radius: 0.4rem;
+			background: #f8f9fa;
+			color: #495057;
+			font-size: 0.9rem;
+		}
+		.usis-poco-lines th { white-space: nowrap; font-size: 0.78rem; }
+		.usis-poco-lines td { vertical-align: middle; }
+		.usis-poco-lines .usis-poco-col-action { min-width: 7.5rem; }
+		.usis-poco-lines .usis-poco-col-parent { min-width: 14rem; }
+		.usis-poco-lines .usis-poco-col-desc { min-width: 14rem; }
+		.usis-poco-lines .usis-poco-col-qty,
+		.usis-poco-lines .usis-poco-col-unit,
+		.usis-poco-lines .usis-poco-col-price { min-width: 5.5rem; }
+		.usis-poco-ext { white-space: nowrap; font-variant-numeric: tabular-nums; }
+		.usis-poco-total {
+			display: flex;
+			justify-content: flex-end;
+			align-items: baseline;
+			gap: 0.75rem;
+			margin-top: 0.65rem;
+			font-size: 0.95rem;
+		}
+		.usis-poco-total strong { font-variant-numeric: tabular-nums; }
+		.usis-poco-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.55rem 0 1.5rem;
+			border-top: 1px solid #dee2e6;
+		}
+		.usis-poco-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-poco-req-note .req { color: #e03131; }
+		.usis-poco-form-footer .btn { min-width: 6.5rem; }
+		.usis-poco-form-footer .btn-light {
+			background: #f1f3f5;
+			border-color: #dee2e6;
+		}
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New PO Change Order",
+				})
+			</div>
+
+			<div class="container-fluid usis-poco-form">
+				<form id="usis-poco-form" autocomplete="off" novalidate>
+					<div class="alert alert-danger d-none" id="usis-poco-error" role="alert"></div>
+
+					<nav class="usis-poco-crumbs" aria-label="PO change orders">
+						<a id="usis-poco-crumb-list" href="construction/project-detail.html" data-i18n="Procurement">Procurement</a>
+						<span class="mx-1">›</span>
+						<span id="usis-poco-crumb-current" data-i18n="New PO Change Order">New PO Change Order</span>
+					</nav>
+					<h1 class="usis-poco-page-title" id="usis-poco-page-title" data-i18n="New PO Change Order">New PO Change Order</h1>
+
+					<div class="usis-poco-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Changes an existing material purchase order. Approving applies line deltas to the parent PO. Voiding reverses them. This is not a prime CO or a sub invoice.">Changes an existing material purchase order. Approving applies line deltas to the parent PO. Voiding reverses them. This is not a prime CO or a sub invoice.</span>
+					</div>
+					<div class="alert alert-success d-none" id="usis-poco-applied" role="status">Deltas from this change order have been applied to the parent purchase order.</div>
+
+					<section class="usis-poco-section">
+						<h2 class="usis-poco-section-title" data-i18n="General Information">General Information</h2>
+						<div class="usis-poco-grid">
+							<div class="usis-poco-field usis-poco-field--span2">
+								<label class="form-label" for="usis-poco-commitment"><span data-i18n="Parent purchase order">Parent purchase order</span><span class="req">*</span></label>
+								<select class="form-select" id="usis-poco-commitment" required>
+									<option value="">Loading…</option>
+								</select>
+								<div class="usis-poco-empty d-none mt-2" id="usis-poco-empty-pos">
+									<p class="mb-2" data-i18n="No purchase orders on this project. Create a material PO before adding a PO change order.">No purchase orders on this project. Create a material PO before adding a PO change order.</p>
+									<a class="btn btn-outline-primary btn-sm" id="usis-poco-create-po" href="construction/purchase-order-create.html">Create a purchase order</a>
+								</div>
+							</div>
+							<div class="usis-poco-field usis-poco-field--span2">
+								<label class="form-label" for="usis-poco-subject"><span data-i18n="Subject">Subject</span><span class="req">*</span></label>
+								<input type="text" class="form-control" id="usis-poco-subject" maxlength="500" required>
+							</div>
+							<div class="usis-poco-field">
+								<label class="form-label" for="usis-poco-status"><span data-i18n="Status">Status</span><span class="req">*</span></label>
+								<select class="form-select" id="usis-poco-status" required>
+									<option value="draft">draft</option>
+									<option value="issued">issued</option>
+									<option value="approved">approved</option>
+									<option value="void">void</option>
+								</select>
+							</div>
+							<div class="usis-poco-field">
+								<label class="form-label" for="usis-poco-status-date" data-i18n="Status date">Status date</label>
+								<input type="date" class="form-control" id="usis-poco-status-date">
+							</div>
+							<div class="usis-poco-field">
+								<label class="form-label" data-i18n="Number">Number</label>
+								<div class="usis-poco-readonly" id="usis-poco-number">—</div>
+							</div>
+							<div class="usis-poco-field usis-poco-field--span2">
+								<label class="form-label" for="usis-poco-notes" data-i18n="Reason">Reason</label>
+								<textarea class="form-control" id="usis-poco-notes" rows="3" placeholder="Why this PO is changing"></textarea>
+							</div>
+						</div>
+					</section>
+
+					<section class="usis-poco-section">
+						<h2 class="usis-poco-section-title" data-i18n="Delta lines">Delta lines</h2>
+						<p class="text-muted small mb-2">Add, change, or delete lines on the parent PO. Change and delete need a parent PO line. Extension is quantity × unit price. Document amount is the sum of extensions.</p>
+						<div class="table-responsive mb-2">
+							<table class="table table-sm table-bordered align-middle mb-0 usis-poco-lines">
+								<thead class="table-light">
+									<tr>
+										<th>#</th>
+										<th class="usis-poco-col-action">Action</th>
+										<th class="usis-poco-col-parent">Parent PO line</th>
+										<th class="usis-poco-col-desc">Description</th>
+										<th class="usis-poco-col-qty">Qty</th>
+										<th class="usis-poco-col-unit">Unit</th>
+										<th class="usis-poco-col-price">Unit price</th>
+										<th class="text-end">Extension</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-poco-lines-tbody"></tbody>
+							</table>
+						</div>
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-poco-line-add">+ Add line</button>
+						<div class="usis-poco-total">
+							<span class="text-muted" data-i18n="Document amount">Document amount</span>
+							<strong id="usis-poco-doc-amount">$0.00</strong>
+						</div>
+					</section>
+
+					<div class="usis-poco-form-footer">
+						<div class="usis-poco-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<a class="btn btn-link text-secondary text-decoration-none" id="usis-poco-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="submit" class="btn btn-primary" id="usis-poco-save" data-i18n="Save">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/po-co-create.js"></script>
+
+</body>
+</html>

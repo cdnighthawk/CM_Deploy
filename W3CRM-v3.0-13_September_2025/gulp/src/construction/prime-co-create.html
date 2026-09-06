@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "prime-co-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-po-form { max-width: 1320px; }
+		.usis-po-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.25rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-po-form .form-label .req { color: var(--usis-error, #c92a2a); margin-left: 0.15rem; }
+		.usis-po-form .text-muted { font-size: 0.78rem; }
+		.usis-punch-crumbs {
+			margin-bottom: 0.1rem;
+			font-size: 0.82rem;
+			color: #6c757d;
+		}
+		.usis-punch-crumbs a { color: inherit; text-decoration: none; }
+		.usis-punch-crumbs a:hover { text-decoration: underline; }
+		.usis-punch-page-title { font-size: 1.65rem; font-weight: 700; margin: 0.15rem 0 1.2rem; letter-spacing: -0.01em; }
+		.usis-po-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 0.75rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-po-banner i { margin-top: 0.15rem; }
+		.usis-po-section {
+			background: #fff;
+			border: 1px solid var(--usis-divider, #e9ecef);
+			border-radius: 0.5rem;
+			padding: 0.7rem 1.15rem 1.15rem;
+			margin-bottom: 1rem;
+		}
+		.usis-po-section-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			width: 100%;
+			background: none;
+			border: 0;
+			padding: 0.2rem 0 0.75rem;
+			font-weight: 700;
+			font-size: 1.02rem;
+			color: inherit;
+			text-align: left;
+		}
+		.usis-po-section-toggle .usis-po-chevron {
+			width: 0.9rem;
+			font-size: 0.7rem;
+			transition: transform 0.15s ease;
+		}
+		.usis-po-section-toggle.collapsed .usis-po-chevron { transform: rotate(-90deg); }
+		.usis-po-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1rem 1.25rem;
+			align-items: start;
+		}
+		@media (max-width: 1199.98px) {
+			.usis-po-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		}
+		@media (max-width: 575.98px) {
+			.usis-po-grid { grid-template-columns: 1fr; }
+		}
+		.usis-po-field { min-width: 0; }
+		.usis-po-field--span2 { grid-column: span 2; }
+		.usis-po-field--span4 { grid-column: 1 / -1; }
+		@media (max-width: 1199.98px) {
+			.usis-po-field--span2 { grid-column: 1 / -1; }
+		}
+		.usis-po-readonly {
+			min-height: 2rem;
+			padding: 0.4rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+		}
+		.usis-punch-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.55rem 0 1.5rem;
+			border-top: 1px solid #dee2e6;
+		}
+		.usis-punch-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-punch-req-note .req { color: #e03131; }
+		.usis-punch-form-footer .btn { min-width: 6.5rem; }
+		.usis-punch-form-footer .btn-light {
+			background: #f1f3f5;
+			border-color: #dee2e6;
+		}
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Prime Change Order",
+				})
+			</div>
+
+			<div class="container-fluid usis-po-form">
+				<form id="usis-pco-form" autocomplete="off" novalidate>
+					<div class="alert alert-danger d-none" id="usis-pco-error" role="alert"></div>
+
+					<nav class="usis-punch-crumbs" aria-label="Prime change order">
+						<a id="usis-pco-crumb" href="construction/project-detail.html" data-i18n="Contract admin">Contract admin</a>
+						<span class="mx-1">›</span>
+						<span id="usis-pco-crumb-current" data-i18n="New Prime Change Order">New Prime Change Order</span>
+					</nav>
+					<h1 class="usis-punch-page-title" id="usis-pco-page-title" data-i18n="New Prime Change Order">New Prime Change Order</h1>
+
+					<div class="usis-po-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Executed change to the owner/GC contract. Approving with the checkbox revises owner contract value on the server.">Executed change to the owner/GC contract. Approving with the checkbox revises owner contract value on the server.</span>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-pco-sec-general" aria-expanded="true" aria-controls="usis-pco-sec-general">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-pco-sec-general">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-pco-title"><span data-i18n="Title">Title</span><span class="req">*</span></label>
+									<input type="text" class="form-control form-control-sm" id="usis-pco-title" maxlength="500" required>
+								</div>
+								<div class="usis-po-field d-none" id="usis-pco-number-wrap">
+									<label class="form-label" for="usis-pco-number" data-i18n="Number">Number</label>
+									<input type="text" class="form-control form-control-sm" id="usis-pco-number" readonly>
+								</div>
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-pco-contract"><span data-i18n="Owner contract">Owner contract</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-pco-contract" required>
+										<option value="">Loading…</option>
+									</select>
+								</div>
+
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-pco-status"><span data-i18n="Status">Status</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-pco-status" required>
+										<option value="draft">draft</option>
+										<option value="submitted">submitted</option>
+										<option value="approved">approved</option>
+										<option value="void">void</option>
+									</select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-pco-status-date" data-i18n="Status date">Status date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-pco-status-date">
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-pco-notes" data-i18n="Reason / scope">Reason / scope</label>
+									<textarea class="form-control form-control-sm" id="usis-pco-notes" rows="3" placeholder="Reason and scope of the change"></textarea>
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" id="usis-pco-revises">
+										<label class="form-check-label" for="usis-pco-revises" data-i18n="Approved revises owner contract value">Approved revises owner contract value</label>
+									</div>
+									<p class="text-muted small mb-0 mt-1">The server updates owner contract value only when status becomes approved and this is checked. Saving again does not double-add.</p>
+								</div>
+								<div class="usis-po-field usis-po-field--span2 d-none" id="usis-pco-source-cpr-wrap">
+									<label class="form-label" data-i18n="Source CPR">Source CPR</label>
+									<div class="usis-po-readonly" id="usis-pco-source-cpr">—</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-pco-sec-parties" aria-expanded="true" aria-controls="usis-pco-sec-parties">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Parties">Parties</span>
+						</button>
+						<div class="collapse show" id="usis-pco-sec-parties">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-pco-gc" data-i18n="GC company">GC company</label>
+									<select class="form-select form-select-sm" id="usis-pco-gc">
+										<option value="">Select GC company…</option>
+									</select>
+								</div>
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" data-i18n="Contractor">Contractor</label>
+									<div class="usis-po-readonly">USIS</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-pco-sec-lines" aria-expanded="true" aria-controls="usis-pco-sec-lines">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Line items">Line items</span>
+						</button>
+						<div class="collapse show" id="usis-pco-sec-lines">
+							<p class="text-muted small mb-2">Amount is the sum of lines. At least one line is required.</p>
+							<div class="table-responsive mb-2">
+								<table class="table table-sm table-bordered align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th style="width:2.5rem">#</th>
+											<th>Description</th>
+											<th style="width:6rem">Qty</th>
+											<th style="width:5rem">Unit</th>
+											<th style="width:8rem">Unit price</th>
+											<th class="text-end" style="width:7rem">Extension</th>
+											<th style="width:2rem"></th>
+										</tr>
+									</thead>
+									<tbody id="usis-doc-lines"></tbody>
+								</table>
+							</div>
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+								<button type="button" class="btn btn-outline-primary btn-sm mb-0" id="usis-doc-line-add">+ Add line</button>
+								<div class="fw-semibold">Total <span id="usis-doc-total">$0.00</span></div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-punch-form-footer">
+						<div class="usis-punch-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<a class="btn btn-link text-secondary text-decoration-none" id="usis-pco-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-light" id="usis-pco-save" data-i18n="Save">Save</button>
+							<button type="submit" class="btn btn-primary" id="usis-pco-save-footer" data-i18n="Save">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-document-lines.js"></script>
+	<script src="assets/js/prime-co-create.js"></script>
+
+</body>
+</html>

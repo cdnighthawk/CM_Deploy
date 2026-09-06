@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "sco-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-sco-form { max-width: 1320px; --usis-primary: #1F4E5F; }
+		.usis-sco-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.25rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-sco-form .form-label .req { color: var(--usis-error, #c92a2a); margin-left: 0.15rem; }
+		.usis-sco-form .text-muted { font-size: 0.78rem; }
+		.usis-sco-form .btn-primary {
+			--bs-btn-bg: #1F4E5F;
+			--bs-btn-border-color: #1F4E5F;
+			--bs-btn-hover-bg: #163845;
+			--bs-btn-hover-border-color: #163845;
+			--bs-btn-active-bg: #163845;
+			--bs-btn-active-border-color: #163845;
+		}
+		.usis-sco-form .btn-outline-primary {
+			--bs-btn-color: #1F4E5F;
+			--bs-btn-border-color: #1F4E5F;
+			--bs-btn-hover-bg: #1F4E5F;
+			--bs-btn-hover-border-color: #1F4E5F;
+		}
+		.usis-punch-crumbs {
+			margin-bottom: 0.1rem;
+			font-size: 0.82rem;
+			color: #6c757d;
+		}
+		.usis-punch-crumbs a { color: inherit; text-decoration: none; }
+		.usis-punch-crumbs a:hover { text-decoration: underline; }
+		.usis-punch-page-title { font-size: 1.65rem; font-weight: 700; margin: 0.15rem 0 1.2rem; letter-spacing: -0.01em; }
+		.usis-po-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 0.75rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-po-banner i { margin-top: 0.15rem; }
+		.usis-po-section {
+			background: #fff;
+			border: 1px solid var(--usis-divider, #e9ecef);
+			border-radius: 0.5rem;
+			padding: 0.7rem 1.15rem 1.15rem;
+			margin-bottom: 1rem;
+		}
+		.usis-po-section-toggle {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			width: 100%;
+			background: none;
+			border: 0;
+			padding: 0.2rem 0 0.75rem;
+			font-weight: 700;
+			font-size: 1.02rem;
+			color: inherit;
+			text-align: left;
+		}
+		.usis-po-section-toggle .usis-po-chevron {
+			width: 0.9rem;
+			font-size: 0.7rem;
+			transition: transform 0.15s ease;
+		}
+		.usis-po-section-toggle.collapsed .usis-po-chevron { transform: rotate(-90deg); }
+		.usis-po-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1rem 1.25rem;
+			align-items: start;
+		}
+		@media (max-width: 1199.98px) {
+			.usis-po-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		}
+		@media (max-width: 575.98px) {
+			.usis-po-grid { grid-template-columns: 1fr; }
+		}
+		.usis-po-field { min-width: 0; }
+		.usis-po-field--span2 { grid-column: span 2; }
+		.usis-po-field--span4 { grid-column: 1 / -1; }
+		@media (max-width: 1199.98px) {
+			.usis-po-field--span2 { grid-column: 1 / -1; }
+		}
+		.usis-po-readonly {
+			min-height: 2rem;
+			padding: 0.4rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+		}
+		.usis-sco-empty {
+			padding: 1.1rem 1.15rem;
+			border: 1px dashed #ced4da;
+			border-radius: 0.4rem;
+			background: #f8f9fa;
+			color: #495057;
+			font-size: 0.9rem;
+		}
+		.usis-punch-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.55rem 0 1.5rem;
+			border-top: 1px solid #dee2e6;
+		}
+		.usis-punch-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-punch-req-note .req { color: #e03131; }
+		.usis-punch-form-footer .btn { min-width: 6.5rem; }
+		.usis-punch-form-footer .btn-light {
+			background: #f1f3f5;
+			border-color: #dee2e6;
+		}
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "Subcontract Change Order",
+				})
+			</div>
+
+			<div class="container-fluid usis-sco-form">
+				<form id="usis-sco-form" autocomplete="off" novalidate>
+					<div class="alert alert-danger d-none" id="usis-sco-error" role="alert"></div>
+
+					<nav class="usis-punch-crumbs" aria-label="Subcontract change order">
+						<a id="usis-sco-crumb" href="construction/project-detail.html" data-i18n="Procurement">Procurement</a>
+						<span class="mx-1">›</span>
+						<span id="usis-sco-crumb-current" data-i18n="New Subcontract Change Order">New Subcontract Change Order</span>
+					</nav>
+					<h1 class="usis-punch-page-title" id="usis-sco-page-title" data-i18n="New Subcontract Change Order">New Subcontract Change Order</h1>
+
+					<div class="usis-po-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Executed change to a subcontract USIS holds with a lower-tier vendor. Revises subcontract value only. Never revises the owner contract.">Executed change to a subcontract USIS holds with a lower-tier vendor. Revises subcontract value only. Never revises the owner contract.</span>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sco-sec-general" aria-expanded="true" aria-controls="usis-sco-sec-general">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="General Information">General Information</span>
+						</button>
+						<div class="collapse show" id="usis-sco-sec-general">
+							<div class="usis-po-grid">
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-sco-commitment"><span data-i18n="Parent subcontract">Parent subcontract</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-sco-commitment" required>
+										<option value="">Loading…</option>
+									</select>
+									<div class="usis-sco-empty d-none mt-2" id="usis-sco-empty">
+										<p class="mb-2" data-i18n="No subcontracts on this project. Create a subcontract in Procurement before adding a subcontract change order.">No subcontracts on this project. Create a subcontract in Procurement before adding a subcontract change order.</p>
+										<a class="btn btn-outline-primary btn-sm" id="usis-sco-empty-link" href="construction/project-detail.html?tab=procurement">Go to Procurement</a>
+									</div>
+								</div>
+								<div class="usis-po-field usis-po-field--span2">
+									<label class="form-label" for="usis-sco-subject"><span data-i18n="Subject">Subject</span><span class="req">*</span></label>
+									<input type="text" class="form-control form-control-sm" id="usis-sco-subject" maxlength="500" required>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-sco-status"><span data-i18n="Status">Status</span><span class="req">*</span></label>
+									<select class="form-select form-select-sm" id="usis-sco-status" required>
+										<option value="draft">draft</option>
+										<option value="issued">issued</option>
+										<option value="approved">approved</option>
+										<option value="void">void</option>
+									</select>
+								</div>
+								<div class="usis-po-field">
+									<label class="form-label" for="usis-sco-status-date" data-i18n="Status date">Status date</label>
+									<input type="date" class="form-control form-control-sm" id="usis-sco-status-date">
+								</div>
+								<div class="usis-po-field d-none" id="usis-sco-number-wrap">
+									<label class="form-label" data-i18n="Number">Number</label>
+									<div class="usis-po-readonly" id="usis-sco-number">—</div>
+								</div>
+								<div class="usis-po-field usis-po-field--span4">
+									<label class="form-label" for="usis-sco-notes" data-i18n="Reason">Reason</label>
+									<textarea class="form-control form-control-sm" id="usis-sco-notes" rows="3" placeholder="Why this subcontract is changing"></textarea>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-po-section">
+						<button type="button" class="usis-po-section-toggle" data-bs-toggle="collapse" data-bs-target="#usis-sco-sec-lines" aria-expanded="true" aria-controls="usis-sco-sec-lines">
+							<i class="fa fa-chevron-down usis-po-chevron" aria-hidden="true"></i>
+							<span data-i18n="Line items">Line items</span>
+						</button>
+						<div class="collapse show" id="usis-sco-sec-lines">
+							<p class="text-muted small mb-2">Amount is the sum of lines. At least one line is required. Approving adds that amount to the parent subcontract on the server — the owner contract is never changed.</p>
+							<div class="table-responsive mb-2">
+								<table class="table table-sm table-bordered align-middle mb-0">
+									<thead class="table-light">
+										<tr>
+											<th style="width:2.5rem">#</th>
+											<th>Description</th>
+											<th style="width:6rem">Qty</th>
+											<th style="width:5rem">Unit</th>
+											<th style="width:8rem">Unit price</th>
+											<th class="text-end" style="width:7rem">Extension</th>
+											<th style="width:2rem"></th>
+										</tr>
+									</thead>
+									<tbody id="usis-doc-lines"></tbody>
+								</table>
+							</div>
+							<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+								<button type="button" class="btn btn-outline-primary btn-sm mb-0" id="usis-doc-line-add">+ Add line</button>
+								<div class="fw-semibold">Total <span id="usis-doc-total">$0.00</span></div>
+							</div>
+						</div>
+					</div>
+
+					<div class="usis-punch-form-footer">
+						<div class="usis-punch-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<a class="btn btn-link text-secondary text-decoration-none" id="usis-sco-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="button" class="btn btn-light" id="usis-sco-save" data-i18n="Save">Save</button>
+							<button type="submit" class="btn btn-primary" id="usis-sco-save-footer" data-i18n="Save">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-document-lines.js"></script>
+	<script src="assets/js/sco-create.js"></script>
+
+</body>
+</html>

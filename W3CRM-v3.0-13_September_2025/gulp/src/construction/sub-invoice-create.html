@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<base href="../">
+
+	@@include("../elements/meta.html", {
+		"fileName": "sub-invoice-create.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+	<style>
+		.usis-sinv-form { max-width: 1320px; }
+		.usis-sinv-form .form-label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			margin-bottom: 0.28rem;
+			color: var(--usis-text, #1b242c);
+		}
+		.usis-sinv-form .form-label .req { color: #e03131; margin-left: 0.2rem; }
+		.usis-sinv-form .form-control,
+		.usis-sinv-form .form-select {
+			min-height: 2.45rem;
+			font-size: 0.9rem;
+			border-color: #ced4da;
+			border-radius: 0.25rem;
+		}
+		.usis-sinv-form .form-control-sm,
+		.usis-sinv-form .form-select-sm { min-height: 2rem; font-size: 0.82rem; }
+		.usis-sinv-crumbs {
+			margin-bottom: 0.1rem;
+			font-size: 0.82rem;
+			color: #6c757d;
+		}
+		.usis-sinv-crumbs a { color: inherit; text-decoration: none; }
+		.usis-sinv-crumbs a:hover { text-decoration: underline; }
+		.usis-sinv-page-title { font-size: 1.65rem; font-weight: 700; margin: 0.15rem 0 1.2rem; letter-spacing: -0.01em; }
+		.usis-sinv-banner {
+			display: flex;
+			align-items: flex-start;
+			gap: 0.55rem;
+			padding: 0.65rem 0.9rem;
+			margin-bottom: 1rem;
+			background: #e8eef1;
+			border: 1px solid #b7c9d0;
+			border-radius: 0.4rem;
+			color: var(--usis-primary-dark, #163845);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+		.usis-sinv-banner i { margin-top: 0.15rem; }
+		.usis-sinv-section { margin-bottom: 1.5rem; }
+		.usis-sinv-section-title {
+			font-size: 1.05rem;
+			font-weight: 700;
+			margin: 0 0 0.95rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 1px solid #dee2e6;
+		}
+		.usis-sinv-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 0.95rem 2rem;
+			align-items: start;
+		}
+		@media (max-width: 767.98px) {
+			.usis-sinv-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+		}
+		.usis-sinv-field { min-width: 0; }
+		.usis-sinv-field--span2 { grid-column: 1 / -1; }
+		.usis-sinv-readonly {
+			min-height: 2.45rem;
+			padding: 0.55rem 0;
+			color: var(--usis-text-secondary, #5c6b76);
+			font-variant-numeric: tabular-nums;
+		}
+		.usis-sinv-totals {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 0.95rem 2rem;
+			margin-top: 1rem;
+			padding-top: 0.85rem;
+			border-top: 1px dashed #dee2e6;
+		}
+		@media (max-width: 767.98px) {
+			.usis-sinv-totals { grid-template-columns: 1fr 1fr; }
+		}
+		.usis-sinv-empty {
+			padding: 1.1rem 1.15rem;
+			border: 1px dashed #ced4da;
+			border-radius: 0.4rem;
+			background: #f8f9fa;
+			color: #495057;
+			font-size: 0.9rem;
+		}
+		.usis-sinv-lines th { white-space: nowrap; font-size: 0.78rem; }
+		.usis-sinv-lines td { vertical-align: middle; }
+		.usis-sinv-lines .usis-sinv-col-desc { min-width: 16rem; }
+		.usis-sinv-lines .usis-sinv-col-amt { min-width: 8rem; }
+		.usis-sinv-form-footer {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-between;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.55rem 0 1.5rem;
+			border-top: 1px solid #dee2e6;
+		}
+		.usis-sinv-req-note { color: #6c757d; font-size: 0.8rem; }
+		.usis-sinv-req-note .req { color: #e03131; }
+		.usis-sinv-form-footer .btn { min-width: 6.5rem; }
+		.usis-sinv-form-footer .btn-light {
+			background: #f1f3f5;
+			border-color: #dee2e6;
+		}
+	</style>
+
+</head>
+<body>
+
+	@@include("../elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("../elements/nav-header-construction.html")
+
+		@@include("../elements/chatbox-construction.html")
+
+		@@include("../elements/header-construction.html")
+
+		@@include("../elements/deznav-construction.html")
+
+		<main class="content-body">
+
+			<div class="page-title">
+				@@include("../elements/breadcrumb.html", {
+					"fileName": "New Subcontractor Invoice",
+				})
+			</div>
+
+			<div class="container-fluid usis-sinv-form">
+				<form id="usis-sinv-form" autocomplete="off" novalidate>
+					<div class="alert alert-danger d-none" id="usis-sinv-error" role="alert"></div>
+
+					<nav class="usis-sinv-crumbs" aria-label="Sub invoices">
+						<a id="usis-sinv-crumb-list" href="construction/project-detail.html" data-i18n="Sub invoices">Sub invoices</a>
+						<span class="mx-1">›</span>
+						<span id="usis-sinv-crumb-current" data-i18n="New Subcontractor Invoice">New Subcontractor Invoice</span>
+					</nav>
+					<h1 class="usis-sinv-page-title" id="usis-sinv-page-title" data-i18n="New Subcontractor Invoice">New Subcontractor Invoice</h1>
+
+					<div class="usis-sinv-banner" role="status">
+						<i class="fa fa-info-circle" aria-hidden="true"></i>
+						<span data-i18n="Invoice from a subcontractor to USIS. This is accounts-payable facing — not a GC G702 pay application and not a material bill on a purchase order.">Invoice from a subcontractor to USIS. This is accounts-payable facing — not a GC G702 pay application and not a material bill on a purchase order.</span>
+					</div>
+
+					<section class="usis-sinv-section">
+						<h2 class="usis-sinv-section-title" data-i18n="General Information">General Information</h2>
+						<div class="usis-sinv-grid">
+							<div class="usis-sinv-field usis-sinv-field--span2">
+								<label class="form-label" for="usis-sinv-commitment"><span data-i18n="Parent subcontract">Parent subcontract</span><span class="req">*</span></label>
+								<select class="form-select" id="usis-sinv-commitment" required>
+									<option value="">Loading…</option>
+								</select>
+								<div class="usis-sinv-empty d-none mt-2" id="usis-sinv-empty-subs">
+									<p class="mb-2" data-i18n="No subcontracts on this project. Create a subcontract on Procurement before adding a sub invoice.">No subcontracts on this project. Create a subcontract on Procurement before adding a sub invoice.</p>
+									<a class="btn btn-outline-primary btn-sm" id="usis-sinv-create-sub" href="construction/project-detail.html">Go to Procurement</a>
+								</div>
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" for="usis-sinv-number" data-i18n="Invoice number">Invoice number</label>
+								<input type="text" class="form-control" id="usis-sinv-number" maxlength="40" placeholder="Leave blank for SINV-###">
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" for="usis-sinv-status"><span data-i18n="Status">Status</span><span class="req">*</span></label>
+								<select class="form-select" id="usis-sinv-status" required>
+									<option value="draft">draft</option>
+									<option value="received">received</option>
+									<option value="approved">approved</option>
+									<option value="rejected">rejected</option>
+									<option value="paid">paid</option>
+								</select>
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" for="usis-sinv-period-start"><span data-i18n="Period start">Period start</span><span class="req">*</span></label>
+								<input type="date" class="form-control" id="usis-sinv-period-start" required>
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" for="usis-sinv-period-end"><span data-i18n="Period end">Period end</span><span class="req">*</span></label>
+								<input type="date" class="form-control" id="usis-sinv-period-end" required>
+							</div>
+							<div class="usis-sinv-field usis-sinv-field--span2">
+								<label class="form-label" for="usis-sinv-subject" data-i18n="Subject">Subject</label>
+								<input type="text" class="form-control" id="usis-sinv-subject" maxlength="500" placeholder="Defaults from invoice number or vendor + period">
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" for="usis-sinv-retainage-pct" data-i18n="Retainage %">Retainage %</label>
+								<input type="number" class="form-control" id="usis-sinv-retainage-pct" step="0.01" min="0" max="100" value="5">
+							</div>
+						</div>
+						<div class="usis-sinv-totals" aria-live="polite">
+							<div class="usis-sinv-field">
+								<label class="form-label" data-i18n="This period">This period</label>
+								<div class="usis-sinv-readonly" id="usis-sinv-this-period">$0.00</div>
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" data-i18n="Previous-to-date">Previous-to-date</label>
+								<div class="usis-sinv-readonly" id="usis-sinv-previous">$0.00</div>
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" data-i18n="Retainage (this period)">Retainage (this period)</label>
+								<div class="usis-sinv-readonly" id="usis-sinv-retainage">$0.00</div>
+							</div>
+							<div class="usis-sinv-field">
+								<label class="form-label" data-i18n="Amount due">Amount due</label>
+								<div class="usis-sinv-readonly" id="usis-sinv-amount-due">$0.00</div>
+							</div>
+						</div>
+						<p class="text-muted small mb-0 mt-2 d-none" id="usis-sinv-server-totals"></p>
+					</section>
+
+					<section class="usis-sinv-section">
+						<h2 class="usis-sinv-section-title" data-i18n="Invoice lines">Invoice lines</h2>
+						<p class="text-muted small mb-2" id="usis-sinv-lines-hint">Select a subcontract to load SOV rows, or enter a lump this-period amount if the subcontract has no SOV.</p>
+						<div class="table-responsive mb-2">
+							<table class="table table-sm table-bordered align-middle mb-0 usis-sinv-lines">
+								<thead class="table-light">
+									<tr>
+										<th>#</th>
+										<th class="usis-sinv-col-desc">Description</th>
+										<th class="usis-sinv-col-amt text-end">This period</th>
+									</tr>
+								</thead>
+								<tbody id="usis-sinv-lines-tbody"></tbody>
+							</table>
+						</div>
+					</section>
+
+					<div class="usis-sinv-form-footer">
+						<div class="usis-sinv-req-note"><span class="req">*</span> <span data-i18n="Asterisk indicates required field">Asterisk indicates required field</span></div>
+						<div class="d-flex flex-wrap gap-2 align-items-center">
+							<a class="btn btn-link text-secondary text-decoration-none" id="usis-sinv-cancel" href="construction/project-detail.html" data-i18n="Cancel">Cancel</a>
+							<button type="submit" class="btn btn-primary" id="usis-sinv-save" data-i18n="Save">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</main>
+
+		@@include("../elements/footer.html")
+	</div>
+
+	@@include("../elements/script.html")
+
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/aiReviewBus.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-command-palette.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/sub-invoice-create.js"></script>
+
+</body>
+</html>

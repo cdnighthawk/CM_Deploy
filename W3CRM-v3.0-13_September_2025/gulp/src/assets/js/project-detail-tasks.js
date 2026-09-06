@@ -185,7 +185,7 @@
 					"</span></td>" +
 					'<td class="text-center">' +
 					'<div class="dropdown custom-dropdown mb-0">' +
-					'<button type="button" class="btn btn-sm btn-link p-0 text-body" data-bs-toggle="dropdown" aria-expanded="false">' +
+					'<button type="button" class="btn btn-sm btn-link p-0 text-body" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-expanded="false">' +
 					'<i class="fa-solid fa-ellipsis-vertical"></i>' +
 					"</button>" +
 					'<ul class="dropdown-menu dropdown-menu-end">' +

@@ -1346,6 +1346,21 @@ def patch_project(project_id: str):
     return _jsonify({"item": item, "entity": "project"})
 
 
+@bp.delete("/projects/<project_id>")
+def delete_project(project_id: str):
+    """Soft-delete a project (admin DELETE). Hidden from subsequent lists."""
+    pid = _parse_uuid_param(project_id)
+    if not pid:
+        return _jsonify({"error": "invalid project id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    item = project_svc.delete_project(pid)
+    if item is None:
+        return _jsonify({"error": "project not found"}), 404
+    db.session.commit()
+    return _jsonify({"ok": True, "item": item, "entity": "project"})
+
+
 @bp.post("/projects/bulk")
 def bulk_patch_projects():
     """Set the same status on several projects the caller can access."""
@@ -3780,6 +3795,23 @@ def patch_project_submittal(project_id: str, submittal_id: str):
     return _jsonify(body)
 
 
+@bp.delete("/projects/<project_id>/submittals/<submittal_id>")
+def delete_project_submittal(project_id: str, submittal_id: str):
+    pid = _parse_uuid_param(project_id)
+    sid = _parse_uuid_param(submittal_id)
+    if not pid or not sid:
+        return _jsonify({"error": "invalid id"}), 400
+    if not _project_exists(pid):
+        return _jsonify({"error": "project not found"}), 404
+    try:
+        body = submittal_svc.delete_submittal(sid, current_user())
+    except submittal_svc.ApiError as exc:
+        return _submittal_err(exc)
+    if str(body.get("project_id") or "") != str(pid):
+        return _jsonify({"error": "submittal not found"}), 404
+    return _jsonify(body)
+
+
 @bp.post("/projects/<project_id>/submittals/<submittal_id>/attachments")
 def post_submittal_attachment(project_id: str, submittal_id: str):
     pid = _parse_uuid_param(project_id)
@@ -4804,6 +4836,24 @@ def patch_lead_estimate(identifier: str):
         row.due_at = rfi_svc._parse_dt(data.get("due_at"))
     db.session.commit()
     return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+
+
+@bp.delete("/lead-estimates/<identifier>")
+def delete_lead_estimate(identifier: str):
+    """Archive a lead so it leaves the Leads and Estimates boards."""
+    row = _resolve_lead(identifier)
+    if row is None:
+        return _jsonify({"error": "lead estimate not found"}), 404
+    row.is_archived = True
+    db.session.commit()
+    return _jsonify(
+        {
+            "ok": True,
+            "id": str(row.id),
+            "archived": True,
+            "entity": "lead_estimate",
+        }
+    )
 
 
 @bp.post("/lead-estimates/<identifier>/approve-estimate")

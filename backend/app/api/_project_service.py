@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -188,6 +188,8 @@ def patch_project(project_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]
         p.substantial_completion_date = _parse_date(data.get("substantial_completion_date"))
     if "closeout_date" in data:
         p.closeout_date = _parse_date(data.get("closeout_date"))
+    if p.status == "complete" and p.closeout_date is None:
+        p.closeout_date = date.today()
     if "retention_percentage" in data:
         dec = _parse_decimal(data.get("retention_percentage"), "retention_percentage")
         p.retention_percentage = float(dec) if dec is not None else None
@@ -275,6 +277,8 @@ def bulk_patch_status(ids: list[Any], status: str) -> dict[str, Any]:
             failed.append({"id": str(pid), "error": "project not found"})
             continue
         p.status = st
+        if st == "complete" and p.closeout_date is None:
+            p.closeout_date = date.today()
         updated.append({"id": str(pid), "status": st})
     db.session.flush()
     return {
@@ -284,3 +288,14 @@ def bulk_patch_status(ids: list[Any], status: str) -> dict[str, Any]:
         "updated_count": len(updated),
         "failed_count": len(failed),
     }
+
+
+def delete_project(project_id: uuid.UUID) -> dict[str, Any] | None:
+    """Soft-delete a project. Caller commits."""
+    p = db.session.get(Project, project_id)
+    if p is None or p.deleted_at is not None:
+        return None
+    p.deleted_at = datetime.now(timezone.utc)
+    from .v1 import _project_detail_public
+
+    return _project_detail_public(p)

@@ -29,11 +29,21 @@
 				}
 				ul.innerHTML = items
 					.map(function (x) {
+						var del =
+							window.USISAdminDelete && window.USISAdminDelete.buttonHtml
+								? window.USISAdminDelete.buttonHtml(x.id, "/api/v1/documents/" + encodeURIComponent(x.id), {
+										label: x.title || "this file",
+									})
+								: "";
 						return (
-							'<li class="list-group-item d-flex justify-content-between align-items-center"><span>' +
+							'<li class="list-group-item d-flex justify-content-between align-items-center gap-2" data-id="' +
+							esc(x.id) +
+							'"><span>' +
 							esc(x.title || x.document_type) +
-							'</span><span class="badge bg-secondary">' +
+							'</span><span class="d-flex align-items-center gap-2"><span class="badge bg-secondary">' +
 							esc(x.document_type) +
+							"</span>" +
+							del +
 							"</span></li>"
 						);
 					})
@@ -46,6 +56,7 @@
 
 	document.addEventListener("DOMContentLoaded", function () {
 		load();
+		window.addEventListener("usis:admin-deleted", load);
 		var btn = document.getElementById("usis-doc-add");
 		if (btn) {
 			btn.addEventListener("click", function () {

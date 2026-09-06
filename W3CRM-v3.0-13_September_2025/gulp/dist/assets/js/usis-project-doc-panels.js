@@ -284,12 +284,70 @@
 		}
 
 		function updateDrawingDownloadBtn() {
-			var btn = drawingDownloadBtn();
-			if (!btn) return;
 			var n = drawingSelected.size;
-			btn.classList.toggle("d-none", n === 0);
-			btn.disabled = n === 0;
-			btn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+			var btn = drawingDownloadBtn();
+			if (btn) {
+				btn.classList.toggle("d-none", n === 0);
+				btn.disabled = n === 0;
+				btn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+			}
+			var del = drawingDeleteBtn();
+			if (del) {
+				del.classList.toggle("d-none", n === 0);
+				del.disabled = n === 0;
+				del.textContent = n <= 1 ? "Delete" : "Delete (" + n + ")";
+			}
+		}
+
+		function drawingDeleteBtn() {
+			var grid = el(ids.gridDrawings);
+			var bar = grid && grid.previousElementSibling;
+			return bar && bar.classList.contains("usis-draw-group-toolbar")
+				? bar.querySelector(".usis-draw-delete")
+				: null;
+		}
+
+		function deleteDrawingSheet(data) {
+			var cr = (data && data.current_revision) || {};
+			var did = cr.id || (data && data.id);
+			if (!did || !window.confirm("Delete this drawing sheet (all revisions)?")) {
+				return Promise.reject({ cancelled: true });
+			}
+			return fetchJson("/api/v1/drawings/" + encodeURIComponent(did) + "/delete", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ confirm: true, scope: "series" }),
+			});
+		}
+
+		function deleteSelectedDrawings() {
+			var rows = filterDrawingSheetsClient(cache.drawingSheets).filter(function (s) {
+				return drawingSelected.has(drawingRowId(s));
+			});
+			if (!rows.length) return;
+			if (!window.confirm("Delete " + rows.length + " drawing sheet" + (rows.length === 1 ? "" : "s") + "?"))
+				return;
+			var chain = Promise.resolve();
+			rows.forEach(function (row) {
+				chain = chain.then(function () {
+					var cr = row.current_revision || {};
+					var did = cr.id || row.id;
+					if (!did) return;
+					return fetchJson("/api/v1/drawings/" + encodeURIComponent(did) + "/delete", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ confirm: true, scope: "series" }),
+					});
+				});
+			});
+			chain
+				.then(function () {
+					drawingSelected.clear();
+					return loadDrawingsAndRfis(activeProjectId);
+				})
+				.catch(function (err) {
+					window.alert(err.message || "Could not delete drawing.");
+				});
 		}
 
 		function drawingFileJob(sheet) {
@@ -403,6 +461,14 @@
 				dl.textContent = "Download";
 				bar.appendChild(dl);
 				dl.addEventListener("click", downloadSelectedDrawings);
+			}
+			if (!bar.querySelector(".usis-draw-delete")) {
+				var delBtn = document.createElement("button");
+				delBtn.type = "button";
+				delBtn.className = "btn btn-sm btn-outline-danger usis-draw-delete d-none";
+				delBtn.textContent = "Delete";
+				bar.appendChild(delBtn);
+				delBtn.addEventListener("click", deleteSelectedDrawings);
 			}
 			updateDrawingDownloadBtn();
 		}
@@ -796,6 +862,36 @@
 						} catch (e) {
 							return esc(cr.updated_at);
 						}
+					},
+				},
+				{
+					title: "",
+					field: "id",
+					width: 72,
+					hozAlign: "right",
+					headerSort: false,
+					formatter: function (cell) {
+						var data = cell.getRow().getData();
+						var cr = data.current_revision || {};
+						var did = cr.id || data.id;
+						if (!did) return "";
+						return (
+							'<button type="button" class="btn btn-sm btn-outline-danger py-0 usis-proj-drawing-del" data-id="' +
+							esc(String(did)) +
+							'">Delete</button>'
+						);
+					},
+					cellClick: function (e, cell) {
+						e.stopPropagation();
+						var btn = e.target && e.target.closest && e.target.closest(".usis-proj-drawing-del");
+						if (!btn) return;
+						deleteDrawingSheet(cell.getRow().getData()).then(function () {
+							drawingSelected.delete(drawingRowId(cell.getRow().getData()));
+							return loadDrawingsAndRfis(activeProjectId);
+						}).catch(function (err) {
+							if (err && err.cancelled) return;
+							window.alert(err.message || "Could not delete drawing.");
+						});
 					},
 				},
 			];

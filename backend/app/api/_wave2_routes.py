@@ -121,6 +121,16 @@ def register_wave2_routes(bp: Blueprint) -> None:
         except ApiError as exc:
             return _err(exc)
 
+    @bp.delete("/companies/<company_id>")
+    def delete_company(company_id: str):
+        cid = _parse_uuid_param(company_id)
+        if not cid:
+            return _jsonify({"error": "invalid company id"}), 400
+        try:
+            return _jsonify(wave2_svc.delete_company(cid, current_user()))
+        except ApiError as exc:
+            return _err(exc)
+
     @bp.get("/companies/<company_id>/contacts")
     def list_contacts(company_id: str):
         cid = _parse_uuid_param(company_id)

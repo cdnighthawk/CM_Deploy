@@ -222,6 +222,13 @@
 					esc(String(row.id || row.external_id || "")) +
 					'">New estimate</button>'
 				: "") +
+			(window.USISAdminDelete && window.USISAdminDelete.menuItemHtml
+				? window.USISAdminDelete.menuItemHtml(
+						row.id,
+						"/api/v1/lead-estimates/" + encodeURIComponent(row.id),
+						{ label: "this estimate" }
+					)
+				: "") +
 			'<span class="dropdown-item-text small text-muted">id: ' +
 			esc(row.external_id || row.id) +
 			"</span>" +
@@ -550,6 +557,11 @@
 			prefetchOtherCounts();
 		});
 	}
+	window.addEventListener("usis:admin-deleted", function () {
+		tabCountsPrefetched = false;
+		loadEstimates();
+		prefetchOtherCounts();
+	});
 	window.usisBcPullOnDone = function () {
 		tabCountsPrefetched = false;
 		loadEstimates();

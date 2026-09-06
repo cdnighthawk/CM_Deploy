@@ -143,7 +143,7 @@
 
 				<div class="d-none d-flex flex-wrap align-items-center gap-1 mb-2" id="usis-leads-filter-chips" aria-live="polite"></div>
 
-				<div class="usis-bulk-bar d-none" id="usis-bc-leads-bulk-bar" role="region" aria-live="polite">
+				<div class="usis-bulk-bar d-none" id="usis-bc-leads-bulk-bar" role="region" aria-live="polite" data-usis-admin-bulk-delete="/api/v1/lead-estimates/{id}" data-usis-admin-bulk-label="lead">
 					<span id="usis-bc-leads-bulk-count" class="fw-semibold me-1">0 selected</span>
 					<button type="button" class="btn btn-sm btn-success" data-usis-bulk-bc="WILL_SUBMIT" data-i18n="Will Bid">Will Bid</button>
 					<button type="button" class="btn btn-sm btn-danger" data-usis-bulk-bc="DECLINED" data-i18n="Will Not Bid">Will Not Bid</button>
@@ -154,7 +154,7 @@
 				<!-- Start - Leads table -->
 				<div class="col-xl-12">
 					<div class="card m-0 table-hover text-nowrap overflow-auto">
-						<table class="table table-sm m-0" id="usis-bc-leads-table">
+						<table class="table table-sm m-0" id="usis-bc-leads-table" data-usis-admin-delete="/api/v1/lead-estimates/{id}" data-usis-admin-delete-label="lead">
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-bc-leads-check-all" aria-label="Select all visible leads"></th>
@@ -367,6 +367,11 @@
 				'<a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="' +
 				quoteHref +
 				'">Quote report (print)</a>' +
+				(window.USISAdminDelete && window.USISAdminDelete.menuItemHtml
+					? window.USISAdminDelete.menuItemHtml(row.id, "/api/v1/lead-estimates/" + encodeURIComponent(row.id), {
+							label: "this lead",
+						})
+					: "") +
 				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.external_id || row.id) + "</span>" +
 				"</div></div>";
 			var bulk = window.USISListBulk && window.USISListBulk.checkboxHtml
@@ -587,6 +592,7 @@
 		});
 		var btn = document.getElementById("usis-bc-sync-stub");
 		if (btn) btn.addEventListener("click", loadLeads);
+		window.addEventListener("usis:admin-deleted", loadLeads);
 		window.usisBcPullOnDone = loadLeads;
 		var pullBtn = document.getElementById("usis-bc-pull");
 		if (pullBtn) {

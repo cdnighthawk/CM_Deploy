@@ -21,8 +21,8 @@ from ..models import (
     SubmittalLineItem,
     SubmittalPdfAnnotation,
 )
-from ..services.object_storage import StorageError, UploadCategory, save_upload
-from ..services.project_file_keys import preferred_document_object_name
+from ..services.object_storage import StorageError, UploadCategory, delete_stored, save_upload
+from ..services.project_file_keys import document_object_candidates, preferred_document_object_name
 from ._perms import CurrentUser, can_create_submittal, can_view_submittal_log
 from ._rfi_service import ApiError, _parse_dt, _parse_uuid
 
@@ -32,6 +32,7 @@ __all__ = [
     "get_submittal_detail",
     "create_submittal",
     "patch_submittal",
+    "delete_submittal",
     "add_submittal_attachment",
     "upload_submittal_attachment_file",
     "get_document_annotations",
@@ -565,6 +566,28 @@ def patch_submittal(sid: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) ->
     s2 = _get_submittal_eager(sid)
     assert s2 is not None
     return get_submittal_detail(s2.id, cu)
+
+
+def delete_submittal(sid: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
+    s = _get_submittal_eager(sid)
+    if s is None:
+        raise ApiError("submittal not found", 404)
+    if not _is_writer(cu) and not _is_admin(cu):
+        raise ApiError("not allowed to delete this submittal", 403)
+    pid = s.project_id
+    docs = list(_submittal_docs(s))
+    for d in docs:
+        for name in document_object_candidates(d):
+            delete_stored(UploadCategory.DOCUMENTS, name)
+        db.session.delete(d)
+    db.session.delete(s)
+    db.session.commit()
+    return {
+        "ok": True,
+        "id": str(sid),
+        "project_id": str(pid) if pid else None,
+        "entity": "submittal",
+    }
 
 
 def add_submittal_attachment(sid: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:

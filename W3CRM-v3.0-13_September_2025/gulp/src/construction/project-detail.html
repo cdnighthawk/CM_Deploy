@@ -11,7 +11,7 @@
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
-	<link href="assets/css/usis-ui.css?v=20260905b" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260906a" rel="stylesheet">
 	<link href="assets/vendor/fullcalendar/css/main.min.css" rel="stylesheet">
 	<style>
 		.usis-detail-toolbar .nav-link { font-weight: 500; }
@@ -207,6 +207,8 @@
 											<div class="small text-muted" id="usis-proj-job-status"></div>
 											<div class="mt-2 d-flex flex-wrap justify-content-md-end gap-1">
 												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-proj-edit-btn" data-i18n="Edit">Edit</button>
+												<button type="button" class="btn btn-success btn-sm d-none" id="usis-proj-close-btn" data-i18n="Close project">Close project</button>
+												<button type="button" class="btn btn-outline-secondary btn-sm d-none" id="usis-proj-reopen-btn" data-i18n="Reopen">Reopen</button>
 											</div>
 										</div>
 									</div>
@@ -1406,6 +1408,28 @@
 		</div>
 	</div>
 
+	<!-- Close project -->
+	<div class="modal fade" id="usis-proj-close-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-proj-close-title">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-proj-close-title">Close project</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-proj-close-err" role="alert"></div>
+					<p class="mb-3">Mark this job complete and move it to the Completed list. You can reopen it later from this page.</p>
+					<label class="form-label small mb-0" for="usis-proj-close-date">Closeout date</label>
+					<input type="date" class="form-control form-control-sm" id="usis-proj-close-date">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-success" id="usis-proj-close-confirm">Close project</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Task tab — Progress S-Curve (template stub; chart TBD) -->
 	<div class="modal fade" id="usis-task-s-curve" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
@@ -2252,7 +2276,7 @@
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260830a"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
-	<script src="assets/js/project-detail-tasks.js"></script>
+	<script src="assets/js/project-detail-tasks.js?v=20260906a"></script>
 	<script src="assets/js/project-detail-procurement.js?v=20260831d"></script>
 	<script src="assets/js/project-detail-order.js?v=20260831d"></script>
 	<script src="assets/js/usis-correspondence.js"></script>

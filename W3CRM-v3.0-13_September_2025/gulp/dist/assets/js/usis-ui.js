@@ -297,7 +297,7 @@
 			.join("");
 		return (
 			'<div class="dropdown custom-dropdown mb-0 tbl-orders-style usis-row-menu">' +
-			'<button type="button" class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" aria-label="Row actions">' +
+			'<button type="button" class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-popper-config=\'{"strategy":"fixed"}\' aria-expanded="false" aria-label="Row actions">' +
 			'<i class="fa-solid fa-ellipsis-vertical"></i></button>' +
 			'<div class="dropdown-menu dropdown-menu-end">' +
 			lis +
@@ -330,9 +330,13 @@
 		if (opts.remove !== false) {
 			var deleteData = Object.assign({}, opts.deleteData || {});
 			if (opts.id != null && opts.id !== "" && deleteData.id == null) deleteData.id = opts.id;
+			if (opts.deleteUrl && !deleteData.url) deleteData.url = opts.deleteUrl;
+			if (opts.deleteMethod && !deleteData.method) deleteData.method = opts.deleteMethod;
+			var delClass = opts.deleteClass || "usis-row-del";
+			if (opts.adminDelete) delClass = (delClass ? delClass + " " : "") + "usis-admin-del";
 			items.push({
 				label: opts.deleteLabel || "Delete",
-				className: opts.deleteClass || "usis-row-del",
+				className: delClass,
 				danger: true,
 				data: deleteData,
 			});
@@ -382,3 +386,376 @@
 		restyleAiButtons();
 	}
 })(window);
+
+/**
+ * Admin-only row delete for list tables, plus a shared confirm+DELETE helper.
+ * Shown when /api/v1/me reports can_admin_delete (admin/superuser or any module admin).
+ */
+(function (global) {
+	"use strict";
+
+	var ready = false;
+	var can = false;
+	var waiters = [];
+	var TABLES = {
+		"usis-projects-table": { url: "/api/v1/projects/{id}", label: "project" },
+		"usis-bc-leads-table": { url: "/api/v1/lead-estimates/{id}", label: "lead" },
+		"usis-estimate-table": { url: "/api/v1/lead-estimates/{id}", label: "estimate" },
+		"usis-lead-estimates-table": { url: "/api/v1/estimates/{id}", label: "estimate" },
+	};
+
+	(function injectHideUntilReady() {
+		if (document.getElementById("usis-admin-delete-css")) return;
+		var st = document.createElement("style");
+		st.id = "usis-admin-delete-css";
+		st.textContent = "html:not(.usis-can-admin-delete) .usis-admin-del, html:not(.usis-can-admin-delete) .usis-admin-bulk-del { display: none !important; }";
+		(document.head || document.documentElement).appendChild(st);
+	})();
+
+	function esc(s) {
+		return String(s == null ? "" : s)
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/"/g, "&quot;");
+	}
+
+	function apiBase() {
+		if (typeof global.usisApiBase === "function") {
+			return String(global.usisApiBase() || "").replace(/\/$/, "");
+		}
+		if (typeof global.USIS_API_BASE === "string") {
+			return global.USIS_API_BASE.trim().replace(/\/$/, "");
+		}
+		return "";
+	}
+
+	function notify(kind, message) {
+		if (global.USISNotify && typeof global.USISNotify[kind] === "function") {
+			global.USISNotify[kind](message);
+			return;
+		}
+		if (kind === "error") global.alert(message);
+	}
+
+	function computeCan(caps) {
+		if (!caps) return false;
+		if (caps.can_admin_delete) return true;
+		if (caps.is_superuser) return true;
+		var roles = caps.role_codes || [];
+		var i;
+		for (i = 0; i < roles.length; i++) {
+			if (roles[i] === "admin" || roles[i] === "superuser") return true;
+		}
+		var mods = caps.modules || {};
+		var k;
+		for (k in mods) {
+			if (Object.prototype.hasOwnProperty.call(mods, k) && mods[k] === "admin") return true;
+		}
+		return false;
+	}
+
+	function whenReady(fn) {
+		if (ready) {
+			fn(can);
+			return;
+		}
+		waiters.push(fn);
+	}
+
+	function setReady(value) {
+		ready = true;
+		can = !!value;
+		document.documentElement.classList.toggle("usis-can-admin-delete", can);
+		waiters.splice(0).forEach(function (fn) {
+			try {
+				fn(can);
+			} catch (e) {}
+		});
+		injectAll();
+		enhanceBulkBars();
+	}
+
+	function expandUrl(template, id) {
+		return String(template || "").replace(/\{id\}/g, encodeURIComponent(id));
+	}
+
+	function menuItemHtml(id, url, opts) {
+		opts = opts || {};
+		if (ready && !can) return "";
+		var hidden = ready && can ? "" : " d-none";
+		var method = opts.method || "DELETE";
+		var extra = "";
+		if (opts.body) extra += " data-body=\"" + esc(JSON.stringify(opts.body)) + "\"";
+		if (opts.reload) extra += " data-reload=\"" + esc(opts.reload) + "\"";
+		return (
+			'<button type="button" class="dropdown-item text-danger usis-admin-del' +
+			hidden +
+			'" data-id="' +
+			esc(id) +
+			'" data-url="' +
+			esc(url) +
+			'" data-method="' +
+			esc(method) +
+			'" data-label="' +
+			esc(opts.label || "this item") +
+			'"' +
+			extra +
+			">Delete</button>"
+		);
+	}
+
+	function buttonHtml(id, url, opts) {
+		opts = opts || {};
+		if (ready && !can) return "";
+		var hidden = ready && can ? "" : " d-none";
+		var method = opts.method || "DELETE";
+		return (
+			'<button type="button" class="btn btn-sm btn-outline-danger py-0 usis-admin-del' +
+			hidden +
+			'" data-id="' +
+			esc(id) +
+			'" data-url="' +
+			esc(url) +
+			'" data-method="' +
+			esc(method) +
+			'" data-label="' +
+			esc(opts.label || "this item") +
+			'">Delete</button>'
+		);
+	}
+
+	function tableConfig(table) {
+		if (!table) return null;
+		var id = table.id || "";
+		if (TABLES[id]) return TABLES[id];
+		var url = table.getAttribute("data-usis-admin-delete");
+		if (!url) return null;
+		return {
+			url: url,
+			label: table.getAttribute("data-usis-admin-delete-label") || "item",
+			method: table.getAttribute("data-usis-admin-delete-method") || "DELETE",
+		};
+	}
+
+	function rowHasDelete(tr) {
+		return !!(
+			tr.querySelector(".usis-admin-del") ||
+			tr.querySelector(".usis-row-del") ||
+			tr.querySelector("[class*='-del']")
+		);
+	}
+
+	function injectRow(tr, cfg) {
+		if (!can || !tr || rowHasDelete(tr)) return;
+		var id = tr.getAttribute("data-id");
+		if (!id) return;
+		var url = expandUrl(cfg.url, id);
+		var html = menuItemHtml(id, url, { label: cfg.label, method: cfg.method });
+		if (!html) return;
+		var menu = tr.querySelector(".dropdown-menu");
+		if (menu) {
+			menu.insertAdjacentHTML("beforeend", html);
+			return;
+		}
+		var last = tr.querySelector("td:last-child");
+		if (last) last.insertAdjacentHTML("beforeend", " " + buttonHtml(id, url, { label: cfg.label, method: cfg.method }));
+	}
+
+	function injectAll() {
+		if (!can) return;
+		document.querySelectorAll("table[id], table[data-usis-admin-delete]").forEach(function (table) {
+			var cfg = tableConfig(table);
+			if (!cfg) return;
+			table.querySelectorAll("tbody tr[data-id]").forEach(function (tr) {
+				injectRow(tr, cfg);
+			});
+		});
+		document.querySelectorAll(".usis-admin-del.d-none").forEach(function (el) {
+			el.classList.remove("d-none");
+		});
+	}
+
+	function enhanceBulkBars() {
+		if (!can) return;
+		document.querySelectorAll("[data-usis-admin-bulk-delete]").forEach(function (bar) {
+			if (bar.querySelector(".usis-admin-bulk-del")) {
+				bar.querySelector(".usis-admin-bulk-del").classList.remove("d-none");
+				return;
+			}
+			var url = bar.getAttribute("data-usis-admin-bulk-delete");
+			if (!url) return;
+			var btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "btn btn-sm btn-outline-danger usis-admin-bulk-del";
+			btn.setAttribute("data-url-template", url);
+			btn.setAttribute("data-label", bar.getAttribute("data-usis-admin-bulk-label") || "item");
+			btn.textContent = "Delete";
+			bar.appendChild(btn);
+		});
+	}
+
+	function parseBody(el) {
+		var raw = el.getAttribute("data-body");
+		if (!raw) return undefined;
+		try {
+			return JSON.parse(raw);
+		} catch (e) {
+			return undefined;
+		}
+	}
+
+	function requestDelete(url, opts) {
+		opts = opts || {};
+		var headers = { Accept: "application/json" };
+		var body = opts.body;
+		if (body != null) headers["Content-Type"] = "application/json";
+		return fetch(apiBase() + url, {
+			method: opts.method || "DELETE",
+			credentials: "include",
+			headers: headers,
+			body: body != null ? JSON.stringify(body) : undefined,
+		}).then(function (r) {
+			return r.text().then(function (t) {
+				var j = null;
+				try {
+					j = t ? JSON.parse(t) : null;
+				} catch (e) {}
+				if (!r.ok) throw new Error((j && (j.error || j.message)) || t || "HTTP " + r.status);
+				return j;
+			});
+		});
+	}
+
+	function confirmDelete(label) {
+		return global.confirm("Delete " + (label || "this item") + "? This cannot be undone from the list.");
+	}
+
+	function afterDelete(el) {
+		var reloadSel = el && el.getAttribute("data-reload");
+		if (reloadSel) {
+			var reloadEl = document.querySelector(reloadSel);
+			if (reloadEl) reloadEl.click();
+			return;
+		}
+		global.dispatchEvent(new CustomEvent("usis:admin-deleted"));
+		var tr = el && el.closest ? el.closest("tr") : null;
+		if (tr && tr.parentNode) tr.parentNode.removeChild(tr);
+	}
+
+	function bindClicks() {
+		if (document.__usisAdminDeleteBound) return;
+		document.__usisAdminDeleteBound = true;
+		document.addEventListener(
+			"click",
+			function (ev) {
+				var bulk = ev.target.closest && ev.target.closest(".usis-admin-bulk-del");
+				if (bulk) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					var ids =
+						global.USISListBulk && typeof global.USISListBulk.ids === "function"
+							? global.USISListBulk.ids()
+							: [];
+					if (!ids.length) return;
+					var label = bulk.getAttribute("data-label") || "item";
+					if (!global.confirm("Delete " + ids.length + " " + label + "(s)?")) return;
+					var tmpl = bulk.getAttribute("data-url-template") || "";
+					var chain = Promise.resolve();
+					ids.forEach(function (id) {
+						chain = chain.then(function () {
+							return requestDelete(expandUrl(tmpl, id));
+						});
+					});
+					chain
+						.then(function () {
+							notify("success", "Deleted " + ids.length + " " + label + "(s).");
+							if (global.USISListBulk && global.USISListBulk.clear) global.USISListBulk.clear();
+							global.dispatchEvent(new CustomEvent("usis:admin-deleted"));
+							var reload = document.querySelector(
+								"#usis-projects-reload, #usis-estimate-sync-stub, #usis-bc-leads-reload"
+							);
+							if (reload) reload.click();
+						})
+						.catch(function (err) {
+							notify("error", err.message || "Delete failed");
+						});
+					return;
+				}
+				var btn = ev.target.closest && ev.target.closest(".usis-admin-del");
+				if (!btn) return;
+				ev.preventDefault();
+				ev.stopPropagation();
+				var url = btn.getAttribute("data-url");
+				var id = btn.getAttribute("data-id");
+				if (!url && id) {
+					var table = btn.closest("table");
+					var cfg = tableConfig(table);
+					if (cfg) url = expandUrl(cfg.url, id);
+				}
+				if (!url) return;
+				if (!confirmDelete(btn.getAttribute("data-label"))) return;
+				requestDelete(url, { method: btn.getAttribute("data-method") || "DELETE", body: parseBody(btn) })
+					.then(function () {
+						notify("success", "Deleted.");
+						afterDelete(btn);
+					})
+					.catch(function (err) {
+						notify("error", err.message || "Delete failed");
+					});
+			},
+			true
+		);
+	}
+
+	function observeTables() {
+		if (!global.MutationObserver || document.__usisAdminDeleteObs) return;
+		document.__usisAdminDeleteObs = true;
+		var obs = new MutationObserver(function () {
+			if (!can) return;
+			injectAll();
+		});
+		obs.observe(document.documentElement, { childList: true, subtree: true });
+	}
+
+	function loadCaps() {
+		fetch(apiBase() + "/api/v1/me", { credentials: "include", headers: { Accept: "application/json" } })
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					setReady(false);
+					return;
+				}
+				setReady(computeCan((res.body && res.body.capabilities) || {}));
+			})
+			.catch(function () {
+				setReady(false);
+			});
+	}
+
+	bindClicks();
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", function () {
+			observeTables();
+			loadCaps();
+		});
+	} else {
+		observeTables();
+		loadCaps();
+	}
+
+	global.USISAdminDelete = {
+		canDelete: function () {
+			return can;
+		},
+		whenReady: whenReady,
+		menuItemHtml: menuItemHtml,
+		buttonHtml: buttonHtml,
+		requestDelete: requestDelete,
+		injectAll: injectAll,
+	};
+})(window);
+

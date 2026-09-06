@@ -82,6 +82,27 @@
 		return String(iso).slice(0, 10);
 	}
 
+	function todayInputDate() {
+		var d = new Date();
+		var mm = String(d.getMonth() + 1).padStart(2, "0");
+		var dd = String(d.getDate()).padStart(2, "0");
+		return d.getFullYear() + "-" + mm + "-" + dd;
+	}
+
+	function projectStatusKey(item) {
+		return String((item && item.status) || "").trim().toLowerCase();
+	}
+
+	function canCloseProject(item) {
+		var st = projectStatusKey(item);
+		return st === "planning" || st === "active" || st === "on_hold";
+	}
+
+	function canReopenProject(item) {
+		var st = projectStatusKey(item);
+		return st === "complete" || st === "archived";
+	}
+
 	function fmtDatePlain(iso) {
 		if (!iso) return "—";
 		try {
@@ -1553,6 +1574,110 @@
 			});
 	}
 
+	function syncCloseButtons(item) {
+		var closeBtn = document.getElementById("usis-proj-close-btn");
+		var reopenBtn = document.getElementById("usis-proj-reopen-btn");
+		if (closeBtn) closeBtn.classList.toggle("d-none", !canCloseProject(item));
+		if (reopenBtn) reopenBtn.classList.toggle("d-none", !canReopenProject(item));
+	}
+
+	function setCloseErr(msg) {
+		var el = document.getElementById("usis-proj-close-err");
+		if (!el) return;
+		if (msg) {
+			el.textContent = msg;
+			el.classList.remove("d-none");
+		} else {
+			el.classList.add("d-none");
+		}
+	}
+
+	function applyProjectPatch(payload, okMessage, errSetter) {
+		if (!lastProjectId) return Promise.resolve();
+		return fetch(apiBase() + "/api/v1/projects/" + encodeURIComponent(lastProjectId), {
+			method: "PATCH",
+			credentials: "include",
+			headers: Object.assign(
+				{ Accept: "application/json", "Content-Type": "application/json" },
+				actorHeaders()
+			),
+			body: JSON.stringify(payload),
+		})
+			.then(function (res) {
+				return res.json().then(function (j) {
+					return { ok: res.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				if (!res.ok) {
+					var msg = (res.body && res.body.error) || "Save failed.";
+					if (errSetter) errSetter(msg);
+					else if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(msg);
+					return null;
+				}
+				var item = res.body.item;
+				lastProjectItem = item;
+				render(item, lastLeadItem);
+				fillContractAdminFromProject(item);
+				wireProcurementTabProjectScope(item, lastProjectId);
+				if (window.USISNotify && window.USISNotify.success) {
+					window.USISNotify.success(okMessage);
+				}
+				return item;
+			})
+			.catch(function () {
+				var msg = "Network error saving project.";
+				if (errSetter) errSetter(msg);
+				else if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(msg);
+				return null;
+			});
+	}
+
+	function openCloseModal() {
+		if (!lastProjectItem || !canCloseProject(lastProjectItem)) return;
+		setCloseErr("");
+		var dateEl = document.getElementById("usis-proj-close-date");
+		if (dateEl) {
+			dateEl.value = isoToInputDate(lastProjectItem.closeout_date) || todayInputDate();
+		}
+		var modalEl = document.getElementById("usis-proj-close-modal");
+		if (modalEl && window.bootstrap) {
+			window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+		}
+	}
+
+	function confirmCloseProject() {
+		if (!lastProjectId) return;
+		setCloseErr("");
+		var dateEl = document.getElementById("usis-proj-close-date");
+		var closeout = dateEl && dateEl.value ? dateEl.value : todayInputDate();
+		var confirmBtn = document.getElementById("usis-proj-close-confirm");
+		if (confirmBtn) confirmBtn.disabled = true;
+		applyProjectPatch(
+			{ status: "complete", closeout_date: closeout },
+			"Project closed and moved to Completed.",
+			setCloseErr
+		)
+			.then(function (item) {
+				if (!item) return;
+				var modalEl = document.getElementById("usis-proj-close-modal");
+				if (modalEl && window.bootstrap) {
+					var inst = window.bootstrap.Modal.getInstance(modalEl);
+					if (inst) inst.hide();
+				}
+			})
+			.finally(function () {
+				if (confirmBtn) confirmBtn.disabled = false;
+			});
+	}
+
+	function reopenProject() {
+		if (!lastProjectItem || !canReopenProject(lastProjectItem)) return;
+		var label = lastProjectItem.name ? String(lastProjectItem.name) : "this project";
+		if (!window.confirm("Reopen " + label + " and move it back to Active?")) return;
+		applyProjectPatch({ status: "active" }, "Project reopened.");
+	}
+
 	function wireProjectEditOnce() {
 		if (wireProjectEditOnce._done) return;
 		wireProjectEditOnce._done = true;
@@ -1560,6 +1685,12 @@
 		if (editBtn) editBtn.addEventListener("click", openEditModal);
 		var saveBtn = document.getElementById("usis-proj-edit-save");
 		if (saveBtn) saveBtn.addEventListener("click", saveProjectEdit);
+		var closeBtn = document.getElementById("usis-proj-close-btn");
+		if (closeBtn) closeBtn.addEventListener("click", openCloseModal);
+		var closeConfirm = document.getElementById("usis-proj-close-confirm");
+		if (closeConfirm) closeConfirm.addEventListener("click", confirmCloseProject);
+		var reopenBtn = document.getElementById("usis-proj-reopen-btn");
+		if (reopenBtn) reopenBtn.addEventListener("click", reopenProject);
 		var methodSel = document.getElementById("usis-proj-edit-invoice-method");
 		if (methodSel) methodSel.addEventListener("change", onInvoiceMethodChange);
 		var shipKind = document.getElementById("usis-proj-edit-ship-kind");
@@ -1634,8 +1765,9 @@
 			if (item.status) statusBits.push(humanizeToken(item.status));
 			if (item.project_type) statusBits.push(humanizeToken(item.project_type));
 			st.textContent = statusBits.join(" · ");
-			st.className = "small text-muted";
+			st.className = projectStatusKey(item) === "complete" ? "small fw-medium text-success" : "small text-muted";
 		}
+		syncCloseButtons(item);
 
 		var loc = projectLocation(item) || lead.location;
 		var merged = {

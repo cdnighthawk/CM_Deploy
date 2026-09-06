@@ -181,10 +181,16 @@ def capabilities_for_user(user: User | None, role_codes: frozenset[str], is_supe
         role_codes,
         is_superuser=is_superuser,
     )
+    can_admin_delete = bool(is_superuser)
+    if not can_admin_delete:
+        can_admin_delete = "admin" in role_codes or "superuser" in role_codes
+    if not can_admin_delete:
+        can_admin_delete = any(level_rank(v) >= level_rank("admin") for v in perms.values())
     out: dict[str, Any] = {
         "modules": perms,
         "role_codes": sorted(role_codes),
         "is_superuser": is_superuser,
+        "can_admin_delete": can_admin_delete,
         "catalog": catalog_public(),
         "project_scope": scope,
     }

@@ -99,7 +99,15 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.8"
       - key: BC_SYNC_CRON_SECRET
-        sync: false
+        fromService:
+          name: usis-cm
+          type: web
+          envVarKey: BC_SYNC_CRON_SECRET
+      - key: USIS_WEB_HOSTPORT
+        fromService:
+          name: usis-cm
+          type: web
+          property: hostport
       - key: INVOICE_MAILBOX_SYNC_URL
         value: https://www.usiscm.com/api/v1/ap/mailbox/sync
 
@@ -115,6 +123,9 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.8"
       - key: BC_SYNC_CRON_SECRET
-        sync: false
+        fromService:
+          name: usis-cm
+          type: web
+          envVarKey: BC_SYNC_CRON_SECRET
       - key: CALENDAR_REMINDER_URL
         value: https://www.usiscm.com/api/v1/integrations/calendar-reminders/run

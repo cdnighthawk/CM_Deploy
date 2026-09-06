@@ -85,7 +85,9 @@
 					? '<span title="Locked">&#128274;</span>'
 					: "";
 				return (
-					"<tr>" +
+					'<tr data-id="' +
+					esc(row.id) +
+					'">' +
 					'<td class="fw-medium"><a class="link-primary text-decoration-none" href="' +
 					esc(href) +
 					'">' +
@@ -113,6 +115,12 @@
 					'<button type="button" class="btn btn-sm btn-outline-secondary usis-est-copy-btn" data-estimate-id="' +
 					esc(row.id) +
 					'">Copy</button>' +
+					(window.USISAdminDelete && window.USISAdminDelete.buttonHtml
+						? " " +
+						  window.USISAdminDelete.buttonHtml(row.id, "/api/v1/estimates/" + encodeURIComponent(row.id), {
+								label: "this estimate",
+							})
+						: "") +
 					"</td></tr>"
 				);
 			})
@@ -387,6 +395,9 @@
 			});
 		}
 		if (root && leadId) loadList();
+		window.addEventListener("usis:admin-deleted", function () {
+			if (leadId) loadList();
+		});
 	}
 
 	window.USISEstimateCreate = {

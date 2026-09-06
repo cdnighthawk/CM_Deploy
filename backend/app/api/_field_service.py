@@ -11,7 +11,7 @@ from sqlalchemy import select
 from ..extensions import db
 from ..models import DailyReport, Drawing, FieldPhoto
 from ..models.field_ops import DAILY_REPORT_STATUSES, DEFAULT_DAILY_SECTIONS
-from ..services.object_storage import UploadCategory, save_upload, send_stored_file, stored_exists
+from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists
 from ._perms import CurrentUser
 from ._serializers import iso
 
@@ -318,6 +318,17 @@ def update_field_photo(photo_id: uuid.UUID, data: Mapping[str, Any], cu: Current
     db.session.commit()
     db.session.refresh(row)
     return {"item": field_photo_public(row), "entity": "field_photo"}
+
+
+def delete_field_photo(photo_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
+    row = db.session.get(FieldPhoto, photo_id)
+    if row is None:
+        raise FieldApiError("photo not found", 404)
+    _require_project_access(cu, row.project_id)
+    delete_stored(UploadCategory.FIELD_PHOTOS, field_photo_object_name(row.id))
+    db.session.delete(row)
+    db.session.commit()
+    return {"ok": True, "id": str(photo_id), "entity": "field_photo"}
 
 
 def send_field_photo_file(photo_id: uuid.UUID, cu: CurrentUser):

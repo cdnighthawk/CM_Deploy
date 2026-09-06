@@ -229,12 +229,55 @@
 	}
 
 	function updateDrawingDownloadBtn() {
-		var btn = drawingDownloadBtn();
-		if (!btn) return;
 		var n = drawingSelected.size;
-		btn.classList.toggle("d-none", n === 0);
-		btn.disabled = n === 0;
-		btn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+		var btn = drawingDownloadBtn();
+		if (btn) {
+			btn.classList.toggle("d-none", n === 0);
+			btn.disabled = n === 0;
+			btn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+		}
+		var del = drawingDeleteBtn();
+		if (del) {
+			del.classList.toggle("d-none", n === 0);
+			del.disabled = n === 0;
+			del.textContent = n <= 1 ? "Delete" : "Delete (" + n + ")";
+		}
+	}
+
+	function drawingDeleteBtn() {
+		var grid = document.getElementById("usis-grid-drawings");
+		var bar = grid && grid.previousElementSibling;
+		return bar && bar.classList.contains("usis-draw-group-toolbar")
+			? bar.querySelector(".usis-draw-delete")
+			: null;
+	}
+
+	function deleteSelectedDrawings() {
+		var rows = filterDrawingSheetsClient(cache.drawingSheets).filter(function (s) {
+			return drawingSelected.has(drawingRowId(s));
+		});
+		if (!rows.length) return;
+		if (!window.confirm("Delete " + rows.length + " drawing sheet" + (rows.length === 1 ? "" : "s") + "?")) return;
+		var chain = Promise.resolve();
+		rows.forEach(function (row) {
+			chain = chain.then(function () {
+				var cr = row.current_revision || {};
+				var did = cr.id || row.id;
+				if (!did) return;
+				return fetchJsonBody("POST", "/api/v1/drawings/" + encodeURIComponent(did) + "/delete", {
+					confirm: true,
+					scope: "series",
+				});
+			});
+		});
+		chain
+			.then(function () {
+				drawingSelected.clear();
+				return loadAll(activeProjectId);
+			})
+			.catch(function (err) {
+				window.alert(err.message || "Could not delete drawing.");
+			});
 	}
 
 	function drawingFileJob(sheet) {
@@ -357,6 +400,14 @@
 			dl.textContent = "Download";
 			bar.appendChild(dl);
 			dl.addEventListener("click", downloadSelectedDrawings);
+		}
+		if (!bar.querySelector(".usis-draw-delete")) {
+			var delBtn = document.createElement("button");
+			delBtn.type = "button";
+			delBtn.className = "btn btn-sm btn-outline-danger usis-draw-delete d-none";
+			delBtn.textContent = "Delete";
+			bar.appendChild(delBtn);
+			delBtn.addEventListener("click", deleteSelectedDrawings);
 		}
 		updateDrawingDownloadBtn();
 	}

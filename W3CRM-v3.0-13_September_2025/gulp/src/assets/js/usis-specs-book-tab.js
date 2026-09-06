@@ -361,6 +361,7 @@
 			'<span class="text-muted">·</span>' +
 			'<button type="button" class="btn btn-link btn-sm p-0 usis-specs-collapse-all">Collapse all</button>' +
 			'<button type="button" class="btn btn-sm btn-primary usis-specs-download d-none">Download</button>' +
+			'<button type="button" class="btn btn-sm btn-outline-danger usis-specs-delete-selected d-none">Delete</button>' +
 			'<div class="usis-specs-book-msg small ms-2 d-none"></div>' +
 			"</div>" +
 			'<div class="usis-specs-grid border rounded overflow-hidden bg-white" style="min-height:22rem;"></div>' +
@@ -465,6 +466,7 @@
 		var expandAllBtn = container.querySelector(".usis-specs-expand-all");
 		var collapseAllBtn = container.querySelector(".usis-specs-collapse-all");
 		var downloadBtn = container.querySelector(".usis-specs-download");
+		var deleteSelectedBtn = container.querySelector(".usis-specs-delete-selected");
 		var specSelected = new Set();
 
 		var closeBtn = overlay.querySelector(".usis-sv-close");
@@ -691,11 +693,58 @@
 		}
 
 		function updateSpecDownloadBtn() {
-			if (!downloadBtn) return;
 			var n = specSelected.size;
-			downloadBtn.classList.toggle("d-none", n === 0);
-			downloadBtn.disabled = n === 0;
-			downloadBtn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+			if (downloadBtn) {
+				downloadBtn.classList.toggle("d-none", n === 0);
+				downloadBtn.disabled = n === 0;
+				downloadBtn.textContent = n <= 1 ? "Download" : "Download (" + n + ")";
+			}
+			if (deleteSelectedBtn) {
+				deleteSelectedBtn.classList.toggle("d-none", n === 0);
+				deleteSelectedBtn.disabled = n === 0;
+				deleteSelectedBtn.textContent = n <= 1 ? "Delete" : "Delete (" + n + ")";
+			}
+		}
+
+		function deleteSelectedSpecs() {
+			var rows = sections.filter(function (s) {
+				return specSelected.has(specRowId(s));
+			});
+			if (!rows.length) return;
+			if (!window.confirm("Delete " + rows.length + " spec section" + (rows.length === 1 ? "" : "s") + " from this project?"))
+				return;
+			var chain = Promise.resolve();
+			rows.forEach(function (row) {
+				chain = chain.then(function () {
+					return fetch(
+						apiBase() +
+							"/api/v1/projects/" +
+							encodeURIComponent(projectId) +
+							"/rfi-lookups/spec_sections/" +
+							encodeURIComponent(row.id),
+						{
+							method: "DELETE",
+							credentials: "include",
+							headers: Object.assign({ Accept: "application/json" }, actorHeaders()),
+						}
+					).then(function (res) {
+						if (!res.ok) {
+							return res.text().then(function (t) {
+								throw new Error(apiErrorText(res, t));
+							});
+						}
+					});
+				});
+			});
+			chain
+				.then(function () {
+					specSelected.clear();
+					setBookMsg("Deleted " + rows.length + " spec section" + (rows.length === 1 ? "" : "s") + ".");
+					load();
+				})
+				.catch(function (e) {
+					setBookMsg(e.message || String(e), true);
+				});
 		}
 
 		function specFileJob(row) {
@@ -909,6 +958,28 @@
 						width: 80,
 						formatter: function (cell) {
 							return cell.getValue() ? "Yes" : "—";
+						},
+					},
+					{
+						title: "",
+						field: "id",
+						width: 72,
+						hozAlign: "right",
+						headerSort: false,
+						formatter: function (cell) {
+							var id = cell.getValue();
+							if (!id) return "";
+							return (
+								'<button type="button" class="btn btn-sm btn-outline-danger py-0 usis-specs-row-del" data-id="' +
+								esc(String(id)) +
+								'">Delete</button>'
+							);
+						},
+						cellClick: function (e, cell) {
+							e.stopPropagation();
+							var btn = e.target && e.target.closest && e.target.closest(".usis-specs-row-del");
+							if (!btn) return;
+							deleteSection(cell.getRow().getData());
 						},
 					},
 				],
@@ -1259,6 +1330,9 @@
 		}
 		if (downloadBtn) {
 			downloadBtn.addEventListener("click", downloadSelectedSpecs);
+		}
+		if (deleteSelectedBtn) {
+			deleteSelectedBtn.addEventListener("click", deleteSelectedSpecs);
 		}
 		updateSpecDownloadBtn();
 		if (addBtn) addBtn.addEventListener("click", openModal);

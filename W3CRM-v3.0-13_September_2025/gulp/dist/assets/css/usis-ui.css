@@ -829,6 +829,20 @@ body .tabulator .tabulator-cell,
 	vertical-align: middle;
 }
 
+/* Kebab menus sit in 56px cells; overflow:hidden on the table (rounded
+   corners) and later rows paint over the menu. Lift the open cell and
+   allow the menu to escape while it is shown. */
+.content-body .table tbody td:has(.dropdown.show),
+.content-body .table tbody td:has(.usis-row-menu.show) {
+	position: relative;
+	z-index: 20;
+	overflow: visible;
+}
+.content-body .table:has(.dropdown-menu.show),
+.content-body .table:has(.usis-row-menu.show) {
+	overflow: visible;
+}
+
 .content-body .table tbody tr:hover,
 body .tabulator .tabulator-row:hover,
 .usis-grid tbody tr:hover {

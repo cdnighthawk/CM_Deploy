@@ -633,6 +633,17 @@ def patch_company(company_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUse
     return {"item": _company_public(row), "entity": "company"}
 
 
+def delete_company(company_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
+    if not _can_mutate(cu):
+        raise ApiError("forbidden", 403)
+    row = db.session.get(Company, company_id)
+    if row is None or row.deleted_at is not None:
+        raise ApiError("company not found", 404)
+    row.deleted_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return {"ok": True, "id": str(company_id), "entity": "company"}
+
+
 def list_contacts(company_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     if not _can_view(cu):
         raise ApiError("forbidden", 403)

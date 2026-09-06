@@ -331,6 +331,30 @@ def register_extra_routes(bp: Blueprint) -> None:
             return _jsonify({"error": "file not found on server"}), 404
         return resp
 
+    @bp.delete("/documents/<document_id>")
+    def delete_document(document_id: str):
+        """Remove a stored project file (and drawing revision if the row is a drawing)."""
+        from ..models import Drawing
+        from ..services.drawing_delete import delete_drawing_revision
+        from ..services.object_storage import UploadCategory, delete_stored
+        from ..services.project_file_keys import document_object_candidates
+
+        did = _parse_uuid_param(document_id)
+        if not did:
+            return _jsonify({"error": "invalid document id"}), 400
+        row = db.session.get(Document, did)
+        if row is None:
+            return _jsonify({"error": "document not found"}), 404
+        if isinstance(row, Drawing) or row.document_type == "drawing":
+            if not delete_drawing_revision(did):
+                return _jsonify({"error": "document not found"}), 404
+        else:
+            for cand in document_object_candidates(row):
+                delete_stored(UploadCategory.DOCUMENTS, cand)
+            db.session.delete(row)
+        db.session.commit()
+        return _jsonify({"ok": True, "id": str(did), "entity": "document"})
+
     @bp.get("/drawings/<drawing_id>/annotations")
     def list_drawing_annotations(drawing_id: str):
         did = _parse_uuid_param(drawing_id)
@@ -776,6 +800,20 @@ def register_extra_routes(bp: Blueprint) -> None:
         except ApiError as exc:
             return _jsonify({"error": exc.message}), exc.status
         return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
+
+    @bp.delete("/rfps/<rfp_id>")
+    def delete_rfp(rfp_id: str):
+        rid = _parse_uuid_param(rfp_id)
+        if not rid:
+            return _jsonify({"error": "invalid rfp id"}), 400
+        row = db.session.get(Rfp, rid)
+        if row is None:
+            return _jsonify({"error": "rfp not found"}), 404
+        row.awarded_quote_id = None
+        db.session.flush()
+        db.session.delete(row)
+        db.session.commit()
+        return _jsonify({"ok": True, "id": str(rid), "entity": "rfp"})
 
     @bp.post("/rfps/<rfp_id>/line-items")
     def add_rfp_line(rfp_id: str):

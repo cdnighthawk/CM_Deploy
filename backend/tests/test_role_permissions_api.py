@@ -112,6 +112,7 @@ def test_me_includes_capabilities(client, standard_role):
     assert "capabilities" in body
     assert body["capabilities"]["modules"]["leads"] == "write"
     assert body["capabilities"]["modules"]["user_admin"] == "none"
+    assert body["capabilities"]["can_admin_delete"] is False
 
 
 def test_website_reviewer_defaults_are_read_only():

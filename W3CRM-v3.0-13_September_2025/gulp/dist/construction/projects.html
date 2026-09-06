@@ -535,7 +535,7 @@
 					</div>
 				</div>
 
-				<div class="usis-bulk-bar d-none" id="usis-projects-bulk-bar" role="region" aria-live="polite">
+				<div class="usis-bulk-bar d-none" id="usis-projects-bulk-bar" role="region" aria-live="polite" data-usis-admin-bulk-delete="/api/v1/projects/{id}" data-usis-admin-bulk-label="project">
 					<span id="usis-projects-bulk-count" class="fw-semibold me-1">0 selected</span>
 					<label class="small me-1 mb-0" for="usis-projects-bulk-status" data-i18n="Set status">Set status</label>
 					<select class="form-select form-select-sm d-inline-block w-auto me-1" id="usis-projects-bulk-status">
@@ -551,7 +551,7 @@
 
 				<div class="col-xl-12">
 					<div class="usis-est-list-card">
-						<table class="table usis-est-bc-table" id="usis-projects-table">
+						<table class="table usis-est-bc-table" id="usis-projects-table" data-usis-admin-delete="/api/v1/projects/{id}" data-usis-admin-delete-label="project">
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-projects-check-all" aria-label="Select all visible projects"></th>
@@ -673,7 +673,7 @@
 	<script src="assets/js/usis-header-bell.js?v=20260905b"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js?v=20260905a"></script>
+	<script src="assets/js/usis-ui.js?v=20260906a"></script>
 	<script src="assets/js/usis-project-context.js?v=20260906d"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -804,6 +804,21 @@
 					jobHref +
 					'" title="Building Connected job info"><i class="fa fa-briefcase"></i></a>'
 				: "";
+			var stKey = String(row.status || "").toLowerCase();
+			var canClose = stKey === "planning" || stKey === "active" || stKey === "on_hold";
+			var canReopen = stKey === "complete" || stKey === "archived";
+			var closeItem = canClose && pidEnc
+				? '<button type="button" class="dropdown-item" data-usis-project-close="' + escAttr(row.id) + '">Close project</button>'
+				: "";
+			var reopenItem = canReopen && pidEnc
+				? '<button type="button" class="dropdown-item" data-usis-project-reopen="' + escAttr(row.id) + '">Reopen</button>'
+				: "";
+			var delItem =
+				window.USISAdminDelete && window.USISAdminDelete.menuItemHtml
+					? window.USISAdminDelete.menuItemHtml(row.id, "/api/v1/projects/" + encodeURIComponent(row.id), {
+							label: "this project",
+						})
+					: "";
 			var actions =
 				'<div class="d-inline-flex align-items-center gap-1 justify-content-end">' +
 				jobBtn +
@@ -812,6 +827,9 @@
 				'<div class="dropdown-menu dropdown-menu-end">' +
 				(jobHref ? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>' : "") +
 				'<a class="dropdown-item" href="' + (pidEnc ? detailHref : "javascript:void(0);") + '">Project detail</a>' +
+				closeItem +
+				reopenItem +
+				delItem +
 				'<span class="dropdown-item-text small text-muted">id: ' + esc(row.id) + "</span>" +
 				"</div></div></div>";
 			var bulk = window.USISListBulk && window.USISListBulk.checkboxHtml
@@ -1059,6 +1077,7 @@
 		});
 		var btn = document.getElementById("usis-projects-reload");
 		if (btn) btn.addEventListener("click", loadProjects);
+		window.addEventListener("usis:admin-deleted", loadProjects);
 		function submitNewProject(e) {
 			if (e) e.preventDefault();
 			var errEl = document.getElementById("usis-project-create-err");
@@ -1164,8 +1183,62 @@
 				showProjectsTable(b.getAttribute("data-status") || "active");
 			});
 		}
+		function patchProjectStatus(pid, status, confirmMsg, okMsg) {
+			if (!pid) return;
+			if (!window.confirm(confirmMsg)) return;
+			fetch((API || "").replace(/\/$/, "") + "/api/v1/projects/" + encodeURIComponent(pid), {
+				method: "PATCH",
+				credentials: "include",
+				headers: { Accept: "application/json", "Content-Type": "application/json" },
+				body: JSON.stringify({ status: status }),
+			})
+				.then(function (r) {
+					return r.json().then(function (j) {
+						if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+						return j;
+					});
+				})
+				.then(function () {
+					if (window.USISNotify && window.USISNotify.success) window.USISNotify.success(okMsg);
+					loadProjects();
+				})
+				.catch(function (err) {
+					if (window.USISNotify && window.USISNotify.error) {
+						window.USISNotify.error(err.message || "Could not update project.");
+					} else {
+						window.alert(err.message || "Could not update project.");
+					}
+				});
+		}
+
 		if (tbody) {
 			tbody.addEventListener("click", function (e) {
+				var closeEl = e.target.closest("[data-usis-project-close]");
+				if (closeEl) {
+					e.preventDefault();
+					e.stopPropagation();
+					var closeId = closeEl.getAttribute("data-usis-project-close");
+					patchProjectStatus(
+						closeId,
+						"complete",
+						"Close this project and move it to Completed?",
+						"Project closed and moved to Completed."
+					);
+					return;
+				}
+				var reopenEl = e.target.closest("[data-usis-project-reopen]");
+				if (reopenEl) {
+					e.preventDefault();
+					e.stopPropagation();
+					var reopenId = reopenEl.getAttribute("data-usis-project-reopen");
+					patchProjectStatus(
+						reopenId,
+						"active",
+						"Reopen this project and move it back to Active?",
+						"Project reopened."
+					);
+					return;
+				}
 				if (e.target.closest("a, button, input, .dropdown, label")) return;
 				var tr = e.target.closest("tr[data-id]");
 				if (!tr) return;

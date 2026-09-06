@@ -73,6 +73,8 @@
 										editHref: "usis-rfp-detail.html?id=" + encodeURIComponent(x.id),
 										createHref: "usis-rfp-detail.html",
 										deleteClass: "usis-rfp-del",
+										adminDelete: true,
+										deleteUrl: "/api/v1/rfps/" + encodeURIComponent(x.id),
 									})
 								: "") +
 							"</td></tr>"

@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request
 from ._field_service import (
     FieldApiError,
     create_field_photo,
+    delete_field_photo,
     get_or_create_daily_report,
     list_field_photos,
     put_daily_report,
@@ -114,6 +115,16 @@ def register_field_routes(bp: Blueprint) -> None:
             return jsonify({"error": "JSON body required"}), 400
         try:
             return jsonify(update_field_photo(pid, data, current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.delete("/photos/<photo_id>")
+    def delete_field_photo_route(photo_id: str):
+        pid = _parse_uuid_param(photo_id)
+        if not pid:
+            return jsonify({"error": "invalid photo id"}), 400
+        try:
+            return jsonify(delete_field_photo(pid, current_user()))
         except FieldApiError as exc:
             return _err(exc)
 

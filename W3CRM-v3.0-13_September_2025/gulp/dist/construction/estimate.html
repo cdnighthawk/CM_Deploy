@@ -551,7 +551,7 @@
 					</div>
 				</div>
 
-				<div class="usis-bulk-bar d-none" id="usis-est-bulk-bar" role="region" aria-live="polite">
+				<div class="usis-bulk-bar d-none" id="usis-est-bulk-bar" role="region" aria-live="polite" data-usis-admin-bulk-delete="/api/v1/lead-estimates/{id}" data-usis-admin-bulk-label="estimate">
 					<span id="usis-est-bulk-count" class="fw-semibold me-1">0 selected</span>
 					<button type="button" class="btn btn-sm btn-success" data-usis-bulk-bc="WILL_SUBMIT">Will Bid</button>
 					<button type="button" class="btn btn-sm btn-danger" data-usis-bulk-bc="DECLINED">Will Not Bid</button>
@@ -562,7 +562,7 @@
 				<!-- Start - Estimates table -->
 				<div class="col-xl-12">
 					<div class="usis-est-list-card">
-						<table class="table usis-est-bc-table" id="usis-estimate-table">
+						<table class="table usis-est-bc-table" id="usis-estimate-table" data-usis-admin-delete="/api/v1/lead-estimates/{id}" data-usis-admin-delete-label="estimate">
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-est-check-all" aria-label="Select all visible estimates"></th>
@@ -684,7 +684,7 @@
 	<script src="assets/js/usis-header-bell.js?v=20260905b"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js?v=20260905a"></script>
+	<script src="assets/js/usis-ui.js?v=20260906a"></script>
 	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

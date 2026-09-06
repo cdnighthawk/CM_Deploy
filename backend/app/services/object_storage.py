@@ -47,7 +47,6 @@ _S3_CONNECT_TIMEOUT = 15
 _S3_READ_TIMEOUT = 40
 _NATIVE_TRANSFER_TIMEOUT = 120
 _NATIVE_PUT_TIMEOUT = 20
-_NATIVE_PUT_ATTEMPTS = 2
 _BROWSER_UPLOAD_HEADERS = (
     "authorization",
     "content-type",
@@ -159,7 +158,12 @@ def _mirror_file(category: UploadCategory, object_name: str) -> Path | None:
 
 def stored_exists(category: UploadCategory, object_name: str) -> bool:
     if b2_enabled():
-        return _head_object(object_key(category, object_name)) is not None
+        if _head_object(object_key(category, object_name)) is not None:
+            return True
+        try:
+            return local_path(category, object_name).is_file()
+        except OSError:
+            return False
     if local_path(category, object_name).is_file():
         return True
     return _mirror_file(category, object_name) is not None
@@ -180,15 +184,12 @@ def read_first_stored(category: UploadCategory, object_names: list[str]) -> tupl
 def stored_size(category: UploadCategory, object_name: str) -> int | None:
     if b2_enabled():
         meta = _head_object(object_key(category, object_name))
-        if meta is None:
-            return None
-        return int(meta.get("ContentLength") or 0)
-    path = local_path(category, object_name)
-    try:
-        if path.is_file():
-            return path.stat().st_size
-    except OSError:
-        pass
+        if meta is not None:
+            return int(meta.get("ContentLength") or 0)
+        return _local_size(category, object_name)
+    size = _local_size(category, object_name)
+    if size is not None:
+        return size
     mirrored = _mirror_file(category, object_name)
     if mirrored is None:
         return None
@@ -224,6 +225,96 @@ def _mirror_to_nas(key: str, payload: bytes) -> None:
     dest.write_bytes(payload)
 
 
+def _local_size(category: UploadCategory, object_name: str) -> int | None:
+    path = local_path(category, object_name)
+    try:
+        if path.is_file():
+            return path.stat().st_size
+    except OSError:
+        return None
+    return None
+
+
+def _local_payload_if_present(category: UploadCategory, object_name: str) -> bytes | None:
+    path = local_path(category, object_name)
+    try:
+        if path.is_file():
+            return path.read_bytes()
+    except OSError:
+        return None
+    return None
+
+
+def _write_local_payload(category: UploadCategory, object_name: str, payload: bytes) -> None:
+    path = local_path(category, object_name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(payload)
+
+
+def _delete_local_payload(category: UploadCategory, object_name: str) -> None:
+    try:
+        local_path(category, object_name).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def _replay_queue_path() -> Path:
+    return Path(current_app.instance_path).resolve() / "b2_replay.jsonl"
+
+
+def _enqueue_b2_replay(category: UploadCategory, object_name: str) -> None:
+    path = _replay_queue_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    row = json.dumps({"category": category.value, "object_name": object_name}) + "\n"
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(row)
+
+
+def _is_cap_error(exc: StorageError) -> bool:
+    blob = (exc.message or "").lower()
+    return "storage cap" in blob or "cap exceeded" in blob
+
+
+def replay_pending_b2_once() -> None:
+    """Copy disk-held uploads into B2 when the upload pods are reachable again."""
+    if not b2_enabled():
+        return
+    path = _replay_queue_path()
+    if not path.is_file():
+        return
+    try:
+        lines = [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    except OSError:
+        return
+    kept: list[str] = []
+    for line in lines:
+        try:
+            row = json.loads(line)
+            cat = UploadCategory(str(row.get("category") or ""))
+            name = str(row.get("object_name") or "").strip()
+        except (TypeError, ValueError, json.JSONDecodeError):
+            continue
+        if not name:
+            continue
+        payload = _local_payload_if_present(cat, name)
+        if not payload:
+            continue
+        try:
+            _put_bytes(object_key(cat, name), payload, content_type="application/pdf")
+        except Exception as exc:
+            current_app.logger.warning("b2 replay still failing key=%s err=%s", name, exc)
+            kept.append(line)
+            continue
+        _delete_local_payload(cat, name)
+    try:
+        if kept:
+            path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        else:
+            path.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def save_upload(category: UploadCategory, object_name: str, file) -> int:
     """Persist a multipart upload or in-memory PDF bytes; return byte size."""
     if b2_enabled():
@@ -234,8 +325,20 @@ def save_upload(category: UploadCategory, object_name: str, file) -> int:
         key = object_key(category, object_name)
         try:
             _put_bytes(key, payload, content_type=content_type)
-        except StorageError:
-            raise
+        except StorageError as exc:
+            if _is_cap_error(exc):
+                raise
+            try:
+                _write_local_payload(category, object_name, payload)
+                _enqueue_b2_replay(category, object_name)
+            except OSError as disk_exc:
+                raise StorageError(exc.message, exc.status) from disk_exc
+            current_app.logger.warning(
+                "b2 put failed; kept file on disk for replay key=%s err=%s",
+                key,
+                exc,
+            )
+            return len(payload)
         except Exception as exc:
             raise StorageError(f"could not save file: {exc}", 500) from exc
         try:
@@ -243,6 +346,7 @@ def save_upload(category: UploadCategory, object_name: str, file) -> int:
         except OSError:
             # NAS is optional; B2 write already succeeded.
             pass
+        _delete_local_payload(category, object_name)
         return len(payload)
     path = local_path(category, object_name)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -263,6 +367,7 @@ def delete_stored(category: UploadCategory, object_name: str) -> None:
             )
         except Exception:
             pass
+        _delete_local_payload(category, object_name)
         return
     try:
         local_path(category, object_name).unlink(missing_ok=True)
@@ -273,7 +378,10 @@ def delete_stored(category: UploadCategory, object_name: str) -> None:
 def read_stored_bytes(category: UploadCategory, object_name: str) -> bytes | None:
     """Load a stored object into memory, or ``None`` when missing."""
     if b2_enabled():
-        return _get_bytes(object_key(category, object_name))
+        data = _get_bytes(object_key(category, object_name))
+        if data is not None:
+            return data
+        return _local_payload_if_present(category, object_name)
     path = local_path(category, object_name)
     if path.is_file():
         return path.read_bytes()
@@ -531,6 +639,27 @@ def start_b2_cors_ensure(app) -> None:
     threading.Thread(target=_run, name="b2-cors-ensure", daemon=True).start()
 
 
+def start_b2_disk_replay(app) -> None:
+    """Retry disk-held uploads into B2 after boot. Website uploads no longer wait on CORS."""
+    import os
+    import sys
+
+    if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    def _run() -> None:
+        time.sleep(8)
+        while True:
+            try:
+                with app.app_context():
+                    replay_pending_b2_once()
+            except Exception:
+                app.logger.warning("b2 disk replay thread failed", exc_info=True)
+            time.sleep(45)
+
+    threading.Thread(target=_run, name="b2-disk-replay", daemon=True).start()
+
+
 def presigned_get_url(
     rel: str,
     *,
@@ -570,6 +699,8 @@ def send_stored_file(
     """Stream a stored object, or ``None`` when missing."""
     if b2_enabled():
         data = _get_bytes(object_key(category, object_name))
+        if data is None:
+            data = _local_payload_if_present(category, object_name)
         if data is None:
             return None
         # Explicit body + Content-Length avoids proxy/browser mismatches with BytesIO send_file.
@@ -869,19 +1000,21 @@ def _get_native_b2(key: str) -> bytes | None:
         raise StorageError("Backblaze B2 native download connection failed.", 503) from exc
 
 
-def _native_upload_client(timeout: int) -> httpx.Client:
-    """Force IPv4. Render often cannot complete TLS to B2 upload pods over IPv6."""
-    return httpx.Client(
-        timeout=httpx.Timeout(timeout, connect=min(10, timeout)),
-        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
-        follow_redirects=False,
-    )
+def _native_upload_client(timeout: int, *, ipv4: bool = False) -> httpx.Client:
+    """HTTP client for B2 upload pods. Default stack first; IPv4 bind is a fallback."""
+    kwargs: dict = {
+        "timeout": httpx.Timeout(timeout, connect=min(8, timeout)),
+        "follow_redirects": False,
+    }
+    if ipv4:
+        kwargs["transport"] = httpx.HTTPTransport(local_address="0.0.0.0")
+    return httpx.Client(**kwargs)
 
 
 def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> None:
     sha1 = hashlib.sha1(payload).hexdigest()
     last: BaseException | None = None
-    for attempt in range(_NATIVE_PUT_ATTEMPTS):
+    for ipv4 in (False, True):
         try:
             info = _b2_get_upload_url()
             headers = {
@@ -891,7 +1024,7 @@ def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> Non
                 "X-Bz-Content-Sha1": sha1,
                 "Content-Length": str(len(payload)),
             }
-            with _native_upload_client(_NATIVE_PUT_TIMEOUT) as client:
+            with _native_upload_client(_NATIVE_PUT_TIMEOUT, ipv4=ipv4) as client:
                 resp = client.post(info["uploadUrl"], content=payload, headers=headers)
             if resp.status_code in (401, 503):
                 last = StorageError(
@@ -917,9 +1050,9 @@ def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> Non
         except Exception as exc:
             last = exc
             current_app.logger.warning(
-                "b2 native put attempt failed key=%s attempt=%s err=%s",
+                "b2 native put attempt failed key=%s ipv4=%s err=%s",
                 key,
-                attempt + 1,
+                ipv4,
                 exc,
             )
     raise StorageError("Backblaze B2 native upload connection failed.", 503) from last

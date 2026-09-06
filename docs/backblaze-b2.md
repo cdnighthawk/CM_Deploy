@@ -145,9 +145,10 @@ Without this bucket rule, a browser fallback upload creates a placeholder row an
 
 A drawing row with `file_pending` is only the catalog line. The PDF is missing when:
 
-1. Render could not write to B2 (old S3-gateway drops). New deploys write **native B2 first** and read through native B2 if S3 GET/HEAD fails.
-2. The browser/desktop never finished the one-shot B2 POST, or CORS blocked it.
-3. Upload Desktop created `POST /api/v1/jobs/{id}/drawings` (metadata only) and did not POST the bytes to the returned `upload.url`, then `POST /api/v1/drawings/{id}/ack-file`.
+1. Render could not write to B2 **and** could not keep a copy on the Render disk.
+2. Upload Desktop created `POST /api/v1/jobs/{id}/drawings` (metadata only) and did not POST the bytes to B2, then `POST /api/v1/drawings/{id}/ack-file`.
+
+Website uploads no longer POST from the browser to B2. If the B2 write drops, the PDF is kept on the Render disk, served from the website, and copied to B2 when the upload pods answer again.
 
 Re-upload the PDF from the website after deploy. Existing placeholder rows are reused for the same sheet/set/revision.
 

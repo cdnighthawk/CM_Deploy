@@ -24,18 +24,6 @@
 		return window.USIS_API.actorHeaders();
 	}
 
-	function hexFromBuffer(buf) {
-		return Array.prototype.map
-			.call(new Uint8Array(buf), function (b) {
-				return b.toString(16).padStart(2, "0");
-			})
-			.join("");
-	}
-
-	function encodeB2Name(name) {
-		return encodeURIComponent(name || "").replace(/%2F/g, "/");
-	}
-
 	function putDrawingThroughApi(itemId, file) {
 		var fd = new FormData();
 		fd.append("file", file, file.name || "drawing.pdf");
@@ -66,72 +54,13 @@
 	}
 
 	function finishClientDrawingUpload(payload, file) {
-		var upload = payload && payload.upload;
 		var item = payload && payload.item;
 		if (!item || !item.id || !file) {
 			return Promise.resolve(payload);
 		}
-		if (!upload || !upload.url) {
-			return putDrawingThroughApi(item.id, file).then(function () {
-				return payload;
-			});
-		}
-		var native = String(upload.mode || "") === "b2_native";
-		return file
-			.arrayBuffer()
-			.then(function (buf) {
-				var headers = { "Content-Type": "application/pdf" };
-				if (native) {
-					if (upload.authorization) headers.Authorization = upload.authorization;
-					if (upload.file_name) headers["X-Bz-File-Name"] = encodeB2Name(upload.file_name);
-					return crypto.subtle.digest("SHA-1", buf).then(function (shaBuf) {
-						headers[upload.sha1_header || "X-Bz-Content-Sha1"] = hexFromBuffer(shaBuf);
-						return fetch(upload.url, {
-							method: "POST",
-							mode: "cors",
-							credentials: "omit",
-							cache: "no-store",
-							headers: headers,
-							body: new Blob([buf], { type: headers["Content-Type"] || "application/pdf" }),
-						});
-					});
-				}
-				return fetch(upload.url, {
-					method: "PUT",
-					mode: "cors",
-					credentials: "omit",
-					cache: "no-store",
-					headers: headers,
-					body: new Blob([buf], { type: headers["Content-Type"] || "application/pdf" }),
-				});
-			})
-			.then(function (res) {
-				if (!res.ok) throw new Error("Company storage rejected the PDF (" + res.status + ").");
-				return fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(item.id) + "/ack-file", {
-					method: "POST",
-					credentials: "include",
-					headers: Object.assign(
-						{ "Content-Type": "application/json", Accept: "application/json" },
-						actorHeaders()
-					),
-					body: JSON.stringify({ byte_size: file.size }),
-				});
-			})
-			.then(function (res) {
-				if (!res.ok) throw new Error("The PDF uploaded, but the website could not mark it ready.");
-				return payload;
-			})
-			.catch(function (err) {
-				return putDrawingThroughApi(item.id, file).then(function () {
-					return payload;
-				}).catch(function () {
-					var msg = (err && err.message) || String(err);
-					if (/failed to fetch|networkerror|cors/i.test(msg)) {
-						throw new Error("The PDF did not reach company storage. Try the upload once more.");
-					}
-					throw err;
-				});
-			});
+		return putDrawingThroughApi(item.id, file).then(function () {
+			return payload;
+		});
 	}
 
 	function resolveAssetUrl(u) {

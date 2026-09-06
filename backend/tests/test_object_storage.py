@@ -225,7 +225,7 @@ def test_b2_put_falls_back_to_s3_when_native_fails(mock_client_factory, _native,
 
 @patch("app.services.object_storage._put_native_b2", side_effect=Exception("native fail"))
 @patch("app.services.object_storage._s3_client")
-def test_b2_put_exhausted_raises_storage_error(mock_client_factory, _native, flask_app):
+def test_b2_put_exhausted_keeps_local_copy(mock_client_factory, _native, flask_app, tmp_path):
     mock_s3 = MagicMock()
     mock_s3.put_object.side_effect = Exception(
         "SSL validation failed for https://s3.example/key EOF occurred in violation of protocol"
@@ -237,15 +237,32 @@ def test_b2_put_exhausted_raises_storage_error(mock_client_factory, _native, fla
             "B2_APPLICATION_KEY": "s",
             "B2_BUCKET_NAME": "usis-bucket",
             "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "DOCUMENT_UPLOAD_FOLDER": str(tmp_path),
         }
     )
     with flask_app.app_context():
-        from app.services.object_storage import StorageError, UploadCategory, save_upload
+        from app.services.object_storage import (
+            UploadCategory,
+            local_path,
+            save_upload,
+            send_stored_file,
+        )
 
-        with pytest.raises(StorageError, match="Could not write the file to Backblaze B2"):
-            save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        sz = save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        assert sz == 8
         mock_s3.put_object.assert_called_once()
         _native.assert_called_once()
+        assert local_path(UploadCategory.DOCUMENTS, "spec.pdf").read_bytes() == b"%PDF-1.4"
+        with flask_app.test_request_context():
+            with patch("app.services.object_storage._get_bytes", return_value=None):
+                resp = send_stored_file(
+                    UploadCategory.DOCUMENTS,
+                    "spec.pdf",
+                    mimetype="application/pdf",
+                    download_name="spec.pdf",
+                )
+                assert resp is not None
+                assert resp.get_data() == b"%PDF-1.4"
 
 
 class ConnectionClosedError(Exception):
@@ -254,9 +271,7 @@ class ConnectionClosedError(Exception):
 
 @patch("app.services.object_storage._put_native_b2", side_effect=Exception("native fail"))
 @patch("app.services.object_storage._s3_client")
-def test_b2_put_connection_closed_without_working_path_raises_storage_error(
-    mock_client_factory, _native, flask_app
-):
+def test_b2_put_connection_closed_keeps_local_copy(mock_client_factory, _native, flask_app, tmp_path):
     mock_s3 = MagicMock()
     mock_s3.put_object.side_effect = ConnectionClosedError(
         "Connection was closed before we received a valid response from endpoint URL: "
@@ -269,15 +284,17 @@ def test_b2_put_connection_closed_without_working_path_raises_storage_error(
             "B2_APPLICATION_KEY": "s",
             "B2_BUCKET_NAME": "usis-bucket",
             "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "DOCUMENT_UPLOAD_FOLDER": str(tmp_path),
         }
     )
     with flask_app.app_context():
-        from app.services.object_storage import StorageError, UploadCategory, save_upload
+        from app.services.object_storage import UploadCategory, local_path, save_upload
 
-        with pytest.raises(StorageError, match="Could not write the file to Backblaze B2"):
-            save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        sz = save_upload(UploadCategory.DOCUMENTS, "spec.pdf", io.BytesIO(b"%PDF-1.4"))
+        assert sz == 8
         mock_s3.put_object.assert_called_once()
         _native.assert_called_once()
+        assert local_path(UploadCategory.DOCUMENTS, "spec.pdf").is_file()
 
 
 @patch("app.services.object_storage._put_native_b2")
@@ -505,3 +522,31 @@ def test_put_native_b2_posts_bytes_over_ipv4(mock_get_url, mock_client_factory, 
     assert headers["Content-Length"] == "8"
     assert headers["X-Bz-Content-Sha1"]
     assert client.post.call_args.kwargs["content"] == b"%PDF-1.4"
+
+
+@patch("app.services.object_storage._put_bytes")
+def test_replay_pending_b2_uploads_local_copy(mock_put, flask_app, tmp_path):
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "DOCUMENT_UPLOAD_FOLDER": str(tmp_path),
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import (
+            UploadCategory,
+            _enqueue_b2_replay,
+            _write_local_payload,
+            local_path,
+            replay_pending_b2_once,
+        )
+
+        _write_local_payload(UploadCategory.DOCUMENTS, "spec.pdf", b"%PDF-1.4")
+        _enqueue_b2_replay(UploadCategory.DOCUMENTS, "spec.pdf")
+        replay_pending_b2_once()
+        mock_put.assert_called_once()
+        assert mock_put.call_args.args[1] == b"%PDF-1.4"
+        assert not local_path(UploadCategory.DOCUMENTS, "spec.pdf").exists()

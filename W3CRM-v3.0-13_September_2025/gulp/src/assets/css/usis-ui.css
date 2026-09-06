@@ -1598,10 +1598,41 @@ body.usis-drawing-viewer .usis-dv-page__body {
 	opacity: 0.4;
 }
 
-.usis-dv-rename-btn {
+button.usis-dv-rename-btn {
 	flex: 0 0 auto;
 	white-space: nowrap;
 	font-weight: 600;
+	color: #f4f6f8;
+	text-decoration: none;
+}
+
+button.usis-dv-rename-btn:hover {
+	color: #fff;
+	text-decoration: underline;
+	text-underline-offset: 0.12em;
+}
+
+button.usis-dv-sheet-rename {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	color: inherit;
+	font: inherit;
+	font-weight: 650;
+	text-align: left;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+button.usis-dv-sheet-rename:hover {
+	color: #fff;
+	text-decoration: underline;
+	text-underline-offset: 0.12em;
 }
 
 .usis-drawing-cell {
@@ -1615,18 +1646,6 @@ body.usis-drawing-viewer .usis-dv-page__body {
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-
-.usis-drawing-rename {
-	flex: 0 0 auto;
-	font-size: 0.75rem;
-	font-weight: 600;
-	line-height: 1;
-	color: var(--usis-text-muted, #6c757d);
-}
-
-.usis-drawing-rename:hover {
-	color: var(--usis-primary);
 }
 
 .usis-dv-chrome__actions {

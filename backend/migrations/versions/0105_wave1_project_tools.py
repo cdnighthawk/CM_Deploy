@@ -1,7 +1,11 @@
 """Wave 1 project-tool completeness: CPR/CO/SCO/POCO/meeting/sub-invoice columns.
 
 Revision ID: 0105_w1_tools
-Revises: 0104_tx_sync_id
+Revises: 0103_hiring
+
+0104_tx_sync_id is a local-only revision (untracked). Render's flask db upgrade
+could not find that parent, so the Wave 1 create pages never left the previous
+deploy — production 404s.
 """
 from __future__ import annotations
 
@@ -12,7 +16,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0105_w1_tools"
-down_revision: Union[str, Sequence[str], None] = "0104_tx_sync_id"
+down_revision: Union[str, Sequence[str], None] = "0103_hiring"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

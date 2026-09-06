@@ -715,3 +715,55 @@ def test_drawing_upload_session_falls_back_to_s3_presign(client):
     upload = sess.get_json()["upload"]
     assert upload["mode"] == "s3_presigned_put"
     assert "X-Amz-Signature" in upload["url"]
+
+
+def test_jobs_drawings_creates_pending_row_and_returns_b2_upload(client):
+    """Desktop ingest writes the catalog first; the PDF goes to B2 from the PC."""
+    from unittest.mock import patch
+
+    with client.application.app_context():
+        p = Project(name="JobDraw-" + uuid.uuid4().hex[:8], number="J" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    did = str(uuid.uuid4())
+    native = {
+        "mode": "b2_native",
+        "url": "https://pod-000.backblaze.com/b2api/v2/b2_upload_file",
+        "authorization": "tok",
+        "file_name": "J1/Drawings/Bid-Set/A1.pdf",
+        "sha1_header": "X-Bz-Content-Sha1",
+    }
+    with patch(
+        "app.services.object_storage.native_upload_session",
+        return_value=native,
+    ):
+        r = client.post(
+            f"/api/v1/jobs/{pid}/drawings",
+            json={
+                "item": {
+                    "id": did,
+                    "sheetNumber": "A1",
+                    "sheetTitle": "Site",
+                    "revisionLabel": "Bid Set",
+                    "sourceFileName": "A1.pdf",
+                    "contentHash": "abc",
+                }
+            },
+        )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["file_pending"] is True
+    assert body["item"]["id"] == did
+    assert body["item"]["sheet_number"] == "A1"
+    assert body["item"]["drawing_set"] == "Bid Set"
+    assert body["upload"]["mode"] == "b2_native"
+    assert body["upload"]["url"] == native["url"]
+
+    with client.application.app_context():
+        row = db.session.get(Drawing, uuid.UUID(did))
+        assert row is not None
+        assert (row.tags or {}).get("file_pending") is True
+        assert row.file_url == f"/api/v1/drawings/{did}/file"

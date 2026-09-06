@@ -2058,6 +2058,86 @@ def upload_project_drawing(project_id: str):
     return _jsonify(body), 201
 
 
+def _resolve_job_project(job_id: uuid.UUID) -> Project | None:
+    """Project, estimate, or lead id → the job drawings attach to."""
+    project = db.session.get(Project, job_id)
+    if project is not None and project.deleted_at is None:
+        return project
+    estimate = db.session.get(Estimate, job_id)
+    if estimate is not None and estimate.project_id:
+        project = db.session.get(Project, estimate.project_id)
+        if project is not None and project.deleted_at is None:
+            return project
+    lead = db.session.get(LeadEstimate, job_id)
+    if lead is None:
+        return None
+    from ..services.lead_workspace import ensure_lead_workspace_project
+
+    cu = current_user()
+    return ensure_lead_workspace_project(lead, getattr(cu, "id", None))
+
+
+@bp.post("/jobs/<job_id>/drawings")
+def create_job_drawing(job_id: str):
+    """Desktop ingest: catalog row only. The PDF is written straight to B2."""
+    from ..services.drawing_upload import create_pending_drawing, native_upload_hint_for_drawing
+
+    jid = _parse_uuid_param(job_id)
+    if not jid:
+        return _jsonify({"error": "invalid job id"}), 400
+    project = _resolve_job_project(jid)
+    if project is None:
+        return _jsonify({"error": "job not found."}), 404
+    if not _project_exists(project.id):
+        return _jsonify({"error": "job not found."}), 404
+
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
+
+    def text(*keys: str, max_len: int = 500) -> str | None:
+        for key in keys:
+            raw = item.get(key)
+            if raw is None:
+                continue
+            value = str(raw).strip()
+            if value:
+                return value[:max_len]
+        return None
+
+    client_id = _parse_uuid_param(str(item.get("id") or item.get("drawingId") or ""))
+    sheet_number = text("sheetNumber", "sheet_number", max_len=50)
+    sheet_title = text("sheetTitle", "sheet_title", "title", max_len=500)
+    revision = text("revision", max_len=50) or "0"
+    drawing_set = text("drawingSet", "drawing_set", "revisionLabel", max_len=120)
+    source_name = text("sourceFileName", "source_file_name", "fileName", "original_filename")
+    discipline = text("discipline", max_len=50)
+    content_hash = text("contentHash", "content_hash", max_len=128)
+
+    row = create_pending_drawing(
+        project_id=project.id,
+        sheet_number=sheet_number,
+        sheet_title=sheet_title,
+        revision=revision,
+        source_file_name=source_name,
+        discipline=discipline,
+        drawing_set=drawing_set,
+        client_id=client_id,
+        content_hash=content_hash,
+    )
+    db.session.commit()
+    native = native_upload_hint_for_drawing(row)
+    body: dict[str, Any] = {
+        "item": _drawing_public(row),
+        "entity": "drawing",
+        "file_pending": True,
+    }
+    if native:
+        body["upload"] = native
+    return _jsonify(body), 201
+
+
 def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tuple[bool, str | None]:
     if key not in body:
         return False, None

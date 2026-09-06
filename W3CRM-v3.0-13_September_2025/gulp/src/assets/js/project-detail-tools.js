@@ -24,6 +24,53 @@
 		return window.USIS_API.actorHeaders();
 	}
 
+	function hexFromBuffer(buf) {
+		return Array.prototype.map
+			.call(new Uint8Array(buf), function (b) {
+				return b.toString(16).padStart(2, "0");
+			})
+			.join("");
+	}
+
+	function encodeB2Name(name) {
+		return encodeURIComponent(name || "").replace(/%2F/g, "/");
+	}
+
+	function finishClientDrawingUpload(payload, file) {
+		var upload = payload && payload.upload;
+		var item = payload && payload.item;
+		if (!upload || !upload.url || !item || !item.id || !file) {
+			return Promise.resolve(payload);
+		}
+		var native = String(upload.mode || "") === "b2_native";
+		return file.arrayBuffer().then(function (buf) {
+			var headers = { "Content-Type": "application/pdf" };
+			if (native) {
+				if (upload.authorization) headers.Authorization = upload.authorization;
+				if (upload.file_name) headers["X-Bz-File-Name"] = encodeB2Name(upload.file_name);
+				return crypto.subtle.digest("SHA-1", buf).then(function (shaBuf) {
+					headers[upload.sha1_header || "X-Bz-Content-Sha1"] = hexFromBuffer(shaBuf);
+					return fetch(upload.url, { method: "POST", headers: headers, body: file });
+				});
+			}
+			return fetch(upload.url, { method: "PUT", headers: headers, body: file });
+		}).then(function (res) {
+			if (!res.ok) throw new Error("Company storage rejected the PDF (" + res.status + ").");
+			return fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(item.id) + "/ack-file", {
+				method: "POST",
+				credentials: "include",
+				headers: Object.assign(
+					{ "Content-Type": "application/json", Accept: "application/json" },
+					actorHeaders()
+				),
+				body: JSON.stringify({ byte_size: file.size }),
+			});
+		}).then(function (res) {
+			if (!res.ok) throw new Error("The PDF uploaded, but the website could not mark it ready.");
+			return payload;
+		});
+	}
+
 	function resolveAssetUrl(u) {
 		if (u == null || u === "") return "";
 		var s = String(u).trim();
@@ -887,21 +934,25 @@
 					headers: actorHeaders(),
 				})
 					.then(function (res) {
-						if (!res.ok) {
-							return res.text().then(function (t) {
+						return res.text().then(function (t) {
+							var j = null;
+							try {
+								j = t ? JSON.parse(t) : null;
+							} catch (parseErr) {
+								j = null;
+							}
+							if (j && j.file_pending && j.upload && j.item) {
+								return finishClientDrawingUpload(j, fileEl.files[0]);
+							}
+							if (!res.ok) {
 								var msg = res.status + " " + (t || res.statusText);
-								try {
-									var j = JSON.parse(t);
-									if (j && (j.error || j.detail)) {
-										msg = [j.error, j.detail].filter(Boolean).join(": ");
-									}
-								} catch (parseErr) {
-									/* not JSON — keep raw text */
+								if (j && (j.error || j.detail)) {
+									msg = [j.error, j.detail].filter(Boolean).join(": ");
 								}
 								throw new Error(msg);
-							});
-						}
-						return res.json();
+							}
+							return j;
+						});
 					})
 					.then(function () {
 						var modalEl = document.getElementById("usis-modal-drawing-create");

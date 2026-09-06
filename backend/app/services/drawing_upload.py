@@ -193,6 +193,87 @@ def _mark_file_pending(d: Drawing, obj_name: str, message: str) -> None:
     d.mime_type = "application/pdf"
 
 
+def create_pending_drawing(
+    *,
+    project_id: uuid.UUID,
+    sheet_number: str | None,
+    sheet_title: str | None,
+    revision: str | None,
+    source_file_name: str | None,
+    discipline: str | None = None,
+    drawing_set: str | None = None,
+    client_id: uuid.UUID | None = None,
+    content_hash: str | None = None,
+) -> Drawing:
+    """Insert a catalog row and wait for the client to write the PDF to B2."""
+    raw_name = (source_file_name or "").strip() or "drawing.pdf"
+    labels = label_drawing(
+        filename=raw_name,
+        sheet_number=sheet_number,
+        sheet_title=sheet_title,
+        discipline=discipline,
+        drawing_set=drawing_set,
+        revision=revision,
+    )
+    title = (labels["sheet_title"] or sheet_title or _base_name(raw_name))[:500]
+    sn = (labels["sheet_number"] or sheet_number or "").strip() or None
+    orig = safe_filename(raw_name, default="drawing.pdf")
+    if not orig.lower().endswith(".pdf"):
+        orig += ".pdf"
+
+    existing = None
+    if client_id is not None:
+        existing = db.session.get(Drawing, client_id)
+    if existing is None:
+        existing = _pending_drawing_row(
+            project_id,
+            sn,
+            labels["drawing_set"] or drawing_set,
+            labels["revision"] or (revision or "0"),
+        )
+    if existing is not None:
+        d = existing
+        d.project_id = project_id
+        d.title = title
+        d.sheet_number = sn[:50] if sn else d.sheet_number
+        d.sheet_title = title
+        if labels["discipline"]:
+            d.discipline = labels["discipline"][:50]
+        if labels["drawing_set"]:
+            d.drawing_set = labels["drawing_set"][:120]
+        d.revision = (labels["revision"] or revision or d.revision or "0")[:50]
+        d.original_filename = orig[:500]
+    else:
+        series_id = _existing_series_id(project_id, sn)
+        d = Drawing(
+            id=client_id,
+            project_id=project_id,
+            title=title,
+            sheet_number=(sn[:50] if sn else None),
+            sheet_title=title,
+            discipline=(labels["discipline"][:50] if labels["discipline"] else None),
+            drawing_set=(labels["drawing_set"][:120] if labels["drawing_set"] else None),
+            revision=(labels["revision"] or revision or "0")[:50],
+            mime_type="application/pdf",
+            original_filename=orig[:500],
+            drawing_series_id=series_id,
+        )
+        db.session.add(d)
+        db.session.flush()
+
+    obj_name = drawing_storage_relpath(d)
+    _mark_file_pending(d, obj_name, "waiting for client B2 upload")
+    digest = (content_hash or "").strip().lower()
+    if digest:
+        tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+        tags["content_hash"] = digest
+        d.tags = tags
+    from ..api._drawing_hygiene import apply_hygiene
+
+    apply_hygiene(d)
+    return d
+
+
 def _existing_series_id(project_id: uuid.UUID | None, sheet_number: str | None) -> uuid.UUID | None:
     """Reuse the series for later revisions of the same sheet on a project."""
     sn = (sheet_number or "").strip()

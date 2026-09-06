@@ -5776,11 +5776,11 @@ _user_activity_svc.register_activity_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)
-try:
+# Optional local-only module. A missing submodule import from a half-loaded
+# package raises ImportError (circular-import wording), not ModuleNotFoundError.
+if (Path(__file__).resolve().parent / "_field_punch_routes.py").is_file():
     from . import _field_punch_routes as _field_punch_routes_mod  # noqa: E402
-except ModuleNotFoundError:
-    _field_punch_routes_mod = None
-if _field_punch_routes_mod is not None:
+
     _field_punch_routes_mod.register_field_punch_routes(bp)
 from . import _safety_routes as _safety_routes_mod  # noqa: E402
 

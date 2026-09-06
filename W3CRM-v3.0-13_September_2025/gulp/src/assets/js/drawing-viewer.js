@@ -566,16 +566,12 @@
 			pdfHref = apiBase() + "/api/v1/drawings/" + encodeURIComponent(r.id) + "/file";
 		}
 		var parts = [];
-		if (pdfHref) {
+		if (nameHtml) {
 			parts.push(
-				"<a class='usis-drawing-name-link' href='" +
-					esc(pdfHref) +
-					"' target='_blank' rel='noopener noreferrer'>" +
+				"<button type='button' class='usis-dv-sheet-rename' title='Change drawing # and name'>" +
 					nameHtml +
-					"</a>"
+					"</button>"
 			);
-		} else 		if (nameHtml) {
-			parts.push(nameHtml);
 		}
 		if (r.discipline) parts.push(esc(r.discipline));
 		if (r.drawing_set) parts.push("Set " + esc(r.drawing_set));
@@ -2821,9 +2817,9 @@
 		});
 	}
 
-	function setRenameButtonVisible() {
+	function setRenameButtonVisible(show) {
 		var el = document.getElementById("usis-dv-rename");
-		if (el) el.classList.add("d-none");
+		if (el) el.classList.toggle("d-none", !show);
 	}
 
 	function renameModalEl() {
@@ -3078,6 +3074,14 @@
 		var bRenameSave = document.getElementById("usis-dv-rename-save");
 		if (bRename) bRename.addEventListener("click", openRenameModal);
 		if (bRenameMore) bRenameMore.addEventListener("click", openRenameModal);
+		var sheetline = document.getElementById("usis-dv-sheetline");
+		if (sheetline) {
+			sheetline.addEventListener("click", function (ev) {
+				var btn = ev.target && ev.target.closest && ev.target.closest(".usis-dv-sheet-rename");
+				if (!btn) return;
+				openRenameModal();
+			});
+		}
 		if (bRenameSave) {
 			bRenameSave.addEventListener("click", function () {
 				var num = document.getElementById("usis-dv-rename-number");

@@ -149,7 +149,11 @@ const filePath = {
 // HTML Partial Include and Minify
 //==============================
 function FileIncludeHtml() {
-  return src([filePath.src.html, "!./src/**/elements/**/*"])
+  return src([
+    filePath.src.html,
+    "!./src/**/elements/**/*",
+    "!./src/assets/vendor/**/*",
+  ])
     .pipe(
       fileinclude({
         prefix: "@@",

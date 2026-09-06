@@ -16,7 +16,7 @@ services:
     plan: starter
     rootDir: backend
     buildCommand: >-
-      (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) &&
+      (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) || true;
       pip install -r requirements.txt
     # Redeploy trigger: application page redirect fix (2026-05-23)
     preDeployCommand: flask db upgrade

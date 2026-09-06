@@ -395,7 +395,6 @@ exports.default = series(
 // Note: do not run cleanTemp here — it deletes ./.temp while BrowserSync (npx gulp)
 // uses .temp as the first baseDir; wiping it mid-session breaks previews until FileTemp runs again.
 exports.build = series(
-  parallel(cleanDist),
   FileIncludeHtml,
   parallel(dzVendor, dzVendorToSrc),
   dzImages,

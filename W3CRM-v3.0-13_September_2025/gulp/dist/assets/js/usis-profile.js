@@ -56,6 +56,38 @@
 		return "Roles: " + (parts.length ? parts.join(", ") : "—");
 	}
 
+	function fillOfficeSelect(offices, selectedId) {
+		var sel = document.getElementById("usis-pf-office");
+		if (!sel) return;
+		var html = '<option value="">Company default</option>';
+		(offices || []).forEach(function (o) {
+			var label = o.label || o.name || "Office";
+			html += '<option value="' + String(o.id || "").replace(/"/g, "&quot;") + '">' + String(label).replace(/</g, "&lt;") + "</option>";
+		});
+		sel.innerHTML = html;
+		sel.value = selectedId || "";
+	}
+
+	function loadOffices(selectedId) {
+		return fetch(apiBase() + "/api/v1/office-locations", {
+			method: "GET",
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (res) {
+				return res.json().then(function (body) {
+					if (!res.ok) throw new Error((body && body.error) || res.statusText);
+					return body.items || [];
+				});
+			})
+			.then(function (items) {
+				fillOfficeSelect(items, selectedId);
+			})
+			.catch(function () {
+				fillOfficeSelect([], selectedId);
+			});
+	}
+
 	function loadProfile() {
 		var alertEl = document.getElementById("usis-profile-alert");
 		return fetch(apiBase() + "/api/v1/me", {
@@ -78,6 +110,7 @@
 				document.getElementById("usis-pf-last").value = u.last_name || "";
 				document.getElementById("usis-pf-email").value = u.email || "";
 				document.getElementById("usis-pf-phone").value = u.phone || "";
+				loadOffices(u.office_id || "");
 				document.getElementById("usis-pf-password").value = "";
 				document.getElementById("usis-pf-password2").value = "";
 				var name = [u.first_name, u.last_name].filter(Boolean).join(" ").trim() || u.email;
@@ -108,11 +141,13 @@
 				return;
 			}
 		}
+		var officeSel = document.getElementById("usis-pf-office");
 		var body = {
 			email: document.getElementById("usis-pf-email").value.trim(),
 			first_name: document.getElementById("usis-pf-first").value.trim() || null,
 			last_name: document.getElementById("usis-pf-last").value.trim() || null,
 			phone: document.getElementById("usis-pf-phone").value.trim() || null,
+			office_id: officeSel && officeSel.value ? officeSel.value : null,
 		};
 		if (p1) body.password = p1;
 		var btn = document.getElementById("usis-pf-save");

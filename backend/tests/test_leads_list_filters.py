@@ -399,6 +399,80 @@ def test_lead_list_distance_from_office(client, flask_app):
         _restore_office(flask_app, snap)
 
 
+def test_lead_list_distance_uses_user_office(client, flask_app):
+    snap = _office_self(
+        flask_app,
+        city="Sacramento",
+        state="CA",
+        postal_code="95814",
+        latitude=38.5816,
+        longitude=-121.4944,
+    )
+    uid = _user(flask_app)
+    sd_id = None
+    lid = None
+    try:
+        with flask_app.app_context():
+            company = db.session.get(Company, uuid.UUID(snap["id"]))
+            sd = CompanyOffice(
+                company_id=company.id,
+                name="San Diego",
+                city="San Diego",
+                state="CA",
+                postal_code="92101",
+                latitude=32.7157,
+                longitude=-117.1611,
+                is_default=False,
+            )
+            db.session.add(sd)
+            db.session.flush()
+            user = db.session.get(User, uuid.UUID(uid))
+            user.office_id = sd.id
+            near_sac = _open_lead(
+                name="Folsom from SD office",
+                location={"city": "Folsom", "state": "CA", "coords": {"lat": 38.678, "lng": -121.176}},
+            )
+            db.session.add(near_sac)
+            db.session.commit()
+            sd_id = str(sd.id)
+            lid = str(near_sac.id)
+
+        r = client.get(
+            "/api/v1/lead-estimates?limit=200&submission_state=undecided",
+            headers={"X-Usis-User-Id": uid},
+        )
+        assert r.status_code == 200
+        payload = r.get_json()
+        row = next(x for x in payload["items"] if x["id"] == lid)
+        assert row["distance_miles"] is not None
+        assert row["distance_miles"] > 350
+        assert payload["office"]["source"] == "user"
+        assert payload["office"]["id"] == sd_id
+        assert payload["office"]["latitude"] == 32.7157
+
+        loc = client.get("/api/v1/office-location", headers={"X-Usis-User-Id": uid})
+        assert loc.status_code == 200
+        assert loc.get_json()["source"] == "user"
+        assert loc.get_json()["city"] == "San Diego"
+    finally:
+        with flask_app.app_context():
+            if lid:
+                lead = db.session.get(LeadEstimate, uuid.UUID(lid))
+                if lead:
+                    db.session.delete(lead)
+            user = db.session.get(User, uuid.UUID(uid))
+            if user:
+                user.office_id = None
+                db.session.flush()
+                db.session.delete(user)
+            if sd_id:
+                office = db.session.get(CompanyOffice, uuid.UUID(sd_id))
+                if office:
+                    db.session.delete(office)
+            db.session.commit()
+        _restore_office(flask_app, snap)
+
+
 def test_lead_list_distance_requires_office(client, flask_app, monkeypatch):
     snap = _office_self(flask_app, latitude=None, longitude=None, city=None, state=None, postal_code=None)
     try:

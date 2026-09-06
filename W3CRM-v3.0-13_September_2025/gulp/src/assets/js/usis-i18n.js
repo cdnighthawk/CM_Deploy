@@ -501,8 +501,8 @@
 		Dist: "Dist.",
 		"Bid due date": "Fecha de cotización",
 		"Lead (Building Connected)": "Prospecto (Building Connected)",
-		"Filter table (project #, lead, trade, company, city, state, bid due)":
-			"Filtrar tabla (#, prospecto, oficio, empresa, ciudad, estado, fecha)",
+		"Filter table (lead, trade, company, city, state, distance, bid due)":
+			"Filtrar tabla (prospecto, oficio, empresa, ciudad, estado, distancia, fecha)",
 		"Saved filters": "Filtros guardados",
 		"Save filter": "Guardar filtro",
 		"Filter name": "Nombre del filtro",

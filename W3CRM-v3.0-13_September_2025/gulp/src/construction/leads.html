@@ -99,7 +99,7 @@
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 							<div class="input-group message-search-area width200 w-xs-100">
-								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" data-i18n-placeholder="Filter table (project #, lead, trade, company, city, state, bid due)" autocomplete="off">
+								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (lead, trade, company, city, state, distance, bid due)" data-i18n-placeholder="Filter table (lead, trade, company, city, state, distance, bid due)" autocomplete="off">
 								<div class="input-group-append">
 									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-bc-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
 								</div>
@@ -158,13 +158,12 @@
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-bc-leads-check-all" aria-label="Select all visible leads"></th>
-									<th class="text-nowrap" data-sort-key="number" data-i18n="Project #">Project #</th>
 									<th class="usis-bc-col-lead" data-sort-key="name" data-i18n="Lead">Lead</th>
 									<th class="text-nowrap usis-bc-col-trade" data-sort-key="trade_name" data-i18n="Trade invited">Trade invited</th>
 									<th class="usis-bc-col-company" data-sort-key="company_name" data-i18n="Company">Company</th>
 									<th class="usis-bc-col-city" data-sort-key="city" data-i18n="City">City</th>
 									<th class="text-nowrap" data-sort-key="state" data-i18n="State">State</th>
-									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles" data-i18n="Dist">Dist</th>
+									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles" data-i18n="Dist" title="Distance from your office">Dist</th>
 									<th class="text-nowrap" data-sort-key="due_at" data-i18n="Bid due date">Bid due date</th>
 									<th class="text-center text-nowrap" data-sort-key="estimate" data-i18n="Estimate">Estimate</th>
 									<th class="text-end text-nowrap" data-i18n="Action">Action</th>
@@ -172,7 +171,7 @@
 							</thead>
 							<tbody id="usis-bc-leads-tbody">
 								<tr>
-									<td colspan="11" class="text-muted" data-i18n="Loading leads from API…">Loading leads from API…</td>
+									<td colspan="10" class="text-muted" data-i18n="Loading leads from API…">Loading leads from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -270,7 +269,7 @@
 		var autoFilter = null;
 
 		var emptyMessage =
-			'<tr><td colspan="11" class="text-muted">No current Bid Board leads. The list matches Undecided parents/standalones that are assigned and still due.</td></tr>';
+			'<tr><td colspan="10" class="text-muted">No current Bid Board leads. The list matches Undecided parents/standalones that are assigned and still due.</td></tr>';
 
 		function esc(s) {
 			return String(s == null ? "" : s)
@@ -327,15 +326,11 @@
 		}
 
 		function renderRow(row) {
-			var num = esc(row.number || "—");
 			var name = row.name || "";
 			var trade = row.trade_name || "";
 			var lid = row.external_id != null && row.external_id !== "" ? row.external_id : row.id;
 			var lidEnc = lid != null && lid !== "" ? encodeURIComponent(String(lid)) : "";
 			var detailHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc : "javascript:void(0);";
-			var numInner = lidEnc
-				? '<a class="link-primary text-decoration-none" href="' + detailHref + '">' + num + "</a>"
-				: num;
 			var leadCell = lidEnc
 				? '<a class="fw-semibold text-black text-decoration-none" href="' + detailHref + '">' + esc(name || "—") + "</a>"
 				: '<span class="fw-semibold text-black">' + esc(name) + "</span>";
@@ -380,7 +375,6 @@
 			return (
 				'<tr data-id="' + escAttr(row.id) + '">' +
 				bulk +
-				'<td class="text-nowrap">' + numInner + "</td>" +
 				"<td class=\"usis-bc-col-lead\">" + leadCell + "</td>" +
 				"<td class=\"usis-bc-col-trade\">" + tradeCell + "</td>" +
 				'<td class="usis-bc-col-company" title="' + company + '">' + company + "</td>" +
@@ -420,7 +414,7 @@
 				if (filterCount) filterCount.textContent = "";
 				if (q) {
 					tbody.innerHTML =
-						'<tr><td colspan="11" class="text-muted">No rows match your filter. Clear the search box to see all loaded leads (or reload if the list is empty).</td></tr>';
+						'<tr><td colspan="10" class="text-muted">No rows match your filter. Clear the search box to see all loaded leads (or reload if the list is empty).</td></tr>';
 				} else {
 					tbody.innerHTML = emptyMessage;
 				}
@@ -435,7 +429,7 @@
 			}
 			if (!filtered.length) {
 				tbody.innerHTML =
-					'<tr><td colspan="11" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
+					'<tr><td colspan="10" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
 			} else {
 				var rows = autoFilter ? autoFilter.sort(filtered) : filtered;
 				tbody.innerHTML = rows.map(renderRow).join("");
@@ -485,7 +479,7 @@
 			allItems = [];
 			if (filterCount) filterCount.textContent = "";
 			if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
-			tbody.innerHTML = '<tr><td colspan="11" class="text-muted">Loading…</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Loading…</td></tr>';
 			var listUrl = API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided";
 			if (window.USIS_API && window.USISLeadsFilters) {
 				listUrl = window.USIS_API.buildUrl("/api/v1/lead-estimates", window.USISLeadsFilters.listParams());
@@ -524,7 +518,7 @@
 					isFetching = false;
 					loadError = err.message;
 					tbody.innerHTML =
-						'<tr><td colspan="11" class="text-danger">Could not load leads: ' +
+						'<tr><td colspan="10" class="text-danger">Could not load leads: ' +
 						esc(err.message) +
 						".</td></tr>";
 				});
@@ -542,7 +536,6 @@
 					resetButton: "#usis-bc-reset-view",
 					mobileButton: "#usis-bc-sort-filter",
 					columns: [
-						{ key: "number", label: "Project #", type: "text", sortable: true, filterable: true },
 						{ key: "name", label: "Lead", type: "text", sortable: true, filterable: true },
 						{ key: "trade_name", label: "Trade invited", type: "singleSelect", sortable: true, filterable: true },
 						{ key: "company_name", label: "Company", type: "text", sortable: true, filterable: true },

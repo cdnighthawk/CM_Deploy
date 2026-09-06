@@ -36,6 +36,8 @@
 		activityUserId: "",
 		activityPeople: [],
 		activityFeed: [],
+		offices: [],
+		officesLoaded: false,
 	};
 
 	function apiBase() {
@@ -124,6 +126,44 @@
 	function displayName(u) {
 		var n = [u.first_name, u.last_name].filter(Boolean).join(" ").trim();
 		return n || u.email || u.username || "—";
+	}
+
+	function fillOfficeSelect(selectedId) {
+		var sel = document.getElementById("usis-ud-modal-office");
+		if (!sel) return;
+		var html = '<option value="">Company default</option>';
+		(state.offices || []).forEach(function (o) {
+			html += '<option value="' + esc(o.id) + '">' + esc(o.label || o.name || "Office") + "</option>";
+		});
+		sel.innerHTML = html;
+		sel.value = selectedId || "";
+	}
+
+	function loadOffices(selectedId, done) {
+		function finish() {
+			fillOfficeSelect(selectedId);
+			if (done) done();
+		}
+		if (state.officesLoaded) {
+			finish();
+			return;
+		}
+		apiFetch("/api/v1/office-locations")
+			.then(function (r) {
+				return r.json().then(function (j) {
+					return { ok: r.ok, body: j };
+				});
+			})
+			.then(function (res) {
+				state.offices = res.ok && res.body && res.body.items ? res.body.items : [];
+				state.officesLoaded = true;
+				finish();
+			})
+			.catch(function () {
+				state.offices = [];
+				state.officesLoaded = true;
+				finish();
+			});
 	}
 
 	function fmtWhen(iso) {
@@ -1008,6 +1048,7 @@
 		document.getElementById("usis-ud-modal-phone").value = "";
 		document.getElementById("usis-ud-modal-fn").value = "";
 		document.getElementById("usis-ud-modal-ln").value = "";
+		loadOffices("");
 		document.getElementById("usis-ud-modal-pw").value = "";
 		document.getElementById("usis-ud-modal-active").checked = true;
 		document.getElementById("usis-ud-modal-super").checked = false;
@@ -1042,6 +1083,7 @@
 		document.getElementById("usis-ud-modal-phone").value = u.phone || "";
 		document.getElementById("usis-ud-modal-fn").value = u.first_name || "";
 		document.getElementById("usis-ud-modal-ln").value = u.last_name || "";
+		loadOffices(u.office_id || "");
 		document.getElementById("usis-ud-modal-pw").value = "";
 		document.getElementById("usis-ud-modal-active").checked = !!u.is_active;
 		document.getElementById("usis-ud-modal-super").checked = !!u.is_superuser;
@@ -1099,12 +1141,14 @@
 			modalErr("Password is required when the user has no email.");
 			return;
 		}
+		var officeSel = document.getElementById("usis-ud-modal-office");
 		var payload = {
 			email: email || null,
 			username: username || null,
 			first_name: fn || null,
 			last_name: ln || null,
 			phone: phone || null,
+			office_id: officeSel && officeSel.value ? officeSel.value : null,
 			is_active: active,
 			is_superuser: sup,
 			role_ids: roleIds,

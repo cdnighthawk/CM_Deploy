@@ -76,13 +76,47 @@ def select_self_company() -> Company | None:
     return db.session.get(Company, cid)
 
 
+def viewer_office_row(company: Company | None = None) -> CompanyOffice | None:
+    """Office the signed-in user belongs to, else the company default."""
+    company = company or select_self_company()
+    user = current_user().user
+    oid = getattr(user, "office_id", None) if user is not None else None
+    if oid is not None:
+        row = db.session.get(CompanyOffice, oid)
+        if row is not None:
+            return row
+    return default_office_row(company)
+
+
+def viewer_office_source(office: CompanyOffice | None) -> str:
+    user = current_user().user
+    if office is not None and user is not None and getattr(user, "office_id", None) == office.id:
+        return "user"
+    return "default"
+
+
 def resolve_office_origin() -> tuple[float, float] | None:
-    office = default_office_row()
+    office = viewer_office_row()
     if office is not None:
         coords = parse_lat_lng(office.latitude, office.longitude)
         if coords:
             return coords
     return company_coords(select_self_company())
+
+
+def office_origin_public() -> dict[str, Any] | None:
+    office = viewer_office_row()
+    origin = resolve_office_origin()
+    if origin is None and office is None:
+        return None
+    company = select_self_company()
+    return {
+        "id": str(office.id) if office is not None else None,
+        "label": office_row_label(office) if office is not None else office_label(company),
+        "latitude": origin[0] if origin else None,
+        "longitude": origin[1] if origin else None,
+        "source": viewer_office_source(office),
+    }
 
 
 def office_label(row: Company | None) -> str:
@@ -614,13 +648,15 @@ def register_office_location_routes(bp: Blueprint) -> None:
     @bp.get("/office-location")
     def get_office_location_route():
         company = select_self_company()
-        office = default_office_row(company)
+        office = viewer_office_row(company)
         if office is not None:
             pub = office_row_public(office)
             coords = parse_lat_lng(office.latitude, office.longitude) or company_coords(company)
             return _jsonify(
                 {
                     "configured": coords is not None,
+                    "id": pub["id"],
+                    "source": viewer_office_source(office),
                     "name": pub["name"] or ((company.name or "").strip() if company else ""),
                     "label": pub["label"] or office_label(company),
                     "address_line1": pub["address_line1"] or ((company.address_line1 or "").strip() if company else ""),
@@ -633,7 +669,10 @@ def register_office_location_routes(bp: Blueprint) -> None:
                     "longitude": coords[1] if coords else None,
                 }
             )
-        return _jsonify(office_public(company))
+        pub = office_public(company)
+        pub["id"] = None
+        pub["source"] = "default"
+        return _jsonify(pub)
 
     @bp.patch("/office-location")
     def patch_office_location_route():

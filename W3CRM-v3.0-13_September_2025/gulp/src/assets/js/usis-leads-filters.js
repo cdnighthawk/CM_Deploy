@@ -213,7 +213,7 @@
 		return params;
 	}
 
-	var officeState = { configured: false, label: "" };
+	var officeState = { configured: false, label: "", source: "default" };
 
 	function readDistanceMiles() {
 		var preset = document.getElementById("usis-leads-f-distance-preset");
@@ -254,14 +254,19 @@
 		var label = document.getElementById("usis-leads-f-office-label");
 		var form = document.getElementById("usis-leads-f-office-form");
 		if (label) {
-			if (officeState.configured && officeState.label) {
+			if (officeState.configured && officeState.label && officeState.source === "user") {
 				label.innerHTML =
 					"From your office in " +
 					esc(officeState.label) +
-					'. Jobs without a mapped site are hidden. <a href="../usis-company-settings.html">Manage offices</a>';
+					'. Jobs without a mapped site are hidden. <a href="../usis-profile.html">Change office</a>';
+			} else if (officeState.configured && officeState.label) {
+				label.innerHTML =
+					"From the company office in " +
+					esc(officeState.label) +
+					'. Assign your office on <a href="../usis-profile.html">My profile</a>. Jobs without a mapped site are hidden.';
 			} else if (officeState.configured) {
 				label.innerHTML =
-					'From your saved office. Jobs without a mapped site are hidden. <a href="../usis-company-settings.html">Manage offices</a>';
+					'From the company office. Assign your office on <a href="../usis-profile.html">My profile</a>. Jobs without a mapped site are hidden.';
 			} else {
 				label.textContent = "Save your office city or ZIP to filter by distance. Jobs without a mapped site are hidden.";
 			}
@@ -277,6 +282,7 @@
 				officeState = {
 					configured: !!(data && data.configured),
 					label: (data && (data.label || [data.city, data.state].filter(Boolean).join(", "))) || "",
+					source: (data && data.source) || "default",
 				};
 				paintOffice();
 				return officeState;
@@ -309,6 +315,7 @@
 				officeState = {
 					configured: !!(data && data.configured),
 					label: (data && (data.label || [data.city, data.state].filter(Boolean).join(", "))) || "",
+					source: (data && data.source) || "default",
 				};
 				paintOffice();
 				notify("success", officeState.label ? "Office set to " + officeState.label : "Office location saved");

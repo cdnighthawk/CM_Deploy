@@ -1204,7 +1204,9 @@ def list_lead_estimates():
         q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
     q = q.offset(offset).limit(limit)
     rows = db.session.scalars(q).all()
-    origin = lead_q.resolve_office_origin()
+    from ._office_location import office_origin_public, resolve_office_origin as _office_origin
+
+    origin = _office_origin()
     items = []
     for r in rows:
         pub = _lead_estimate_public(r)
@@ -1220,14 +1222,7 @@ def list_lead_estimates():
             "limit": limit,
             "offset": offset,
             "entity": "lead_estimates",
-            "office": (
-                {
-                    "latitude": origin[0],
-                    "longitude": origin[1],
-                }
-                if origin
-                else None
-            ),
+            "office": office_origin_public(),
         }
     )
 
@@ -1248,13 +1243,13 @@ def list_estimate_queue():
 
 @bp.get("/project-queue")
 def list_project_queue():
-    """Desktop Projects → Queue. Same set as the website Projects board."""
-    from ..permissions.project_scope import can_see_all_projects, project_access_clause
+    """Desktop Projects → Queue. Same Active directory as the website Projects board.
 
-    cu = current_user()
-    filt = and_(Project.deleted_at.is_(None), project_access_clause(cu))
-    if can_see_all_projects(cu):
-        filt = and_(filt, Project.status != "planning")
+    Not assignment-scoped. Estimators open company jobs from this list; the
+    website still hides unassigned jobs on ``GET /projects``.
+    """
+    hidden = ("planning", "archived", "cancelled")
+    filt = and_(Project.deleted_at.is_(None), ~Project.status.in_(hidden))
     q = (
         select(Project)
         .where(filt)

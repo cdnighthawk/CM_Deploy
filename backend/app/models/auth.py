@@ -54,6 +54,12 @@ class User(UUIDPKMixin, TimestampMixin, db.Model):
     first_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    office_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("company_offices.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(
@@ -63,6 +69,7 @@ class User(UUIDPKMixin, TimestampMixin, db.Model):
         DateTime(timezone=True), nullable=True
     )
 
+    office = relationship("CompanyOffice", foreign_keys=[office_id])
     roles: Mapped[List["UserRole"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

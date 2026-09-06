@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from werkzeug.security import generate_password_hash
 
 from ..extensions import db
-from ..models import HrHireApplication, Role, RoleModulePermission, User, UserRole
+from ..models import CompanyOffice, HrHireApplication, Role, RoleModulePermission, User, UserRole
 from ..permissions.access import (
     capabilities_for_user,
     permissions_for_role,
@@ -74,6 +74,17 @@ def user_public(u: User) -> dict[str, Any]:
             }
         )
     roles.sort(key=lambda r: (r.get("code") or "", r.get("name") or ""))
+    office = None
+    if getattr(u, "office_id", None):
+        row = db.session.get(CompanyOffice, u.office_id)
+        if row is not None:
+            from ._office_location import office_row_label
+
+            office = {
+                "id": str(row.id),
+                "name": (row.name or "").strip() or "Office",
+                "label": office_row_label(row),
+            }
     return {
         "id": str(u.id),
         "email": u.email,
@@ -81,6 +92,8 @@ def user_public(u: User) -> dict[str, Any]:
         "first_name": u.first_name,
         "last_name": u.last_name,
         "phone": u.phone,
+        "office_id": str(u.office_id) if getattr(u, "office_id", None) else None,
+        "office": office,
         "is_active": u.is_active,
         "is_superuser": u.is_superuser,
         "has_password": bool(u.password_hash),
@@ -286,6 +299,22 @@ def _parse_role_ids(raw: Any) -> list[uuid.UUID]:
     return out
 
 
+def _apply_office_id(user: User, data: dict[str, Any]) -> None:
+    if "office_id" not in data:
+        return
+    raw = data.get("office_id")
+    if raw in (None, ""):
+        user.office_id = None
+        return
+    try:
+        oid = uuid.UUID(str(raw).strip())
+    except (TypeError, ValueError) as exc:
+        raise ApiError("invalid office_id") from exc
+    if db.session.get(CompanyOffice, oid) is None:
+        raise ApiError("office not found", 404)
+    user.office_id = oid
+
+
 def _set_roles(user: User, role_ids: list[uuid.UUID]) -> None:
     roles = db.session.scalars(select(Role).where(Role.id.in_(role_ids))).all() if role_ids else []
     if role_ids and len(roles) != len(set(role_ids)):
@@ -346,6 +375,7 @@ def create_user(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
         is_superuser=is_superuser,
         password_hash=pwd_hash,
     )
+    _apply_office_id(u, data)
     db.session.add(u)
     db.session.flush()
     role_ids = _parse_role_ids(data.get("role_ids"))
@@ -423,7 +453,7 @@ def patch_me(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
     )
     if u is None:
         raise ApiError("user not found", 404)
-    allowed = frozenset({"email", "first_name", "last_name", "phone", "password"})
+    allowed = frozenset({"email", "first_name", "last_name", "phone", "password", "office_id"})
     for key in data:
         if key not in allowed:
             raise ApiError(f"cannot update {key!r} on your own profile", 400)
@@ -449,6 +479,7 @@ def patch_me(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
         if str(pr).strip() == "":
             raise ApiError("password cannot be empty; omit the field to leave unchanged", 400)
         u.password_hash = generate_password_hash(str(pr))
+    _apply_office_id(u, data)
     db.session.flush()
     db.session.refresh(u)
     return user_public(u)
@@ -511,6 +542,7 @@ def patch_user(cu: CurrentUser, user_id: uuid.UUID, data: dict[str, Any]) -> dic
     if "role_ids" in data:
         role_ids = _parse_role_ids(data.get("role_ids"))
         _set_roles(u, role_ids)
+    _apply_office_id(u, data)
     db.session.flush()
     db.session.refresh(u)
     return user_public(u)

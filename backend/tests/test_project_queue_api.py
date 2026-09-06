@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from app.extensions import db
-from app.models import Project, ProjectMember, Role, RoleModulePermission, User, UserRole
+from app.models import Project, Role, RoleModulePermission, User, UserRole
 
 
 @pytest.fixture
@@ -92,20 +92,21 @@ def test_project_queue_hides_planning_for_company_wide(client, no_dev_admin):
     assert planning_id not in ids
 
 
-def test_project_queue_assigned_user_sees_own_planning_job(client, no_dev_admin):
+def test_project_queue_estimator_sees_company_active_jobs(client, no_dev_admin):
+    suffix = uuid.uuid4().hex[:8]
     with client.application.app_context():
         u = _user_with_projects()
-        planning = Project(name="Assigned Planning", status="planning", project_type="commercial")
-        other = Project(name="Other Planning", status="planning", project_type="commercial")
-        db.session.add_all([planning, other])
-        db.session.flush()
-        db.session.add(ProjectMember(user_id=u.id, project_id=planning.id))
+        keep = Project(name=f"Active {suffix}", status="active", project_type="commercial")
+        planning = Project(name=f"Plan {suffix}", status="planning", project_type="commercial")
+        archived = Project(name=f"Archived {suffix}", status="archived", project_type="commercial")
+        db.session.add_all([keep, planning, archived])
         db.session.commit()
         uid = str(u.id)
-        pid, other_id = str(planning.id), str(other.id)
+        keep_id, planning_id, archived_id = str(keep.id), str(planning.id), str(archived.id)
 
     r = client.get("/api/v1/project-queue", headers={"X-Usis-User-Id": uid})
     assert r.status_code == 200
     ids = {x["id"] for x in r.get_json()["items"]}
-    assert pid in ids
-    assert other_id not in ids
+    assert keep_id in ids
+    assert planning_id not in ids
+    assert archived_id not in ids

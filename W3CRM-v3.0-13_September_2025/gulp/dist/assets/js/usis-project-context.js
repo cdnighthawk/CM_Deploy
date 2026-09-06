@@ -340,6 +340,35 @@
     clear: clear,
   };
 
+  function isModifiedClick(e) {
+    return !!(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1);
+  }
+
+  function isProjectsListPage() {
+    return /\/projects\.html$/i.test(global.location.pathname || "");
+  }
+
+  function markProjectsNavActive() {
+    document.querySelectorAll('.deznav .metismenu > li > a[href*="projects.html"]').forEach(function (a) {
+      var li = a.closest("li");
+      if (li) li.classList.add("mm-active", "active-no-child");
+      a.classList.add("mm-active");
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    if (isModifiedClick(e)) return;
+    var navLink = e.target.closest('.deznav a[href*="projects.html"]');
+    if (!navLink) return;
+    e.preventDefault();
+    if (isProjectsListPage() && typeof global.usisShowProjectsTable === "function") {
+      global.usisShowProjectsTable("active");
+      markProjectsNavActive();
+      return;
+    }
+    global.location.href = navLink.href || "construction/projects.html";
+  });
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {

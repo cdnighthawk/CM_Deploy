@@ -1,4 +1,4 @@
-"""Project read/update for Job info tab."""
+"""Project create/read/update for Job info tab."""
 from __future__ import annotations
 
 import re
@@ -7,7 +7,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from ..extensions import db
 from ..models import Project
@@ -61,6 +61,67 @@ def _normalize_emails(raw: Any) -> str | None:
         if not email_re.match(em):
             raise ApiError(f"invalid email address: {em}")
     return ", ".join(parts)
+
+
+def _optional_text(data: dict[str, Any], key: str, maxlen: int) -> str | None:
+    if key not in data:
+        return None
+    v = data.get(key)
+    if v is None:
+        return None
+    s = str(v).strip()[:maxlen]
+    return s or None
+
+
+def create_project(data: dict[str, Any], member_user_id: uuid.UUID | None = None) -> dict[str, Any]:
+    """Create an active job and assign the creator so they can open it."""
+    if not isinstance(data, dict):
+        raise ApiError("JSON body required")
+    name = str(data.get("name") or "").strip()
+    if not name:
+        raise ApiError("name is required")
+
+    status = str(data.get("status") or "active").strip().lower()
+    if status not in PROJECT_STATUSES:
+        raise ApiError("invalid status")
+    project_type = str(data.get("project_type") or "commercial").strip().lower()
+    if project_type not in PROJECT_TYPES:
+        raise ApiError("invalid project_type")
+
+    number_raw = data.get("number")
+    number = None if number_raw is None or str(number_raw).strip() == "" else str(number_raw).strip()[:50]
+    if number:
+        taken = db.session.scalar(
+            select(Project.id).where(
+                Project.deleted_at.is_(None),
+                func.lower(func.trim(Project.number)) == number.lower(),
+            )
+        )
+        if taken:
+            raise ApiError("project number already in use", 409)
+
+    p = Project(
+        name=name[:255],
+        number=number,
+        status=status,
+        project_type=project_type,
+        city=_optional_text(data, "city", 120),
+        state=_optional_text(data, "state", 50),
+        address_line1=_optional_text(data, "address_line1", 255),
+        address_line2=_optional_text(data, "address_line2", 255),
+        postal_code=_optional_text(data, "postal_code", 20),
+    )
+    db.session.add(p)
+    db.session.flush()
+
+    if member_user_id is not None:
+        from ..services.lead_workspace import ensure_project_membership
+
+        ensure_project_membership(p.id, member_user_id)
+
+    from .v1 import _project_detail_public
+
+    return _project_detail_public(p)
 
 
 def patch_project(project_id: uuid.UUID, data: dict[str, Any]) -> dict[str, Any]:

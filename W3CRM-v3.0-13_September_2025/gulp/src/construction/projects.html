@@ -14,17 +14,7 @@
 	<link href="assets/css/usis-ui.css?v=20260905b" rel="stylesheet">
 	<!-- End - Style CSS -->
 	<style>
-		#usis-projects-table { font-size: 0.8125rem; }
-		#usis-projects-table thead th,
-		#usis-projects-table tbody td {
-			padding: 0.2rem 0.45rem;
-			vertical-align: middle;
-			line-height: 1.25;
-		}
-		#usis-projects-table thead th { font-weight: 600; }
 		#usis-projects-table .btn-square { padding: 0.12rem 0.3rem; line-height: 1; min-height: 0; }
-		#usis-projects-table th.usis-bulk-col,
-		#usis-projects-table td.usis-bulk-col { width: 28px; max-width: 28px; }
 		#usis-projects-table.usis-hide-city th:nth-child(4),
 		#usis-projects-table.usis-hide-city td:nth-child(4),
 		#usis-projects-table.usis-hide-state th:nth-child(5),
@@ -63,31 +53,45 @@
 			<div class="container-fluid">
 
 				<div class="col-xl-12">
-					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
-						<p class="small text-muted mb-0 d-none" id="usis-projects-scope-hint"></p>
-						<div class="usis-seg" id="usis-projects-status-chips" role="tablist">
-							<button type="button" class="btn btn-sm nav-link active" data-status="active" aria-selected="true">Active</button>
-							<button type="button" class="btn btn-sm nav-link" data-status="complete" aria-selected="false">Complete</button>
-							<button type="button" class="btn btn-sm nav-link" data-status="all" aria-selected="false">All</button>
+					<p class="small text-muted mb-2 d-none" id="usis-projects-scope-hint"></p>
+					<div class="usis-est-toolbar">
+						<div class="usis-est-folder-tabs" id="usis-projects-status-chips" role="tablist">
+							<a class="usis-est-folder-tab active" href="construction/projects.html" data-status="active" role="tab" aria-selected="true">
+								<span data-i18n="Active">Active</span>
+								<span class="usis-est-folder-count" data-usis-projects-count="active"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/projects.html?status=complete" data-status="complete" role="tab" aria-selected="false">
+								<span data-i18n="Complete">Complete</span>
+								<span class="usis-est-folder-count" data-usis-projects-count="complete"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/projects.html?status=all" data-status="all" role="tab" aria-selected="false">
+								<span data-i18n="All">All</span>
+								<span class="usis-est-folder-count" data-usis-projects-count="all"></span>
+							</a>
 						</div>
-						<a href="usis-calendar.html" class="btn btn-sm btn-outline-secondary" data-i18n="Calendar">Calendar</a>
-						<div class="input-group message-search-area width200 w-xs-100">
-							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state" data-i18n-placeholder="Filter by #, name, city, or state">
-							<div class="input-group-append">
-								<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-projects-filter-clear" aria-label="Clear filter"><i class="flaticon-381-search-2"></i></button>
-							</div>
+						<div class="usis-est-toolbar-search">
+							<i class="flaticon-381-search-2 usis-est-search-icon" aria-hidden="true"></i>
+							<input type="search" id="usis-projects-filter" placeholder="Search #, name, city, or state" autocomplete="off" aria-label="Search #, name, city, or state" data-i18n-placeholder="Search #, name, city, or state">
 						</div>
-						<button type="button" class="btn btn-primary w-xs-100" id="usis-projects-new" data-bs-toggle="modal" data-bs-target="#usis-project-create-modal">
-							<i class="icon feather icon-plus me-1"></i> <span data-i18n="New project">New project</span>
-						</button>
-						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Refresh project list">
-							<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Refresh">Refresh</span>
-						</button>
 					</div>
 				</div>
 
-				<div class="alert alert-secondary py-2 mb-2 d-none" id="usis-projects-bulk-bar" role="region" aria-live="polite">
-					<span id="usis-projects-bulk-count" class="fw-semibold me-2">0 selected</span>
+				<div class="col-xl-12">
+					<div class="usis-est-actions">
+						<div class="d-flex flex-wrap gap-2 ms-auto">
+							<a href="usis-calendar.html" class="btn btn-outline-secondary btn-sm w-xs-100" data-i18n="Calendar">Calendar</a>
+							<button type="button" class="btn btn-outline-primary btn-sm w-xs-100" id="usis-projects-reload" title="Refresh project list">
+								<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Refresh">Refresh</span>
+							</button>
+							<button type="button" class="btn btn-primary btn-sm w-xs-100" id="usis-projects-new" data-bs-toggle="modal" data-bs-target="#usis-project-create-modal">
+								<i class="icon feather icon-plus me-1"></i> <span data-i18n="New project">New project</span>
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="usis-bulk-bar d-none" id="usis-projects-bulk-bar" role="region" aria-live="polite">
+					<span id="usis-projects-bulk-count" class="fw-semibold me-1">0 selected</span>
 					<label class="small me-1 mb-0" for="usis-projects-bulk-status" data-i18n="Set status">Set status</label>
 					<select class="form-select form-select-sm d-inline-block w-auto me-1" id="usis-projects-bulk-status">
 						<option value="active" data-i18n="Active">Active</option>
@@ -101,13 +105,13 @@
 				</div>
 
 				<div class="col-xl-12">
-					<div class="card m-0 table-hover text-nowrap overflow-auto">
-						<table class="table table-sm m-0" id="usis-projects-table">
+					<div class="usis-est-list-card">
+						<table class="table usis-est-bc-table" id="usis-projects-table">
 							<thead>
 								<tr>
 									<th class="text-center usis-bulk-col"><input type="checkbox" class="form-check-input m-0" id="usis-projects-check-all" aria-label="Select all visible projects"></th>
 									<th class="text-nowrap" data-sort-key="number" data-i18n="Project #">Project #</th>
-									<th data-sort-key="name" data-i18n="Name">Name</th>
+									<th class="usis-est-col-name" data-sort-key="name" data-i18n="Name">Name</th>
 									<th class="text-nowrap" data-sort-key="city" data-i18n="City">City</th>
 									<th class="text-nowrap" data-sort-key="state" data-i18n="State">State</th>
 									<th class="text-nowrap" data-sort-key="status" data-i18n="Status">Status</th>
@@ -135,25 +139,49 @@
 	<div class="modal fade" id="usis-project-create-modal" tabindex="-1" aria-labelledby="usis-project-create-title">
 		<div class="modal-dialog">
 			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="usis-project-create-title" data-i18n="New project">New project</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<p class="small text-danger d-none mb-2" id="usis-project-create-err" role="alert"></p>
-					<div class="mb-3">
-						<label class="form-label" for="usis-project-create-name" data-i18n="Name">Name</label>
-						<input type="text" class="form-control" id="usis-project-create-name" maxlength="255" required autocomplete="off">
+				<form id="usis-project-create-form">
+					<div class="modal-header">
+						<h5 class="modal-title" id="usis-project-create-title" data-i18n="New project">New project</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
-					<div class="mb-0">
-						<label class="form-label" for="usis-project-create-number" data-i18n="Project #">Project #</label>
-						<input type="text" class="form-control" id="usis-project-create-number" maxlength="50" autocomplete="off">
+					<div class="modal-body">
+						<p class="small text-danger d-none mb-2" id="usis-project-create-err" role="alert"></p>
+						<div class="mb-3">
+							<label class="form-label" for="usis-project-create-name" data-i18n="Name">Name</label>
+							<input type="text" class="form-control" id="usis-project-create-name" maxlength="255" required autocomplete="off">
+						</div>
+						<div class="row g-2 mb-3">
+							<div class="col-md-6">
+								<label class="form-label" for="usis-project-create-number" data-i18n="Project #">Project #</label>
+								<input type="text" class="form-control" id="usis-project-create-number" maxlength="50" autocomplete="off">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label" for="usis-project-create-type" data-i18n="Type">Type</label>
+								<select class="form-select" id="usis-project-create-type">
+									<option value="commercial" data-i18n="Commercial">Commercial</option>
+									<option value="government" data-i18n="Government">Government</option>
+									<option value="residential" data-i18n="Residential">Residential</option>
+									<option value="mixed" data-i18n="Mixed">Mixed</option>
+									<option value="other" data-i18n="Other">Other</option>
+								</select>
+							</div>
+						</div>
+						<div class="row g-2 mb-0">
+							<div class="col-md-7">
+								<label class="form-label" for="usis-project-create-city" data-i18n="City">City</label>
+								<input type="text" class="form-control" id="usis-project-create-city" maxlength="120" autocomplete="off">
+							</div>
+							<div class="col-md-5">
+								<label class="form-label" for="usis-project-create-state" data-i18n="State">State</label>
+								<input type="text" class="form-control" id="usis-project-create-state" maxlength="50" autocomplete="off">
+							</div>
+						</div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
-					<button type="button" class="btn btn-primary" id="usis-project-create-submit" data-i18n="Create">Create</button>
-				</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+						<button type="submit" class="btn btn-primary" id="usis-project-create-submit" data-i18n="Create">Create</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	</div>
@@ -168,7 +196,7 @@
 	<!-- Script For Custom JS -->
     	<script src="assets/js/aiReviewBus.js"></script>
 	<script src="assets/js/usis-notify.js"></script>
-	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/usis-project-context.js?v=20260906d"></script>
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="assets/js/custom.js"></script>
@@ -183,6 +211,59 @@
 		var filterInput = document.getElementById("usis-projects-filter");
 		var lastItems = [];
 		var statusFilter = "active";
+
+		function statusFromSearch() {
+			var tab = "";
+			try {
+				tab = String(new URLSearchParams(window.location.search).get("status") || "").toLowerCase();
+			} catch (e) {
+				tab = "";
+			}
+			if (tab === "complete" || tab === "completed") return "complete";
+			if (tab === "all") return "all";
+			return "active";
+		}
+
+		function urlForStatus(status) {
+			var path = window.location.pathname;
+			if (status === "complete") return path + "?status=complete";
+			if (status === "all") return path + "?status=all";
+			return path;
+		}
+
+		function markProjectsNavActive() {
+			document.querySelectorAll('.deznav .metismenu > li > a[href*="projects.html"]').forEach(function (a) {
+				var li = a.closest("li");
+				if (li) li.classList.add("mm-active", "active-no-child");
+				a.classList.add("mm-active");
+			});
+		}
+
+		function syncStatusChips(status) {
+			var chips = document.getElementById("usis-projects-status-chips");
+			if (!chips) return;
+			chips.querySelectorAll("[data-status]").forEach(function (el) {
+				var on = el.getAttribute("data-status") === status;
+				el.classList.toggle("active", on);
+				el.setAttribute("aria-selected", on ? "true" : "false");
+			});
+		}
+
+		function showProjectsTable(status, replace) {
+			statusFilter = status === "complete" || status === "all" ? status : "active";
+			syncStatusChips(statusFilter);
+			try {
+				var url = urlForStatus(statusFilter);
+				if (replace) history.replaceState({ usisProjectsStatus: statusFilter }, "", url);
+				else history.pushState({ usisProjectsStatus: statusFilter }, "", url);
+			} catch (e) {}
+			applyFilter();
+			markProjectsNavActive();
+		}
+
+		window.usisShowProjectsTable = function (status) {
+			showProjectsTable(status || "active");
+		};
 
 		function t(key) {
 			return window.USISI18n && typeof window.USISI18n.tr === "function" ? window.USISI18n.tr(key) : key;
@@ -213,15 +294,19 @@
 				jobKey != null && String(jobKey).trim() !== "" ? encodeURIComponent(String(jobKey).trim()) : "";
 			var jobHref = jobKeyEnc ? "construction/lead-detail.html?id=" + jobKeyEnc : "";
 			var nameInner = pidEnc
-				? '<a class="fw-semibold text-black text-decoration-none" href="' + detailHref + '">' + esc(row.name || "—") + "</a>"
-				: '<span class="fw-semibold text-black">' + esc(row.name || "—") + "</span>";
+				? '<a class="usis-est-name__title" href="' + detailHref + '">' + esc(row.name || "—") + "</a>"
+				: '<span class="usis-est-name__title">' + esc(row.name || "—") + "</span>";
 			var numInner = pidEnc
-				? '<a class="link-primary text-decoration-none" href="' + detailHref + '">' + num + "</a>"
+				? '<a class="text-decoration-none" href="' + detailHref + '">' + num + "</a>"
 				: num;
 			var st = esc(humanizeStatus(row.status));
 			var pt = esc(humanizeStatus(row.project_type));
-			var cityCell = row.city ? esc(row.city) : '<span class="text-muted">—</span>';
-			var stAbbr = row.state ? esc(row.state) : '<span class="text-muted">—</span>';
+			var cityCell = row.city
+				? '<span class="usis-est-location">' + esc(row.city) + "</span>"
+				: '<span class="text-muted">—</span>';
+			var stAbbr = row.state
+				? '<span class="usis-est-location">' + esc(row.state) + "</span>"
+				: '<span class="text-muted">—</span>';
 			var jobBtn = jobHref
 				? '<a class="btn btn-square btn-sm btn-outline-primary rounded" href="' +
 					jobHref +
@@ -231,7 +316,7 @@
 				'<div class="d-inline-flex align-items-center gap-1 justify-content-end">' +
 				jobBtn +
 				'<div class="dropdown custom-dropdown mb-0 tbl-orders-style">' +
-				'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
+				'<div class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-popper-config=\'{"strategy":"fixed"}\'><i class="fa-solid fa-ellipsis-vertical"></i></div>' +
 				'<div class="dropdown-menu dropdown-menu-end">' +
 				(jobHref ? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>' : "") +
 				'<a class="dropdown-item" href="' + (pidEnc ? detailHref : "javascript:void(0);") + '">Project detail</a>' +
@@ -244,7 +329,7 @@
 				'<tr data-id="' + escAttr(row.id) + '">' +
 				bulk +
 				'<td class="text-nowrap">' + numInner + "</td>" +
-				"<td>" + nameInner + "</td>" +
+				'<td class="usis-est-col-name"><div class="usis-est-name">' + nameInner + "</div></td>" +
 				'<td class="text-nowrap">' + cityCell + "</td>" +
 				'<td class="text-nowrap">' + stAbbr + "</td>" +
 				'<td class="text-nowrap">' + st + "</td>" +
@@ -265,6 +350,21 @@
 			if (statusFilter === "all") return true;
 			if (statusFilter === "complete") return st === "complete" || st === "completed";
 			return st !== "complete" && st !== "completed" && st !== "archived" && st !== "cancelled" && st !== "canceled";
+		}
+
+		function updateTabCounts() {
+			var active = 0;
+			var complete = 0;
+			lastItems.forEach(function (r) {
+				var st = String(r.status || "").toLowerCase();
+				if (st === "complete" || st === "completed") complete += 1;
+				else if (st !== "archived" && st !== "cancelled" && st !== "canceled") active += 1;
+			});
+			var counts = { active: active, complete: complete, all: lastItems.length };
+			document.querySelectorAll("[data-usis-projects-count]").forEach(function (el) {
+				var key = el.getAttribute("data-usis-projects-count");
+				el.textContent = counts[key] != null ? String(counts[key]) : "";
+			});
 		}
 
 		function updateColumnVisibility(rows) {
@@ -346,11 +446,12 @@
 					} else if (hint) {
 						hint.classList.add("d-none");
 					}
+					updateTabCounts();
 					if (!lastItems.length) {
 						var msg =
 							scope === "assigned"
 								? t("No projects are assigned to your account. Ask an administrator to assign jobs in User admin.")
-								: t("No projects yet. Add projects in your system, then reload.");
+								: t("No projects yet. Use New project to add one.");
 						tbody.innerHTML = '<tr><td colspan="8" class="text-muted">' + esc(msg) + "</td></tr>";
 						return;
 					}
@@ -454,62 +555,102 @@
 			});
 		}
 
-		document.addEventListener("DOMContentLoaded", loadProjects);
+		statusFilter = statusFromSearch();
+		syncStatusChips(statusFilter);
+		markProjectsNavActive();
+		if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", loadProjects);
+		else loadProjects();
+		window.addEventListener("popstate", function () {
+			statusFilter = statusFromSearch();
+			syncStatusChips(statusFilter);
+			applyFilter();
+		});
 		var btn = document.getElementById("usis-projects-reload");
 		if (btn) btn.addEventListener("click", loadProjects);
-		var createSubmit = document.getElementById("usis-project-create-submit");
-		if (createSubmit) {
-			createSubmit.addEventListener("click", function () {
+		function submitNewProject(e) {
+			if (e) e.preventDefault();
+			var errEl = document.getElementById("usis-project-create-err");
+			var nameEl = document.getElementById("usis-project-create-name");
+			var numEl = document.getElementById("usis-project-create-number");
+			var cityEl = document.getElementById("usis-project-create-city");
+			var stateEl = document.getElementById("usis-project-create-state");
+			var typeEl = document.getElementById("usis-project-create-type");
+			var submitBtn = document.getElementById("usis-project-create-submit");
+			var name = nameEl ? String(nameEl.value || "").trim() : "";
+			var number = numEl ? String(numEl.value || "").trim() : "";
+			var city = cityEl ? String(cityEl.value || "").trim() : "";
+			var state = stateEl ? String(stateEl.value || "").trim() : "";
+			var projectType = typeEl ? String(typeEl.value || "commercial").trim() : "commercial";
+			if (errEl) {
+				errEl.textContent = "";
+				errEl.classList.add("d-none");
+			}
+			if (!name) {
+				if (errEl) {
+					errEl.textContent = t("Name is required.");
+					errEl.classList.remove("d-none");
+				}
+				if (nameEl) nameEl.focus();
+				return;
+			}
+			if (submitBtn) submitBtn.disabled = true;
+			fetch((API || "").replace(/\/$/, "") + "/api/v1/projects", {
+				method: "POST",
+				credentials: "include",
+				headers: { Accept: "application/json", "Content-Type": "application/json" },
+				body: JSON.stringify({
+					name: name,
+					number: number || null,
+					city: city || null,
+					state: state || null,
+					project_type: projectType || "commercial",
+					status: "active",
+				}),
+			})
+				.then(function (r) {
+					return r.json().then(function (j) {
+						if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+						return j;
+					});
+				})
+				.then(function (data) {
+					var id = data && data.item && data.item.id;
+					if (id) {
+						window.location.href = "construction/project-detail.html?id=" + encodeURIComponent(id);
+						return;
+					}
+					loadProjects();
+				})
+				.catch(function (err) {
+					if (errEl) {
+						errEl.textContent = err && err.message ? err.message : t("Could not create project.");
+						errEl.classList.remove("d-none");
+					}
+				})
+				.finally(function () {
+					if (submitBtn) submitBtn.disabled = false;
+				});
+		}
+		var createForm = document.getElementById("usis-project-create-form");
+		if (createForm) createForm.addEventListener("submit", submitNewProject);
+		var createModal = document.getElementById("usis-project-create-modal");
+		if (createModal) {
+			createModal.addEventListener("shown.bs.modal", function () {
 				var errEl = document.getElementById("usis-project-create-err");
-				var nameEl = document.getElementById("usis-project-create-name");
-				var numEl = document.getElementById("usis-project-create-number");
-				var name = nameEl ? String(nameEl.value || "").trim() : "";
-				var number = numEl ? String(numEl.value || "").trim() : "";
 				if (errEl) {
 					errEl.textContent = "";
 					errEl.classList.add("d-none");
 				}
-				if (!name) {
-					if (errEl) {
-						errEl.textContent = t("Name is required.");
-						errEl.classList.remove("d-none");
-					}
-					return;
+				var nameEl = document.getElementById("usis-project-create-name");
+				if (nameEl) nameEl.focus();
+			});
+			createModal.addEventListener("hidden.bs.modal", function () {
+				if (createForm) createForm.reset();
+				var errEl = document.getElementById("usis-project-create-err");
+				if (errEl) {
+					errEl.textContent = "";
+					errEl.classList.add("d-none");
 				}
-				createSubmit.disabled = true;
-				fetch((API || "").replace(/\/$/, "") + "/api/v1/projects", {
-					method: "POST",
-					credentials: "include",
-					headers: { Accept: "application/json", "Content-Type": "application/json" },
-					body: JSON.stringify({
-						name: name,
-						number: number || null,
-						status: "active",
-					}),
-				})
-					.then(function (r) {
-						return r.json().then(function (j) {
-							if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
-							return j;
-						});
-					})
-					.then(function (data) {
-						var id = data && data.item && data.item.id;
-						if (id) {
-							window.location.href = "construction/project-detail.html?id=" + encodeURIComponent(id);
-							return;
-						}
-						loadProjects();
-					})
-					.catch(function (err) {
-						if (errEl) {
-							errEl.textContent = err && err.message ? err.message : t("Could not create project.");
-							errEl.classList.remove("d-none");
-						}
-					})
-					.finally(function () {
-						createSubmit.disabled = false;
-					});
 			});
 		}
 		if (filterInput) {
@@ -527,12 +668,8 @@
 			chips.addEventListener("click", function (e) {
 				var b = e.target.closest("[data-status]");
 				if (!b) return;
-				chips.querySelectorAll("[data-status]").forEach(function (el) {
-					el.classList.toggle("active", el === b);
-					el.setAttribute("aria-selected", el === b ? "true" : "false");
-				});
-				statusFilter = b.getAttribute("data-status") || "active";
-				applyFilter();
+				e.preventDefault();
+				showProjectsTable(b.getAttribute("data-status") || "active");
 			});
 		}
 		if (tbody) {
@@ -540,7 +677,7 @@
 				if (e.target.closest("a, button, input, .dropdown, label")) return;
 				var tr = e.target.closest("tr[data-id]");
 				if (!tr) return;
-				var a = tr.querySelector("a.link-primary");
+				var a = tr.querySelector("a.usis-est-name__title") || tr.querySelector("a[href]");
 				if (a && a.getAttribute("href") && a.getAttribute("href") !== "javascript:void(0);") {
 					window.location.href = a.getAttribute("href");
 				}

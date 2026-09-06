@@ -247,6 +247,11 @@
 		"No projects match this filter.": "Ningún proyecto coincide con este filtro.",
 		"No projects yet. Add projects in your system, then reload.":
 			"Aún no hay proyectos. Agréguelos al sistema y recargue.",
+		"No projects yet. Use New project to add one.":
+			"Aún no hay proyectos. Use Proyecto nuevo para agregar uno.",
+		"New project": "Proyecto nuevo",
+		"Name is required.": "El nombre es obligatorio.",
+		"Could not create project.": "No se pudo crear el proyecto.",
 		"No projects are assigned to your account. Ask an administrator to assign jobs in User admin.":
 			"No tiene proyectos asignados. Pida a un administrador que le asigne trabajos.",
 		"Showing only projects assigned to you. Contact an administrator if a job is missing.":

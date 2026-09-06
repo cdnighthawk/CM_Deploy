@@ -347,22 +347,11 @@
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
 						</a>
 					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+					<li data-usis-module="projects">
+						<a href="construction/projects.html" aria-expanded="false">
 							<i class="icon feather icon-layers"></i>
 							<span class="nav-text" data-i18n="Projects">Projects</span>
 						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="projects">
-								<a href="construction/projects.html" data-i18n="All projects">All projects</a>
-							</li>
-							<li data-usis-module="projects">
-								<a href="usis-calendar.html" data-i18n="Calendar">Calendar</a>
-							</li>
-							<li data-usis-module="projects">
-								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
-							</li>
-						</ul>
 					</li>
 					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
@@ -444,6 +433,9 @@
 						<ul aria-expanded="false">
 							<li data-usis-module="user_admin">
 								<a href="usis-user-directory.html" data-i18n="User admin">User admin</a>
+							</li>
+							<li data-usis-module="user_admin">
+								<a href="construction/issues.html" data-i18n="Issues">Issues</a>
 							</li>
 							<li data-usis-module="user_admin">
 								<a href="usis-companies.html">Companies</a>
@@ -570,6 +562,9 @@
 						<button type="button" class="btn btn-outline-secondary" id="usis-gs-reload">
 							<i class="icon feather icon-refresh-cw me-1"></i> Reload
 						</button>
+						<button type="button" class="btn btn-outline-primary" id="usis-gs-fetch-details">
+							<i class="icon feather icon-download me-1"></i> Fetch details
+						</button>
 						<button type="button" class="btn btn-primary" id="usis-gs-import-btn">
 							<i class="icon feather icon-upload me-1"></i> Import weekly listing
 						</button>
@@ -661,7 +656,7 @@
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
-	<script src="assets/js/usis-gs-planroom.js?v=20260906a"></script>
+	<script src="assets/js/usis-gs-planroom.js?v=20260906b"></script>
 	
 </body>
 </html>

@@ -70,12 +70,16 @@
 							<button type="button" class="btn btn-sm nav-link" data-status="complete" aria-selected="false">Complete</button>
 							<button type="button" class="btn btn-sm nav-link" data-status="all" aria-selected="false">All</button>
 						</div>
+						<a href="usis-calendar.html" class="btn btn-sm btn-outline-secondary" data-i18n="Calendar">Calendar</a>
 						<div class="input-group message-search-area width200 w-xs-100">
 							<input type="text" class="form-control border-end-0" id="usis-projects-filter" placeholder="Filter by #, name, city, or state" data-i18n-placeholder="Filter by #, name, city, or state">
 							<div class="input-group-append">
 								<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-projects-filter-clear" aria-label="Clear filter"><i class="flaticon-381-search-2"></i></button>
 							</div>
 						</div>
+						<button type="button" class="btn btn-primary w-xs-100" id="usis-projects-new" data-bs-toggle="modal" data-bs-target="#usis-project-create-modal">
+							<i class="icon feather icon-plus me-1"></i> <span data-i18n="New project">New project</span>
+						</button>
 						<button type="button" class="btn btn-outline-primary w-xs-100" id="usis-projects-reload" title="Refresh project list">
 							<i class="icon feather icon-refresh-cw me-1"></i> <span data-i18n="Refresh">Refresh</span>
 						</button>
@@ -127,6 +131,32 @@
 
 	</div>
 	<!-- End - Main Wrapper -->
+
+	<div class="modal fade" id="usis-project-create-modal" tabindex="-1" aria-labelledby="usis-project-create-title">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-project-create-title" data-i18n="New project">New project</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="small text-danger d-none mb-2" id="usis-project-create-err" role="alert"></p>
+					<div class="mb-3">
+						<label class="form-label" for="usis-project-create-name" data-i18n="Name">Name</label>
+						<input type="text" class="form-control" id="usis-project-create-name" maxlength="255" required autocomplete="off">
+					</div>
+					<div class="mb-0">
+						<label class="form-label" for="usis-project-create-number" data-i18n="Project #">Project #</label>
+						<input type="text" class="form-control" id="usis-project-create-number" maxlength="50" autocomplete="off">
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="Cancel">Cancel</button>
+					<button type="button" class="btn btn-primary" id="usis-project-create-submit" data-i18n="Create">Create</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<!-- Start - Page Scripts -->
 	@@include("../elements/script.html")
@@ -427,6 +457,61 @@
 		document.addEventListener("DOMContentLoaded", loadProjects);
 		var btn = document.getElementById("usis-projects-reload");
 		if (btn) btn.addEventListener("click", loadProjects);
+		var createSubmit = document.getElementById("usis-project-create-submit");
+		if (createSubmit) {
+			createSubmit.addEventListener("click", function () {
+				var errEl = document.getElementById("usis-project-create-err");
+				var nameEl = document.getElementById("usis-project-create-name");
+				var numEl = document.getElementById("usis-project-create-number");
+				var name = nameEl ? String(nameEl.value || "").trim() : "";
+				var number = numEl ? String(numEl.value || "").trim() : "";
+				if (errEl) {
+					errEl.textContent = "";
+					errEl.classList.add("d-none");
+				}
+				if (!name) {
+					if (errEl) {
+						errEl.textContent = t("Name is required.");
+						errEl.classList.remove("d-none");
+					}
+					return;
+				}
+				createSubmit.disabled = true;
+				fetch((API || "").replace(/\/$/, "") + "/api/v1/projects", {
+					method: "POST",
+					credentials: "include",
+					headers: { Accept: "application/json", "Content-Type": "application/json" },
+					body: JSON.stringify({
+						name: name,
+						number: number || null,
+						status: "active",
+					}),
+				})
+					.then(function (r) {
+						return r.json().then(function (j) {
+							if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
+							return j;
+						});
+					})
+					.then(function (data) {
+						var id = data && data.item && data.item.id;
+						if (id) {
+							window.location.href = "construction/project-detail.html?id=" + encodeURIComponent(id);
+							return;
+						}
+						loadProjects();
+					})
+					.catch(function (err) {
+						if (errEl) {
+							errEl.textContent = err && err.message ? err.message : t("Could not create project.");
+							errEl.classList.remove("d-none");
+						}
+					})
+					.finally(function () {
+						createSubmit.disabled = false;
+					});
+			});
+		}
 		if (filterInput) {
 			filterInput.addEventListener("input", applyFilter);
 		}

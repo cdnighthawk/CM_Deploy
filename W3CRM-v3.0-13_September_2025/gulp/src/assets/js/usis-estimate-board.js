@@ -611,6 +611,7 @@
 		var navLink = e.target.closest('a[href*="estimate.html"]');
 		if (!navLink) return;
 		if (navLink.closest("[data-usis-est-tab]")) return;
+		if (navLink.closest(".deznav")) return;
 		var board = boardFromHref(navLink.getAttribute("href") || "");
 		if (!board || board === "gs_plan") return;
 		e.preventDefault();

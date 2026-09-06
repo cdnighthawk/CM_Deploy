@@ -1123,10 +1123,55 @@
 			});
 	}
 
+	var ESTD_TAB_IDS = {
+		job: "estd-tab-job",
+		drawings: "estd-tab-drawings",
+		specs: "estd-tab-specs",
+		rfi: "estd-tab-rfi",
+		takeoff: "estd-tab-takeoff",
+		estimate: "estd-tab-estimate",
+		"spec-package": "estd-tab-spec-package",
+		spec_package: "estd-tab-spec-package",
+		rfp: "estd-tab-rfp",
+	};
+
+	function showEstdTab(tabId) {
+		var btn = document.getElementById(tabId || "estd-tab-estimate");
+		if (!btn) return;
+		if (window.bootstrap && window.bootstrap.Tab) {
+			window.bootstrap.Tab.getOrCreateInstance(btn).show();
+			return;
+		}
+		btn.click();
+	}
+
+	function defaultEstdTabId() {
+		var tab = "";
+		try {
+			tab = String(new URLSearchParams(window.location.search).get("tab") || "").toLowerCase();
+		} catch (e) {
+			tab = "";
+		}
+		return ESTD_TAB_IDS[tab] || "estd-tab-estimate";
+	}
+
+	function bindEstimateToolbar(stayOnDetail) {
+		showEstdTab(defaultEstdTabId());
+		if (!stayOnDetail) return;
+		document.addEventListener("click", function (e) {
+			if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+			var navLink = e.target.closest('.deznav a[href*="estimate.html"]');
+			if (!navLink) return;
+			e.preventDefault();
+			showEstdTab("estd-tab-estimate");
+		});
+	}
+
 	function init() {
 		var p = new URLSearchParams(window.location.search);
 		leadKey = p.get("id");
 		var wrap = document.getElementById("usis-est-detail-root");
+		bindEstimateToolbar(!!leadKey);
 		if (!leadKey) {
 			if (wrap) wrap.classList.add("d-none");
 			return;

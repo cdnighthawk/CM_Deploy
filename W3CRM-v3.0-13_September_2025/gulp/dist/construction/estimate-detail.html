@@ -625,7 +625,7 @@
 				<div class="col-xl-12 mb-3">
 					<ul class="nav nav-pills nav-pills-sm flex-nowrap gap-1 usis-detail-toolbar" role="tablist">
 						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="estd-tab-job" data-bs-toggle="pill" data-bs-target="#estd-pane-job" type="button" role="tab" aria-controls="estd-pane-job" aria-selected="true">Job information</button>
+							<button class="nav-link" id="estd-tab-job" data-bs-toggle="pill" data-bs-target="#estd-pane-job" type="button" role="tab" aria-controls="estd-pane-job" aria-selected="false">Job information</button>
 						</li>
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="estd-tab-drawings" data-bs-toggle="pill" data-bs-target="#estd-pane-drawings" type="button" role="tab" aria-controls="estd-pane-drawings" aria-selected="false">Drawings</button>
@@ -640,7 +640,7 @@
 							<button class="nav-link" id="estd-tab-takeoff" data-bs-toggle="pill" data-bs-target="#estd-pane-takeoff" type="button" role="tab" aria-controls="estd-pane-takeoff" aria-selected="false">Takeoff</button>
 						</li>
 						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="estd-tab-estimate" data-bs-toggle="pill" data-bs-target="#estd-pane-estimate" type="button" role="tab" aria-controls="estd-pane-estimate" aria-selected="false">Estimate</button>
+							<button class="nav-link active" id="estd-tab-estimate" data-bs-toggle="pill" data-bs-target="#estd-pane-estimate" type="button" role="tab" aria-controls="estd-pane-estimate" aria-selected="true">Estimate</button>
 						</li>
 						<li class="nav-item" role="presentation">
 							<button class="nav-link" id="estd-tab-spec-package" data-bs-toggle="pill" data-bs-target="#estd-pane-spec-package" type="button" role="tab" aria-controls="estd-pane-spec-package" aria-selected="false">Spec package</button>
@@ -653,7 +653,7 @@
 
 				<div class="col-xl-12">
 					<div class="tab-content card card-body border-0 shadow-sm">
-						<div class="tab-pane fade show active" id="estd-pane-job" role="tabpanel" aria-labelledby="estd-tab-job" tabindex="0">
+						<div class="tab-pane fade" id="estd-pane-job" role="tabpanel" aria-labelledby="estd-tab-job" tabindex="0">
 							<div class="alert alert-light border py-2 mb-2" data-usis-estd-job-loading>Loading job information…</div>
 							<div class="alert alert-danger py-2 mb-2 d-none" data-usis-estd-job-error role="alert"></div>
 							<div id="usis-estd-job-root" class="d-none">
@@ -875,7 +875,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="tab-pane fade" id="estd-pane-estimate" role="tabpanel" aria-labelledby="estd-tab-estimate" tabindex="0">
+						<div class="tab-pane fade show active" id="estd-pane-estimate" role="tabpanel" aria-labelledby="estd-tab-estimate" tabindex="0">
 							<div id="usis-est-detail-root" class="d-none">
 								<div id="usis-est-detail-err" class="alert alert-danger d-none mb-3" role="alert"></div>
 								<div id="usis-est-lock-banner" class="alert alert-secondary border py-2 small d-none mb-2" role="status"></div>
@@ -1179,7 +1179,7 @@
 	<script src="assets/js/usis-estimates-list.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
-	<script src="assets/js/usis-estimate-detail.js?v=20260830k"></script>
+	<script src="assets/js/usis-estimate-detail.js?v=20260906c"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>
 	<script src="assets/js/usis-estimate-spec-package.js?v=20260901a"></script>

@@ -14,8 +14,8 @@ Single HTTPS web service: Gulp-built UI + Flask API + PostgreSQL. Session cookie
 3. Render reads [`render.yaml`](../render.yaml) at the repo root and creates:
    - PostgreSQL `usis-cm-db`
    - Web service `usis-cm` (Python 3.12)
-   - Cron job `usis-calendar-reminders` (daily 14:00 UTC; needs `BC_SYNC_CRON_SECRET`)
-   - Cron job `usis-invoice-mailbox-sync` (every 5 minutes; same `BC_SYNC_CRON_SECRET`)
+   - Cron job `usis-calendar-reminders` (daily 14:00 UTC; inherits `BC_SYNC_CRON_SECRET` from `usis-cm`)
+   - Cron job `usis-invoice-mailbox-sync` (every 5 minutes; same secret, calls `usis-cm` over Render private networking)
    - Persistent disk on `backend/instance` (uploads; optional if using B2 — see [backblaze-b2.md](backblaze-b2.md))
 
 ## 2. Secrets (Dashboard → usis-cm → Environment)
@@ -53,6 +53,8 @@ Set all four **required** variables to store drawings, spec PDFs, RFI attachment
 | `B2_ENDPOINT` | Copy **S3 Endpoint** from B2 → bucket **USIS-construction-docs** → Bucket Settings (e.g. `https://s3.us-west-004.backblazeb2.com`) |
 | `B2_PREFIX` | Optional, e.g. `prod/usis-cm` |
 | `B2_MIRROR_ROOT` | **Do not set on Render.** Office copy only; the website reads B2. See [backblaze-b2.md](backblaze-b2.md) §7 |
+
+There is **no CORS environment variable**. CORS is a rule on the B2 bucket, not a key. Do not add `CORS`, `CORS_KEY`, or `CORS_ORIGINS` for Backblaze. Click path and JSON: [backblaze-b2.md](backblaze-b2.md) §3.
 
 After saving env vars, trigger **Manual Deploy** (or push to `main`) so the service restarts with B2 enabled. New uploads use B2; existing files on the Render disk are not migrated automatically ([backblaze-b2.md](backblaze-b2.md) §6).
 

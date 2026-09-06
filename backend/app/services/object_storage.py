@@ -43,6 +43,9 @@ class StorageError(Exception):
 _PUT_ATTEMPTS = 3
 _S3_CONNECT_TIMEOUT = 15
 _S3_READ_TIMEOUT = 40
+_NATIVE_TRANSFER_TIMEOUT = 120
+_AUTH_TTL_SEC = 50 * 60
+_auth_cache: dict = {"at": 0.0, "key_id": "", "data": None}
 
 
 class UploadCategory(StrEnum):
@@ -472,17 +475,28 @@ def _s3_client():
 def _is_s3_compat_drop(exc: BaseException) -> bool:
     """B2's S3 gateway dropped the socket. Native B2 (api.backblazeb2.com) may still work.
 
-    Covers SSL EOF *and* boto ``ConnectionClosedError`` ("Connection was closed
-    before we received a valid response"). Those are different doors than native B2.
+    Covers SSL EOF, boto ``ConnectionClosedError``, and connect/read timeouts.
+    Those are different doors than native B2.
     """
     name = type(exc).__name__
-    if name in {"SSLError", "SSLEOFError", "ConnectionClosedError"}:
+    if name in {
+        "SSLError",
+        "SSLEOFError",
+        "ConnectionClosedError",
+        "ReadTimeoutError",
+        "ConnectTimeoutError",
+        "EndpointConnectionError",
+        "ConnectionError",
+    }:
         return True
     text = str(exc).lower()
     return (
         "eof occurred in violation" in text
         or "ssl validation failed" in text
         or "connection was closed before we received a valid response" in text
+        or "read timeout" in text
+        or "connect timeout" in text
+        or "timed out" in text
     )
 
 
@@ -514,7 +528,11 @@ def _head_object(key: str) -> dict | None:
     except Exception as exc:
         if _is_not_found(exc):
             return None
-        current_app.logger.warning("b2 head failed key=%s err=%s", key, exc)
+        current_app.logger.warning("b2 s3 head failed key=%s err=%s", key, exc)
+    try:
+        return _head_native_b2(key)
+    except Exception as exc:
+        current_app.logger.warning("b2 native head failed key=%s err=%s", key, exc)
         return None
 
 
@@ -528,17 +546,34 @@ def _get_bytes(key: str) -> bytes | None:
     except Exception as exc:
         if _is_not_found(exc):
             return None
-        current_app.logger.warning("b2 get failed key=%s err=%s", key, exc)
+        current_app.logger.warning("b2 s3 get failed key=%s err=%s", key, exc)
+    try:
+        return _get_native_b2(key)
+    except Exception as exc:
+        current_app.logger.warning("b2 native get failed key=%s err=%s", key, exc)
         return None
 
 
 def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
+    """Write via native B2 first. Render's S3-compatible gateway often drops the socket."""
     extra: dict = {}
     if content_type:
         extra["ContentType"] = content_type
+    native_err: BaseException | None = None
+    try:
+        _put_native_b2(key, payload, content_type=content_type)
+        return
+    except StorageError as exc:
+        if "storage cap" in (exc.message or "").lower() or "cap exceeded" in (exc.message or "").lower():
+            raise
+        native_err = exc
+        current_app.logger.warning("b2 native put failed; trying S3 key=%s err=%s", key, exc)
+    except Exception as exc:
+        native_err = exc
+        current_app.logger.warning("b2 native put failed; trying S3 key=%s err=%s", key, exc)
+
     last: BaseException | None = None
-    s3_dropped = False
-    for attempt in range(_PUT_ATTEMPTS):
+    for _attempt in range(_PUT_ATTEMPTS):
         try:
             _s3_client().put_object(
                 Bucket=current_app.config["B2_BUCKET_NAME"],
@@ -546,6 +581,7 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
                 Body=payload,
                 **extra,
             )
+            current_app.logger.warning("b2 s3 put succeeded after native failure key=%s", key)
             return
         except Exception as exc:
             last = exc
@@ -556,25 +592,13 @@ def _put_bytes(key: str, payload: bytes, *, content_type: str | None) -> None:
                     503,
                 ) from exc
             if _is_s3_compat_drop(exc):
-                # Do not spend remaining S3 read-timeouts — that is how clients
-                # see Cloudflare/Render HTML 502 before Flask can return a native URL.
-                s3_dropped = True
                 break
-            raise
-    if s3_dropped:
-        try:
-            _put_native_b2(key, payload, content_type=content_type)
-            current_app.logger.warning("b2 s3 put dropped; native upload succeeded key=%s", key)
-            return
-        except Exception as native_exc:
-            current_app.logger.warning("b2 native upload failed key=%s err=%s", key, native_exc)
-            raise StorageError(
-                "Backblaze B2 closed the S3-compatible upload connection. "
-                "Render could not finish writing the file to B2 via S3.",
-                503,
-            ) from last
-    if last is not None:
-        raise last
+            break
+    raise StorageError(
+        "Could not write the file to Backblaze B2. "
+        "Render could not finish the upload via native B2 or S3.",
+        503,
+    ) from (native_err or last)
 
 
 def _b2_http_json(req: Request, timeout: int) -> dict:
@@ -589,13 +613,25 @@ def _b2_http_json(req: Request, timeout: int) -> dict:
 def _b2_authorize() -> dict:
     key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
     secret = (current_app.config.get("B2_APPLICATION_KEY") or "").strip()
+    now = time.time()
+    cached = _auth_cache.get("data")
+    if (
+        cached
+        and _auth_cache.get("key_id") == key_id
+        and now - float(_auth_cache.get("at") or 0) < _AUTH_TTL_SEC
+    ):
+        return cached
     token = base64.b64encode(f"{key_id}:{secret}".encode()).decode()
     req = Request(
         "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
         headers={"Authorization": f"Basic {token}"},
         method="GET",
     )
-    return _b2_http_json(req, _S3_CONNECT_TIMEOUT)
+    data = _b2_http_json(req, _S3_CONNECT_TIMEOUT)
+    _auth_cache["at"] = now
+    _auth_cache["key_id"] = key_id
+    _auth_cache["data"] = data
+    return data
 
 
 def _b2_bucket_id(auth: dict) -> str:
@@ -637,6 +673,58 @@ def _b2_get_upload_url() -> dict:
     return _b2_http_json(req, _S3_CONNECT_TIMEOUT)
 
 
+def _b2_file_url(auth: dict, key: str) -> str:
+    bucket = quote((current_app.config.get("B2_BUCKET_NAME") or "").strip(), safe="")
+    encoded = quote(key, safe="/")
+    return f"{auth['downloadUrl']}/file/{bucket}/{encoded}"
+
+
+def _head_native_b2(key: str) -> dict | None:
+    """Size/exists via native list (avoids the S3 gateway)."""
+    auth = _b2_authorize()
+    bucket_id = _b2_bucket_id(auth)
+    body = json.dumps(
+        {
+            "bucketId": bucket_id,
+            "prefix": key,
+            "maxFileCount": 10,
+        }
+    ).encode()
+    req = Request(
+        f"{auth['apiUrl']}/b2api/v2/b2_list_file_names",
+        data=body,
+        headers={
+            "Authorization": auth["authorizationToken"],
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    payload = _b2_http_json(req, _S3_CONNECT_TIMEOUT)
+    for row in payload.get("files") or []:
+        if row.get("fileName") == key and row.get("action") in (None, "upload"):
+            return {"ContentLength": int(row.get("contentLength") or 0)}
+    return None
+
+
+def _get_native_b2(key: str) -> bytes | None:
+    auth = _b2_authorize()
+    req = Request(
+        _b2_file_url(auth, key),
+        headers={"Authorization": auth["authorizationToken"]},
+        method="GET",
+    )
+    try:
+        with urlopen(req, timeout=_NATIVE_TRANSFER_TIMEOUT) as resp:
+            return resp.read()
+    except HTTPError as exc:
+        if exc.code == 404:
+            return None
+        raw = exc.read().decode("utf-8", "replace")[:240]
+        raise StorageError(f"B2 HTTP {exc.code}: {raw}", 503) from exc
+    except URLError as exc:
+        raise StorageError("Backblaze B2 native download connection failed.", 503) from exc
+
+
 def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> None:
     info = _b2_get_upload_url()
     sha1 = hashlib.sha1(payload).hexdigest()
@@ -648,7 +736,7 @@ def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> Non
     }
     req = Request(info["uploadUrl"], data=payload, headers=headers, method="POST")
     try:
-        with urlopen(req, timeout=_S3_READ_TIMEOUT) as resp:
+        with urlopen(req, timeout=_NATIVE_TRANSFER_TIMEOUT) as resp:
             resp.read()
     except HTTPError as exc:
         raw = exc.read().decode("utf-8", "replace")[:240]

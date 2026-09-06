@@ -44,23 +44,80 @@ The app does **not** read a single `back_blaze` (or similar) variable. If you on
 
 **Private bucket:** files are not served from a public B2 URL. Uploads and downloads go through the Flask API (`save_upload` / `send_stored_file`), which uses your session after login. Do not set the bucket to Public unless you intentionally want objects reachable without the app.
 
-## 3. CORS (browser uploads)
+## 3. CORS — not a key, and it does not go on Render
 
-Uploads go through the Flask API (`multipart/form-data` to same origin on Render), not direct browser → B2 PUT. **CORS on the bucket is usually not required** for the current UI.
+There is **no CORS key**. Do **not** add `CORS`, `CORS_KEY`, or anything like that under Render → Environment. That list is only for the two Backblaze **application key** values (see §2 and §4).
 
-If you later add direct-to-B2 uploads from the browser, configure CORS on the bucket to allow your Render origin, e.g.:
+CORS is a **rule on the B2 bucket**. You set it once. Employees never see it. The PDF installer does not take a CORS key.
+
+| What people confuse | Where it actually goes |
+|---------------------|------------------------|
+| B2 **keyID** | Render → **usis-cm** → **Environment** → `B2_APPLICATION_KEY_ID` |
+| B2 **applicationKey** | Render → **usis-cm** → **Environment** → `B2_APPLICATION_KEY` |
+| CORS | Backblaze → bucket **USIS-construction-docs** → CORS rules (below) |
+
+### Where to click in Backblaze
+
+1. Sign in at [https://secure.backblaze.com](https://secure.backblaze.com) (the same account that owns the bucket).
+2. Open **B2 Cloud Storage** → **Buckets**.
+3. Open the bucket **USIS-construction-docs** (not App Keys).
+4. Open **Bucket Settings** (or **Settings** → **CORS Rules** if you have the newer console).
+5. Add **one** CORS rule. If the UI has a “share with exactly one origin” preset, use that and enter `https://www.usiscm.com`, API = **Both** (B2 Native and S3). Then add a second origin `https://usiscm.onrender.com` the same way, or paste the JSON below.
+
+If the classic console has no CORS editor, leave the bucket open and run the one-time script in the next subsection (it writes the same rule using the keys already on your PC).
+
+### JSON to paste on the bucket (not on Render)
 
 ```json
 [
   {
-    "corsRuleName": "usis-cm-render",
-    "allowedOrigins": ["https://your-service.onrender.com"],
-    "allowedOperations": ["b2_upload_file", "s3_put", "s3_post"],
+    "corsRuleName": "usis-cm-browser",
+    "allowedOrigins": [
+      "https://www.usiscm.com",
+      "https://usiscm.onrender.com"
+    ],
+    "allowedOperations": [
+      "b2_upload_file",
+      "b2_download_file_by_name",
+      "b2_download_file_by_id",
+      "s3_put",
+      "s3_head",
+      "s3_get"
+    ],
     "allowedHeaders": ["*"],
+    "exposeHeaders": [
+      "x-bz-file-id",
+      "x-bz-file-name",
+      "x-bz-content-sha1",
+      "etag"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
 ```
+
+`allowedOrigins` must be the website origin only — scheme + host, **no path**. `https://www.usiscm.com/construction/project-detail.html` is wrong. `https://www.usiscm.com` is right.
+
+### One-time script (same rule, no typing)
+
+From `backend/` on a machine that already has `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` in `.env` (or in the environment). This does **not** add a Render variable.
+
+```bash
+python scripts/apply_b2_cors.py --dry-run
+python scripts/apply_b2_cors.py
+```
+
+Without this bucket rule, a browser fallback upload creates a placeholder row and the PDF never lands in B2.
+
+## 3.1 Placeholders with no PDF
+
+A drawing row with `file_pending` is only the catalog line. The PDF is missing when:
+
+1. Render could not write to B2 (old S3-gateway drops). New deploys write **native B2 first** and read through native B2 if S3 GET/HEAD fails.
+2. The browser/desktop never finished the one-shot B2 POST, or CORS blocked it.
+3. Upload Desktop created `POST /api/v1/jobs/{id}/drawings` (metadata only) and did not POST the bytes to the returned `upload.url`, then `POST /api/v1/drawings/{id}/ack-file`.
+
+Re-upload the PDF from the website after deploy. Existing placeholder rows are reused for the same sheet/set/revision.
 
 ## 4. Render environment variables
 

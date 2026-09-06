@@ -75,20 +75,46 @@ If the classic console has no CORS editor, leave the bucket open and run the one
 ```json
 [
   {
+    "corsRuleName": "usis-cm-browser-upload",
+    "allowedOrigins": [
+      "https://www.usiscm.com",
+      "https://usiscm.onrender.com"
+    ],
+    "allowedOperations": ["b2_upload_file", "b2_upload_part"],
+    "allowedHeaders": [
+      "authorization",
+      "content-type",
+      "x-bz-file-name",
+      "x-bz-content-sha1",
+      "x-bz-info-*",
+      "range",
+      "x-amz-*"
+    ],
+    "exposeHeaders": ["x-bz-file-id", "x-bz-file-name", "x-bz-content-sha1"],
+    "maxAgeSeconds": 3600
+  },
+  {
     "corsRuleName": "usis-cm-browser",
     "allowedOrigins": [
       "https://www.usiscm.com",
       "https://usiscm.onrender.com"
     ],
     "allowedOperations": [
-      "b2_upload_file",
       "b2_download_file_by_name",
       "b2_download_file_by_id",
       "s3_put",
       "s3_head",
       "s3_get"
     ],
-    "allowedHeaders": ["*"],
+    "allowedHeaders": [
+      "authorization",
+      "content-type",
+      "x-bz-file-name",
+      "x-bz-content-sha1",
+      "x-bz-info-*",
+      "range",
+      "x-amz-*"
+    ],
     "exposeHeaders": [
       "x-bz-file-id",
       "x-bz-file-name",
@@ -99,6 +125,8 @@ If the classic console has no CORS editor, leave the bucket open and run the one
   }
 ]
 ```
+
+List `authorization` by name. A lone `"*"` does **not** allow that header, so Firefox blocks the browser POST even when the origin looks right.
 
 `allowedOrigins` must be the website origin only — scheme + host, **no path**. `https://www.usiscm.com/construction/project-detail.html` is wrong. `https://www.usiscm.com` is right.
 

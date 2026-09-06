@@ -86,10 +86,24 @@
 					if (upload.file_name) headers["X-Bz-File-Name"] = encodeB2Name(upload.file_name);
 					return crypto.subtle.digest("SHA-1", buf).then(function (shaBuf) {
 						headers[upload.sha1_header || "X-Bz-Content-Sha1"] = hexFromBuffer(shaBuf);
-						return fetch(upload.url, { method: "POST", headers: headers, body: buf });
+						return fetch(upload.url, {
+							method: "POST",
+							mode: "cors",
+							credentials: "omit",
+							cache: "no-store",
+							headers: headers,
+							body: new Blob([buf], { type: headers["Content-Type"] || "application/pdf" }),
+						});
 					});
 				}
-				return fetch(upload.url, { method: "PUT", headers: headers, body: buf });
+				return fetch(upload.url, {
+					method: "PUT",
+					mode: "cors",
+					credentials: "omit",
+					cache: "no-store",
+					headers: headers,
+					body: new Blob([buf], { type: headers["Content-Type"] || "application/pdf" }),
+				});
 			})
 			.then(function (res) {
 				if (!res.ok) throw new Error("Company storage rejected the PDF (" + res.status + ").");
@@ -113,9 +127,7 @@
 				}).catch(function () {
 					var msg = (err && err.message) || String(err);
 					if (/failed to fetch|networkerror|cors/i.test(msg)) {
-						throw new Error(
-							"Could not store the PDF yet. Wait about a minute and upload once more."
-						);
+						throw new Error("The PDF did not reach company storage. Try the upload once more.");
 					}
 					throw err;
 				});

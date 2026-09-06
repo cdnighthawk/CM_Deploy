@@ -23,6 +23,8 @@ if str(_BACKEND) not in sys.path:
 
 load_dotenv(_BACKEND / ".env", override=True)
 
+from app.services.object_storage import browser_cors_rules
+
 DEFAULT_ORIGINS = (
     "https://www.usiscm.com",
     "https://usiscm.onrender.com",
@@ -74,31 +76,6 @@ def _bucket_id(auth: dict, want: str) -> str:
     raise SystemExit(f"Bucket not found for this application key: {want}")
 
 
-def cors_rules(origins: list[str]) -> list[dict]:
-    return [
-        {
-            "corsRuleName": "usis-cm-browser",
-            "allowedOrigins": origins,
-            "allowedOperations": [
-                "b2_upload_file",
-                "b2_download_file_by_name",
-                "b2_download_file_by_id",
-                "s3_put",
-                "s3_head",
-                "s3_get",
-            ],
-            "allowedHeaders": ["*"],
-            "exposeHeaders": [
-                "x-bz-file-id",
-                "x-bz-file-name",
-                "x-bz-content-sha1",
-                "etag",
-            ],
-            "maxAgeSeconds": 3600,
-        }
-    ]
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
@@ -117,7 +94,7 @@ def main() -> int:
     if not origins:
         raise SystemExit("At least one --origin is required.")
 
-    rules = cors_rules(origins)
+    rules = browser_cors_rules(origins)
     print(f"Bucket: {bucket}")
     print(json.dumps(rules, indent=2))
     if args.dry_run:

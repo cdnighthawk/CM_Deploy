@@ -466,7 +466,42 @@ def test_ensure_browser_cors_writes_upload_rule(mock_auth, _bucket, mock_http, f
         mock_http.return_value = {"corsRules": osvc.browser_cors_rules(["https://www.usiscm.com"])}
         assert osvc.ensure_browser_cors() is True
         body = json.loads(mock_http.call_args.args[0].data.decode())
-        rule = body["corsRules"][0]
-        assert "b2_upload_file" in rule["allowedOperations"]
-        assert "https://www.usiscm.com" in rule["allowedOrigins"]
+        upload = next(r for r in body["corsRules"] if "b2_upload_file" in r["allowedOperations"])
+        headers = [h.lower() for h in upload["allowedHeaders"]]
+        assert "authorization" in headers
+        assert "*" not in upload["allowedHeaders"]
+        assert "https://www.usiscm.com" in upload["allowedOrigins"]
         assert osvc._cors_applied["ok"] is True
+
+
+@patch("app.services.object_storage._native_upload_client")
+@patch("app.services.object_storage._b2_get_upload_url")
+def test_put_native_b2_posts_bytes_over_ipv4(mock_get_url, mock_client_factory, flask_app):
+    mock_get_url.return_value = {
+        "uploadUrl": "https://pod.example/up",
+        "authorizationToken": "tok",
+    }
+    client = MagicMock()
+    resp = MagicMock()
+    resp.status_code = 200
+    resp.text = "{}"
+    client.post.return_value = resp
+    mock_client_factory.return_value.__enter__.return_value = client
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import _put_native_b2
+
+        _put_native_b2("prod/usis-cm/drawings/a.pdf", b"%PDF-1.4", content_type="application/pdf")
+    headers = client.post.call_args.kwargs["headers"]
+    assert client.post.call_args.args[0] == "https://pod.example/up"
+    assert headers["Authorization"] == "tok"
+    assert headers["Content-Length"] == "8"
+    assert headers["X-Bz-Content-Sha1"]
+    assert client.post.call_args.kwargs["content"] == b"%PDF-1.4"

@@ -24,6 +24,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+import httpx
 from flask import Response, current_app, send_file
 
 if TYPE_CHECKING:
@@ -45,6 +46,17 @@ _PUT_ATTEMPTS = 3
 _S3_CONNECT_TIMEOUT = 15
 _S3_READ_TIMEOUT = 40
 _NATIVE_TRANSFER_TIMEOUT = 120
+_NATIVE_PUT_TIMEOUT = 20
+_NATIVE_PUT_ATTEMPTS = 2
+_BROWSER_UPLOAD_HEADERS = (
+    "authorization",
+    "content-type",
+    "x-bz-file-name",
+    "x-bz-content-sha1",
+    "x-bz-info-*",
+    "range",
+    "x-amz-*",
+)
 _AUTH_TTL_SEC = 50 * 60
 _auth_cache: dict = {"at": 0.0, "key_id": "", "data": None}
 _cors_applied = {"ok": False, "at": 0.0}
@@ -419,21 +431,37 @@ def browser_cors_origins() -> list[str]:
 
 
 def browser_cors_rules(origins: list[str] | None = None) -> list[dict]:
-    """Native B2 CORS that allows browser upload, not only download/share."""
+    """Native B2 CORS that allows browser upload, not only download/share.
+
+    Do not use ``allowedHeaders: ["*"]``. Browsers treat that as not covering
+    ``Authorization``, so the one-shot ``b2_upload_file`` POST is blocked.
+    """
     allowed = [o for o in (origins or browser_cors_origins()) if o]
+    headers = list(_BROWSER_UPLOAD_HEADERS)
     return [
+        {
+            "corsRuleName": "usis-cm-browser-upload",
+            "allowedOrigins": allowed,
+            "allowedOperations": ["b2_upload_file", "b2_upload_part"],
+            "allowedHeaders": headers,
+            "exposeHeaders": [
+                "x-bz-file-id",
+                "x-bz-file-name",
+                "x-bz-content-sha1",
+            ],
+            "maxAgeSeconds": 3600,
+        },
         {
             "corsRuleName": "usis-cm-browser",
             "allowedOrigins": allowed,
             "allowedOperations": [
-                "b2_upload_file",
                 "b2_download_file_by_name",
                 "b2_download_file_by_id",
                 "s3_put",
                 "s3_head",
                 "s3_get",
             ],
-            "allowedHeaders": ["*"],
+            "allowedHeaders": headers,
             "exposeHeaders": [
                 "x-bz-file-id",
                 "x-bz-file-name",
@@ -441,7 +469,7 @@ def browser_cors_rules(origins: list[str] | None = None) -> list[dict]:
                 "etag",
             ],
             "maxAgeSeconds": 3600,
-        }
+        },
     ]
 
 
@@ -841,28 +869,57 @@ def _get_native_b2(key: str) -> bytes | None:
         raise StorageError("Backblaze B2 native download connection failed.", 503) from exc
 
 
+def _native_upload_client(timeout: int) -> httpx.Client:
+    """Force IPv4. Render often cannot complete TLS to B2 upload pods over IPv6."""
+    return httpx.Client(
+        timeout=httpx.Timeout(timeout, connect=min(10, timeout)),
+        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+        follow_redirects=False,
+    )
+
+
 def _put_native_b2(key: str, payload: bytes, *, content_type: str | None) -> None:
-    info = _b2_get_upload_url()
     sha1 = hashlib.sha1(payload).hexdigest()
-    headers = {
-        "Authorization": info["authorizationToken"],
-        "X-Bz-File-Name": quote(key, safe="/"),
-        "Content-Type": (content_type or "application/octet-stream"),
-        "X-Bz-Content-Sha1": sha1,
-    }
-    req = Request(info["uploadUrl"], data=payload, headers=headers, method="POST")
-    try:
-        with urlopen(req, timeout=_NATIVE_TRANSFER_TIMEOUT) as resp:
-            resp.read()
-    except HTTPError as exc:
-        raw = exc.read().decode("utf-8", "replace")[:240]
-        blob = raw.lower()
-        if "storage_cap" in blob or "cap exceeded" in blob or "cap_exceeded" in blob:
-            raise StorageError(
-                "Backblaze B2 storage cap exceeded. "
-                "In B2, open Caps & Alerts and raise or remove the daily storage cap.",
-                503,
-            ) from exc
-        raise StorageError(f"Backblaze B2 native upload failed ({exc.code}).", 503) from exc
-    except URLError as exc:
-        raise StorageError("Backblaze B2 native upload connection failed.", 503) from exc
+    last: BaseException | None = None
+    for attempt in range(_NATIVE_PUT_ATTEMPTS):
+        try:
+            info = _b2_get_upload_url()
+            headers = {
+                "Authorization": info["authorizationToken"],
+                "X-Bz-File-Name": quote(key, safe="/"),
+                "Content-Type": (content_type or "application/octet-stream"),
+                "X-Bz-Content-Sha1": sha1,
+                "Content-Length": str(len(payload)),
+            }
+            with _native_upload_client(_NATIVE_PUT_TIMEOUT) as client:
+                resp = client.post(info["uploadUrl"], content=payload, headers=headers)
+            if resp.status_code in (401, 503):
+                last = StorageError(
+                    f"Backblaze B2 native upload failed ({resp.status_code}).",
+                    503,
+                )
+                continue
+            if resp.status_code >= 400:
+                blob = (resp.text or "")[:240].lower()
+                if "storage_cap" in blob or "cap exceeded" in blob or "cap_exceeded" in blob:
+                    raise StorageError(
+                        "Backblaze B2 storage cap exceeded. "
+                        "In B2, open Caps & Alerts and raise or remove the daily storage cap.",
+                        503,
+                    )
+                raise StorageError(
+                    f"Backblaze B2 native upload failed ({resp.status_code}).",
+                    503,
+                )
+            return
+        except StorageError:
+            raise
+        except Exception as exc:
+            last = exc
+            current_app.logger.warning(
+                "b2 native put attempt failed key=%s attempt=%s err=%s",
+                key,
+                attempt + 1,
+                exc,
+            )
+    raise StorageError("Backblaze B2 native upload connection failed.", 503) from last

@@ -47,23 +47,7 @@
 
 				<div class="col-xl-12">
 					<div class="usis-est-toolbar">
-						<div class="usis-est-folder-tabs" id="usis-est-board-tabs" role="tablist">
-							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=lead" data-usis-est-tab="lead" role="tab" aria-selected="false">
-								<i class="fa fa-th-large" aria-hidden="true"></i>
-								<span data-i18n="Lead">Lead</span>
-								<span class="usis-est-folder-count" data-usis-est-count="lead"></span>
-							</a>
-							<a class="usis-est-folder-tab active" href="construction/estimate.html" data-usis-est-tab="will_submit" role="tab" aria-selected="true">
-								<i class="fa fa-file-alt" aria-hidden="true"></i>
-								<span data-i18n="Estimate">Estimate</span>
-								<span class="usis-est-folder-count" data-usis-est-count="will_submit"></span>
-							</a>
-							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=submitted" data-usis-est-tab="submitted" role="tab" aria-selected="false">
-								<i class="fa fa-briefcase" aria-hidden="true"></i>
-								<span data-i18n="Submitted">Submitted</span>
-								<span class="usis-est-folder-count" data-usis-est-count="submitted"></span>
-							</a>
-						</div>
+						@@include("../elements/estimate-folder-tabs.html")
 						<div class="usis-est-toolbar-search">
 							<i class="flaticon-381-search-2 usis-est-search-icon" aria-hidden="true"></i>
 							<input type="search" id="usis-est-table-filter" placeholder="Search name, number, trade..." autocomplete="off" aria-label="Search name, number, trade">
@@ -214,7 +198,7 @@
 	<script src="assets/js/usis-bc-write.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>
-	<script src="assets/js/usis-estimate-board.js?v=20260902a"></script>
+	<script src="assets/js/usis-estimate-board.js?v=20260906a"></script>
 	
 </body>
 </html>

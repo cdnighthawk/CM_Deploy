@@ -15,6 +15,7 @@
 		Leads: "Prospectos",
 		Lead: "Prospecto",
 		Estimate: "Estimación",
+		"GS Plan": "Plan GS",
 		Projects: "Proyectos",
 		Calendar: "Calendario",
 		Safety: "Seguridad",

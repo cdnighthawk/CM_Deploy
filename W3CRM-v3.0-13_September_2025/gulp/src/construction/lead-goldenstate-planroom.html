@@ -46,12 +46,17 @@
 			
 			<div class="page-title">
 				@@include("../elements/breadcrumb.html", {
-					"fileName": "Leads — Golden State Planroom",
+					"fileName": "Estimate",
 				})
 			</div>
 
 			
 			<div class="container-fluid">
+				<div class="col-xl-12">
+					<div class="usis-est-toolbar">
+						@@include("../elements/estimate-folder-tabs.html")
+					</div>
+				</div>
 				<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 					<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 						<div class="input-group message-search-area width200 w-xs-100">
@@ -135,7 +140,7 @@
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
-	<script src="assets/js/usis-gs-planroom.js"></script>
+	<script src="assets/js/usis-gs-planroom.js?v=20260906a"></script>
 	
 </body>
 </html>

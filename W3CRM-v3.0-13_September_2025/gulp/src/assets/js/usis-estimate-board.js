@@ -1,7 +1,8 @@
 /**
- * Estimate board — Lead / Estimate / Submitted.
+ * Estimate board — Lead / Estimate / Submitted / GS Plan.
  * GET /api/v1/lead-estimates?submission_state=undecided|will_submit|submitted
  * Tab switches update the query only (pushState); no full page reload.
+ * GS Plan navigates to the Golden State planroom page.
  */
 (function () {
 	"use strict";
@@ -47,6 +48,7 @@
 		tab = String(tab).toLowerCase();
 		if (tab === "submitted") return "submitted";
 		if (tab === "lead" || tab === "leads" || tab === "undecided") return "lead";
+		if (tab === "gs_plan" || tab === "gs-plan" || tab === "gsplan") return "gs_plan";
 		return "will_submit";
 	}
 
@@ -64,14 +66,23 @@
 		var path = window.location.pathname;
 		if (board === "submitted") return path + "?tab=submitted";
 		if (board === "lead") return path + "?tab=lead";
+		if (board === "gs_plan") {
+			return path.replace(/estimate\.html$/i, "lead-goldenstate-planroom.html");
+		}
 		return path;
+	}
+
+	function isGsPlanHref(href) {
+		return !!(href && /lead-goldenstate-planroom\.html/i.test(href));
 	}
 
 	function boardFromHref(href) {
 		if (!href) return null;
+		if (isGsPlanHref(href)) return "gs_plan";
 		if (!/estimate\.html/i.test(href)) return null;
 		if (/[?&]tab=submitted\b/i.test(href)) return "submitted";
 		if (/[?&]tab=lead\b/i.test(href) || /[?&]tab=leads\b/i.test(href)) return "lead";
+		if (/[?&]tab=gs[_-]?plan\b/i.test(href)) return "gs_plan";
 		return "will_submit";
 	}
 
@@ -82,7 +93,18 @@
 	function pageTitleFor(board) {
 		if (board === "submitted") return "Construction — Submitted";
 		if (board === "lead") return "Construction — Lead";
+		if (board === "gs_plan") return "Construction — GS Plan";
 		return "Construction — Estimate";
+	}
+
+	function markEstimateNavActive() {
+		document.querySelectorAll('.deznav .metismenu > li > a[href*="estimate.html"]').forEach(function (a) {
+			var li = a.closest("li");
+			if (li) {
+				li.classList.add("mm-active", "active-no-child");
+			}
+			a.classList.add("mm-active");
+		});
 	}
 
 	function esc(s) {
@@ -403,6 +425,18 @@
 				})
 				.catch(function () {});
 		});
+		fetch(API.replace(/\/$/, "") + "/api/v1/golden-state-planroom/leads?limit=1", {
+			credentials: "include",
+			headers: { Accept: "application/json" },
+		})
+			.then(function (r) {
+				if (!r.ok) throw new Error("HTTP " + r.status);
+				return r.json();
+			})
+			.then(function (data) {
+				if (data && data.total != null) setTabCount("gs_plan", data.total);
+			})
+			.catch(function () {});
 		tabCountsPrefetched = true;
 	}
 
@@ -422,14 +456,7 @@
 		if (bulkBar && board === "submitted") {
 			bulkBar.classList.add("d-none");
 		}
-		document.querySelectorAll('.deznav a[href*="estimate.html"]').forEach(function (a) {
-			var href = a.getAttribute("href") || "";
-			var linkBoard = boardFromHref(href);
-			var on = linkBoard === board;
-			var li = a.closest("li");
-			if (li) li.classList.toggle("mm-active", on);
-			a.classList.toggle("mm-active", on);
-		});
+		markEstimateNavActive();
 	}
 
 	function switchBoard(board, replace) {
@@ -485,6 +512,11 @@
 	}
 
 	if (!tbody) return;
+
+	if (currentBoard() === "gs_plan") {
+		window.location.replace(urlForBoard("gs_plan"));
+		return;
+	}
 
 	autoFilter = bindAutoFilter();
 
@@ -570,15 +602,17 @@
 		if (isModifiedClick(e)) return;
 		var tabLink = e.target.closest("[data-usis-est-tab]");
 		if (tabLink) {
+			var tab = tabLink.getAttribute("data-usis-est-tab");
+			if (tab === "gs_plan") return;
 			e.preventDefault();
-			switchBoard(tabLink.getAttribute("data-usis-est-tab"));
+			switchBoard(tab);
 			return;
 		}
 		var navLink = e.target.closest('a[href*="estimate.html"]');
 		if (!navLink) return;
 		if (navLink.closest("[data-usis-est-tab]")) return;
 		var board = boardFromHref(navLink.getAttribute("href") || "");
-		if (!board) return;
+		if (!board || board === "gs_plan") return;
 		e.preventDefault();
 		switchBoard(board);
 	});

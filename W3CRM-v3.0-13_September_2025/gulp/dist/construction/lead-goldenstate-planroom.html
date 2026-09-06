@@ -341,25 +341,11 @@
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
 						</a>
 					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+										<li data-usis-module="estimate">
+						<a href="construction/estimate.html" aria-expanded="false">
 							<i class="icon feather icon-file-text"></i>
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
 						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="estimate">
-								<a href="construction/estimate.html" data-i18n="Board">Board</a>
-							</li>
-							<li data-usis-module="estimate">
-								<a href="construction/estimate.html?tab=submitted" data-i18n="Submitted">Submitted</a>
-							</li>
-							<li data-usis-module="leads">
-								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
-							</li>
-							<li data-usis-module="leads">
-								<a href="construction/lead-goldenstate-planroom.html" data-i18n="Golden State Planroom">Golden State Planroom</a>
-							</li>
-						</ul>
 					</li>
 					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
@@ -490,7 +476,7 @@
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="Leads — Golden State Planroom">Leads — Golden State Planroom</h1></li>
+						<li><h1 data-i18n="Estimate">Estimate</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -509,7 +495,7 @@
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="Leads — Golden State Planroom">Leads — Golden State Planroom</span>
+							<span data-i18n="Estimate">Estimate</span>
 
 						</li>
 					</ol>
@@ -519,6 +505,32 @@
 
 			
 			<div class="container-fluid">
+								<div class="col-xl-12">
+					<div class="usis-est-toolbar">
+						<div class="usis-est-folder-tabs" id="usis-est-board-tabs" role="tablist">
+							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=lead" data-usis-est-tab="lead" role="tab" aria-selected="false">
+								<i class="fa fa-th-large" aria-hidden="true"></i>
+								<span data-i18n="Lead">Lead</span>
+								<span class="usis-est-folder-count" data-usis-est-count="lead"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/estimate.html" data-usis-est-tab="will_submit" role="tab" aria-selected="false">
+								<i class="fa fa-file-alt" aria-hidden="true"></i>
+								<span data-i18n="Estimate">Estimate</span>
+								<span class="usis-est-folder-count" data-usis-est-count="will_submit"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=submitted" data-usis-est-tab="submitted" role="tab" aria-selected="false">
+								<i class="fa fa-briefcase" aria-hidden="true"></i>
+								<span data-i18n="Submitted">Submitted</span>
+								<span class="usis-est-folder-count" data-usis-est-count="submitted"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/lead-goldenstate-planroom.html" data-usis-est-tab="gs_plan" role="tab" aria-selected="false" title="Golden State Planroom">
+								<i class="fa fa-map" aria-hidden="true"></i>
+								<span data-i18n="GS Plan">GS Plan</span>
+								<span class="usis-est-folder-count" data-usis-est-count="gs_plan"></span>
+							</a>
+						</div>
+					</div>
+				</div>
 				<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 					<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 						<div class="input-group message-search-area width200 w-xs-100">
@@ -649,7 +661,7 @@
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
-	<script src="assets/js/usis-gs-planroom.js"></script>
+	<script src="assets/js/usis-gs-planroom.js?v=20260906a"></script>
 	
 </body>
 </html>

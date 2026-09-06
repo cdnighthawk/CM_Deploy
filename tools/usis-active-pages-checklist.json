@@ -4,7 +4,7 @@
   "pages": [
     { "path": "usis-dashboard-dark.html", "in_nav": "deznav,bottomnav" },
     { "path": "usis-dashboard.html", "in_nav": "dashboard-alt" },
-    { "path": "construction/leads.html", "in_nav": "deznav,bottomnav" },
+    { "path": "construction/leads.html", "in_nav": "flow" },
     { "path": "construction/projects.html", "in_nav": "deznav,bottomnav" },
     { "path": "construction/estimate.html", "in_nav": "deznav,bottomnav" },
     { "path": "construction/drawing-viewer.html", "in_nav": "bottomnav" },

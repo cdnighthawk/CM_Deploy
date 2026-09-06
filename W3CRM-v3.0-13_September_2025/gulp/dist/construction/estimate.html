@@ -331,25 +331,11 @@
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
 						</a>
 					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+										<li data-usis-module="estimate">
+						<a href="construction/estimate.html" aria-expanded="false">
 							<i class="icon feather icon-file-text"></i>
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
 						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="estimate">
-								<a href="construction/estimate.html" data-i18n="Board">Board</a>
-							</li>
-							<li data-usis-module="estimate">
-								<a href="construction/estimate.html?tab=submitted" data-i18n="Submitted">Submitted</a>
-							</li>
-							<li data-usis-module="leads">
-								<a href="construction/leads.html" data-i18n="Leads">Leads</a>
-							</li>
-							<li data-usis-module="leads">
-								<a href="construction/lead-goldenstate-planroom.html" data-i18n="Golden State Planroom">Golden State Planroom</a>
-							</li>
-						</ul>
 					</li>
 					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
@@ -514,13 +500,13 @@
 
 				<div class="col-xl-12">
 					<div class="usis-est-toolbar">
-						<div class="usis-est-folder-tabs" id="usis-est-board-tabs" role="tablist">
+												<div class="usis-est-folder-tabs" id="usis-est-board-tabs" role="tablist">
 							<a class="usis-est-folder-tab" href="construction/estimate.html?tab=lead" data-usis-est-tab="lead" role="tab" aria-selected="false">
 								<i class="fa fa-th-large" aria-hidden="true"></i>
 								<span data-i18n="Lead">Lead</span>
 								<span class="usis-est-folder-count" data-usis-est-count="lead"></span>
 							</a>
-							<a class="usis-est-folder-tab active" href="construction/estimate.html" data-usis-est-tab="will_submit" role="tab" aria-selected="true">
+							<a class="usis-est-folder-tab" href="construction/estimate.html" data-usis-est-tab="will_submit" role="tab" aria-selected="false">
 								<i class="fa fa-file-alt" aria-hidden="true"></i>
 								<span data-i18n="Estimate">Estimate</span>
 								<span class="usis-est-folder-count" data-usis-est-count="will_submit"></span>
@@ -529,6 +515,11 @@
 								<i class="fa fa-briefcase" aria-hidden="true"></i>
 								<span data-i18n="Submitted">Submitted</span>
 								<span class="usis-est-folder-count" data-usis-est-count="submitted"></span>
+							</a>
+							<a class="usis-est-folder-tab" href="construction/lead-goldenstate-planroom.html" data-usis-est-tab="gs_plan" role="tab" aria-selected="false" title="Golden State Planroom">
+								<i class="fa fa-map" aria-hidden="true"></i>
+								<span data-i18n="GS Plan">GS Plan</span>
+								<span class="usis-est-folder-count" data-usis-est-count="gs_plan"></span>
 							</a>
 						</div>
 						<div class="usis-est-toolbar-search">
@@ -728,7 +719,7 @@
 	<script src="assets/js/usis-bc-write.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>
-	<script src="assets/js/usis-estimate-board.js?v=20260902a"></script>
+	<script src="assets/js/usis-estimate-board.js?v=20260906a"></script>
 	
 </body>
 </html>

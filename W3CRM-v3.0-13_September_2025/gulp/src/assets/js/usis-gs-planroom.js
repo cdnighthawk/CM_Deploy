@@ -17,6 +17,57 @@
 	var loadError = null;
 	var autoFilter = null;
 
+	function setTabCount(board, n) {
+		var el = document.querySelector('[data-usis-est-count="' + board + '"]');
+		if (!el) return;
+		if (n == null || n === "") {
+			el.textContent = "";
+			return;
+		}
+		el.textContent = String(n);
+	}
+
+	function markEstimateNavActive() {
+		document.querySelectorAll('.deznav .metismenu > li > a[href*="estimate.html"]').forEach(function (a) {
+			var li = a.closest("li");
+			if (li) {
+				li.classList.add("mm-active", "active-no-child");
+			}
+			a.classList.add("mm-active");
+		});
+	}
+
+	function syncEstimateTabs() {
+		document.querySelectorAll("[data-usis-est-tab]").forEach(function (el) {
+			var on = el.getAttribute("data-usis-est-tab") === "gs_plan";
+			el.classList.toggle("active", on);
+			el.setAttribute("aria-selected", on ? "true" : "false");
+		});
+		markEstimateNavActive();
+	}
+
+	function prefetchBoardCounts() {
+		var api = (API || "").replace(/\/$/, "");
+		[
+			{ board: "lead", state: "undecided" },
+			{ board: "will_submit", state: "will_submit" },
+			{ board: "submitted", state: "submitted" },
+		].forEach(function (row) {
+			fetch(api + "/api/v1/lead-estimates?limit=1&submission_state=" + encodeURIComponent(row.state), {
+				credentials: "include",
+				headers: { Accept: "application/json" },
+			})
+				.then(function (r) {
+					if (!r.ok) throw new Error("HTTP " + r.status);
+					return r.json();
+				})
+				.then(function (data) {
+					if (data && data.total != null) setTabCount(row.board, data.total);
+				})
+				.catch(function () {});
+		});
+	}
+
 	function esc(s) {
 		return String(s == null ? "" : s)
 			.replace(/&/g, "&amp;")
@@ -238,6 +289,8 @@
 				allItems = data.items || [];
 				isFetching = false;
 				loadError = null;
+				if (data && data.total != null) setTabCount("gs_plan", data.total);
+				else setTabCount("gs_plan", allItems.length);
 				applyLocalFilter();
 			})
 			.catch(function (err) {
@@ -352,8 +405,13 @@
 			if (importInput.files && importInput.files[0]) importCsv(importInput.files[0]);
 		});
 	}
+	syncEstimateTabs();
+	prefetchBoardCounts();
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", loadLeads);
+		document.addEventListener("DOMContentLoaded", function () {
+			syncEstimateTabs();
+			loadLeads();
+		});
 	} else {
 		loadLeads();
 	}

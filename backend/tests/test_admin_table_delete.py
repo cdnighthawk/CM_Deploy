@@ -106,6 +106,45 @@ def test_delete_document_row(client, flask_app):
         assert db.session.get(Document, uuid.UUID(did)) is None
 
 
+def test_project_writer_can_delete_document(client, flask_app, monkeypatch):
+    _skip_if_no_db(flask_app)
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    email = "writer_doc_" + uuid.uuid4().hex[:8] + "@t.com"
+    with flask_app.app_context():
+        from app.models import Role, RoleModulePermission, UserRole
+
+        role = Role(code="doc_writer_" + uuid.uuid4().hex[:6], name="Doc Writer")
+        db.session.add(role)
+        db.session.flush()
+        db.session.add(RoleModulePermission(role_id=role.id, module_code="projects", access_level="write"))
+        db.session.add(RoleModulePermission(role_id=role.id, module_code="documents", access_level="write"))
+        u = User(email=email, password_hash=generate_password_hash("pw-1"), is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        p = Project(
+            name="DocW-" + uuid.uuid4().hex[:8],
+            number="DW-" + uuid.uuid4().hex[:6],
+            status="active",
+            project_type="commercial",
+        )
+        db.session.add(p)
+        db.session.commit()
+        uid = str(u.id)
+        pid = str(p.id)
+
+    hdr = {"X-Usis-User-Id": uid}
+    created = client.post(
+        f"/api/v1/projects/{pid}/documents",
+        json={"title": "Packet", "document_type": "other"},
+        headers=hdr,
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    did = created.get_json()["item"]["id"]
+    gone = client.delete(f"/api/v1/documents/{did}", headers=hdr)
+    assert gone.status_code == 200, gone.get_data(as_text=True)
+
+
 def test_delete_rfp(client, flask_app):
     _skip_if_no_db(flask_app)
     created = client.post("/api/v1/rfps", json={"title": "Delete me"})

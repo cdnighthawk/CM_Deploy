@@ -85,6 +85,13 @@ def test_spec_section_delete_is_write_not_admin():
     assert http_method_min_level("DELETE") == "admin"
 
 
+def test_document_and_photo_delete_is_write_not_admin():
+    did = "9814519d-6bec-48cc-bb38-3e1e28e21bc8"
+    assert http_method_min_level("DELETE", f"/api/v1/documents/{did}") == "write"
+    assert http_method_min_level("DELETE", f"/api/v1/photos/{did}") == "write"
+    assert http_method_min_level("DELETE", f"/api/v1/projects/{did}") == "admin"
+
+
 def test_line_card_and_buy_channel_delete_is_write():
     cid = "1ff506fd-fe21-4455-9dae-72697f0bd344"
     rid = "9814519d-6bec-48cc-bb38-3e1e28e21bc8"

@@ -169,6 +169,17 @@ def test_field_photo_file_requires_project_access(client, no_dev_admin):
     listed = client.get(f"/api/v1/projects/{pid}/photos", headers={"X-Usis-User-Id": oid})
     assert listed.get_json()["items"][0]["caption"] == "north"
 
+    denied_del = client.delete(
+        f"/api/v1/photos/{item['id']}",
+        headers={"X-Usis-User-Id": xid},
+    )
+    assert denied_del.status_code == 404
+    gone = client.delete(
+        f"/api/v1/photos/{item['id']}",
+        headers={"X-Usis-User-Id": oid},
+    )
+    assert gone.status_code == 200, gone.get_data(as_text=True)
+
 
 def test_put_daily_report_requires_project_access_before_write(client, no_dev_admin):
     with client.application.app_context():

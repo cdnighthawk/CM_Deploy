@@ -424,9 +424,12 @@
 						return (
 							'<div class="col-6 col-md-3"><div class="card border-0 shadow-sm h-100"><img src="' +
 							esc(src) +
-							'" class="card-img-top" alt="" style="height:8rem;object-fit:cover"><div class="card-body p-2 small">' +
+							'" class="card-img-top" alt="" style="height:8rem;object-fit:cover"><div class="card-body p-2 small d-flex justify-content-between align-items-start gap-2">' +
+							"<span>" +
 							esc(ph.caption || ph.album || "Photo") +
-							"</div></div></div>"
+							'</span><button type="button" class="btn btn-sm btn-outline-danger py-0 usis-photo-del" data-id="' +
+							esc(ph.id) +
+							'">Delete</button></div></div></div>'
 						);
 					})
 					.join("");
@@ -732,6 +735,20 @@
 		});
 		var up = document.getElementById("usis-photo-upload");
 		if (up) up.addEventListener("click", uploadPhoto);
+		var gallery = document.getElementById("usis-photo-gallery");
+		if (gallery) {
+			gallery.addEventListener("click", function (e) {
+				var btn = e.target.closest(".usis-photo-del");
+				if (!btn) return;
+				var pid = btn.getAttribute("data-id");
+				if (!pid || !window.confirm("Delete this photo?")) return;
+				fetchJson("/api/v1/photos/" + encodeURIComponent(pid), { method: "DELETE" })
+					.then(loadPhotos)
+					.catch(function (err) {
+						window.alert((err && err.message) || "Could not delete photo.");
+					});
+			});
+		}
 	}
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", onReady);

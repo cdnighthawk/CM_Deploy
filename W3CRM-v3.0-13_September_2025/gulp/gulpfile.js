@@ -166,7 +166,11 @@ function FileIncludeHtml() {
     .pipe(gulpIf("*.css", postcss([autoprefixer(), cssnano()])))
     .pipe(gulpIf("*.js", terser()))
     .pipe(dest(filePath.dist.basedist))
-    .pipe(browserSync.stream());
+    .pipe(browserSync.stream())
+    .on("error", function (err) {
+      console.error("FileIncludeHtml:", err && err.message ? err.message : err);
+      this.emit("end");
+    });
 }
 
 //==============================

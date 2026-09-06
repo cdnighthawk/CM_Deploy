@@ -6,11 +6,15 @@ Revises: 0103_hiring
 0104_tx_sync_id is a local-only revision (untracked). Render's flask db upgrade
 could not find that parent, so the Wave 1 create pages never left the previous
 deploy — production 404s.
+
+Render uses psycopg3, which rejects more than one SQL command per execute().
+Keep each ALTER / DO block as its own statement.
 """
 from __future__ import annotations
 
 from typing import Sequence, Union
 
+import sqlalchemy as sa
 from alembic import op
 
 revision: str = "0105_w1_tools"
@@ -19,40 +23,144 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def _exec(sql: str) -> None:
+    op.execute(sa.text(sql.strip()))
+
+
 def upgrade() -> None:
-    op.execute(
+    _exec(
         """
         ALTER TABLE IF EXISTS change_proposal_requests
-            ADD COLUMN IF NOT EXISTS origin varchar(40) DEFAULT 'other',
-            ADD COLUMN IF NOT EXISTS source_tm_ticket_id uuid,
-            ADD COLUMN IF NOT EXISTS source_rfi_id uuid;
-        ALTER TABLE IF EXISTS owner_change_orders
-            ADD COLUMN IF NOT EXISTS approved_revises_contract boolean NOT NULL DEFAULT false,
-            ADD COLUMN IF NOT EXISTS contract_value_applied numeric(15, 2),
-            ADD COLUMN IF NOT EXISTS source_tm_ticket_id uuid,
-            ADD COLUMN IF NOT EXISTS gc_company_id uuid;
-        ALTER TABLE IF EXISTS subcontract_change_orders
-            ADD COLUMN IF NOT EXISTS value_applied numeric(15, 2);
-        ALTER TABLE IF EXISTS purchase_order_change_orders
-            ADD COLUMN IF NOT EXISTS applied boolean NOT NULL DEFAULT false,
-            ADD COLUMN IF NOT EXISTS amount_applied numeric(15, 2),
-            ADD COLUMN IF NOT EXISTS line_snapshot jsonb NOT NULL DEFAULT '[]'::jsonb;
-        ALTER TABLE IF EXISTS sub_invoices
-            ADD COLUMN IF NOT EXISTS period_start date,
-            ADD COLUMN IF NOT EXISTS period_end date,
-            ADD COLUMN IF NOT EXISTS retainage_pct numeric(5, 2),
-            ADD COLUMN IF NOT EXISTS this_period numeric(15, 2),
-            ADD COLUMN IF NOT EXISTS previous_to_date numeric(15, 2),
-            ADD COLUMN IF NOT EXISTS amount_due numeric(15, 2);
-        ALTER TABLE IF EXISTS meetings
-            ADD COLUMN IF NOT EXISTS meeting_type varchar(40) DEFAULT 'other',
-            ADD COLUMN IF NOT EXISTS start_time varchar(16),
-            ADD COLUMN IF NOT EXISTS end_time varchar(16),
-            ADD COLUMN IF NOT EXISTS facilitator_user_id uuid,
-            ADD COLUMN IF NOT EXISTS minutes text;
+            ADD COLUMN IF NOT EXISTS origin varchar(40) DEFAULT 'other'
         """
     )
-    op.execute(
+    _exec(
+        """
+        ALTER TABLE IF EXISTS change_proposal_requests
+            ADD COLUMN IF NOT EXISTS source_tm_ticket_id uuid
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS change_proposal_requests
+            ADD COLUMN IF NOT EXISTS source_rfi_id uuid
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS owner_change_orders
+            ADD COLUMN IF NOT EXISTS approved_revises_contract boolean NOT NULL DEFAULT false
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS owner_change_orders
+            ADD COLUMN IF NOT EXISTS contract_value_applied numeric(15, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS owner_change_orders
+            ADD COLUMN IF NOT EXISTS source_tm_ticket_id uuid
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS owner_change_orders
+            ADD COLUMN IF NOT EXISTS gc_company_id uuid
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS subcontract_change_orders
+            ADD COLUMN IF NOT EXISTS value_applied numeric(15, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS purchase_order_change_orders
+            ADD COLUMN IF NOT EXISTS applied boolean NOT NULL DEFAULT false
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS purchase_order_change_orders
+            ADD COLUMN IF NOT EXISTS amount_applied numeric(15, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS purchase_order_change_orders
+            ADD COLUMN IF NOT EXISTS line_snapshot jsonb NOT NULL DEFAULT '[]'::jsonb
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS sub_invoices
+            ADD COLUMN IF NOT EXISTS period_start date
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS sub_invoices
+            ADD COLUMN IF NOT EXISTS period_end date
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS sub_invoices
+            ADD COLUMN IF NOT EXISTS retainage_pct numeric(5, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS sub_invoices
+            ADD COLUMN IF NOT EXISTS this_period numeric(15, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS sub_invoices
+            ADD COLUMN IF NOT EXISTS previous_to_date numeric(15, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS sub_invoices
+            ADD COLUMN IF NOT EXISTS amount_due numeric(15, 2)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS meetings
+            ADD COLUMN IF NOT EXISTS meeting_type varchar(40) DEFAULT 'other'
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS meetings
+            ADD COLUMN IF NOT EXISTS start_time varchar(16)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS meetings
+            ADD COLUMN IF NOT EXISTS end_time varchar(16)
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS meetings
+            ADD COLUMN IF NOT EXISTS facilitator_user_id uuid
+        """
+    )
+    _exec(
+        """
+        ALTER TABLE IF EXISTS meetings
+            ADD COLUMN IF NOT EXISTS minutes text
+        """
+    )
+    _exec(
         """
         DO $$ BEGIN
             ALTER TABLE change_proposal_requests
@@ -60,21 +168,32 @@ def upgrade() -> None:
                 FOREIGN KEY (source_rfi_id) REFERENCES rfis(id) ON DELETE SET NULL;
         EXCEPTION WHEN duplicate_object THEN NULL;
                   WHEN undefined_table THEN NULL;
-        END $$;
+                  WHEN undefined_column THEN NULL;
+        END $$
+        """
+    )
+    _exec(
+        """
         DO $$ BEGIN
             ALTER TABLE owner_change_orders
                 ADD CONSTRAINT fk_oco_gc_company
                 FOREIGN KEY (gc_company_id) REFERENCES companies(id) ON DELETE SET NULL;
         EXCEPTION WHEN duplicate_object THEN NULL;
                   WHEN undefined_table THEN NULL;
-        END $$;
+                  WHEN undefined_column THEN NULL;
+        END $$
+        """
+    )
+    _exec(
+        """
         DO $$ BEGIN
             ALTER TABLE meetings
                 ADD CONSTRAINT fk_meetings_facilitator
                 FOREIGN KEY (facilitator_user_id) REFERENCES users(id) ON DELETE SET NULL;
         EXCEPTION WHEN duplicate_object THEN NULL;
                   WHEN undefined_table THEN NULL;
-        END $$;
+                  WHEN undefined_column THEN NULL;
+        END $$
         """
     )
 

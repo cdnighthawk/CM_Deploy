@@ -48,13 +48,17 @@ The app does **not** read a single `back_blaze` (or similar) variable. If you on
 
 There is **no CORS key**. Do **not** add `CORS`, `CORS_KEY`, or anything like that under Render → Environment. That list is only for the two Backblaze **application key** values (see §2 and §4).
 
-CORS is a **rule on the B2 bucket**. You set it once. Employees never see it. The PDF installer does not take a CORS key.
+CORS is a **rule on the B2 bucket**, not a Render variable. Employees never see it.
+
+The Backblaze bucket screen **“Share everything in this bucket with this one origin”** only allows the website to **read** files. It does **not** allow the browser to **upload**. That preset is why a drawing upload can still fail after you pick `https://www.usiscm.com`.
+
+The website now writes the **upload** CORS rule itself on deploy (and again when it hands the browser a B2 upload URL). You do not need to use that Backblaze preset.
 
 | What people confuse | Where it actually goes |
 |---------------------|------------------------|
 | B2 **keyID** | Render → **usis-cm** → **Environment** → `B2_APPLICATION_KEY_ID` |
 | B2 **applicationKey** | Render → **usis-cm** → **Environment** → `B2_APPLICATION_KEY` |
-| CORS | Backblaze → bucket **USIS-construction-docs** → CORS rules (below) |
+| CORS | Written by the app onto bucket **USIS-construction-docs** (upload + download). Optional JSON below if you set it by hand. |
 
 ### Where to click in Backblaze
 

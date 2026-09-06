@@ -113,7 +113,7 @@
 					var msg = (err && err.message) || String(err);
 					if (/failed to fetch|networkerror|cors/i.test(msg)) {
 						throw new Error(
-							"The browser could not write the PDF to company storage. Check B2 CORS for https://www.usiscm.com, then try again."
+							"Could not store the PDF yet. Wait about a minute and upload once more."
 						);
 					}
 					throw err;

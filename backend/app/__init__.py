@@ -332,6 +332,9 @@ def create_app(config_object: str | None = None) -> Flask:
     from .ap._sync_loop import start_invoice_mailbox_sync_loop
 
     start_invoice_mailbox_sync_loop(app)
+    from .services.object_storage import start_b2_cors_ensure
+
+    start_b2_cors_ensure(app)
 
     if os.environ.get("USIS_BOOTSTRAP_LEADS_ON_STARTUP", "true").strip().lower() in (
         "0",

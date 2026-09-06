@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import uuid
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -418,9 +419,10 @@ def test_b2_read_falls_back_to_native_when_s3_drops(mock_client_factory, _head_n
             assert resp.get_data() == b"%PDF-1.4 native"
 
 
+@patch("app.services.object_storage.ensure_browser_cors", return_value=True)
 @patch("app.services.object_storage.time.sleep", return_value=None)
 @patch("app.services.object_storage._b2_get_upload_url")
-def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, flask_app):
+def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, _cors, flask_app):
     mock_get_url.side_effect = [RuntimeError("b2 busy"), {"uploadUrl": "https://pod.example/up", "authorizationToken": "tok"}]
     flask_app.config.update(
         {
@@ -438,3 +440,33 @@ def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, flask
         assert session["mode"] == "b2_native"
         assert session["url"] == "https://pod.example/up"
         assert mock_get_url.call_count == 2
+
+
+@patch("app.services.object_storage._b2_http_json")
+@patch("app.services.object_storage._b2_bucket_id", return_value="bucket-1")
+@patch(
+    "app.services.object_storage._b2_authorize",
+    return_value={"accountId": "acc", "apiUrl": "https://api.backblazeb2.com", "authorizationToken": "tok"},
+)
+def test_ensure_browser_cors_writes_upload_rule(mock_auth, _bucket, mock_http, flask_app):
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+            "USIS_APP_PUBLIC_URL": "https://www.usiscm.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services import object_storage as osvc
+
+        osvc._cors_applied["ok"] = False
+        osvc._cors_applied["at"] = 0.0
+        mock_http.return_value = {"corsRules": osvc.browser_cors_rules(["https://www.usiscm.com"])}
+        assert osvc.ensure_browser_cors() is True
+        body = json.loads(mock_http.call_args.args[0].data.decode())
+        rule = body["corsRules"][0]
+        assert "b2_upload_file" in rule["allowedOperations"]
+        assert "https://www.usiscm.com" in rule["allowedOrigins"]
+        assert osvc._cors_applied["ok"] is True

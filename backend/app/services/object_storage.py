@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import threading
 import time
 from enum import StrEnum
 from pathlib import Path
@@ -46,6 +47,12 @@ _S3_READ_TIMEOUT = 40
 _NATIVE_TRANSFER_TIMEOUT = 120
 _AUTH_TTL_SEC = 50 * 60
 _auth_cache: dict = {"at": 0.0, "key_id": "", "data": None}
+_cors_applied = {"ok": False, "at": 0.0}
+_CORS_TTL_SEC = 6 * 60 * 60
+_DEFAULT_BROWSER_ORIGINS = (
+    "https://www.usiscm.com",
+    "https://usiscm.onrender.com",
+)
 
 
 class UploadCategory(StrEnum):
@@ -367,6 +374,7 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
     """
     if not b2_enabled():
         return None
+    ensure_browser_cors()
     key = object_key(category, object_name)
     last: BaseException | None = None
     for attempt in range(3):
@@ -385,6 +393,114 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
                 time.sleep(0.4 * (2**attempt))
     current_app.logger.warning("b2 native upload url failed key=%s err=%s", key, last)
     return None
+
+
+def browser_cors_origins() -> list[str]:
+    """Website origins that may POST a one-shot B2 upload from the browser."""
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def add(raw: str | None) -> None:
+        s = (raw or "").strip().rstrip("/")
+        if not s.startswith("http://") and not s.startswith("https://"):
+            return
+        key = s.lower()
+        if key in seen:
+            return
+        seen.add(key)
+        out.append(s)
+
+    add(current_app.config.get("USIS_APP_PUBLIC_URL"))
+    for origin in current_app.config.get("CORS_ORIGINS") or ():
+        add(str(origin))
+    for origin in _DEFAULT_BROWSER_ORIGINS:
+        add(origin)
+    return out
+
+
+def browser_cors_rules(origins: list[str] | None = None) -> list[dict]:
+    """Native B2 CORS that allows browser upload, not only download/share."""
+    allowed = [o for o in (origins or browser_cors_origins()) if o]
+    return [
+        {
+            "corsRuleName": "usis-cm-browser",
+            "allowedOrigins": allowed,
+            "allowedOperations": [
+                "b2_upload_file",
+                "b2_download_file_by_name",
+                "b2_download_file_by_id",
+                "s3_put",
+                "s3_head",
+                "s3_get",
+            ],
+            "allowedHeaders": ["*"],
+            "exposeHeaders": [
+                "x-bz-file-id",
+                "x-bz-file-name",
+                "x-bz-content-sha1",
+                "etag",
+            ],
+            "maxAgeSeconds": 3600,
+        }
+    ]
+
+
+def ensure_browser_cors() -> bool:
+    """Write upload-capable CORS onto the bucket. The B2 'share with this origin' UI is download-only."""
+    if not b2_enabled():
+        return False
+    now = time.time()
+    if _cors_applied.get("ok") and now - float(_cors_applied.get("at") or 0) < _CORS_TTL_SEC:
+        return True
+    origins = browser_cors_origins()
+    if not origins:
+        return False
+    try:
+        auth = _b2_authorize()
+        bucket_id = _b2_bucket_id(auth)
+        body = json.dumps(
+            {
+                "accountId": auth.get("accountId"),
+                "bucketId": bucket_id,
+                "corsRules": browser_cors_rules(origins),
+            }
+        ).encode()
+        req = Request(
+            f"{auth['apiUrl']}/b2api/v2/b2_update_bucket",
+            data=body,
+            headers={
+                "Authorization": auth["authorizationToken"],
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        _b2_http_json(req, _S3_CONNECT_TIMEOUT)
+        _cors_applied["ok"] = True
+        _cors_applied["at"] = now
+        current_app.logger.info("b2 browser upload CORS applied origins=%s", ",".join(origins))
+        return True
+    except Exception as exc:
+        current_app.logger.warning("b2 browser upload CORS apply failed err=%s", exc)
+        return False
+
+
+def start_b2_cors_ensure(app) -> None:
+    """Apply upload CORS once after boot so the first drawing upload is not blocked."""
+    import os
+    import sys
+
+    if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    def _run() -> None:
+        time.sleep(2)
+        try:
+            with app.app_context():
+                ensure_browser_cors()
+        except Exception:
+            app.logger.warning("b2 cors ensure thread failed", exc_info=True)
+
+    threading.Thread(target=_run, name="b2-cors-ensure", daemon=True).start()
 
 
 def presigned_get_url(

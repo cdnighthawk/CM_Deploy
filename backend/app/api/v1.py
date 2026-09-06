@@ -1302,6 +1302,22 @@ def list_projects():
     return _jsonify(payload)
 
 
+@bp.post("/projects")
+def create_project():
+    """Create a job (defaults to active) so drawings and documents can be uploaded."""
+    body = request.get_json(silent=True) or {}
+    cu = current_user()
+    try:
+        item = project_svc.create_project(body, member_user_id=cu.id)
+    except project_svc.ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    except IntegrityError:
+        db.session.rollback()
+        return _jsonify({"error": "project number already in use"}), 409
+    db.session.commit()
+    return _jsonify({"item": item, "entity": "project"}), 201
+
+
 @bp.get("/projects/<project_id>")
 def get_project(project_id: str):
     """Single project by UUID (Job info tab)."""
@@ -5760,9 +5776,12 @@ _user_activity_svc.register_activity_routes(bp)
 from . import _field_routes as _field_routes_mod  # noqa: E402
 
 _field_routes_mod.register_field_routes(bp)
-from . import _field_punch_routes as _field_punch_routes_mod  # noqa: E402
-
-_field_punch_routes_mod.register_field_punch_routes(bp)
+try:
+    from . import _field_punch_routes as _field_punch_routes_mod  # noqa: E402
+except ModuleNotFoundError:
+    _field_punch_routes_mod = None
+if _field_punch_routes_mod is not None:
+    _field_punch_routes_mod.register_field_punch_routes(bp)
 from . import _safety_routes as _safety_routes_mod  # noqa: E402
 
 _safety_routes_mod.register_safety_routes(bp)

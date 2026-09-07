@@ -12,7 +12,7 @@
 	var filterInput = document.getElementById("usis-est-table-filter");
 	var filterCount = document.getElementById("usis-est-filter-count");
 	var bulkBar = document.getElementById("usis-est-bulk-bar");
-	var COLSPAN = 7;
+	var COLSPAN = 8;
 
 	var allItems = [];
 	var isFetching = false;
@@ -128,6 +128,15 @@
 				return p != null && String(p).trim() !== "";
 			})
 			.join(", ");
+	}
+
+	function formatDistanceMiles(raw) {
+		if (raw == null || raw === "") return '<span class="text-muted">—</span>';
+		var n = Number(raw);
+		if (isNaN(n)) return '<span class="text-muted">—</span>';
+		if (n < 1) return "&lt;1 mi";
+		if (n < 10) return esc(n.toFixed(1) + " mi");
+		return esc(String(Math.round(n)) + " mi");
 	}
 
 	function formatDueDate(iso) {
@@ -257,6 +266,9 @@
 			"<td>" +
 			locCell +
 			"</td>" +
+			'<td class="usis-est-col-dist text-nowrap">' +
+			formatDistanceMiles(row.distance_miles) +
+			"</td>" +
 			'<td class="text-end">' +
 			actions +
 			"</td>" +
@@ -273,6 +285,7 @@
 			row.city,
 			row.state,
 			row.zip,
+			row.distance_miles,
 			row.due_at,
 			row.external_id,
 			row.id,
@@ -507,6 +520,7 @@
 						return locationLine(row);
 					},
 				},
+				{ key: "distance_miles", label: "Dist", type: "number", sortable: true, filterable: true },
 			],
 			onChange: function () {
 				applyTableFilter();

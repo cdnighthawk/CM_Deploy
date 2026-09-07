@@ -247,13 +247,68 @@
 		);
 	}
 
+	function submitUpdate(ids, state, extra, modalEl, confirmBtn) {
+		var payload = { submissionState: state };
+		if (state === "DECLINED") {
+			payload.declineReasons = (extra && extra.declineReasons) || ["TOO_BUSY"];
+			payload.note = (extra && extra.note) || "";
+		}
+		if (confirmBtn) confirmBtn.disabled = true;
+		var req = ids.length > 1 ? patchSubmissionBulk(ids, payload) : patchSubmission(ids[0], payload);
+		return req
+			.then(function (result) {
+				if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+					window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+				}
+				if (ids.length > 1 && result && result.status === "started") {
+					if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
+						window.USISListBulk.clear();
+					}
+					notify(
+						"info",
+						result.message ||
+							"Sending " + ids.length + " updates to BuildingConnected in the background."
+					);
+					refreshListsInBackground();
+					return;
+				}
+				if (ids.length > 1) summarizeBulk(result, state);
+				else {
+					notify(
+						"success",
+						state === "DECLINED"
+							? "Marked Will Not Bid in BuildingConnected."
+							: "BuildingConnected status updated.",
+					);
+				}
+				if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
+					window.USISListBulk.clear();
+				}
+				document.dispatchEvent(
+					new CustomEvent("usis-bc-write-done", { detail: { ids: ids, state: state } }),
+				);
+				reloadLists();
+			})
+			.catch(function (err) {
+				var msg = err.message || "BuildingConnected update failed";
+				if (isReconnectError(msg)) offerReconnect(msg);
+				else notify("error", msg);
+			})
+			.finally(function () {
+				if (confirmBtn) confirmBtn.disabled = false;
+			});
+	}
+
 	function openDialog(idOrIds, state, name) {
 		var ids = asIdList(idOrIds);
 		if (!ids.length) return;
+		if (state === "WILL_SUBMIT") {
+			submitUpdate(ids, state, null, null, null);
+			return;
+		}
 		ensureModal();
 		var modalEl = document.getElementById("usis-bc-write-modal");
-		var title =
-			state === "DECLINED" ? "Will Not Bid" : state === "WILL_SUBMIT" ? "Will Bid" : "Undecided";
+		var title = state === "DECLINED" ? "Will Not Bid" : "Undecided";
 		var target =
 			ids.length > 1
 				? ids.length + " selected opportunities"
@@ -267,54 +322,14 @@
 		var confirmBtn = document.getElementById("usis-bc-write-confirm");
 		confirmBtn.className = "btn btn-sm " + (state === "DECLINED" ? "btn-danger" : "btn-primary");
 		confirmBtn.onclick = function () {
-			var payload = { submissionState: state };
+			var extra = null;
 			if (state === "DECLINED") {
-				payload.declineReasons = [document.getElementById("usis-bc-write-reason").value];
-				payload.note = document.getElementById("usis-bc-write-note").value;
+				extra = {
+					declineReasons: [document.getElementById("usis-bc-write-reason").value],
+					note: document.getElementById("usis-bc-write-note").value,
+				};
 			}
-			confirmBtn.disabled = true;
-			var req = ids.length > 1 ? patchSubmissionBulk(ids, payload) : patchSubmission(ids[0], payload);
-			req.then(function (result) {
-					if (window.bootstrap && window.bootstrap.Modal) {
-						window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-					}
-					if (ids.length > 1 && result && result.status === "started") {
-						if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
-							window.USISListBulk.clear();
-						}
-						notify(
-							"info",
-							result.message ||
-								"Sending " + ids.length + " updates to BuildingConnected in the background."
-						);
-						refreshListsInBackground();
-						return;
-					}
-					if (ids.length > 1) summarizeBulk(result, state);
-					else {
-						notify(
-							"success",
-							state === "DECLINED"
-								? "Marked Will Not Bid in BuildingConnected."
-								: "BuildingConnected status updated.",
-						);
-					}
-					if (window.USISListBulk && typeof window.USISListBulk.clear === "function") {
-						window.USISListBulk.clear();
-					}
-					document.dispatchEvent(
-						new CustomEvent("usis-bc-write-done", { detail: { ids: ids, state: state } }),
-					);
-					reloadLists();
-				})
-				.catch(function (err) {
-					var msg = err.message || "BuildingConnected update failed";
-					if (isReconnectError(msg)) offerReconnect(msg);
-					else notify("error", msg);
-				})
-				.finally(function () {
-					confirmBtn.disabled = false;
-				});
+			submitUpdate(ids, state, extra, modalEl, confirmBtn);
 		};
 		if (window.bootstrap && window.bootstrap.Modal) {
 			window.bootstrap.Modal.getOrCreateInstance(modalEl).show();

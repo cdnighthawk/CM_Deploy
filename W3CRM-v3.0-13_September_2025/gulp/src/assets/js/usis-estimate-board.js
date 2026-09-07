@@ -513,11 +513,11 @@
 				{
 					key: "location",
 					label: "Location",
-					type: "text",
+					type: "singleSelect",
 					sortable: true,
 					filterable: true,
 					getValue: function (row) {
-						return locationLine(row);
+						return row.state ? String(row.state).trim().toUpperCase() : "";
 					},
 				},
 				{ key: "distance_miles", label: "Dist", type: "number", sortable: true, filterable: true },

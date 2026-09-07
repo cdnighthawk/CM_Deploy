@@ -86,8 +86,8 @@
 		}
 		#usis-bc-leads-table th.usis-bc-col-company,
 		#usis-bc-leads-table td.usis-bc-col-company,
-		#usis-bc-leads-table th.usis-bc-col-city,
-		#usis-bc-leads-table td.usis-bc-col-city {
+		#usis-bc-leads-table th.usis-bc-col-location,
+		#usis-bc-leads-table td.usis-bc-col-location {
 			white-space: normal;
 			word-break: break-word;
 			overflow-wrap: break-word;
@@ -98,10 +98,10 @@
 			width: 14%;
 			max-width: 14%;
 		}
-		#usis-bc-leads-table th.usis-bc-col-city,
-		#usis-bc-leads-table td.usis-bc-col-city {
-			width: 10%;
-			max-width: 10%;
+		#usis-bc-leads-table th.usis-bc-col-location,
+		#usis-bc-leads-table td.usis-bc-col-location {
+			width: 14%;
+			max-width: 14%;
 		}
 		#usis-bc-leads-table th.usis-bc-col-dist,
 		#usis-bc-leads-table td.usis-bc-col-dist {
@@ -544,7 +544,7 @@
 					<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
 						<div class="clearfix gap-2 d-flex flex-wrap align-items-center">
 							<div class="input-group message-search-area width200 w-xs-100">
-								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (lead, trade, company, city, state, distance, bid due)" data-i18n-placeholder="Filter table (lead, trade, company, city, state, distance, bid due)" autocomplete="off">
+								<input type="text" class="form-control border-end-0" id="usis-bc-table-filter" placeholder="Filter table (lead, trade, company, location, distance, bid due)" data-i18n-placeholder="Filter table (lead, trade, company, location, distance, bid due)" autocomplete="off">
 								<div class="input-group-append">
 									<button type="button" class="input-group-text rounded-0 rounded-end border-start-0" id="usis-bc-table-filter-btn" aria-label="Apply filter"><i class="flaticon-381-search-2"></i></button>
 								</div>
@@ -606,8 +606,7 @@
 									<th class="usis-bc-col-lead" data-sort-key="name" data-i18n="Lead">Lead</th>
 									<th class="text-nowrap usis-bc-col-trade" data-sort-key="trade_name" data-i18n="Trade invited">Trade invited</th>
 									<th class="usis-bc-col-company" data-sort-key="company_name" data-i18n="Company">Company</th>
-									<th class="usis-bc-col-city" data-sort-key="city" data-i18n="City">City</th>
-									<th class="text-nowrap" data-sort-key="state" data-i18n="State">State</th>
+									<th class="usis-bc-col-location" data-sort-key="location" data-i18n="Location">Location</th>
 									<th class="usis-bc-col-dist text-nowrap" data-sort-key="distance_miles" data-i18n="Dist" title="Distance from your office">Dist</th>
 									<th class="text-nowrap" data-sort-key="due_at" data-i18n="Bid due date">Bid due date</th>
 									<th class="text-center text-nowrap" data-sort-key="estimate" data-i18n="Estimate">Estimate</th>
@@ -616,7 +615,7 @@
 							</thead>
 							<tbody id="usis-bc-leads-tbody">
 								<tr>
-									<td colspan="10" class="text-muted" data-i18n="Loading leads from API…">Loading leads from API…</td>
+									<td colspan="9" class="text-muted" data-i18n="Loading leads from API…">Loading leads from API…</td>
 								</tr>
 							</tbody>
 						</table>
@@ -878,7 +877,7 @@
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js?v=20260905b"></script>
+<script src="assets/js/usis-nav-access.js?v=20260906c"></script>
 	<script src="assets/js/usis-command-palette.js?v=20260905b"></script>
 	<script src="assets/js/usis-header-bell.js?v=20260905b"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
@@ -924,7 +923,7 @@
 		var autoFilter = null;
 
 		var emptyMessage =
-			'<tr><td colspan="10" class="text-muted">No current Bid Board leads. The list matches Undecided parents/standalones that are assigned and still due.</td></tr>';
+			'<tr><td colspan="9" class="text-muted">No current Bid Board leads. The list matches Undecided parents/standalones that are assigned and still due.</td></tr>';
 
 		function esc(s) {
 			return String(s == null ? "" : s)
@@ -961,6 +960,18 @@
 			}
 		}
 
+		function locationLine(row) {
+			return [row.city, row.state]
+				.filter(function (p) {
+					return p != null && String(p).trim() !== "";
+				})
+				.join(", ");
+		}
+
+		function leadState(row) {
+			return row.state ? String(row.state).trim().toUpperCase() : "";
+		}
+
 		function estimateBadges(row) {
 			if (row.estimate_approved_at) {
 				var t = String(row.estimate_approved_at).slice(0, 16);
@@ -993,8 +1004,8 @@
 				? '<span class="text-muted">' + esc(trade) + "</span>"
 				: '<span class="text-muted">—</span>';
 			var company = esc(row.company_name || "—");
-			var city = esc(row.city || "—");
-			var state = esc(row.state || "—");
+			var loc = locationLine(row);
+			var locCell = loc ? esc(loc) : "—";
 			var dist = formatDistanceMiles(row.distance_miles);
 			var bidDue = formatBidDueDate(row.due_at);
 			var apiRoot = (API || "").replace(/\/$/, "");
@@ -1038,8 +1049,7 @@
 				"<td class=\"usis-bc-col-lead\">" + leadCell + "</td>" +
 				"<td class=\"usis-bc-col-trade\">" + tradeCell + "</td>" +
 				'<td class="usis-bc-col-company" title="' + company + '">' + company + "</td>" +
-				'<td class="usis-bc-col-city" title="' + city + '">' + city + "</td>" +
-				'<td class="text-nowrap">' + state + "</td>" +
+				'<td class="usis-bc-col-location" title="' + locCell + '">' + locCell + "</td>" +
 				'<td class="usis-bc-col-dist text-nowrap">' + dist + "</td>" +
 				'<td class="text-nowrap">' + bidDue + "</td>" +
 				'<td class="text-center text-nowrap">' + estimateBadges(row) + "</td>" +
@@ -1074,7 +1084,7 @@
 				if (filterCount) filterCount.textContent = "";
 				if (q) {
 					tbody.innerHTML =
-						'<tr><td colspan="10" class="text-muted">No rows match your filter. Clear the search box to see all loaded leads (or reload if the list is empty).</td></tr>';
+						'<tr><td colspan="9" class="text-muted">No rows match your filter. Clear the search box to see all loaded leads (or reload if the list is empty).</td></tr>';
 				} else {
 					tbody.innerHTML = emptyMessage;
 				}
@@ -1089,7 +1099,7 @@
 			}
 			if (!filtered.length) {
 				tbody.innerHTML =
-					'<tr><td colspan="10" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
+					'<tr><td colspan="9" class="text-muted">No rows match your column filters and/or search. Clear a column filter or the search box.</td></tr>';
 			} else {
 				var rows = autoFilter ? autoFilter.sort(filtered) : filtered;
 				tbody.innerHTML = rows.map(renderRow).join("");
@@ -1139,7 +1149,7 @@
 			allItems = [];
 			if (filterCount) filterCount.textContent = "";
 			if (window.USISListBulk && window.USISListBulk.clear) window.USISListBulk.clear();
-			tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Loading…</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Loading…</td></tr>';
 			var listUrl = API.replace(/\/$/, "") + "/api/v1/lead-estimates?limit=500&submission_state=undecided";
 			if (window.USIS_API && window.USISLeadsFilters) {
 				listUrl = window.USIS_API.buildUrl("/api/v1/lead-estimates", window.USISLeadsFilters.listParams());
@@ -1178,7 +1188,7 @@
 					isFetching = false;
 					loadError = err.message;
 					tbody.innerHTML =
-						'<tr><td colspan="10" class="text-danger">Could not load leads: ' +
+						'<tr><td colspan="9" class="text-danger">Could not load leads: ' +
 						esc(err.message) +
 						".</td></tr>";
 				});
@@ -1199,8 +1209,14 @@
 						{ key: "name", label: "Lead", type: "text", sortable: true, filterable: true },
 						{ key: "trade_name", label: "Trade invited", type: "singleSelect", sortable: true, filterable: true },
 						{ key: "company_name", label: "Company", type: "text", sortable: true, filterable: true },
-						{ key: "city", label: "City", type: "text", sortable: true, filterable: true },
-						{ key: "state", label: "State", type: "singleSelect", sortable: true, filterable: true },
+						{
+							key: "location",
+							label: "Location",
+							type: "singleSelect",
+							sortable: true,
+							filterable: true,
+							getValue: leadState,
+						},
 						{ key: "distance_miles", label: "Dist", type: "number", sortable: true, filterable: true },
 						{ key: "due_at", label: "Bid due date", type: "date", sortable: true, filterable: true },
 						{

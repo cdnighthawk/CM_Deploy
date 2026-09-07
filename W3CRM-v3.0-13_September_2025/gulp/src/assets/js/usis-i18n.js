@@ -497,6 +497,7 @@
 		"Contract admin hub": "Centro de admin. de contrato",
 		Index: "Índice",
 		"Add lead": "Agregar prospecto",
+		"New project": "Nuevo proyecto",
 		"Sync BC": "Sincronizar BC",
 		"Reconnect BC": "Reconectar BC",
 		"Will Bid": "Va a cotizar",
@@ -506,8 +507,8 @@
 		Dist: "Dist.",
 		"Bid due date": "Fecha de cotización",
 		"Lead (Building Connected)": "Prospecto (Building Connected)",
-		"Filter table (lead, trade, company, city, state, distance, bid due)":
-			"Filtrar tabla (prospecto, oficio, empresa, ciudad, estado, distancia, fecha)",
+		"Filter table (lead, trade, company, location, distance, bid due)":
+			"Filtrar tabla (prospecto, oficio, empresa, ubicación, distancia, fecha)",
 		"Saved filters": "Filtros guardados",
 		"Save filter": "Guardar filtro",
 		"Filter name": "Nombre del filtro",

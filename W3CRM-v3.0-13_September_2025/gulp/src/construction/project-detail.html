@@ -1515,37 +1515,20 @@
 		<div class="modal-dialog modal-lg modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">Upload drawing (PDF)</h5>
+					<h5 class="modal-title">Upload drawings (PDF)</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<div class="alert alert-danger py-2 d-none" id="usis-drawing-upload-err" role="alert"></div>
-					<p class="text-muted small mb-2">Name each PDF <code>{Sheet}_{Title}.pdf</code> (example <code>A1-001_ENTRY-PLAN.pdf</code>). Sheet #, title, and discipline are read from the filename. A multi-page PDF still splits into one row per page.</p>
-					<div class="row g-2 mb-2">
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-drawing-discipline">Discipline</label>
-							<select class="form-select form-select-sm" id="usis-drawing-discipline">
-								<option value="">From filename</option>
-								<option>Architectural</option>
-								<option>Structural</option>
-								<option>Mechanical</option>
-								<option>Electrical</option>
-								<option>Plumbing</option>
-								<option>Civil</option>
-								<option>Landscape</option>
-								<option>Fire Protection</option>
-								<option>General</option>
-								<option>Interiors</option>
-							</select>
-						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-drawing-set">Set</label>
-							<input class="form-control form-control-sm" type="text" id="usis-drawing-set" placeholder="Permit-Set, Bulletin-15, Current" maxlength="120">
-						</div>
+					<p class="text-muted small mb-2">Select one or more PDFs named <code>{Sheet}_{Title}.pdf</code> (example <code>A1-001_ENTRY-PLAN.pdf</code>). Sheet #, title, and discipline are read from each filename. A multi-page PDF still splits into one row per page.</p>
+					<div class="mb-2">
+						<label class="form-label small mb-0" for="usis-drawing-set">Set</label>
+						<input class="form-control form-control-sm" type="text" id="usis-drawing-set" placeholder="Permit-Set, Bulletin-15, Current" maxlength="120">
 					</div>
 					<div class="mb-0">
-						<label class="form-label small mb-0" for="usis-drawing-file">PDF file <span class="text-danger">*</span></label>
-						<input class="form-control form-control-sm" type="file" id="usis-drawing-file" accept=".pdf,application/pdf">
+						<label class="form-label small mb-0" for="usis-drawing-file">PDF files <span class="text-danger">*</span></label>
+						<input class="form-control form-control-sm" type="file" id="usis-drawing-file" accept=".pdf,application/pdf" multiple>
+						<div class="small mt-2" id="usis-drawing-file-preview"></div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -2274,7 +2257,8 @@
 	<script src="assets/js/project-detail-wave1.js?v=20260905a"></script>
 	<script src="assets/js/project-detail-wave2.js?v=20260906b"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
-	<script src="assets/js/project-detail-tools.js?v=20260906e"></script>
+	<script src="assets/js/usis-drawing-upload.js?v=20260906f"></script>
+	<script src="assets/js/project-detail-tools.js?v=20260906f"></script>
 	<script src="assets/js/project-detail-schedule.js"></script>
 	<script src="assets/js/project-detail-tasks.js?v=20260906a"></script>
 	<script src="assets/js/project-detail-procurement.js?v=20260831d"></script>

@@ -807,6 +807,9 @@
 				esc(row.submittal_type) +
 				"</td><td>" +
 				esc(row.status) +
+				(row.import_source === "sage_cm"
+					? ' <span class="badge bg-secondary-subtle text-secondary border" title="Imported from Sage CM">Sage CM</span>'
+					: "") +
 				"</td><td>" +
 				esc(row.responsible_contractor) +
 				"</td><td>" +
@@ -878,70 +881,83 @@
 		if (s1) s1.addEventListener("input", applySubmittalFilter);
 		if (s2) s2.addEventListener("change", applySubmittalFilter);
 
+		var fileEl = document.getElementById("usis-drawing-file");
+		var previewEl = document.getElementById("usis-drawing-file-preview");
+		if (fileEl && !fileEl.dataset.usisPreviewWired) {
+			fileEl.dataset.usisPreviewWired = "1";
+			fileEl.addEventListener("change", function () {
+				var helper = window.USISDrawingUpload;
+				if (!helper) return;
+				helper.renderFilePreview(previewEl, helper.listPdfFiles(fileEl.files));
+			});
+		}
+
 		var drawUp = document.getElementById("usis-drawing-upload-submit");
 		if (drawUp && !drawUp.dataset.usisWired) {
 			drawUp.dataset.usisWired = "1";
 			drawUp.addEventListener("click", function () {
 				var pid = activeProjectId || projectIdFromQuery();
 				if (!pid) return;
+				var helper = window.USISDrawingUpload;
 				var err = document.getElementById("usis-drawing-upload-err");
-				var fileEl = document.getElementById("usis-drawing-file");
+				var fileInput = document.getElementById("usis-drawing-file");
 				if (err) {
 					err.classList.add("d-none");
 					err.textContent = "";
+					err.style.whiteSpace = "pre-line";
 				}
-				if (!fileEl || !fileEl.files || !fileEl.files[0]) {
+				if (!helper) {
 					if (err) {
-						err.textContent = "Choose a PDF file.";
+						err.textContent = "Drawing upload script failed to load.";
 						err.classList.remove("d-none");
 					}
 					return;
 				}
-				var fd = new FormData();
-				fd.append("file", fileEl.files[0]);
-				fd.append("split_pages", "true");
-				var discEl = document.getElementById("usis-drawing-discipline");
+				var files = helper ? helper.listPdfFiles(fileInput && fileInput.files) : [];
+				if (!files.length) {
+					if (err) {
+						err.textContent = "Choose one or more PDF files.";
+						err.classList.remove("d-none");
+					}
+					return;
+				}
 				var setEl = document.getElementById("usis-drawing-set");
-				if (discEl && discEl.value) fd.append("discipline", discEl.value);
-				if (setEl && setEl.value) fd.append("drawing_set", setEl.value.trim());
 				var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
-				fetch(url, {
-					method: "POST",
-					body: fd,
-					credentials: "include",
-					headers: actorHeaders(),
-				})
-					.then(function (res) {
-						return res.text().then(function (t) {
-							var j = null;
-							try {
-								j = t ? JSON.parse(t) : null;
-							} catch (parseErr) {
-								j = null;
-							}
-							if (j && j.file_pending && j.upload && j.item) {
-								return finishClientDrawingUpload(j, fileEl.files[0]);
-							}
-							if (!res.ok) {
-								var msg = res.status + " " + (t || res.statusText);
-								if (j && (j.error || j.detail)) {
-									msg = [j.error, j.detail].filter(Boolean).join(": ");
-								}
-								throw new Error(msg);
-							}
-							return j;
-						});
+				var label = drawUp.textContent;
+				drawUp.disabled = true;
+				helper
+					.uploadFiles({
+						url: url,
+						files: files,
+						drawingSet: setEl && setEl.value ? setEl.value.trim() : "",
+						headers: actorHeaders(),
+						onProgress: function (n, total) {
+							drawUp.textContent = "Uploading " + n + " of " + total + "…";
+						},
 					})
-					.then(function () {
+					.then(function (result) {
+						drawUp.disabled = false;
+						drawUp.textContent = label;
+						if (result.failed && result.failed.length) {
+							if (err) {
+								err.textContent = helper.formatResultMessage(result);
+								err.classList.remove("d-none");
+							}
+							if (result.ok) return loadAll(pid);
+							return;
+						}
 						var modalEl = document.getElementById("usis-modal-drawing-create");
 						if (modalEl && window.bootstrap && window.bootstrap.Modal) {
 							var inst = window.bootstrap.Modal.getInstance(modalEl);
 							if (inst) inst.hide();
 						}
-						if (fileEl) fileEl.value = "";
+						if (fileInput) fileInput.value = "";
+						if (previewEl) previewEl.innerHTML = "";
 						return loadAll(pid);
 					})
 					.catch(function (e) {
+						drawUp.disabled = false;
+						drawUp.textContent = label;
 						if (err) {
 							err.textContent = e.message || String(e);
 							err.classList.remove("d-none");

@@ -42,7 +42,7 @@
 			drawingUploadSubmit: "usis-lead-drawing-upload-submit",
 			drawingUploadErr: "usis-lead-drawing-upload-err",
 			drawingFile: "usis-lead-drawing-file",
-			drawingDiscipline: "usis-lead-drawing-discipline",
+			drawingFilePreview: "usis-lead-drawing-file-preview",
 			drawingSet: "usis-lead-drawing-set",
 			modalDrawingCreate: "usis-lead-modal-drawing-create",
 		},

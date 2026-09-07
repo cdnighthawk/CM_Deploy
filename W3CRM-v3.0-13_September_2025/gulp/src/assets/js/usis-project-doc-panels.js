@@ -880,70 +880,83 @@
 			if (r1) r1.addEventListener("input", applyRfiFilter);
 			if (r2) r2.addEventListener("change", applyRfiFilter);
 
+			var fileEl = el(ids.drawingFile);
+			var previewEl = el(ids.drawingFilePreview);
+			if (fileEl && !fileEl.dataset.usisPreviewWired) {
+				fileEl.dataset.usisPreviewWired = "1";
+				fileEl.addEventListener("change", function () {
+					var helper = global.USISDrawingUpload;
+					if (!helper) return;
+					helper.renderFilePreview(previewEl, helper.listPdfFiles(fileEl.files));
+				});
+			}
+
 			var upBtn = el(ids.drawingUploadSubmit);
 			if (upBtn && !upBtn.dataset.usisWired) {
 				upBtn.dataset.usisWired = "1";
 				upBtn.addEventListener("click", function () {
 					var pid = activeProjectId;
 					if (!pid) return;
+					var helper = global.USISDrawingUpload;
 					var err = el(ids.drawingUploadErr);
-					var fileEl = el(ids.drawingFile);
+					var fileInput = el(ids.drawingFile);
 					if (err) {
 						err.classList.add("d-none");
 						err.textContent = "";
+						err.style.whiteSpace = "pre-line";
 					}
-					if (!fileEl || !fileEl.files || !fileEl.files[0]) {
+					if (!helper) {
 						if (err) {
-							err.textContent = "Choose a PDF file.";
+							err.textContent = "Drawing upload script failed to load.";
 							err.classList.remove("d-none");
 						}
 						return;
 					}
-					var fd = new FormData();
-					fd.append("file", fileEl.files[0]);
-					fd.append("split_pages", "true");
-					var discEl = el(ids.drawingDiscipline);
+					var files = helper ? helper.listPdfFiles(fileInput && fileInput.files) : [];
+					if (!files.length) {
+						if (err) {
+							err.textContent = "Choose one or more PDF files.";
+							err.classList.remove("d-none");
+						}
+						return;
+					}
 					var setEl = el(ids.drawingSet);
-					if (discEl && discEl.value) fd.append("discipline", discEl.value);
-					if (setEl && setEl.value) fd.append("drawing_set", setEl.value.trim());
 					var url = apiBase() + "/api/v1/projects/" + encodeURIComponent(pid) + "/drawings";
-					fetch(url, {
-						method: "POST",
-						body: fd,
-						credentials: "include",
-						headers: actorHeaders(),
-					})
-						.then(function (res) {
-							return res.text().then(function (t) {
-								var j = null;
-								try {
-									j = t ? JSON.parse(t) : null;
-								} catch (parseErr) {
-									j = null;
-								}
-								if (j && j.file_pending && j.upload && j.item) {
-									return finishClientDrawingUpload(j, fileEl.files[0]);
-								}
-								if (!res.ok) {
-									var msg = res.status + " " + (t || res.statusText);
-									if (j && (j.error || j.detail)) {
-										msg = [j.error, j.detail].filter(Boolean).join(": ");
-									}
-									throw new Error(msg);
-								}
-								return j;
-							});
+					var label = upBtn.textContent;
+					upBtn.disabled = true;
+					helper
+						.uploadFiles({
+							url: url,
+							files: files,
+							drawingSet: setEl && setEl.value ? setEl.value.trim() : "",
+							headers: actorHeaders(),
+							onProgress: function (n, total) {
+								upBtn.textContent = "Uploading " + n + " of " + total + "…";
+							},
 						})
-						.then(function () {
+						.then(function (result) {
+							upBtn.disabled = false;
+							upBtn.textContent = label;
+							if (result.failed && result.failed.length) {
+								if (err) {
+									err.textContent = helper.formatResultMessage(result);
+									err.classList.remove("d-none");
+								}
+								if (result.ok) return loadProject(pid);
+								return;
+							}
 							var modalEl = el(ids.modalDrawingCreate);
 							if (modalEl && global.bootstrap && global.bootstrap.Modal) {
 								var inst = global.bootstrap.Modal.getInstance(modalEl);
 								if (inst) inst.hide();
 							}
-							if (fileEl) fileEl.value = "";
+							if (fileInput) fileInput.value = "";
+							if (previewEl) previewEl.innerHTML = "";
 							return loadProject(pid);
 						})
 						.catch(function (e) {
+							upBtn.disabled = false;
+							upBtn.textContent = label;
 							if (err) {
 								err.textContent = e.message || String(e);
 								err.classList.remove("d-none");

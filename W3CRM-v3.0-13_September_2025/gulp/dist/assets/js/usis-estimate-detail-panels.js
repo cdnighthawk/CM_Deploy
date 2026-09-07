@@ -45,7 +45,7 @@
 						drawingUploadSubmit: "usis-estd-drawing-upload-submit",
 						drawingUploadErr: "usis-estd-drawing-upload-err",
 						drawingFile: "usis-estd-drawing-file",
-						drawingDiscipline: "usis-estd-drawing-discipline",
+						drawingFilePreview: "usis-estd-drawing-file-preview",
 						drawingSet: "usis-estd-drawing-set",
 						modalDrawingCreate: "usis-estd-modal-drawing-create",
 					},

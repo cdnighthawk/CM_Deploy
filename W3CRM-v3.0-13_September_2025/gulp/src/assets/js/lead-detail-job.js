@@ -299,29 +299,36 @@
 			})
 			.join("");
 		el.innerHTML =
-			'<div class="card border-0 shadow-sm"><div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">' +
+			'<div class="card border-0 shadow-sm"><div class="card-body py-2 d-flex align-items-center justify-content-between gap-2">' +
+			'<div class="d-flex align-items-center gap-2">' +
 			'<label class="small mb-0 text-muted text-uppercase">CRM</label>' +
 			'<select class="form-select form-select-sm" style="max-width:13rem" id="usis-crm-stage">' +
 			opts +
 			"</select>" +
-			'<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-crm-save-stage">Save stage</button>' +
-			'<button type="button" class="btn btn-sm btn-outline-danger" id="usis-crm-wnb">Will Not Bid</button>' +
-			'<button type="button" class="btn btn-sm btn-outline-success" id="usis-crm-will-bid">Will Bid</button>' +
-			'<button type="button" class="btn btn-sm btn-success" id="usis-crm-award">Award (new project)</button>' +
-			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-crm-ai">AI feasibility</button>' +
-			'<button type="button" class="btn btn-sm btn-outline-dark" id="usis-crm-open-estimates">Estimates</button>' +
-			'<a class="btn btn-sm btn-outline-dark" href="' +
+			"</div>" +
+			'<div class="dropdown custom-dropdown mb-0">' +
+			'<button type="button" class="btn btn-square btn-sm rounded" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" aria-label="Lead actions">' +
+			'<i class="fa-solid fa-ellipsis-vertical"></i></button>' +
+			'<div class="dropdown-menu dropdown-menu-end">' +
+			'<button type="button" class="dropdown-item" id="usis-crm-save-stage">Save stage</button>' +
+			'<button type="button" class="dropdown-item text-danger" id="usis-crm-wnb">Will Not Bid</button>' +
+			'<button type="button" class="dropdown-item text-success" id="usis-crm-will-bid">Will Bid</button>' +
+			'<button type="button" class="dropdown-item text-success" id="usis-crm-award">Award (new project)</button>' +
+			'<div class="dropdown-divider"></div>' +
+			'<button type="button" class="dropdown-item" id="usis-crm-ai">AI feasibility</button>' +
+			'<button type="button" class="dropdown-item" id="usis-crm-open-estimates">Estimates</button>' +
+			'<a class="dropdown-item" href="' +
 			estHref +
 			'" title="' +
 			esc(lockTitle) +
 			'">Takeoff</a>' +
-			'<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer" href="' +
+			'<a class="dropdown-item" target="_blank" rel="noopener noreferrer" href="' +
 			quoteHref +
 			'" title="Print / save PDF from browser">Quote report</a>' +
-			'<a class="btn btn-sm btn-outline-dark" href="usis-rfp-list.html?lead_estimate_id=' +
+			'<a class="dropdown-item" href="usis-rfp-list.html?lead_estimate_id=' +
 			encodeURIComponent(item.id) +
 			'">RFP list</a>' +
-			"</div></div>";
+			"</div></div></div></div>";
 		var idForApi = item.id;
 		var openEstimates = document.getElementById("usis-crm-open-estimates");
 		if (openEstimates) {

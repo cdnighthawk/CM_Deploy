@@ -181,7 +181,14 @@
 		if (!id) return Promise.resolve();
 		return fetchJson("/api/v1/me/chat/conversations/" + encodeURIComponent(id) + "/read", {
 			method: "POST",
-		}).catch(function () {});
+		})
+			.then(function (data) {
+				if (typeof window.usisRefreshHeaderNotifications === "function") {
+					window.usisRefreshHeaderNotifications();
+				}
+				return data;
+			})
+			.catch(function () {});
 	}
 
 	function openConversation(id, convHint) {

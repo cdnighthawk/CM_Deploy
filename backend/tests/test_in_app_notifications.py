@@ -50,6 +50,28 @@ def test_list_and_mark_read(client, no_dev_admin):
     assert again.get_json()["unread"] == 0
 
 
+def test_mark_all_read(client, no_dev_admin):
+    from app.api._in_app_notifications import register_on_app
+
+    register_on_app(client.application)
+    with client.application.app_context():
+        u = User(email="notif_all_" + uuid.uuid4().hex[:8] + "@t.com", is_active=True)
+        db.session.add(u)
+        db.session.flush()
+        create_in_app_notification(user_id=u.id, title="One", url="/one")
+        create_in_app_notification(user_id=u.id, title="Two", url="/two")
+        db.session.commit()
+        uid = str(u.id)
+
+    listed = client.get("/api/v1/me/notifications", headers={"X-Usis-User-Id": uid})
+    assert listed.get_json()["unread"] == 2
+    marked = client.post("/api/v1/me/notifications/read-all", headers={"X-Usis-User-Id": uid})
+    assert marked.status_code == 200
+    assert marked.get_json()["unread"] == 0
+    again = client.get("/api/v1/me/notifications", headers={"X-Usis-User-Id": uid})
+    assert again.get_json()["unread"] == 0
+
+
 def test_notifications_require_sign_in(client, no_dev_admin):
     from app.api._in_app_notifications import register_on_app
 

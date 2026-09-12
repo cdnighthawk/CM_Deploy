@@ -1,5 +1,6 @@
 /**
- * Show the header bell only when the signed-in user has notifications.
+ * Unhide the header bell when the signed-in user has notifications.
+ * List contents and the unread badge are owned by usis-header-notifications.js.
  */
 (function (global) {
 	"use strict";
@@ -19,43 +20,6 @@
 		return "";
 	}
 
-	function esc(s) {
-		return String(s == null ? "" : s)
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;");
-	}
-
-	function render(items) {
-		var item = document.getElementById("usis-header-bell-item");
-		var list = document.getElementById("usis-header-bell-list");
-		if (!item || !list) return;
-		if (!items || !items.length) {
-			item.classList.add("d-none");
-			return;
-		}
-		item.classList.remove("d-none");
-		list.innerHTML = items
-			.map(function (n) {
-				var href = n.url ? esc(n.url) : "#";
-				var title = esc(n.title || "Notice");
-				var unread = n.read ? "" : " fw-semibold";
-				return (
-					'<a class="dropdown-item py-2' +
-					unread +
-					'" href="' +
-					href +
-					'" data-usis-note-id="' +
-					esc(n.id || "") +
-					'">' +
-					title +
-					"</a>"
-				);
-			})
-			.join("");
-	}
-
 	function init() {
 		var item = document.getElementById("usis-header-bell-item");
 		if (!item) return;
@@ -68,7 +32,13 @@
 				return r.json();
 			})
 			.then(function (data) {
-				render(data.items || []);
+				var items = (data && data.items) || [];
+				var unread = Number((data && data.unread) || 0);
+				if (!items.length && !unread) {
+					item.classList.add("d-none");
+					return;
+				}
+				item.classList.remove("d-none");
 			})
 			.catch(function () {
 				item.classList.add("d-none");

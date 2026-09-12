@@ -79,6 +79,11 @@ def notification_public(row: HrmsNotification) -> dict[str, Any]:
     }
 
 
+def _payload_url(row: HrmsNotification) -> str:
+    payload = row.payload if isinstance(row.payload, dict) else {}
+    return str(payload.get("url") or "").strip()
+
+
 def list_for_user(cu: CurrentUser, *, limit: int = 40) -> dict[str, Any]:
     uid = _require_user(cu)
     n = max(1, min(int(limit or 40), 100))
@@ -89,7 +94,17 @@ def list_for_user(cu: CurrentUser, *, limit: int = 40) -> dict[str, Any]:
         .limit(n)
     ).all()
     items = [notification_public(r) for r in rows]
-    unread = sum(1 for i in items if not i["read"])
+    unread = int(
+        db.session.scalar(
+            select(func.count())
+            .select_from(HrmsNotification)
+            .where(
+                HrmsNotification.user_id == uid,
+                HrmsNotification.read_at.is_(None),
+            )
+        )
+        or 0
+    )
     return {"items": items, "unread": unread, "entity": "notifications"}
 
 
@@ -103,6 +118,79 @@ def mark_read(cu: CurrentUser, notification_id: uuid.UUID) -> dict[str, Any] | N
         db.session.flush()
         db.session.commit()
     return notification_public(row)
+
+
+def mark_all_read(cu: CurrentUser) -> dict[str, Any]:
+    uid = _require_user(cu)
+    rows = db.session.scalars(
+        select(HrmsNotification).where(
+            HrmsNotification.user_id == uid,
+            HrmsNotification.read_at.is_(None),
+        )
+    ).all()
+    now = _utcnow()
+    for row in rows:
+        row.read_at = now
+    db.session.flush()
+    db.session.commit()
+    return {"unread": 0, "marked": len(rows), "entity": "notifications"}
+
+
+def upsert_url_notification(
+    *,
+    user_id: uuid.UUID,
+    title: str,
+    body: str | None = None,
+    url: str,
+    channel: str = "in_app",
+) -> HrmsNotification:
+    """Keep one unread bell item per destination URL (e.g. a chat thread)."""
+    target = (url or "").strip()
+    if target:
+        existing = db.session.scalars(
+            select(HrmsNotification)
+            .where(
+                HrmsNotification.user_id == user_id,
+                HrmsNotification.read_at.is_(None),
+            )
+            .order_by(HrmsNotification.created_at.desc())
+        ).all()
+        for row in existing:
+            if _payload_url(row) == target:
+                row.title = (title or "Notice")[:255]
+                row.body = body
+                row.channel = (channel or "in_app")[:32]
+                row.created_at = _utcnow()
+                db.session.flush()
+                return row
+    return create_in_app_notification(
+        user_id=user_id,
+        title=title,
+        body=body,
+        url=url,
+        channel=channel,
+    )
+
+
+def mark_unread_matching_url(*, user_id: uuid.UUID, url: str) -> int:
+    target = (url or "").strip()
+    if not target:
+        return 0
+    rows = db.session.scalars(
+        select(HrmsNotification).where(
+            HrmsNotification.user_id == user_id,
+            HrmsNotification.read_at.is_(None),
+        )
+    ).all()
+    now = _utcnow()
+    n = 0
+    for row in rows:
+        if _payload_url(row) == target:
+            row.read_at = now
+            n += 1
+    if n:
+        db.session.flush()
+    return n
 
 
 bp = Blueprint("in_app_notifications", __name__)
@@ -137,6 +225,14 @@ def mark_my_notification_read(notification_id: str):
     if item is None:
         return jsonify({"error": "not found", "entity": "notifications"}), 404
     return jsonify({"item": item, "entity": "notifications"})
+
+
+@bp.post("/api/v1/me/notifications/read-all")
+def mark_all_my_notifications_read():
+    try:
+        return jsonify(mark_all_read(current_user()))
+    except ApiError as exc:
+        return jsonify({"error": exc.message, "entity": "notifications"}), exc.status
 
 
 def register_on_app(app) -> None:

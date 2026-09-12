@@ -72,6 +72,21 @@ def test_send_and_receive_message(client, no_dev_admin):
     assert msgs[0]["mine"] is False
     assert msgs[0]["body"] == "Need you on the jobsite at 7."
 
+    sent2 = client.post(
+        f"/api/v1/me/chat/conversations/{conv_id}/messages",
+        json={"body": "Bring drawings."},
+        headers={"X-Usis-User-Id": alice_id},
+    )
+    assert sent2.status_code == 200
+
+    bell = client.get("/api/v1/me/notifications", headers={"X-Usis-User-Id": bob_id})
+    assert bell.status_code == 200
+    bell_body = bell.get_json()
+    assert bell_body["unread"] == 1
+    chat_notes = [i for i in bell_body["items"] if i["url"].endswith(f"?c={conv_id}")]
+    assert len(chat_notes) == 1
+    assert "drawings" in (chat_notes[0].get("body") or "")
+
     unread = client.get("/api/v1/me/chat/unread-count", headers={"X-Usis-User-Id": bob_id})
     assert unread.get_json()["unread"] == 1
 
@@ -84,6 +99,10 @@ def test_send_and_receive_message(client, no_dev_admin):
 
     again = client.get("/api/v1/me/chat/unread-count", headers={"X-Usis-User-Id": bob_id})
     assert again.get_json()["unread"] == 0
+
+    bell_after = client.get("/api/v1/me/notifications", headers={"X-Usis-User-Id": bob_id})
+    assert bell_after.status_code == 200
+    assert bell_after.get_json()["unread"] == 0
 
     reply = client.post(
         f"/api/v1/me/chat/conversations/{conv_id}/messages",

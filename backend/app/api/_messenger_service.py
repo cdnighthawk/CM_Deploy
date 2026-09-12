@@ -13,7 +13,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from ..extensions import db
 from ..models import User
 from ..models.chat import ChatConversation, ChatMessage, ChatParticipant
-from ._in_app_notifications import create_in_app_notification
+from ._in_app_notifications import mark_unread_matching_url, upsert_url_notification
 from ._perms import CurrentUser, current_user, users_for_picker
 
 MAX_BODY = 4000
@@ -298,7 +298,7 @@ def send_message(cu: CurrentUser, conversation_id: uuid.UUID, body: str) -> dict
     other = _other_participant(conv, me)
     if other is not None:
         preview = text if len(text) <= 160 else text[:157] + "..."
-        create_in_app_notification(
+        upsert_url_notification(
             user_id=other.user_id,
             title=f"Message from {_display_name(sender)}",
             body=preview,
@@ -318,6 +318,7 @@ def mark_read(cu: CurrentUser, conversation_id: uuid.UUID) -> dict[str, Any]:
     mine = _participant_for(conv, me)
     if mine is not None:
         mine.last_read_at = _utcnow()
+        mark_unread_matching_url(user_id=me, url=f"/usis-messenger.html?c={conv.id}")
         db.session.flush()
         db.session.commit()
     return {"item": _conversation_public(conv, me=me), "entity": "chat_conversations"}

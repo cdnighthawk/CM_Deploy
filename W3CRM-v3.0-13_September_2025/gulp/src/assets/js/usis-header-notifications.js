@@ -1,8 +1,10 @@
 /**
  * Populate the header bell from GET /api/v1/me/notifications.
  */
-(function () {
+(function (global) {
 	"use strict";
+
+	var unreadCount = 0;
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") {
@@ -33,31 +35,93 @@
 		return d.toLocaleString();
 	}
 
+	function setBellVisible(root, on) {
+		if (!root) return;
+		if (on) root.classList.remove("d-none");
+		else root.classList.add("d-none");
+	}
+
 	function setBadge(root, unread) {
+		unreadCount = Number(unread || 0);
 		var btn = root.querySelector("button.nav-link, a.nav-link");
 		if (!btn) return;
 		var badge = btn.querySelector(".usis-notif-badge");
-		if (!unread) {
+		if (!unreadCount) {
 			if (badge) badge.remove();
 			return;
 		}
 		if (!badge) {
 			badge = document.createElement("span");
 			badge.className = "usis-notif-badge badge bg-danger rounded-circle position-absolute";
-			badge.style.cssText = "top:4px;right:2px;min-width:1.05rem;height:1.05rem;font-size:0.65rem;line-height:1.05rem;padding:0;";
+			badge.style.cssText =
+				"top:4px;right:2px;min-width:1.05rem;height:1.05rem;font-size:0.65rem;line-height:1.05rem;padding:0;";
 			if (!btn.classList.contains("position-relative")) {
 				btn.classList.add("position-relative");
 			}
 			btn.appendChild(badge);
 		}
-		badge.textContent = unread > 9 ? "9+" : String(unread);
+		badge.textContent = unreadCount > 9 ? "9+" : String(unreadCount);
+	}
+
+	function markRead(id) {
+		if (!id) return Promise.resolve();
+		return fetch(apiBase() + "/api/v1/me/notifications/" + encodeURIComponent(id) + "/read", {
+			method: "POST",
+			credentials: "include",
+			keepalive: true,
+			headers: { Accept: "application/json" },
+		}).catch(function () {});
+	}
+
+	function markAllRead() {
+		return fetch(apiBase() + "/api/v1/me/notifications/read-all", {
+			method: "POST",
+			credentials: "include",
+			keepalive: true,
+			headers: { Accept: "application/json" },
+		}).catch(function () {});
+	}
+
+	function bindList(root, list) {
+		list.querySelectorAll(".usis-header-notif-item").forEach(function (a) {
+			a.addEventListener("click", function (ev) {
+				var id = a.getAttribute("data-notif-id");
+				var href = a.getAttribute("data-notif-url") || a.getAttribute("href") || "";
+				if (a.classList.contains("bg-action-light")) {
+					a.classList.remove("bg-action-light");
+					setBadge(root, Math.max(0, unreadCount - 1));
+				}
+				if (id) markRead(id);
+				if (href && href !== "#" && href.indexOf("javascript:") !== 0) {
+					ev.preventDefault();
+					window.setTimeout(function () {
+						window.location.assign(href);
+					}, 50);
+					return;
+				}
+				ev.preventDefault();
+			});
+		});
+		var markAll = list.querySelector("[data-usis-notif-mark-all]");
+		if (markAll) {
+			markAll.addEventListener("click", function (ev) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				setBadge(root, 0);
+				markAllRead().then(function () {
+					refresh();
+				});
+			});
+		}
 	}
 
 	function render(root, data) {
-		var list = root.querySelector(".dz-scroll") || root.querySelector(".dropdown-menu");
+		var list = root.querySelector("#usis-header-bell-list") || root.querySelector(".dz-scroll");
 		if (!list) return;
 		var items = (data && data.items) || [];
-		setBadge(root, Number((data && data.unread) || 0));
+		var unread = Number((data && data.unread) || 0);
+		setBadge(root, unread);
+		setBellVisible(root, items.length > 0 || unread > 0);
 		var seeAll = root.querySelector("a.d-block.border-top, a.d-block.text-center");
 		if (seeAll) seeAll.classList.add("d-none");
 		if (!items.length) {
@@ -65,53 +129,45 @@
 				'<p class="text-muted small text-center mb-0 py-5">No notifications.</p>';
 			return;
 		}
-		list.innerHTML = items
-			.map(function (n) {
-				var unread = !n.read;
-				var href = String(n.url || "").trim();
-				if (href && href.charAt(0) !== "/" && !/^https?:\/\//i.test(href)) {
-					href = "/" + href.replace(/^\.\//, "");
-				}
-				return (
-					'<a class="dropdown-item d-flex align-items-start p-2 rounded text-decoration-none text-body usis-header-notif-item' +
-					(unread ? " bg-action-light" : "") +
-					'" href="' +
-					esc(href || "#") +
-					'" data-notif-url="' +
-					esc(href) +
-					'" data-notif-id="' +
-					esc(n.id) +
-					'">' +
-					'<div class="avatar avatar-sm avatar-primary rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"><i class="fa fa-bell"></i></div>' +
-					'<div class="ms-2">' +
-					'<h6 class="fs-13 mb-0 fw-semibold">' +
-					esc(n.title) +
-					"</h6>" +
-					(n.body ? '<div class="small mt-1">' + esc(n.body) + "</div>" : "") +
-					'<small class="text-muted">' +
-					esc(formatWhen(n.created_at)) +
-					"</small>" +
-					"</div></a>"
-				);
-			})
-			.join("");
-		list.querySelectorAll(".usis-header-notif-item").forEach(function (a) {
-			a.addEventListener("click", function (ev) {
-				var id = a.getAttribute("data-notif-id");
-				var href = a.getAttribute("data-notif-url") || a.getAttribute("href") || "";
-				if (id) {
-					fetch(apiBase() + "/api/v1/me/notifications/" + encodeURIComponent(id) + "/read", {
-						method: "POST",
-						credentials: "include",
-						headers: { Accept: "application/json" },
-					}).catch(function () {});
-				}
-				if (href && href !== "#" && href.indexOf("javascript:") !== 0) {
-					ev.preventDefault();
-					window.location.assign(href);
-				}
-			});
-		});
+		var markAllHtml =
+			unread > 0
+				? '<div class="d-flex justify-content-end px-1 pb-1">' +
+					'<button type="button" class="btn btn-link btn-sm text-decoration-none py-0" data-usis-notif-mark-all>Mark all as read</button>' +
+					"</div>"
+				: "";
+		list.innerHTML =
+			markAllHtml +
+			items
+				.map(function (n) {
+					var itemUnread = !n.read;
+					var href = String(n.url || "").trim();
+					if (href && href.charAt(0) !== "/" && !/^https?:\/\//i.test(href)) {
+						href = "/" + href.replace(/^\.\//, "");
+					}
+					return (
+						'<a class="dropdown-item d-flex align-items-start p-2 rounded text-decoration-none text-body usis-header-notif-item' +
+						(itemUnread ? " bg-action-light" : "") +
+						'" href="' +
+						esc(href || "#") +
+						'" data-notif-url="' +
+						esc(href) +
+						'" data-notif-id="' +
+						esc(n.id) +
+						'">' +
+						'<div class="avatar avatar-sm avatar-primary rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center"><i class="fa fa-bell"></i></div>' +
+						'<div class="ms-2">' +
+						'<h6 class="fs-13 mb-0 fw-semibold">' +
+						esc(n.title) +
+						"</h6>" +
+						(n.body ? '<div class="small mt-1">' + esc(n.body) + "</div>" : "") +
+						'<small class="text-muted">' +
+						esc(formatWhen(n.created_at)) +
+						"</small>" +
+						"</div></a>"
+					);
+				})
+				.join("");
+		bindList(root, list);
 	}
 
 	function setMessagesBadge(unread) {
@@ -166,9 +222,25 @@
 		refreshMessagesBadge();
 	}
 
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", refresh);
-	} else {
+	function wireDropdownRefresh() {
+		var root = dropdownRoot();
+		if (!root || root.getAttribute("data-usis-notif-wired") === "1") return;
+		root.setAttribute("data-usis-notif-wired", "1");
+		root.addEventListener("shown.bs.dropdown", function () {
+			refresh();
+		});
+	}
+
+	global.usisRefreshHeaderNotifications = refresh;
+
+	function start() {
+		wireDropdownRefresh();
 		refresh();
 	}
-})();
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", start);
+	} else {
+		start();
+	}
+})(typeof window !== "undefined" ? window : this);

@@ -9,7 +9,7 @@
 		job: "Job pages",
 		files: "Files pages",
 		preconstruction: "Estimate pages",
-		field: "Field pages",
+		field: "Construction pages",
 		buyout: "Buyout pages",
 	};
 
@@ -21,7 +21,7 @@
 		"proj-tab-invoicing": "job",
 		"proj-tab-drawings": "files",
 		"proj-tab-specs": "files",
-		"proj-tab-photos": "files",
+		"proj-tab-photos": "field",
 		"proj-tab-estimate": "preconstruction",
 		"proj-tab-takeoff": "preconstruction",
 		"proj-tab-procurement": "buyout",

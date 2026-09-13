@@ -11,7 +11,7 @@ from flask import request
 from sqlalchemy import select
 
 from ..extensions import db
-from ..models import DailyReport, Drawing, FieldPhoto
+from ..models import DailyReport, Drawing, FieldPhoto, FieldPunchItem
 from ..models.field_ops import DAILY_REPORT_STATUSES, DEFAULT_DAILY_SECTIONS
 from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists, read_stored_bytes
 from ._perms import CurrentUser
@@ -186,6 +186,25 @@ def put_daily_report(report_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentU
     return {"item": daily_report_public(row), "entity": "daily_report"}
 
 
+def resolve_punch_item_fk(project_id: uuid.UUID, punch_id: uuid.UUID | None) -> uuid.UUID | None:
+    """Map a phone local_id or server id to punch_items.id. Unknown ids become None (do not FK-fail)."""
+    if punch_id is None:
+        return None
+    row = db.session.get(FieldPunchItem, punch_id)
+    if row is not None and row.project_id == project_id and getattr(row, "deleted_at", None) is None:
+        return row.id
+    found = db.session.scalar(
+        select(FieldPunchItem).where(
+            FieldPunchItem.project_id == project_id,
+            FieldPunchItem.local_id == str(punch_id),
+            FieldPunchItem.deleted_at.is_(None),
+        )
+    )
+    if found is not None:
+        return found.id
+    return None
+
+
 def first_upload_file(files=None):
     bag = files if files is not None else (request.files if request else None)
     if bag is None:
@@ -264,8 +283,8 @@ def create_field_photo(
         if report is None or report.project_id != project_id:
             raise FieldApiError("daily report not found", 404)
 
-    punch_id = _parse_uuid(form.get("punch_item_id"))
-    if form.get("punch_item_id") and punch_id is None:
+    punch_id = resolve_punch_item_fk(project_id, _parse_uuid(form.get("punch_item_id")))
+    if form.get("punch_item_id") and _parse_uuid(form.get("punch_item_id")) is None:
         raise FieldApiError("invalid punch_item_id", 400)
 
     filename = (getattr(file, "filename", None) or "photo.jpg")[:300]
@@ -346,7 +365,7 @@ def update_field_photo(photo_id: uuid.UUID, data: Mapping[str, Any], cu: Current
         punch_id = _parse_uuid(data.get("punch_item_id"))
         if data.get("punch_item_id") and punch_id is None:
             raise FieldApiError("invalid punch_item_id", 400)
-        row.punch_item_id = punch_id
+        row.punch_item_id = resolve_punch_item_fk(row.project_id, punch_id)
     db.session.add(row)
     db.session.commit()
     db.session.refresh(row)

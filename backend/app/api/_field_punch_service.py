@@ -10,7 +10,7 @@ from typing import Any, Mapping
 from werkzeug.datastructures import FileStorage
 
 from flask import render_template
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from ..extensions import db
 from ..models import (
@@ -274,6 +274,30 @@ def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
     )
     if not punches:
         return
+    by_local: dict[uuid.UUID, FieldPunchItem] = {}
+    for punch in punches:
+        local = _parse_uuid(punch.local_id)
+        if local is not None:
+            by_local[local] = punch
+    claimed = False
+    if by_local:
+        misplaced = list(
+            db.session.scalars(
+                select(FieldPhoto).where(
+                    FieldPhoto.project_id == project_id,
+                    FieldPhoto.punch_item_id.in_(list(by_local.keys())),
+                )
+            ).all()
+        )
+        for photo in misplaced:
+            punch = by_local.get(photo.punch_item_id)
+            if punch is None or photo.punch_item_id == punch.id:
+                continue
+            photo.punch_item_id = punch.id
+            if not photo.album:
+                photo.album = "Punch"
+            db.session.add(photo)
+            claimed = True
     orphans = list(
         db.session.scalars(
             select(FieldPhoto).where(
@@ -283,9 +307,6 @@ def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
             )
         ).all()
     )
-    if not orphans:
-        return
-    claimed = False
     for photo in orphans:
         taken = _aware(photo.taken_at) or _aware(photo.created_at)
         best: FieldPunchItem | None = None
@@ -316,9 +337,13 @@ def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
 
 
 def _photos_for_punch(row: FieldPunchItem) -> list[FieldPhoto]:
+    local_uid = _parse_uuid(row.local_id)
+    match = FieldPhoto.punch_item_id == row.id
+    if local_uid is not None:
+        match = or_(match, FieldPhoto.punch_item_id == local_uid)
     linked = list(
         db.session.scalars(
-            select(FieldPhoto).where(FieldPhoto.punch_item_id == row.id).order_by(FieldPhoto.created_at.asc())
+            select(FieldPhoto).where(match).order_by(FieldPhoto.created_at.asc())
         ).all()
     )
     if linked:
@@ -604,6 +629,7 @@ def create_or_get_punch_item(project_id: uuid.UUID, data: Mapping[str, Any], cu:
         _link_photo_ids(existing, _photo_ids_from(data))
         _attach_inline_photos(existing, data, cu)
         db.session.commit()
+        claim_orphan_punch_photos(existing.project_id)
         return {"item": punch_item_public(existing), "entity": "punch_item"}, 200
 
     list_name = _enum(data.get("list") or "ours", PUNCH_LISTS, "list", required=True) or "ours"
@@ -639,6 +665,7 @@ def create_or_get_punch_item(project_id: uuid.UUID, data: Mapping[str, Any], cu:
     if should_notify:
         send_punch_notify(row, cu, persist=False)
     db.session.commit()
+    claim_orphan_punch_photos(row.project_id)
     db.session.refresh(row)
     return {"item": punch_item_public(row), "entity": "punch_item"}, 201
 

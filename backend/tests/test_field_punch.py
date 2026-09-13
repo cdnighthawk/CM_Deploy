@@ -335,3 +335,55 @@ def test_nearby_unlinked_photo_shown_on_detail(client):
     assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
     got = client.get(f"/api/v1/punch-items/{item_id}")
     assert len(got.get_json()["item"]["photos"]) >= 1
+
+
+def test_photo_upload_accepts_unknown_punch_item_id(client):
+    import io
+
+    with client.application.app_context():
+        pid = _make_project()
+    fake = str(uuid.uuid4())
+    uploaded = client.post(
+        f"/api/v1/projects/{pid}/photos",
+        data={"file": (io.BytesIO(_tiny_jpeg()), "bead.jpg"), "punch_item_id": fake},
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    assert uploaded.get_json()["item"]["punch_item_id"] in (None, "")
+
+
+def test_photo_before_punch_is_claimed_on_create(client):
+    import io
+
+    local_id = str(uuid.uuid4())
+    with client.application.app_context():
+        pid = _make_project()
+    uploaded = client.post(
+        f"/api/v1/projects/{pid}/photos",
+        data={"file": (io.BytesIO(_tiny_jpeg()), "bead.jpg"), "punch_item_id": local_id},
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    created = client.post(f"/api/v1/projects/{pid}/punch-items", json=_payload(local_id=local_id))
+    assert created.status_code == 201, created.get_data(as_text=True)
+    assert len(created.get_json()["item"]["photos"]) >= 1
+
+
+def test_photo_links_using_punch_local_id(client):
+    import io
+
+    local_id = str(uuid.uuid4())
+    with client.application.app_context():
+        pid = _make_project()
+    created = client.post(f"/api/v1/projects/{pid}/punch-items", json=_payload(local_id=local_id))
+    assert created.status_code == 201
+    item_id = created.get_json()["item"]["id"]
+    uploaded = client.post(
+        f"/api/v1/projects/{pid}/photos",
+        data={"file": (io.BytesIO(_tiny_jpeg()), "bead.jpg"), "punch_item_id": local_id},
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    assert uploaded.get_json()["item"]["punch_item_id"] == item_id
+    got = client.get(f"/api/v1/punch-items/{item_id}")
+    assert len(got.get_json()["item"]["photos"]) >= 1

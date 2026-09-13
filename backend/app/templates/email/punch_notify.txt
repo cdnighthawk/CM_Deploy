@@ -1,0 +1,13 @@
+{{ job_name }}{% if job_number %} ({{ job_number }}){% endif %}
+
+Punch item{% if number %} #{{ number }}{% endif %}: {{ title }}
+Location: {{ location or "—" }}
+Trade: {{ trade or "—" }}
+Type: {{ type or "—" }}
+Priority: {{ priority }}
+Schedule impact: {{ schedule_impact }}{% if schedule_note %} — {{ schedule_note }}{% endif %}
+Cost impact: {{ cost_impact }}{% if cost_note %} — {{ cost_note }}{% endif %}
+{% if photos_pending %}Photos pending sync{% else %}Photos: {{ photo_urls|join(", ") }}{% endif %}
+
+{{ web_hint }}
+Sent by {{ sent_by }} at {{ sent_at }}

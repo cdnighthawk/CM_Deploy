@@ -41,6 +41,7 @@ from .estimator_script import (
     EstimatorStandardSpec,
 )
 from .field_ops import DailyReport, FieldPhoto, TimeEntry, TimePunch
+from .field_punch import FieldPunchItem, PunchDistribution, PunchNotifyLog
 from .timekeeping import (
     EmployeeTimeProfile,
     ProjectGeofence,
@@ -372,6 +373,9 @@ __all__ = [
     "CompanyLicense",
     "IssueCompany",
     "Meeting",
+    "FieldPunchItem",
+    "PunchDistribution",
+    "PunchNotifyLog",
     "PunchlistItem",
     "PurchaseOrderChangeOrder",
     "QcChecklist",

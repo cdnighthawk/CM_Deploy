@@ -202,6 +202,7 @@ def field_photo_public(row: FieldPhoto) -> dict[str, Any]:
         "location_text": row.location_text or "",
         "drawing_id": str(row.drawing_id) if row.drawing_id else None,
         "daily_report_id": str(row.daily_report_id) if row.daily_report_id else None,
+        "punch_item_id": str(row.punch_item_id) if getattr(row, "punch_item_id", None) else None,
         "album": getattr(row, "album", None) or "",
         "created_at": iso(row.created_at),
     }
@@ -241,6 +242,10 @@ def create_field_photo(
         if report is None or report.project_id != project_id:
             raise FieldApiError("daily report not found", 404)
 
+    punch_id = _parse_uuid(form.get("punch_item_id"))
+    if form.get("punch_item_id") and punch_id is None:
+        raise FieldApiError("invalid punch_item_id", 400)
+
     filename = (getattr(file, "filename", None) or "photo.jpg")[:300]
     mime = (getattr(file, "mimetype", None) or "image/jpeg")[:120]
     row = FieldPhoto(
@@ -256,6 +261,7 @@ def create_field_photo(
         original_filename=filename,
         mime_type=mime,
         album=(str(form.get("album") or "").strip()[:120] or None),
+        punch_item_id=punch_id,
     )
     db.session.add(row)
     db.session.flush()
@@ -314,6 +320,11 @@ def update_field_photo(photo_id: uuid.UUID, data: Mapping[str, Any], cu: Current
     if "album" in data:
         album = str(data.get("album") or "").strip()[:120]
         row.album = album or None
+    if "punch_item_id" in data:
+        punch_id = _parse_uuid(data.get("punch_item_id"))
+        if data.get("punch_item_id") and punch_id is None:
+            raise FieldApiError("invalid punch_item_id", 400)
+        row.punch_item_id = punch_id
     db.session.add(row)
     db.session.commit()
     db.session.refresh(row)

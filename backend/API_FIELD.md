@@ -278,9 +278,38 @@ Geofence default is **flag**: punch is saved and an `offsite` / `gps_denied` fla
 
 ## Punch lists (field)
 
+Canonical FinishWorks Field punch list (2026-09-04 lock). Prefix is **`/api/v1`** (not `/api/field`). iOS must match these routes and JSON.
+
+**Tools-tile badge:** `open_count` / `ours_open` = open Ours items (`open` | `in_progress` | `ready_to_inspect`). `gc_open` is also returned.
+
+Idempotent on `local_id`. Replaying POST returns the existing row (200).
+
+| Method | Path |
+|--------|------|
+| GET | `/api/v1/projects/:id/punch-items?list=ours\|gc\|all&status=` |
+| POST | `/api/v1/projects/:id/punch-items` |
+| GET | `/api/v1/punch-items/:id` |
+| PATCH | `/api/v1/punch-items/:id` |
+| DELETE | `/api/v1/punch-items/:id` (soft-delete) |
+| POST | `/api/v1/punch-items/:id/photos` multipart (`file`) or `{photo_id}` — same photo pipeline as daily reports |
+| POST | `/api/v1/punch-items/:id/notify` `{distribution_contact_ids?: []}` |
+| POST | `/api/v1/punch-items/:id/status` `{status}` |
+| GET | `/api/v1/projects/:id/directory` contacts eligible for Distribution |
+| GET | `/api/v1/projects/:id/locations` rooms/areas (`rfi_locations`); `200 {items:[]}` if empty |
+
+`list=gc` **create** from the phone → **403**. GC rows appear when synced later. Crew may PATCH our assignee, status, photos, and notify on a GC row. `gc_manager`, `gc_approver`, `external_type`, `external_id` are read-only.
+
+Enums: `status` `open|in_progress|ready_to_inspect|closed`; `priority` `blocking|normal|cosmetic`; `type` `deficiency|incomplete|damage|warranty|safety|held_for_others`; impact `none|possible|yes`; `source` `internal|procore|other`. Invalid enum → 400 `{error, field}`.
+
+Title required, max 255. Notify uses `MAIL_FROM` (never `quotes@gousis.com`); one SMTP message per selected contact. `notify_on_save: false` or empty distribution = no mail.
+
+The website **Punchlist → Crew** tab lists `list=ours` items from this API (phone-synced) plus any leftover `crew_punch` issues. Office create on that tab POSTs here; `local_id` is optional and generated when omitted. `room` is accepted as an alias for `location_text`.
+
+Legacy issues tracker (still used by Inspections and older crew punch rows):
+
 Reuse `GET/POST /api/v1/projects/:id/issues` with `source_type`:
 
-- `punch` — owner / GC punch list (shared)
+- `punch` — older owner / GC list — prefer `punch-items` for new work
 - `crew_punch` — internal QC comments. Create with `{title, description?, room, photo_id?, source_type: "crew_punch"}`. `room` is stored as `sheet_number`; `photo_id` is stored as `source_id`. Response includes `room` and `photo_id`.
 - `inspection` — field inspections (`title`, `description` notes, `due_date` / `scheduled_date`, `status`)
 

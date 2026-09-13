@@ -22,6 +22,7 @@ from ..models import (
     Contact,
     HrmsTimesheetEntry,
     HrmsTimesheetPeriod,
+    FieldPunchItem,
     Issue,
     IssueCompany,
     Meeting,
@@ -41,6 +42,7 @@ from ..models import (
     WorkflowInstance,
     WorkflowInstanceStep,
 )
+from ..models.field_punch import PUNCH_OPEN_STATUSES
 from ._perms import CurrentUser, is_company_readonly
 from ._rfi_service import ApiError
 
@@ -843,6 +845,21 @@ def team_open_items(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
         select(PunchlistItem).where(PunchlistItem.project_id == project_id, PunchlistItem.status != "closed").limit(50)
     ).all():
         items.append({"kind": "punch", "id": str(punch.id), "title": punch.title, "status": punch.status})
+    for crew in db.session.scalars(
+        select(FieldPunchItem).where(
+            FieldPunchItem.project_id == project_id,
+            FieldPunchItem.deleted_at.is_(None),
+            FieldPunchItem.status.in_(PUNCH_OPEN_STATUSES),
+        ).limit(50)
+    ).all():
+        items.append(
+            {
+                "kind": "crew_punch" if crew.list == "ours" else "gc_punch",
+                "id": str(crew.id),
+                "title": crew.title,
+                "status": crew.status,
+            }
+        )
     for iss in db.session.scalars(
         select(Issue).where(Issue.project_id == project_id, Issue.status.notin_(("Closed", "Resolved", "Done"))).limit(50)
     ).all():

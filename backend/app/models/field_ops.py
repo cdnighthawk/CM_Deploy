@@ -89,6 +89,12 @@ class FieldPhoto(UUIDPKMixin, TimestampMixin, db.Model):
     original_filename: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     mime_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     album: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    punch_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("punch_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     project = relationship("Project")
     daily_report = relationship("DailyReport", back_populates="photos")

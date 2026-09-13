@@ -1162,7 +1162,7 @@
 									<button class="nav-link active" id="usis-punch-subtab-gc" data-bs-toggle="pill" data-bs-target="#usis-punch-subpane-gc" type="button" role="tab" aria-controls="usis-punch-subpane-gc" aria-selected="true">GC</button>
 								</li>
 								<li class="nav-item" role="presentation">
-									<button class="nav-link" id="usis-punch-subtab-crew" data-bs-toggle="pill" data-bs-target="#usis-punch-subpane-crew" type="button" role="tab" aria-controls="usis-punch-subpane-crew" aria-selected="false">Crew</button>
+									<button class="nav-link" id="usis-punch-subtab-crew" data-bs-toggle="pill" data-bs-target="#usis-punch-subpane-crew" type="button" role="tab" aria-controls="usis-punch-subpane-crew" aria-selected="false">Crew <span class="badge text-bg-secondary ms-1 d-none" id="usis-punch-crew-count"></span></button>
 								</li>
 							</ul>
 							<div class="tab-content">
@@ -2244,6 +2244,21 @@
 		</div>
 	</div>
 
+	<div class="modal fade" id="usis-modal-crew-punch-detail" tabindex="-1" aria-labelledby="usis-crew-punch-detail-heading" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-crew-punch-detail-heading">Crew punch item</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="usis-crew-punch-detail-body"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	@@include("../elements/script.html")
 	<script src="assets/vendor/i18n/i18n.js"></script>
 	<script src="assets/js/translator.js"></script>
@@ -2259,7 +2274,7 @@
 	<script src="assets/vendor/fullcalendar/js/main.min.js"></script>
 	<script src="assets/js/project-detail-job.js?v=20260830b"></script>
 	<script src="assets/js/project-detail-wave1.js?v=20260905a"></script>
-	<script src="assets/js/project-detail-wave2.js?v=20260906b"></script>
+	<script src="assets/js/project-detail-wave2.js?v=20260912c"></script>
 	<script src="assets/js/project-detail-safety.js"></script>
 	<script src="assets/js/usis-drawing-upload.js?v=20260906f"></script>
 	<script src="assets/js/project-detail-tools.js?v=20260906f"></script>

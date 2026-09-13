@@ -466,6 +466,8 @@
 			});
 	}
 
+	var crewPunchCache = {};
+
 	function crewEls() {
 		return {
 			root: document.getElementById("usis-modal-crew-punch"),
@@ -496,42 +498,169 @@
 		return pidPath("/issues?source_type=crew_punch");
 	}
 
+	function crewPunchItemsPath() {
+		return pidPath("/punch-items?list=ours");
+	}
+
+	function prettyPunch(v) {
+		if (v == null || v === "") return "";
+		return String(v).replace(/_/g, " ");
+	}
+
+	function newLocalId() {
+		if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+		return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+			var r = (Math.random() * 16) | 0;
+			return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+		});
+	}
+
+	function crewCacheKey(source, id) {
+		return String(source || "punch_item") + ":" + String(id || "");
+	}
+
+	function photoSrc(ph) {
+		var url = (ph && (ph.file_url || ph.url)) || "";
+		if (!url) return "";
+		if (/^https?:\/\//i.test(url)) return url;
+		return (window.USIS_API.apiBase() || "") + url;
+	}
+
+	function normalizeFieldPunch(it) {
+		return {
+			source: "punch_item",
+			id: it.id,
+			number: it.number,
+			title: it.title || "",
+			room: it.location_text || "",
+			status: it.status || "",
+			type: it.type || "",
+			priority: it.priority || "",
+			trade: it.trade || "",
+			description: it.description || "",
+			assignee_name: it.assignee_name || "",
+			due_on: it.due_on || "",
+			schedule_impact: it.schedule_impact || "",
+			schedule_note: it.schedule_note || "",
+			cost_impact: it.cost_impact || "",
+			cost_note: it.cost_note || "",
+			source_label: it.source || "",
+			last_notified_at: it.last_notified_at || "",
+			created_at: it.created_at || "",
+			updated_at: it.updated_at || "",
+			distribution: it.distribution || [],
+			photos: it.photos || [],
+		};
+	}
+
+	function normalizeCrewIssue(it) {
+		var photos = [];
+		if (it.photo_id) {
+			photos.push({ id: it.photo_id, file_url: "/api/v1/photos/" + it.photo_id + "/file" });
+		}
+		return {
+			source: "issue",
+			id: it.id,
+			number: it.number || "",
+			title: it.title || "",
+			room: it.room || it.sheet_number || "",
+			status: it.status || "",
+			type: "",
+			priority: it.severity || "",
+			trade: it.trade || "",
+			description: it.description || "",
+			assignee_name: it.assignee_name || "",
+			due_on: it.due_date || "",
+			schedule_impact: it.schedule_impact_days != null ? String(it.schedule_impact_days) : "",
+			schedule_note: "",
+			cost_impact: it.cost_impact != null ? String(it.cost_impact) : "",
+			cost_note: "",
+			source_label: it.source_type || "crew_punch",
+			last_notified_at: "",
+			created_at: it.created_at || "",
+			updated_at: it.updated_at || "",
+			distribution: [],
+			photos: photos,
+		};
+	}
+
+	function setCrewCount(n) {
+		var el = document.getElementById("usis-punch-crew-count");
+		if (!el) return;
+		if (n > 0) {
+			el.textContent = String(n);
+			el.classList.remove("d-none");
+		} else {
+			el.textContent = "";
+			el.classList.add("d-none");
+		}
+	}
+
+	function settledItems(result) {
+		if (!result || result.status !== "fulfilled" || !result.value) return [];
+		return result.value.items || [];
+	}
+
 	function loadCrewPunch() {
 		var tbody = crewEls().tbody;
 		if (!tbody || !projectId()) return;
-		fetchJson(crewIssuePath())
-			.then(function (data) {
-				var items = data.items || [];
+		Promise.allSettled([fetchJson(crewPunchItemsPath()), fetchJson(crewIssuePath())])
+			.then(function (results) {
+				var field = settledItems(results[0]).map(normalizeFieldPunch);
+				var issues = settledItems(results[1]).map(normalizeCrewIssue);
+				var items = field.concat(issues);
+				crewPunchCache = {};
+				items.forEach(function (it) {
+					crewPunchCache[crewCacheKey(it.source, it.id)] = it;
+				});
+				setCrewCount(field.length || items.length);
 				if (!items.length) {
-					tbody.innerHTML = '<tr><td colspan="5" class="text-muted">None yet.</td></tr>';
+					var failed = results[0].status !== "fulfilled" && results[1].status !== "fulfilled";
+					tbody.innerHTML =
+						'<tr><td colspan="5" class="text-muted">' +
+						(failed ? "Could not load." : "None yet.") +
+						"</td></tr>";
 					return;
 				}
 				tbody.innerHTML = items
 					.map(function (it) {
-						var extras =
-							it.status === "Resolved" || it.status === "Closed"
-								? []
-								: [{ label: "Resolve", className: "usis-punch-crew-resolve", data: { id: it.id } }];
+						var closed = ["closed", "resolved", "done"].indexOf(String(it.status || "").toLowerCase()) >= 0;
+						var extras = closed
+							? []
+							: [
+									{
+										label: "Resolve",
+										className: "usis-punch-crew-resolve",
+										data: { id: it.id, source: it.source },
+									},
+								];
 						var menu =
 							window.USISUi && window.USISUi.rowMenu
 								? window.USISUi.rowMenu({
 										id: it.id,
 										createTarget: "#usis-punch-crew-add",
 										deleteClass: "usis-punch-crew-del",
+										deleteData: { id: it.id, source: it.source },
 										extras: extras,
 									})
 								: extras.length
 									? '<button type="button" class="btn btn-link btn-sm p-0 usis-punch-crew-resolve" data-id="' +
 										esc(it.id) +
+										'" data-source="' +
+										esc(it.source) +
 										'">Resolve</button>'
 									: "";
 						return (
-							"<tr><td>" +
-							esc(it.title || "") +
+							"<tr><td><a href=\"#\" class=\"usis-punch-crew-open\" data-id=\"" +
+							esc(it.id) +
+							'" data-source="' +
+							esc(it.source) +
+							'">' +
+							esc(it.title || "Untitled") +
+							"</a></td><td>" +
+							esc(it.room || "") +
 							"</td><td>" +
-							esc(it.room || it.sheet_number || "") +
-							"</td><td>" +
-							esc(it.status || "") +
+							esc(prettyPunch(it.status)) +
 							"</td><td>" +
 							esc(it.description || "") +
 							"</td><td>" +
@@ -540,9 +669,97 @@
 						);
 					})
 					.join("");
+			});
+	}
+
+	function punchDetailRow(label, value) {
+		if (value == null || String(value).trim() === "") return "";
+		return (
+			'<div class="row g-2 mb-2"><div class="col-sm-3 text-muted small">' +
+			esc(label) +
+			'</div><div class="col-sm-9">' +
+			esc(String(value)) +
+			"</div></div>"
+		);
+	}
+
+	function renderCrewDetail(it) {
+		var heading = document.getElementById("usis-crew-punch-detail-heading");
+		var body = document.getElementById("usis-crew-punch-detail-body");
+		if (heading) heading.textContent = it.title || "Crew punch item";
+		if (!body) return;
+		var photos = it.photos || [];
+		var photoHtml = photos.length
+			? photos
+					.map(function (ph) {
+						var src = photoSrc(ph);
+						if (!src) return "";
+						return (
+							'<img src="' +
+							esc(src) +
+							'" alt="" class="img-fluid rounded border mb-3" style="max-height:28rem;width:100%;object-fit:contain;background:#f8f9fa">'
+						);
+					})
+					.join("")
+			: '<p class="text-muted small mb-3">No photo.</p>';
+		var dist = (it.distribution || [])
+			.map(function (d) {
+				return d.name ? d.name + (d.email ? " <" + d.email + ">" : "") : d.email || "";
+			})
+			.filter(Boolean)
+			.join(", ");
+		body.innerHTML =
+			photoHtml +
+			punchDetailRow("#", it.number) +
+			punchDetailRow("Title", it.title) +
+			punchDetailRow("Status", prettyPunch(it.status)) +
+			punchDetailRow("Type", prettyPunch(it.type)) +
+			punchDetailRow("Priority", prettyPunch(it.priority)) +
+			punchDetailRow("Location", it.room) +
+			punchDetailRow("Trade", prettyPunch(it.trade)) +
+			punchDetailRow("Assignee", it.assignee_name) +
+			punchDetailRow("Due", it.due_on) +
+			punchDetailRow("Description", it.description) +
+			punchDetailRow("Schedule impact", prettyPunch(it.schedule_impact)) +
+			punchDetailRow("Schedule note", it.schedule_note) +
+			punchDetailRow("Cost impact", prettyPunch(it.cost_impact)) +
+			punchDetailRow("Cost note", it.cost_note) +
+			punchDetailRow("Distribution", dist) +
+			punchDetailRow("Last notified", it.last_notified_at) +
+			punchDetailRow("Source", prettyPunch(it.source_label)) +
+			punchDetailRow("Created", it.created_at) +
+			punchDetailRow("Updated", it.updated_at);
+	}
+
+	function openCrewDetail(id, source) {
+		source = source || "punch_item";
+		var root = document.getElementById("usis-modal-crew-punch-detail");
+		if (!root || !window.bootstrap || !window.bootstrap.Modal) {
+			window.alert("Detail window is missing. Reload the page.");
+			return;
+		}
+		var cached = crewPunchCache[crewCacheKey(source, id)];
+		if (cached) renderCrewDetail(cached);
+		else {
+			var body = document.getElementById("usis-crew-punch-detail-body");
+			if (body) body.innerHTML = '<p class="text-muted small mb-0">Loading…</p>';
+		}
+		window.bootstrap.Modal.getOrCreateInstance(root).show();
+		var path =
+			source === "issue"
+				? "/api/v1/issues/" + encodeURIComponent(id)
+				: "/api/v1/punch-items/" + encodeURIComponent(id);
+		fetchJson(path)
+			.then(function (data) {
+				var fresh = source === "issue" ? normalizeCrewIssue(data.issue || data) : normalizeFieldPunch(data.item || data);
+				crewPunchCache[crewCacheKey(source, id)] = fresh;
+				renderCrewDetail(fresh);
 			})
 			.catch(function () {
-				tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Could not load.</td></tr>';
+				if (!cached) {
+					var body = document.getElementById("usis-crew-punch-detail-body");
+					if (body) body.innerHTML = '<p class="text-muted small mb-0">Could not load this item.</p>';
+				}
 			});
 	}
 
@@ -602,13 +819,22 @@
 		photoStep
 			.then(function (photoId) {
 				var body = {
+					local_id: newLocalId(),
+					list: "ours",
 					title: title,
+					location_text: room,
 					room: room,
-					source_type: "crew_punch",
+					notify_on_save: false,
 				};
 				if (notes) body.description = notes;
-				if (photoId) body.photo_id = photoId;
-				return fetchJson(pidPath("/issues"), { method: "POST", body: body });
+				return fetchJson(pidPath("/punch-items"), { method: "POST", body: body }).then(function (created) {
+					var item = (created && created.item) || created || {};
+					if (!photoId || !item.id) return created;
+					return fetchJson("/api/v1/punch-items/" + encodeURIComponent(item.id) + "/photos", {
+						method: "POST",
+						body: { photo_id: photoId },
+					});
+				});
 			})
 			.then(function () {
 				if (els.root && window.bootstrap && window.bootstrap.Modal) {
@@ -626,16 +852,32 @@
 			});
 	}
 
-	function resolveCrewItem(id) {
+	function resolveCrewItem(id, source) {
 		if (!id) return;
-		fetchJson("/api/v1/issues/" + encodeURIComponent(id) + "/status", {
-			method: "PATCH",
-			body: { status: "Resolved" },
-		})
-			.then(loadCrewPunch)
-			.catch(function () {
-				window.alert("Could not resolve.");
-			});
+		var req =
+			source === "issue"
+				? fetchJson("/api/v1/issues/" + encodeURIComponent(id) + "/status", {
+						method: "PATCH",
+						body: { status: "Resolved" },
+					})
+				: fetchJson("/api/v1/punch-items/" + encodeURIComponent(id) + "/status", {
+						method: "POST",
+						body: { status: "closed" },
+					});
+		req.then(loadCrewPunch).catch(function () {
+			window.alert("Could not resolve.");
+		});
+	}
+
+	function deleteCrewItem(id, source) {
+		if (!id || !window.confirm("Delete this crew punch item?")) return;
+		var req =
+			source === "issue"
+				? fetchJson("/api/v1/issues/" + encodeURIComponent(id), { method: "DELETE" })
+				: fetchJson("/api/v1/punch-items/" + encodeURIComponent(id), { method: "DELETE" });
+		req.then(loadCrewPunch).catch(function (err) {
+			window.alert((err && err.message) || "Could not delete item.");
+		});
 	}
 
 	function loadOpenItems() {
@@ -718,19 +960,19 @@
 			});
 		}
 		document.body.addEventListener("click", function (e) {
+			var openLink = e.target.closest(".usis-punch-crew-open");
+			if (openLink) {
+				e.preventDefault();
+				openCrewDetail(openLink.getAttribute("data-id"), openLink.getAttribute("data-source"));
+				return;
+			}
 			var btn = e.target.closest(".usis-w2-del");
 			if (btn) delKind(btn.getAttribute("data-kind"), btn.getAttribute("data-id"));
 			var resolveBtn = e.target.closest(".usis-punch-crew-resolve");
-			if (resolveBtn) resolveCrewItem(resolveBtn.getAttribute("data-id"));
+			if (resolveBtn) resolveCrewItem(resolveBtn.getAttribute("data-id"), resolveBtn.getAttribute("data-source"));
 			var crewDel = e.target.closest(".usis-punch-crew-del");
 			if (crewDel) {
-				var cid = crewDel.getAttribute("data-id");
-				if (!cid || !window.confirm("Delete this crew punch item?")) return;
-				fetchJson("/api/v1/issues/" + encodeURIComponent(cid), { method: "DELETE" })
-					.then(loadCrewPunch)
-					.catch(function (err) {
-						window.alert((err && err.message) || "Could not delete item.");
-					});
+				deleteCrewItem(crewDel.getAttribute("data-id"), crewDel.getAttribute("data-source"));
 			}
 		});
 		var up = document.getElementById("usis-photo-upload");

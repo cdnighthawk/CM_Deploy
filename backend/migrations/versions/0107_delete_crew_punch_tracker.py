@@ -1,7 +1,7 @@
 """Remove crew punch cards from the website Issues board.
 
 Revision ID: 0107_drop_crew_punch
-Revises: 0106_user_office
+Revises: 0102_field_punch
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 
 revision: str = "0107_drop_crew_punch"
-down_revision: Union[str, Sequence[str], None] = "0106_user_office"
+down_revision: Union[str, Sequence[str], None] = "0102_field_punch"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -8,6 +8,8 @@ from ._issue_service import (
     create_co_from_issue,
     create_issue,
     create_rfi_from_issue,
+    delete_crew_punch_issues,
+    delete_issue,
     get_issue,
     list_issues,
     update_status,
@@ -77,6 +79,22 @@ def register_issue_routes(bp: Blueprint) -> None:
         except ValueError as exc:
             return _jsonify({"error": str(exc)}), 400
         return _jsonify({"issue": issue, "entity": "issue"}), 201
+
+    @bp.delete("/issues/crew-punch")
+    def delete_all_crew_punch():
+        deleted = delete_crew_punch_issues()
+        return _jsonify({"deleted": deleted, "entity": "issues"})
+
+    @bp.delete("/issues/<issue_id>")
+    def delete_tracker_issue(issue_id: str):
+        iid = _parse_uuid_param(issue_id)
+        if not iid:
+            return _jsonify({"error": "invalid issue id"}), 400
+        try:
+            delete_issue(iid, current_user())
+        except KeyError:
+            return _jsonify({"error": "issue not found"}), 404
+        return _jsonify({"ok": True, "entity": "issue"})
 
     @bp.get("/issues/<issue_id>")
     def get_tracker_issue(issue_id: str):

@@ -299,6 +299,8 @@ def list_issues(filters: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
     source_type = _text(filters.get("source_type"))
     if source_type in SOURCES:
         q = q.where(Issue.source_type == source_type)
+    elif not project_id:
+        q = q.where(Issue.source_type != "crew_punch")
     search = _text(filters.get("search") or filters.get("q")).lower()
     if search:
         like = f"%{search}%"
@@ -530,6 +532,22 @@ def apply_github_workflow(
     )
     db.session.commit()
     return serialize_issue(row, include_events=True)
+
+
+def delete_issue(issue_id: uuid.UUID, cu: CurrentUser) -> None:
+    row = db.session.get(Issue, issue_id)
+    if row is None:
+        raise KeyError("Issue not found.")
+    db.session.delete(row)
+    db.session.commit()
+
+
+def delete_crew_punch_issues() -> int:
+    rows = list(db.session.scalars(select(Issue).where(Issue.source_type == "crew_punch")).all())
+    for row in rows:
+        db.session.delete(row)
+    db.session.commit()
+    return len(rows)
 
 
 def update_status(issue_id: uuid.UUID, status: str, cu: CurrentUser) -> dict[str, Any]:

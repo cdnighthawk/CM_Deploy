@@ -72,9 +72,27 @@ def test_infer_pending_review_and_closed():
         ],
     )
     assert notified == "Pending Review"
+    still_open, _detail = inferred_tracker_status(
+        {"number": 4, "body": "", "state": "open"},
+        [
+            {
+                "body": "Resolution: This is not fixed yet. Please choose Still not fixed.",
+                "user": {"login": "cdnighthawk"},
+            }
+        ],
+    )
+    assert still_open == "In Progress"
+    later_fixed, _detail = inferred_tracker_status(
+        {"number": 5, "body": "", "state": "open"},
+        [
+            {"body": "Resolution: This is not fixed yet.", "user": {"login": "cdnighthawk"}},
+            {"body": "Resolution: This is live. Please confirm.", "user": {"login": "cdnighthawk"}},
+        ],
+    )
+    assert later_fixed == "Pending Review"
 
 
-def test_refresh_skips_without_github_token():
-    result = refresh_tracker_from_github(type("Cfg", (), {})())
+def test_refresh_skips_placeholder_owner():
+    result = refresh_tracker_from_github(type("Cfg", (), {"GITHUB_FEEDBACK_OWNER": "your-org"})())
     assert result["status"] == "skipped"
     assert result["reason"] == "not_configured"

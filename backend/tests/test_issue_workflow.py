@@ -8,7 +8,9 @@ import httpx
 from app.api._issue_service import (
     apply_github_workflow,
     assign_issue,
+    delete_crew_punch_issues,
     find_feedback_by_github_number,
+    list_issues,
 )
 from app.api._perms import CurrentUser
 from app.extensions import db
@@ -198,6 +200,66 @@ def test_opened_webhook_creates_new_card(flask_app):
         assert created is not None
         assert created.status == "New"
         assert created.source_id == github_source_id(9105)
+
+
+def test_refresh_reads_public_github_without_token(flask_app):
+    with flask_app.app_context():
+        _seed(9201)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if "/comments" in str(request.url):
+                return httpx.Response(
+                    200,
+                    json=[
+                        {
+                            "body": "Resolution: Sorted columns.",
+                            "user": {"login": "cdnighthawk"},
+                            "issue_url": "https://api.github.com/repos/cdnighthawk/CM_Deploy/issues/9201",
+                        }
+                    ],
+                )
+            return httpx.Response(200, json=[_payload(9201)])
+
+        result = feedback_svc.refresh_tracker_from_github(
+            type(
+                "Cfg",
+                (),
+                {
+                    "GITHUB_FEEDBACK_TOKEN": "",
+                    "GITHUB_FEEDBACK_OWNER": "cdnighthawk",
+                    "GITHUB_FEEDBACK_REPO": "CM_Deploy",
+                },
+            )(),
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+            force=True,
+        )
+        assert result["status"] == "synced"
+        assert find_feedback_by_github_number(9201).status == "Pending Review"
+
+
+def test_admin_list_hides_and_deletes_crew_punch(flask_app):
+    with flask_app.app_context():
+        punch = Issue(
+            source_type="crew_punch",
+            severity="Minor",
+            status="New",
+            title="grab bars conflicts",
+        )
+        report = Issue(
+            source_type="feedback",
+            severity="Major",
+            status="New",
+            title="[bug] Role wrong",
+        )
+        db.session.add_all([punch, report])
+        db.session.commit()
+        listed = list_issues({}, _cu())
+        titles = [item["title"] for item in listed["items"]]
+        assert "[bug] Role wrong" in titles
+        assert "grab bars conflicts" not in titles
+        assert delete_crew_punch_issues() == 1
+        leftover = list_issues({"source_type": "crew_punch"}, _cu())
+        assert leftover["items"] == []
 
 
 def test_resolution_does_not_reopen_closed_card(flask_app):

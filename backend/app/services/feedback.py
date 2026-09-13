@@ -35,6 +35,7 @@ REPORTER_EMAIL_MARKER_RE = re.compile(r"<!--\s*usis-reporter-email:\s*([^ >]+)\s
 REPORTER_EMAIL_LINE_RE = re.compile(r"(?im)^\*\*Email:\*\*\s*(\S+@\S+)\s*$")
 REPORTER_NAME_LINE_RE = re.compile(r"(?im)^\*\*From:\*\*\s*(.+?)\s*$")
 RESOLUTION_RE = re.compile(r"(?is)^\s*(?:##\s*)?Resolution:\s*(.+)$")
+STILL_OPEN_RE = re.compile(r"not fixed yet|still not fixed", re.I)
 CLOSER_NOTE = (
     "Leave a comment that starts with `Resolution:` explaining how it was fixed "
     "or why it was not. Leave the issue open — the employee confirms it is resolved "
@@ -115,8 +116,15 @@ def feedback_options(config: Any) -> dict[str, Any]:
     owner = _cfg(config, "GITHUB_FEEDBACK_OWNER", DEFAULT_OWNER) or DEFAULT_OWNER
     repo = _cfg(config, "GITHUB_FEEDBACK_REPO", DEFAULT_REPO) or DEFAULT_REPO
     token = _cfg(config, "GITHUB_FEEDBACK_TOKEN")
-    configured = bool(token and owner and repo and owner.lower() != PLACEHOLDER_OWNER)
-    return {"owner": owner, "repo": repo, "token": token, "configured": configured}
+    readable = bool(owner and repo and owner.lower() != PLACEHOLDER_OWNER)
+    configured = bool(token and readable)
+    return {
+        "owner": owner,
+        "repo": repo,
+        "token": token,
+        "readable": readable,
+        "configured": configured,
+    }
 
 
 def parse_feedback_input(body: dict[str, Any] | None) -> dict[str, Any]:
@@ -323,12 +331,18 @@ def _is_automation_comment(comment: dict[str, Any]) -> bool:
 
 
 def has_resolution_comment(comments: list[dict[str, Any]] | None) -> bool:
+    return latest_resolution_body(comments) is not None
+
+
+def latest_resolution_body(comments: list[dict[str, Any]] | None) -> str | None:
+    last = None
     for comment in comments or []:
         if _is_automation_comment(comment):
             continue
-        if RESOLUTION_RE.match(str(comment.get("body") or "")):
-            return True
-    return False
+        body = str(comment.get("body") or "")
+        if RESOLUTION_RE.match(body):
+            last = body
+    return last
 
 
 def has_work_comment(comments: list[dict[str, Any]] | None) -> bool:
@@ -351,7 +365,10 @@ def inferred_tracker_status(
         return "Closed", "Reporter confirmed"
     if signal == "rejected":
         return "In Progress", "Reporter said this is still not fixed"
-    if signal == "notified" or has_resolution_comment(comments):
+    resolution = latest_resolution_body(comments)
+    if signal == "notified" or resolution:
+        if resolution and STILL_OPEN_RE.search(resolution):
+            return "In Progress", "Resolution said this is still not fixed"
         return "Pending Review", "Waiting for reporter confirmation"
     assignees = issue.get("assignees") if isinstance(issue.get("assignees"), list) else []
     if issue.get("assignee") or assignees:
@@ -493,13 +510,15 @@ def verify_github_signature(*, secret: str, payload: bytes, signature_header: st
     return hmac.compare_digest(expected, signature_header.strip())
 
 
-def _github_headers(token: str) -> dict[str, str]:
-    return {
+def _github_headers(token: str | None) -> dict[str, str]:
+    headers = {
         "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "USISCM",
     }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
 
 
 def fetch_issue_comments(
@@ -510,7 +529,7 @@ def fetch_issue_comments(
     token: str,
     client: httpx.Client | None = None,
 ) -> list[dict[str, Any]]:
-    if not token or not issue_number:
+    if not issue_number:
         return []
     url = (
         f"https://api.github.com/repos/{owner}/{repo}/issues/{int(issue_number)}/comments"
@@ -580,8 +599,6 @@ def fetch_repo_issue_comments(
     token: str,
     client: httpx.Client | None = None,
 ) -> list[dict[str, Any]]:
-    if not token:
-        return []
     url = (
         f"https://api.github.com/repos/{owner}/{repo}/issues/comments"
         "?per_page=100&sort=created&direction=asc"
@@ -618,8 +635,6 @@ def fetch_repo_issues(
     client: httpx.Client | None = None,
     state: str = "all",
 ) -> list[dict[str, Any]]:
-    if not token:
-        return []
     url = (
         f"https://api.github.com/repos/{owner}/{repo}/issues"
         f"?state={state}&per_page=100&sort=updated&direction=desc"
@@ -673,7 +688,7 @@ def refresh_tracker_from_github(
     ):
         return {"ok": True, "status": "skipped", "reason": "recent"}
     options = feedback_options(config)
-    if not options.get("configured"):
+    if not options.get("readable"):
         return {"ok": True, "status": "skipped", "reason": "not_configured"}
     issues = fetch_repo_issues(
         owner=options["owner"],

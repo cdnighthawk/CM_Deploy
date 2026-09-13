@@ -15,6 +15,8 @@ os.environ["MS_ENTRA_TENANT_ID"] = ""
 os.environ["MS_ENTRA_CLIENT_ID"] = ""
 os.environ["MS_ENTRA_CLIENT_SECRET"] = ""
 os.environ["MS_ENTRA_REDIRECT_URI"] = ""
+# Do not pull the public GitHub issues board during unit tests.
+os.environ.setdefault("GITHUB_FEEDBACK_OWNER", "your-org")
 
 
 @pytest.fixture

@@ -520,17 +520,19 @@
 	}
 
 	function photoSrc(ph) {
+		if (ph && ph.data_url) return ph.data_url;
 		var url = (ph && (ph.file_url || ph.url)) || "";
 		if (!url) return "";
-		if (/^https?:\/\//i.test(url)) return url;
+		if (/^https?:\/\//i.test(url) || /^data:/i.test(url)) return url;
 		return (window.USIS_API.apiBase() || "") + url;
 	}
 
 	function bindPunchPhotos(root) {
 		if (!root) return;
 		root.querySelectorAll("img.usis-punch-photo[data-file-url]").forEach(function (img) {
+			if (img.getAttribute("src") && String(img.getAttribute("src")).indexOf("data:") === 0) return;
 			var url = img.getAttribute("data-file-url") || "";
-			if (!url) return;
+			if (!url || url.indexOf("data:") === 0) return;
 			fetch(url, {
 				credentials: "include",
 				headers: Object.assign({ Accept: "image/*" }, window.USIS_API.actorHeaders()),
@@ -720,6 +722,13 @@
 					.map(function (ph) {
 						var src = photoSrc(ph);
 						if (!src) return "";
+						if (/^data:/i.test(src)) {
+							return (
+								'<img src="' +
+								esc(src) +
+								'" alt="" class="img-fluid rounded border mb-3 usis-punch-photo" style="max-height:28rem;width:100%;object-fit:contain;background:#f8f9fa">'
+							);
+						}
 						return (
 							'<img src="" data-file-url="' +
 							esc(src) +
@@ -758,6 +767,34 @@
 		bindPunchPhotos(body);
 	}
 
+	function attachNearbyCrewPhotos(it) {
+		if (!it || (it.photos && it.photos.length) || it.source === "issue" || !projectId()) {
+			return Promise.resolve(it);
+		}
+		return fetchJson(pidPath("/photos"))
+			.then(function (data) {
+				var all = (data && (data.items || data.photos)) || [];
+				var created = Date.parse(it.created_at || "") || 0;
+				var nearby = all
+					.filter(function (ph) {
+						if (!ph || ph.daily_report_id) return false;
+						if (ph.punch_item_id && String(ph.punch_item_id) !== String(it.id)) return false;
+						var taken = Date.parse(ph.taken_at || ph.created_at || "") || 0;
+						if (!created || !taken) return false;
+						var album = String(ph.album || "").toLowerCase();
+						var punchy = album.indexOf("punch") >= 0;
+						var delta = Math.abs(taken - created);
+						return (punchy && delta < 14 * 86400000) || delta < 4 * 3600 * 1000;
+					})
+					.slice(0, 6);
+				if (nearby.length) it.photos = nearby;
+				return it;
+			})
+			.catch(function () {
+				return it;
+			});
+	}
+
 	function openCrewDetail(id, source) {
 		source = source || "punch_item";
 		var root = document.getElementById("usis-modal-crew-punch-detail");
@@ -779,6 +816,9 @@
 		fetchJson(path)
 			.then(function (data) {
 				var fresh = source === "issue" ? normalizeCrewIssue(data.issue || data) : normalizeFieldPunch(data.item || data);
+				return attachNearbyCrewPhotos(fresh);
+			})
+			.then(function (fresh) {
 				crewPunchCache[crewCacheKey(source, id)] = fresh;
 				renderCrewDetail(fresh);
 			})

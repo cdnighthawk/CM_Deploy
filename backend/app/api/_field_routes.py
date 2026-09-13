@@ -9,6 +9,7 @@ from ._field_service import (
     FieldApiError,
     create_field_photo,
     delete_field_photo,
+    first_upload_file,
     get_or_create_daily_report,
     list_field_photos,
     put_daily_report,
@@ -101,7 +102,7 @@ def register_field_routes(bp: Blueprint) -> None:
             return jsonify({"error": "project not found"}), 404
         form = request.form.to_dict() if request.form else {}
         try:
-            return jsonify(create_field_photo(pid, request.files.get("file"), form, current_user())), 201
+            return jsonify(create_field_photo(pid, first_upload_file(request.files), form, current_user())), 201
         except FieldApiError as exc:
             return _err(exc)
 

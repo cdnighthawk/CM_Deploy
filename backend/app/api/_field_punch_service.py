@@ -1,11 +1,15 @@
 """FinishWorks Field punch-list CRUD, directory, locations, and notify."""
 from __future__ import annotations
 
+import base64
+import io
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Mapping
 
-from flask import render_template, request
+from werkzeug.datastructures import FileStorage
+
+from flask import render_template
 from sqlalchemy import func, select
 
 from ..extensions import db
@@ -33,7 +37,14 @@ from ..models.field_punch import (
     PUNCH_TRADES,
     PUNCH_TYPES,
 )
-from ._field_service import FieldApiError, _parse_uuid, _require_project_access, create_field_photo, field_photo_public
+from ._field_service import (
+    FieldApiError,
+    _parse_uuid,
+    _require_project_access,
+    create_field_photo,
+    field_photo_public,
+    first_upload_file,
+)
 from ._notifications import send_html_notification_email
 from ._perms import CurrentUser
 from ._serializers import iso
@@ -173,6 +184,55 @@ def _link_photo_ids(row: FieldPunchItem, ids: list[uuid.UUID]) -> None:
         db.session.add(photo)
 
 
+def _attach_inline_photos(row: FieldPunchItem, data: Mapping[str, Any], cu: CurrentUser) -> None:
+    blobs: list[Any] = []
+    for key in ("photos", "attachments", "images"):
+        raw = data.get(key)
+        if isinstance(raw, dict):
+            blobs.append(raw)
+        elif isinstance(raw, list):
+            blobs.extend(raw)
+    single = data.get("photo") or data.get("image") or data.get("data_url")
+    if isinstance(single, (str, dict)):
+        blobs.append(single)
+    for i, entry in enumerate(blobs):
+        mime = "image/jpeg"
+        filename = f"punch-{i + 1}.jpg"
+        payload = ""
+        if isinstance(entry, str):
+            payload = entry.strip()
+        elif isinstance(entry, dict):
+            payload = str(
+                entry.get("data_url")
+                or entry.get("data")
+                or entry.get("base64")
+                or entry.get("content")
+                or ""
+            ).strip()
+            filename = str(entry.get("filename") or entry.get("name") or filename)[:300]
+            if entry.get("mime_type"):
+                mime = str(entry.get("mime_type")).strip() or mime
+        if not payload.startswith("data:") and len(payload) < 80:
+            continue
+        if payload.startswith("data:") and "," in payload:
+            header, payload = payload.split(",", 1)
+            if ";" in header:
+                mime = header[5:].split(";")[0].strip() or mime
+        try:
+            raw_bytes = base64.b64decode(payload, validate=False)
+        except (ValueError, TypeError):
+            continue
+        if len(raw_bytes) < 32:
+            continue
+        upload = FileStorage(stream=io.BytesIO(raw_bytes), filename=filename, content_type=mime)
+        create_field_photo(
+            row.project_id,
+            upload,
+            {"album": "Punch", "punch_item_id": str(row.id)},
+            cu,
+        )
+
+
 def _photo_looks_like_punch(photo: FieldPhoto, punch: FieldPunchItem) -> bool:
     album = (photo.album or "").strip().lower()
     caption = (photo.caption or "").strip().lower()
@@ -231,12 +291,6 @@ def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
         best: FieldPunchItem | None = None
         best_delta: float | None = None
         for punch in punches:
-            if (
-                punch.created_by_id
-                and photo.uploaded_by_user_id
-                and punch.created_by_id != photo.uploaded_by_user_id
-            ):
-                continue
             if not _photo_looks_like_punch(photo, punch):
                 continue
             created = _aware(punch.created_at)
@@ -245,7 +299,7 @@ def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
                     best = punch
                 continue
             delta = abs((taken - created).total_seconds())
-            if delta > 8 * 3600:
+            if delta > 14 * 24 * 3600:
                 continue
             if best_delta is None or delta < best_delta:
                 best = punch
@@ -262,14 +316,46 @@ def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
 
 
 def _photos_for_punch(row: FieldPunchItem) -> list[FieldPhoto]:
-    return list(
+    linked = list(
         db.session.scalars(
             select(FieldPhoto).where(FieldPhoto.punch_item_id == row.id).order_by(FieldPhoto.created_at.asc())
         ).all()
     )
+    if linked:
+        return linked
+    created = _aware(row.created_at)
+    if created is None:
+        return []
+    nearby = list(
+        db.session.scalars(
+            select(FieldPhoto)
+            .where(
+                FieldPhoto.project_id == row.project_id,
+                FieldPhoto.daily_report_id.is_(None),
+            )
+            .order_by(FieldPhoto.created_at.asc())
+        ).all()
+    )
+    out: list[FieldPhoto] = []
+    for photo in nearby:
+        if photo.punch_item_id and photo.punch_item_id != row.id:
+            continue
+        taken = _aware(photo.taken_at) or _aware(photo.created_at)
+        if taken is None:
+            continue
+        delta = abs((taken - created).total_seconds())
+        album = (photo.album or "").strip().lower()
+        punchy = "punch" in album or album in {"camera", "photos", "crew punch"}
+        if punchy and delta <= 14 * 24 * 3600:
+            out.append(photo)
+        elif delta <= 4 * 3600:
+            out.append(photo)
+        if len(out) >= 6:
+            break
+    return out
 
 
-def punch_item_public(row: FieldPunchItem) -> dict[str, Any]:
+def punch_item_public(row: FieldPunchItem, *, include_photo_data: bool = False) -> dict[str, Any]:
     photos = _photos_for_punch(row)
     dists = list(
         db.session.scalars(
@@ -314,7 +400,7 @@ def punch_item_public(row: FieldPunchItem) -> dict[str, Any]:
         "created_by_id": str(row.created_by_id) if row.created_by_id else None,
         "updated_at": iso(row.updated_at),
         "created_at": iso(row.created_at),
-        "photos": [field_photo_public(p) for p in photos],
+        "photos": [field_photo_public(p, include_data=include_photo_data) for p in photos],
         "distribution": [
             {
                 "id": str(d.id),
@@ -516,6 +602,7 @@ def create_or_get_punch_item(project_id: uuid.UUID, data: Mapping[str, Any], cu:
         if existing.project_id != project_id:
             raise PunchFieldError("local_id already used", 409, "local_id")
         _link_photo_ids(existing, _photo_ids_from(data))
+        _attach_inline_photos(existing, data, cu)
         db.session.commit()
         return {"item": punch_item_public(existing), "entity": "punch_item"}, 200
 
@@ -546,6 +633,7 @@ def create_or_get_punch_item(project_id: uuid.UUID, data: Mapping[str, Any], cu:
     db.session.flush()
     _replace_distribution(row, data.get("distribution"))
     _link_photo_ids(row, _photo_ids_from(data))
+    _attach_inline_photos(row, data, cu)
     _audit(cu, row.id, "create", f"Created punch item {row.number}: {row.title}")
     should_notify = _as_bool(data.get("notify_on_save"))
     if should_notify:
@@ -566,7 +654,7 @@ def _get_item(item_id: uuid.UUID, cu: CurrentUser) -> FieldPunchItem:
 def get_punch_item(item_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     row = _get_item(item_id, cu)
     claim_orphan_punch_photos(row.project_id)
-    return {"item": punch_item_public(row), "entity": "punch_item"}
+    return {"item": punch_item_public(row, include_photo_data=True), "entity": "punch_item"}
 
 
 def patch_punch_item(item_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
@@ -590,6 +678,7 @@ def patch_punch_item(item_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUse
         if "notify_on_save" in data and data.get("notify_on_save"):
             send_punch_notify(row, cu, persist=False)
     _link_photo_ids(row, _photo_ids_from(data))
+    _attach_inline_photos(row, data, cu)
     _audit(cu, row.id, "update", f"Updated punch item {row.number}")
     db.session.add(row)
     db.session.commit()
@@ -622,20 +711,6 @@ def delete_punch_item(item_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     db.session.add(row)
     db.session.commit()
     return {"ok": True, "id": str(row.id), "entity": "punch_item"}
-
-
-def first_upload_file(files=None):
-    bag = files if files is not None else (request.files if request else None)
-    if bag is None:
-        return None
-    for key in ("file", "photo", "image", "attachment", "picture"):
-        candidate = bag.get(key)
-        if candidate is not None and getattr(candidate, "filename", None):
-            return candidate
-    for candidate in bag.values():
-        if candidate is not None and getattr(candidate, "filename", None):
-            return candidate
-    return None
 
 
 def attach_punch_photo(item_id: uuid.UUID, file, form: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:

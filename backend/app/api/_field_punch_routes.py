@@ -18,7 +18,7 @@ from ._field_punch_service import (
     set_punch_status,
 )
 from ._field_routes import _parse_uuid_param, _project_exists
-from ._field_service import FieldApiError
+from ._field_service import FieldApiError, create_field_photo, list_field_photos, send_field_photo_file
 from ._perms import current_user
 
 
@@ -57,11 +57,18 @@ def register_field_punch_routes(bp: Blueprint) -> None:
             return jsonify({"error": "invalid project id"}), 400
         if not _project_exists(pid):
             return jsonify({"error": "project not found"}), 404
-        data = request.get_json(silent=True) or {}
+        data = request.get_json(silent=True)
         if not isinstance(data, dict):
-            return jsonify({"error": "JSON body required"}), 400
+            data = request.form.to_dict() if request.form else {}
+        if not isinstance(data, dict):
+            data = {}
         try:
             body, status = create_or_get_punch_item(pid, data, current_user())
+            upload = first_upload_file(request.files)
+            item_id = _parse_uuid_param(str((body.get("item") or {}).get("id") or ""))
+            if upload is not None and item_id:
+                attach_punch_photo(item_id, upload, {}, current_user())
+                body = get_punch_item(item_id, current_user())
             return jsonify(body), status
         except FieldApiError as exc:
             return _err(exc)
@@ -161,5 +168,41 @@ def register_field_punch_routes(bp: Blueprint) -> None:
             return jsonify({"error": "project not found"}), 404
         try:
             return jsonify(list_field_locations(pid, current_user()))
+        except FieldApiError as exc:
+            return _err(exc)
+
+
+def register_field_photo_aliases(bp: Blueprint) -> None:
+    """Phone ticket paths under ``/api/field`` for generic job photos."""
+
+    @bp.get("/projects/<project_id>/photos")
+    def get_field_alias_project_photos(project_id: str):
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        return jsonify(list_field_photos(pid))
+
+    @bp.post("/projects/<project_id>/photos")
+    def post_field_alias_project_photo(project_id: str):
+        pid = _parse_uuid_param(project_id)
+        if not pid:
+            return jsonify({"error": "invalid project id"}), 400
+        if not _project_exists(pid):
+            return jsonify({"error": "project not found"}), 404
+        form = request.form.to_dict() if request.form else {}
+        try:
+            return jsonify(create_field_photo(pid, first_upload_file(request.files), form, current_user())), 201
+        except FieldApiError as exc:
+            return _err(exc)
+
+    @bp.get("/photos/<photo_id>/file")
+    def get_field_alias_photo_file(photo_id: str):
+        pid = _parse_uuid_param(photo_id)
+        if not pid:
+            return jsonify({"error": "invalid photo id"}), 400
+        try:
+            return send_field_photo_file(pid, current_user())
         except FieldApiError as exc:
             return _err(exc)

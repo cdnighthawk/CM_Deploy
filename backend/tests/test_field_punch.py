@@ -282,3 +282,56 @@ def test_attach_photo_field_name(client):
     assert attached.status_code == 201, attached.get_data(as_text=True)
     got = client.get(f"/api/v1/punch-items/{item_id}")
     assert len(got.get_json()["item"]["photos"]) == 1
+    assert got.get_json()["item"]["photos"][0].get("data_url", "").startswith("data:image/")
+
+
+def test_field_alias_photo_attach(client):
+    import io
+
+    with client.application.app_context():
+        pid = _make_project()
+    created = client.post(f"/api/field/projects/{pid}/punch-items", json=_payload())
+    assert created.status_code == 201, created.get_data(as_text=True)
+    item_id = created.get_json()["item"]["id"]
+    attached = client.post(
+        f"/api/field/punch-items/{item_id}/photos",
+        data={"photo": (io.BytesIO(_tiny_jpeg()), "bead.jpg")},
+        content_type="multipart/form-data",
+    )
+    assert attached.status_code == 201, attached.get_data(as_text=True)
+    got = client.get(f"/api/field/punch-items/{item_id}")
+    assert got.status_code == 200
+    assert len(got.get_json()["item"]["photos"]) == 1
+
+
+def test_inline_data_url_photo_on_create(client):
+    import base64
+
+    with client.application.app_context():
+        pid = _make_project()
+    jpeg = _tiny_jpeg()
+    data_url = "data:image/jpeg;base64," + base64.b64encode(jpeg).decode("ascii")
+    created = client.post(
+        f"/api/v1/projects/{pid}/punch-items",
+        json=_payload(photos=[{"data_url": data_url, "filename": "bead.jpg"}]),
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    photos = created.get_json()["item"]["photos"]
+    assert len(photos) == 1
+
+
+def test_nearby_unlinked_photo_shown_on_detail(client):
+    import io
+
+    with client.application.app_context():
+        pid = _make_project()
+    created = client.post(f"/api/v1/projects/{pid}/punch-items", json=_payload())
+    item_id = created.get_json()["item"]["id"]
+    uploaded = client.post(
+        f"/api/v1/projects/{pid}/photos",
+        data={"file": (io.BytesIO(_tiny_jpeg()), "bead.jpg")},
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    got = client.get(f"/api/v1/punch-items/{item_id}")
+    assert len(got.get_json()["item"]["photos"]) >= 1

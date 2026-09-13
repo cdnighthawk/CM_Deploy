@@ -5907,6 +5907,13 @@ if (Path(__file__).resolve().parent / "_field_punch_routes.py").is_file():
     from . import _field_punch_routes as _field_punch_routes_mod  # noqa: E402
 
     _field_punch_routes_mod.register_field_punch_routes(bp)
+
+field_alias_bp = Blueprint("api_field", __name__, url_prefix="/api/field")
+if (Path(__file__).resolve().parent / "_field_punch_routes.py").is_file():
+    from . import _field_punch_routes as _field_punch_alias_mod  # noqa: E402
+
+    _field_punch_alias_mod.register_field_punch_routes(field_alias_bp)
+    _field_punch_alias_mod.register_field_photo_aliases(field_alias_bp)
 from . import _safety_routes as _safety_routes_mod  # noqa: E402
 
 _safety_routes_mod.register_safety_routes(bp)

@@ -1,17 +1,19 @@
 """Daily reports and field photos for the FinishWorks field app."""
 from __future__ import annotations
 
+import base64
 import copy
 import uuid
 from datetime import date, datetime, timezone
 from typing import Any, Mapping
 
+from flask import request
 from sqlalchemy import select
 
 from ..extensions import db
 from ..models import DailyReport, Drawing, FieldPhoto
 from ..models.field_ops import DAILY_REPORT_STATUSES, DEFAULT_DAILY_SECTIONS
-from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists
+from ..services.object_storage import UploadCategory, delete_stored, save_upload, send_stored_file, stored_exists, read_stored_bytes
 from ._perms import CurrentUser
 from ._serializers import iso
 
@@ -184,14 +186,28 @@ def put_daily_report(report_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentU
     return {"item": daily_report_public(row), "entity": "daily_report"}
 
 
+def first_upload_file(files=None):
+    bag = files if files is not None else (request.files if request else None)
+    if bag is None:
+        return None
+    for key in ("file", "photo", "image", "attachment", "picture"):
+        candidate = bag.get(key)
+        if candidate is not None and getattr(candidate, "filename", None):
+            return candidate
+    for candidate in bag.values():
+        if candidate is not None and getattr(candidate, "filename", None):
+            return candidate
+    return None
+
+
 def field_photo_object_name(photo_id: uuid.UUID) -> str:
     return f"{photo_id}.jpg"
 
 
-def field_photo_public(row: FieldPhoto) -> dict[str, Any]:
+def field_photo_public(row: FieldPhoto, *, include_data: bool = False) -> dict[str, Any]:
     lat = row.lat
     lon = row.lon
-    return {
+    payload = {
         "id": str(row.id),
         "project_id": str(row.project_id),
         "file_url": f"/api/v1/photos/{row.id}/file",
@@ -206,6 +222,12 @@ def field_photo_public(row: FieldPhoto) -> dict[str, Any]:
         "album": getattr(row, "album", None) or "",
         "created_at": iso(row.created_at),
     }
+    if include_data:
+        raw = read_stored_bytes(UploadCategory.FIELD_PHOTOS, field_photo_object_name(row.id))
+        if raw:
+            mime = (row.mime_type or "image/jpeg").strip() or "image/jpeg"
+            payload["data_url"] = "data:" + mime + ";base64," + base64.b64encode(raw).decode("ascii")
+    return payload
 
 
 def list_field_photos(project_id: uuid.UUID) -> dict[str, Any]:

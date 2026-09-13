@@ -170,6 +170,7 @@ def create_app(config_object: str | None = None) -> Flask:
 
     from .ai.blueprint import bp as ai_bp
     from .api import v1_bp
+    from .api.v1 import field_alias_bp
     from .api.github_webhooks import bp as github_webhooks_bp
     from .api.ingest import bp as ingest_bp
     from .ap import ap_bp
@@ -182,6 +183,7 @@ def create_app(config_object: str | None = None) -> Flask:
     from .api.hires_bp import bp as hires_bp
 
     app.register_blueprint(v1_bp)
+    app.register_blueprint(field_alias_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(public_bp)
     app.register_blueprint(submittals_bp)
@@ -203,6 +205,7 @@ def create_app(config_object: str | None = None) -> Flask:
     def _protected_api_path(path: str) -> bool:
         return (
             path.startswith("/api/v1")
+            or path.startswith("/api/field")
             or path.startswith("/api/ai")
             or path.startswith("/api/submittals")
             or path.startswith("/api/workflows")

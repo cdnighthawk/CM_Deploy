@@ -36,6 +36,7 @@
 		activityUserId: "",
 		activityPeople: [],
 		activityFeed: [],
+		activityFeedTotal: 0,
 		offices: [],
 		officesLoaded: false,
 	};
@@ -193,6 +194,17 @@
 		var d = new Date(iso);
 		if (isNaN(d.getTime())) return String(iso);
 		return d.toLocaleString();
+	}
+
+	function fmtActive(seconds) {
+		var n = parseInt(seconds, 10) || 0;
+		if (n <= 0) return "—";
+		if (n < 60) return "<1m";
+		var h = Math.floor(n / 3600);
+		var m = Math.floor((n % 3600) / 60);
+		if (h && m) return h + "h " + m + "m";
+		if (h) return h + "h";
+		return m + "m";
 	}
 
 	function loginLabel(u) {
@@ -899,7 +911,7 @@
 		if (!tb) return;
 		var rows = state.activityPeople || [];
 		if (!rows.length) {
-			tb.innerHTML = '<tr><td colspan="6" class="text-muted small">No staff users to show.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="8" class="text-muted small">No staff users to show.</td></tr>';
 			return;
 		}
 		tb.innerHTML = rows
@@ -926,11 +938,17 @@
 					'">' +
 					esc(fmtWhen(u.last_seen_at)) +
 					"</td>" +
-					'<td class="text-end">' +
-					esc(u.actions_today || 0) +
+					'<td class="text-end text-nowrap">' +
+					esc(fmtActive(u.active_seconds_today)) +
+					"</td>" +
+					'<td class="text-end text-nowrap">' +
+					esc(fmtActive(u.active_seconds_period)) +
 					"</td>" +
 					'<td class="text-end">' +
-					esc(u.actions_period || 0) +
+					esc(u.page_views_period || 0) +
+					"</td>" +
+					'<td class="text-end">' +
+					esc(u.writes_period || 0) +
 					"</td>" +
 					'<td class="text-end">' +
 					esc(u.logins_period || 0) +
@@ -958,6 +976,22 @@
 			title.textContent = person ? "Activity — " + (person.name || person.email || person.username) : "Recent activity";
 		}
 		if (clearBtn) clearBtn.classList.toggle("d-none", !state.activityUserId);
+		var meta = document.getElementById("usis-ud-activity-feed-meta");
+		var total = state.activityFeedTotal || 0;
+		if (meta) {
+			if (!total) {
+				meta.textContent = "History is kept for 1 year.";
+			} else if (total > (state.activityFeed || []).length) {
+				meta.textContent =
+					"Showing latest " +
+					(state.activityFeed || []).length +
+					" of " +
+					total +
+					". History is kept for 1 year.";
+			} else {
+				meta.textContent = total + " event" + (total === 1 ? "" : "s") + " in this range. History is kept for 1 year.";
+			}
+		}
 		var rows = state.activityFeed || [];
 		if (!rows.length) {
 			tb.innerHTML = '<tr><td colspan="3" class="text-muted small">No activity in this range yet.</td></tr>';
@@ -1019,6 +1053,7 @@
 			.then(function (res) {
 				if (!res.ok) return;
 				state.activityFeed = res.body.items || [];
+				state.activityFeedTotal = res.body.total != null ? res.body.total : state.activityFeed.length;
 				renderActivityFeed();
 			})
 			.catch(function () {});

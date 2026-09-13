@@ -48,6 +48,62 @@
 		return h === "localhost" || h === "127.0.0.1" || h === "::1";
 	}
 
+	function startActivityTracking() {
+		var lastInputAt = Date.now();
+		var HB_MS = 45000;
+		var IDLE_MS = 5 * 60 * 1000;
+
+		function activityBody(extra) {
+			var out = {
+				path: (location.pathname || "") + (location.search || ""),
+				title: document.title || "",
+				visible: document.visibilityState === "visible",
+			};
+			if (extra) {
+				for (var k in extra) {
+					if (Object.prototype.hasOwnProperty.call(extra, k)) out[k] = extra[k];
+				}
+			}
+			return JSON.stringify(out);
+		}
+
+		function postActivity(url, extra) {
+			try {
+				fetch(apiBase() + url, {
+					method: "POST",
+					credentials: "include",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					body: activityBody(extra),
+					keepalive: true,
+				}).catch(function () {});
+			} catch (e) {}
+		}
+
+		function markInput() {
+			lastInputAt = Date.now();
+		}
+
+		["pointerdown", "keydown", "scroll", "mousemove", "touchstart"].forEach(function (ev) {
+			document.addEventListener(ev, markInput, { passive: true });
+		});
+
+		function tickHeartbeat() {
+			if (document.visibilityState !== "visible") return;
+			if (Date.now() - lastInputAt > IDLE_MS) return;
+			postActivity("/api/v1/me/activity/heartbeat");
+		}
+
+		postActivity("/api/v1/me/activity/page-view");
+		tickHeartbeat();
+		setInterval(tickHeartbeat, HB_MS);
+		document.addEventListener("visibilitychange", function () {
+			if (document.visibilityState === "visible") {
+				markInput();
+				tickHeartbeat();
+			}
+		});
+	}
+
 	function redirectToLogin() {
 		var here = location.href.split("#")[0];
 		window.location.assign("/page-login.html?next=" + encodeURIComponent(here));
@@ -70,19 +126,7 @@
 				if (window.USISDrawingCache && typeof window.USISDrawingCache.refresh === "function") {
 					window.USISDrawingCache.refresh();
 				}
-				try {
-					var payload = JSON.stringify({
-						path: (location.pathname || "") + (location.search || ""),
-						title: document.title || "",
-					});
-					fetch(apiBase() + "/api/v1/me/activity/page-view", {
-						method: "POST",
-						credentials: "include",
-						headers: { "Content-Type": "application/json", Accept: "application/json" },
-						body: payload,
-						keepalive: true,
-					}).catch(function () {});
-				} catch (e) {}
+				startActivityTracking();
 				return;
 			}
 			redirectToLogin();

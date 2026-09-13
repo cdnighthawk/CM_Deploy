@@ -68,6 +68,9 @@ class User(UUIDPKMixin, TimestampMixin, db.Model):
     last_seen_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    activity_heartbeat_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     office = relationship("CompanyOffice", foreign_keys=[office_id])
     roles: Mapped[List["UserRole"]] = relationship(

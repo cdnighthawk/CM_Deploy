@@ -6,7 +6,7 @@ from .ai_chat import AiChatMessage, AiChatSession
 from .chat import ChatConversation, ChatMessage, ChatParticipant
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
-from .user_activity import UserActivityEvent
+from .user_activity import UserActivityDaily, UserActivityEvent
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .change_management import (
     ChangeProposalRequest,
@@ -361,6 +361,7 @@ __all__ = [
     "TimecardPeriod",
     "TimecardPeriodEmployee",
     "User",
+    "UserActivityDaily",
     "UserActivityEvent",
     "UserRole",
     "VendorInvoice",

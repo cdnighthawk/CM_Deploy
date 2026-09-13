@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from flask import has_request_context, request
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from ..extensions import db
-from ..models import User, UserActivityEvent
+from ..models import User, UserActivityDaily, UserActivityEvent
 from ._admin_users_service import ApiError, _iso, _require_admin
 from ._perms import CurrentUser
 from ..permissions.applicant import applicant_only_user_id_subquery
@@ -19,11 +20,20 @@ EVENT_LOGOUT = "logout"
 EVENT_PAGE_VIEW = "page_view"
 EVENT_API_WRITE = "api_write"
 
+_PACIFIC = ZoneInfo("America/Los_Angeles")
+RETENTION_DAYS = 365
+MAX_QUERY_DAYS = 365
 _LAST_SEEN_MIN_SECONDS = 60
 _PAGE_VIEW_DEDUP_SECONDS = 120
+_HEARTBEAT_MIN_SECONDS = 20
+_HEARTBEAT_MAX_CREDIT_SECONDS = 90
+_SESSION_IDLE_SECONDS = 15 * 60
+_DAILY_ACTIVE_CAP_SECONDS = 16 * 60 * 60
+_PRUNE_EVERY_SECONDS = 6 * 60 * 60
 _MAX_PATH = 500
 _MAX_SUMMARY = 300
 _MAX_UA = 500
+_last_prune_at: datetime | None = None
 
 _SKIP_WRITE_PREFIXES = (
     "/api/v1/me/activity",
@@ -88,6 +98,89 @@ def _aware(dt: datetime | None) -> datetime | None:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt
+
+
+def _local_date(dt: datetime | None = None) -> date:
+    return (dt or _now()).astimezone(_PACIFIC).date()
+
+
+def _since_utc(days: int) -> datetime:
+    days = max(1, min(int(days), MAX_QUERY_DAYS))
+    start = datetime.combine(_local_date() - timedelta(days=days - 1), time.min, tzinfo=_PACIFIC)
+    return start.astimezone(timezone.utc)
+
+
+def _daily_row(user: User, when: datetime | None = None) -> UserActivityDaily:
+    now = when or _now()
+    day = _local_date(now)
+    row = db.session.scalar(
+        select(UserActivityDaily).where(
+            UserActivityDaily.user_id == user.id,
+            UserActivityDaily.activity_date == day,
+        )
+    )
+    if row is None:
+        row = UserActivityDaily(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            activity_date=day,
+            active_seconds=0,
+            page_views=0,
+            api_writes=0,
+            logins=0,
+            sessions=0,
+            first_seen_at=now,
+            last_seen_at=now,
+        )
+        db.session.add(row)
+        db.session.flush()
+    if row.first_seen_at is None:
+        row.first_seen_at = now
+    row.last_seen_at = now
+    return row
+
+
+def _bump_daily(user: User, **counts: int) -> UserActivityDaily:
+    row = _daily_row(user)
+    if counts.get("page_views"):
+        row.page_views = int(row.page_views or 0) + int(counts["page_views"])
+    if counts.get("api_writes"):
+        row.api_writes = int(row.api_writes or 0) + int(counts["api_writes"])
+    if counts.get("logins"):
+        row.logins = int(row.logins or 0) + int(counts["logins"])
+    if counts.get("sessions"):
+        row.sessions = int(row.sessions or 0) + int(counts["sessions"])
+    if counts.get("active_seconds"):
+        row.active_seconds = min(
+            int(row.active_seconds or 0) + int(counts["active_seconds"]),
+            _DAILY_ACTIVE_CAP_SECONDS,
+        )
+    return row
+
+
+def prune_old_activity(*, force: bool = False) -> dict[str, int]:
+    """Drop events and daily rows older than one year. Bounded, indexed deletes."""
+    global _last_prune_at
+    now = _now()
+    if (
+        not force
+        and _last_prune_at is not None
+        and (now - _last_prune_at).total_seconds() < _PRUNE_EVERY_SECONDS
+    ):
+        return {"events": 0, "daily": 0}
+    _last_prune_at = now
+    event_cutoff = now - timedelta(days=RETENTION_DAYS)
+    day_cutoff = _local_date(now) - timedelta(days=RETENTION_DAYS)
+    events = db.session.execute(
+        delete(UserActivityEvent).where(UserActivityEvent.created_at < event_cutoff)
+    )
+    daily = db.session.execute(
+        delete(UserActivityDaily).where(UserActivityDaily.activity_date < day_cutoff)
+    )
+    return {
+        "events": int(events.rowcount or 0),
+        "daily": int(daily.rowcount or 0),
+    }
 
 
 def client_ip() -> str | None:
@@ -183,7 +276,9 @@ def record_login(user: User, source: str) -> None:
     now = _now()
     user.last_login_at = now
     user.last_seen_at = now
+    user.activity_heartbeat_at = now
     db.session.add(user)
+    _bump_daily(user, logins=1, sessions=1)
     _add_event(
         user,
         event_type=EVENT_LOGIN,
@@ -224,6 +319,7 @@ def record_page_view(user: User, path: str, title: str | None = None) -> UserAct
     if recent is not None:
         return None
     extra = {"title": (title or "").strip()[:200]} if (title or "").strip() else None
+    _bump_daily(user, page_views=1)
     return _add_event(
         user,
         event_type=EVENT_PAGE_VIEW,
@@ -248,6 +344,7 @@ def record_api_write(user: User, method: str, path: str, status: int) -> UserAct
     if should_skip_api_write(clean):
         return None
     touch_last_seen(user, force=True)
+    _bump_daily(user, api_writes=1)
     return _add_event(
         user,
         event_type=EVENT_API_WRITE,
@@ -257,6 +354,65 @@ def record_api_write(user: User, method: str, path: str, status: int) -> UserAct
         summary=_write_summary(method, clean),
         extra={"status": status},
     )
+
+
+def record_heartbeat(user: User, *, visible: bool = True, path: str | None = None) -> dict[str, Any]:
+    """Credit active time while the tab is visible. Does not write an event per ping."""
+    prune_old_activity()
+    if not visible:
+        return {
+            "ok": True,
+            "credited_seconds": 0,
+            "skipped": "hidden",
+            "entity": "user_activity_heartbeat",
+        }
+    now = _now()
+    prev = _aware(user.activity_heartbeat_at)
+    credited = 0
+    new_session = prev is None
+    if prev is not None:
+        gap = (now - prev).total_seconds()
+        if gap < _HEARTBEAT_MIN_SECONDS:
+            touch_last_seen(user)
+            db.session.add(user)
+            row = _daily_row(user, now)
+            return {
+                "ok": True,
+                "credited_seconds": 0,
+                "throttled": True,
+                "active_seconds_today": int(row.active_seconds or 0),
+                "entity": "user_activity_heartbeat",
+            }
+        if gap > _SESSION_IDLE_SECONDS:
+            new_session = True
+        else:
+            credited = min(int(gap), _HEARTBEAT_MAX_CREDIT_SECONDS)
+    user.activity_heartbeat_at = now
+    user.last_seen_at = now
+    db.session.add(user)
+    counts: dict[str, int] = {"active_seconds": credited}
+    if new_session:
+        counts["sessions"] = 1
+    row = _bump_daily(user, **counts)
+    return {
+        "ok": True,
+        "credited_seconds": credited,
+        "active_seconds_today": int(row.active_seconds or 0),
+        "path": _clip(path, _MAX_PATH),
+        "entity": "user_activity_heartbeat",
+    }
+
+
+def record_heartbeat_for_current(cu: CurrentUser, data: dict[str, Any] | None) -> dict[str, Any]:
+    if cu.user is None:
+        raise ApiError("authentication required", 401)
+    body = data if isinstance(data, dict) else {}
+    visible_raw = body.get("visible")
+    visible = True if visible_raw is None else bool(visible_raw)
+    path = str(body.get("path") or body.get("page") or "").strip() or None
+    out = record_heartbeat(cu.user, visible=visible, path=path)
+    db.session.commit()
+    return out
 
 
 def after_request_track(response) -> None:
@@ -363,10 +519,12 @@ def list_events(
 
 def activity_summary(cu: CurrentUser, *, days: int = 7) -> dict[str, Any]:
     _require_admin(cu)
-    days = max(1, min(int(days), 90))
-    now = _now()
-    since = now - timedelta(days=days)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    prune_old_activity()
+    db.session.commit()
+    days = max(1, min(int(days), MAX_QUERY_DAYS))
+    since = _since_utc(days)
+    today = _local_date()
+    since_date = today - timedelta(days=days - 1)
 
     users = db.session.scalars(
         select(User)
@@ -384,24 +542,44 @@ def activity_summary(cu: CurrentUser, *, days: int = 7) -> dict[str, Any]:
     counts_today = dict(
         db.session.execute(
             select(UserActivityEvent.user_id, func.count())
-            .where(UserActivityEvent.created_at >= today_start)
+            .where(UserActivityEvent.created_at >= _since_utc(1))
             .group_by(UserActivityEvent.user_id)
         ).all()
     )
-    login_counts = dict(
+    daily_period = db.session.execute(
+        select(
+            UserActivityDaily.user_id,
+            func.coalesce(func.sum(UserActivityDaily.active_seconds), 0),
+            func.coalesce(func.sum(UserActivityDaily.page_views), 0),
+            func.coalesce(func.sum(UserActivityDaily.api_writes), 0),
+            func.coalesce(func.sum(UserActivityDaily.logins), 0),
+            func.coalesce(func.sum(UserActivityDaily.sessions), 0),
+        )
+        .where(UserActivityDaily.activity_date >= since_date)
+        .group_by(UserActivityDaily.user_id)
+    ).all()
+    period_map = {
+        row[0]: {
+            "active_seconds": int(row[1] or 0),
+            "page_views": int(row[2] or 0),
+            "api_writes": int(row[3] or 0),
+            "logins": int(row[4] or 0),
+            "sessions": int(row[5] or 0),
+        }
+        for row in daily_period
+    }
+    today_secs = dict(
         db.session.execute(
-            select(UserActivityEvent.user_id, func.count())
-            .where(
-                UserActivityEvent.created_at >= since,
-                UserActivityEvent.event_type == EVENT_LOGIN,
+            select(UserActivityDaily.user_id, UserActivityDaily.active_seconds).where(
+                UserActivityDaily.activity_date == today
             )
-            .group_by(UserActivityEvent.user_id)
         ).all()
     )
 
     items: list[dict[str, Any]] = []
     for u in users:
         name = " ".join(x for x in (u.first_name, u.last_name) if x).strip()
+        daily = period_map.get(u.id) or {}
         items.append(
             {
                 "id": str(u.id),
@@ -413,13 +591,19 @@ def activity_summary(cu: CurrentUser, *, days: int = 7) -> dict[str, Any]:
                 "last_seen_at": _iso(u.last_seen_at),
                 "actions_today": int(counts_today.get(u.id) or 0),
                 "actions_period": int(counts_period.get(u.id) or 0),
-                "logins_period": int(login_counts.get(u.id) or 0),
+                "logins_period": int(daily.get("logins") or 0),
+                "active_seconds_today": int(today_secs.get(u.id) or 0),
+                "active_seconds_period": int(daily.get("active_seconds") or 0),
+                "page_views_period": int(daily.get("page_views") or 0),
+                "writes_period": int(daily.get("api_writes") or 0),
+                "sessions_period": int(daily.get("sessions") or 0),
             }
         )
     return {
         "entity": "user_activity_summary",
         "days": days,
         "since": _iso(since),
+        "retention_days": RETENTION_DAYS,
         "items": items,
     }
 
@@ -450,6 +634,14 @@ def register_activity_routes(bp) -> None:
         except ApiError as exc:
             return _err(exc)
 
+    @bp.post("/me/activity/heartbeat")
+    def post_me_heartbeat():
+        body = req.get_json(silent=True) or {}
+        try:
+            return jsonify(record_heartbeat_for_current(current_user(), body))
+        except ApiError as exc:
+            return _err(exc)
+
     @bp.get("/admin/activity")
     def admin_list_activity():
         raw_uid = (req.args.get("user_id") or "").strip()
@@ -461,12 +653,12 @@ def register_activity_routes(bp) -> None:
         if event_type and event_type not in allowed:
             return jsonify({"error": "invalid event_type"}), 400
         try:
-            limit = max(1, min(int(req.args.get("limit") or 100), 500))
+            days = max(1, min(int(req.args.get("days") or 7), MAX_QUERY_DAYS))
+            limit = max(1, min(int(req.args.get("limit") or 200), 500))
             offset = max(0, int(req.args.get("offset") or 0))
-            days = max(1, min(int(req.args.get("days") or 7), 90))
         except ValueError:
             return jsonify({"error": "invalid limit, offset, or days"}), 400
-        since = _now() - timedelta(days=days)
+        since = _since_utc(days)
         try:
             items, total = list_events(
                 current_user(),
@@ -485,6 +677,7 @@ def register_activity_routes(bp) -> None:
                 "limit": limit,
                 "offset": offset,
                 "days": days,
+                "retention_days": RETENTION_DAYS,
                 "entity": "user_activity",
             }
         )
@@ -492,7 +685,7 @@ def register_activity_routes(bp) -> None:
     @bp.get("/admin/activity/summary")
     def admin_activity_summary():
         try:
-            days = max(1, min(int(req.args.get("days") or 7), 90))
+            days = max(1, min(int(req.args.get("days") or 7), MAX_QUERY_DAYS))
         except ValueError:
             return jsonify({"error": "invalid days"}), 400
         try:

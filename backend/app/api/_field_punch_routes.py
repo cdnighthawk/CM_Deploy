@@ -8,6 +8,7 @@ from ._field_punch_service import (
     attach_punch_photo,
     create_or_get_punch_item,
     delete_punch_item,
+    first_upload_file,
     get_punch_item,
     list_field_directory,
     list_field_locations,
@@ -122,7 +123,7 @@ def register_field_punch_routes(bp: Blueprint) -> None:
             if isinstance(extra, dict):
                 form.update({k: extra[k] for k in extra if extra[k] is not None})
         try:
-            return jsonify(attach_punch_photo(iid, request.files.get("file"), form, current_user())), 201
+            return jsonify(attach_punch_photo(iid, first_upload_file(request.files), form, current_user())), 201
         except FieldApiError as exc:
             return _err(exc)
 

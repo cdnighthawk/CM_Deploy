@@ -526,6 +526,32 @@
 		return (window.USIS_API.apiBase() || "") + url;
 	}
 
+	function bindPunchPhotos(root) {
+		if (!root) return;
+		root.querySelectorAll("img.usis-punch-photo[data-file-url]").forEach(function (img) {
+			var url = img.getAttribute("data-file-url") || "";
+			if (!url) return;
+			fetch(url, {
+				credentials: "include",
+				headers: Object.assign({ Accept: "image/*" }, window.USIS_API.actorHeaders()),
+			})
+				.then(function (res) {
+					if (!res.ok) throw new Error("photo");
+					return res.blob();
+				})
+				.then(function (blob) {
+					if (!blob || blob.size < 32) {
+						img.src = url;
+						return;
+					}
+					img.src = URL.createObjectURL(blob);
+				})
+				.catch(function () {
+					img.src = url;
+				});
+		});
+	}
+
 	function normalizeFieldPunch(it) {
 		return {
 			source: "punch_item",
@@ -695,9 +721,9 @@
 						var src = photoSrc(ph);
 						if (!src) return "";
 						return (
-							'<img src="' +
+							'<img src="" data-file-url="' +
 							esc(src) +
-							'" alt="" class="img-fluid rounded border mb-3" style="max-height:28rem;width:100%;object-fit:contain;background:#f8f9fa">'
+							'" alt="" class="img-fluid rounded border mb-3 usis-punch-photo" style="max-height:28rem;width:100%;object-fit:contain;background:#f8f9fa">'
 						);
 					})
 					.join("")
@@ -729,6 +755,7 @@
 			punchDetailRow("Source", prettyPunch(it.source_label)) +
 			punchDetailRow("Created", it.created_at) +
 			punchDetailRow("Updated", it.updated_at);
+		bindPunchPhotos(body);
 	}
 
 	function openCrewDetail(id, source) {

@@ -101,9 +101,11 @@ def test_notify_not_sent_when_flag_false(client, monkeypatch):
         ),
     )
     assert r.status_code == 201, r.get_data(as_text=True)
+    assert r.get_json()["item"]["last_notified_at"] is None
     assert sent == []
     with client.application.app_context():
-        logs = list(db.session.scalars(select(PunchNotifyLog)).all())
+        item_id = uuid.UUID(r.get_json()["item"]["id"])
+        logs = list(db.session.scalars(select(PunchNotifyLog).where(PunchNotifyLog.punch_item_id == item_id)).all())
         assert logs == []
 
 
@@ -203,3 +205,80 @@ def test_open_items_includes_field_crew_punch(client):
     assert "Phone crush bead" in titles
     kinds = {row["kind"] for row in open_items.get_json()["items"]}
     assert "crew_punch" in kinds
+
+
+def _tiny_jpeg() -> bytes:
+    return (
+        b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+        b"\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t"
+        b"\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e"
+        b"\x1d\x1a\x1c\x1c $.' \",#\x1c\x1c(7),01444\x1f'9=82<.342"
+        b"\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00"
+        b"\xff\xc4\x00\x14\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x08"
+        b"\xff\xc4\x00\x14\x10\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00"
+        b"\xff\xda\x00\x08\x01\x01\x00\x00?\x00\x7f\xff\xd9"
+    )
+
+
+def test_photo_ids_on_create_are_linked(client):
+    import io
+
+    with client.application.app_context():
+        pid = _make_project()
+    uploaded = client.post(
+        f"/api/v1/projects/{pid}/photos",
+        data={"file": (io.BytesIO(_tiny_jpeg()), "bead.jpg"), "album": "Punch"},
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    photo_id = uploaded.get_json()["item"]["id"]
+    created = client.post(
+        f"/api/v1/projects/{pid}/punch-items",
+        json=_payload(photo_ids=[photo_id]),
+    )
+    assert created.status_code == 201, created.get_data(as_text=True)
+    photos = created.get_json()["item"]["photos"]
+    assert len(photos) == 1
+    assert photos[0]["id"] == photo_id
+
+
+def test_orphan_punch_album_photo_is_claimed(client):
+    import io
+
+    with client.application.app_context():
+        pid = _make_project()
+    created = client.post(f"/api/v1/projects/{pid}/punch-items", json=_payload())
+    assert created.status_code == 201
+    item_id = created.get_json()["item"]["id"]
+    uploaded = client.post(
+        f"/api/v1/projects/{pid}/photos",
+        data={"file": (io.BytesIO(_tiny_jpeg()), "bead.jpg"), "album": "Punch"},
+        content_type="multipart/form-data",
+    )
+    assert uploaded.status_code == 201, uploaded.get_data(as_text=True)
+    listed = client.get(f"/api/v1/projects/{pid}/punch-items?list=ours")
+    assert listed.status_code == 200
+    items = listed.get_json()["items"]
+    assert items[0]["id"] == item_id
+    assert len(items[0]["photos"]) == 1
+    got = client.get(f"/api/v1/punch-items/{item_id}")
+    assert len(got.get_json()["item"]["photos"]) == 1
+
+
+def test_attach_photo_field_name(client):
+    import io
+
+    with client.application.app_context():
+        pid = _make_project()
+    created = client.post(f"/api/v1/projects/{pid}/punch-items", json=_payload())
+    item_id = created.get_json()["item"]["id"]
+    attached = client.post(
+        f"/api/v1/punch-items/{item_id}/photos",
+        data={"photo": (io.BytesIO(_tiny_jpeg()), "bead.jpg")},
+        content_type="multipart/form-data",
+    )
+    assert attached.status_code == 201, attached.get_data(as_text=True)
+    got = client.get(f"/api/v1/punch-items/{item_id}")
+    assert len(got.get_json()["item"]["photos"]) == 1

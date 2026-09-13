@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Mapping
 
-from flask import render_template
+from flask import render_template, request
 from sqlalchemy import func, select
 
 from ..extensions import db
@@ -49,6 +49,19 @@ class PunchFieldError(FieldApiError):
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _as_bool(raw: Any, default: bool = False) -> bool:
+    if raw is None:
+        return default
+    if isinstance(raw, bool):
+        return raw
+    s = str(raw).strip().lower()
+    if s in ("1", "true", "yes", "on"):
+        return True
+    if s in ("0", "false", "no", "off", ""):
+        return False
+    return default
 
 
 def _enum(value: Any, allowed: tuple[str, ...], field: str, *, required: bool, default: str | None = None) -> str | None:
@@ -125,12 +138,139 @@ def _next_number(project_id: uuid.UUID) -> int:
     return int(current or 0) + 1
 
 
-def punch_item_public(row: FieldPunchItem) -> dict[str, Any]:
-    photos = list(
+def _photo_ids_from(data: Mapping[str, Any]) -> list[uuid.UUID]:
+    raw: list[Any] = []
+    if isinstance(data.get("photo_ids"), list):
+        raw.extend(data.get("photo_ids") or [])
+    if data.get("photo_id"):
+        raw.append(data.get("photo_id"))
+    photos = data.get("photos")
+    if isinstance(photos, list):
+        for entry in photos:
+            if isinstance(entry, dict):
+                raw.append(entry.get("id") or entry.get("photo_id"))
+            else:
+                raw.append(entry)
+    ids: list[uuid.UUID] = []
+    seen: set[uuid.UUID] = set()
+    for item in raw:
+        uid = _parse_uuid(item)
+        if uid is None or uid in seen:
+            continue
+        seen.add(uid)
+        ids.append(uid)
+    return ids
+
+
+def _link_photo_ids(row: FieldPunchItem, ids: list[uuid.UUID]) -> None:
+    for pid in ids:
+        photo = db.session.get(FieldPhoto, pid)
+        if photo is None or photo.project_id != row.project_id:
+            continue
+        photo.punch_item_id = row.id
+        if not photo.album:
+            photo.album = "Punch"
+        db.session.add(photo)
+
+
+def _photo_looks_like_punch(photo: FieldPhoto, punch: FieldPunchItem) -> bool:
+    album = (photo.album or "").strip().lower()
+    caption = (photo.caption or "").strip().lower()
+    loc = (photo.location_text or "").strip().lower()
+    local = (punch.local_id or "").strip().lower()
+    pid = str(punch.id).lower()
+    title = (punch.title or "").strip().lower()
+    if "punch" in album or album in {"camera", "photos", "crew punch"}:
+        return True
+    if local and (local in album or local in caption):
+        return True
+    if pid in album or pid in caption:
+        return True
+    if title and len(title) >= 8 and title in caption:
+        return True
+    if punch.location_text and (punch.location_text or "").strip().lower() and loc == (punch.location_text or "").strip().lower():
+        return True
+    if not album and not photo.daily_report_id and not photo.drawing_id:
+        return True
+    return False
+
+
+def _aware(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def claim_orphan_punch_photos(project_id: uuid.UUID) -> None:
+    punches = list(
+        db.session.scalars(
+            select(FieldPunchItem).where(
+                FieldPunchItem.project_id == project_id,
+                FieldPunchItem.deleted_at.is_(None),
+            )
+        ).all()
+    )
+    if not punches:
+        return
+    orphans = list(
+        db.session.scalars(
+            select(FieldPhoto).where(
+                FieldPhoto.project_id == project_id,
+                FieldPhoto.punch_item_id.is_(None),
+                FieldPhoto.daily_report_id.is_(None),
+            )
+        ).all()
+    )
+    if not orphans:
+        return
+    claimed = False
+    for photo in orphans:
+        taken = _aware(photo.taken_at) or _aware(photo.created_at)
+        best: FieldPunchItem | None = None
+        best_delta: float | None = None
+        for punch in punches:
+            if (
+                punch.created_by_id
+                and photo.uploaded_by_user_id
+                and punch.created_by_id != photo.uploaded_by_user_id
+            ):
+                continue
+            if not _photo_looks_like_punch(photo, punch):
+                continue
+            created = _aware(punch.created_at)
+            if taken is None or created is None:
+                if best is None:
+                    best = punch
+                continue
+            delta = abs((taken - created).total_seconds())
+            if delta > 8 * 3600:
+                continue
+            if best_delta is None or delta < best_delta:
+                best = punch
+                best_delta = delta
+        if best is None:
+            continue
+        photo.punch_item_id = best.id
+        if not photo.album:
+            photo.album = "Punch"
+        db.session.add(photo)
+        claimed = True
+    if claimed:
+        db.session.commit()
+
+
+def _photos_for_punch(row: FieldPunchItem) -> list[FieldPhoto]:
+    return list(
         db.session.scalars(
             select(FieldPhoto).where(FieldPhoto.punch_item_id == row.id).order_by(FieldPhoto.created_at.asc())
         ).all()
     )
+
+
+def punch_item_public(row: FieldPunchItem) -> dict[str, Any]:
+    photos = _photos_for_punch(row)
     dists = list(
         db.session.scalars(
             select(PunchDistribution)
@@ -199,6 +339,7 @@ def list_punch_items(
     status: str | None,
 ) -> dict[str, Any]:
     _require_project_access(cu, project_id)
+    claim_orphan_punch_photos(project_id)
     stmt = select(FieldPunchItem).where(
         FieldPunchItem.project_id == project_id,
         FieldPunchItem.deleted_at.is_(None),
@@ -344,7 +485,7 @@ def _apply_ours_fields(row: FieldPunchItem, data: Mapping[str, Any], *, creating
     if "pin_y" in data or creating:
         row.pin_y = _opt_float(data.get("pin_y"), "pin_y")
     if "notify_on_save" in data or creating:
-        row.notify_on_save = bool(data.get("notify_on_save"))
+        row.notify_on_save = _as_bool(data.get("notify_on_save"))
 
 
 def _apply_assignee(row: FieldPunchItem, data: Mapping[str, Any], *, creating: bool) -> None:
@@ -374,6 +515,8 @@ def create_or_get_punch_item(project_id: uuid.UUID, data: Mapping[str, Any], cu:
     if existing is not None:
         if existing.project_id != project_id:
             raise PunchFieldError("local_id already used", 409, "local_id")
+        _link_photo_ids(existing, _photo_ids_from(data))
+        db.session.commit()
         return {"item": punch_item_public(existing), "entity": "punch_item"}, 200
 
     list_name = _enum(data.get("list") or "ours", PUNCH_LISTS, "list", required=True) or "ours"
@@ -402,8 +545,9 @@ def create_or_get_punch_item(project_id: uuid.UUID, data: Mapping[str, Any], cu:
     db.session.add(row)
     db.session.flush()
     _replace_distribution(row, data.get("distribution"))
+    _link_photo_ids(row, _photo_ids_from(data))
     _audit(cu, row.id, "create", f"Created punch item {row.number}: {row.title}")
-    should_notify = bool(data.get("notify_on_save"))
+    should_notify = _as_bool(data.get("notify_on_save"))
     if should_notify:
         send_punch_notify(row, cu, persist=False)
     db.session.commit()
@@ -420,7 +564,9 @@ def _get_item(item_id: uuid.UUID, cu: CurrentUser) -> FieldPunchItem:
 
 
 def get_punch_item(item_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
-    return {"item": punch_item_public(_get_item(item_id, cu)), "entity": "punch_item"}
+    row = _get_item(item_id, cu)
+    claim_orphan_punch_photos(row.project_id)
+    return {"item": punch_item_public(row), "entity": "punch_item"}
 
 
 def patch_punch_item(item_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
@@ -443,6 +589,7 @@ def patch_punch_item(item_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUse
             _replace_distribution(row, data.get("distribution"))
         if "notify_on_save" in data and data.get("notify_on_save"):
             send_punch_notify(row, cu, persist=False)
+    _link_photo_ids(row, _photo_ids_from(data))
     _audit(cu, row.id, "update", f"Updated punch item {row.number}")
     db.session.add(row)
     db.session.commit()
@@ -477,9 +624,23 @@ def delete_punch_item(item_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
     return {"ok": True, "id": str(row.id), "entity": "punch_item"}
 
 
+def first_upload_file(files=None):
+    bag = files if files is not None else (request.files if request else None)
+    if bag is None:
+        return None
+    for key in ("file", "photo", "image", "attachment", "picture"):
+        candidate = bag.get(key)
+        if candidate is not None and getattr(candidate, "filename", None):
+            return candidate
+    for candidate in bag.values():
+        if candidate is not None and getattr(candidate, "filename", None):
+            return candidate
+    return None
+
+
 def attach_punch_photo(item_id: uuid.UUID, file, form: Mapping[str, Any], cu: CurrentUser) -> dict[str, Any]:
     row = _get_item(item_id, cu)
-    photo_id = _parse_uuid(form.get("photo_id"))
+    photo_id = _parse_uuid(form.get("photo_id") or form.get("id"))
     if photo_id is not None:
         photo = db.session.get(FieldPhoto, photo_id)
         if photo is None or photo.project_id != row.project_id:
@@ -490,9 +651,11 @@ def attach_punch_photo(item_id: uuid.UUID, file, form: Mapping[str, Any], cu: Cu
         db.session.add(photo)
         db.session.commit()
         return {"item": field_photo_public(photo), "entity": "field_photo"}
+    upload = file if file is not None and getattr(file, "filename", None) else first_upload_file()
     merged = dict(form)
     merged.setdefault("album", "Punch")
-    created = create_field_photo(row.project_id, file, merged, cu)
+    merged["punch_item_id"] = str(row.id)
+    created = create_field_photo(row.project_id, upload, merged, cu)
     pid = _parse_uuid((created.get("item") or {}).get("id"))
     if pid:
         photo = db.session.get(FieldPhoto, pid)

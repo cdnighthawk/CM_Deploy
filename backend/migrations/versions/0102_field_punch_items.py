@@ -1,7 +1,7 @@
 """Field punch list tables for FinishWorks Field.
 
 Revision ID: 0102_field_punch
-Revises: 0100_import_src
+Revises: 0106_user_office
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0102_field_punch"
-down_revision: Union[str, Sequence[str], None] = "0100_import_src"
+down_revision: Union[str, Sequence[str], None] = "0106_user_office"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

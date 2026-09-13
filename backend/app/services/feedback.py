@@ -35,7 +35,7 @@ REPORTER_EMAIL_MARKER_RE = re.compile(r"<!--\s*usis-reporter-email:\s*([^ >]+)\s
 REPORTER_EMAIL_LINE_RE = re.compile(r"(?im)^\*\*Email:\*\*\s*(\S+@\S+)\s*$")
 REPORTER_NAME_LINE_RE = re.compile(r"(?im)^\*\*From:\*\*\s*(.+?)\s*$")
 RESOLUTION_RE = re.compile(r"(?is)^\s*(?:##\s*)?Resolution:\s*(.+)$")
-STILL_OPEN_RE = re.compile(r"not fixed yet|still not fixed", re.I)
+STILL_OPEN_RE = re.compile(r"this is not fixed yet", re.I)
 CLOSER_NOTE = (
     "Leave a comment that starts with `Resolution:` explaining how it was fixed "
     "or why it was not. Leave the issue open — the employee confirms it is resolved "

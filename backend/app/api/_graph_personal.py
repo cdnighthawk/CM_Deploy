@@ -5,6 +5,7 @@ scoped to the session user's mailbox. Does not add a second OAuth flow.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from . import _notifications as graph
@@ -16,6 +17,7 @@ _TODO_TASK_SELECT = (
 )
 _SKIP_TODO_LISTS = frozenset({"flaggedemails"})
 _OPEN_TODO_STATUSES = frozenset({"notstarted", "inprogress", "waitingonothers", "deferred", ""})
+_FLAGGED_MAIL_DAYS = 30
 
 
 def _source_error(exc: GraphMailError, *, permission: str) -> dict[str, Any]:
@@ -61,6 +63,48 @@ def _serialize_todo(item: dict[str, Any], *, list_id: str, list_name: str) -> di
         "from": None,
         "is_read": None,
     }
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _flagged_mail_cutoff(now: datetime | None = None) -> datetime:
+    return (now or _utcnow()) - timedelta(days=_FLAGGED_MAIL_DAYS)
+
+
+def _flagged_mail_cutoff_iso(cutoff: datetime | None = None) -> str:
+    dt = (cutoff or _flagged_mail_cutoff()).astimezone(timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _parse_graph_dt(raw: Any) -> datetime | None:
+    if isinstance(raw, datetime):
+        dt = raw
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    s = str(raw or "").strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _flagged_mail_received_at(item: dict[str, Any]) -> datetime | None:
+    return _parse_graph_dt(item.get("receivedDateTime") or item.get("sentDateTime"))
+
+
+def _within_flagged_mail_window(item: dict[str, Any], *, cutoff: datetime) -> bool:
+    received = _flagged_mail_received_at(item)
+    return received is not None and received >= cutoff
 
 
 def _serialize_flagged_mail(item: dict[str, Any]) -> dict[str, Any]:
@@ -138,28 +182,40 @@ def _list_todo_tasks(*, mailbox: str, top: int) -> tuple[list[dict[str, Any]], d
 
 def _list_flagged_mail(*, mailbox: str, top: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     url = graph._user_mail_url(mailbox, "messages")
-    params = {
+    cutoff = _flagged_mail_cutoff()
+    cutoff_iso = _flagged_mail_cutoff_iso(cutoff)
+    dated_filter = f"flag/flagStatus eq 'flagged' and receivedDateTime ge {cutoff_iso}"
+    flag_filter = "flag/flagStatus eq 'flagged'"
+    base = {
         "$top": str(max(1, min(top, 50))),
         "$select": _MAIL_LIST_SELECT,
-        "$filter": "flag/flagStatus eq 'flagged'",
-        "$orderby": "receivedDateTime desc",
     }
-    try:
-        payload = graph._graph_http("GET", url, params=params) or {}
-    except GraphMailError as exc:
-        if int(exc.status_code or 0) == 400:
-            try:
-                lighter = dict(params)
-                lighter.pop("$orderby", None)
-                payload = graph._graph_http("GET", url, params=lighter) or {}
-            except GraphMailError as retry_exc:
-                return [], _source_error(retry_exc, permission="Mail.ReadWrite")
-        else:
-            return [], _source_error(exc, permission="Mail.ReadWrite")
+    attempts = (
+        {**base, "$filter": dated_filter, "$orderby": "receivedDateTime desc"},
+        {**base, "$filter": dated_filter},
+        {**base, "$filter": flag_filter, "$orderby": "receivedDateTime desc"},
+        {**base, "$filter": flag_filter},
+    )
+    payload: dict[str, Any] | None = None
+    last_exc: GraphMailError | None = None
+    for params in attempts:
+        try:
+            payload = graph._graph_http("GET", url, params=params) or {}
+            last_exc = None
+            break
+        except GraphMailError as exc:
+            last_exc = exc
+            if int(exc.status_code or 0) != 400:
+                return [], _source_error(exc, permission="Mail.ReadWrite")
+    if last_exc is not None or payload is None:
+        return [], _source_error(
+            last_exc or GraphMailError(502, "Microsoft Graph did not return flagged mail."),
+            permission="Mail.ReadWrite",
+        )
     items = [
         _serialize_flagged_mail(row)
         for row in (payload.get("value") or [])
-        if isinstance(row, dict)
+        if isinstance(row, dict) and _within_flagged_mail_window(row, cutoff=cutoff)
     ]
     return items, {"ok": True, "error": None}
 

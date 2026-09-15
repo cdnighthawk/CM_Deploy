@@ -459,6 +459,30 @@ def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, _cors
         assert mock_get_url.call_count == 2
 
 
+@patch("app.services.object_storage.ensure_browser_cors")
+@patch("app.services.object_storage._b2_get_upload_url")
+def test_native_upload_session_skips_cors_ensure(mock_get_url, mock_cors, flask_app):
+    mock_get_url.return_value = {
+        "uploadUrl": "https://pod.example/b2api/v2/b2_upload_file/x",
+        "authorizationToken": "tok",
+    }
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, native_upload_session
+
+        session = native_upload_session(UploadCategory.DRAWINGS, "sheet.pdf")
+        assert session is not None
+        assert session["mode"] == "b2_native"
+    mock_cors.assert_not_called()
+
+
 @patch("app.services.object_storage._b2_http_json")
 @patch("app.services.object_storage._b2_bucket_id", return_value="bucket-1")
 @patch(

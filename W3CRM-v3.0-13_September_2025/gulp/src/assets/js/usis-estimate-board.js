@@ -183,9 +183,9 @@
 		var lidEnc = lid != null && lid !== "" ? encodeURIComponent(String(lid)) : "";
 		var estimateId = row.current_estimate_id || row.primary_estimate_id || "";
 		var detailHref = estimateId
-			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
+			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId) + "&from=estimate"
 			: lidEnc
-				? "construction/estimate-detail.html?id=" + lidEnc
+				? "construction/estimate-detail.html?id=" + lidEnc + "&from=estimate"
 				: "javascript:void(0);";
 		var jobHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc : "";
 		var titleHref = currentBoard() === "lead" && jobHref ? jobHref : detailHref;

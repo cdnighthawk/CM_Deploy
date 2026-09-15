@@ -25,7 +25,8 @@ def test_project_context_js_special_cases_lead_detail_list_trail():
     assert "construction/leads.html" in text
     assert 'label: "Leads"' in text
     assert "lead-detail.html" in text
-    assert "leadDetailOrigin" in text
+    assert "areaDetailOrigin" in text
+    assert "isEstimateDetailPage" in text
 
 
 def test_leads_list_and_projects_pass_origin_query():

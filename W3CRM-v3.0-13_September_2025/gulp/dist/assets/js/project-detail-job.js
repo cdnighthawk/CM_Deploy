@@ -1949,7 +1949,7 @@
 				extras.push(
 					' · <a class="link-secondary" href="construction/estimate-detail.html?id=' +
 						encodeURIComponent(item.primary_lead_detail_id) +
-						'">Open estimate</a>'
+						'&from=projects">Open estimate</a>'
 				);
 			} else {
 				extras.push(' · <span class="text-muted">No linked lead on file for this project.</span>');

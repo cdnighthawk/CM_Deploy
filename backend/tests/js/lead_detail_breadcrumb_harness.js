@@ -254,6 +254,40 @@ Promise.all([
     assert.strictEqual(got.listHref, "construction/leads.html");
     assert.strictEqual(got.listHidden, false);
   }),
+  runCase({
+    pathname: "/construction/estimate-detail.html",
+    search: "?id=est-1",
+    referrer: "https://www.usiscm.com/construction/estimate.html",
+    setProjectId: "proj-1",
+  }).then(function (got) {
+    assert.strictEqual(got.listLabel, "Estimate", JSON.stringify(got));
+    assert.strictEqual(got.listHref, "construction/estimate.html");
+    assert.strictEqual(got.listHidden, false);
+    assert.strictEqual(got.jobLabel, "YMCA Fullerton Phase 2", JSON.stringify(got));
+    assert.ok(got.jobHref.indexOf("estimate-detail.html") !== -1, got.jobHref);
+    assert.ok(got.jobHref.indexOf("project-detail.html") === -1, got.jobHref);
+    assert.strictEqual(got.jobHidden, false);
+  }),
+  runCase({
+    pathname: "/construction/estimate-detail.html",
+    search: "?id=est-1&from=projects",
+    referrer: "https://www.usiscm.com/construction/project-detail.html?id=abc",
+    setProjectId: "proj-1",
+  }).then(function (got) {
+    assert.strictEqual(got.listLabel, "Active projects", JSON.stringify(got));
+    assert.strictEqual(got.listHref, "construction/projects.html");
+    assert.strictEqual(got.listHidden, false);
+    assert.ok(got.jobHref.indexOf("project-detail.html") !== -1, got.jobHref);
+  }),
+  runCase({
+    pathname: "/construction/estimate-detail.html",
+    search: "?id=est-1",
+    referrer: "",
+  }).then(function (got) {
+    assert.strictEqual(got.listLabel, "Estimate", JSON.stringify(got));
+    assert.strictEqual(got.listHref, "construction/estimate.html");
+    assert.strictEqual(got.listHidden, false);
+  }),
 ])
   .then(function () {
     console.log("ok");

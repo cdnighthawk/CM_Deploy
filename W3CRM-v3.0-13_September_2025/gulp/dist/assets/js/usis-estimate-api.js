@@ -73,7 +73,7 @@
 
 	function estimateDetailHref(estimateId) {
 		if (!estimateId) return "javascript:void(0);";
-		return "construction/estimate-detail.html?id=" + encodeURIComponent(String(estimateId));
+		return "construction/estimate-detail.html?id=" + encodeURIComponent(String(estimateId)) + "&from=estimate";
 	}
 
 	function leadDetailHref(leadId) {

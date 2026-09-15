@@ -341,7 +341,7 @@
 			var trade = row.trade_name || "";
 			var lid = row.external_id != null && row.external_id !== "" ? row.external_id : row.id;
 			var lidEnc = lid != null && lid !== "" ? encodeURIComponent(String(lid)) : "";
-			var detailHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc : "javascript:void(0);";
+			var detailHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc + "&from=leads" : "javascript:void(0);";
 			var leadCell = lidEnc
 				? '<a class="fw-semibold text-black text-decoration-none" href="' + detailHref + '">' + esc(name || "—") + "</a>"
 				: '<span class="fw-semibold text-black">' + esc(name) + "</span>";

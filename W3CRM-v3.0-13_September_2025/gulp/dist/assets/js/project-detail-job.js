@@ -1944,7 +1944,7 @@
 				extras.push(
 					' · <a class="link-primary" href="construction/lead-detail.html?id=' +
 						encodeURIComponent(item.primary_lead_detail_id) +
-						'">Open lead</a>'
+						'&from=projects">Open lead</a>'
 				);
 				extras.push(
 					' · <a class="link-secondary" href="construction/estimate-detail.html?id=' +

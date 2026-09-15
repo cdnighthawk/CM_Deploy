@@ -784,7 +784,7 @@
 			var jobKey = row.primary_lead_detail_id;
 			var jobKeyEnc =
 				jobKey != null && String(jobKey).trim() !== "" ? encodeURIComponent(String(jobKey).trim()) : "";
-			var jobHref = jobKeyEnc ? "construction/lead-detail.html?id=" + jobKeyEnc : "";
+			var jobHref = jobKeyEnc ? "construction/lead-detail.html?id=" + jobKeyEnc + "&from=projects" : "";
 			var nameInner = pidEnc
 				? '<a class="usis-est-name__title" href="' + detailHref + '">' + esc(row.name || "—") + "</a>"
 				: '<span class="usis-est-name__title">' + esc(row.name || "—") + "</span>";

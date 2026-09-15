@@ -785,7 +785,8 @@ def test_jobs_drawings_creates_pending_row_and_returns_b2_upload(client):
         assert row.file_url == f"/api/v1/drawings/{did}/file"
 
 
-def test_jobs_drawings_returns_503_when_native_mint_fails(client):
+def test_jobs_drawings_returns_201_when_native_mint_fails(client):
+    """Catalog row must be 201 even if mint fails — desktop treats non-2xx as rejected row."""
     from unittest.mock import patch
 
     with client.application.app_context():
@@ -815,11 +816,13 @@ def test_jobs_drawings_returns_503_when_native_mint_fails(client):
                 }
             },
         )
-    assert r.status_code == 503, r.get_data(as_text=True)
+    assert r.status_code == 201, r.get_data(as_text=True)
     body = r.get_json()
-    assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
-    assert body.get("upload") is None
     assert body["item"]["id"] == did
+    assert body["file_pending"] is True
+    assert body.get("upload") is None
+    assert body.get("error") is None
+    assert body["upload_error"] == "B2_UPLOAD_URL_UNAVAILABLE"
     blob = r.get_data(as_text=True)
     assert "X-Amz-" not in blob
     assert "s3.us-west-004" not in blob
@@ -857,9 +860,12 @@ def test_jobs_drawings_rejects_s3_looking_mint_url(client):
                 }
             },
         )
-    assert r.status_code == 503, r.get_data(as_text=True)
+    assert r.status_code == 201, r.get_data(as_text=True)
     body = r.get_json()
-    assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
+    assert body["item"]["id"] == did
+    assert body.get("upload") is None
+    assert body.get("error") is None
+    assert body["upload_error"] == "B2_UPLOAD_URL_UNAVAILABLE"
     blob = r.get_data(as_text=True)
     assert "X-Amz-" not in blob
     assert "s3.us-west-004" not in blob

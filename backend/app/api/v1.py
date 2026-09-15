@@ -2156,24 +2156,24 @@ def create_job_drawing(job_id: str):
         content_hash=content_hash,
     )
     db.session.commit()
+    # Catalog row is accepted even when native mint fails. USISPdfApp treats a
+    # non-2xx here as "The website did not accept the drawing row." Mint failure
+    # belongs on upload-session (503), not on create.
     native = _native_b2_mint_or_none(row)
-    if not native:
-        return _jsonify(
-            {
-                "error": "B2_UPLOAD_URL_UNAVAILABLE",
-                "entity": "drawing",
-                "item": _drawing_public(row),
-                "file_pending": True,
-            }
-        ), 503
-    return _jsonify(
-        {
-            "item": _drawing_public(row),
-            "entity": "drawing",
-            "file_pending": True,
-            "upload": native,
-        }
-    ), 201
+    body: dict[str, Any] = {
+        "item": _drawing_public(row),
+        "entity": "drawing",
+        "file_pending": True,
+    }
+    if native:
+        body["upload"] = native
+    else:
+        current_app.logger.warning(
+            "b2 native mint unavailable after drawing create drawing=%s",
+            row.id,
+        )
+        body["upload_error"] = "B2_UPLOAD_URL_UNAVAILABLE"
+    return _jsonify(body), 201
 
 
 def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tuple[bool, str | None]:

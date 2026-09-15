@@ -63,6 +63,7 @@ _BROWSER_UPLOAD_HEADERS = (
 )
 _AUTH_TTL_SEC = 50 * 60
 _auth_cache: dict = {"at": 0.0, "key_id": "", "data": None}
+_bucket_id_cache: dict = {"at": 0.0, "key_id": "", "id": ""}
 _cors_applied = {"ok": False, "at": 0.0}
 _CORS_TTL_SEC = 6 * 60 * 60
 _DEFAULT_BROWSER_ORIGINS = (
@@ -521,7 +522,9 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
     """
     if not b2_enabled():
         return None
-    ensure_browser_cors()
+    # Do not call ensure_browser_cors() here. Desktop POSTs are not browsers;
+    # boot already applies CORS. A thundering herd of b2_update_bucket during
+    # ingest can 5xx native mint and made every create look like a rejected row.
     key = object_key(category, object_name)
     last: BaseException | None = None
     for attempt in range(3):
@@ -916,6 +919,39 @@ def _b2_http_json(req: Request, timeout: int) -> dict:
         raise StorageError(f"B2 HTTP {exc.code}: {raw}", 503) from exc
 
 
+def _b2_json(method: str, url: str, *, headers: dict, json_body: dict | None, timeout: int) -> dict:
+    """Native B2 JSON (api.backblazeb2.com). IPv4 fallback matches upload-pod PUT."""
+    last: BaseException | None = None
+    for ipv4 in (False, True):
+        try:
+            with _native_upload_client(timeout, ipv4=ipv4) as client:
+                kwargs: dict = {"headers": headers}
+                if json_body is not None:
+                    kwargs["json"] = json_body
+                resp = client.request(method, url, **kwargs)
+            if resp.status_code >= 400:
+                raise StorageError(
+                    f"B2 HTTP {resp.status_code}: {(resp.text or '')[:240]}",
+                    503,
+                )
+            data = resp.json()
+            if not isinstance(data, dict):
+                raise StorageError("B2 native API returned a non-object JSON body.", 503)
+            return data
+        except StorageError:
+            raise
+        except Exception as exc:
+            last = exc
+            current_app.logger.warning(
+                "b2 json %s %s ipv4=%s err=%s",
+                method,
+                url,
+                ipv4,
+                exc,
+            )
+    raise StorageError("Backblaze B2 native API connection failed.", 503) from last
+
+
 def _b2_authorize() -> dict:
     key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
     secret = (current_app.config.get("B2_APPLICATION_KEY") or "").strip()
@@ -928,12 +964,13 @@ def _b2_authorize() -> dict:
     ):
         return cached
     token = base64.b64encode(f"{key_id}:{secret}".encode()).decode()
-    req = Request(
+    data = _b2_json(
+        "GET",
         "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
         headers={"Authorization": f"Basic {token}"},
-        method="GET",
+        json_body=None,
+        timeout=_S3_CONNECT_TIMEOUT,
     )
-    data = _b2_http_json(req, _S3_CONNECT_TIMEOUT)
     _auth_cache["at"] = now
     _auth_cache["key_id"] = key_id
     _auth_cache["data"] = data
@@ -949,38 +986,48 @@ def _b2_bucket_id(auth: dict) -> str:
     configured = (current_app.config.get("B2_BUCKET_ID") or "").strip()
     if configured:
         return configured
+    key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
+    cached_id = (_bucket_id_cache.get("id") or "").strip()
+    if (
+        cached_id
+        and _bucket_id_cache.get("key_id") == key_id
+        and time.time() - float(_bucket_id_cache.get("at") or 0) < _AUTH_TTL_SEC
+    ):
+        return cached_id
     want = (current_app.config.get("B2_BUCKET_NAME") or "").strip()
-    body = json.dumps({"accountId": auth.get("accountId")}).encode()
-    req = Request(
+    payload = _b2_json(
+        "POST",
         f"{auth['apiUrl']}/b2api/v2/b2_list_buckets",
-        data=body,
         headers={
             "Authorization": auth["authorizationToken"],
             "Content-Type": "application/json",
         },
-        method="POST",
+        json_body={"accountId": auth.get("accountId")},
+        timeout=_S3_CONNECT_TIMEOUT,
     )
-    payload = _b2_http_json(req, _S3_CONNECT_TIMEOUT)
     for bucket in payload.get("buckets") or []:
-        if bucket.get("bucketName") == want:
-            return str(bucket.get("bucketId") or "")
+        found = str(bucket.get("bucketId") or "")
+        if bucket.get("bucketName") == want and found:
+            _bucket_id_cache["at"] = time.time()
+            _bucket_id_cache["key_id"] = key_id
+            _bucket_id_cache["id"] = found
+            return found
     raise StorageError("Backblaze B2 bucket was not found for this application key.", 500)
 
 
 def _b2_get_upload_url() -> dict:
     auth = _b2_authorize()
     bucket_id = _b2_bucket_id(auth)
-    body = json.dumps({"bucketId": bucket_id}).encode()
-    req = Request(
+    return _b2_json(
+        "POST",
         f"{auth['apiUrl']}/b2api/v2/b2_get_upload_url",
-        data=body,
         headers={
             "Authorization": auth["authorizationToken"],
             "Content-Type": "application/json",
         },
-        method="POST",
+        json_body={"bucketId": bucket_id},
+        timeout=_S3_CONNECT_TIMEOUT,
     )
-    return _b2_http_json(req, _S3_CONNECT_TIMEOUT)
 
 
 def _b2_file_url(auth: dict, key: str) -> str:

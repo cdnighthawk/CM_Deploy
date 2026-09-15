@@ -1,9 +1,35 @@
 """Personal Microsoft To Do + flagged Outlook mail (Graph app-only, no extra OAuth)."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 from app.api import _notifications as mail
+from app.api import _graph_personal as gp
+
+
+def _utc(year, month, day, hour=0, minute=0, second=0) -> datetime:
+    return datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
+
+
+def _iso(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _flagged_message(*, msg_id: str, subject: str, received: str) -> dict:
+    return {
+        "id": msg_id,
+        "subject": subject,
+        "from": {"emailAddress": {"name": "Pat", "address": "pat@example.com"}},
+        "toRecipients": [],
+        "receivedDateTime": received,
+        "isRead": False,
+        "bodyPreview": "Please review",
+        "hasAttachments": False,
+        "flag": {"flagStatus": "flagged"},
+        "importance": "normal",
+        "webLink": f"https://outlook.office.com/mail/id/{msg_id}",
+    }
 
 
 def _session_user(email: str):
@@ -62,19 +88,11 @@ def test_me_tasks_uses_session_mailbox_not_query(client, monkeypatch):
         if url.rstrip("/").endswith("/messages") or "/messages?" in url:
             return {
                 "value": [
-                    {
-                        "id": "msg-flag",
-                        "subject": "Need a decision",
-                        "from": {"emailAddress": {"name": "Pat", "address": "pat@example.com"}},
-                        "toRecipients": [],
-                        "receivedDateTime": "2026-09-15T10:00:00Z",
-                        "isRead": False,
-                        "bodyPreview": "Please review",
-                        "hasAttachments": False,
-                        "flag": {"flagStatus": "flagged"},
-                        "importance": "normal",
-                        "webLink": "https://outlook.office.com/mail/id/msg-flag",
-                    }
+                    _flagged_message(
+                        msg_id="msg-flag",
+                        subject="Need a decision",
+                        received=_iso(datetime.now(timezone.utc) - timedelta(days=1)),
+                    )
                 ]
             }
         raise AssertionError(f"unexpected Graph URL {url}")
@@ -113,17 +131,11 @@ def test_me_tasks_keeps_flagged_mail_when_todo_forbidden(client, monkeypatch):
             raise mail.GraphMailError(403, "Access denied")
         return {
             "value": [
-                {
-                    "id": "msg-flag",
-                    "subject": "Flagged in Outlook",
-                    "from": {"emailAddress": {"address": "pat@example.com"}},
-                    "toRecipients": [],
-                    "receivedDateTime": "2026-09-15T10:00:00Z",
-                    "isRead": True,
-                    "bodyPreview": "",
-                    "hasAttachments": False,
-                    "flag": {"flagStatus": "flagged"},
-                }
+                _flagged_message(
+                    msg_id="msg-flag",
+                    subject="Flagged in Outlook",
+                    received=_iso(datetime.now(timezone.utc) - timedelta(days=1)),
+                )
             ]
         }
 
@@ -229,3 +241,199 @@ def test_me_tasks_requires_sign_in(client, monkeypatch):
     monkeypatch.setattr(v1_mod, "current_user", lambda: cu)
     r = client.get("/api/v1/me/tasks")
     assert r.status_code == 401
+
+
+def test_list_flagged_mail_graph_filter_includes_30_day_received_cutoff(monkeypatch):
+    captured: list[dict] = []
+    now = _utc(2026, 9, 15, 16, 27, 0)
+    monkeypatch.setattr(gp, "_utcnow", lambda: now)
+
+    def fake_http(method, url, **kwargs):
+        captured.append(kwargs.get("params") or {})
+        return {"value": []}
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    items, src = gp._list_flagged_mail(mailbox="charles@gousis.com", top=10)
+    assert items == []
+    assert src["ok"] is True
+    assert captured
+    params = captured[0]
+    assert params["$orderby"] == "receivedDateTime desc"
+    filt = params["$filter"]
+    assert "flag/flagStatus eq 'flagged'" in filt
+    assert "receivedDateTime ge 2026-08-16T16:27:00Z" in filt
+
+
+def test_list_flagged_mail_drops_messages_older_than_30_days(monkeypatch):
+    now = _utc(2026, 9, 15, 12, 0, 0)
+    monkeypatch.setattr(gp, "_utcnow", lambda: now)
+
+    def fake_http(method, url, **kwargs):
+        return {
+            "value": [
+                _flagged_message(
+                    msg_id="msg-recent",
+                    subject="Recent flag",
+                    received="2026-09-10T10:00:00Z",
+                ),
+                _flagged_message(
+                    msg_id="msg-old",
+                    subject="Ancient flag",
+                    received="2024-03-01T10:00:00Z",
+                ),
+                _flagged_message(
+                    msg_id="msg-boundary",
+                    subject="Exactly 30 days",
+                    received="2026-08-16T12:00:00Z",
+                ),
+                _flagged_message(
+                    msg_id="msg-just-old",
+                    subject="31st day",
+                    received="2026-08-16T11:59:59Z",
+                ),
+            ]
+        }
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    items, src = gp._list_flagged_mail(mailbox="charles@gousis.com", top=40)
+    assert src["ok"] is True
+    assert {row["id"] for row in items} == {"msg-recent", "msg-boundary"}
+    assert {row["title"] for row in items} == {"Recent flag", "Exactly 30 days"}
+
+
+def test_list_flagged_mail_retries_without_orderby_then_client_filters(monkeypatch):
+    now = _utc(2026, 9, 15, 12, 0, 0)
+    monkeypatch.setattr(gp, "_utcnow", lambda: now)
+    captured: list[dict] = []
+
+    def fake_http(method, url, **kwargs):
+        params = kwargs.get("params") or {}
+        captured.append(params)
+        if params.get("$orderby"):
+            raise mail.GraphMailError(400, "The restriction or sort order is invalid.")
+        return {
+            "value": [
+                _flagged_message(
+                    msg_id="msg-recent",
+                    subject="Keep me",
+                    received="2026-09-01T08:00:00Z",
+                ),
+                _flagged_message(
+                    msg_id="msg-old",
+                    subject="Drop me",
+                    received="2025-01-15T08:00:00Z",
+                ),
+            ]
+        }
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    items, src = gp._list_flagged_mail(mailbox="charles@gousis.com", top=20)
+    assert src["ok"] is True
+    assert len(captured) == 2
+    assert captured[0].get("$orderby") == "receivedDateTime desc"
+    assert "receivedDateTime ge" in captured[0]["$filter"]
+    assert "$orderby" not in captured[1]
+    assert "receivedDateTime ge" in captured[1]["$filter"]
+    assert [row["id"] for row in items] == ["msg-recent"]
+
+
+def test_list_flagged_mail_falls_back_to_client_filter_when_date_filter_rejected(monkeypatch):
+    now = _utc(2026, 9, 15, 12, 0, 0)
+    monkeypatch.setattr(gp, "_utcnow", lambda: now)
+    captured: list[dict] = []
+
+    def fake_http(method, url, **kwargs):
+        params = kwargs.get("params") or {}
+        captured.append(params)
+        if "receivedDateTime" in (params.get("$filter") or ""):
+            raise mail.GraphMailError(400, "Invalid filter clause.")
+        return {
+            "value": [
+                _flagged_message(
+                    msg_id="msg-old",
+                    subject="Years old",
+                    received="2021-06-01T00:00:00Z",
+                ),
+                _flagged_message(
+                    msg_id="msg-recent",
+                    subject="This month",
+                    received="2026-09-12T00:00:00Z",
+                ),
+            ]
+        }
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    items, src = gp._list_flagged_mail(mailbox="charles@gousis.com", top=20)
+    assert src["ok"] is True
+    assert len(captured) == 3
+    assert captured[2]["$filter"] == "flag/flagStatus eq 'flagged'"
+    assert captured[2].get("$orderby") == "receivedDateTime desc"
+    assert [row["id"] for row in items] == ["msg-recent"]
+
+
+def test_me_tasks_excludes_old_flagged_mail_and_keeps_todo(client, monkeypatch):
+    from app.api import v1 as v1_mod
+
+    staff = "charles@gousis.com"
+    monkeypatch.setattr(v1_mod, "current_user", lambda: _session_user(staff))
+    _graph_env(monkeypatch)
+    now = _utc(2026, 9, 15, 12, 0, 0)
+    monkeypatch.setattr(gp, "_utcnow", lambda: now)
+    todo_filters: list[str] = []
+
+    def fake_http(method, url, **kwargs):
+        params = kwargs.get("params") or {}
+        if "/todo/lists" in url and "/tasks" not in url:
+            return {
+                "value": [
+                    {
+                        "id": "list-1",
+                        "displayName": "Tasks",
+                        "wellknownListName": "defaultList",
+                    }
+                ]
+            }
+        if "/todo/lists/list-1/tasks" in url:
+            todo_filters.append(params.get("$filter") or "")
+            return {
+                "value": [
+                    {
+                        "id": "task-1",
+                        "title": "Call the GC",
+                        "status": "notStarted",
+                        "importance": "high",
+                        "dueDateTime": {"dateTime": "2026-09-16T00:00:00", "timeZone": "UTC"},
+                        "createdDateTime": "2026-09-14T12:00:00Z",
+                    }
+                ]
+            }
+        if url.rstrip("/").endswith("/messages") or "/messages?" in url:
+            return {
+                "value": [
+                    _flagged_message(
+                        msg_id="msg-old",
+                        subject="Old flagged mail",
+                        received="2024-01-02T10:00:00Z",
+                    ),
+                    _flagged_message(
+                        msg_id="msg-new",
+                        subject="Need a decision",
+                        received="2026-09-10T10:00:00Z",
+                    ),
+                ]
+            }
+        raise AssertionError(f"unexpected Graph URL {url}")
+
+    monkeypatch.setattr(mail, "_graph_http", fake_http)
+    r = client.get("/api/v1/me/tasks")
+    assert r.status_code == 200, r.get_json()
+    body = r.get_json()
+    titles = {item["title"] for item in body["items"]}
+    assert "Call the GC" in titles
+    assert "Need a decision" in titles
+    assert "Old flagged mail" not in titles
+    flagged = [item for item in body["items"] if item["kind"] == "flagged_mail"]
+    assert [item["id"] for item in flagged] == ["msg-new"]
+    assert all(filt == "status ne 'completed'" for filt in todo_filters)
+    assert body["sources"]["todo"]["ok"] is True
+    assert body["sources"]["flagged_mail"]["ok"] is True

@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import threading
 import time
 from enum import StrEnum
@@ -69,7 +70,7 @@ _auth_cache: dict = {"at": 0.0, "key_id": "", "data": None}
 _auth_lock = threading.Lock()
 _bucket_id_cache: dict = {"at": 0.0, "key_id": "", "id": ""}
 _mint_lock = threading.Lock()
-_mint_circuit: dict = {"open_until": 0.0}
+_mint_circuit: dict = {"open_until": 0.0, "last_error": ""}
 _b2_json_clients: dict[bool, httpx.Client] = {}
 _b2_json_clients_lock = threading.Lock()
 _cors_applied = {"ok": False, "at": 0.0}
@@ -528,6 +529,17 @@ def mint_retry_after_seconds() -> int:
     return max(0, int(rem + 0.999))
 
 
+def mint_last_error() -> str:
+    """Last native mint failure (no secrets). Empty when the last mint succeeded."""
+    return str(_mint_circuit.get("last_error") or "")[:240]
+
+
+def _configured_b2_bucket_id() -> str:
+    """Render ``B2_BUCKET_ID`` (exact name). Strips accidental quotes from the dashboard paste."""
+    raw = current_app.config.get("B2_BUCKET_ID") or os.environ.get("B2_BUCKET_ID") or ""
+    return str(raw).strip().strip('"').strip("'")
+
+
 def native_upload_session(category: UploadCategory, object_name: str) -> dict | None:
     """One-shot native B2 upload URL (b2_get_upload_url) for a client POST of the file bytes.
 
@@ -536,22 +548,42 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
     a new httpx client per sheet.
     """
     if not b2_enabled():
+        current_app.logger.warning(
+            "b2 native mint skipped; B2_APPLICATION_KEY_ID/B2_APPLICATION_KEY/"
+            "B2_BUCKET_NAME/B2_ENDPOINT not all set"
+        )
         return None
-    if mint_retry_after_seconds() > 0:
+    wait = mint_retry_after_seconds()
+    if wait > 0:
+        current_app.logger.warning(
+            "b2 native mint cooldown skip remaining=%ss last_err=%s",
+            wait,
+            mint_last_error() or "-",
+        )
         return None
     key = object_key(category, object_name)
     last: BaseException | None = None
     with _mint_lock:
-        if mint_retry_after_seconds() > 0:
+        wait = mint_retry_after_seconds()
+        if wait > 0:
+            current_app.logger.warning(
+                "b2 native mint cooldown skip remaining=%ss last_err=%s",
+                wait,
+                mint_last_error() or "-",
+            )
             return None
-        for attempt in range(_MINT_ATTEMPTS):
+        for _attempt in range(_MINT_ATTEMPTS):
             try:
                 info = _b2_get_upload_url()
                 url = str(info.get("uploadUrl") or "").strip()
                 token = str(info.get("authorizationToken") or "").strip()
                 if not token or not is_native_b2_upload_url(url):
-                    raise StorageError(B2_UPLOAD_URL_UNAVAILABLE, 503)
+                    raise StorageError(
+                        f"{B2_UPLOAD_URL_UNAVAILABLE}: native URL missing or looked like S3 ({url[:120]})",
+                        503,
+                    )
                 _mint_circuit["open_until"] = 0.0
+                _mint_circuit["last_error"] = ""
                 return {
                     "mode": "b2_native",
                     "url": url,
@@ -561,8 +593,15 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
                 }
             except Exception as exc:
                 last = exc
+        err = str(last or B2_UPLOAD_URL_UNAVAILABLE)[:240]
         _mint_circuit["open_until"] = time.time() + _MINT_COOLDOWN_SEC
-    current_app.logger.warning("b2 native upload url failed key=%s err=%s", key, last)
+        _mint_circuit["last_error"] = err
+    current_app.logger.warning(
+        "b2 native upload url failed key=%s circuit=%ss err=%s",
+        key,
+        _MINT_COOLDOWN_SEC,
+        last,
+    )
     return None
 
 
@@ -936,8 +975,18 @@ def _b2_http_json(req: Request, timeout: int) -> dict:
         raise StorageError(f"B2 HTTP {exc.code}: {raw}", 503) from exc
 
 
+def _discard_b2_json_client(ipv4: bool) -> None:
+    with _b2_json_clients_lock:
+        client = _b2_json_clients.pop(ipv4, None)
+    if client is not None:
+        try:
+            client.close()
+        except Exception:
+            pass
+
+
 def _b2_json_client(ipv4: bool) -> httpx.Client:
-    """Reuse one JSON client per address family. Creating httpx+TLS per mint OOM'd Starter."""
+    """Reuse one JSON client per address family. Drop it after errors (dead keep-alives)."""
     with _b2_json_clients_lock:
         client = _b2_json_clients.get(ipv4)
         if client is None:
@@ -957,18 +1006,21 @@ def _b2_json(method: str, url: str, *, headers: dict, json_body: dict | None, ti
                 kwargs["json"] = json_body
             resp = client.request(method, url, **kwargs)
             if resp.status_code >= 400:
+                _discard_b2_json_client(ipv4)
                 raise StorageError(
                     f"B2 HTTP {resp.status_code}: {(resp.text or '')[:240]}",
                     503,
                 )
             data = resp.json()
             if not isinstance(data, dict):
+                _discard_b2_json_client(ipv4)
                 raise StorageError("B2 native API returned a non-object JSON body.", 503)
             return data
         except StorageError:
             raise
         except Exception as exc:
             last = exc
+            _discard_b2_json_client(ipv4)
             current_app.logger.warning(
                 "b2 json %s %s ipv4=%s err=%s",
                 method,
@@ -1007,14 +1059,14 @@ def _b2_authorize() -> dict:
 
 
 def _b2_bucket_id(auth: dict) -> str:
-    """Prefer the key's bucket, then ``B2_BUCKET_ID``, then ``b2_list_buckets``."""
+    """Prefer explicit ``B2_BUCKET_ID``, then the key's bucket, then ``b2_list_buckets``."""
+    configured = _configured_b2_bucket_id()
+    if configured:
+        return configured
     allowed = auth.get("allowed") or {}
     bucket_id = (allowed.get("bucketId") or "").strip()
     if bucket_id:
         return bucket_id
-    configured = (current_app.config.get("B2_BUCKET_ID") or "").strip()
-    if configured:
-        return configured
     key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
     cached_id = (_bucket_id_cache.get("id") or "").strip()
     if (
@@ -1047,16 +1099,33 @@ def _b2_bucket_id(auth: dict) -> str:
 def _b2_get_upload_url() -> dict:
     auth = _b2_authorize()
     bucket_id = _b2_bucket_id(auth)
-    return _b2_json(
-        "POST",
-        f"{auth['apiUrl']}/b2api/v2/b2_get_upload_url",
-        headers={
-            "Authorization": auth["authorizationToken"],
-            "Content-Type": "application/json",
-        },
-        json_body={"bucketId": bucket_id},
-        timeout=_B2_JSON_TIMEOUT,
-    )
+    try:
+        return _b2_json(
+            "POST",
+            f"{auth['apiUrl']}/b2api/v2/b2_get_upload_url",
+            headers={
+                "Authorization": auth["authorizationToken"],
+                "Content-Type": "application/json",
+            },
+            json_body={"bucketId": bucket_id},
+            timeout=_B2_JSON_TIMEOUT,
+        )
+    except StorageError as exc:
+        if "B2 HTTP 401" not in (exc.message or ""):
+            raise
+        with _auth_lock:
+            _auth_cache["data"] = None
+        auth = _b2_authorize()
+        return _b2_json(
+            "POST",
+            f"{auth['apiUrl']}/b2api/v2/b2_get_upload_url",
+            headers={
+                "Authorization": auth["authorizationToken"],
+                "Content-Type": "application/json",
+            },
+            json_body={"bucketId": bucket_id},
+            timeout=_B2_JSON_TIMEOUT,
+        )
 
 
 def _b2_file_url(auth: dict, key: str) -> str:

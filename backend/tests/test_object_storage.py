@@ -17,8 +17,10 @@ def _reset_native_mint_circuit():
     from app.services import object_storage as osvc
 
     osvc._mint_circuit["open_until"] = 0.0
+    osvc._mint_circuit["last_error"] = ""
     yield
     osvc._mint_circuit["open_until"] = 0.0
+    osvc._mint_circuit["last_error"] = ""
 
 
 def test_local_save_and_send(flask_app, tmp_path):
@@ -645,6 +647,9 @@ def test_native_upload_session_circuit_skips_b2_after_failures(mock_get_url, fla
         assert mint_retry_after_seconds() > 0
         assert native_upload_session(UploadCategory.DRAWINGS, "b.pdf") is None
         assert mock_get_url.call_count == 0
+        from app.services.object_storage import mint_last_error
+
+        assert "b2 down" in mint_last_error()
 
 
 @patch("app.services.object_storage._b2_http_json")
@@ -665,11 +670,27 @@ def test_b2_bucket_id_uses_config_without_list_buckets(mock_http, flask_app):
         mock_http.assert_not_called()
 
 
-def test_b2_bucket_id_prefers_application_key_allowed_bucket(flask_app):
+def test_b2_bucket_id_prefers_config_over_allowed(flask_app):
     flask_app.config.update({"B2_BUCKET_ID": "configured-bucket-id"})
     with flask_app.app_context():
         from app.services.object_storage import _b2_bucket_id
 
         assert (
-            _b2_bucket_id({"allowed": {"bucketId": "from-key"}}) == "from-key"
+            _b2_bucket_id({"allowed": {"bucketId": "from-key"}}) == "configured-bucket-id"
         )
+
+
+def test_b2_bucket_id_uses_allowed_when_config_empty(flask_app):
+    flask_app.config.update({"B2_BUCKET_ID": None})
+    with flask_app.app_context():
+        from app.services.object_storage import _b2_bucket_id
+
+        assert _b2_bucket_id({"allowed": {"bucketId": "from-key"}}) == "from-key"
+
+
+def test_b2_bucket_id_strips_quoted_dashboard_paste(flask_app):
+    flask_app.config.update({"B2_BUCKET_ID": '"527bb6ff7885f8ef93dd0815"'})
+    with flask_app.app_context():
+        from app.services.object_storage import _b2_bucket_id
+
+        assert _b2_bucket_id({"allowed": {}}) == "527bb6ff7885f8ef93dd0815"

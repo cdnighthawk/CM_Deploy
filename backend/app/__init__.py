@@ -317,6 +317,23 @@ def create_app(config_object: str | None = None) -> Flask:
             out["lead_estimates_count"] = int(n)
         except Exception:
             out["lead_estimates_count"] = None
+        try:
+            from .services.object_storage import (
+                b2_enabled,
+                mint_last_error,
+                mint_retry_after_seconds,
+            )
+
+            out["b2_enabled"] = bool(b2_enabled())
+            out["b2_bucket_id_set"] = bool(
+                (app.config.get("B2_BUCKET_ID") or os.environ.get("B2_BUCKET_ID") or "").strip()
+            )
+            out["b2_mint_cooldown_s"] = mint_retry_after_seconds()
+            err = mint_last_error()
+            if err:
+                out["b2_mint_last_error"] = err
+        except Exception:
+            out["b2_enabled"] = None
         return out
 
     from .static_shell import register_static_shell

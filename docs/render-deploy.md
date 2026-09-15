@@ -51,7 +51,8 @@ Set all four **required** variables to store drawings, spec PDFs, RFI attachment
 | `B2_APPLICATION_KEY` | Application key **applicationKey** secret (paste once; treat as password) |
 | `B2_BUCKET_NAME` | `USIS-construction-docs` |
 | `B2_ENDPOINT` | Copy **S3 Endpoint** from B2 → bucket **USIS-construction-docs** → Bucket Settings (e.g. `https://s3.us-west-004.backblazeb2.com`) |
-| `B2_PREFIX` | Optional, e.g. `prod/usis-cm` |
+| `B2_PREFIX` | `prod/usis-cm` |
+| `B2_BUCKET_ID` | Optional. Bucket id so native `b2_get_upload_url` mint does not call `list_buckets` |
 | `B2_MIRROR_ROOT` | **Do not set on Render.** Office copy only; the website reads B2. See [backblaze-b2.md](backblaze-b2.md) §7 |
 
 There is **no CORS environment variable**. CORS is a rule on the B2 bucket, not a key. Do not add `CORS`, `CORS_KEY`, or `CORS_ORIGINS` for Backblaze. Click path and JSON: [backblaze-b2.md](backblaze-b2.md) §3.

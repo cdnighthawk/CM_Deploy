@@ -82,6 +82,9 @@ services:
         sync: false
       - key: B2_PREFIX
         value: prod/usis-cm
+      # Optional. Skips b2_list_buckets for native b2_get_upload_url mint.
+      - key: B2_BUCKET_ID
+        sync: false
       - key: QUOTES_MAILBOX
         value: quotes@gousis.com
       - key: INVOICE_MAILBOX

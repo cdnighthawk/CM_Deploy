@@ -59,6 +59,9 @@ def _bucket_id(auth: dict, want: str) -> str:
     bucket_id = (allowed.get("bucketId") or "").strip()
     if bucket_id:
         return bucket_id
+    configured = (os.environ.get("B2_BUCKET_ID") or "").strip()
+    if configured:
+        return configured
     body = json.dumps({"accountId": auth.get("accountId")}).encode()
     req = Request(
         f"{auth['apiUrl']}/b2api/v2/b2_list_buckets",

@@ -21,7 +21,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 import httpx
@@ -38,6 +38,11 @@ class StorageError(Exception):
         super().__init__(message)
         self.message = message
         self.status = status
+
+
+# Desktop mint (USISPdfApp) must never receive an S3 presigned PUT. That path is
+# signed locally with boto3 and never talks to B2; the app refuses those URLs.
+B2_UPLOAD_URL_UNAVAILABLE = "B2_UPLOAD_URL_UNAVAILABLE"
 
 
 # Keep S3 attempts inside gunicorn --timeout (see render.yaml). SSL drops usually
@@ -464,7 +469,11 @@ def presigned_put_url(
     ttl: int = 3600,
     content_type: str | None = None,
 ) -> str | None:
-    """Short-lived PUT URL so a client can write the object without Render proxying bytes."""
+    """Short-lived PUT URL so a client can write the object without Render proxying bytes.
+
+    Do not use this for desktop drawing mint. USISPdfApp refuses S3/SigV4 URLs
+    (``S3_FALLBACK_FORBIDDEN``). Mint via ``native_upload_session`` only.
+    """
     if not b2_enabled():
         return None
     params: dict = {
@@ -485,12 +494,30 @@ def presigned_put_url(
         return None
 
 
+def is_native_b2_upload_url(url: str | None) -> bool:
+    """True only for a native ``b2_upload_file`` URL. Rejects S3 / SigV4 lookalikes."""
+    raw = (url or "").strip()
+    if not raw:
+        return False
+    lower = raw.lower()
+    if "x-amz-" in lower:
+        return False
+    try:
+        host = (urlparse(raw).hostname or "").lower()
+    except ValueError:
+        return False
+    if not host:
+        return False
+    if host.startswith("s3.") or ".s3." in host or host.endswith(".amazonaws.com"):
+        return False
+    return "b2_upload_file" in lower
+
+
 def native_upload_session(category: UploadCategory, object_name: str) -> dict | None:
     """One-shot native B2 upload URL (b2_get_upload_url) for a client POST of the file bytes.
 
-    Retry a few times: Render's S3 gateway is the flaky door, but ``b2_get_upload_url``
-    can still 5xx under load. The desktop needs this URL more than Render needs to
-    PUT the bytes itself.
+    Never falls back to a locally signed S3 PUT. Retry a few times: ``b2_get_upload_url``
+    can 5xx under load. The desktop needs this URL more than Render needs to PUT the bytes.
     """
     if not b2_enabled():
         return None
@@ -500,10 +527,14 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
     for attempt in range(3):
         try:
             info = _b2_get_upload_url()
+            url = str(info.get("uploadUrl") or "").strip()
+            token = str(info.get("authorizationToken") or "").strip()
+            if not token or not is_native_b2_upload_url(url):
+                raise StorageError(B2_UPLOAD_URL_UNAVAILABLE, 503)
             return {
                 "mode": "b2_native",
-                "url": info["uploadUrl"],
-                "authorization": info["authorizationToken"],
+                "url": url,
+                "authorization": token,
                 "file_name": key,
                 "sha1_header": "X-Bz-Content-Sha1",
             }
@@ -910,10 +941,14 @@ def _b2_authorize() -> dict:
 
 
 def _b2_bucket_id(auth: dict) -> str:
+    """Prefer the key's bucket, then ``B2_BUCKET_ID``, then ``b2_list_buckets``."""
     allowed = auth.get("allowed") or {}
     bucket_id = (allowed.get("bucketId") or "").strip()
     if bucket_id:
         return bucket_id
+    configured = (current_app.config.get("B2_BUCKET_ID") or "").strip()
+    if configured:
+        return configured
     want = (current_app.config.get("B2_BUCKET_NAME") or "").strip()
     body = json.dumps({"accountId": auth.get("accountId")}).encode()
     req = Request(

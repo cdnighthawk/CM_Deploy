@@ -361,6 +361,11 @@
 			table.on("renderComplete", function () {
 				growDrawingTitleColumn(table);
 			});
+			if (typeof window.addEventListener === "function") {
+				window.addEventListener("resize", function () {
+					growDrawingTitleColumn(table);
+				});
+			}
 		}
 
 		function drawingCheckboxColumn() {

@@ -12,6 +12,15 @@ import pytest
 from werkzeug.datastructures import FileStorage
 
 
+@pytest.fixture(autouse=True)
+def _reset_native_mint_circuit():
+    from app.services import object_storage as osvc
+
+    osvc._mint_circuit["open_until"] = 0.0
+    yield
+    osvc._mint_circuit["open_until"] = 0.0
+
+
 def test_local_save_and_send(flask_app, tmp_path):
     flask_app.config.update(
         {
@@ -613,7 +622,29 @@ def test_native_upload_session_rejects_s3_url(mock_get_url, _sleep, _cors, flask
         from app.services.object_storage import UploadCategory, native_upload_session
 
         assert native_upload_session(UploadCategory.DRAWINGS, "sheet.pdf") is None
-    assert mock_get_url.call_count == 3
+    assert mock_get_url.call_count == 2
+
+
+@patch("app.services.object_storage._b2_get_upload_url")
+def test_native_upload_session_circuit_skips_b2_after_failures(mock_get_url, flask_app):
+    mock_get_url.side_effect = RuntimeError("b2 down")
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, mint_retry_after_seconds, native_upload_session
+
+        assert native_upload_session(UploadCategory.DRAWINGS, "a.pdf") is None
+        assert mock_get_url.call_count == 2
+        mock_get_url.reset_mock()
+        assert mint_retry_after_seconds() > 0
+        assert native_upload_session(UploadCategory.DRAWINGS, "b.pdf") is None
+        assert mock_get_url.call_count == 0
 
 
 @patch("app.services.object_storage._b2_http_json")

@@ -35,12 +35,13 @@ _graph_token_cache: dict[str, object] = {"token": None, "expires_at": 0.0}
 _GRAPH_BASE = "https://graph.microsoft.com/v1.0"
 _MAIL_LIST_SELECT = (
     "id,subject,from,toRecipients,receivedDateTime,sentDateTime,"
-    "isRead,bodyPreview,hasAttachments"
+    "isRead,bodyPreview,hasAttachments,flag,importance,webLink"
 )
 _MAIL_DETAIL_SELECT = (
     "id,subject,from,toRecipients,ccRecipients,receivedDateTime,"
-    "sentDateTime,isRead,body,bodyPreview,hasAttachments"
+    "sentDateTime,isRead,body,bodyPreview,hasAttachments,flag,importance,webLink"
 )
+_FLAG_STATUSES = frozenset({"notFlagged", "flagged", "complete"})
 _MAIL_FOLDERS = {
     "inbox": "inbox",
     "sent": "sentitems",
@@ -368,6 +369,12 @@ def _addr_from_graph(obj: Any) -> dict[str, str]:
     }
 
 
+def _flag_status(item: dict[str, Any]) -> str:
+    flag = item.get("flag") if isinstance(item.get("flag"), dict) else {}
+    status = str(flag.get("flagStatus") or "notFlagged").strip() or "notFlagged"
+    return status if status in _FLAG_STATUSES else "notFlagged"
+
+
 def _serialize_message_summary(item: dict[str, Any]) -> dict[str, Any]:
     to_list = [_addr_from_graph(x) for x in (item.get("toRecipients") or [])]
     return {
@@ -379,6 +386,9 @@ def _serialize_message_summary(item: dict[str, Any]) -> dict[str, Any]:
         "is_read": bool(item.get("isRead")),
         "preview": (item.get("bodyPreview") or "")[:240],
         "has_attachments": bool(item.get("hasAttachments")),
+        "flag_status": _flag_status(item),
+        "importance": str(item.get("importance") or "normal"),
+        "web_link": item.get("webLink") or None,
     }
 
 
@@ -560,9 +570,35 @@ def get_mailbox_message(*, mailbox: str, message_id: str) -> dict[str, Any]:
 
 
 def mark_mailbox_message_read(*, mailbox: str, message_id: str, is_read: bool = True) -> dict[str, Any]:
+    return patch_mailbox_message(mailbox=mailbox, message_id=message_id, is_read=bool(is_read))
+
+
+def patch_mailbox_message(
+    *,
+    mailbox: str,
+    message_id: str,
+    is_read: bool | None = None,
+    flag_status: str | None = None,
+) -> dict[str, Any]:
+    """Update read and/or Outlook flag state on one message."""
+    body: dict[str, Any] = {}
+    if is_read is not None:
+        body["isRead"] = bool(is_read)
+    if flag_status is not None:
+        status = str(flag_status).strip()
+        if status not in _FLAG_STATUSES:
+            raise GraphMailError(400, "flag_status must be flagged, notFlagged, or complete")
+        body["flag"] = {"flagStatus": status}
+    if not body:
+        raise GraphMailError(400, "no mailbox fields to update")
     url = _user_mail_url(mailbox, "messages", message_id)
-    _graph_http("PATCH", url, json={"isRead": bool(is_read)})
-    return {"ok": True, "is_read": bool(is_read)}
+    _graph_http("PATCH", url, json=body)
+    out: dict[str, Any] = {"ok": True}
+    if is_read is not None:
+        out["is_read"] = bool(is_read)
+    if flag_status is not None:
+        out["flag_status"] = str(flag_status).strip()
+    return out
 
 
 def delete_mailbox_message(*, mailbox: str, message_id: str) -> dict[str, Any]:
@@ -594,7 +630,8 @@ def graph_error_http(exc: GraphMailError) -> tuple[dict[str, object], int]:
             "ok": False,
             "error": (
                 "Microsoft Graph refused mailbox access. Confirm application "
-                "Mail.ReadWrite is granted with admin consent, and that an "
+                "Mail.ReadWrite (and Tasks.Read.All / Tasks.ReadWrite.All for "
+                "Microsoft To Do) are granted with admin consent, and that an "
                 "Exchange application access policy allows this mailbox."
             ),
             "detail": str(exc),
@@ -605,6 +642,8 @@ def graph_error_http(exc: GraphMailError) -> tuple[dict[str, object], int]:
             "error": "Mailbox or message was not found in Microsoft 365.",
             "detail": str(exc),
         }, 404
+    if status == 503:
+        return {"ok": False, "error": str(exc)}, 503
     return {"ok": False, "error": str(exc)}, 502 if status >= 500 else status
 
 

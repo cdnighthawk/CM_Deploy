@@ -83,7 +83,8 @@ None on Home. Use Reports and Project analytics.
 
 | Sage concept | USIS table / API / page | Status |
 |---|---|---|
-| Home landing | `usis-dashboard.html`, `usis-dashboard-dark.html` | stub |
+| Home landing | `usis-dashboard.html`, `usis-dashboard-dark.html` | implemented — KPIs, queues, My tasks |
+| Personal Microsoft To Do + flagged Outlook mail | `GET /api/v1/me/tasks`; Dashboard **My tasks** | implemented — Graph app-only, signed-in mailbox |
 | Header bell | `hrms_notifications` / `_in_app_notifications.py` | partial |
 | Project calendar | `_calendar_service.py` (procurement, schedule, RFI, submittal, RFP, milestones) | partial |
 | Per-user alert feature subscriptions | none | none |

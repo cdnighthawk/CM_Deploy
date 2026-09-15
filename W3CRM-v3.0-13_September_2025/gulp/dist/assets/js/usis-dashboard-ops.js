@@ -3,8 +3,8 @@
 
 	var CLOSED_RFP = { awarded: 1, closed: 1, cancelled: 1, canceled: 1, void: 1 };
 
-	function fetchJson(path) {
-		if (window.USIS_API) return window.USIS_API.fetchJson(path);
+	function fetchJson(path, opts) {
+		if (window.USIS_API) return window.USIS_API.fetchJson(path, opts);
 		return fetch(path, { credentials: "include", headers: { Accept: "application/json" } }).then(function (r) {
 			return r.json().then(function (j) {
 				if (!r.ok) throw new Error((j && j.error) || "HTTP " + r.status);
@@ -145,10 +145,120 @@
 			});
 	}
 
+	function taskWhen(item) {
+		var raw = item && (item.due || item.created);
+		if (!raw) return "";
+		var dt = new Date(raw);
+		if (isNaN(dt.getTime())) return String(raw).slice(0, 10);
+		return dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+	}
+
+	function taskHref(item) {
+		if (item && item.kind === "flagged_mail") return "usis-email.html";
+		var link = item && item.web_link;
+		if (link && /^https:\/\//i.test(link)) return link;
+		return "https://to-do.office.com/tasks";
+	}
+
+	function renderTasks(body) {
+		var items = (body && body.items) || [];
+		var sources = (body && body.sources) || {};
+		var meta = document.getElementById("usis-dash-tasks-meta");
+		var notes = [];
+		if (sources.todo && sources.todo.ok === false) notes.push("To Do needs Tasks.Read.All");
+		if (sources.flagged_mail && sources.flagged_mail.ok === false) notes.push("Flagged mail unavailable");
+		if (meta) meta.textContent = notes.join(" · ");
+		if (!items.length) {
+			var empty = "No Microsoft To Do tasks or flagged Outlook mail.";
+			if (notes.length) empty = notes.join(" ") + ".";
+			setQueue("usis-dash-tasks-list", emptyRow(empty));
+			return;
+		}
+		setQueue(
+			"usis-dash-tasks-list",
+			items
+				.map(function (item) {
+					var kind = item.kind === "flagged_mail" ? "Flagged" : "To Do";
+					var href = taskHref(item);
+					var extra = item.kind === "flagged_mail" ? item.from || "Outlook" : item.list_name || "To Do";
+					var when = taskWhen(item);
+					var complete =
+						'<button type="button" class="btn btn-sm btn-outline-secondary usis-dash-task-done" data-kind="' +
+						esc(item.kind || "") +
+						'" data-id="' +
+						esc(item.id || "") +
+						'" data-list="' +
+						esc(item.list_id || "") +
+						'">Done</button>';
+					var target = item.kind === "flagged_mail" ? "" : ' target="_blank" rel="noopener noreferrer"';
+					return (
+						'<div class="list-group-item py-2 usis-dash-task">' +
+						'<a class="usis-dash-task__main text-decoration-none text-body" href="' +
+						esc(href) +
+						'"' +
+						target +
+						"><span class=\"usis-status-chip usis-dash-task__kind\">" +
+						esc(kind) +
+						'</span><span class="d-block text-truncate">' +
+						esc(item.title || "Task") +
+						'</span><span class="small text-muted">' +
+						esc([extra, when].filter(Boolean).join(" · ")) +
+						"</span></a>" +
+						complete +
+						"</div>"
+					);
+				})
+				.join("")
+		);
+		document.querySelectorAll("#usis-dash-tasks-list .usis-dash-task-done").forEach(function (btn) {
+			btn.addEventListener("click", function (ev) {
+				ev.preventDefault();
+				ev.stopPropagation();
+				completeTask(btn);
+			});
+		});
+	}
+
+	function loadMyTasks() {
+		if (!document.getElementById("usis-dash-tasks-list")) return Promise.resolve();
+		setQueue("usis-dash-tasks-list", emptyRow("Loading…"));
+		return fetchJson("/api/v1/me/tasks")
+			.then(renderTasks)
+			.catch(function (err) {
+				var msg = (err && err.message) || "Could not load personal tasks.";
+				if (String(msg).indexOf("sign in") !== -1 || String(msg).indexOf("401") === 0) {
+					msg = "Sign in with Microsoft to see To Do and flagged Outlook mail.";
+				}
+				setQueue("usis-dash-tasks-list", emptyRow(msg));
+			});
+	}
+
+	function completeTask(btn) {
+		if (!btn || btn.disabled) return;
+		btn.disabled = true;
+		fetchJson("/api/v1/me/tasks/complete", {
+			method: "POST",
+			body: {
+				kind: btn.getAttribute("data-kind"),
+				id: btn.getAttribute("data-id"),
+				list_id: btn.getAttribute("data-list") || undefined,
+			},
+		})
+			.then(function () {
+				loadMyTasks();
+			})
+			.catch(function () {
+				btn.disabled = false;
+			});
+	}
+
 	document.addEventListener("DOMContentLoaded", function () {
 		if (!document.getElementById("usis-dashboard-dark-page")) return;
 		loadKpis();
 		loadRfps();
 		loadSubmittals();
+		loadMyTasks();
+		var refresh = document.getElementById("usis-dash-tasks-refresh");
+		if (refresh) refresh.addEventListener("click", loadMyTasks);
 	});
 })();

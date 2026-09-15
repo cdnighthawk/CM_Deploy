@@ -8,7 +8,7 @@
 
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
-	<link href="assets/css/usis-ui.css?v=20260905c" rel="stylesheet">
+	<link href="assets/css/usis-ui.css?v=20260915a" rel="stylesheet">
 
 </head>
 <body>
@@ -97,6 +97,24 @@
 							<div class="usis-kpi__label">POs late vs ship date</div>
 							<div class="usis-kpi__value" id="usis-dash-po-late">—</div>
 						</div></div>
+					</div>
+				</div>
+
+				<div class="row g-3 mb-3" id="usis-dash-my-tasks">
+					<div class="col-12">
+						<div class="card h-100 mb-0">
+							<div class="card-header py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+								<h4 class="card-title mb-0">My tasks</h4>
+								<div class="d-flex align-items-center gap-2">
+									<span class="small text-muted" id="usis-dash-tasks-meta"></span>
+									<a class="small" href="usis-email.html">Inbox</a>
+									<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-dash-tasks-refresh">Refresh</button>
+								</div>
+							</div>
+							<div class="list-group list-group-flush" id="usis-dash-tasks-list">
+								<div class="list-group-item text-muted small">Loading…</div>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -205,7 +223,7 @@
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
 	<script src="assets/js/usis-submittal-dashboard.js"></script>
-	<script src="assets/js/usis-dashboard-ops.js?v=20260905b"></script>
+	<script src="assets/js/usis-dashboard-ops.js?v=20260915a"></script>
 
 </body>
 </html>

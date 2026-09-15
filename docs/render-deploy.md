@@ -163,6 +163,8 @@ Also update third-party redirect URIs if used:
 | Autodesk / BuildingConnected | `AUTODESK_OAUTH_REDIRECT_URI` | `https://www.usiscm.com/api/v1/integrations/buildingconnected/oauth/callback` |
 | Power BI embed (reports page) | `POWERBI_TENANT_ID`, `POWERBI_CLIENT_ID`, `POWERBI_CLIENT_SECRET`, `POWERBI_WORKSPACE_ID`, `POWERBI_REPORT_ID` | Service principal; see [powerbi-embed.md](powerbi-embed.md) |
 
+Entra app **USIS CRM** (`738dce41-ed61-4475-82ae-5800963231c0`) uses that redirect for Microsoft sign-in only. Graph mail, To Do, and send-as reuse the same app via client credentials (`MS_ENTRA_TENANT_ID` / `CLIENT_ID` / `CLIENT_SECRET`). Grant **application** permissions with admin consent: `Mail.Send`, `Mail.ReadWrite`, `Tasks.Read.All`, and `Tasks.ReadWrite.All`. See [email.md](email.md).
+
 ### 7.4 Smoke test on custom domain
 
 | Check | URL |

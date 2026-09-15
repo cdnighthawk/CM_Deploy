@@ -1104,6 +1104,7 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-col-title {
 body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter {
 	margin-top: 2px;
 	padding: 0;
+	min-width: 0;
 }
 
 body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter input,
@@ -1111,6 +1112,9 @@ body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select
 body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter input.form-control,
 body .tabulator .tabulator-header .tabulator-col .tabulator-header-filter select.form-select {
 	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
 	font-size: 0.75rem;
 	line-height: 1.2;
 	padding: 0 0.3rem;

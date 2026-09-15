@@ -285,7 +285,7 @@
 
 .usis-ol-row {
 	display: grid;
-	grid-template-columns: 40px minmax(0, 1fr) auto;
+	grid-template-columns: 40px minmax(0, 1fr) auto 16px;
 	column-gap: 10px;
 	width: 100%;
 	border: 0;
@@ -357,6 +357,27 @@
 	color: var(--muted);
 	white-space: nowrap;
 	padding-top: 2px;
+}
+
+.usis-ol-flag-mark {
+	color: #c50f1f;
+	display: flex;
+	align-items: flex-start;
+	padding-top: 2px;
+	opacity: 0;
+}
+
+.usis-ol-row.is-flagged .usis-ol-flag-mark {
+	opacity: 1;
+}
+
+.usis-ol-flag-mark svg {
+	width: 14px;
+	height: 14px;
+}
+
+.usis-ol-cmdbtn.is-on {
+	color: #c50f1f;
 }
 
 .usis-ol-pane {

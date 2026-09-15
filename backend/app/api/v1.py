@@ -2860,17 +2860,93 @@ def get_mail_message(message_id: str):
 
 @bp.patch("/mail/messages/<path:message_id>")
 def patch_mail_message(message_id: str):
-    from ._notifications import GraphMailError, graph_error_http, mark_mailbox_message_read
+    from ._graph_personal import parse_flag_status
+    from ._notifications import GraphMailError, graph_error_http, patch_mailbox_message
 
     mailbox, err = _session_mailbox()
     if err is not None:
         return err
     data = request.get_json(silent=True) or {}
-    is_read = data.get("is_read", data.get("isRead", True))
+    try:
+        flag_status = parse_flag_status(data.get("flag_status", data.get("flagStatus")))
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+    if "is_read" in data or "isRead" in data:
+        is_read: bool | None = bool(data.get("is_read", data.get("isRead")))
+    elif flag_status is None:
+        is_read = True
+    else:
+        is_read = None
     try:
         return _jsonify(
-            mark_mailbox_message_read(
-                mailbox=mailbox, message_id=message_id, is_read=bool(is_read)
+            patch_mailbox_message(
+                mailbox=mailbox,
+                message_id=message_id,
+                is_read=is_read,
+                flag_status=flag_status,
+            )
+        )
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+
+
+@bp.get("/me/tasks")
+def list_my_tasks():
+    """Microsoft To Do tasks and flagged Outlook mail for the signed-in user."""
+    from ._graph_personal import list_personal_tasks
+    from ._notifications import GraphMailError, graph_error_http
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    try:
+        top = int(request.args.get("top") or 40)
+    except (TypeError, ValueError):
+        top = 40
+    try:
+        payload = list_personal_tasks(mailbox=mailbox, top=top)
+    except GraphMailError as exc:
+        body, status = graph_error_http(exc)
+        return _jsonify(body), status
+    sources = payload.get("sources") or {}
+    todo_ok = bool((sources.get("todo") or {}).get("ok"))
+    mail_ok = bool((sources.get("flagged_mail") or {}).get("ok"))
+    if not todo_ok and not mail_ok:
+        err_todo = (sources.get("todo") or {}).get("error") or ""
+        err_mail = (sources.get("flagged_mail") or {}).get("error") or ""
+        payload = {
+            "ok": False,
+            "error": err_todo or err_mail or "Microsoft Graph refused personal tasks.",
+            "mailbox": mailbox,
+            "items": [],
+            "sources": sources,
+        }
+        return _jsonify(payload), 403
+    return _jsonify(payload)
+
+
+@bp.post("/me/tasks/complete")
+def complete_my_task():
+    """Complete a To Do task or clear a flagged Outlook message for the signed-in user."""
+    from ._graph_personal import complete_personal_task
+    from ._notifications import GraphMailError, graph_error_http
+
+    mailbox, err = _session_mailbox()
+    if err is not None:
+        return err
+    data = request.get_json(silent=True) or {}
+    kind = data.get("kind") or data.get("type")
+    item_id = data.get("id") or data.get("item_id")
+    list_id = data.get("list_id") or data.get("listId")
+    try:
+        return _jsonify(
+            complete_personal_task(
+                mailbox=mailbox,
+                kind=str(kind or ""),
+                item_id=str(item_id or ""),
+                list_id=str(list_id or "") or None,
             )
         )
     except GraphMailError as exc:

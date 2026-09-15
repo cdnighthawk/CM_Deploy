@@ -14,15 +14,19 @@ Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry
 
 1. In Entra, on the **USIS CRM** app (`738dce41-ed61-4475-82ae-5800963231c0`): **API permissions** → **Microsoft Graph** → **Application permissions**:
    - `Mail.Send` (compose + system mail)
-   - `Mail.ReadWrite` (Inbox, Sent, read, delete on the website)
+   - `Mail.ReadWrite` (Inbox, Sent, read, delete, flag on the website)
+   - `Tasks.Read.All` (Microsoft To Do on Dashboard → My tasks)
+   - `Tasks.ReadWrite.All` (mark To Do complete from My tasks)
 2. Click **Grant admin consent** for the tenant.
 3. Create shared mailboxes `noreply@gousis.com`, `quotes@gousis.com`, and `invoices@gousis.com` in Microsoft 365 admin (no extra license).
 4. Restrict the app with an Exchange **application access policy** so it can only access `@gousis.com` mailboxes plus those shared mailboxes. After creating a new mailbox, re-run [exchange-application-access-policy.ps1](exchange-application-access-policy.ps1) so the Graph app can Send As / read it.
 5. On Render set `MAIL_TRANSPORT=graph` and `MAIL_FROM=noreply@gousis.com`. Existing `MS_ENTRA_*` vars are reused.
 
+Redirect URI is unchanged: `https://www.usiscm.com/auth/microsoft/callback` (`MS_ENTRA_REDIRECT_URI`). Microsoft sign-in still uses `openid profile email offline_access`. Graph mail and To Do use the same app-only token (`https://graph.microsoft.com/.default`) — there is no second OAuth flow. `Tasks.Read.All` / `Tasks.ReadWrite.All` are **not** limited by the Exchange application access policy; the website only queries the **signed-in user’s** mailbox / UPN.
+
 The website always uses the **signed-in user’s** mailbox address — never a mailbox chosen by the client. The access policy is the tenant-side limit.
 
-Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom folders and subfolders, read, delete, and compose. That page calls `GET /api/v1/mail/folders`, `GET/PATCH/DELETE /api/v1/mail/messages`, and `POST /api/v1/messages/email`.
+Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom folders and subfolders, read, delete, flag/unflag, and compose. That page calls `GET /api/v1/mail/folders`, `GET/PATCH/DELETE /api/v1/mail/messages`, and `POST /api/v1/messages/email`. Dashboard **My tasks** (`GET /api/v1/me/tasks`, `POST /api/v1/me/tasks/complete`) lists that user’s Microsoft To Do tasks and flagged Outlook mail.
 
 **AP invoices:** `POST /api/v1/ap/mailbox/sync` reads `invoices@gousis.com`. Vendors can send there directly, or staff can forward a vendor invoice from their own inbox — USIS treats the original From:/subject as the vendor, not the employee who forwarded it. Each new message is scanned (email body plus PDF attachments) and compared to invoices already on file by invoice number, vendor/sender, amount, and PDF fingerprint. Weekly reminder emails that attach the same bill are recorded on the original invoice instead of opening a duplicate. Each request ingests a small batch (default 8 new messages, 70 seconds) so Cloudflare/Render do not return HTML 502. The web process also polls that mailbox every 5 minutes (`INVOICE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`). Production has a Render cron (`usis-invoice-mailbox-sync`) that POSTs the same route with `X-Cron-Secret` (copied from `usis-cm`, preferably over Render private networking).
 

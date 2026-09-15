@@ -22,6 +22,7 @@
 		deleted: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M8.5 4h3a1.5 1.5 0 0 0-3 0ZM7 4a2.5 2.5 0 0 1 5 0h4.25a.75.75 0 0 1 0 1.5h-.84l-.9 9.07A2.75 2.75 0 0 1 11.77 17H8.23a2.75 2.75 0 0 1-2.74-2.43L4.59 5.5H3.75a.75.75 0 0 1 0-1.5H7Z"/></svg>',
 		folder: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M2.5 5.75A2.25 2.25 0 0 1 4.75 3.5h3.06c.4 0 .78.16 1.06.44l.83.83h5.55A2.25 2.25 0 0 1 17.5 7.02v7.23A2.25 2.25 0 0 1 15.25 16.5H4.75A2.25 2.25 0 0 1 2.5 14.25v-8.5Z"/></svg>',
 		chevron: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.7 5.8a.75.75 0 0 1 1.06 0L8 8.04l2.24-2.24a.75.75 0 1 1 1.06 1.06l-2.77 2.77a.75.75 0 0 1-1.06 0L4.7 6.86a.75.75 0 0 1 0-1.06Z"/></svg>',
+		flag: '<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M4.5 3.25a.75.75 0 0 0-1.5 0v13.5a.75.75 0 0 0 1.5 0V12.5h10.13c.62 0 1.01-.67.7-1.2L13.7 8.75l1.63-2.55c.31-.53-.08-1.2-.7-1.2H4.5V3.25Z"/></svg>',
 	};
 
 	function api() {
@@ -47,10 +48,25 @@
 	}
 
 	function setToolbar(enabled) {
-		["usis-mail-delete-btn", "usis-mail-reply-btn"].forEach(function (id) {
+		["usis-mail-delete-btn", "usis-mail-reply-btn", "usis-mail-flag-btn"].forEach(function (id) {
 			var btn = document.getElementById(id);
 			if (btn) btn.disabled = !enabled;
 		});
+		if (!enabled) setFlagLabel(false);
+	}
+
+	function isFlaggedStatus(status) {
+		return String(status || "").toLowerCase() === "flagged";
+	}
+
+	function setFlagLabel(flagged) {
+		var label = document.getElementById("usis-mail-flag-label");
+		var btn = document.getElementById("usis-mail-flag-btn");
+		if (label) label.textContent = flagged ? "Unflag" : "Flag";
+		if (btn) {
+			btn.classList.toggle("is-on", !!flagged);
+			btn.setAttribute("aria-pressed", flagged ? "true" : "false");
+		}
 	}
 
 	function showEmpty() {
@@ -410,6 +426,7 @@
 				var cls = "usis-ol-row";
 				if (!m.is_read) cls += " is-unread";
 				if (m.id === selectedId) cls += " is-on";
+				if (isFlaggedStatus(m.flag_status)) cls += " is-flagged";
 				return (
 					'<button type="button" class="' +
 					cls +
@@ -419,6 +436,8 @@
 					esc((m.from && m.from.address) || "") +
 					'" data-subject="' +
 					esc(m.subject || "") +
+					'" data-flag="' +
+					esc(m.flag_status || "notFlagged") +
 					'"><span class="usis-ol-avatar" style="background:' +
 					avatarColor(from) +
 					'">' +
@@ -431,6 +450,9 @@
 					esc(m.preview) +
 					'</div></span><span class="usis-ol-when">' +
 					esc(formatWhen(m.received)) +
+					"</span>" +
+					'<span class="usis-ol-flag-mark" aria-hidden="true">' +
+					ICONS.flag +
 					"</span></button>"
 				);
 			})
@@ -473,7 +495,9 @@
 			selectedMeta = {
 				from: rowBtn.getAttribute("data-from") || "",
 				subject: rowBtn.getAttribute("data-subject") || "",
+				flag_status: rowBtn.getAttribute("data-flag") || "notFlagged",
 			};
+			setFlagLabel(isFlaggedStatus(selectedMeta.flag_status));
 		}
 		showCompose(false);
 		showRead();
@@ -488,7 +512,12 @@
 			.then(function (m) {
 				var fromName = (m.from && (m.from.name || m.from.address)) || "";
 				var fromAddr = (m.from && m.from.address) || "";
-				selectedMeta = { from: fromAddr, subject: m.subject || "" };
+				selectedMeta = {
+					from: fromAddr,
+					subject: m.subject || "",
+					flag_status: m.flag_status || "notFlagged",
+				};
+				setFlagLabel(isFlaggedStatus(selectedMeta.flag_status));
 				var to = (m.to || [])
 					.map(function (a) {
 						return a.address || a.name;
@@ -612,6 +641,34 @@
 		if (body) body.focus();
 	}
 
+	function applyFlagLocal(id, status) {
+		listCache.forEach(function (m) {
+			if (m.id === id) m.flag_status = status;
+		});
+		if (selectedMeta && selectedId === id) selectedMeta.flag_status = status;
+		setFlagLabel(isFlaggedStatus(status));
+		renderList();
+	}
+
+	function toggleSelectedFlag() {
+		if (!selectedId || !api()) return;
+		var current = (selectedMeta && selectedMeta.flag_status) || "notFlagged";
+		var next = isFlaggedStatus(current) ? "notFlagged" : "flagged";
+		api()
+			.fetchJson("/api/v1/mail/messages/" + encodeURIComponent(selectedId), {
+				method: "PATCH",
+				body: { flag_status: next },
+			})
+			.then(function () {
+				applyFlagLocal(selectedId, next);
+			})
+			.catch(function (err) {
+				var N = notify();
+				if (N) N.error(err.message || "Could not update flag");
+				else alert(err.message || "Could not update flag");
+			});
+	}
+
 	function sendCompose(ev) {
 		ev.preventDefault();
 		if (!api()) return;
@@ -672,6 +729,8 @@
 		if (delBtn) delBtn.addEventListener("click", deleteSelected);
 		var replyBtn = document.getElementById("usis-mail-reply-btn");
 		if (replyBtn) replyBtn.addEventListener("click", replySelected);
+		var flagBtn = document.getElementById("usis-mail-flag-btn");
+		if (flagBtn) flagBtn.addEventListener("click", toggleSelectedFlag);
 		var form = document.getElementById("usis-mail-compose-form");
 		if (form) form.addEventListener("submit", sendCompose);
 		var search = document.getElementById("usis-mail-search");

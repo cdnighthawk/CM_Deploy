@@ -2704,3 +2704,19 @@ body.usis-sv-open {
 .usis-row-menu .dropdown-menu {
 	z-index: 1080;
 }
+
+.usis-dash-task {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+.usis-dash-task__main {
+	min-width: 0;
+	flex: 1;
+}
+.usis-dash-task__kind {
+	margin-bottom: 0.2rem;
+}
+.usis-dash-task-done {
+	flex-shrink: 0;
+}

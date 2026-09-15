@@ -328,14 +328,23 @@
 
 		function growDrawingTitleColumn(table) {
 			if (!table || typeof table.getColumn !== "function") return;
+			if (table._usisGrowQueued) return;
+			table._usisGrowQueued = true;
 			var run = function () {
+				table._usisGrowQueued = false;
 				try {
 					var col = table.getColumn("sheet_title");
 					if (!col || typeof col.getWidth !== "function" || typeof col.setWidth !== "function") return;
 					var root = table.element;
 					var holder = root && root.querySelector && root.querySelector(".tabulator-tableholder");
 					if (!holder) return;
-					var extra = holder.clientWidth - holder.scrollWidth;
+					var used = 0;
+					(table.getColumns() || []).forEach(function (c) {
+						var def = c.getDefinition ? c.getDefinition() : null;
+						if (def && def.visible === false) return;
+						if (typeof c.getWidth === "function") used += c.getWidth() || 0;
+					});
+					var extra = holder.clientWidth - used;
 					if (extra > 2) col.setWidth(col.getWidth() + extra);
 				} catch (err) {}
 			};

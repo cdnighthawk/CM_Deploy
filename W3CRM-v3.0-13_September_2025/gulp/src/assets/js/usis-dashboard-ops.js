@@ -154,7 +154,11 @@
 	}
 
 	function taskHref(item) {
-		if (item && item.kind === "flagged_mail") return "usis-email.html";
+		if (item && item.kind === "flagged_mail") {
+			var id = String(item.id || "").trim();
+			if (!id) return "usis-email.html";
+			return "usis-email.html?id=" + encodeURIComponent(id);
+		}
 		var link = item && item.web_link;
 		if (link && /^https:\/\//i.test(link)) return link;
 		return "https://to-do.office.com/tasks";

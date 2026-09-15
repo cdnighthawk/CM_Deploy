@@ -1963,9 +1963,7 @@ def put_drawing_pdf_file(drawing_id: str):
         replace_drawing_file(row, payload)
         db.session.commit()
     except DrawingUploadError as exc:
-        from ..services.drawing_upload import native_upload_hint_for_drawing
-
-        hint = native_upload_hint_for_drawing(row)
+        hint = _native_b2_mint_or_none(row)
         item = _drawing_public(row)
         db.session.rollback()
         body: dict = {"error": exc.message, "entity": "drawing", "item": item}
@@ -2026,15 +2024,13 @@ def upload_project_drawing(project_id: str):
     except DrawingUploadError as exc:
         if exc.drawing is not None:
             db.session.commit()
-            from ..services.drawing_upload import native_upload_hint_for_drawing
-
             item = _drawing_public(exc.drawing)
             body: dict = {
                 "entity": "drawing",
                 "file_pending": True,
                 "item": item,
             }
-            native = native_upload_hint_for_drawing(exc.drawing)
+            native = _native_b2_mint_or_none(exc.drawing)
             if native:
                 body["upload"] = native
             else:
@@ -2060,12 +2056,10 @@ def upload_project_drawing(project_id: str):
     item = result["item"]
     body: dict = {"item": item, "entity": "drawing"}
     try:
-        from ..services.drawing_upload import native_upload_hint_for_drawing
-
         did = uuid.UUID(str(item.get("id") or ""))
         row = db.session.get(Drawing, did)
         if row is not None:
-            native = native_upload_hint_for_drawing(row)
+            native = _native_b2_mint_or_none(row)
             if native:
                 body["upload"] = native
     except (ValueError, TypeError):
@@ -2092,10 +2086,30 @@ def _resolve_job_project(job_id: uuid.UUID) -> Project | None:
     return ensure_lead_workspace_project(lead, getattr(cu, "id", None))
 
 
+def _native_b2_mint_or_none(row: Drawing) -> dict | None:
+    """Native ``b2_upload_file`` mint only. Rejects S3 / SigV4 URLs if produced."""
+    from ..services.drawing_upload import native_upload_hint_for_drawing
+    from ..services.object_storage import is_native_b2_upload_url
+
+    hint = native_upload_hint_for_drawing(row)
+    if not hint:
+        return None
+    url = str(hint.get("url") or "")
+    if hint.get("mode") != "b2_native" or not is_native_b2_upload_url(url):
+        current_app.logger.warning(
+            "rejected non-native drawing mint drawing=%s mode=%s url=%s",
+            getattr(row, "id", None),
+            hint.get("mode"),
+            url[:180],
+        )
+        return None
+    return hint
+
+
 @bp.post("/jobs/<job_id>/drawings")
 def create_job_drawing(job_id: str):
     """Desktop ingest: catalog row only. The PDF is written straight to B2."""
-    from ..services.drawing_upload import create_pending_drawing, native_upload_hint_for_drawing
+    from ..services.drawing_upload import create_pending_drawing
 
     jid = _parse_uuid_param(job_id)
     if not jid:
@@ -2142,15 +2156,24 @@ def create_job_drawing(job_id: str):
         content_hash=content_hash,
     )
     db.session.commit()
-    native = native_upload_hint_for_drawing(row)
-    body: dict[str, Any] = {
-        "item": _drawing_public(row),
-        "entity": "drawing",
-        "file_pending": True,
-    }
-    if native:
-        body["upload"] = native
-    return _jsonify(body), 201
+    native = _native_b2_mint_or_none(row)
+    if not native:
+        return _jsonify(
+            {
+                "error": "B2_UPLOAD_URL_UNAVAILABLE",
+                "entity": "drawing",
+                "item": _drawing_public(row),
+                "file_pending": True,
+            }
+        ), 503
+    return _jsonify(
+        {
+            "item": _drawing_public(row),
+            "entity": "drawing",
+            "file_pending": True,
+            "upload": native,
+        }
+    ), 201
 
 
 def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tuple[bool, str | None]:
@@ -2165,9 +2188,7 @@ def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tupl
 
 @bp.post("/drawings/<drawing_id>/upload-session")
 def create_drawing_upload_session(drawing_id: str):
-    """Mint a one-shot native B2 URL so the desktop can PUT the PDF without Render."""
-    from ..services.drawing_upload import native_upload_hint_for_drawing
-
+    """Mint a one-shot native B2 URL so the desktop can POST the PDF without Render."""
     did = _parse_uuid_param(drawing_id)
     if not did:
         return _jsonify({"error": "invalid drawing id"}), 400
@@ -2176,9 +2197,9 @@ def create_drawing_upload_session(drawing_id: str):
         return _jsonify({"error": "drawing not found"}), 404
     if row.project_id and not _project_exists(row.project_id):
         return _jsonify({"error": "drawing not found"}), 404
-    native = native_upload_hint_for_drawing(row)
+    native = _native_b2_mint_or_none(row)
     if not native:
-        return _jsonify({"error": "B2 client upload URL unavailable"}), 503
+        return _jsonify({"error": "B2_UPLOAD_URL_UNAVAILABLE"}), 503
     return _jsonify({"upload": native, "item": _drawing_public(row), "entity": "drawing"}), 200
 
 

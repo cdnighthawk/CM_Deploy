@@ -440,7 +440,7 @@ def test_b2_read_falls_back_to_native_when_s3_drops(mock_client_factory, _head_n
 @patch("app.services.object_storage.time.sleep", return_value=None)
 @patch("app.services.object_storage._b2_get_upload_url")
 def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, _cors, flask_app):
-    mock_get_url.side_effect = [RuntimeError("b2 busy"), {"uploadUrl": "https://pod.example/up", "authorizationToken": "tok"}]
+    mock_get_url.side_effect = [RuntimeError("b2 busy"), {"uploadUrl": "https://pod.example/b2api/v2/b2_upload_file/x", "authorizationToken": "tok"}]
     flask_app.config.update(
         {
             "B2_APPLICATION_KEY_ID": "k",
@@ -455,7 +455,7 @@ def test_native_upload_session_retries_then_succeeds(mock_get_url, _sleep, _cors
         session = native_upload_session(UploadCategory.DRAWINGS, "sheet.pdf")
         assert session is not None
         assert session["mode"] == "b2_native"
-        assert session["url"] == "https://pod.example/up"
+        assert session["url"] == "https://pod.example/b2api/v2/b2_upload_file/x"
         assert mock_get_url.call_count == 2
 
 
@@ -550,3 +550,71 @@ def test_replay_pending_b2_uploads_local_copy(mock_put, flask_app, tmp_path):
         mock_put.assert_called_once()
         assert mock_put.call_args.args[1] == b"%PDF-1.4"
         assert not local_path(UploadCategory.DOCUMENTS, "spec.pdf").exists()
+
+
+def test_is_native_b2_upload_url_rejects_s3_presign():
+    from app.services.object_storage import is_native_b2_upload_url
+
+    native = "https://pod-000-1000-00.backblaze.com/b2api/v2/b2_upload_file/4_bucket/tok"
+    s3 = (
+        "https://s3.us-west-004.backblazeb2.com/USIS-construction-docs/prod/usis-cm/drawings/a.pdf"
+        "?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=003%2F20260101%2Fus-west-004%2Fs3%2Faws4_request"
+    )
+    assert is_native_b2_upload_url(native)
+    assert not is_native_b2_upload_url(s3)
+    assert not is_native_b2_upload_url("")
+    assert not is_native_b2_upload_url(None)
+    assert not is_native_b2_upload_url("https://example.com/upload")
+
+
+@patch("app.services.object_storage.ensure_browser_cors", return_value=True)
+@patch("app.services.object_storage.time.sleep", return_value=None)
+@patch("app.services.object_storage._b2_get_upload_url")
+def test_native_upload_session_rejects_s3_url(mock_get_url, _sleep, _cors, flask_app):
+    mock_get_url.return_value = {
+        "uploadUrl": (
+            "https://s3.us-west-004.backblazeb2.com/bucket/key.pdf?X-Amz-Credential=x"
+        ),
+        "authorizationToken": "tok",
+    }
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import UploadCategory, native_upload_session
+
+        assert native_upload_session(UploadCategory.DRAWINGS, "sheet.pdf") is None
+    assert mock_get_url.call_count == 3
+
+
+@patch("app.services.object_storage._b2_http_json")
+def test_b2_bucket_id_uses_config_without_list_buckets(mock_http, flask_app):
+    flask_app.config.update(
+        {
+            "B2_APPLICATION_KEY_ID": "k",
+            "B2_APPLICATION_KEY": "s",
+            "B2_BUCKET_NAME": "usis-bucket",
+            "B2_BUCKET_ID": "configured-bucket-id",
+            "B2_ENDPOINT": "https://s3.us-west-004.backblazeb2.com",
+        }
+    )
+    with flask_app.app_context():
+        from app.services.object_storage import _b2_bucket_id
+
+        assert _b2_bucket_id({"accountId": "acc", "allowed": {}}) == "configured-bucket-id"
+        mock_http.assert_not_called()
+
+
+def test_b2_bucket_id_prefers_application_key_allowed_bucket(flask_app):
+    flask_app.config.update({"B2_BUCKET_ID": "configured-bucket-id"})
+    with flask_app.app_context():
+        from app.services.object_storage import _b2_bucket_id
+
+        assert (
+            _b2_bucket_id({"allowed": {"bucketId": "from-key"}}) == "from-key"
+        )

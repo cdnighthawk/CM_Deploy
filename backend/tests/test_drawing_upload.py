@@ -527,7 +527,7 @@ def test_drawing_storage_failure_hands_native_b2_not_s3_presign(client):
         ) as mock_native,
         patch(
             "app.services.object_storage.presigned_put_url",
-            return_value="https://s3.us-west-004.backblazeb2.com/usis-cm/broken",
+            return_value="https://s3.us-west-004.backblazeb2.com/usis-cm/broken?X-Amz-Credential=x",
         ) as mock_presign,
     ):
         r = client.post(
@@ -538,14 +538,16 @@ def test_drawing_storage_failure_hands_native_b2_not_s3_presign(client):
     assert r.status_code == 503, r.get_data(as_text=True)
     body = r.get_json()
     assert body["upload"]["mode"] == "b2_native"
-    assert "pod-" in body["upload"]["url"]
+    assert "b2_upload_file" in body["upload"]["url"]
+    assert "X-Amz-" not in body["upload"]["url"]
+    assert "s3.us-west-004" not in body["upload"]["url"]
     assert body["upload"].get("authorization") == "tok"
     mock_native.assert_called_once()
     mock_presign.assert_not_called()
 
 
-def test_drawing_storage_failure_falls_back_to_s3_presign(client):
-    """If native B2 session cannot be issued, sign an S3 PUT for the desktop."""
+def test_drawing_storage_failure_does_not_hand_s3_presign(client):
+    """If native B2 mint fails, do not locally sign an S3 PUT for the desktop."""
     from unittest.mock import patch
 
     from app.services.object_storage import StorageError
@@ -588,9 +590,12 @@ def test_drawing_storage_failure_falls_back_to_s3_presign(client):
         )
     assert r.status_code == 500, r.get_data(as_text=True)
     body = r.get_json()
-    assert body["upload"]["mode"] == "s3_presigned_put"
-    assert "X-Amz-Signature" in body["upload"]["url"]
-    mock_presign.assert_called_once()
+    assert body.get("upload") is None
+    blob = r.get_data(as_text=True)
+    assert "X-Amz-" not in blob
+    assert "s3.us-west-004" not in blob
+    assert "s3_presigned_put" not in blob
+    mock_presign.assert_not_called()
 
 
 def test_put_drawing_file_replaces_pdf(client):
@@ -664,7 +669,11 @@ def test_drawing_upload_session_and_ack_file(client):
     ):
         sess = client.post(f"/api/v1/drawings/{did}/upload-session")
     assert sess.status_code == 200, sess.get_data(as_text=True)
-    assert sess.get_json()["upload"]["mode"] == "b2_native"
+    upload = sess.get_json()["upload"]
+    assert upload["mode"] == "b2_native"
+    assert "b2_upload_file" in upload["url"]
+    assert "X-Amz-" not in upload["url"]
+    assert upload.get("authorization") == "tok"
 
     ack = client.post(
         f"/api/v1/drawings/{did}/ack-file",
@@ -679,7 +688,7 @@ def test_drawing_upload_session_and_ack_file(client):
         assert not (row.tags or {}).get("file_pending")
 
 
-def test_drawing_upload_session_falls_back_to_s3_presign(client):
+def test_drawing_upload_session_returns_503_when_native_mint_fails(client):
     writer = PdfWriter()
     writer.add_blank_page(width=200, height=200)
     buf = io.BytesIO()
@@ -687,7 +696,7 @@ def test_drawing_upload_session_falls_back_to_s3_presign(client):
     payload = buf.getvalue()
 
     with client.application.app_context():
-        p = Project(name="DrawSessS3-" + uuid.uuid4().hex[:8])
+        p = Project(name="DrawSessFail-" + uuid.uuid4().hex[:8])
         db.session.add(p)
         db.session.flush()
         pid = str(p.id)
@@ -703,18 +712,22 @@ def test_drawing_upload_session_falls_back_to_s3_presign(client):
 
     from unittest.mock import patch
 
+    s3_url = "https://s3.us-west-004.backblazeb2.com/bucket/key.pdf?X-Amz-Credential=x&X-Amz-Signature=x"
     with (
         patch("app.services.object_storage.native_upload_session", return_value=None),
         patch(
             "app.services.object_storage.presigned_put_url",
-            return_value="https://s3.us-west-004.backblazeb2.com/bucket/key.pdf?X-Amz-Signature=x",
+            return_value=s3_url,
         ),
     ):
         sess = client.post(f"/api/v1/drawings/{did}/upload-session")
-    assert sess.status_code == 200, sess.get_data(as_text=True)
-    upload = sess.get_json()["upload"]
-    assert upload["mode"] == "s3_presigned_put"
-    assert "X-Amz-Signature" in upload["url"]
+    assert sess.status_code == 503, sess.get_data(as_text=True)
+    body = sess.get_json()
+    assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
+    assert body.get("upload") is None
+    blob = sess.get_data(as_text=True)
+    assert "X-Amz-" not in blob
+    assert "s3.us-west-004" not in blob
 
 
 def test_jobs_drawings_creates_pending_row_and_returns_b2_upload(client):
@@ -761,9 +774,92 @@ def test_jobs_drawings_creates_pending_row_and_returns_b2_upload(client):
     assert body["item"]["drawing_set"] == "Bid Set"
     assert body["upload"]["mode"] == "b2_native"
     assert body["upload"]["url"] == native["url"]
+    assert "b2_upload_file" in body["upload"]["url"]
+    assert "X-Amz-" not in body["upload"]["url"]
+    assert body["upload"].get("authorization") == "tok"
 
     with client.application.app_context():
         row = db.session.get(Drawing, uuid.UUID(did))
         assert row is not None
         assert (row.tags or {}).get("file_pending") is True
         assert row.file_url == f"/api/v1/drawings/{did}/file"
+
+
+def test_jobs_drawings_returns_503_when_native_mint_fails(client):
+    from unittest.mock import patch
+
+    with client.application.app_context():
+        p = Project(name="JobDrawFail-" + uuid.uuid4().hex[:8], number="J" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    did = str(uuid.uuid4())
+    with (
+        patch("app.services.object_storage.native_upload_session", return_value=None),
+        patch(
+            "app.services.object_storage.presigned_put_url",
+            return_value="https://s3.us-west-004.backblazeb2.com/bucket/key.pdf?X-Amz-Credential=x",
+        ),
+    ):
+        r = client.post(
+            f"/api/v1/jobs/{pid}/drawings",
+            json={
+                "item": {
+                    "id": did,
+                    "sheetNumber": "A1",
+                    "sheetTitle": "Site",
+                    "revisionLabel": "Bid Set",
+                    "sourceFileName": "A1.pdf",
+                }
+            },
+        )
+    assert r.status_code == 503, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
+    assert body.get("upload") is None
+    assert body["item"]["id"] == did
+    blob = r.get_data(as_text=True)
+    assert "X-Amz-" not in blob
+    assert "s3.us-west-004" not in blob
+    with client.application.app_context():
+        row = db.session.get(Drawing, uuid.UUID(did))
+        assert row is not None
+        assert (row.tags or {}).get("file_pending") is True
+
+
+def test_jobs_drawings_rejects_s3_looking_mint_url(client):
+    """Defense in depth: never hand the desktop an S3 URL even if a mint helper produces one."""
+    from unittest.mock import patch
+
+    with client.application.app_context():
+        p = Project(name="JobDrawS3-" + uuid.uuid4().hex[:8], number="J" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    did = str(uuid.uuid4())
+    fake_s3 = {
+        "mode": "s3_presigned_put",
+        "url": "https://s3.us-west-004.backblazeb2.com/USIS-construction-docs/key.pdf?X-Amz-Credential=AKIA&X-Amz-Signature=x",
+        "file_name": "key.pdf",
+    }
+    with patch("app.services.object_storage.native_upload_session", return_value=fake_s3):
+        r = client.post(
+            f"/api/v1/jobs/{pid}/drawings",
+            json={
+                "item": {
+                    "id": did,
+                    "sheetNumber": "A2",
+                    "sourceFileName": "A2.pdf",
+                }
+            },
+        )
+    assert r.status_code == 503, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
+    blob = r.get_data(as_text=True)
+    assert "X-Amz-" not in blob
+    assert "s3.us-west-004" not in blob

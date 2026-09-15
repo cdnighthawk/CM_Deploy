@@ -162,11 +162,14 @@ In **Dashboard → usis-cm → Environment**, add:
 | `B2_APPLICATION_KEY` | (secret) | Yes |
 | `B2_BUCKET_NAME` | `USIS-construction-docs` | Yes |
 | `B2_ENDPOINT` | From bucket **S3 Endpoint** (region-specific) | Yes |
-| `B2_PREFIX` | `prod/usis-cm` | No |
+| `B2_PREFIX` | `prod/usis-cm` | No (use this value on Render) |
+| `B2_BUCKET_ID` | From bucket **Bucket Settings** (or `b2_list_buckets`) | No — skips `list_buckets` for native mint |
 
 **Remove** any unused custom name such as `back_blaze` — the app ignores it.
 
 All four required vars must be set or the app falls back to local `instance/` paths.
+
+**Desktop mint (USISPdfApp)** uses native B2 only. `POST /api/v1/jobs/<id>/drawings` and `POST /api/v1/drawings/<id>/upload-session` return `{ "mode": "b2_native", "url": ".../b2_upload_file...", "authorization": "..." }`. They never return an S3 presigned PUT (`X-Amz-` / `s3.us-west-004.backblazeb2.com`). If `b2_get_upload_url` fails, those endpoints respond **503** with `{ "error": "B2_UPLOAD_URL_UNAVAILABLE" }`.
 
 After deploy, new uploads go to B2. Existing files on the Render disk are **not** migrated automatically; copy them with the B2 CLI or a one-off sync script if needed.
 

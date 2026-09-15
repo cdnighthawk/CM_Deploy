@@ -326,6 +326,8 @@ class Config:
     B2_BUCKET_NAME: str | None = (
         (os.environ.get("B2_BUCKET_NAME") or os.environ.get("B2_BUCKET") or "").strip() or None
     )
+    # Optional. Skips b2_list_buckets when the application key is not bucket-restricted.
+    B2_BUCKET_ID: str | None = (os.environ.get("B2_BUCKET_ID") or "").strip() or None
     B2_ENDPOINT: str | None = (os.environ.get("B2_ENDPOINT") or "").strip() or None
     B2_PREFIX: str | None = (os.environ.get("B2_PREFIX") or "").strip() or None
     # Local/NAS archive only. Used by scripts/mirror_b2.py — do not set on Render.

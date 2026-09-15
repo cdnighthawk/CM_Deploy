@@ -89,6 +89,11 @@ def test_me_tasks_uses_session_mailbox_not_query(client, monkeypatch):
     titles = {item["title"] for item in body["items"]}
     assert "Call the GC" in titles
     assert "Need a decision" in titles
+    flagged = next(item for item in body["items"] if item["kind"] == "flagged_mail")
+    todo = next(item for item in body["items"] if item["kind"] == "todo")
+    assert flagged["id"] == "msg-flag"
+    assert todo["id"] == "task-1"
+    assert todo["web_link"] == "https://to-do.office.com/tasks"
     assert all("victim@" not in url for url in captured)
     assert any("todo/lists" in url for url in captured)
     assert not any("list-flagged" in url for url in captured)

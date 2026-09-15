@@ -464,6 +464,15 @@
 		});
 	}
 
+	function requestedMessageId() {
+		try {
+			var q = new URLSearchParams(window.location.search || "");
+			return String(q.get("id") || q.get("message") || "").trim();
+		} catch (e) {
+			return "";
+		}
+	}
+
 	function loadList() {
 		var list = document.getElementById("usis-mail-list");
 		if (!list || !api()) return;
@@ -714,6 +723,8 @@
 		bindFolderNav();
 		loadFolders();
 		loadList();
+		var deepId = requestedMessageId();
+		if (deepId) openMessage(deepId);
 		var composeBtn = document.getElementById("usis-mail-compose-btn");
 		if (composeBtn)
 			composeBtn.addEventListener("click", function () {

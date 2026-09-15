@@ -2168,11 +2168,18 @@ def create_job_drawing(job_id: str):
     if native:
         body["upload"] = native
     else:
+        from ..services.object_storage import mint_last_error, mint_retry_after_seconds
+
         current_app.logger.warning(
-            "b2 native mint unavailable after drawing create drawing=%s",
+            "b2 native mint unavailable after drawing create drawing=%s last_err=%s cooldown=%ss",
             row.id,
+            mint_last_error() or "-",
+            mint_retry_after_seconds(),
         )
         body["upload_error"] = "B2_UPLOAD_URL_UNAVAILABLE"
+        detail = mint_last_error()
+        if detail:
+            body["upload_error_detail"] = detail
     return _jsonify(body), 201
 
 
@@ -2199,10 +2206,14 @@ def create_drawing_upload_session(drawing_id: str):
         return _jsonify({"error": "drawing not found"}), 404
     native = _native_b2_mint_or_none(row)
     if not native:
-        from ..services.object_storage import mint_retry_after_seconds
+        from ..services.object_storage import mint_last_error, mint_retry_after_seconds
 
         wait = mint_retry_after_seconds() or 20
-        resp = _jsonify({"error": "B2_UPLOAD_URL_UNAVAILABLE"})
+        body = {"error": "B2_UPLOAD_URL_UNAVAILABLE"}
+        detail = mint_last_error()
+        if detail:
+            body["detail"] = detail
+        resp = _jsonify(body)
         resp.status_code = 503
         resp.headers["Retry-After"] = str(wait)
         return resp

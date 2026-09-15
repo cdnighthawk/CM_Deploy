@@ -259,8 +259,42 @@
 		});
 	}
 
+	function compactDrawingCol(def) {
+		def.widthGrow = 0;
+		def.widthShrink = 0;
+		return def;
+	}
+
+	function growDrawingTitleColumn(table) {
+		if (!table || typeof table.getColumn !== "function") return;
+		var run = function () {
+			try {
+				var col = table.getColumn("sheet_title");
+				if (!col || typeof col.getWidth !== "function" || typeof col.setWidth !== "function") return;
+				var root = table.element;
+				var holder = root && root.querySelector && root.querySelector(".tabulator-tableholder");
+				if (!holder) return;
+				var extra = holder.clientWidth - holder.scrollWidth;
+				if (extra > 2) col.setWidth(col.getWidth() + extra);
+			} catch (err) {}
+		};
+		if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+		else run();
+	}
+
+	function bindDrawingGridColumnLayout(table) {
+		if (!table || table._usisDrawingColsBound) return;
+		table._usisDrawingColsBound = true;
+		table.on("dataProcessed", function () {
+			growDrawingTitleColumn(table);
+		});
+		table.on("renderComplete", function () {
+			growDrawingTitleColumn(table);
+		});
+	}
+
 	function drawingCheckboxColumn() {
-		return {
+		return compactDrawingCol({
 			title: "",
 			field: "_sel",
 			cssClass: "usis-doc-check-col",
@@ -313,7 +347,7 @@
 				});
 				return cb;
 			},
-		};
+		});
 	}
 
 	function ensureDrawingGroupToolbar(gridEl) {
@@ -617,31 +651,37 @@
 		var pid = activeProjectId || "";
 		var cols = [
 			drawingCheckboxColumn(),
-			{
+			compactDrawingCol({
 				title: "Sheet #",
 				field: "sheet_number",
 				headerFilter: "input",
-				minWidth: 100,
-				widthGrow: 1,
 				editable: false,
 				formatter: drawingNameLinkFormatter("sheet_number", pid),
-			},
+			}),
 			{
 				title: "Title",
 				field: "sheet_title",
 				headerFilter: "input",
 				minWidth: 160,
-				widthGrow: 2,
+				widthGrow: 1,
 				editable: false,
 				formatter: drawingNameLinkFormatter("sheet_title", pid),
 			},
 			{ title: "Discipline", field: "discipline", visible: false },
-			{ title: "Set", field: "drawing_set", headerFilter: "input", minWidth: 140, widthGrow: 1 },
-			{ title: "Issues", field: "revision_count", hozAlign: "right", width: 90 },
-			{
+			compactDrawingCol({
+				title: "Set",
+				field: "drawing_set",
+				headerFilter: "input",
+			}),
+			compactDrawingCol({
+				title: "Issues",
+				field: "revision_count",
+				hozAlign: "right",
+				headerHozAlign: "left",
+			}),
+			compactDrawingCol({
 				title: "Updated",
 				field: "current_revision",
-				width: 170,
 				formatter: function (cell) {
 					var cr = cell.getValue();
 					if (!cr || !cr.updated_at) return "—";
@@ -651,8 +691,8 @@
 						return esc(cr.updated_at);
 					}
 				},
-			},
-			{
+			}),
+			compactDrawingCol({
 				title: "",
 				field: "id",
 				width: 52,
@@ -670,7 +710,7 @@
 						deleteClass: "usis-proj-drawing-del",
 					});
 				},
-			},
+			}),
 		];
 		rows.sort(function (a, b) {
 			var da = drawingDisciplineGroup(a).toLowerCase();
@@ -687,7 +727,8 @@
 		}
 		drawingsTabulator = new Tabulator(el, {
 			data: rows,
-			layout: "fitColumns",
+			layout: "fitDataFill",
+			layoutColumnsOnNewData: true,
 			pagination: false,
 			movableColumns: true,
 			placeholder: "No drawings for this project yet.",
@@ -707,6 +748,7 @@
 				);
 			},
 		});
+		bindDrawingGridColumnLayout(drawingsTabulator);
 		bindDrawingGroupPersistence(drawingsTabulator);
 	}
 

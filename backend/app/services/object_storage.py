@@ -52,6 +52,9 @@ _S3_CONNECT_TIMEOUT = 15
 _S3_READ_TIMEOUT = 40
 _NATIVE_TRANSFER_TIMEOUT = 120
 _NATIVE_PUT_TIMEOUT = 20
+_B2_JSON_TIMEOUT = 8
+_MINT_ATTEMPTS = 2
+_MINT_COOLDOWN_SEC = 20
 _BROWSER_UPLOAD_HEADERS = (
     "authorization",
     "content-type",
@@ -63,7 +66,12 @@ _BROWSER_UPLOAD_HEADERS = (
 )
 _AUTH_TTL_SEC = 50 * 60
 _auth_cache: dict = {"at": 0.0, "key_id": "", "data": None}
+_auth_lock = threading.Lock()
 _bucket_id_cache: dict = {"at": 0.0, "key_id": "", "id": ""}
+_mint_lock = threading.Lock()
+_mint_circuit: dict = {"open_until": 0.0}
+_b2_json_clients: dict[bool, httpx.Client] = {}
+_b2_json_clients_lock = threading.Lock()
 _cors_applied = {"ok": False, "at": 0.0}
 _CORS_TTL_SEC = 6 * 60 * 60
 _DEFAULT_BROWSER_ORIGINS = (
@@ -514,37 +522,46 @@ def is_native_b2_upload_url(url: str | None) -> bool:
     return "b2_upload_file" in lower
 
 
+def mint_retry_after_seconds() -> int:
+    """Seconds desktop should wait when native mint is in cooldown. 0 if mint may be tried."""
+    rem = float(_mint_circuit.get("open_until") or 0) - time.time()
+    return max(0, int(rem + 0.999))
+
+
 def native_upload_session(category: UploadCategory, object_name: str) -> dict | None:
     """One-shot native B2 upload URL (b2_get_upload_url) for a client POST of the file bytes.
 
-    Never falls back to a locally signed S3 PUT. Retry a few times: ``b2_get_upload_url``
-    can 5xx under load. The desktop needs this URL more than Render needs to PUT the bytes.
+    Never falls back to a locally signed S3 PUT. Serialize mint and fail fast after a
+    B2 outage so a desktop retry herd does not pin gunicorn workers or allocate
+    a new httpx client per sheet.
     """
     if not b2_enabled():
         return None
-    # Do not call ensure_browser_cors() here. Desktop POSTs are not browsers;
-    # boot already applies CORS. A thundering herd of b2_update_bucket during
-    # ingest can 5xx native mint and made every create look like a rejected row.
+    if mint_retry_after_seconds() > 0:
+        return None
     key = object_key(category, object_name)
     last: BaseException | None = None
-    for attempt in range(3):
-        try:
-            info = _b2_get_upload_url()
-            url = str(info.get("uploadUrl") or "").strip()
-            token = str(info.get("authorizationToken") or "").strip()
-            if not token or not is_native_b2_upload_url(url):
-                raise StorageError(B2_UPLOAD_URL_UNAVAILABLE, 503)
-            return {
-                "mode": "b2_native",
-                "url": url,
-                "authorization": token,
-                "file_name": key,
-                "sha1_header": "X-Bz-Content-Sha1",
-            }
-        except Exception as exc:
-            last = exc
-            if attempt + 1 < 3:
-                time.sleep(0.4 * (2**attempt))
+    with _mint_lock:
+        if mint_retry_after_seconds() > 0:
+            return None
+        for attempt in range(_MINT_ATTEMPTS):
+            try:
+                info = _b2_get_upload_url()
+                url = str(info.get("uploadUrl") or "").strip()
+                token = str(info.get("authorizationToken") or "").strip()
+                if not token or not is_native_b2_upload_url(url):
+                    raise StorageError(B2_UPLOAD_URL_UNAVAILABLE, 503)
+                _mint_circuit["open_until"] = 0.0
+                return {
+                    "mode": "b2_native",
+                    "url": url,
+                    "authorization": token,
+                    "file_name": key,
+                    "sha1_header": "X-Bz-Content-Sha1",
+                }
+            except Exception as exc:
+                last = exc
+        _mint_circuit["open_until"] = time.time() + _MINT_COOLDOWN_SEC
     current_app.logger.warning("b2 native upload url failed key=%s err=%s", key, last)
     return None
 
@@ -919,16 +936,26 @@ def _b2_http_json(req: Request, timeout: int) -> dict:
         raise StorageError(f"B2 HTTP {exc.code}: {raw}", 503) from exc
 
 
+def _b2_json_client(ipv4: bool) -> httpx.Client:
+    """Reuse one JSON client per address family. Creating httpx+TLS per mint OOM'd Starter."""
+    with _b2_json_clients_lock:
+        client = _b2_json_clients.get(ipv4)
+        if client is None:
+            client = _native_upload_client(_B2_JSON_TIMEOUT, ipv4=ipv4)
+            _b2_json_clients[ipv4] = client
+        return client
+
+
 def _b2_json(method: str, url: str, *, headers: dict, json_body: dict | None, timeout: int) -> dict:
     """Native B2 JSON (api.backblazeb2.com). IPv4 fallback matches upload-pod PUT."""
     last: BaseException | None = None
     for ipv4 in (False, True):
         try:
-            with _native_upload_client(timeout, ipv4=ipv4) as client:
-                kwargs: dict = {"headers": headers}
-                if json_body is not None:
-                    kwargs["json"] = json_body
-                resp = client.request(method, url, **kwargs)
+            client = _b2_json_client(ipv4)
+            kwargs: dict = {"headers": headers, "timeout": timeout}
+            if json_body is not None:
+                kwargs["json"] = json_body
+            resp = client.request(method, url, **kwargs)
             if resp.status_code >= 400:
                 raise StorageError(
                     f"B2 HTTP {resp.status_code}: {(resp.text or '')[:240]}",
@@ -956,24 +983,26 @@ def _b2_authorize() -> dict:
     key_id = (current_app.config.get("B2_APPLICATION_KEY_ID") or "").strip()
     secret = (current_app.config.get("B2_APPLICATION_KEY") or "").strip()
     now = time.time()
-    cached = _auth_cache.get("data")
-    if (
-        cached
-        and _auth_cache.get("key_id") == key_id
-        and now - float(_auth_cache.get("at") or 0) < _AUTH_TTL_SEC
-    ):
-        return cached
+    with _auth_lock:
+        cached = _auth_cache.get("data")
+        if (
+            cached
+            and _auth_cache.get("key_id") == key_id
+            and now - float(_auth_cache.get("at") or 0) < _AUTH_TTL_SEC
+        ):
+            return cached
     token = base64.b64encode(f"{key_id}:{secret}".encode()).decode()
     data = _b2_json(
         "GET",
         "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
         headers={"Authorization": f"Basic {token}"},
         json_body=None,
-        timeout=_S3_CONNECT_TIMEOUT,
+        timeout=_B2_JSON_TIMEOUT,
     )
-    _auth_cache["at"] = now
-    _auth_cache["key_id"] = key_id
-    _auth_cache["data"] = data
+    with _auth_lock:
+        _auth_cache["at"] = time.time()
+        _auth_cache["key_id"] = key_id
+        _auth_cache["data"] = data
     return data
 
 
@@ -1003,7 +1032,7 @@ def _b2_bucket_id(auth: dict) -> str:
             "Content-Type": "application/json",
         },
         json_body={"accountId": auth.get("accountId")},
-        timeout=_S3_CONNECT_TIMEOUT,
+        timeout=_B2_JSON_TIMEOUT,
     )
     for bucket in payload.get("buckets") or []:
         found = str(bucket.get("bucketId") or "")
@@ -1026,7 +1055,7 @@ def _b2_get_upload_url() -> dict:
             "Content-Type": "application/json",
         },
         json_body={"bucketId": bucket_id},
-        timeout=_S3_CONNECT_TIMEOUT,
+        timeout=_B2_JSON_TIMEOUT,
     )
 
 

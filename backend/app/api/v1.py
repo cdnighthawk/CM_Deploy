@@ -2199,7 +2199,13 @@ def create_drawing_upload_session(drawing_id: str):
         return _jsonify({"error": "drawing not found"}), 404
     native = _native_b2_mint_or_none(row)
     if not native:
-        return _jsonify({"error": "B2_UPLOAD_URL_UNAVAILABLE"}), 503
+        from ..services.object_storage import mint_retry_after_seconds
+
+        wait = mint_retry_after_seconds() or 20
+        resp = _jsonify({"error": "B2_UPLOAD_URL_UNAVAILABLE"})
+        resp.status_code = 503
+        resp.headers["Retry-After"] = str(wait)
+        return resp
     return _jsonify({"upload": native, "item": _drawing_public(row), "entity": "drawing"}), 200
 
 

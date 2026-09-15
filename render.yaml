@@ -13,6 +13,8 @@ services:
   - type: web
     name: usis-cm
     runtime: python
+    # Starter is 512 MB. Two gunicorn workers plus pymupdf/boto3 OOM during a
+    # desktop mint retry herd. Default 1 worker; on Standard (2 GB) set WEB_CONCURRENCY=2.
     plan: starter
     rootDir: backend
     buildCommand: >-
@@ -20,7 +22,7 @@ services:
       pip install -r requirements.txt
     # Redeploy trigger: application page redirect fix (2026-05-23)
     preDeployCommand: flask db upgrade
-    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --timeout 180
     healthCheckPath: /healthz
     disk:
       name: usis-instance

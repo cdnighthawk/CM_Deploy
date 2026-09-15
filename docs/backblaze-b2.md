@@ -169,6 +169,8 @@ In **Dashboard → usis-cm → Environment**, add:
 
 All four required vars must be set or the app falls back to local `instance/` paths.
 
+If `b2_get_upload_url` is failing, create still returns 201 (catalog accepted). `POST /api/v1/drawings/<id>/upload-session` returns **503** `{ "error": "B2_UPLOAD_URL_UNAVAILABLE" }` with `Retry-After`. After a mint failure the process cools down ~20s and skips further B2 control-plane calls so a desktop retry herd does not OOM Starter.
+
 **Desktop mint (USISPdfApp)** uses native B2 only. Successful `POST /api/v1/jobs/<id>/drawings` is **201** with the catalog `item` even if mint fails (a non-2xx here is treated as “the website did not accept the drawing row”). The `upload` object is present only for a native `b2_upload_file` URL + auth token (`mode: b2_native`). It never includes an S3 presigned PUT (`X-Amz-` / `s3.us-west-004.backblazeb2.com`). If native mint fails, the 201 body has `upload_error: B2_UPLOAD_URL_UNAVAILABLE` and no `upload`. `POST /api/v1/drawings/<id>/upload-session` still responds **503** `{ "error": "B2_UPLOAD_URL_UNAVAILABLE" }` when mint cannot be issued.
 
 After deploy, new uploads go to B2. Existing files on the Render disk are **not** migrated automatically; copy them with the B2 CLI or a one-off sync script if needed.

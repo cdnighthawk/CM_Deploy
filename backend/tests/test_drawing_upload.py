@@ -725,6 +725,7 @@ def test_drawing_upload_session_returns_503_when_native_mint_fails(client):
     body = sess.get_json()
     assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
     assert body.get("upload") is None
+    assert sess.headers.get("Retry-After")
     blob = sess.get_data(as_text=True)
     assert "X-Amz-" not in blob
     assert "s3.us-west-004" not in blob

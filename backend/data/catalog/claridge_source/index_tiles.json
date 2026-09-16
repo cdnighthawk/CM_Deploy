@@ -1,0 +1,617 @@
+[
+  {
+    "url": "https://claridgeproducts.com/product/claridge-glass/",
+    "name": "Claridge Glass Whiteboard",
+    "short_description": "Claridge glass boards are stylish, functional and easy to maintain.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Glass-Invisimount-768x768.png",
+    "type_ids": [
+      "71",
+      "247",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/lcs-elite/",
+    "name": "LCS Elite",
+    "short_description": "Smooth LCS Porcelain surface that delivers a great writing experience.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/05/d_Hero-Quiet-Room_filmic1-768x768.png",
+    "type_ids": [
+      "71",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/aspire-whiteboard/",
+    "name": "Aspire Whiteboard",
+    "short_description": "LCS Porcelain surface built to gives optimum projection quality for idea sharing or training sessions.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/01/Aspire-Hero-768x768.png",
+    "type_ids": [
+      "71",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/arise-whiteboard/",
+    "name": "Arise Whiteboard",
+    "short_description": "LCS Porcelain surface that delivers a great writing experience and will stand the test of time.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/AriseMB-website-768x768.jpg",
+    "type_ids": [
+      "71",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/series-1/",
+    "name": "Series 1",
+    "short_description": "Claridge whiteboard and tackboard with 1-1/2\" wide perimeter trim. Available in whiteboard, chalkboard porcelain, cork, fabrics, and tackboards.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2021/07/Series-1-Hero-768x768.jpg",
+    "type_ids": [
+      "240",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/series-2/",
+    "name": "Series 2",
+    "short_description": "Claridge whiteboard or tackboard with 3/4” perimeter trim. Available in whiteboard, chalkboard porcelain, cork, fabrics, and tackboards.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Series-2-Hero-768x768.jpg",
+    "type_ids": [
+      "240",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/series-3/",
+    "name": "Series 3",
+    "short_description": "Claridge whiteboard and tackboard with 1-1/4\" wide perimeter trim. Available in whiteboard, chalkboard porcelain, cork, fabrics, and tackboards.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Series-3-Hero-768x768.jpg",
+    "type_ids": [
+      "240",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/series-4/",
+    "name": "Series 4",
+    "short_description": "Claridge whiteboard and tackboard with 5/8\" wide perimeter trim. Available in whiteboard, chalkboard porcelain, cork, fabrics, and tackboards.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Series-4-Hero-768x768.jpg",
+    "type_ids": [
+      "240",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/series-5/",
+    "name": "Series 5",
+    "short_description": "Claridge whiteboard and tackboard with 5/8\" wide perimeter trim and extruded Z-bar for more concealed mounting.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Series-4-Hero-768x768.jpg",
+    "type_ids": [
+      "240",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/series-8/",
+    "name": "Series 8",
+    "short_description": "Claridge whiteboard and tackboard with 5/16\" wide perimeter trim. Available in whiteboard, chalkboard porcelain, cork, fabrics, and tackboards.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/05/Series-8-Hero-768x768.jpg",
+    "type_ids": [
+      "216",
+      "240"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/lcs-deluxe-porcelain-whiteboard-2/",
+    "name": "LCS Deluxe Porcelain Whiteboards",
+    "short_description": "Perfect for sharing big ideas, these popular whiteboards come in a range of XL sizes.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/09/LCS_Deluxe-768x768.png",
+    "type_ids": [
+      "71",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/grain-whiteboard/",
+    "name": "Grain Whiteboard",
+    "short_description": "Claridge marker board with white porcelain enamel steel writing surface & a natural finish oak frame",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Grain-Hero-Web-768x768.png",
+    "type_ids": [
+      "71",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/custom-logo-print-glass-markerboard/",
+    "name": "Custom Logo Print Glass Markerboard",
+    "short_description": "Create a custom printed glass board by uploading your own art or work with our designers to create your masterpiece.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/MicrosoftTeams-image-125-768x768.png",
+    "type_ids": [
+      "216",
+      "247",
+      "239"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/custom-print-whiteboards/",
+    "name": "Custom Print Glass Markerboard",
+    "short_description": "Create a custom printed glass board by uploading your own art or work with our designers to create your masterpiece.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/MicrosoftTeams-image-161-768x768.png",
+    "type_ids": [
+      "216",
+      "247",
+      "239"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/standard-graphic-board/",
+    "name": "Standard Graphic Boards",
+    "short_description": "Choose from a variety of graphics for your custom printed glassboard.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2024/07/thumbnail_Glassboard-music-lines-768x768.png",
+    "type_ids": [
+      "216",
+      "247",
+      "239"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/envision-graphic-board/",
+    "name": "Envision Graphic Board",
+    "short_description": "Custom designed to incorporate personalized graphics.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/07/GlassHealthboard-EnvisionTrim-HERO-768x768.png",
+    "type_ids": [
+      "71",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/xchange-graphic-board/",
+    "name": "XChange Graphic Board",
+    "short_description": "Interchangeable graphic insert that slides easily behind a clear, 1/4″ tempered glass writing surface.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Xchnage-Detail-1-768x768.png",
+    "type_ids": [
+      "71",
+      "247",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/glass-marker-wall/",
+    "name": "Glass Marker Wall",
+    "short_description": "Claridge Glass Marker Walls offer a room-size presentation surface designed for heavy use and multiple-format presentations.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/05/Glasswalls-Hero-768x768.png",
+    "type_ids": [
+      "72",
+      "247",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/arise-marker-wall/",
+    "name": "Arise Marker Wall",
+    "short_description": "Arise Marker Walls offer a room-size presentation surface designed for heavy use and multiple-format presentations",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/06/Wall-Write-Hero1-2-768x768.png",
+    "type_ids": [
+      "72",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/wall-write-walll/",
+    "name": "Wall-Write Wall",
+    "short_description": "Claridge LCS Wall-Write marker walls offer a room-size presentation surface designed for heavy use and multiple-format presentations.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/Wallwrite-768x768.png",
+    "type_ids": [
+      "72",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/tack-walls-2/",
+    "name": "Tack Walls",
+    "short_description": "Cover an entire wall or workspace, floor-to-ceiling, in heights up to 10′.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/Tack-Wall-Hero-1x1-1-768x768.png",
+    "type_ids": [
+      "72",
+      "111",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/edge-wrapped-tackboard/",
+    "name": "Edge Wrapped Tackboard",
+    "short_description": "Frameless fabric or fabricork edge wrapped tackboards with square or radius corners",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/09/Edge-Wrapped-Hero-768x768.png",
+    "type_ids": [
+      "216",
+      "111"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/tableau/",
+    "name": "Tableau",
+    "short_description": "Delivers extremely clean, modern lines and fits within the design and functionality of any space.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/MicrosoftTeams-image-217-768x768.png",
+    "type_ids": [
+      "71",
+      "247",
+      "111",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/grain-tackboard/",
+    "name": "Grain Tackboard",
+    "short_description": "Add a subtle hint of warmth with a wood-framed tackboard.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Grain-Tackboard-Hero-Web-768x768.png",
+    "type_ids": [
+      "216",
+      "111"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/glass-sliding-wall/",
+    "name": "Glass Sliding Wall",
+    "short_description": "Claridge custom horizontal sliding walls are ideal for tight spaces where more writable wall space is needed",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/06/Glass-SlidingDoors-Hero-768x768.png",
+    "type_ids": [
+      "106",
+      "247",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/porcelain-sliding-wall/",
+    "name": "Porcelain Sliding Wall",
+    "short_description": "Claridge custom horizontal sliding walls are ideal for classrooms, limited wall spaces and anywhere more writable wall space is needed.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/07/Sliding-Wall-Hero-768x768.png",
+    "type_ids": [
+      "106",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/vertical-sliding-system/",
+    "name": "Vertical Sliding System",
+    "short_description": "Vertical Sliding Units offer ideal visual communication solutions where large visual display surfaces are required but space is limited",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/05/Vertical-Sliding-System-Hero-768x768.png",
+    "type_ids": [
+      "106",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/horizontal-sliding-system/",
+    "name": "Horizontal Sliding System",
+    "short_description": "Horizontal Sliding Units are custom-built to meet your needs, providing optimum display surfaces within easy reach for teaching, conferences, and training",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Horizontal-Sliding-System-HERO-768x763.webp",
+    "type_ids": [
+      "106",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/classic-bulletin-board-cabinet/",
+    "name": "Classic Bulletin Board Cabinet",
+    "short_description": "Radius edge cabinet is constructed of 1-1/2” x 3” hollow tube perimeter trim with clear anodized finish",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Classic-Series-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/contemporary-bulletin-board-cabinet/",
+    "name": "Contemporary Bulletin Board Cabinet",
+    "short_description": "The Contemporary Bulletin Board Cabinet features a sleek aluminum housing with a clear anodized finish and locking tempered glass doors for safety.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Contemporary-Series-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/310-series-bulletin-board-cabinet/",
+    "name": "310 Series Bulletin Board Cabinet",
+    "short_description": "Wood framed bulletin board cabinet with sliding glass doors.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/07/310-Series-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/imperial-bulletin-board-cabinet/",
+    "name": "Imperial Bulletin Board Cabinet",
+    "short_description": "Bulletin Board Cabinet with two sliding 3/16” tempered glass doors, finger pulls, and flat key tumbler lock.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/07/Imperieal-Series-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/revere-bulletin-board/",
+    "name": "Revere Bulletin Board Cabinet",
+    "short_description": "Bulletin Board Cabinet with 1\"x3\" hollow tube perimeter and locking hinged doors",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Revere-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/premiere-wall-mounted-display-case/",
+    "name": "Premiere Wall Mounted Display Case",
+    "short_description": "Wall mounted display case with tempered glass sliding doors.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Premier-Hero-Web-2-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/premiere-freestanding-display-case/",
+    "name": "Premiere Freestanding Display Case",
+    "short_description": "Freestanding display case with or without laminate base.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/05/Premier-Free-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/370-series-recessed-display-case/",
+    "name": "370 Series Recessed Display Case",
+    "short_description": "Recessed display case with clear anodized aluminum fronts, tackable back panels, sliding and locking glass doors, and three glass shelves.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/01/370-Series-Hero-Web-768x768.png",
+    "type_ids": [
+      "216",
+      "105"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/390-series-recessed-display-case/",
+    "name": "390 Series Recessed Display Case",
+    "short_description": "Claridge Recessed Display case with super-heavy clear anodized aluminum frame, 4\" face, mitered corners, tackable back panels, 1/4\" sliding & locking glass doors, and three (3) glass shelves.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/09/390-Series-Hero-Web-768x768.png",
+    "type_ids": [
+      "105",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/economy-deluxe-map-display-rail/",
+    "name": "Economy and Deluxe Map & Display Rail",
+    "short_description": "51EZ aluminum rail is 1” wide with a 5/8” tan cork insert (unless otherwise specified); 74EZ rail is 2” wide with a 1-5/8” tan cork insert",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/MapandDisplayRail-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/hang-tight-rail-system/",
+    "name": "Hang-Tight Rail System",
+    "short_description": "Combines standard aluminum map and display rail with a specially designed extrusion that holds posters, pamphlets, blueprints, etc., securely in place without tacking",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/Hang_Tight-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/edr-exhibit-rail/",
+    "name": "EDR Exhibit Rail",
+    "short_description": "3\" wide exhibit rail with Claridge Fabricork tackable insert.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/EDR-Exhibit-Rail-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/ez-fit-panels/",
+    "name": "EZ Fit Panels",
+    "short_description": "EZ Fit Panels are designed to install over existing boards – no need to remove old boards.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/10/EZ-Fit-Panels-768x765.png",
+    "type_ids": [
+      "216",
+      "109"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/rare-earth-magnets/",
+    "name": "Rare Earth Magnets",
+    "short_description": "Small but powerful magnets keep your ideas in place on glass or on porcelain surfaces",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Rare-Earth-Magnets-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/magnetic-marker-tray/",
+    "name": "Rare Earth Magnetic Marker Tray",
+    "short_description": "Keep markers where you need them with a magnetic tray for glass surfaces",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Magnetic-Marker-Tray-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/magnetic-aluminum-tray/",
+    "name": "Magnetic Aluminum Tray",
+    "short_description": "A magnetic tray for use on all porcelain, chalkboards and other steel surfaces.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Magnetic-Aluminum-Tray-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/slim-magnetic-marker-tray/",
+    "name": "Slim Magnetic Marker Tray",
+    "short_description": "Keep markers handy and readily available with this sleek magnetic tray.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2022/09/Slim-Magnetic-Marker-Tray_a-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/magnetic-aluminum-accessory-tray/",
+    "name": "Magnetic Aluminum Accessory Tray",
+    "short_description": "Perfect for porcleain this sleek tray includes two extra strong magnets to keep it all in place",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Magnetic-Aluminum-Accessory-Tray-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/magnetic-wood-accessory-tray/",
+    "name": "Magnetic Wood Accessory Tray",
+    "short_description": "Classic wood accessory tray includes 2 strong magnets for use on LCS Porcelain only.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Magnetic-Wood-Accessory-Tray-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/adhesive-backed-marker-tray/",
+    "name": "Adhesive Backed Marker Tray",
+    "short_description": "Stick it and forget it. Adhesive backing keeps everything on hand in one permanent spot",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Magnetic-Aluminum-Tray-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/stadium-marker-caddy/",
+    "name": "Stadium Marker Caddy",
+    "short_description": "The Stadium Marker Caddy comes in 3 different options holding all of your accessories.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Stadium-Marker-Caddy-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/slim-marker-caddy/",
+    "name": "Slim Marker Caddy",
+    "short_description": "Four markers line up perfectly in a neat row in this stylish slim caddy.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Slim-Marker-Caddy-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/dry-erase-markers/",
+    "name": "Dry-Erase Markers",
+    "short_description": "LCS dry- erase markers are available in 1 dozen lots of each color and as assorted dozens; 4-packs (broad top) available assorted.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Dry-Erase-Markers-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/magnetic-eraser/",
+    "name": "Magnetic Eraser",
+    "short_description": "Black felt eraser with strong rare earth magnets. Ready when you need it.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Magnetic-Eraser-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/dry-erase-cloth/",
+    "name": "Dry-Erase Cloth",
+    "short_description": "Claridge eraser cloths are designed to reduce marker residue build-up. Furnished with small magnet for easy hanging on board surface.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Dry-Erase-Cloth-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/markerboard-cleaner/",
+    "name": "Markerboard Cleaner",
+    "short_description": "Make a clean sweep and restore the look of your whiteboards with one cleaner",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2020/09/Whiteboard-Cleaner-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  },
+  {
+    "url": "https://claridgeproducts.com/product/partition-panel-clip/",
+    "name": "Partition Panel Clip",
+    "short_description": "Spring steel clips to fit over the top of thick partitions.",
+    "image_url": "https://claridgeproducts.com/wp-content/uploads/2023/07/Partition-Clip-768x768.png",
+    "type_ids": [
+      "109",
+      "216"
+    ],
+    "index_url": "https://claridgeproducts.com/products/all-products/"
+  }
+]

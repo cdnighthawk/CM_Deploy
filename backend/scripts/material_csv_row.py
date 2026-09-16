@@ -9,8 +9,9 @@ from pathlib import Path
 _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "manufacturer": ("manufacturer", "vendor", "mfg", "brand", "supplier"),
     "item": ("item", "part", "part number", "part #", "part no", "sku", "model", "catalog #", "catalog no"),
-    "category": ("category", "type", "product type"),
+    "category": ("category", "type", "product type", "family", "product family"),
     "description": ("description", "desc", "product description", "name"),
+    "url": ("url", "source url", "source_url", "product url", "product_url", "link", "webpage"),
     "mounting_type": ("mounting type", "mounting", "mount type", "mount"),
     "cost": ("cost", "price", "unit price", "unit cost", "material cost"),
     "labor_per": ("labor per", "labor", "labor cost", "labor $", "install labor"),
@@ -85,6 +86,9 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
 
     category = _blank_to_none(_get_cell(row, col_map, "category"))
     description = _blank_to_none(_get_cell(row, col_map, "description"))
+    url = _blank_to_none(_get_cell(row, col_map, "url"))
+    if url and (not description or url not in description):
+        description = f"{description} {url}".strip() if description else url
     mounting_type = _blank_to_none(_get_cell(row, col_map, "mounting_type"))
     cost = _parse_decimal(_get_cell(row, col_map, "cost"))
     labor_per = _parse_decimal(_get_cell(row, col_map, "labor_per"))

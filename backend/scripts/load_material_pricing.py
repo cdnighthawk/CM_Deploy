@@ -1,4 +1,8 @@
-"""Load material_pricing rows from Bobrick / updated vendor material CSV exports."""
+"""Load material_pricing rows from Bobrick / updated vendor material CSV exports.
+
+Repo-seed CSVs under ``backend/data/catalog`` (JL Industries cabinets, later
+Claridge, …) upsert by (manufacturer, item) and never truncate the table.
+"""
 from __future__ import annotations
 
 import argparse
@@ -11,11 +15,32 @@ for _p in (_BACKEND_ROOT, _SCRIPTS):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from db_csv_paths import database_files_dir  # noqa: E402
+from db_csv_paths import database_files_dir, repo_catalog_seed_csvs  # noqa: E402
 from material_csv_row import read_material_csv  # noqa: E402
 
 _DEFAULT_BOBRICK = database_files_dir() / "BOBRICK MATERIAL PRICING.CSV"
 _DEFAULT_UPDATED = database_files_dir() / "uPDATED PRICING.CSV"
+
+
+def should_truncate_catalog_file(
+    *,
+    index: int,
+    is_repo_seed: bool,
+    truncate_flag: bool | None,
+    all_defaults: bool,
+    repo_seeds_only: bool,
+    path_count: int,
+) -> bool:
+    """Repo seeds upsert unless the operator passed an explicit --truncate."""
+    if truncate_flag is not None:
+        return bool(truncate_flag) and index == 0
+    if is_repo_seed:
+        return False
+    if all_defaults:
+        return index == 0
+    if repo_seeds_only:
+        return False
+    return path_count == 1
 
 
 def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> None:
@@ -54,7 +79,13 @@ def main() -> None:
     parser.add_argument(
         "--all-defaults",
         action="store_true",
-        help="Load BOBRICK (truncate) then uPDATED PRICING (upsert) from DATABASE_FILES_ROOT.",
+        help="Load BOBRICK (truncate) then uPDATED PRICING (upsert) from DATABASE_FILES_ROOT, "
+        "then upsert in-repo catalog seeds.",
+    )
+    parser.add_argument(
+        "--repo-seeds",
+        action="store_true",
+        help="Upsert CSVs from backend/data/catalog (never truncates unless --truncate).",
     )
     parser.add_argument(
         "--truncate",
@@ -81,10 +112,17 @@ def main() -> None:
 
     app = create_app()
 
+    seed_paths = repo_catalog_seed_csvs()
+    seed_set = {p.resolve() for p in seed_paths}
+
     if args.all_defaults:
-        paths = [_DEFAULT_BOBRICK, _DEFAULT_UPDATED]
+        paths = [_DEFAULT_BOBRICK, _DEFAULT_UPDATED, *seed_paths]
     elif args.csv_paths:
         paths = [Path(p) for p in args.csv_paths]
+        if args.repo_seeds:
+            paths.extend(seed_paths)
+    elif args.repo_seeds:
+        paths = list(seed_paths)
     else:
         paths = [_DEFAULT_BOBRICK]
 
@@ -98,14 +136,15 @@ def main() -> None:
             if args.tag_door_hardware:
                 for p in payloads:
                     p["csi_spec_section"] = "087100"
-            if args.truncate is not None:
-                do_truncate = bool(args.truncate) and i == 0
-            elif args.all_defaults:
-                do_truncate = i == 0
-            elif len(paths) == 1:
-                do_truncate = True
-            else:
-                do_truncate = False
+            is_repo_seed = csv_path.resolve() in seed_set
+            do_truncate = should_truncate_catalog_file(
+                index=i,
+                is_repo_seed=is_repo_seed,
+                truncate_flag=args.truncate,
+                all_defaults=bool(args.all_defaults),
+                repo_seeds_only=bool(args.repo_seeds) and not args.csv_paths,
+                path_count=len(paths),
+            )
 
             if do_truncate:
                 db.session.execute(text("TRUNCATE material_pricing RESTART IDENTITY"))

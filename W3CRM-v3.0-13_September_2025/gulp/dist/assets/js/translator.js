@@ -736,6 +736,7 @@ let translations = {
 			"HR suite": "Suite de RH",
 			"Expenses": "Gastos",
 			"Playbooks": "Guías",
+			"Catalog": "Catálogo",
 			"User admin": "Admin. de usuarios",
 			"Procurement": "Compras",
 			"Search": "Buscar",

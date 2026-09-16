@@ -34,6 +34,7 @@
 		"Time sheets": "Hojas de tiempo",
 		Expenses: "Gastos",
 		Playbooks: "Guías",
+		Catalog: "Catálogo",
 		"User admin": "Admin. de usuarios",
 		Procurement: "Compras",
 		Purchasing: "Compras",

@@ -27,6 +27,30 @@ def test_read_bobrick_style_headers():
         path.unlink(missing_ok=True)
 
 
+def test_read_url_and_family_aliases():
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Manufacturer", "SKU", "Family", "Description", "URL", "CSI Spec Section"])
+        w.writerow(
+            [
+                "JL Industries",
+                "C1013F10",
+                "Fire Extinguisher Cabinet",
+                "Ambassador surface cabinet",
+                "https://www.activarcpg.com/product/ambassador-series-steel/",
+                "10 44 00",
+            ]
+        )
+        path = Path(f.name)
+    try:
+        rows = read_material_csv(path)
+        assert rows[0]["category"] == "Fire Extinguisher Cabinet"
+        assert rows[0]["csi_spec_section"] == "104400"
+        assert "activarcpg.com" in (rows[0]["description"] or "")
+    finally:
+        path.unlink(missing_ok=True)
+
+
 def test_read_vendor_alias_headers():
     with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as f:
         w = csv.writer(f)

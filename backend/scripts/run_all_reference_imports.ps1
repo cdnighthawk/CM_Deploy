@@ -14,7 +14,7 @@ Write-Host "=== load_wage_rates ===" -ForegroundColor Cyan
 & $Python scripts\load_wage_rates.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "=== load_material_pricing (BOBRICK + uPDATED PRICING) ===" -ForegroundColor Cyan
+Write-Host "=== load_material_pricing (BOBRICK + uPDATED PRICING + repo catalog seeds) ===" -ForegroundColor Cyan
 & $Python scripts\load_material_pricing.py --all-defaults
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

@@ -18,6 +18,88 @@ _SERIES = {
     "Orbit",
 }
 _BEST_SELLERS = {"C1013F10", "C1015W10"}
+_PRODUCT_TAG_EXTRAS = {"C1015W10", "C1023F10", "C1025F10", "C5614S21"}
+_HERO_SKUS = {"C1085V10", "C1017P42", "C2119F10"}
+_DROPPED_CONSTRUCTED = {
+    "C1013C70",
+    "C1015C70",
+    "C1015C71",
+    "C1017C70",
+    "C1043F10",
+    "C1045F10",
+    "C1047F10",
+    "C1055F10",
+    "C8115F10",
+    "C2115F10",
+    "C2115F10FX2",
+    "C2119G10",
+}
+_EXACT_SUBMITTAL_SKUS = {
+    # Ambassador Exact Submittals
+    "C1013F10",
+    "C1013G10",
+    "C1013S21",
+    "C1013V10",
+    "C1015F10",
+    "C1015F10FX2",
+    "C1015V10",
+    "C1015V10FX2",
+    "C1016F10",
+    "C1016F10FX2",
+    "C1016V10",
+    "C1016W17FX2",
+    "C1017F10",
+    "C1017F10FX2",
+    "C1017F17",
+    "C1017F17FX2",
+    "C1017G10",
+    "C1017G10FX2",
+    "C1017S21",
+    "C1017V10",
+    "C1017V10FX2",
+    "C1017V17FX2",
+    "C1017W10",
+    "C1017W10FX2",
+    "C1017W17FX2",
+    "C1816F10",
+    "C1816G10",
+    "C1816G10FX2",
+    # Academy Exact Submittals
+    "C1026L24",
+    "C1027F10",
+    "C1027F10FX2",
+    "C1027V10",
+    "C1027V10FX2",
+    "C1027W17",
+    # Cosmopolitan Exact Submittals
+    "C1033F10",
+    "C1033F17",
+    "C1033V10",
+    "C1033W17",
+    "C1035V10",
+    "C1037F10",
+    "C1037F10FX2",
+    "C1037F17",
+    "C1037G10",
+    "C1037L22",
+    "C1037S21",
+    "C1037V10",
+    "C1037V10FX2",
+    "C1037V17",
+    "C1037W10",
+    "C1037W17",
+    "C2033F10",
+    # Clear Vu Exact Submittals
+    "C1515G25",
+    "C1516F25",
+    "C1516F25FX2",
+    # Embassy Exact Submittals
+    "C5614V10",
+    "C5614V17",
+    "C5614V17FX2",
+    "C5634S21",
+}
+_SKIPPED_SERIES_SKUS = {"9163Z30", "SERIES-CLASSIC", "SERIES-CATO-CHIEF", "Classic", "Cato Chief"}
 _MOUNTS = {"Surface", "Recessed", "Semi-recessed"}
 
 
@@ -29,10 +111,16 @@ def test_repo_catalog_includes_jl_seed():
 def test_jl_seed_parses_to_real_skus():
     rows = read_material_csv(_SEED)
     items = [r["item"] for r in rows]
-    assert len(rows) >= 40
+    item_set = set(items)
+    assert len(rows) == 73
     assert len(items) == len(set(items))
-    assert _SERIES.issubset(set(items))
-    assert _BEST_SELLERS.issubset(set(items))
+    assert _SERIES.issubset(item_set)
+    assert _BEST_SELLERS.issubset(item_set)
+    assert _PRODUCT_TAG_EXTRAS.issubset(item_set)
+    assert _HERO_SKUS.issubset(item_set)
+    assert _EXACT_SUBMITTAL_SKUS.issubset(item_set)
+    assert item_set.isdisjoint(_DROPPED_CONSTRUCTED)
+    assert item_set.isdisjoint(_SKIPPED_SERIES_SKUS)
     for row in rows:
         assert row["manufacturer"] == "JL Industries"
         assert row["category"] == "Fire Extinguisher Cabinet"
@@ -47,6 +135,7 @@ def test_jl_seed_parses_to_real_skus():
         if row["item"] not in _SERIES:
             assert any(token in mount for token in _MOUNTS)
             assert str(row["item"]).startswith("C")
+            assert not str(row["item"]).startswith("SERIES-")
 
 
 def test_jl_seed_covers_mounts_and_materials():
@@ -63,7 +152,10 @@ def test_jl_seed_covers_mounts_and_materials():
     assert "aluminum" in (by_item["Academy"]["description"] or "").lower()
     assert "stainless" in (by_item["Cosmopolitan"]["description"] or "").lower()
     assert "bronze" in (by_item["Cavalier"]["description"] or "").lower()
-    assert "FE10V" in (by_item["C2115F10"]["description"] or "")
+    assert "FE10V" in (by_item["C2119F10"]["description"] or "")
+    assert by_item["C2119F10"]["mounting_type"] == "Surface"
+    assert by_item["C1085V10"]["mounting_type"] == "Recessed"
+    assert "frameless" in (by_item["C1017P42"]["description"] or "").lower()
 
 
 def test_repo_seeds_never_truncate_by_default():
@@ -134,5 +226,7 @@ def test_jl_seed_upsert_is_idempotent(client):
     skus = {x["item"] for x in items}
     assert _BEST_SELLERS.issubset(skus)
     assert _SERIES.issubset(skus)
+    assert _EXACT_SUBMITTAL_SKUS.issubset(skus)
+    assert skus.isdisjoint(_DROPPED_CONSTRUCTED)
     assert all(x.get("csi_spec_section") == "104400" for x in items)
     assert all(x.get("unit_of_measure") == "EA" for x in items)

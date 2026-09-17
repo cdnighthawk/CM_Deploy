@@ -306,9 +306,12 @@ def register_extra_routes(bp: Blueprint) -> None:
         if row is None:
             return _jsonify({"error": "document not found"}), 404
         if isinstance(row, Drawing) or row.document_type == "drawing":
+            from ..services.drawing_upload import drawing_file_pending, file_pending_error_body
             from ..services.employee_pc_cache import respond_drawing_pdf
             from ..services.project_file_keys import preferred_drawing_object_name
 
+            if drawing_file_pending(row):
+                return _jsonify(file_pending_error_body()), 409
             name = preferred_drawing_object_name(row)
             resp = respond_drawing_pdf(row, name)
         else:

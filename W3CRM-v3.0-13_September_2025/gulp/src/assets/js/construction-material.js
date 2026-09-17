@@ -626,14 +626,22 @@
 			{
 				title: "Manufacturer",
 				field: "manufacturer",
-				width: 128,
+				width: 170,
+				minWidth: 148,
+				tooltip: true,
 				headerFilter: selectFilter("manufacturer", "manufacturers", "Manufacturer filter"),
 			},
 			{
 				title: "Item",
 				field: "item",
-				width: 110,
+				width: 300,
+				minWidth: 220,
+				widthGrow: 1.5,
 				headerFilter: columnFilter("item"),
+				tooltip: function (e, cell) {
+					var v = cell.getValue();
+					return v == null || v === "" ? "" : String(v);
+				},
 				formatter: function (cell) {
 					var v = cell.getValue();
 					if (v == null || v === "") return "—";
@@ -641,6 +649,7 @@
 					btn.type = "button";
 					btn.className = "btn btn-link p-0 text-start usis-mat-item-open";
 					btn.textContent = String(v);
+					btn.title = String(v);
 					btn.addEventListener("mousedown", function (e) {
 						e.stopPropagation();
 					});
@@ -655,7 +664,8 @@
 			{
 				title: "Division",
 				field: "csi_display",
-				width: 128,
+				width: 118,
+				minWidth: 108,
 				formatter: fmtCsi,
 				hozAlign: "left",
 				headerFilter: selectFilter("csi", "csi_sections", "Division filter"),
@@ -667,33 +677,40 @@
 			{
 				title: "Category",
 				field: "category",
-				width: 150,
+				width: 160,
+				minWidth: 128,
+				tooltip: true,
 				headerFilter: selectFilter("category", "categories", "Category filter"),
 			},
 			{
 				title: "Size",
 				field: "size_display",
 				width: 96,
+				minWidth: 88,
 				formatter: fmtSize,
 				headerFilter: selectFilter("size", "sizes", "Size filter"),
 			},
 			{
 				title: "Description",
 				field: "description",
-				minWidth: 140,
+				minWidth: 180,
 				widthGrow: 2,
+				tooltip: true,
 				headerFilter: columnFilter("description"),
 			},
 			{
 				title: "Mounting",
 				field: "mounting_type",
-				width: 110,
+				width: 120,
+				minWidth: 118,
+				tooltip: true,
 				headerFilter: selectFilter("mounting", "mounting_types", "Mounting filter"),
 			},
 			{
 				title: "Cost",
 				field: "cost",
-				width: 84,
+				width: 92,
+				minWidth: 88,
 				hozAlign: "right",
 				formatter: fmtMoney,
 				headerFilter: columnFilter("cost"),
@@ -701,13 +718,15 @@
 			{
 				title: "Prod. rate",
 				field: "labor_production",
-				width: 110,
+				width: 118,
+				minWidth: 110,
 				formatter: fmtRate,
 			},
 			{
 				title: "Labor (hr)",
 				field: "labor_per",
-				width: 94,
+				width: 114,
+				minWidth: 110,
 				hozAlign: "right",
 				formatter: fmtHours,
 				headerFilter: selectFilter("labor", "labor", "Labor filter"),
@@ -715,7 +734,8 @@
 			{
 				title: "UOM",
 				field: "unit_of_measure",
-				width: 72,
+				width: 80,
+				minWidth: 76,
 				headerFilter: selectFilter("uom", "units", "UOM filter"),
 			},
 		];
@@ -763,7 +783,11 @@
 			if (!item || !item.field || !byField[item.field] || seen[item.field]) return;
 			var d = Object.assign({}, byField[item.field]);
 			d.visible = item.visible !== false;
-			if (item.width) d.width = item.width;
+			if (item.width) {
+				var saved = Number(item.width) || 0;
+				var floor = Number(d.minWidth) || 0;
+				d.width = saved > floor ? saved : floor || saved;
+			}
 			ordered.push(d);
 			seen[item.field] = true;
 		});
@@ -1024,7 +1048,7 @@
 		}
 		headerFilterFillers = [];
 		catalogTable = new Tabulator(el, {
-			layout: "fitDataStretch",
+			layout: "fitDataFill",
 			height: "min(520px, 60vh)",
 			headerFilterLiveFilter: false,
 			movableColumns: true,
@@ -1035,6 +1059,7 @@
 			columnDefaults: {
 				resizable: true,
 				headerSort: true,
+				headerTooltip: true,
 			},
 			columns: applyColumnLayout([selectionColumnDef()].concat(dataColumnDefs())),
 		});

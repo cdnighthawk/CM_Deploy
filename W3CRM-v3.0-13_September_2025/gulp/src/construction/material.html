@@ -19,9 +19,20 @@
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/css/tabulator_bootstrap5.min.css" crossorigin="anonymous">
 	<style>
-		#usis-mat-tabulator .tabulator { font-size: 0.875rem; }
+		#usis-mat-tabulator .tabulator { font-size: 0.875rem; width: 100%; }
+		#usis-mat-grid-wrap { width: 100%; min-width: 0; }
+		#usis-mat-tabulator .tabulator-col .tabulator-col-title {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 		#usis-mat-tabulator .tabulator-col:not(.tabulator-col-frozen) .tabulator-col-title {
 			cursor: grab;
+		}
+		#usis-mat-tabulator .tabulator-cell {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 		#usis-mat-tabulator .tabulator-header-filter input,
 		#usis-mat-tabulator .tabulator-header-filter select {
@@ -51,9 +62,13 @@
 			flex: 0 0 auto;
 		}
 		#usis-mat-tabulator .usis-mat-item-open {
+			display: block;
+			width: 100%;
 			font-weight: 600;
 			text-decoration: none;
-			white-space: normal;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 		#usis-mat-tabulator .usis-mat-item-open:hover { text-decoration: underline; }
 		#usis-mat-cols-modal .modal-content { overflow: hidden; }
@@ -1397,7 +1412,7 @@
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
-    <script src="assets/js/construction-material.js?v=20260917n"></script>
+    <script src="assets/js/construction-material.js?v=20260917o"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	    

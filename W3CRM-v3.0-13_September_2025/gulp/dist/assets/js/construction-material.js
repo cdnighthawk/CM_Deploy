@@ -337,6 +337,211 @@
 		if (next) next.disabled = state.offset + state.limit >= state.total;
 	}
 
+	var COL_LAYOUT_KEY = "usis-mat-col-layout-v1";
+
+	function selectionColumnDef() {
+		return {
+			formatter: "rowSelection",
+			titleFormatter: "rowSelection",
+			hozAlign: "center",
+			headerSort: false,
+			headerFilter: false,
+			width: 40,
+			minWidth: 40,
+			frozen: true,
+			resizable: false,
+			download: false,
+		};
+	}
+
+	function dataColumnDefs() {
+		return [
+			{
+				title: "Manufacturer",
+				field: "manufacturer",
+				width: 128,
+				headerFilter: selectFilter("manufacturer", "manufacturers", "Manufacturer filter"),
+			},
+			{
+				title: "Item",
+				field: "item",
+				width: 110,
+				headerFilter: columnFilter("item"),
+			},
+			{
+				title: "Division",
+				field: "csi_display",
+				width: 128,
+				formatter: fmtCsi,
+				hozAlign: "left",
+				headerFilter: selectFilter("csi", "csi_sections", "Division filter"),
+				tooltip: function (e, cell) {
+					var row = cell.getRow().getData() || {};
+					return row.csi_title || row.csi_display || row.csi_spec_section || "";
+				},
+			},
+			{
+				title: "Category",
+				field: "category",
+				width: 150,
+				headerFilter: selectFilter("category", "categories", "Category filter"),
+			},
+			{
+				title: "Size",
+				field: "size_display",
+				width: 96,
+				formatter: fmtSize,
+				headerFilter: selectFilter("size", "sizes", "Size filter"),
+			},
+			{
+				title: "Description",
+				field: "description",
+				minWidth: 140,
+				widthGrow: 2,
+				headerFilter: columnFilter("description"),
+			},
+			{
+				title: "Mounting",
+				field: "mounting_type",
+				width: 110,
+				headerFilter: selectFilter("mounting", "mounting_types", "Mounting filter"),
+			},
+			{
+				title: "Cost",
+				field: "cost",
+				width: 84,
+				hozAlign: "right",
+				formatter: fmtMoney,
+				headerFilter: columnFilter("cost"),
+			},
+			{
+				title: "Labor (hr)",
+				field: "labor_per",
+				width: 94,
+				hozAlign: "right",
+				formatter: fmtHours,
+				headerFilter: selectFilter("labor", "labor", "Labor filter"),
+			},
+			{
+				title: "UOM",
+				field: "unit_of_measure",
+				width: 72,
+				headerFilter: selectFilter("uom", "units", "UOM filter"),
+			},
+		];
+	}
+
+	function loadColumnLayout() {
+		try {
+			var raw = localStorage.getItem(COL_LAYOUT_KEY);
+			if (!raw) return null;
+			var parsed = JSON.parse(raw);
+			return Array.isArray(parsed) ? parsed : null;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function saveColumnLayout() {
+		if (!catalogTable) return;
+		var layout = [];
+		catalogTable.getColumns().forEach(function (col) {
+			var def = col.getDefinition() || {};
+			if (!def.field) return;
+			layout.push({
+				field: def.field,
+				visible: col.isVisible(),
+				width: col.getWidth(),
+			});
+		});
+		try {
+			localStorage.setItem(COL_LAYOUT_KEY, JSON.stringify(layout));
+		} catch (e) {}
+	}
+
+	function applyColumnLayout(defs) {
+		var layout = loadColumnLayout();
+		var selection = defs[0];
+		var byField = {};
+		defs.slice(1).forEach(function (d) {
+			if (d.field) byField[d.field] = d;
+		});
+		if (!layout || !layout.length) return defs;
+		var ordered = [selection];
+		var seen = {};
+		layout.forEach(function (item) {
+			if (!item || !item.field || !byField[item.field] || seen[item.field]) return;
+			var d = Object.assign({}, byField[item.field]);
+			d.visible = item.visible !== false;
+			if (item.width) d.width = item.width;
+			ordered.push(d);
+			seen[item.field] = true;
+		});
+		defs.slice(1).forEach(function (d) {
+			if (!d.field || seen[d.field]) return;
+			ordered.push(d);
+		});
+		return ordered;
+	}
+
+	function fillColumnMenu() {
+		var menu = document.getElementById("usis-mat-columns-menu");
+		if (!menu || !catalogTable) return;
+		menu.innerHTML = "";
+		catalogTable.getColumns().forEach(function (col) {
+			var def = col.getDefinition() || {};
+			if (!def.field) return;
+			var wrap = document.createElement("label");
+			wrap.className = "dropdown-item d-flex align-items-center gap-2 mb-0";
+			var box = document.createElement("input");
+			box.type = "checkbox";
+			box.className = "form-check-input mt-0";
+			box.checked = col.isVisible();
+			box.setAttribute("data-field", def.field);
+			box.addEventListener("change", function () {
+				if (!box.checked) {
+					var visible = catalogTable.getColumns().filter(function (c) {
+						var d = c.getDefinition() || {};
+						return d.field && c.isVisible();
+					});
+					if (visible.length <= 1) {
+						box.checked = true;
+						notifyErr("Keep at least one column visible.");
+						return;
+					}
+					col.hide();
+				} else {
+					col.show();
+				}
+				saveColumnLayout();
+			});
+			var label = document.createElement("span");
+			label.textContent = def.title || def.field;
+			wrap.appendChild(box);
+			wrap.appendChild(label);
+			menu.appendChild(wrap);
+		});
+		var divider = document.createElement("div");
+		divider.className = "dropdown-divider";
+		menu.appendChild(divider);
+		var reset = document.createElement("button");
+		reset.type = "button";
+		reset.className = "dropdown-item";
+		reset.textContent = "Reset column layout";
+		reset.addEventListener("click", resetColumnLayout);
+		menu.appendChild(reset);
+	}
+
+	function resetColumnLayout() {
+		try {
+			localStorage.removeItem(COL_LAYOUT_KEY);
+		} catch (e) {}
+		var rows = catalogTable ? catalogTable.getData() : [];
+		buildTable();
+		if (catalogTable) catalogTable.setData(rows);
+		loadFacets();
+	}
+
 	function buildTable() {
 		var el = document.getElementById("usis-mat-tabulator");
 		if (!el || typeof Tabulator === "undefined") {
@@ -347,102 +552,40 @@
 			}
 			return;
 		}
+		if (catalogTable) {
+			try {
+				catalogTable.destroy();
+			} catch (e) {}
+			catalogTable = null;
+		}
 		headerFilterFillers = [];
 		catalogTable = new Tabulator(el, {
-			layout: "fitColumns",
+			layout: "fitDataStretch",
 			height: "min(520px, 60vh)",
 			headerFilterLiveFilter: false,
+			movableColumns: true,
+			resizableColumnFit: false,
 			placeholder: "No rows match your filters.",
 			selectableRows: true,
 			selectableRowsRangeMode: "click",
-			columns: [
-				{
-					formatter: "rowSelection",
-					titleFormatter: "rowSelection",
-					hozAlign: "center",
-					headerSort: false,
-					width: 40,
-					frozen: true,
-				},
-				{
-					title: "Manufacturer",
-					field: "manufacturer",
-					width: 128,
-					headerFilter: selectFilter("manufacturer", "manufacturers", "Manufacturer filter"),
-				},
-				{
-					title: "Item",
-					field: "item",
-					width: 110,
-					headerFilter: columnFilter("item"),
-				},
-				{
-					title: "Division",
-					field: "csi_display",
-					width: 128,
-					formatter: fmtCsi,
-					hozAlign: "left",
-					headerFilter: selectFilter("csi", "csi_sections", "Division filter"),
-					tooltip: function (e, cell) {
-						var row = cell.getRow().getData() || {};
-						return row.csi_title || row.csi_display || row.csi_spec_section || "";
-					},
-				},
-				{
-					title: "Category",
-					field: "category",
-					width: 150,
-					headerFilter: selectFilter("category", "categories", "Category filter"),
-				},
-				{
-					title: "Size",
-					field: "size_display",
-					width: 96,
-					formatter: fmtSize,
-					headerFilter: selectFilter("size", "sizes", "Size filter"),
-				},
-				{
-					title: "Description",
-					field: "description",
-					minWidth: 140,
-					widthGrow: 2,
-					headerFilter: columnFilter("description"),
-				},
-				{
-					title: "Mounting",
-					field: "mounting_type",
-					width: 110,
-					headerFilter: selectFilter("mounting", "mounting_types", "Mounting filter"),
-				},
-				{
-					title: "Cost",
-					field: "cost",
-					width: 84,
-					hozAlign: "right",
-					formatter: fmtMoney,
-					headerFilter: columnFilter("cost"),
-				},
-				{
-					title: "Labor (hr)",
-					field: "labor_per",
-					width: 94,
-					hozAlign: "right",
-					formatter: fmtHours,
-					headerFilter: selectFilter("labor", "labor", "Labor filter"),
-				},
-				{
-					title: "UOM",
-					field: "unit_of_measure",
-					width: 72,
-					headerFilter: selectFilter("uom", "units", "UOM filter"),
-				},
-			],
+			columnDefaults: {
+				resizable: true,
+				headerSort: true,
+			},
+			columns: applyColumnLayout([selectionColumnDef()].concat(dataColumnDefs())),
 		});
 		catalogTable.on("rowSelectionChanged", function () {
 			var pageCount = catalogTable.getData().length;
 			if (selectedCount() < pageCount) setAllMatching(false);
 			updateSelectionUi();
 		});
+		catalogTable.on("columnMoved", function () {
+			saveColumnLayout();
+			fillColumnMenu();
+		});
+		catalogTable.on("columnResized", saveColumnLayout);
+		catalogTable.on("tableBuilt", fillColumnMenu);
+		fillColumnMenu();
 	}
 
 	function scheduleSearch() {

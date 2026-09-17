@@ -26,6 +26,8 @@ class MaterialPrice(UUIDPKMixin, TimestampMixin, db.Model):
     mounting_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
     labor_per: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    size_width_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    size_height_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
     currency: Mapped[str] = mapped_column(
         String(3), nullable=False, server_default=text("'USD'")
     )

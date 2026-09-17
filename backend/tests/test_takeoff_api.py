@@ -191,7 +191,14 @@ def test_takeoff_line_patch_location_and_material_catalog(client):
             le = LeadEstimate(external_id=eid, name="Mat link test", number="T-MAT-1")
             db.session.add(le)
             db.session.flush()
-            mp = MaterialPrice(manufacturer="Acme", item="Widget A", cost=Decimal("12.34"))
+            mp = MaterialPrice(
+                manufacturer="Acme",
+                item="Widget A",
+                cost=Decimal("12.34"),
+                category="Porcelain Markerboard",
+                size_width_in=Decimal("48"),
+                size_height_in=Decimal("96"),
+            )
             db.session.add(mp)
             db.session.flush()
             mid = mp.id
@@ -199,7 +206,7 @@ def test_takeoff_line_patch_location_and_material_catalog(client):
 
         r = client.post(
             f"/api/v1/lead-estimates/{eid}/takeoff-lines",
-            json={"description": "Line A", "quantity": 1, "unit": "EA", "unit_cost": 10, "cost_type": "M"},
+            json={"description": "Line A", "quantity": 100, "unit": "SF", "unit_cost": 10, "cost_type": "M"},
         )
         assert r.status_code == 201
         line_id = r.get_json()["item"]["id"]
@@ -218,6 +225,10 @@ def test_takeoff_line_patch_location_and_material_catalog(client):
         assert item["material_pricing_id"] == str(mid)
         assert item["material_catalog"] is not None
         assert item["material_catalog"]["item"] == "Widget A"
+        assert item["material_catalog"]["category"] == "Porcelain Markerboard"
+        assert item["material_catalog"]["size_display"] == "48×96"
+        assert item["material_catalog"]["sheet_area_sf"] == 32.0
+        assert item["material_catalog"]["suggested_sheets"] == 4
 
         r3 = client.patch(f"/api/v1/takeoff-lines/{line_id}", json={"material_pricing_id": None})
         assert r3.status_code == 200

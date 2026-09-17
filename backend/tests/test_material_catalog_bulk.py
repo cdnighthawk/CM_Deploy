@@ -110,6 +110,36 @@ def test_material_prices_column_filters(client, catalog_rows):
     assert not any(x["id"] == catalog_rows[1] for x in items)
 
 
+def test_material_price_categories_and_size(client, catalog_rows):
+    cats = client.get("/api/v1/material-prices/categories")
+    assert cats.status_code == 200
+    names = cats.get_json()["items"]
+    assert "Hardware" in names
+    assert "Accessories" in names
+
+    r = client.get("/api/v1/material-prices?manufacturer=BulkMfg&category=hard&limit=50")
+    assert r.status_code == 200
+    assert r.get_json()["items"] == []
+
+    r = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": [catalog_rows[0]], "field": "size_width_in", "value": "48"},
+    )
+    assert r.status_code == 200, r.get_json()
+    r = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": [catalog_rows[0]], "field": "size_height_in", "value": "96"},
+    )
+    assert r.status_code == 200, r.get_json()
+    listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&size=48x96&limit=50")
+    assert listed.status_code == 200
+    items = listed.get_json()["items"]
+    hit = next(x for x in items if x["id"] == catalog_rows[0])
+    assert hit["size_display"] == "48×96"
+    assert hit["sheet_area_sf"] == 32.0
+    assert not any(x["id"] == catalog_rows[1] for x in items)
+
+
 def test_bulk_change_rejects_unknown_field(client, catalog_rows):
     r = client.post(
         "/api/v1/material-prices/bulk",

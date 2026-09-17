@@ -7,18 +7,19 @@
 	var catalogTable = null;
 	var searchTimer = null;
 	var BULK_CHUNK = 2000;
+	var categoryList = [];
 	var state = {
 		q: "",
 		manufacturer: "",
 		item: "",
 		csi: "",
-		csiDivision: "",
 		category: "",
 		description: "",
 		mounting: "",
 		cost: "",
 		labor: "",
 		uom: "",
+		size: "",
 		offset: 0,
 		limit: 100,
 		total: 0,
@@ -84,10 +85,9 @@
 		return row.csi_display || row.csi_spec_section || "—";
 	}
 
-	function fmtDivision(cell) {
+	function fmtSize(cell) {
 		var row = cell.getRow().getData() || {};
-		if (!row.csi_division) return "—";
-		return row.csi_division_name ? row.csi_division + " — " + row.csi_division_name : row.csi_division;
+		return row.size_display || "—";
 	}
 
 	function setStatus(text) {
@@ -108,13 +108,13 @@
 			state.manufacturer ||
 			state.item ||
 			state.csi ||
-			state.csiDivision ||
 			state.category ||
 			state.description ||
 			state.mounting ||
 			state.cost ||
 			state.labor ||
-			state.uom
+			state.uom ||
+			state.size
 		);
 	}
 
@@ -124,13 +124,13 @@
 		if (state.manufacturer) p.set("manufacturer", state.manufacturer);
 		if (state.item) p.set("item", state.item);
 		if (state.csi) p.set("csi_spec_section", state.csi);
-		if (state.csiDivision) p.set("csi_division", state.csiDivision);
 		if (state.category) p.set("category", state.category);
 		if (state.description) p.set("description", state.description);
 		if (state.mounting) p.set("mounting_type", state.mounting);
 		if (state.cost) p.set("cost", state.cost);
 		if (state.labor) p.set("labor_per", state.labor);
 		if (state.uom) p.set("unit_of_measure", state.uom);
+		if (state.size) p.set("size", state.size);
 		return p;
 	}
 
@@ -212,6 +212,46 @@
 		};
 	}
 
+	function categoryFilter(cell, onRendered, success, cancel) {
+		var select = document.createElement("select");
+		select.className = "form-select form-select-sm";
+		select.setAttribute("aria-label", "Category filter");
+		function fill() {
+			var current = state.category;
+			select.innerHTML = "";
+			var all = document.createElement("option");
+			all.value = "";
+			all.textContent = "All";
+			select.appendChild(all);
+			categoryList.forEach(function (name) {
+				var o = document.createElement("option");
+				o.value = name;
+				o.textContent = name;
+				select.appendChild(o);
+			});
+			select.value = current;
+		}
+		fill();
+		select.addEventListener("change", function () {
+			state.category = (select.value || "").trim();
+			state.offset = 0;
+			setAllMatching(false);
+			scheduleSearch();
+		});
+		onRendered(fill);
+		return select;
+	}
+
+	function loadCategories() {
+		return jsonFetch(apiBase() + "/api/v1/material-prices/categories?limit=500")
+			.then(function (d) {
+				categoryList = d.items || [];
+			})
+			.catch(function () {
+				categoryList = [];
+			});
+	}
+
 	function refreshCatalog() {
 		setStatus("Loading…");
 		return fetchCatalog()
@@ -284,9 +324,9 @@
 					headerFilter: columnFilter("item"),
 				},
 				{
-					title: "CSI",
+					title: "Division",
 					field: "csi_display",
-					width: 90,
+					width: 110,
 					formatter: fmtCsi,
 					hozAlign: "left",
 					headerFilter: columnFilter("csi"),
@@ -296,18 +336,17 @@
 					},
 				},
 				{
-					title: "Division",
-					field: "csi_division",
-					width: 150,
-					formatter: fmtDivision,
-					tooltip: true,
-					headerFilter: columnFilter("csiDivision"),
-				},
-				{
 					title: "Category",
 					field: "category",
-					width: 110,
-					headerFilter: columnFilter("category"),
+					width: 150,
+					headerFilter: categoryFilter,
+				},
+				{
+					title: "Size",
+					field: "size_display",
+					width: 88,
+					formatter: fmtSize,
+					headerFilter: columnFilter("size"),
 				},
 				{
 					title: "Description",
@@ -454,7 +493,7 @@
 					if (inst) inst.hide();
 				}
 				notifyOk("Updated " + (d.updated_count || 0) + " catalog row" + (d.updated_count === 1 ? "" : "s") + ".");
-				return refreshCatalog();
+				return loadCategories().then(refreshCatalog);
 			})
 			.catch(function (e) {
 				notifyErr(String(e.message || e));
@@ -527,7 +566,7 @@
 		buildTable();
 		wireUi();
 		if (window.USISDrawingCache) window.USISDrawingCache.refresh();
-		refreshCatalog();
+		loadCategories().then(refreshCatalog);
 	}
 
 	if (document.readyState === "loading") {

@@ -861,12 +861,38 @@ def ensure_lead_workspace_project(row: LeadEstimate, cu) -> Project:
     return proj
 
 
+def _material_size_fields(m: MaterialPrice) -> dict[str, Any]:
+    from ..material_size import sheet_area_sf, size_display
+
+    return {
+        "size_width_in": _num_or_none(m.size_width_in),
+        "size_height_in": _num_or_none(m.size_height_in),
+        "size_display": size_display(m.size_width_in, m.size_height_in),
+        "sheet_area_sf": sheet_area_sf(m.size_width_in, m.size_height_in),
+    }
+
+
+def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str, Any]:
+    from ..material_size import suggested_sheet_count
+
+    return {
+        "id": str(mp.id),
+        "manufacturer": mp.manufacturer,
+        "item": mp.item,
+        "category": mp.category,
+        **_material_size_fields(mp),
+        "suggested_sheets": suggested_sheet_count(
+            t.quantity, t.unit, mp.size_width_in, mp.size_height_in
+        ),
+    }
+
+
 def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
     mat_cat = None
     if t.material_pricing_id is not None:
         mp = t.material_price
         if mp is not None:
-            mat_cat = {"id": str(mp.id), "manufacturer": mp.manufacturer, "item": mp.item}
+            mat_cat = _takeoff_material_catalog(t, mp)
     return {
         "id": str(t.id),
         "lead_estimate_id": str(t.lead_estimate_id) if t.lead_estimate_id else None,
@@ -4872,6 +4898,7 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
         "labor_per": _num_or_none(m.labor_per),
         "unit_of_measure": m.unit_of_measure,
         "currency": m.currency,
+        **_material_size_fields(m),
     }
 
 
@@ -4888,6 +4915,7 @@ def _material_price_list_filters() -> dict[str, Any]:
         "unit_of_measure": (request.args.get("unit_of_measure") or "").strip(),
         "cost": (request.args.get("cost") or "").strip(),
         "labor_per": (request.args.get("labor_per") or "").strip(),
+        "size": (request.args.get("size") or "").strip(),
     }
 
 
@@ -4910,14 +4938,17 @@ def _material_prices_query(
     unit_of_measure: str = "",
     cost: str = "",
     labor_per: str = "",
+    size: str = "",
 ):
     from ..csi_catalog import DIVISION_NAMES
     from ..csi_spec import digits_from_csi, normalize_csi_spec_section
+    from ..material_size import parse_size_cell
 
     stmt = select(MaterialPrice)
     stmt = _ilike_contains(stmt, MaterialPrice.manufacturer, manufacturer)
     stmt = _ilike_contains(stmt, MaterialPrice.item, item)
-    stmt = _ilike_contains(stmt, MaterialPrice.category, category)
+    if category:
+        stmt = stmt.where(func.lower(MaterialPrice.category) == category.lower())
     stmt = _ilike_contains(stmt, MaterialPrice.description, description)
     stmt = _ilike_contains(stmt, MaterialPrice.mounting_type, mounting_type)
     stmt = _ilike_contains(stmt, MaterialPrice.unit_of_measure, unit_of_measure)
@@ -4925,6 +4956,21 @@ def _material_prices_query(
         stmt = stmt.where(cast(MaterialPrice.cost, String).ilike(f"%{cost}%"))
     if labor_per:
         stmt = stmt.where(cast(MaterialPrice.labor_per, String).ilike(f"%{labor_per}%"))
+    if size:
+        w, h = parse_size_cell(size)
+        if w is not None and h is not None:
+            stmt = stmt.where(
+                MaterialPrice.size_width_in == w,
+                MaterialPrice.size_height_in == h,
+            )
+        else:
+            like = f"%{size}%"
+            stmt = stmt.where(
+                or_(
+                    cast(MaterialPrice.size_width_in, String).ilike(like),
+                    cast(MaterialPrice.size_height_in, String).ilike(like),
+                )
+            )
     if csi_spec_section:
         norm = normalize_csi_spec_section(csi_spec_section) or digits_from_csi(csi_spec_section)
         digits = re.sub(r"\D", "", str(csi_spec_section).strip())
@@ -4953,6 +4999,8 @@ def _material_prices_query(
             MaterialPrice.description.ilike(like),
             MaterialPrice.category.ilike(like),
             MaterialPrice.csi_spec_section.ilike(like),
+            cast(MaterialPrice.size_width_in, String).ilike(like),
+            cast(MaterialPrice.size_height_in, String).ilike(like),
         ]
         q_digits = re.sub(r"\D", "", q)
         if 2 <= len(q_digits) <= 6:
@@ -4972,6 +5020,8 @@ _MATERIAL_BULK_FIELDS = frozenset(
         "cost",
         "labor_per",
         "unit_of_measure",
+        "size_width_in",
+        "size_height_in",
     }
 )
 
@@ -4979,7 +5029,7 @@ _MATERIAL_BULK_FIELDS = frozenset(
 def _coerce_material_bulk_value(field: str, value: Any) -> Any:
     from ..csi_spec import digits_from_csi, normalize_csi_spec_section
 
-    if field in ("cost", "labor_per"):
+    if field in ("cost", "labor_per", "size_width_in", "size_height_in"):
         if value in (None, ""):
             return None
         try:
@@ -6029,6 +6079,28 @@ def list_material_price_manufacturers():
     limit = max(1, min(limit, 500))
     names = [r for r in db.session.scalars(stmt.limit(limit)).all() if r]
     return _jsonify({"items": names, "entity": "material_manufacturers"})
+
+
+@bp.get("/material-prices/categories")
+def list_material_price_categories():
+    """Distinct product-type categories for catalog filters."""
+    q = (request.args.get("q") or "").strip()
+    stmt = (
+        select(MaterialPrice.category)
+        .where(MaterialPrice.category.is_not(None))
+        .where(MaterialPrice.category != "")
+        .distinct()
+        .order_by(MaterialPrice.category.asc())
+    )
+    if q:
+        stmt = stmt.where(MaterialPrice.category.ilike(f"%{q}%"))
+    try:
+        limit = int(request.args.get("limit") or 300)
+    except ValueError:
+        limit = 300
+    limit = max(1, min(limit, 500))
+    names = [r for r in db.session.scalars(stmt.limit(limit)).all() if r]
+    return _jsonify({"items": names, "entity": "material_categories"})
 
 
 @bp.get("/material-prices/csi-sections")

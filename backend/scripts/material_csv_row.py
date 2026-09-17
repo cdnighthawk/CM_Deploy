@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import csv
+import re
+from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from typing import Any
 
 # Canonical field -> accepted header variants (case-insensitive match on stripped names).
 _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
@@ -18,6 +21,7 @@ _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "unit_of_measure": ("unit of measure", "uom", "unit", "units"),
     "currency": ("currency",),
     "csi_spec_section": (
+        "csi_spec_section",
         "csi spec",
         "csi spec section",
         "spec section",
@@ -27,7 +31,162 @@ _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
         "08 71 00",
         "087100",
     ),
+    "size_width_in": ("size_width_in", "width_in", "width", "w"),
+    "size_height_in": ("size_height_in", "height_in", "length_in", "height", "length", "h"),
+    "size": ("size", "sheet size", "wxh", "w x h"),
 }
+
+# Aliases that count as Construction Specialties when replacing that manufacturer.
+_CS_MANUFACTURER_ALIASES = frozenset(
+    {
+        "construction specialties",
+        "cs",
+        "c/s",
+        "c-s",
+        "cs group",
+        "c-s group",
+        "c/s group",
+    }
+)
+
+_INPRO_MANUFACTURER_ALIASES = frozenset(
+    {
+        "inpro",
+        "inpro corporation",
+        "inpro corp",
+        "ipc",
+    }
+)
+
+_SKU_PREFIXES = ("INPRO-", "IPC-", "CS-")
+
+
+def sku_key(item: str | None) -> str:
+    """Normalize a catalog item for labor matching (strip vendor prefixes)."""
+    s = (item or "").strip().upper()
+    s = re.sub(r"[\s_]+", "-", s)
+    for prefix in _SKU_PREFIXES:
+        if s.startswith(prefix):
+            s = s[len(prefix) :]
+            break
+    return s
+
+
+def manufacturer_aliases(target: str) -> frozenset[str]:
+    t = (target or "").strip().lower()
+    if not t:
+        return frozenset()
+    if t in _CS_MANUFACTURER_ALIASES:
+        return _CS_MANUFACTURER_ALIASES
+    if t in _INPRO_MANUFACTURER_ALIASES:
+        return _INPRO_MANUFACTURER_ALIASES
+    return frozenset({t})
+
+
+def is_target_manufacturer(name: str | None, target: str) -> bool:
+    n = (name or "").strip().lower()
+    if not n:
+        return False
+    return n in manufacturer_aliases(target)
+
+
+@dataclass(frozen=True)
+class CatalogOldRow:
+    id: Any
+    manufacturer: str
+    item: str
+    labor_per: Any = None
+
+
+@dataclass
+class CatalogReplacePlan:
+    updates: list[tuple[Any, dict[str, object]]] = field(default_factory=list)
+    inserts: list[dict[str, object]] = field(default_factory=list)
+    delete_ids: list[Any] = field(default_factory=list)
+    labor_copied: int = 0
+    unmatched_new: int = 0
+    ambiguous_keys: list[str] = field(default_factory=list)
+
+    @property
+    def updated_count(self) -> int:
+        return len(self.updates)
+
+    @property
+    def inserted_count(self) -> int:
+        return len(self.inserts)
+
+    @property
+    def deleted_count(self) -> int:
+        return len(self.delete_ids)
+
+
+def _overlay_labor(payload: dict[str, object], old_labor: Any) -> tuple[dict[str, object], bool]:
+    out = dict(payload)
+    if out.get("labor_per") is None and old_labor is not None:
+        out["labor_per"] = old_labor
+        return out, True
+    return out, False
+
+
+def plan_manufacturer_replace(
+    old_rows: list[CatalogOldRow],
+    payloads: list[dict[str, object]],
+    target_manufacturer: str,
+) -> CatalogReplacePlan:
+    """Replace one manufacturer: keep unique SKU labor, delete leftover old rows."""
+    old_cs = [r for r in old_rows if is_target_manufacturer(r.manufacturer, target_manufacturer)]
+    assigned: set[Any] = set()
+    plan = CatalogReplacePlan()
+
+    for payload in payloads:
+        item = str(payload.get("item") or "")
+        new_mfr = str(payload.get("manufacturer") or "").strip().lower()
+        unassigned = [r for r in old_cs if r.id not in assigned]
+        exact_item = [r for r in unassigned if r.item == item]
+        named = [r for r in exact_item if (r.manufacturer or "").strip().lower() == new_mfr]
+
+        chosen: CatalogOldRow | None = None
+        skip_labor = False
+        key = sku_key(item)
+
+        if len(named) == 1:
+            chosen = named[0]
+        elif len(exact_item) == 1:
+            chosen = exact_item[0]
+        elif len(exact_item) > 1:
+            skip_labor = True
+            plan.ambiguous_keys.append(item)
+            chosen = named[0] if named else exact_item[0]
+        else:
+            sku_hits = [r for r in unassigned if sku_key(r.item) == key]
+            if len(sku_hits) == 1:
+                chosen = sku_hits[0]
+            elif len(sku_hits) > 1:
+                skip_labor = True
+                plan.ambiguous_keys.append(key)
+                plan.inserts.append(dict(payload))
+                plan.unmatched_new += 1
+                continue
+
+        if chosen is None:
+            plan.inserts.append(dict(payload))
+            plan.unmatched_new += 1
+            continue
+
+        assigned.add(chosen.id)
+        if skip_labor:
+            fields = dict(payload)
+            if fields.get("labor_per") is None:
+                fields.pop("labor_per", None)
+            plan.updates.append((chosen.id, fields))
+            continue
+        fields, copied = _overlay_labor(payload, chosen.labor_per)
+        if copied:
+            plan.labor_copied += 1
+        plan.updates.append((chosen.id, fields))
+
+    plan.delete_ids = [r.id for r in old_cs if r.id not in assigned]
+    return plan
 
 
 def _blank_to_none(s: str | None) -> str | None:
@@ -101,7 +260,18 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
 
         csi_spec_section = normalize_csi_spec_section(csi_raw)
 
-    return {
+    from app.material_size import parse_size_cell
+
+    size_width_in = _parse_decimal(_get_cell(row, col_map, "size_width_in")) if "size_width_in" in col_map else None
+    size_height_in = _parse_decimal(_get_cell(row, col_map, "size_height_in")) if "size_height_in" in col_map else None
+    if (size_width_in is None or size_height_in is None) and "size" in col_map:
+        parsed_w, parsed_h = parse_size_cell(_get_cell(row, col_map, "size"))
+        if size_width_in is None:
+            size_width_in = parsed_w
+        if size_height_in is None:
+            size_height_in = parsed_h
+
+    payload: dict[str, object] = {
         "manufacturer": manufacturer[:120],
         "item": item[:120],
         "category": category[:120] if category else None,
@@ -113,6 +283,10 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
         "currency": currency,
         "unit_of_measure": uom[:20],
     }
+    if "size_width_in" in col_map or "size_height_in" in col_map or "size" in col_map:
+        payload["size_width_in"] = size_width_in
+        payload["size_height_in"] = size_height_in
+    return payload
 
 
 def read_material_csv(csv_path: Path) -> list[dict[str, object]]:

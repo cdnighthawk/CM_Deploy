@@ -1,7 +1,10 @@
 """Load material_pricing rows from Bobrick / updated vendor material CSV exports.
 
-Repo-seed CSVs under ``backend/data/catalog`` (JL Industries cabinets, later
-Claridge, …) upsert by (manufacturer, item) and never truncate the table.
+Repo-seed CSVs under ``backend/data/catalog`` (JL Industries cabinets,
+Construction Specialties, Inpro wall protection, later Claridge, …) upsert
+by (manufacturer, item) and never truncate the table. Blank seed labor does not
+overwrite hours already on a row. Use ``--replace-manufacturer`` to swap one
+vendor family and keep unique SKU labor.
 """
 from __future__ import annotations
 
@@ -16,7 +19,12 @@ for _p in (_BACKEND_ROOT, _SCRIPTS):
         sys.path.insert(0, str(_p))
 
 from db_csv_paths import database_files_dir, repo_catalog_seed_csvs  # noqa: E402
-from material_csv_row import read_material_csv  # noqa: E402
+from material_csv_row import (  # noqa: E402
+    CatalogOldRow,
+    is_target_manufacturer,
+    plan_manufacturer_replace,
+    read_material_csv,
+)
 
 _DEFAULT_BOBRICK = database_files_dir() / "BOBRICK MATERIAL PRICING.CSV"
 _DEFAULT_UPDATED = database_files_dir() / "uPDATED PRICING.CSV"
@@ -58,7 +66,9 @@ def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> No
                 "description": ins.excluded.description,
                 "mounting_type": ins.excluded.mounting_type,
                 "cost": ins.excluded.cost,
-                "labor_per": ins.excluded.labor_per,
+                "labor_per": func.coalesce(ins.excluded.labor_per, table.c.labor_per),
+                "size_width_in": func.coalesce(ins.excluded.size_width_in, table.c.size_width_in),
+                "size_height_in": func.coalesce(ins.excluded.size_height_in, table.c.size_height_in),
                 "currency": ins.excluded.currency,
                 "unit_of_measure": ins.excluded.unit_of_measure,
                 "updated_at": func.now(),
@@ -66,6 +76,64 @@ def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> No
         )
         db.session.execute(stmt)
     db.session.commit()
+
+
+def replace_manufacturer_rows(
+    db,
+    MaterialPrice,
+    payloads: list[dict[str, object]],
+    manufacturer: str,
+    *,
+    delete_leftovers: bool = True,
+):
+    """Replace or merge one manufacturer family; copy unique SKU labor; do not truncate."""
+    from datetime import datetime, timezone
+
+    from sqlalchemy import func, select
+
+    from material_csv_row import manufacturer_aliases
+
+    aliases = sorted(manufacturer_aliases(manufacturer))
+    if not aliases:
+        raise ValueError("replace manufacturer is empty")
+    old_models = db.session.scalars(
+        select(MaterialPrice).where(func.lower(MaterialPrice.manufacturer).in_(aliases))
+    ).all()
+    old_rows = [
+        CatalogOldRow(
+            id=row.id,
+            manufacturer=row.manufacturer,
+            item=row.item,
+            labor_per=row.labor_per,
+        )
+        for row in old_models
+        if is_target_manufacturer(row.manufacturer, manufacturer)
+    ]
+    plan = plan_manufacturer_replace(old_rows, payloads, manufacturer)
+
+    if delete_leftovers:
+        for uid in plan.delete_ids:
+            row = db.session.get(MaterialPrice, uid)
+            if row is not None:
+                db.session.delete(row)
+        db.session.flush()
+    else:
+        plan.delete_ids = []
+
+    now = datetime.now(timezone.utc)
+    for uid, fields in plan.updates:
+        row = db.session.get(MaterialPrice, uid)
+        if row is None:
+            continue
+        for key, value in fields.items():
+            setattr(row, key, value)
+        row.updated_at = now
+    db.session.flush()
+
+    for payload in plan.inserts:
+        db.session.add(MaterialPrice(**payload))
+    db.session.commit()
+    return plan
 
 
 def main() -> None:
@@ -98,7 +166,35 @@ def main() -> None:
         action="store_true",
         help="Set csi_spec_section=087100 (08 71 00) on every row in this load.",
     )
+    parser.add_argument(
+        "--replace-manufacturer",
+        default="",
+        help="Replace rows for this manufacturer only (CS aliases included). "
+        "Keeps unique SKU labor hours. Does not truncate the table.",
+    )
+    parser.add_argument(
+        "--merge-manufacturer",
+        default="",
+        help="Upsert this manufacturer from CSV and copy unique SKU labor. "
+        "Does not delete leftover rows (use for adding a CS product family).",
+    )
     args = parser.parse_args()
+    replace_mfr = (args.replace_manufacturer or "").strip()
+    merge_mfr = (args.merge_manufacturer or "").strip()
+    family_mfr = replace_mfr or merge_mfr
+    if replace_mfr and merge_mfr:
+        parser.error("use either --replace-manufacturer or --merge-manufacturer")
+    if family_mfr:
+        if args.all_defaults:
+            parser.error("manufacturer replace/merge cannot be combined with --all-defaults")
+        if args.truncate:
+            parser.error("manufacturer replace/merge cannot truncate the catalog")
+        if not args.csv_paths:
+            parser.error("manufacturer replace/merge requires --csv")
+        if args.repo_seeds:
+            parser.error("manufacturer replace/merge cannot be combined with --repo-seeds")
+        if len(args.csv_paths) != 1:
+            parser.error("manufacturer replace/merge accepts exactly one --csv file")
 
     from sqlalchemy import text
 
@@ -111,11 +207,20 @@ def main() -> None:
     from app.models.material_pricing import MaterialPrice
 
     app = create_app()
+    if family_mfr:
+        uri = str(app.config.get("SQLALCHEMY_DATABASE_URI") or "")
+        if "CHANGE_ME_APP_PASSWORD" in uri:
+            raise SystemExit(
+                "Set DATABASE_URL to the Render usis-cm-db External URL "
+                "before manufacturer replace/merge."
+            )
 
     seed_paths = repo_catalog_seed_csvs()
     seed_set = {p.resolve() for p in seed_paths}
 
-    if args.all_defaults:
+    if family_mfr:
+        paths = [Path(p) for p in args.csv_paths]
+    elif args.all_defaults:
         paths = [_DEFAULT_BOBRICK, _DEFAULT_UPDATED, *seed_paths]
     elif args.csv_paths:
         paths = [Path(p) for p in args.csv_paths]
@@ -136,6 +241,26 @@ def main() -> None:
             if args.tag_door_hardware:
                 for p in payloads:
                     p["csi_spec_section"] = "087100"
+            if family_mfr:
+                plan = replace_manufacturer_rows(
+                    db,
+                    MaterialPrice,
+                    payloads,
+                    family_mfr,
+                    delete_leftovers=bool(replace_mfr),
+                )
+                verb = "Replaced" if replace_mfr else "Merged"
+                print(
+                    f"{verb} {family_mfr} from {csv_path.name}: "
+                    f"{plan.updated_count} updated, {plan.inserted_count} inserted, "
+                    f"{plan.deleted_count} deleted, {plan.labor_copied} labor copied, "
+                    f"{plan.unmatched_new} unmatched new, "
+                    f"{len(plan.ambiguous_keys)} ambiguous"
+                )
+                if plan.ambiguous_keys:
+                    print("Ambiguous SKUs (labor not copied): " + ", ".join(plan.ambiguous_keys[:40]))
+                total += len(payloads)
+                continue
             is_repo_seed = csv_path.resolve() in seed_set
             do_truncate = should_truncate_catalog_file(
                 index=i,

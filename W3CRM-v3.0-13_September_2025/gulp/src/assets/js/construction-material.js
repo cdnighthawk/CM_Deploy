@@ -89,6 +89,11 @@
 		return n.toLocaleString(undefined, { maximumFractionDigits: 4 }) + label;
 	}
 
+	function fmtRate(cell) {
+		var row = cell.getRow().getData() || {};
+		return row.labor_production || "—";
+	}
+
 	function fmtCsi(cell) {
 		var row = cell.getRow().getData() || {};
 		return row.csi_display || row.csi_spec_section || "—";
@@ -155,6 +160,54 @@
 		return el ? el.value : "";
 	}
 
+	function hoursFromRate(rate, unit) {
+		var n = Number(rate);
+		if (!n || n <= 0 || (unit !== "SF" && unit !== "LF")) return "";
+		var hours = 1 / n;
+		return String(Number(hours.toFixed(4)));
+	}
+
+	function syncLaborFromRate() {
+		var rateEl = document.getElementById("usis-mat-edit-rate");
+		var unitEl = document.getElementById("usis-mat-edit-rate-unit");
+		var labor = document.getElementById("usis-mat-edit-labor");
+		var uom = document.getElementById("usis-mat-edit-uom");
+		var hint = document.getElementById("usis-mat-edit-labor-hint");
+		if (!labor) return;
+		var unit = unitEl ? unitEl.value : "";
+		var hours = hoursFromRate(rateEl ? rateEl.value : "", unit);
+		var currentUom = String((uom && uom.value) || "").toUpperCase();
+		var isEa = !currentUom || currentUom === "EA" || currentUom === "EACH";
+		var measuredLf = currentUom === "LF" || currentUom === "FT";
+		var applySf = hours && unit === "SF" && (currentUom === "SF" || isEa);
+		var applyLf = hours && unit === "LF" && measuredLf;
+		if (applySf || applyLf) {
+			labor.value = hours;
+			labor.readOnly = true;
+			if (uom) uom.value = unit;
+			if (hint) {
+				hint.textContent =
+					unit === "SF"
+						? "Hours = (length × height) ÷ " +
+						  String(rateEl.value).trim() +
+						  " SF/hr (" +
+						  hours +
+						  " hr per SF)."
+						: "Hours = quantity ÷ " +
+						  String(rateEl.value).trim() +
+						  " LF/hr (" +
+						  hours +
+						  " hr per LF).";
+			}
+		} else {
+			labor.readOnly = false;
+			if (hint) {
+				hint.textContent =
+					"EA items use hours per each. Rigid sheet and FRP use SF/hour (length × height). Feet/hour only when UOM is LF.";
+			}
+		}
+	}
+
 	function fillDetailForm(item) {
 		var map = {
 			"usis-mat-edit-manufacturer": item.manufacturer,
@@ -166,6 +219,7 @@
 			"usis-mat-edit-width": item.size_width_in,
 			"usis-mat-edit-height": item.size_height_in,
 			"usis-mat-edit-cost": item.cost,
+			"usis-mat-edit-rate": item.labor_units_per_hour,
 			"usis-mat-edit-labor": item.labor_per,
 			"usis-mat-edit-uom": item.unit_of_measure,
 			"usis-mat-edit-currency": item.currency,
@@ -174,6 +228,9 @@
 			var el = document.getElementById(id);
 			if (el) el.value = map[id] == null ? "" : String(map[id]);
 		});
+		var unitEl = document.getElementById("usis-mat-edit-rate-unit");
+		if (unitEl) unitEl.value = item.labor_rate_unit === "SF" || item.labor_rate_unit === "LF" ? item.labor_rate_unit : "";
+		syncLaborFromRate();
 	}
 
 	function renderDetailView(item) {
@@ -196,6 +253,7 @@
 			["Description", dash(item.description)],
 			["Mounting", dash(item.mounting_type)],
 			["Cost", moneyText(item.cost)],
+			["Production rate", dash(item.labor_production)],
 			["Labor", hoursText(item.labor_per)],
 			["UOM", dash(item.unit_of_measure)],
 			["Currency", dash(item.currency)],
@@ -247,6 +305,8 @@
 			size_width_in: inputVal("usis-mat-edit-width"),
 			size_height_in: inputVal("usis-mat-edit-height"),
 			cost: inputVal("usis-mat-edit-cost"),
+			labor_units_per_hour: inputVal("usis-mat-edit-rate"),
+			labor_rate_unit: inputVal("usis-mat-edit-rate-unit"),
 			labor_per: inputVal("usis-mat-edit-labor"),
 			unit_of_measure: inputVal("usis-mat-edit-uom"),
 			currency: inputVal("usis-mat-edit-currency"),
@@ -350,11 +410,17 @@
 		var n = selectedCount();
 		var bulk = document.getElementById("usis-mat-bulk");
 		if (bulk) bulk.disabled = n === 0 && state.total === 0;
+		var del = document.getElementById("usis-mat-delete");
+		if (del) del.disabled = n === 0 && state.total === 0;
+		var deleting = bulkModeIsDelete();
 		var countEl = document.getElementById("usis-mat-bulk-count");
 		if (countEl) {
 			if (allMatchingChecked() && state.total > 0) {
 				countEl.textContent =
-					"Bulk change will update all " +
+					(deleting ? "Delete" : "Bulk change") +
+					" will " +
+					(deleting ? "remove" : "update") +
+					" all " +
 					state.total +
 					" row" +
 					(state.total === 1 ? "" : "s") +
@@ -371,6 +437,28 @@
 				state.total > 0
 					? "Apply to all " + state.total + " rows matching the current filters"
 					: "Apply to all rows matching the current filters";
+		}
+		syncBulkModeUi();
+	}
+
+	function bulkModeIsDelete() {
+		var fieldEl = document.getElementById("usis-mat-bulk-field");
+		return !!(fieldEl && fieldEl.value === "delete");
+	}
+
+	function syncBulkModeUi() {
+		var deleting = bulkModeIsDelete();
+		var title = document.getElementById("usis-mat-bulk-title");
+		if (title) title.textContent = deleting ? "Delete catalog items" : "Bulk change";
+		var wrap = document.getElementById("usis-mat-bulk-value-wrap");
+		if (wrap) wrap.classList.toggle("d-none", deleting);
+		var hint = document.getElementById("usis-mat-bulk-delete-hint");
+		if (hint) hint.classList.toggle("d-none", !deleting);
+		var applyBtn = document.getElementById("usis-mat-bulk-apply");
+		if (applyBtn) {
+			applyBtn.textContent = deleting ? "Delete" : "Apply";
+			applyBtn.classList.toggle("btn-primary", !deleting);
+			applyBtn.classList.toggle("btn-danger", deleting);
 		}
 	}
 
@@ -611,6 +699,12 @@
 				headerFilter: columnFilter("cost"),
 			},
 			{
+				title: "Prod. rate",
+				field: "labor_production",
+				width: 110,
+				formatter: fmtRate,
+			},
+			{
 				title: "Labor (hr)",
 				field: "labor_per",
 				width: 94,
@@ -819,22 +913,29 @@
 	function postBulkChunks(ids, field, value) {
 		var updated = 0;
 		var failed = 0;
+		var deleting = field === "delete";
 		var chain = Promise.resolve();
 		for (var i = 0; i < ids.length; i += BULK_CHUNK) {
 			(function (chunk) {
 				chain = chain.then(function () {
 					return jsonFetch(apiBase() + "/api/v1/material-prices/bulk", {
 						method: "POST",
-						body: JSON.stringify({ ids: chunk, field: field, value: value }),
+						body: JSON.stringify(
+							deleting
+								? { ids: chunk, action: "delete" }
+								: { ids: chunk, field: field, value: value }
+						),
 					}).then(function (d) {
-						updated += d.updated_count || 0;
+						updated += d.updated_count || d.deleted_count || 0;
 						failed += d.failed_count || 0;
 					});
 				});
 			})(ids.slice(i, i + BULK_CHUNK));
 		}
 		return chain.then(function () {
-			return { updated_count: updated, failed_count: failed };
+			return deleting
+				? { action: "delete", deleted_count: updated, failed_count: failed }
+				: { updated_count: updated, failed_count: failed };
 		});
 	}
 
@@ -845,7 +946,12 @@
 		if (inst) inst.hide();
 	}
 
-	function openBulkModal() {
+	function openBulkModal(mode) {
+		var fieldEl = document.getElementById("usis-mat-bulk-field");
+		if (fieldEl) {
+			if (mode === "delete") fieldEl.value = "delete";
+			else if (fieldEl.value === "delete") fieldEl.value = "csi_spec_section";
+		}
 		updateSelectionUi();
 		hideActionsMenu();
 		var modalEl = document.getElementById("usis-mat-bulk-modal");
@@ -854,7 +960,7 @@
 			bootstrap.Modal.getOrCreateInstance(modalEl).show();
 		}
 		var value = document.getElementById("usis-mat-bulk-value");
-		if (value) {
+		if (value && mode !== "delete") {
 			value.value = "";
 			value.focus();
 		}
@@ -868,6 +974,7 @@
 		var value = valueEl ? valueEl.value : "";
 		var useAll = !!(allEl && allEl.checked);
 		var applyBtn = document.getElementById("usis-mat-bulk-apply");
+		var deleting = field === "delete";
 		if (!field) {
 			notifyErr("Choose a field to change.");
 			return;
@@ -877,19 +984,20 @@
 		idsPromise
 			.then(function (ids) {
 				if (!ids.length) throw new Error("Select rows, or turn on “all matching filters”.");
-				if (
-					!window.confirm(
-						"Change " +
-							field.replace(/_/g, " ") +
-							" on " +
-							ids.length +
-							" catalog row" +
-							(ids.length === 1 ? "" : "s") +
-							"?"
-					)
-				) {
-					return null;
-				}
+				var msg = deleting
+					? "Permanently delete " +
+					  ids.length +
+					  " catalog row" +
+					  (ids.length === 1 ? "" : "s") +
+					  "? This cannot be undone."
+					: "Change " +
+					  field.replace(/_/g, " ") +
+					  " on " +
+					  ids.length +
+					  " catalog row" +
+					  (ids.length === 1 ? "" : "s") +
+					  "?";
+				if (!window.confirm(msg)) return null;
 				return postBulkChunks(ids, field, value);
 			})
 			.then(function (d) {
@@ -899,7 +1007,24 @@
 					var inst = bootstrap.Modal.getInstance(modalEl);
 					if (inst) inst.hide();
 				}
-				notifyOk("Updated " + (d.updated_count || 0) + " catalog row" + (d.updated_count === 1 ? "" : "s") + ".");
+				if (d.action === "delete") {
+					notifyOk(
+						"Deleted " +
+							(d.deleted_count || 0) +
+							" catalog row" +
+							(d.deleted_count === 1 ? "" : "s") +
+							"."
+					);
+				} else {
+					notifyOk(
+						"Updated " +
+							(d.updated_count || 0) +
+							" catalog row" +
+							(d.updated_count === 1 ? "" : "s") +
+							"."
+					);
+				}
+				setAllMatching(false);
 				return loadFacets().then(refreshCatalog);
 			})
 			.catch(function (e) {
@@ -916,6 +1041,7 @@
 		var prev = document.getElementById("usis-mat-prev");
 		var next = document.getElementById("usis-mat-next");
 		var bulk = document.getElementById("usis-mat-bulk");
+		var delBtn = document.getElementById("usis-mat-delete");
 		var apply = document.getElementById("usis-mat-bulk-apply");
 
 		if (search) {
@@ -927,25 +1053,45 @@
 		}
 		if (refreshBtn) {
 			refreshBtn.addEventListener("click", function () {
+				hideActionsMenu();
 				loadFacets().then(refreshCatalog);
 			});
 		}
 		if (prev) {
 			prev.addEventListener("click", function () {
+				hideActionsMenu();
 				state.offset = Math.max(0, state.offset - state.limit);
 				refreshCatalog();
 			});
 		}
 		if (next) {
 			next.addEventListener("click", function () {
+				hideActionsMenu();
 				if (state.offset + state.limit < state.total) {
 					state.offset += state.limit;
 					refreshCatalog();
 				}
 			});
 		}
-		if (bulk) bulk.addEventListener("click", openBulkModal);
+		var selectAll = document.getElementById("usis-mat-select-all");
+		if (selectAll) {
+			selectAll.addEventListener("click", function () {
+				if (!catalogTable) return;
+				hideActionsMenu();
+				catalogTable.selectRow();
+				if (state.total > 0) setAllMatching(true);
+				updateSelectionUi();
+			});
+		}
+		if (bulk) bulk.addEventListener("click", function () {
+			openBulkModal("change");
+		});
+		if (delBtn) delBtn.addEventListener("click", function () {
+			openBulkModal("delete");
+		});
 		if (apply) apply.addEventListener("click", applyBulk);
+		var fieldEl = document.getElementById("usis-mat-bulk-field");
+		if (fieldEl) fieldEl.addEventListener("change", updateSelectionUi);
 		var editBtn = document.getElementById("usis-mat-detail-edit");
 		var saveBtn = document.getElementById("usis-mat-detail-save");
 		var cancelBtn = document.getElementById("usis-mat-detail-cancel");
@@ -958,6 +1104,12 @@
 				if (first) first.focus();
 			});
 		}
+		["usis-mat-edit-rate", "usis-mat-edit-rate-unit", "usis-mat-edit-uom"].forEach(function (id) {
+			var el = document.getElementById(id);
+			if (!el) return;
+			el.addEventListener("input", syncLaborFromRate);
+			el.addEventListener("change", syncLaborFromRate);
+		});
 		if (saveBtn) saveBtn.addEventListener("click", saveDetail);
 		var detailForm = document.getElementById("usis-mat-detail-form");
 		if (detailForm) {

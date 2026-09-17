@@ -124,14 +124,13 @@
                                 <div class="d-flex flex-wrap align-items-center gap-2">
                                     <span id="usis-mat-status" class="small text-muted"></span>
                                     <div class="dropdown">
-                                        <button type="button" id="usis-mat-actions" class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false" aria-label="Catalog actions">
+                                        <button type="button" id="usis-mat-actions" class="btn btn-outline-secondary btn-sm" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" aria-label="Catalog actions">
                                             <i class="fa-solid fa-ellipsis-vertical"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end" id="usis-mat-actions-menu">
+                                            <button type="button" id="usis-mat-select-all" class="dropdown-item">Select all</button>
                                             <button type="button" id="usis-mat-bulk" class="dropdown-item" disabled>Bulk change</button>
-                                            <div class="dropdown-divider"></div>
-                                            <h6 class="dropdown-header">Columns</h6>
-                                            <div id="usis-mat-columns-menu"></div>
+                                            <button type="button" id="usis-mat-delete" class="dropdown-item text-danger" disabled>Delete</button>
                                             <div class="dropdown-divider"></div>
                                             <button type="button" id="usis-mat-refresh" class="dropdown-item">Refresh</button>
                                             <button type="button" id="usis-mat-prev" class="dropdown-item" disabled>Prev</button>
@@ -175,14 +174,18 @@
                                                     <option value="mounting_type">Mounting</option>
                                                     <option value="cost">Cost</option>
                                                     <option value="labor_per">Labor (hr)</option>
+                                                    <option value="labor_units_per_hour">Production rate (units/hr)</option>
+                                                    <option value="labor_rate_unit">Production unit (SF or LF)</option>
                                                     <option value="unit_of_measure">UOM</option>
+                                                    <option value="delete">Delete items</option>
                                                 </select>
                                             </div>
-                                            <div class="mb-3">
+                                            <div class="mb-3" id="usis-mat-bulk-value-wrap">
                                                 <label class="form-label" for="usis-mat-bulk-value">New value</label>
                                                 <input type="text" id="usis-mat-bulk-value" class="form-control" placeholder="Type the new value" autocomplete="off">
                                                 <div class="form-text">Division examples: 08 71 00 or 10 44 00. Leave blank to clear optional fields. Manufacturer + item must stay unique.</div>
                                             </div>
+                                            <p class="small text-danger d-none" id="usis-mat-bulk-delete-hint">This permanently removes the selected catalog rows. Takeoff and spec links to those items are cleared.</p>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" id="usis-mat-bulk-all-matching">
                                                 <label class="form-check-label" for="usis-mat-bulk-all-matching" id="usis-mat-bulk-all-label">Apply to all rows matching the current filters</label>
@@ -242,9 +245,22 @@
                                                         <label class="form-label" for="usis-mat-edit-cost">Cost</label>
                                                         <input type="text" class="form-control" id="usis-mat-edit-cost" inputmode="decimal">
                                                     </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label" for="usis-mat-edit-rate">Production rate</label>
+                                                        <input type="text" class="form-control" id="usis-mat-edit-rate" inputmode="decimal" placeholder="30">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label" for="usis-mat-edit-rate-unit">Per</label>
+                                                        <select class="form-select" id="usis-mat-edit-rate-unit">
+                                                            <option value="">Hours each</option>
+                                                            <option value="SF">SF / hour</option>
+                                                            <option value="LF">LF / hour</option>
+                                                        </select>
+                                                    </div>
                                                     <div class="col-md-4">
                                                         <label class="form-label" for="usis-mat-edit-labor">Labor (hr)</label>
                                                         <input type="text" class="form-control" id="usis-mat-edit-labor" inputmode="decimal">
+                                                        <div class="form-text" id="usis-mat-edit-labor-hint">EA is hours each. Rigid sheet and FRP use SF/hour (length × height).</div>
                                                     </div>
                                                     <div class="col-md-2">
                                                         <label class="form-label" for="usis-mat-edit-uom">UOM</label>
@@ -1255,7 +1271,7 @@
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
-    <script src="assets/js/construction-material.js?v=20260917h"></script>
+    <script src="assets/js/construction-material.js?v=20260917k"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	    

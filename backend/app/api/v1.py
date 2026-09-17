@@ -6319,33 +6319,12 @@ def list_material_price_ids():
     )
 
 
-@bp.post("/material-prices/bulk")
-def bulk_patch_material_prices():
-    """Set one field on many catalog rows (filter → select → bulk change)."""
-    from ..permissions.access import has_module_access
-
-    cu = current_user()
-    if not (
-        cu.is_dev_admin
-        or has_module_access(cu, "estimate", "write")
-        or has_module_access(cu, "user_admin", "write")
-    ):
-        return _jsonify({"error": "catalog edits require estimate or user admin write access"}), 403
-    body = request.get_json(silent=True) or {}
-    if not isinstance(body, dict):
-        return _jsonify({"error": "expected JSON object body"}), 400
-    field = str(body.get("field") or "").strip()
-    if field not in _MATERIAL_BULK_FIELDS:
-        return _jsonify({"error": "field is not bulk-editable"}), 400
-    try:
-        new_value = _coerce_material_bulk_value(field, body.get("value"))
-    except ApiError as exc:
-        return _jsonify({"error": exc.message}), exc.status
+def _material_bulk_ids(body: dict[str, Any]):
     raw_ids = body.get("ids") or []
     if not isinstance(raw_ids, list) or not raw_ids:
-        return _jsonify({"error": "ids must be a non-empty list"}), 400
+        return None, (_jsonify({"error": "ids must be a non-empty list"}), 400)
     if len(raw_ids) > 2000:
-        return _jsonify({"error": "bulk change is limited to 2000 rows"}), 400
+        return None, (_jsonify({"error": "bulk change is limited to 2000 rows"}), 400)
     parsed: list[uuid.UUID] = []
     skipped: list[dict[str, str]] = []
     seen: set[uuid.UUID] = set()
@@ -6358,6 +6337,67 @@ def bulk_patch_material_prices():
             continue
         seen.add(pid)
         parsed.append(pid)
+    return (parsed, skipped), None
+
+
+def _bulk_delete_material_prices(body: dict[str, Any]):
+    parsed_or_err = _material_bulk_ids(body)
+    if parsed_or_err[0] is None:
+        return parsed_or_err[1]
+    parsed, skipped = parsed_or_err[0]
+    rows = db.session.scalars(select(MaterialPrice).where(MaterialPrice.id.in_(parsed))).all()
+    by_id = {row.id: row for row in rows}
+    deleted: list[str] = []
+    for pid in parsed:
+        row = by_id.get(pid)
+        if row is None:
+            skipped.append({"id": str(pid), "error": "not found"})
+            continue
+        db.session.delete(row)
+        deleted.append(str(pid))
+    db.session.commit()
+    return _jsonify(
+        {
+            "ok": True,
+            "action": "delete",
+            "deleted": deleted,
+            "deleted_count": len(deleted),
+            "failed": skipped,
+            "failed_count": len(skipped),
+            "entity": "material_prices",
+        }
+    )
+
+
+@bp.post("/material-prices/bulk")
+def bulk_patch_material_prices():
+    """Set one field on many catalog rows, or delete them (action=delete)."""
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    if not (
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    ):
+        return _jsonify({"error": "catalog edits require estimate or user admin write access"}), 403
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    action = str(body.get("action") or "").strip().lower()
+    field = str(body.get("field") or "").strip()
+    if action == "delete" or field == "delete":
+        return _bulk_delete_material_prices(body)
+    if field not in _MATERIAL_BULK_FIELDS:
+        return _jsonify({"error": "field is not bulk-editable"}), 400
+    try:
+        new_value = _coerce_material_bulk_value(field, body.get("value"))
+    except ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    parsed_or_err = _material_bulk_ids(body)
+    if parsed_or_err[0] is None:
+        return parsed_or_err[1]
+    parsed, skipped = parsed_or_err[0]
     rows = db.session.scalars(select(MaterialPrice).where(MaterialPrice.id.in_(parsed))).all()
     by_id = {row.id: row for row in rows}
     updated: list[dict[str, Any]] = []

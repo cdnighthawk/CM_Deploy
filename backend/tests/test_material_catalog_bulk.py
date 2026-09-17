@@ -229,6 +229,39 @@ def test_bulk_change_rejects_unknown_field(client, catalog_rows):
     assert r.status_code == 400
 
 
+def test_bulk_delete_selected_rows(client, catalog_rows):
+    r = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": catalog_rows, "action": "delete"},
+    )
+    assert r.status_code == 200, r.get_json()
+    body = r.get_json()
+    assert body["deleted_count"] == 2
+    assert set(body["deleted"]) == set(catalog_rows)
+
+    listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&limit=50")
+    leftover = {x["id"] for x in listed.get_json()["items"]}
+    assert not set(catalog_rows) & leftover
+
+
+def test_bulk_delete_via_field_and_skips_missing(client, catalog_rows):
+    missing = str(uuid.uuid4())
+    r = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": [catalog_rows[0], missing], "field": "delete"},
+    )
+    assert r.status_code == 200, r.get_json()
+    body = r.get_json()
+    assert body["deleted_count"] == 1
+    assert body["deleted"] == [catalog_rows[0]]
+    assert body["failed_count"] == 1
+
+    gone = client.get(f"/api/v1/material-prices/{catalog_rows[0]}")
+    assert gone.status_code == 404
+    kept = client.get(f"/api/v1/material-prices/{catalog_rows[1]}")
+    assert kept.status_code == 200
+
+
 def test_get_material_price_detail(client, catalog_rows):
     r = client.get(f"/api/v1/material-prices/{catalog_rows[0]}")
     assert r.status_code == 200

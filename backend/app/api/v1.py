@@ -7,7 +7,7 @@ import re
 import uuid
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -4925,6 +4925,12 @@ def _ilike_contains(stmt, column, value: str):
     return stmt
 
 
+def _exact_ci(stmt, column, value: str):
+    if value:
+        stmt = stmt.where(func.lower(column) == value.lower())
+    return stmt
+
+
 def _material_prices_query(
     q: str,
     manufacturer: str,
@@ -4945,17 +4951,19 @@ def _material_prices_query(
     from ..material_size import parse_size_cell
 
     stmt = select(MaterialPrice)
-    stmt = _ilike_contains(stmt, MaterialPrice.manufacturer, manufacturer)
+    stmt = _exact_ci(stmt, MaterialPrice.manufacturer, manufacturer)
     stmt = _ilike_contains(stmt, MaterialPrice.item, item)
-    if category:
-        stmt = stmt.where(func.lower(MaterialPrice.category) == category.lower())
+    stmt = _exact_ci(stmt, MaterialPrice.category, category)
     stmt = _ilike_contains(stmt, MaterialPrice.description, description)
-    stmt = _ilike_contains(stmt, MaterialPrice.mounting_type, mounting_type)
-    stmt = _ilike_contains(stmt, MaterialPrice.unit_of_measure, unit_of_measure)
+    stmt = _exact_ci(stmt, MaterialPrice.mounting_type, mounting_type)
+    stmt = _exact_ci(stmt, MaterialPrice.unit_of_measure, unit_of_measure)
     if cost:
         stmt = stmt.where(cast(MaterialPrice.cost, String).ilike(f"%{cost}%"))
     if labor_per:
-        stmt = stmt.where(cast(MaterialPrice.labor_per, String).ilike(f"%{labor_per}%"))
+        try:
+            stmt = stmt.where(MaterialPrice.labor_per == Decimal(labor_per))
+        except (InvalidOperation, ValueError, ArithmeticError):
+            stmt = stmt.where(cast(MaterialPrice.labor_per, String).ilike(f"%{labor_per}%"))
     if size:
         w, h = parse_size_cell(size)
         if w is not None and h is not None:
@@ -6101,6 +6109,86 @@ def list_material_price_categories():
     limit = max(1, min(limit, 500))
     names = [r for r in db.session.scalars(stmt.limit(limit)).all() if r]
     return _jsonify({"items": names, "entity": "material_categories"})
+
+
+def _distinct_text_values(column, *, limit: int = 500) -> list[str]:
+    stmt = (
+        select(column)
+        .where(column.is_not(None))
+        .where(column != "")
+        .distinct()
+        .order_by(column.asc())
+        .limit(max(1, min(limit, 1000)))
+    )
+    return [r for r in db.session.scalars(stmt).all() if r]
+
+
+@bp.get("/material-prices/facets")
+def list_material_price_facets():
+    """Distinct values for catalog column dropdowns."""
+    from ..material_size import size_display
+
+    size_pairs = db.session.execute(
+        select(MaterialPrice.size_width_in, MaterialPrice.size_height_in)
+        .where(MaterialPrice.size_width_in.is_not(None))
+        .where(MaterialPrice.size_height_in.is_not(None))
+        .distinct()
+        .order_by(MaterialPrice.size_width_in.asc(), MaterialPrice.size_height_in.asc())
+        .limit(500)
+    ).all()
+    sizes = []
+    seen: set[str] = set()
+    for width, height in size_pairs:
+        label = size_display(width, height)
+        if label and label not in seen:
+            seen.add(label)
+            sizes.append(label)
+    csi_rows = db.session.scalars(
+        select(MaterialPrice.csi_spec_section)
+        .where(MaterialPrice.csi_spec_section.is_not(None))
+        .where(MaterialPrice.csi_spec_section != "")
+        .distinct()
+        .order_by(MaterialPrice.csi_spec_section.asc())
+    ).all()
+    csi_items: list[dict[str, Any]] = []
+    for raw in csi_rows:
+        extra = _csi_extras(raw)
+        display = extra["csi_display"] or raw
+        title = extra["csi_title"]
+        csi_items.append(
+            {
+                "value": raw,
+                "label": f"{display} — {title}" if title else display,
+            }
+        )
+    labor_vals = db.session.scalars(
+        select(MaterialPrice.labor_per)
+        .where(MaterialPrice.labor_per.is_not(None))
+        .distinct()
+        .order_by(MaterialPrice.labor_per.asc())
+        .limit(200)
+    ).all()
+    labor: list[str] = []
+    for raw in labor_vals:
+        if raw is None:
+            continue
+        d = raw if isinstance(raw, Decimal) else Decimal(str(raw))
+        if d == d.to_integral_value():
+            labor.append(str(int(d)))
+        else:
+            labor.append(format(d.normalize(), "f"))
+    return _jsonify(
+        {
+            "manufacturers": _distinct_text_values(MaterialPrice.manufacturer),
+            "categories": _distinct_text_values(MaterialPrice.category),
+            "csi_sections": csi_items,
+            "sizes": sizes,
+            "mounting_types": _distinct_text_values(MaterialPrice.mounting_type),
+            "units": _distinct_text_values(MaterialPrice.unit_of_measure, limit=100),
+            "labor": labor,
+            "entity": "material_price_facets",
+        }
+    )
 
 
 @bp.get("/material-prices/csi-sections")

@@ -20,7 +20,7 @@ services:
     buildCommand: >-
       (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) || true;
       pip install -r requirements.txt
-    # Redeploy trigger: catalog categories + sheet size (2026-09-17)
+    # Redeploy trigger: catalog column dropdowns (2026-09-17b)
     preDeployCommand: flask db upgrade
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --timeout 180
     healthCheckPath: /healthz

@@ -140,6 +140,47 @@ def test_material_price_categories_and_size(client, catalog_rows):
     assert not any(x["id"] == catalog_rows[1] for x in items)
 
 
+def test_material_price_facets_and_exact_dropdowns(client, catalog_rows):
+    with client.application.app_context():
+        row = db.session.get(MaterialPrice, uuid.UUID(catalog_rows[0]))
+        row.mounting_type = "Surface"
+        row.unit_of_measure = "EA"
+        row.labor_per = Decimal("1")
+        row.size_width_in = Decimal("24")
+        row.size_height_in = Decimal("36")
+        db.session.commit()
+
+    facets = client.get("/api/v1/material-prices/facets")
+    assert facets.status_code == 200
+    body = facets.get_json()
+    assert "BulkMfg" in body["manufacturers"]
+    assert "Hardware" in body["categories"]
+    assert "Accessories" in body["categories"]
+    assert "Surface" in body["mounting_types"]
+    assert "EA" in body["units"]
+    assert "1" in body["labor"]
+    assert "24×36" in body["sizes"]
+    assert any(x.get("value") == "087100" for x in body["csi_sections"])
+
+    r = client.get("/api/v1/material-prices?manufacturer=Bulk&limit=50")
+    assert r.status_code == 200
+    ids = {x["id"] for x in r.get_json()["items"]}
+    assert catalog_rows[0] not in ids
+    assert catalog_rows[1] not in ids
+
+    r = client.get("/api/v1/material-prices?manufacturer=BulkMfg&mounting_type=Surface&limit=50")
+    assert r.status_code == 200
+    items = r.get_json()["items"]
+    assert any(x["id"] == catalog_rows[0] for x in items)
+    assert not any(x["id"] == catalog_rows[1] for x in items)
+
+    r = client.get("/api/v1/material-prices?manufacturer=BulkMfg&labor_per=1&limit=50")
+    assert r.status_code == 200
+    items = r.get_json()["items"]
+    assert any(x["id"] == catalog_rows[0] for x in items)
+    assert not any(x["id"] == catalog_rows[1] for x in items)
+
+
 def test_bulk_change_rejects_unknown_field(client, catalog_rows):
     r = client.post(
         "/api/v1/material-prices/bulk",

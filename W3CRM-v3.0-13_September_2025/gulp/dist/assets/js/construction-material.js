@@ -7,7 +7,16 @@
 	var catalogTable = null;
 	var searchTimer = null;
 	var BULK_CHUNK = 2000;
-	var categoryList = [];
+	var headerFilterFillers = [];
+	var facetLists = {
+		manufacturers: [],
+		categories: [],
+		csi_sections: [],
+		sizes: [],
+		mounting_types: [],
+		units: [],
+		labor: [],
+	};
 	var state = {
 		q: "",
 		manufacturer: "",
@@ -193,7 +202,7 @@
 			var input = document.createElement("input");
 			input.type = "search";
 			input.className = "form-control form-control-sm";
-			input.placeholder = "Filter";
+			input.placeholder = "Search";
 			input.autocomplete = "off";
 			var title = "";
 			try {
@@ -201,7 +210,8 @@
 			} catch (e) {
 				title = "";
 			}
-			input.setAttribute("aria-label", (title || stateKey) + " filter");
+			input.setAttribute("aria-label", (title || stateKey) + " search");
+			input.value = state[stateKey] || "";
 			input.addEventListener("input", function () {
 				state[stateKey] = (input.value || "").trim();
 				state.offset = 0;
@@ -212,43 +222,73 @@
 		};
 	}
 
-	function categoryFilter(cell, onRendered, success, cancel) {
-		var select = document.createElement("select");
-		select.className = "form-select form-select-sm";
-		select.setAttribute("aria-label", "Category filter");
-		function fill() {
-			var current = state.category;
-			select.innerHTML = "";
-			var all = document.createElement("option");
-			all.value = "";
-			all.textContent = "All";
-			select.appendChild(all);
-			categoryList.forEach(function (name) {
-				var o = document.createElement("option");
-				o.value = name;
-				o.textContent = name;
-				select.appendChild(o);
+	function selectFilter(stateKey, facetKey, ariaLabel) {
+		return function (cell, onRendered, success, cancel) {
+			var select = document.createElement("select");
+			select.className = "form-select form-select-sm";
+			select.setAttribute("aria-label", ariaLabel || (stateKey + " filter"));
+			function fill() {
+				var current = state[stateKey] || "";
+				select.innerHTML = "";
+				var all = document.createElement("option");
+				all.value = "";
+				all.textContent = "All";
+				select.appendChild(all);
+				(facetLists[facetKey] || []).forEach(function (entry) {
+					var o = document.createElement("option");
+					if (entry && typeof entry === "object") {
+						o.value = entry.value;
+						o.textContent = entry.label;
+					} else {
+						o.value = entry;
+						o.textContent = entry;
+					}
+					select.appendChild(o);
+				});
+				select.value = current;
+				if (select.value !== current) select.value = "";
+			}
+			fill();
+			headerFilterFillers.push(fill);
+			select.addEventListener("change", function () {
+				state[stateKey] = (select.value || "").trim();
+				state.offset = 0;
+				setAllMatching(false);
+				scheduleSearch();
 			});
-			select.value = current;
-		}
-		fill();
-		select.addEventListener("change", function () {
-			state.category = (select.value || "").trim();
-			state.offset = 0;
-			setAllMatching(false);
-			scheduleSearch();
-		});
-		onRendered(fill);
-		return select;
+			onRendered(fill);
+			return select;
+		};
 	}
 
-	function loadCategories() {
-		return jsonFetch(apiBase() + "/api/v1/material-prices/categories?limit=500")
+	function refillHeaderFilters() {
+		headerFilterFillers.forEach(function (fn) {
+			try {
+				fn();
+			} catch (e) {}
+		});
+	}
+
+	function loadFacets() {
+		return jsonFetch(apiBase() + "/api/v1/material-prices/facets")
 			.then(function (d) {
-				categoryList = d.items || [];
+				facetLists.manufacturers = d.manufacturers || [];
+				facetLists.categories = d.categories || [];
+				facetLists.csi_sections = d.csi_sections || [];
+				facetLists.sizes = d.sizes || [];
+				facetLists.mounting_types = d.mounting_types || [];
+				facetLists.units = d.units || [];
+				facetLists.labor = d.labor || [];
+				refillHeaderFilters();
 			})
 			.catch(function () {
-				categoryList = [];
+				facetLists.manufacturers = [];
+				facetLists.categories = [];
+				facetLists.csi_sections = [];
+				facetLists.sizes = [];
+				facetLists.mounting_types = [];
+				facetLists.units = [];
+				facetLists.labor = [];
 			});
 	}
 
@@ -296,9 +336,11 @@
 			}
 			return;
 		}
+		headerFilterFillers = [];
 		catalogTable = new Tabulator(el, {
 			layout: "fitColumns",
 			height: "min(520px, 60vh)",
+			headerFilterLiveFilter: false,
 			placeholder: "No rows match your filters.",
 			selectableRows: true,
 			selectableRowsRangeMode: "click",
@@ -314,8 +356,8 @@
 				{
 					title: "Manufacturer",
 					field: "manufacturer",
-					width: 120,
-					headerFilter: columnFilter("manufacturer"),
+					width: 128,
+					headerFilter: selectFilter("manufacturer", "manufacturers", "Manufacturer filter"),
 				},
 				{
 					title: "Item",
@@ -326,10 +368,10 @@
 				{
 					title: "Division",
 					field: "csi_display",
-					width: 110,
+					width: 128,
 					formatter: fmtCsi,
 					hozAlign: "left",
-					headerFilter: columnFilter("csi"),
+					headerFilter: selectFilter("csi", "csi_sections", "Division filter"),
 					tooltip: function (e, cell) {
 						var row = cell.getRow().getData() || {};
 						return row.csi_title || row.csi_display || row.csi_spec_section || "";
@@ -339,14 +381,14 @@
 					title: "Category",
 					field: "category",
 					width: 150,
-					headerFilter: categoryFilter,
+					headerFilter: selectFilter("category", "categories", "Category filter"),
 				},
 				{
 					title: "Size",
 					field: "size_display",
-					width: 88,
+					width: 96,
 					formatter: fmtSize,
-					headerFilter: columnFilter("size"),
+					headerFilter: selectFilter("size", "sizes", "Size filter"),
 				},
 				{
 					title: "Description",
@@ -358,8 +400,8 @@
 				{
 					title: "Mounting",
 					field: "mounting_type",
-					width: 90,
-					headerFilter: columnFilter("mounting"),
+					width: 110,
+					headerFilter: selectFilter("mounting", "mounting_types", "Mounting filter"),
 				},
 				{
 					title: "Cost",
@@ -375,13 +417,13 @@
 					width: 94,
 					hozAlign: "right",
 					formatter: fmtHours,
-					headerFilter: columnFilter("labor"),
+					headerFilter: selectFilter("labor", "labor", "Labor filter"),
 				},
 				{
 					title: "UOM",
 					field: "unit_of_measure",
-					width: 60,
-					headerFilter: columnFilter("uom"),
+					width: 72,
+					headerFilter: selectFilter("uom", "units", "UOM filter"),
 				},
 			],
 		});
@@ -493,7 +535,7 @@
 					if (inst) inst.hide();
 				}
 				notifyOk("Updated " + (d.updated_count || 0) + " catalog row" + (d.updated_count === 1 ? "" : "s") + ".");
-				return loadCategories().then(refreshCatalog);
+				return loadFacets().then(refreshCatalog);
 			})
 			.catch(function (e) {
 				notifyErr(String(e.message || e));
@@ -563,10 +605,12 @@
 
 	function init() {
 		if (!document.getElementById("usis-mat-tabulator")) return;
-		buildTable();
 		wireUi();
 		if (window.USISDrawingCache) window.USISDrawingCache.refresh();
-		loadCategories().then(refreshCatalog);
+		loadFacets().then(function () {
+			buildTable();
+			refreshCatalog();
+		});
 	}
 
 	if (document.readyState === "loading") {

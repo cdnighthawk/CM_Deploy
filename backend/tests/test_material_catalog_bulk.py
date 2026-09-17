@@ -181,6 +181,46 @@ def test_material_price_facets_and_exact_dropdowns(client, catalog_rows):
     assert not any(x["id"] == catalog_rows[1] for x in items)
 
 
+def test_material_price_facets_follow_other_filters(client, catalog_rows):
+    extra_id = None
+    with client.application.app_context():
+        extra = MaterialPrice(
+            manufacturer="OtherMfg-" + uuid.uuid4().hex[:6],
+            item="locker-" + uuid.uuid4().hex[:6],
+            category="Lockers",
+            csi_spec_section="105113",
+        )
+        db.session.add(extra)
+        db.session.commit()
+        extra_id = str(extra.id)
+        extra_mfr = extra.manufacturer
+    try:
+        by_mfr = client.get("/api/v1/material-prices/facets?manufacturer=BulkMfg")
+        assert by_mfr.status_code == 200
+        body = by_mfr.get_json()
+        assert "Hardware" in body["categories"]
+        assert "Accessories" in body["categories"]
+        assert "Lockers" not in body["categories"]
+        assert "BulkMfg" in body["manufacturers"]
+        assert extra_mfr in body["manufacturers"]
+        assert any(x.get("value") == "087100" for x in body["csi_sections"])
+        assert not any(x.get("value") == "105113" for x in body["csi_sections"])
+
+        by_csi = client.get("/api/v1/material-prices/facets?csi_spec_section=105113")
+        assert by_csi.status_code == 200
+        csi_body = by_csi.get_json()
+        assert extra_mfr in csi_body["manufacturers"]
+        assert "BulkMfg" not in csi_body["manufacturers"]
+        assert "Lockers" in csi_body["categories"]
+        assert "Hardware" not in csi_body["categories"]
+    finally:
+        with client.application.app_context():
+            row = db.session.get(MaterialPrice, uuid.UUID(extra_id))
+            if row is not None:
+                db.session.delete(row)
+                db.session.commit()
+
+
 def test_bulk_change_rejects_unknown_field(client, catalog_rows):
     r = client.post(
         "/api/v1/material-prices/bulk",

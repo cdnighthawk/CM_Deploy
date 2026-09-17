@@ -6111,9 +6111,21 @@ def list_material_price_categories():
     return _jsonify({"items": names, "entity": "material_categories"})
 
 
-def _distinct_text_values(column, *, limit: int = 500) -> list[str]:
+def _filters_omitting(filters: dict[str, Any], *keys: str) -> dict[str, Any]:
+    out = dict(filters)
+    for key in keys:
+        out[key] = None if key in ("csi_spec_section", "csi_division") else ""
+    return out
+
+
+def _facet_base(filters: dict[str, Any], *omit: str):
+    return _material_prices_query(**_filters_omitting(filters, *omit)).order_by(None)
+
+
+def _facet_text_values(filters: dict[str, Any], column, *omit: str, limit: int = 500) -> list[str]:
     stmt = (
-        select(column)
+        _facet_base(filters, *omit)
+        .with_only_columns(column)
         .where(column.is_not(None))
         .where(column != "")
         .distinct()
@@ -6123,53 +6135,17 @@ def _distinct_text_values(column, *, limit: int = 500) -> list[str]:
     return [r for r in db.session.scalars(stmt).all() if r]
 
 
-@bp.get("/material-prices/facets")
-def list_material_price_facets():
-    """Distinct values for catalog column dropdowns."""
-    from ..material_size import size_display
-
-    size_pairs = db.session.execute(
-        select(MaterialPrice.size_width_in, MaterialPrice.size_height_in)
-        .where(MaterialPrice.size_width_in.is_not(None))
-        .where(MaterialPrice.size_height_in.is_not(None))
-        .distinct()
-        .order_by(MaterialPrice.size_width_in.asc(), MaterialPrice.size_height_in.asc())
-        .limit(500)
-    ).all()
-    sizes = []
-    seen: set[str] = set()
-    for width, height in size_pairs:
-        label = size_display(width, height)
-        if label and label not in seen:
-            seen.add(label)
-            sizes.append(label)
-    csi_rows = db.session.scalars(
-        select(MaterialPrice.csi_spec_section)
-        .where(MaterialPrice.csi_spec_section.is_not(None))
-        .where(MaterialPrice.csi_spec_section != "")
-        .distinct()
-        .order_by(MaterialPrice.csi_spec_section.asc())
-    ).all()
-    csi_items: list[dict[str, Any]] = []
-    for raw in csi_rows:
-        extra = _csi_extras(raw)
-        display = extra["csi_display"] or raw
-        title = extra["csi_title"]
-        csi_items.append(
-            {
-                "value": raw,
-                "label": f"{display} — {title}" if title else display,
-            }
-        )
-    labor_vals = db.session.scalars(
-        select(MaterialPrice.labor_per)
+def _facet_labor_values(filters: dict[str, Any], *, limit: int = 200) -> list[str]:
+    stmt = (
+        _facet_base(filters, "labor_per")
+        .with_only_columns(MaterialPrice.labor_per)
         .where(MaterialPrice.labor_per.is_not(None))
         .distinct()
         .order_by(MaterialPrice.labor_per.asc())
-        .limit(200)
-    ).all()
+        .limit(max(1, min(limit, 500)))
+    )
     labor: list[str] = []
-    for raw in labor_vals:
+    for raw in db.session.scalars(stmt).all():
         if raw is None:
             continue
         d = raw if isinstance(raw, Decimal) else Decimal(str(raw))
@@ -6177,15 +6153,67 @@ def list_material_price_facets():
             labor.append(str(int(d)))
         else:
             labor.append(format(d.normalize(), "f"))
+    return labor
+
+
+def _facet_size_values(filters: dict[str, Any], *, limit: int = 500) -> list[str]:
+    from ..material_size import size_display
+
+    stmt = (
+        _facet_base(filters, "size")
+        .with_only_columns(MaterialPrice.size_width_in, MaterialPrice.size_height_in)
+        .where(MaterialPrice.size_width_in.is_not(None))
+        .where(MaterialPrice.size_height_in.is_not(None))
+        .distinct()
+        .order_by(MaterialPrice.size_width_in.asc(), MaterialPrice.size_height_in.asc())
+        .limit(max(1, min(limit, 500)))
+    )
+    sizes: list[str] = []
+    seen: set[str] = set()
+    for width, height in db.session.execute(stmt).all():
+        label = size_display(width, height)
+        if label and label not in seen:
+            seen.add(label)
+            sizes.append(label)
+    return sizes
+
+
+def _facet_csi_items(filters: dict[str, Any]) -> list[dict[str, Any]]:
+    stmt = (
+        _facet_base(filters, "csi_spec_section", "csi_division")
+        .with_only_columns(MaterialPrice.csi_spec_section)
+        .where(MaterialPrice.csi_spec_section.is_not(None))
+        .where(MaterialPrice.csi_spec_section != "")
+        .distinct()
+        .order_by(MaterialPrice.csi_spec_section.asc())
+    )
+    items: list[dict[str, Any]] = []
+    for raw in db.session.scalars(stmt).all():
+        extra = _csi_extras(raw)
+        display = extra["csi_display"] or raw
+        title = extra["csi_title"]
+        items.append(
+            {
+                "value": raw,
+                "label": f"{display} — {title}" if title else display,
+            }
+        )
+    return items
+
+
+@bp.get("/material-prices/facets")
+def list_material_price_facets():
+    """Distinct values for catalog column dropdowns, scoped to the other active filters."""
+    filters = _material_price_list_filters()
     return _jsonify(
         {
-            "manufacturers": _distinct_text_values(MaterialPrice.manufacturer),
-            "categories": _distinct_text_values(MaterialPrice.category),
-            "csi_sections": csi_items,
-            "sizes": sizes,
-            "mounting_types": _distinct_text_values(MaterialPrice.mounting_type),
-            "units": _distinct_text_values(MaterialPrice.unit_of_measure, limit=100),
-            "labor": labor,
+            "manufacturers": _facet_text_values(filters, MaterialPrice.manufacturer, "manufacturer"),
+            "categories": _facet_text_values(filters, MaterialPrice.category, "category"),
+            "csi_sections": _facet_csi_items(filters),
+            "sizes": _facet_size_values(filters),
+            "mounting_types": _facet_text_values(filters, MaterialPrice.mounting_type, "mounting_type"),
+            "units": _facet_text_values(filters, MaterialPrice.unit_of_measure, "unit_of_measure", limit=100),
+            "labor": _facet_labor_values(filters),
             "entity": "material_price_facets",
         }
     )

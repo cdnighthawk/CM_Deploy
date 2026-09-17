@@ -234,19 +234,29 @@
 				all.value = "";
 				all.textContent = "All";
 				select.appendChild(all);
+				var hasCurrent = !current;
 				(facetLists[facetKey] || []).forEach(function (entry) {
 					var o = document.createElement("option");
+					var value;
 					if (entry && typeof entry === "object") {
-						o.value = entry.value;
+						value = entry.value;
+						o.value = value;
 						o.textContent = entry.label;
 					} else {
+						value = entry;
 						o.value = entry;
 						o.textContent = entry;
 					}
+					if (String(value) === String(current)) hasCurrent = true;
 					select.appendChild(o);
 				});
+				if (current && !hasCurrent) {
+					var kept = document.createElement("option");
+					kept.value = current;
+					kept.textContent = current;
+					select.appendChild(kept);
+				}
 				select.value = current;
-				if (select.value !== current) select.value = "";
 			}
 			fill();
 			headerFilterFillers.push(fill);
@@ -270,7 +280,8 @@
 	}
 
 	function loadFacets() {
-		return jsonFetch(apiBase() + "/api/v1/material-prices/facets")
+		var qs = filterParams().toString();
+		return jsonFetch(apiBase() + "/api/v1/material-prices/facets" + (qs ? "?" + qs : ""))
 			.then(function (d) {
 				facetLists.manufacturers = d.manufacturers || [];
 				facetLists.categories = d.categories || [];
@@ -438,7 +449,7 @@
 		if (searchTimer) clearTimeout(searchTimer);
 		searchTimer = setTimeout(function () {
 			state.offset = 0;
-			refreshCatalog();
+			Promise.all([loadFacets(), refreshCatalog()]);
 		}, 300);
 	}
 
@@ -563,7 +574,7 @@
 		}
 		if (refreshBtn) {
 			refreshBtn.addEventListener("click", function () {
-				refreshCatalog();
+				loadFacets().then(refreshCatalog);
 			});
 		}
 		if (prev) {

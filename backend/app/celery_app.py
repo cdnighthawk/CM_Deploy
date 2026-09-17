@@ -46,6 +46,7 @@ if Celery is not None and BROKER:
         body: str,
         to: str,
         from_addr: str | None = None,
+        bcc: str | list[str] | None = None,
     ) -> None:  # pragma: no cover
         """Send an RFI email out-of-band.
 
@@ -60,7 +61,7 @@ if Celery is not None and BROKER:
         with app.app_context():
             try:
                 if _mail_configured(from_addr=from_addr):
-                    _deliver_email(subject=subject, body=body, to=to, from_addr=from_addr)
+                    _deliver_email(subject=subject, body=body, to=to, from_addr=from_addr, bcc=bcc)
                 _mark_log_delivered(log_id)
             except Exception as exc:
                 _mark_log_delivered(log_id, error=str(exc))

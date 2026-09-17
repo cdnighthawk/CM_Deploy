@@ -77,6 +77,7 @@ def _serialize(item: CorrespondenceItem, project_name: str | None = None) -> dic
         "attachmentCount": item.attachment_count,
         "storageRelpath": item.storage_relpath,
         "downloadUrl": f"/api/correspondence/{item.id}/download",
+        "threadId": str(item.thread_id) if item.thread_id else None,
     }
 
 
@@ -98,12 +99,17 @@ def _parse_dt(raw: Any) -> datetime | None:
 def list_items(cu: CurrentUser, args: Mapping[str, Any]) -> dict[str, Any]:
     if not _can_view(cu):
         raise ApiError("forbidden", 403)
-    stmt = select(CorrespondenceItem).order_by(CorrespondenceItem.sent_at.desc().nullslast())
+    stmt = select(CorrespondenceItem)
     pid = _parse_uuid(args.get("project_id"))
     if pid:
-        stmt = stmt.where(CorrespondenceItem.project_id == pid)
-    elif str(args.get("unfiled") or "").strip() in ("1", "true", "yes"):
-        stmt = stmt.where(CorrespondenceItem.project_id.is_(None))
+        stmt = stmt.where(CorrespondenceItem.project_id == pid).order_by(
+            CorrespondenceItem.thread_id.asc().nullslast(),
+            CorrespondenceItem.sent_at.asc().nullslast(),
+        )
+    else:
+        if str(args.get("unfiled") or "").strip() in ("1", "true", "yes"):
+            stmt = stmt.where(CorrespondenceItem.project_id.is_(None))
+        stmt = stmt.order_by(CorrespondenceItem.sent_at.desc().nullslast())
     q = (args.get("q") or "").strip()
     if q:
         like = f"%{q}%"
@@ -211,6 +217,19 @@ def configured_mailboxes() -> list[str]:
     return [r.mailbox or r.external_key for r in rows if (r.mailbox or r.external_key)]
 
 
+def _ref_from_body(body_text: str) -> tuple[uuid.UUID | None, uuid.UUID | None]:
+    from ._email_ref import parse_ref
+
+    parsed = parse_ref(body_text)
+    if not parsed:
+        return None, None
+    pid, tid = parsed
+    project = db.session.get(Project, pid)
+    if project is None or getattr(project, "deleted_at", None) is not None:
+        return None, tid
+    return project.id, tid
+
+
 def ingest_graph_message(detail: Mapping[str, Any], *, mailbox: str, source: CorrespondenceSource) -> CorrespondenceItem | None:
     mid = str(detail.get("id") or "").strip()
     if not mid:
@@ -257,8 +276,10 @@ def ingest_graph_message(detail: Mapping[str, Any], *, mailbox: str, source: Cor
         ]
     )
     count = _write_message_files(rel, headers=headers, body_text=body_text, attachments=attachments)
+    ref_pid, ref_tid = _ref_from_body(body_text)
+    project_id = ref_pid if ref_pid is not None else source.default_project_id
     item = CorrespondenceItem(
-        project_id=source.default_project_id,
+        project_id=project_id,
         source_id=source.id,
         source_type="mailbox",
         graph_message_id=mid,
@@ -270,8 +291,9 @@ def ingest_graph_message(detail: Mapping[str, Any], *, mailbox: str, source: Cor
         search_text=f"{subject} {from_name or ''} {from_email or ''} {body_text}"[:20000],
         has_attachments=count > 0,
         attachment_count=count,
+        thread_id=ref_tid,
     )
-    if source.default_project_id:
+    if project_id:
         item.filed_at = _utcnow()
     db.session.add(item)
     db.session.flush()
@@ -337,6 +359,9 @@ def ingest_local_message(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, 
     from_email = (str(data.get("from_email") or "").strip() or None)
     from_name = (str(data.get("from_name") or "").strip() or None)
     pid = _parse_uuid(data.get("project_id"))
+    ref_pid, ref_tid = _ref_from_body(body)
+    if ref_pid is not None:
+        pid = ref_pid
     year = _utcnow().year
     rel = f"{UNFILED if pid is None else str(pid)}/{year}/{uuid.uuid4().hex[:16]}"
     headers = "\n".join(
@@ -361,6 +386,7 @@ def ingest_local_message(data: Mapping[str, Any], cu: CurrentUser) -> dict[str, 
         attachment_count=0,
         filed_by_user_id=cu.id if pid else None,
         filed_at=_utcnow() if pid else None,
+        thread_id=ref_tid,
     )
     db.session.add(item)
     db.session.commit()

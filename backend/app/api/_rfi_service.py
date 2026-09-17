@@ -1729,7 +1729,15 @@ def forward_by_email(rfi_id: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser
         )
         db.session.add(log)
         db.session.flush()
-        result = enqueue_email(log, subject=subject, body=body, to=em, from_addr=from_addr)
+        result = enqueue_email(
+            log,
+            subject=subject,
+            body=body,
+            to=em,
+            from_addr=from_addr,
+            project_id=rfi.project_id,
+            thread_id=rfi.id,
+        )
         if result.get("dry_run"):
             dry_run = True
         if result.get("queued"):

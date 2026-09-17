@@ -1,6 +1,7 @@
 """Microsoft Graph outbound mail (unit tests, no network)."""
 from __future__ import annotations
 
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -118,6 +119,66 @@ def test_send_html_sets_reply_to(monkeypatch, flask_app):
     assert send_call.kwargs["json"]["message"]["replyTo"] == [
         {"emailAddress": {"address": "quotes@gousis.com"}}
     ]
+
+
+def test_send_html_stamps_usis_ref_and_bccs_archive(monkeypatch, flask_app):
+    from app.api import _notifications as mail
+
+    mail.reset_graph_token_cache()
+    _graph_env(monkeypatch)
+    pid = uuid.uuid4()
+    tid = uuid.uuid4()
+    monkeypatch.setenv("CORRESPONDENCE_MAILBOXES", "projects@gousis.com")
+
+    token_response = MagicMock()
+    token_response.raise_for_status = MagicMock()
+    token_response.json.return_value = {"access_token": "tok", "expires_in": 3600}
+    send_response = MagicMock()
+    send_response.status_code = 202
+    send_response.text = ""
+    http_client = MagicMock()
+    http_client.__enter__.return_value = http_client
+    http_client.__exit__.return_value = False
+    http_client.post.side_effect = [token_response, send_response]
+
+    with flask_app.app_context():
+        flask_app.config["CORRESPONDENCE_MAILBOXES"] = "projects@gousis.com"
+        with patch("httpx.Client", return_value=http_client):
+            result = mail.send_html_notification_email(
+                to="gc@example.com",
+                subject="RFI 12",
+                body="Please review",
+                html_body="<p>Please review</p>",
+                from_addr="charles@gousis.com",
+                project_id=pid,
+                thread_id=tid,
+            )
+
+    assert result["sent"] is True
+    message = http_client.post.call_args_list[1].kwargs["json"]["message"]
+    content = message["body"]["content"]
+    assert f"USIS-REF project={pid} thread={tid}" in content
+    assert message["bccRecipients"] == [{"emailAddress": {"address": "projects@gousis.com"}}]
+
+
+def test_password_reset_does_not_stamp_usis_ref(monkeypatch, flask_app):
+    from app.api import _notifications as mail
+
+    captured: dict[str, str] = {}
+
+    def _fake_deliver(**kwargs):
+        captured["body"] = kwargs.get("body") or ""
+        captured["bcc"] = kwargs.get("bcc")
+
+    mail.reset_graph_token_cache()
+    _graph_env(monkeypatch)
+    monkeypatch.setenv("CORRESPONDENCE_MAILBOXES", "projects@gousis.com")
+    with flask_app.app_context():
+        flask_app.config["CORRESPONDENCE_MAILBOXES"] = "projects@gousis.com"
+        with patch.object(mail, "_deliver_email", side_effect=_fake_deliver):
+            mail.send_password_reset_email(to="user@example.com", reset_token="tok")
+    assert "USIS-REF" not in captured["body"]
+    assert not captured["bcc"]
 
 
 def test_compose_sends_as_user_mailbox(monkeypatch, flask_app):

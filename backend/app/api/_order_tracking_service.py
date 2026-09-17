@@ -161,7 +161,9 @@ def notify_supplier_order_by_change(c: Commitment) -> dict[str, Any]:
         result["error"] = "no vendor contact email"
         db.session.flush()
         return result
-    mail = send_plain_notification_email(to=to, subject=subject, body=body)
+    mail = send_plain_notification_email(
+        to=to, subject=subject, body=body, project_id=c.project_id, thread_id=c.id
+    )
     result.update(mail)
     if mail.get("sent") or mail.get("dry_run"):
         c.supplier_confirm_status = SUPPLIER_CONFIRM_SENT

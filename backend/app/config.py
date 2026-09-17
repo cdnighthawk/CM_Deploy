@@ -284,6 +284,9 @@ class Config:
     # Correspondence archive root (Teams/email files). Falls back to DOCUMENT_UPLOAD_FOLDER / correspondence.
     DOCUMENT_ROOT: str | None = (os.environ.get("DOCUMENT_ROOT") or "").strip() or None
     CORRESPONDENCE_MAILBOXES: str = (os.environ.get("CORRESPONDENCE_MAILBOXES") or "").strip()
+    CORRESPONDENCE_MAILBOX_SYNC_INTERVAL_SEC: int = int(
+        (os.environ.get("CORRESPONDENCE_MAILBOX_SYNC_INTERVAL_SEC") or "300").strip() or "300"
+    )
     # Spec section PDFs (``POST .../rfi-lookups/spec_sections/<id>/file``); defaults under ``instance/``.
     SPEC_SECTION_UPLOAD_FOLDER: str | None = (os.environ.get("SPEC_SECTION_UPLOAD_FOLDER") or "").strip() or None
     # RFI attachment binaries (``POST /api/v1/rfis/<id>/attachments/upload``).

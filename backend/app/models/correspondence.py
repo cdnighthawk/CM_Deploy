@@ -58,5 +58,6 @@ class CorrespondenceItem(UUIDPKMixin, TimestampMixin, db.Model):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     filed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    thread_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
 
     source: Mapped[Optional[CorrespondenceSource]] = relationship(back_populates="items")

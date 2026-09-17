@@ -31,6 +31,7 @@ $GroupName = "USIS Graph mail mailboxes"
 $Noreply = "noreply@gousis.com"
 $Quotes = "quotes@gousis.com"
 $Invoices = "invoices@gousis.com"
+$Projects = "projects@gousis.com"
 
 $group = Get-DistributionGroup -Identity $GroupName -ErrorAction SilentlyContinue
 if (-not $group) {
@@ -46,8 +47,9 @@ Get-Mailbox -ResultSize Unlimited | Where-Object {
 Add-DistributionGroupMember -Identity $GroupName -Member $Noreply -BypassSecurityGroupManagerCheck -ErrorAction SilentlyContinue
 Add-DistributionGroupMember -Identity $GroupName -Member $Quotes -BypassSecurityGroupManagerCheck -ErrorAction SilentlyContinue
 Add-DistributionGroupMember -Identity $GroupName -Member $Invoices -BypassSecurityGroupManagerCheck -ErrorAction SilentlyContinue
+Add-DistributionGroupMember -Identity $GroupName -Member $Projects -BypassSecurityGroupManagerCheck -ErrorAction SilentlyContinue
 
-$Description = "USIS CRM may only send/read mail for gousis.com + noreply/quotes/invoices"
+$Description = "USIS CRM may only send/read mail for gousis.com + noreply/quotes/invoices/projects"
 
 # Get-ApplicationAccessPolicy with no Identity searches '*', which Exchange
 # Hosted sometimes fails to resolve (OU=...onmicrosoft.com\*) even when

@@ -196,6 +196,25 @@ def _celery_app():  # pragma: no cover — optional dependency
     return celery
 
 
+def _stamp_project_mail(
+    *,
+    body: str,
+    html_body: str | None = None,
+    project_id: Any | None = None,
+    thread_id: Any | None = None,
+    bcc: str | list[str] | None = None,
+) -> tuple[str, str | None, list[str] | None]:
+    from ._email_ref import append_ref, correspondence_archive_mailbox, parse_ref
+
+    text, html, _tid = append_ref(body, html_body, project_id, thread_id)
+    addrs = _norm_addr_list(bcc)
+    if parse_ref(text) or parse_ref(html or ""):
+        archive = correspondence_archive_mailbox()
+        if archive and archive.lower() not in {a.lower() for a in addrs}:
+            addrs.append(archive)
+    return text, html, addrs or None
+
+
 def enqueue_rfi_email(
     log: "RfiNotificationLog",
     *,
@@ -219,6 +238,9 @@ def enqueue_rfi_email(
         body_lines.append("")
         body_lines.append(f"— sent by {actor.user.email}")
     body = "\n".join(body_lines)
+    project_id = getattr(rfi, "project_id", None) if rfi is not None else None
+    thread_id = getattr(rfi, "id", None) if rfi is not None else None
+    body, _, bcc = _stamp_project_mail(body=body, project_id=project_id, thread_id=thread_id)
 
     actor_email = None
     if actor is not None and getattr(actor, "user", None) is not None:
@@ -229,6 +251,7 @@ def enqueue_rfi_email(
         body=body,
         to=log.recipient_email,
         from_addr=actor_email,
+        bcc=bcc,
     )
 
 
@@ -239,8 +262,11 @@ def enqueue_email(
     body: str,
     to: str,
     from_addr: str | None = None,
+    project_id: Any | None = None,
+    thread_id: Any | None = None,
 ) -> dict[str, object]:
-    return _dispatch(log_id=str(log.id), subject=subject, body=body, to=to, from_addr=from_addr)
+    body, _, bcc = _stamp_project_mail(body=body, project_id=project_id, thread_id=thread_id)
+    return _dispatch(log_id=str(log.id), subject=subject, body=body, to=to, from_addr=from_addr, bcc=bcc)
 
 
 def _dispatch(
@@ -250,6 +276,7 @@ def _dispatch(
     body: str,
     to: str,
     from_addr: str | None = None,
+    bcc: str | list[str] | None = None,
 ) -> dict[str, object]:
     """Send or queue one message. Caller must ``flush()`` the log row so ``log_id`` is valid."""
     celery = _celery_app()
@@ -263,6 +290,7 @@ def _dispatch(
                     "body": body,
                     "to": to,
                     "from_addr": from_addr,
+                    "bcc": bcc,
                 },
             )
             return {"sent": False, "dry_run": False, "queued": True, "error": None}
@@ -278,7 +306,7 @@ def _dispatch(
         return {"sent": False, "dry_run": True, "queued": False, "error": None}
 
     try:
-        _deliver_email(subject=subject, body=body, to=to, from_addr=from_addr)
+        _deliver_email(subject=subject, body=body, to=to, from_addr=from_addr, bcc=bcc)
         if log_id and log_id != "None":
             _mark_log_delivered(log_id)
         return {"sent": True, "dry_run": False, "queued": False, "error": None}
@@ -829,6 +857,9 @@ def send_plain_notification_email(
     subject: str,
     body: str,
     from_addr: str | None = None,
+    project_id: Any | None = None,
+    thread_id: Any | None = None,
+    bcc: str | list[str] | None = None,
 ) -> dict[str, object]:
     """Best-effort synchronous send for system or user-authored mail.
 
@@ -836,7 +867,14 @@ def send_plain_notification_email(
     user's email for compose / RFI forwarding.
     """
     return send_html_notification_email(
-        to=to, subject=subject, body=body, html_body=None, from_addr=from_addr
+        to=to,
+        subject=subject,
+        body=body,
+        html_body=None,
+        from_addr=from_addr,
+        project_id=project_id,
+        thread_id=thread_id,
+        bcc=bcc,
     )
 
 
@@ -852,10 +890,19 @@ def send_html_notification_email(
     cc: str | list[str] | None = None,
     attachments: list[dict[str, Any]] | None = None,
     from_name: str | None = None,
+    project_id: Any | None = None,
+    thread_id: Any | None = None,
 ) -> dict[str, object]:
     """Best-effort synchronous send with optional HTML alternative body."""
     if not to:
         return {"sent": False, "dry_run": False, "error": "missing recipient email"}
+    body, html_body, bcc = _stamp_project_mail(
+        body=body,
+        html_body=html_body,
+        project_id=project_id,
+        thread_id=thread_id,
+        bcc=bcc,
+    )
     if not _mail_configured(from_addr=from_addr):
         current_app.logger.info("Plain email (mail unset, dry-run): to=%s subj=%r", to, subject)
         return {"sent": False, "dry_run": True, "error": None}
@@ -886,6 +933,8 @@ def send_compose_email(
     body: str,
     cc: str | None = None,
     from_addr: str | None = None,
+    project_id: Any | None = None,
+    thread_id: Any | None = None,
 ) -> dict[str, object]:
     """Send mail from the W3CRM compose page (``POST /api/v1/messages/email``)."""
     recipients = [s.strip() for s in to.split(",") if s.strip()]
@@ -900,7 +949,12 @@ def send_compose_email(
     errors: list[str] = []
     for em in recipients:
         result = send_plain_notification_email(
-            to=em, subject=subject, body=body, from_addr=from_addr
+            to=em,
+            subject=subject,
+            body=body,
+            from_addr=from_addr,
+            project_id=project_id,
+            thread_id=thread_id,
         )
         if result.get("dry_run"):
             dry_run = True

@@ -2819,7 +2819,13 @@ def compose_email():
     from ._notifications import send_compose_email
 
     result = send_compose_email(
-        to=to, subject=subject[:500], body=body, cc=cc, from_addr=from_addr
+        to=to,
+        subject=subject[:500],
+        body=body,
+        cc=cc,
+        from_addr=from_addr,
+        project_id=_parse_uuid_param(data.get("project_id")),
+        thread_id=_parse_uuid_param(data.get("thread_id")),
     )
     if not result.get("ok"):
         return _jsonify(result), 400

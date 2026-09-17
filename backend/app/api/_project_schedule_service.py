@@ -123,7 +123,13 @@ def notify_schedule_assignee(
     url = _schedule_item_url(row.project_id)
     create_in_app_notification(user_id=user.id, title=title, body=body, url=url)
     if user.email:
-        send_plain_notification_email(to=user.email, subject=subject, body=body + f"\n\n{url}")
+        send_plain_notification_email(
+            to=user.email,
+            subject=subject,
+            body=body + f"\n\n{url}",
+            project_id=row.project_id,
+            thread_id=row.id,
+        )
 
 
 def send_due_schedule_reminders(*, as_of: date | None = None) -> dict[str, Any]:

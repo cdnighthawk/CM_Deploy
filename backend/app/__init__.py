@@ -350,8 +350,10 @@ def create_app(config_object: str | None = None) -> Flask:
         return branded_404()
     _apply_production_middleware(app)
     from .ap._sync_loop import start_invoice_mailbox_sync_loop
+    from .api._correspondence_sync_loop import start_correspondence_mailbox_sync_loop
 
     start_invoice_mailbox_sync_loop(app)
+    start_correspondence_mailbox_sync_loop(app)
     from .services.object_storage import start_b2_cors_ensure, start_b2_disk_replay
 
     start_b2_cors_ensure(app)

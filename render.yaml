@@ -20,7 +20,7 @@ services:
     buildCommand: >-
       (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) || true;
       pip install -r requirements.txt
-    # Redeploy trigger: alembic 0112 labor rate (2026-09-17o)
+    # Redeploy trigger: catalog column customizer (2026-09-17p)
     preDeployCommand: flask db upgrade
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --timeout 180
     healthCheckPath: /healthz

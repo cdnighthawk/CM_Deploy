@@ -72,8 +72,12 @@ def run_migrations_online() -> None:
             target_metadata=get_metadata(),
             **conf_args,
         )
-        with context.begin_transaction():
-            context.run_migrations()
+        try:
+            with context.begin_transaction():
+                context.run_migrations()
+        except BaseException:
+            logger.exception("flask db upgrade failed")
+            raise
 
 
 if context.is_offline_mode():

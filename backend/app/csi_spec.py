@@ -51,3 +51,19 @@ def normalize_csi_spec_section(raw: str | None) -> str | None:
 
 def is_door_hardware_section(section: str | None) -> bool:
     return normalize_csi_spec_section(section) == _DOOR_HARDWARE_CANONICAL
+
+
+def csi_storage_variants(raw: str | None) -> list[str]:
+    """Canonical and display forms that may exist in ``material_pricing.csi_spec_section``.
+
+    Older catalog loads stored ``10 11 00``; newer rows store ``101100``. Filters must
+    match both or the Division dropdown looks empty.
+    """
+    digits = normalize_csi_spec_section(raw) or digits_from_csi(raw)
+    if not digits or len(digits) != 6:
+        return []
+    display = format_csi_display(digits)
+    variants = [digits]
+    if display and display not in variants:
+        variants.append(display)
+    return variants

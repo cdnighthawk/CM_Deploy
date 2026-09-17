@@ -4947,7 +4947,7 @@ def _material_prices_query(
     size: str = "",
 ):
     from ..csi_catalog import DIVISION_NAMES
-    from ..csi_spec import digits_from_csi, normalize_csi_spec_section
+    from ..csi_spec import csi_storage_variants
     from ..material_size import parse_size_cell
 
     stmt = select(MaterialPrice)
@@ -4980,10 +4980,10 @@ def _material_prices_query(
                 )
             )
     if csi_spec_section:
-        norm = normalize_csi_spec_section(csi_spec_section) or digits_from_csi(csi_spec_section)
+        variants = csi_storage_variants(csi_spec_section)
         digits = re.sub(r"\D", "", str(csi_spec_section).strip())
-        if norm and len(norm) == 6:
-            stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
+        if variants:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.in_(variants))
         elif 2 <= len(digits) <= 5:
             stmt = stmt.where(MaterialPrice.csi_spec_section.like(f"{digits}%"))
         else:
@@ -6204,6 +6204,8 @@ def _facet_size_values(filters: dict[str, Any], *, limit: int = 500) -> list[str
 
 
 def _facet_csi_items(filters: dict[str, Any]) -> list[dict[str, Any]]:
+    from ..csi_spec import digits_from_csi
+
     stmt = (
         _facet_base(filters, "csi_spec_section", "csi_division")
         .with_only_columns(MaterialPrice.csi_spec_section)
@@ -6213,16 +6215,22 @@ def _facet_csi_items(filters: dict[str, Any]) -> list[dict[str, Any]]:
         .order_by(MaterialPrice.csi_spec_section.asc())
     )
     items: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for raw in db.session.scalars(stmt).all():
         extra = _csi_extras(raw)
+        key = digits_from_csi(raw) or str(raw)
+        if key in seen:
+            continue
+        seen.add(key)
         display = extra["csi_display"] or raw
         title = extra["csi_title"]
         items.append(
             {
-                "value": raw,
+                "value": key,
                 "label": f"{display} — {title}" if title else display,
             }
         )
+    items.sort(key=lambda row: str(row.get("value") or ""))
     return items
 
 
@@ -6247,6 +6255,8 @@ def list_material_price_facets():
 @bp.get("/material-prices/csi-sections")
 def list_material_price_csi_sections():
     """Distinct CSI sections and divisions present in the material catalog."""
+    from ..csi_spec import digits_from_csi
+
     rows = db.session.scalars(
         select(MaterialPrice.csi_spec_section)
         .where(MaterialPrice.csi_spec_section.is_not(None))
@@ -6255,20 +6265,26 @@ def list_material_price_csi_sections():
         .order_by(MaterialPrice.csi_spec_section.asc())
     ).all()
     items: list[dict[str, Any]] = []
+    seen: set[str] = set()
     divisions: dict[str, str | None] = {}
     for raw in rows:
         extra = _csi_extras(raw)
+        key = digits_from_csi(raw) or str(raw)
+        if extra["csi_division"]:
+            divisions[extra["csi_division"]] = extra["csi_division_name"]
+        if key in seen:
+            continue
+        seen.add(key)
         items.append(
             {
-                "csi_spec_section": raw,
+                "csi_spec_section": key,
                 "csi_display": extra["csi_display"] or raw,
                 "csi_title": extra["csi_title"],
                 "csi_division": extra["csi_division"],
                 "csi_division_name": extra["csi_division_name"],
             }
         )
-        if extra["csi_division"]:
-            divisions[extra["csi_division"]] = extra["csi_division_name"]
+    items.sort(key=lambda row: str(row.get("csi_spec_section") or ""))
     return _jsonify(
         {
             "items": items,
@@ -6410,7 +6426,7 @@ def patch_material_price(price_id: str):
 
 @bp.get("/cost-suggestions/material")
 def cost_suggestions_material():
-    from ..csi_spec import normalize_csi_spec_section
+    from ..csi_spec import csi_storage_variants
 
     q = (request.args.get("q") or "").strip()
     if len(q) < 2:
@@ -6425,9 +6441,9 @@ def cost_suggestions_material():
     )
     csi = (request.args.get("csi_spec_section") or "").strip() or None
     if csi:
-        norm = normalize_csi_spec_section(csi)
-        if norm:
-            stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
+        variants = csi_storage_variants(csi)
+        if variants:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.in_(variants))
     stmt = stmt.limit(25)
     rows = db.session.scalars(stmt).all()
     return _jsonify({"items": [_material_price_public(m) for m in rows], "entity": "material_prices"})

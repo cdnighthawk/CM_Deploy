@@ -48,10 +48,15 @@ def _should_parse_size(row) -> bool:
 
 
 def _plan_row(row) -> dict[str, object] | None:
+    from app.csi_spec import normalize_csi_spec_section
     from app.material_category import planned_category_update
     from app.material_size import parse_sheet_size, size_display
 
     changes: dict[str, object] = {}
+    current_csi = (row.csi_spec_section or "").strip() or None
+    new_csi = normalize_csi_spec_section(current_csi) if current_csi else None
+    if new_csi and new_csi != current_csi:
+        changes["csi_spec_section"] = new_csi
     new_cat = planned_category_update(row)
     if new_cat is not None:
         changes["category"] = new_cat
@@ -69,6 +74,7 @@ def _plan_row(row) -> dict[str, object] | None:
         "manufacturer": row.manufacturer,
         "item": row.item,
         "old_category": row.category,
+        "old_csi": current_csi,
         "size_display": size_display(
             changes.get("size_width_in", row.size_width_in),
             changes.get("size_height_in", row.size_height_in),
@@ -82,7 +88,7 @@ def main() -> int:
     parser.add_argument(
         "--execute",
         action="store_true",
-        help="Write category and size updates (default is dry-run).",
+        help="Write category, CSI digit, and size updates (default is dry-run).",
     )
     parser.add_argument(
         "--sample",
@@ -119,6 +125,7 @@ def main() -> int:
         plans = []
         cat_n = 0
         size_n = 0
+        csi_n = 0
         for row in rows:
             plan = _plan_row(row)
             if not plan:
@@ -127,6 +134,8 @@ def main() -> int:
             ch = plan["changes"]
             if "category" in ch:
                 cat_n += 1
+            if "csi_spec_section" in ch:
+                csi_n += 1
             if "size_width_in" in ch or "size_height_in" in ch:
                 size_n += 1
             if args.execute:
@@ -136,10 +145,12 @@ def main() -> int:
             db.session.commit()
 
     verb = "Updated" if args.execute else "Would update"
-    print(f"{verb} {len(plans)} of {total} catalog rows ({cat_n} category, {size_n} size).")
+    print(f"{verb} {len(plans)} of {total} catalog rows ({cat_n} category, {csi_n} CSI, {size_n} size).")
     for plan in plans[: max(0, args.sample)]:
         ch = plan["changes"]
         bits = []
+        if "csi_spec_section" in ch:
+            bits.append(f"CSI {plan.get('old_csi')!r} -> {ch['csi_spec_section']!r}")
         if "category" in ch:
             bits.append(f"{plan['old_category']!r} -> {ch['category']!r}")
         if plan.get("size_display") and ("size_width_in" in ch or "size_height_in" in ch):

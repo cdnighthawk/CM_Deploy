@@ -520,11 +520,13 @@
 		return {
 			formatter: "rowSelection",
 			titleFormatter: "rowSelection",
+			cssClass: "usis-doc-check-col",
 			hozAlign: "center",
+			headerHozAlign: "center",
 			headerSort: false,
 			headerFilter: false,
-			width: 40,
-			minWidth: 40,
+			width: 52,
+			minWidth: 52,
 			frozen: true,
 			resizable: false,
 			download: false,
@@ -778,7 +780,14 @@
 			fillColumnMenu();
 		});
 		catalogTable.on("columnResized", saveColumnLayout);
-		catalogTable.on("tableBuilt", fillColumnMenu);
+		catalogTable.on("tableBuilt", function () {
+			var headerCb = el.querySelector(".usis-doc-check-col input[type=checkbox]");
+			if (headerCb) {
+				headerCb.classList.add("form-check-input", "m-0");
+				headerCb.setAttribute("aria-label", "Select all rows on this page");
+			}
+			fillColumnMenu();
+		});
 		fillColumnMenu();
 	}
 
@@ -829,8 +838,16 @@
 		});
 	}
 
+	function hideActionsMenu() {
+		var btn = document.getElementById("usis-mat-actions");
+		if (!btn || typeof bootstrap === "undefined" || !bootstrap.Dropdown) return;
+		var inst = bootstrap.Dropdown.getInstance(btn);
+		if (inst) inst.hide();
+	}
+
 	function openBulkModal() {
 		updateSelectionUi();
+		hideActionsMenu();
 		var modalEl = document.getElementById("usis-mat-bulk-modal");
 		if (!modalEl) return;
 		if (typeof bootstrap !== "undefined" && bootstrap.Modal) {
@@ -898,7 +915,6 @@
 		var refreshBtn = document.getElementById("usis-mat-refresh");
 		var prev = document.getElementById("usis-mat-prev");
 		var next = document.getElementById("usis-mat-next");
-		var selectAll = document.getElementById("usis-mat-select-all");
 		var bulk = document.getElementById("usis-mat-bulk");
 		var apply = document.getElementById("usis-mat-bulk-apply");
 
@@ -926,14 +942,6 @@
 					state.offset += state.limit;
 					refreshCatalog();
 				}
-			});
-		}
-		if (selectAll) {
-			selectAll.addEventListener("click", function () {
-				if (!catalogTable) return;
-				catalogTable.selectRow();
-				if (state.total > 0) setAllMatching(true);
-				updateSelectionUi();
 			});
 		}
 		if (bulk) bulk.addEventListener("click", openBulkModal);

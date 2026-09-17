@@ -1087,7 +1087,8 @@ body .tabulator .tabulator-header .usis-doc-check-col .tabulator-col-title {
 	line-height: 0;
 }
 
-body .tabulator .usis-doc-check-col .form-check-input {
+body .tabulator .usis-doc-check-col .form-check-input,
+body .tabulator .usis-doc-check-col input[type="checkbox"] {
 	width: 1rem;
 	height: 1rem;
 	margin: 0;

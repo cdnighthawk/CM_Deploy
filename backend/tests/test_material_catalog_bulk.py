@@ -227,3 +227,51 @@ def test_bulk_change_rejects_unknown_field(client, catalog_rows):
         json={"ids": catalog_rows, "field": "id", "value": "nope"},
     )
     assert r.status_code == 400
+
+
+def test_get_material_price_detail(client, catalog_rows):
+    r = client.get(f"/api/v1/material-prices/{catalog_rows[0]}")
+    assert r.status_code == 200
+    item = r.get_json()["item"]
+    assert item["id"] == catalog_rows[0]
+    assert item["manufacturer"] == "BulkMfg"
+    assert item["csi_display"] == "08 71 00"
+    assert "created_at" in item
+    assert "updated_at" in item
+
+
+def test_get_material_price_not_found(client):
+    missing = uuid.uuid4()
+    r = client.get(f"/api/v1/material-prices/{missing}")
+    assert r.status_code == 404
+
+
+def test_patch_material_price(client, catalog_rows):
+    r = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={
+            "description": "Updated hinge",
+            "cost": "12.50",
+            "csi_spec_section": "10 44 00",
+            "mounting_type": "Recessed",
+        },
+    )
+    assert r.status_code == 200, r.get_json()
+    item = r.get_json()["item"]
+    assert item["description"] == "Updated hinge"
+    assert item["cost"] == 12.5
+    assert item["csi_spec_section"] == "104400"
+    assert item["csi_display"] == "10 44 00"
+    assert item["mounting_type"] == "Recessed"
+
+    listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&limit=50")
+    hit = next(x for x in listed.get_json()["items"] if x["id"] == catalog_rows[0])
+    assert hit["description"] == "Updated hinge"
+
+
+def test_patch_material_price_rejects_blank_item(client, catalog_rows):
+    r = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={"item": ""},
+    )
+    assert r.status_code == 400

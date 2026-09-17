@@ -99,6 +99,183 @@
 		return row.size_display || "—";
 	}
 
+	var detailItem = null;
+	var detailEditing = false;
+
+	function escHtml(s) {
+		return String(s == null ? "" : s)
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;");
+	}
+
+	function dash(v) {
+		if (v == null || v === "") return "—";
+		return String(v);
+	}
+
+	function moneyText(v) {
+		if (v == null || v === "") return "—";
+		var n = Number(v);
+		return isNaN(n) ? String(v) : "$" + n.toFixed(2);
+	}
+
+	function hoursText(v) {
+		if (v == null || v === "") return "—";
+		var n = Number(v);
+		if (isNaN(n)) return String(v);
+		return n.toLocaleString(undefined, { maximumFractionDigits: 4 }) + (n === 1 ? " hr" : " hrs");
+	}
+
+	function detailModal() {
+		var el = document.getElementById("usis-mat-detail-modal");
+		if (!el || typeof bootstrap === "undefined" || !bootstrap.Modal) return null;
+		return bootstrap.Modal.getOrCreateInstance(el);
+	}
+
+	function setDetailMode(editing) {
+		detailEditing = !!editing;
+		var view = document.getElementById("usis-mat-detail-view");
+		var form = document.getElementById("usis-mat-detail-form");
+		var editBtn = document.getElementById("usis-mat-detail-edit");
+		var saveBtn = document.getElementById("usis-mat-detail-save");
+		var cancelBtn = document.getElementById("usis-mat-detail-cancel");
+		var closeBtn = document.getElementById("usis-mat-detail-close");
+		if (view) view.classList.toggle("d-none", detailEditing);
+		if (form) form.classList.toggle("d-none", !detailEditing);
+		if (editBtn) editBtn.classList.toggle("d-none", detailEditing);
+		if (saveBtn) saveBtn.classList.toggle("d-none", !detailEditing);
+		if (cancelBtn) cancelBtn.classList.toggle("d-none", !detailEditing);
+		if (closeBtn) closeBtn.classList.toggle("d-none", detailEditing);
+	}
+
+	function inputVal(id) {
+		var el = document.getElementById(id);
+		return el ? el.value : "";
+	}
+
+	function fillDetailForm(item) {
+		var map = {
+			"usis-mat-edit-manufacturer": item.manufacturer,
+			"usis-mat-edit-item": item.item,
+			"usis-mat-edit-category": item.category,
+			"usis-mat-edit-csi": item.csi_display || item.csi_spec_section,
+			"usis-mat-edit-description": item.description,
+			"usis-mat-edit-mounting": item.mounting_type,
+			"usis-mat-edit-width": item.size_width_in,
+			"usis-mat-edit-height": item.size_height_in,
+			"usis-mat-edit-cost": item.cost,
+			"usis-mat-edit-labor": item.labor_per,
+			"usis-mat-edit-uom": item.unit_of_measure,
+			"usis-mat-edit-currency": item.currency,
+		};
+		Object.keys(map).forEach(function (id) {
+			var el = document.getElementById(id);
+			if (el) el.value = map[id] == null ? "" : String(map[id]);
+		});
+	}
+
+	function renderDetailView(item) {
+		var view = document.getElementById("usis-mat-detail-view");
+		var title = document.getElementById("usis-mat-detail-title");
+		if (title) title.textContent = item.item ? String(item.item) : "Material";
+		if (!view) return;
+		var division = item.csi_display || item.csi_spec_section || "—";
+		if (item.csi_title) division = division + " — " + item.csi_title;
+		var rows = [
+			["Item", dash(item.item)],
+			["Manufacturer", dash(item.manufacturer)],
+			["Category", dash(item.category)],
+			["Division", division],
+			["CSI section", dash(item.csi_spec_section)],
+			["Size", dash(item.size_display)],
+			["Width (in)", dash(item.size_width_in)],
+			["Height (in)", dash(item.size_height_in)],
+			["Sheet area (sf)", dash(item.sheet_area_sf)],
+			["Description", dash(item.description)],
+			["Mounting", dash(item.mounting_type)],
+			["Cost", moneyText(item.cost)],
+			["Labor", hoursText(item.labor_per)],
+			["UOM", dash(item.unit_of_measure)],
+			["Currency", dash(item.currency)],
+			["Updated", dash(item.updated_at)],
+			["Created", dash(item.created_at)],
+		];
+		view.innerHTML =
+			'<dl class="row mb-0">' +
+			rows
+				.map(function (pair) {
+					return (
+						'<dt class="col-sm-4 col-lg-3 text-muted small">' +
+						escHtml(pair[0]) +
+						'</dt><dd class="col-sm-8 col-lg-9">' +
+						escHtml(pair[1]) +
+						"</dd>"
+					);
+				})
+				.join("") +
+			"</dl>";
+		fillDetailForm(item);
+	}
+
+	function openDetail(row) {
+		if (!row || !row.id) return;
+		detailItem = row;
+		setDetailMode(false);
+		renderDetailView(row);
+		var modal = detailModal();
+		if (modal) modal.show();
+		jsonFetch(apiBase() + "/api/v1/material-prices/" + encodeURIComponent(row.id))
+			.then(function (d) {
+				if (!d || !d.item || !detailItem || d.item.id !== String(detailItem.id)) return;
+				detailItem = d.item;
+				if (!detailEditing) renderDetailView(detailItem);
+				else fillDetailForm(detailItem);
+			})
+			.catch(function () {});
+	}
+
+	function collectDetailEdits() {
+		return {
+			manufacturer: inputVal("usis-mat-edit-manufacturer"),
+			item: inputVal("usis-mat-edit-item"),
+			category: inputVal("usis-mat-edit-category"),
+			csi_spec_section: inputVal("usis-mat-edit-csi"),
+			description: inputVal("usis-mat-edit-description"),
+			mounting_type: inputVal("usis-mat-edit-mounting"),
+			size_width_in: inputVal("usis-mat-edit-width"),
+			size_height_in: inputVal("usis-mat-edit-height"),
+			cost: inputVal("usis-mat-edit-cost"),
+			labor_per: inputVal("usis-mat-edit-labor"),
+			unit_of_measure: inputVal("usis-mat-edit-uom"),
+			currency: inputVal("usis-mat-edit-currency"),
+		};
+	}
+
+	function saveDetail() {
+		if (!detailItem || !detailItem.id) return;
+		var saveBtn = document.getElementById("usis-mat-detail-save");
+		if (saveBtn) saveBtn.disabled = true;
+		jsonFetch(apiBase() + "/api/v1/material-prices/" + encodeURIComponent(detailItem.id), {
+			method: "PATCH",
+			body: JSON.stringify(collectDetailEdits()),
+		})
+			.then(function (d) {
+				detailItem = d.item || detailItem;
+				setDetailMode(false);
+				renderDetailView(detailItem);
+				notifyOk("Saved catalog item.");
+				return loadFacets().then(refreshCatalog);
+			})
+			.catch(function (e) {
+				notifyErr(String(e.message || e));
+			})
+			.then(function () {
+				if (saveBtn) saveBtn.disabled = false;
+			});
+	}
+
 	function setStatus(text) {
 		var el = document.getElementById("usis-mat-status");
 		if (el) el.textContent = text || "";
@@ -367,6 +544,23 @@
 				field: "item",
 				width: 110,
 				headerFilter: columnFilter("item"),
+				formatter: function (cell) {
+					var v = cell.getValue();
+					if (v == null || v === "") return "—";
+					var btn = document.createElement("button");
+					btn.type = "button";
+					btn.className = "btn btn-link p-0 text-start usis-mat-item-open";
+					btn.textContent = String(v);
+					btn.addEventListener("mousedown", function (e) {
+						e.stopPropagation();
+					});
+					btn.addEventListener("click", function (e) {
+						e.stopPropagation();
+						e.preventDefault();
+						openDetail(cell.getRow().getData());
+					});
+					return btn;
+				},
 			},
 			{
 				title: "Division",
@@ -744,6 +938,32 @@
 		}
 		if (bulk) bulk.addEventListener("click", openBulkModal);
 		if (apply) apply.addEventListener("click", applyBulk);
+		var editBtn = document.getElementById("usis-mat-detail-edit");
+		var saveBtn = document.getElementById("usis-mat-detail-save");
+		var cancelBtn = document.getElementById("usis-mat-detail-cancel");
+		if (editBtn) {
+			editBtn.addEventListener("click", function () {
+				if (!detailItem) return;
+				fillDetailForm(detailItem);
+				setDetailMode(true);
+				var first = document.getElementById("usis-mat-edit-item");
+				if (first) first.focus();
+			});
+		}
+		if (saveBtn) saveBtn.addEventListener("click", saveDetail);
+		var detailForm = document.getElementById("usis-mat-detail-form");
+		if (detailForm) {
+			detailForm.addEventListener("submit", function (ev) {
+				ev.preventDefault();
+				saveDetail();
+			});
+		}
+		if (cancelBtn) {
+			cancelBtn.addEventListener("click", function () {
+				setDetailMode(false);
+				if (detailItem) renderDetailView(detailItem);
+			});
+		}
 		var allMatching = document.getElementById("usis-mat-bulk-all-matching");
 		if (allMatching) allMatching.addEventListener("change", updateSelectionUi);
 		var valueEl = document.getElementById("usis-mat-bulk-value");

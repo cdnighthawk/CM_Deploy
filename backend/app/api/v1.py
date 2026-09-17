@@ -5058,11 +5058,36 @@ def _coerce_material_bulk_value(field: str, value: Any) -> Any:
             raise ApiError(f"{field} cannot be blank", 400)
         limits = {"manufacturer": 120, "item": 120, "unit_of_measure": 20}
         return text[: limits[field]]
+    if field == "currency":
+        text = (str(value).strip() if value is not None else "") or ""
+        if not text:
+            raise ApiError("currency cannot be blank", 400)
+        return text[:3].upper()
     if value in (None, ""):
         return None
     text = str(value).strip()
     limits = {"category": 120, "description": 4000, "mounting_type": 120}
     return text[: limits.get(field, 120)] or None
+
+
+_MATERIAL_PATCH_FIELDS = _MATERIAL_BULK_FIELDS | {"currency"}
+
+
+def _material_price_detail(m: MaterialPrice) -> dict[str, Any]:
+    out = _material_price_public(m)
+    out["created_at"] = m.created_at.isoformat() if m.created_at else None
+    out["updated_at"] = m.updated_at.isoformat() if m.updated_at else None
+    return out
+
+
+def _load_material_price(price_id: str) -> tuple[MaterialPrice | None, tuple[Any, int] | None]:
+    pid = _parse_uuid_param(price_id)
+    if not pid:
+        return None, (_jsonify({"error": "invalid material id"}), 400)
+    row = db.session.get(MaterialPrice, pid)
+    if row is None:
+        return None, (_jsonify({"error": "material not found"}), 404)
+    return row, None
 
 
 def _wage_rate_public(w: WageRate) -> dict[str, Any]:
@@ -6338,6 +6363,49 @@ def bulk_patch_material_prices():
             "entity": "material_prices",
         }
     )
+
+
+@bp.get("/material-prices/<price_id>")
+def get_material_price(price_id: str):
+    """One catalog row, including timestamps."""
+    row, err = _load_material_price(price_id)
+    if err:
+        return err
+    return _jsonify({"item": _material_price_detail(row), "entity": "material_price"})
+
+
+@bp.patch("/material-prices/<price_id>")
+def patch_material_price(price_id: str):
+    """Update fields on one catalog row."""
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    if not (
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    ):
+        return _jsonify({"error": "catalog edits require estimate or user admin write access"}), 403
+    row, err = _load_material_price(price_id)
+    if err:
+        return err
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    updates = {k: v for k, v in body.items() if k in _MATERIAL_PATCH_FIELDS}
+    if not updates:
+        return _jsonify({"error": "no editable fields in body"}), 400
+    try:
+        for field, value in updates.items():
+            setattr(row, field, _coerce_material_bulk_value(field, value))
+    except ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return _jsonify({"error": "that manufacturer and item combination already exists"}), 409
+    return _jsonify({"item": _material_price_detail(row), "ok": True, "entity": "material_price"})
 
 
 @bp.get("/cost-suggestions/material")

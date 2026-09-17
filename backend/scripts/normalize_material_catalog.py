@@ -42,6 +42,7 @@ def _should_parse_size(row) -> bool:
             "bulletin",
             "wall covering",
             "wall panel",
+            "rigid sheet",
         )
     )
 

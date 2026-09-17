@@ -1,6 +1,7 @@
 """Normalize material_pricing.category into stable product-type labels."""
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .csi_spec import digits_from_csi
@@ -13,6 +14,7 @@ TACKBOARD = "Tackboard"
 BULLETIN_BOARD = "Bulletin Board"
 DISPLAY_CASE = "Display Case"
 MARKERBOARD_ACCESSORY = "Markerboard Accessory"
+RIGID_SHEET_WALL_PROTECTION = "Rigid Sheet Wall Protection"
 
 _PLURAL_MAP = {
     "tackboards": TACKBOARD,
@@ -21,6 +23,8 @@ _PLURAL_MAP = {
     "markerboard accessories": MARKERBOARD_ACCESSORY,
 }
 
+_CS_THICKNESS_SKU = re.compile(r"^cs-\.(?:030|040|060|075)-", re.I)
+
 
 def _blob(*parts: str | None) -> str:
     return " ".join(p for p in parts if (p or "").strip()).lower()
@@ -28,6 +32,38 @@ def _blob(*parts: str | None) -> str:
 
 def _is_visual_display(csi_spec_section: str | None) -> bool:
     return digits_from_csi(csi_spec_section) == VISUAL_DISPLAY_DIGITS
+
+
+def _is_rigid_sheet_wall_protection(
+    category: str | None,
+    *,
+    description: str | None,
+    item: str | None,
+) -> bool:
+    item_l = (item or "").strip().lower()
+    cat = (category or "").strip().lower()
+    product = _blob(item, description)
+    if "stainless steel wall covering" in product:
+        return False
+    if "trim" in item_l or cat == "trim":
+        return False
+    if "aluminum trim" in product or "rigid sheet trim" in product:
+        return False
+    if "top cap for" in product or "divider bar for" in product:
+        return False
+    if "kickplate" in product or "door edge protector" in product:
+        return False
+    if "palladium rigid sheet" in product or "rolled palladium" in product or "rolled-palladium-rigid-sheet" in product:
+        return True
+    if "acrovyn-wc-" in item_l or "acrovynwallcovering" in item_l.replace(" ", "").replace("_", ""):
+        return True
+    if "acrovyn-by-design" in item_l:
+        return True
+    if _CS_THICKNESS_SKU.match(item_l):
+        return True
+    if "acrovyn wall covering" in product:
+        return True
+    return False
 
 
 def recode_category(
@@ -49,6 +85,11 @@ def recode_category(
             return "Handrail"
         if has_cr and not has_hr:
             return "Crash Rail"
+
+    if current == RIGID_SHEET_WALL_PROTECTION or _is_rigid_sheet_wall_protection(
+        current, description=description, item=item
+    ):
+        return RIGID_SHEET_WALL_PROTECTION
 
     mapped = _PLURAL_MAP.get(current.lower())
     if mapped:

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import uuid
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
@@ -11,7 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from flask import Blueprint, Response, current_app, jsonify, request, send_file, stream_with_context
-from sqlalchemy import and_, func, literal, or_, select
+from sqlalchemy import String, and_, cast, func, literal, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
@@ -4839,13 +4840,32 @@ def delete_project_pay_application(project_id: str, pay_application_id: str):
         return _pay_app_err(exc)
 
 
+def _csi_extras(raw: str | None) -> dict[str, Any]:
+    from ..csi_catalog import DIVISION_NAMES, title_for_code
+    from ..csi_spec import digits_from_csi, format_csi_display
+
+    digits = digits_from_csi(raw)
+    div = digits[:2] if digits else None
+    return {
+        "csi_display": format_csi_display(raw),
+        "csi_title": title_for_code(raw),
+        "csi_division": div,
+        "csi_division_name": DIVISION_NAMES.get(div) if div else None,
+    }
+
+
 def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
+    extra = _csi_extras(m.csi_spec_section)
     return {
         "id": str(m.id),
         "manufacturer": m.manufacturer,
         "item": m.item,
         "category": m.category,
         "csi_spec_section": m.csi_spec_section,
+        "csi_display": extra["csi_display"],
+        "csi_title": extra["csi_title"],
+        "csi_division": extra["csi_division"],
+        "csi_division_name": extra["csi_division_name"],
         "description": m.description,
         "mounting_type": m.mounting_type,
         "cost": _num_or_none(m.cost),
@@ -4855,27 +4875,136 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
     }
 
 
-def _material_prices_query(q: str, manufacturer: str, csi_spec_section: str | None = None):
-    from ..csi_spec import normalize_csi_spec_section
+def _material_price_list_filters() -> dict[str, Any]:
+    return {
+        "q": (request.args.get("q") or "").strip(),
+        "manufacturer": (request.args.get("manufacturer") or "").strip(),
+        "csi_spec_section": (request.args.get("csi_spec_section") or "").strip() or None,
+        "csi_division": (request.args.get("csi_division") or "").strip() or None,
+        "item": (request.args.get("item") or "").strip(),
+        "category": (request.args.get("category") or "").strip(),
+        "description": (request.args.get("description") or "").strip(),
+        "mounting_type": (request.args.get("mounting_type") or "").strip(),
+        "unit_of_measure": (request.args.get("unit_of_measure") or "").strip(),
+        "cost": (request.args.get("cost") or "").strip(),
+        "labor_per": (request.args.get("labor_per") or "").strip(),
+    }
+
+
+def _ilike_contains(stmt, column, value: str):
+    if value:
+        stmt = stmt.where(column.ilike(f"%{value}%"))
+    return stmt
+
+
+def _material_prices_query(
+    q: str,
+    manufacturer: str,
+    csi_spec_section: str | None = None,
+    csi_division: str | None = None,
+    *,
+    item: str = "",
+    category: str = "",
+    description: str = "",
+    mounting_type: str = "",
+    unit_of_measure: str = "",
+    cost: str = "",
+    labor_per: str = "",
+):
+    from ..csi_catalog import DIVISION_NAMES
+    from ..csi_spec import digits_from_csi, normalize_csi_spec_section
 
     stmt = select(MaterialPrice)
-    if manufacturer:
-        stmt = stmt.where(MaterialPrice.manufacturer.ilike(f"%{manufacturer}%"))
+    stmt = _ilike_contains(stmt, MaterialPrice.manufacturer, manufacturer)
+    stmt = _ilike_contains(stmt, MaterialPrice.item, item)
+    stmt = _ilike_contains(stmt, MaterialPrice.category, category)
+    stmt = _ilike_contains(stmt, MaterialPrice.description, description)
+    stmt = _ilike_contains(stmt, MaterialPrice.mounting_type, mounting_type)
+    stmt = _ilike_contains(stmt, MaterialPrice.unit_of_measure, unit_of_measure)
+    if cost:
+        stmt = stmt.where(cast(MaterialPrice.cost, String).ilike(f"%{cost}%"))
+    if labor_per:
+        stmt = stmt.where(cast(MaterialPrice.labor_per, String).ilike(f"%{labor_per}%"))
     if csi_spec_section:
-        norm = normalize_csi_spec_section(csi_spec_section)
-        if norm:
+        norm = normalize_csi_spec_section(csi_spec_section) or digits_from_csi(csi_spec_section)
+        digits = re.sub(r"\D", "", str(csi_spec_section).strip())
+        if norm and len(norm) == 6:
             stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
+        elif 2 <= len(digits) <= 5:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.like(f"{digits}%"))
+        else:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.ilike(f"%{csi_spec_section}%"))
+    if csi_division:
+        div_digits = re.sub(r"\D", "", str(csi_division).strip())
+        if len(div_digits) >= 1:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.like(f"{div_digits[:2]}%"))
+        else:
+            needle = str(csi_division).strip().lower()
+            matches = [k for k, v in DIVISION_NAMES.items() if needle in (v or "").lower()]
+            if matches:
+                stmt = stmt.where(or_(*[MaterialPrice.csi_spec_section.like(f"{k}%") for k in matches]))
+            else:
+                stmt = stmt.where(MaterialPrice.csi_spec_section.ilike(f"%{csi_division}%"))
     if q:
         like = f"%{q}%"
-        stmt = stmt.where(
-            or_(
-                MaterialPrice.item.ilike(like),
-                MaterialPrice.manufacturer.ilike(like),
-                MaterialPrice.description.ilike(like),
-                MaterialPrice.category.ilike(like),
-            )
-        )
+        clauses = [
+            MaterialPrice.item.ilike(like),
+            MaterialPrice.manufacturer.ilike(like),
+            MaterialPrice.description.ilike(like),
+            MaterialPrice.category.ilike(like),
+            MaterialPrice.csi_spec_section.ilike(like),
+        ]
+        q_digits = re.sub(r"\D", "", q)
+        if 2 <= len(q_digits) <= 6:
+            clauses.append(MaterialPrice.csi_spec_section.ilike(f"{q_digits}%"))
+        stmt = stmt.where(or_(*clauses))
     return stmt.order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
+
+
+_MATERIAL_BULK_FIELDS = frozenset(
+    {
+        "manufacturer",
+        "item",
+        "category",
+        "csi_spec_section",
+        "description",
+        "mounting_type",
+        "cost",
+        "labor_per",
+        "unit_of_measure",
+    }
+)
+
+
+def _coerce_material_bulk_value(field: str, value: Any) -> Any:
+    from ..csi_spec import digits_from_csi, normalize_csi_spec_section
+
+    if field in ("cost", "labor_per"):
+        if value in (None, ""):
+            return None
+        try:
+            return Decimal(str(value).strip())
+        except Exception as exc:
+            raise ApiError(f"{field} must be a number", 400) from exc
+    if field == "csi_spec_section":
+        if value in (None, ""):
+            return None
+        raw = str(value).strip()
+        norm = normalize_csi_spec_section(raw) or digits_from_csi(raw)
+        if not norm:
+            raise ApiError("CSI must look like 08 71 00", 400)
+        return norm
+    if field in ("manufacturer", "item", "unit_of_measure"):
+        text = (str(value).strip() if value is not None else "") or ""
+        if not text:
+            raise ApiError(f"{field} cannot be blank", 400)
+        limits = {"manufacturer": 120, "item": 120, "unit_of_measure": 20}
+        return text[: limits[field]]
+    if value in (None, ""):
+        return None
+    text = str(value).strip()
+    limits = {"category": 120, "description": 4000, "mounting_type": 120}
+    return text[: limits.get(field, 120)] or None
 
 
 def _wage_rate_public(w: WageRate) -> dict[str, Any]:
@@ -5871,10 +6000,8 @@ def list_material_prices():
         offset = 0
     limit = max(1, min(limit, 500))
     offset = max(0, offset)
-    q = (request.args.get("q") or "").strip()
-    manufacturer = (request.args.get("manufacturer") or "").strip()
-    csi = (request.args.get("csi_spec_section") or "").strip() or None
-    base = _material_prices_query(q, manufacturer, csi)
+    filters = _material_price_list_filters()
+    base = _material_prices_query(**filters)
     total = db.session.scalar(select(func.count()).select_from(base.subquery())) or 0
     rows = db.session.scalars(base.offset(offset).limit(limit)).all()
     return _jsonify(
@@ -5902,6 +6029,127 @@ def list_material_price_manufacturers():
     limit = max(1, min(limit, 500))
     names = [r for r in db.session.scalars(stmt.limit(limit)).all() if r]
     return _jsonify({"items": names, "entity": "material_manufacturers"})
+
+
+@bp.get("/material-prices/csi-sections")
+def list_material_price_csi_sections():
+    """Distinct CSI sections and divisions present in the material catalog."""
+    rows = db.session.scalars(
+        select(MaterialPrice.csi_spec_section)
+        .where(MaterialPrice.csi_spec_section.is_not(None))
+        .where(MaterialPrice.csi_spec_section != "")
+        .distinct()
+        .order_by(MaterialPrice.csi_spec_section.asc())
+    ).all()
+    items: list[dict[str, Any]] = []
+    divisions: dict[str, str | None] = {}
+    for raw in rows:
+        extra = _csi_extras(raw)
+        items.append(
+            {
+                "csi_spec_section": raw,
+                "csi_display": extra["csi_display"] or raw,
+                "csi_title": extra["csi_title"],
+                "csi_division": extra["csi_division"],
+                "csi_division_name": extra["csi_division_name"],
+            }
+        )
+        if extra["csi_division"]:
+            divisions[extra["csi_division"]] = extra["csi_division_name"]
+    return _jsonify(
+        {
+            "items": items,
+            "divisions": [
+                {"csi_division": k, "csi_division_name": v} for k, v in sorted(divisions.items())
+            ],
+            "entity": "material_csi_sections",
+        }
+    )
+
+
+@bp.get("/material-prices/ids")
+def list_material_price_ids():
+    """IDs matching the same filters as ``GET /material-prices`` (cap 5000)."""
+    filters = _material_price_list_filters()
+    base = _material_prices_query(**filters)
+    total = db.session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    ids = [str(r.id) for r in db.session.scalars(base.limit(5000)).all()]
+    return _jsonify(
+        {
+            "ids": ids,
+            "total": int(total),
+            "truncated": int(total) > len(ids),
+            "entity": "material_price_ids",
+        }
+    )
+
+
+@bp.post("/material-prices/bulk")
+def bulk_patch_material_prices():
+    """Set one field on many catalog rows (filter → select → bulk change)."""
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    if not (
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    ):
+        return _jsonify({"error": "catalog edits require estimate or user admin write access"}), 403
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    field = str(body.get("field") or "").strip()
+    if field not in _MATERIAL_BULK_FIELDS:
+        return _jsonify({"error": "field is not bulk-editable"}), 400
+    try:
+        new_value = _coerce_material_bulk_value(field, body.get("value"))
+    except ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    raw_ids = body.get("ids") or []
+    if not isinstance(raw_ids, list) or not raw_ids:
+        return _jsonify({"error": "ids must be a non-empty list"}), 400
+    if len(raw_ids) > 2000:
+        return _jsonify({"error": "bulk change is limited to 2000 rows"}), 400
+    parsed: list[uuid.UUID] = []
+    skipped: list[dict[str, str]] = []
+    seen: set[uuid.UUID] = set()
+    for raw in raw_ids:
+        pid = _parse_uuid_param(str(raw) if raw is not None else "")
+        if not pid:
+            skipped.append({"id": str(raw), "error": "invalid id"})
+            continue
+        if pid in seen:
+            continue
+        seen.add(pid)
+        parsed.append(pid)
+    rows = db.session.scalars(select(MaterialPrice).where(MaterialPrice.id.in_(parsed))).all()
+    by_id = {row.id: row for row in rows}
+    updated: list[dict[str, Any]] = []
+    for pid in parsed:
+        row = by_id.get(pid)
+        if row is None:
+            skipped.append({"id": str(pid), "error": "not found"})
+            continue
+        setattr(row, field, new_value)
+        updated.append(_material_price_public(row))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return _jsonify({"error": "that manufacturer and item combination already exists"}), 409
+    return _jsonify(
+        {
+            "ok": True,
+            "field": field,
+            "value": new_value if field not in ("cost", "labor_per") else _num_or_none(new_value),
+            "updated": updated,
+            "updated_count": len(updated),
+            "failed": skipped,
+            "failed_count": len(skipped),
+            "entity": "material_prices",
+        }
+    )
 
 
 @bp.get("/cost-suggestions/material")

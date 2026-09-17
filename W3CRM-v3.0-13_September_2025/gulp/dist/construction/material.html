@@ -104,6 +104,102 @@
 			white-space: normal;
 		}
 		#usis-mat-tabulator .usis-mat-item-open:hover { text-decoration: underline; }
+		#usis-mat-cols-modal .modal-content { overflow: hidden; }
+		#usis-mat-cols-modal .modal-header {
+			border-bottom: 0;
+			padding: 1rem 1.25rem 0.35rem;
+		}
+		#usis-mat-cols-modal .modal-title { font-size: 1.25rem; font-weight: 600; }
+		#usis-mat-cols-modal .usis-mat-cols-hint {
+			padding: 0 1.25rem 0.75rem;
+			color: #667085;
+			font-size: 0.8125rem;
+		}
+		#usis-mat-cols-modal .modal-body { padding: 0; }
+		#usis-mat-cols-modal .usis-mat-cols-split {
+			display: grid;
+			grid-template-columns: 240px 1fr;
+			min-height: 420px;
+			border-top: 1px solid #e4e7ec;
+		}
+		#usis-mat-cols-available {
+			background: #eef0f3;
+			padding: 1rem 1.15rem 1.25rem;
+			overflow: auto;
+			max-height: 62vh;
+		}
+		.usis-mat-cols-group + .usis-mat-cols-group { margin-top: 1.15rem; }
+		.usis-mat-cols-group-title {
+			font-size: 0.75rem;
+			font-weight: 600;
+			color: #667085;
+			margin-bottom: 0.45rem;
+		}
+		.usis-mat-cols-check {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin: 0 0 0.45rem;
+			font-size: 0.875rem;
+			cursor: pointer;
+		}
+		.usis-mat-cols-check input { margin: 0; flex: 0 0 auto; }
+		#usis-mat-cols-selected-wrap {
+			padding: 1rem 1.25rem 1.25rem;
+			overflow: auto;
+			max-height: 62vh;
+		}
+		.usis-mat-cols-selected-head {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 0.75rem;
+			margin-bottom: 0.85rem;
+		}
+		.usis-mat-cols-selected-head h2 {
+			font-size: 1.05rem;
+			font-weight: 600;
+			margin: 0;
+		}
+		.usis-mat-cols-selected-head span {
+			font-size: 0.8125rem;
+			color: #98a2b3;
+			white-space: nowrap;
+		}
+		.usis-mat-col-chip {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.75rem;
+			border: 1px solid #d0d5dd;
+			border-radius: 0.4rem;
+			padding: 0.55rem 0.75rem;
+			margin-bottom: 0.5rem;
+			background: #fff;
+			cursor: grab;
+			user-select: none;
+		}
+		.usis-mat-col-chip.is-dragging { opacity: 0.45; }
+		.usis-mat-col-chip.is-drop-target { border-color: #1f4e5f; }
+		.usis-mat-col-grip {
+			display: grid;
+			grid-template-columns: 3px 3px;
+			gap: 3px;
+			width: 9px;
+			flex: 0 0 auto;
+		}
+		.usis-mat-col-grip span {
+			width: 3px;
+			height: 3px;
+			border-radius: 50%;
+			background: #98a2b3;
+		}
+		#usis-mat-cols-modal .modal-footer { border-top: 1px solid #e4e7ec; }
+		#usis-mat-cols-modal .btn-link { text-decoration: none; }
+		@media (max-width: 767.98px) {
+			#usis-mat-cols-modal .usis-mat-cols-split { grid-template-columns: 1fr; }
+			#usis-mat-cols-available { max-height: 28vh; }
+		}
 	</style>
 	<!-- End - Style CSS -->
 
@@ -597,6 +693,8 @@
                                             <button type="button" id="usis-mat-bulk" class="dropdown-item" disabled>Bulk change</button>
                                             <button type="button" id="usis-mat-delete" class="dropdown-item text-danger" disabled>Delete</button>
                                             <div class="dropdown-divider"></div>
+                                            <button type="button" id="usis-mat-columns" class="dropdown-item">Customize columns</button>
+                                            <div class="dropdown-divider"></div>
                                             <button type="button" id="usis-mat-refresh" class="dropdown-item">Refresh</button>
                                             <button type="button" id="usis-mat-prev" class="dropdown-item" disabled>Prev</button>
                                             <button type="button" id="usis-mat-next" class="dropdown-item" disabled>Next</button>
@@ -744,6 +842,34 @@
                                             <button type="button" class="btn btn-outline-secondary d-none" id="usis-mat-detail-cancel">Cancel</button>
                                             <button type="button" class="btn btn-outline-primary" id="usis-mat-detail-edit">Edit</button>
                                             <button type="button" class="btn btn-primary d-none" id="usis-mat-detail-save">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal fade" id="usis-mat-cols-modal" tabindex="-1" aria-labelledby="usis-mat-cols-title" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title" id="usis-mat-cols-title">Customize Catalog Columns</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <p class="usis-mat-cols-hint mb-0">Changes will only apply to you.</p>
+                                        <div class="modal-body">
+                                            <div class="usis-mat-cols-split">
+                                                <div id="usis-mat-cols-available"></div>
+                                                <div id="usis-mat-cols-selected-wrap">
+                                                    <div class="usis-mat-cols-selected-head">
+                                                        <h2 id="usis-mat-cols-count">0 / 0 Selected Columns</h2>
+                                                        <span>(Drag to reorder)</span>
+                                                    </div>
+                                                    <div id="usis-mat-cols-selected"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-link text-secondary me-auto" id="usis-mat-cols-reset">Reset to default</button>
+                                            <button type="button" class="btn btn-link text-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="button" class="btn btn-primary" id="usis-mat-cols-apply" disabled>Apply</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1783,7 +1909,7 @@
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
-    <script src="assets/js/construction-material.js?v=20260917k"></script>
+    <script src="assets/js/construction-material.js?v=20260917n"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	    

@@ -774,62 +774,236 @@
 		return ordered;
 	}
 
-	function fillColumnMenu() {
-		var menu = document.getElementById("usis-mat-columns-menu");
-		if (!menu || !catalogTable) return;
-		menu.innerHTML = "";
+	var COLUMN_GROUPS = [
+		{ title: "Catalog", fields: ["manufacturer", "item", "description"] },
+		{ title: "Classification", fields: ["csi_display", "category", "size_display", "mounting_type"] },
+		{ title: "Pricing", fields: ["cost", "labor_production", "labor_per", "unit_of_measure"] },
+	];
+	var columnDraft = { selected: [], baseline: "" };
+	var columnDragField = null;
+
+	function columnMeta() {
+		var byField = {};
+		dataColumnDefs().forEach(function (d) {
+			if (d.field) byField[d.field] = { field: d.field, title: d.title || d.field };
+		});
+		return byField;
+	}
+
+	function allColumnFields() {
+		return dataColumnDefs()
+			.map(function (d) {
+				return d.field;
+			})
+			.filter(Boolean);
+	}
+
+	function visibleColumnFields() {
+		if (!catalogTable) return allColumnFields();
+		var fields = [];
 		catalogTable.getColumns().forEach(function (col) {
 			var def = col.getDefinition() || {};
 			if (!def.field) return;
-			var wrap = document.createElement("label");
-			wrap.className = "dropdown-item d-flex align-items-center gap-2 mb-0";
-			var box = document.createElement("input");
-			box.type = "checkbox";
-			box.className = "form-check-input mt-0";
-			box.checked = col.isVisible();
-			box.setAttribute("data-field", def.field);
-			box.addEventListener("change", function () {
-				if (!box.checked) {
-					var visible = catalogTable.getColumns().filter(function (c) {
-						var d = c.getDefinition() || {};
-						return d.field && c.isVisible();
-					});
-					if (visible.length <= 1) {
-						box.checked = true;
-						notifyErr("Keep at least one column visible.");
-						return;
-					}
-					col.hide();
-				} else {
-					col.show();
-				}
-				saveColumnLayout();
-			});
-			var label = document.createElement("span");
-			label.textContent = def.title || def.field;
-			wrap.appendChild(box);
-			wrap.appendChild(label);
-			menu.appendChild(wrap);
+			if (col.isVisible()) fields.push(def.field);
 		});
-		var divider = document.createElement("div");
-		divider.className = "dropdown-divider";
-		menu.appendChild(divider);
-		var reset = document.createElement("button");
-		reset.type = "button";
-		reset.className = "dropdown-item";
-		reset.textContent = "Reset column layout";
-		reset.addEventListener("click", resetColumnLayout);
-		menu.appendChild(reset);
+		return fields.length ? fields : allColumnFields();
 	}
 
-	function resetColumnLayout() {
+	function draftKey(selected) {
+		return (selected || []).join("|");
+	}
+
+	function setColumnApplyEnabled() {
+		var apply = document.getElementById("usis-mat-cols-apply");
+		if (!apply) return;
+		apply.disabled = !columnDraft.selected.length || draftKey(columnDraft.selected) === columnDraft.baseline;
+	}
+
+	function toggleDraftColumn(field, on) {
+		var ix = columnDraft.selected.indexOf(field);
+		if (on && ix < 0) columnDraft.selected.push(field);
+		if (!on && ix >= 0) {
+			if (columnDraft.selected.length <= 1) {
+				notifyErr("Keep at least one column visible.");
+				renderColumnCustomizer();
+				return;
+			}
+			columnDraft.selected.splice(ix, 1);
+		}
+		renderColumnCustomizer();
+	}
+
+	function moveDraftColumn(fromField, toField) {
+		if (!fromField || fromField === toField) return;
+		var from = columnDraft.selected.indexOf(fromField);
+		var to = columnDraft.selected.indexOf(toField);
+		if (from < 0 || to < 0) return;
+		var moved = columnDraft.selected.splice(from, 1)[0];
+		columnDraft.selected.splice(to, 0, moved);
+		renderColumnCustomizer();
+	}
+
+	function gripHtml() {
+		return (
+			'<span class="usis-mat-col-grip" aria-hidden="true">' +
+			"<span></span><span></span><span></span><span></span><span></span><span></span>" +
+			"</span>"
+		);
+	}
+
+	function groupedColumnFields() {
+		var grouped = {};
+		var leftover = [];
+		COLUMN_GROUPS.forEach(function (group) {
+			group.fields.forEach(function (field) {
+				grouped[field] = true;
+			});
+		});
+		allColumnFields().forEach(function (field) {
+			if (!grouped[field]) leftover.push(field);
+		});
+		if (!leftover.length) return COLUMN_GROUPS;
+		return COLUMN_GROUPS.concat([{ title: "Other", fields: leftover }]);
+	}
+
+	function renderColumnCustomizer() {
+		var available = document.getElementById("usis-mat-cols-available");
+		var selected = document.getElementById("usis-mat-cols-selected");
+		var count = document.getElementById("usis-mat-cols-count");
+		if (!available || !selected) return;
+		var meta = columnMeta();
+		var total = allColumnFields().length;
+		var n = columnDraft.selected.length;
+		if (count) count.textContent = n + " / " + total + " Selected Columns";
+
+		var html = "";
+		groupedColumnFields().forEach(function (group) {
+			html += '<div class="usis-mat-cols-group">';
+			html += '<div class="usis-mat-cols-group-title">' + escHtml(group.title) + "</div>";
+			group.fields.forEach(function (field) {
+				var info = meta[field];
+				if (!info) return;
+				var checked = columnDraft.selected.indexOf(field) >= 0;
+				html +=
+					'<label class="usis-mat-cols-check">' +
+					'<input type="checkbox" class="form-check-input" data-col-field="' +
+					escHtml(field) +
+					'"' +
+					(checked ? " checked" : "") +
+					">" +
+					"<span>" +
+					escHtml(info.title) +
+					"</span></label>";
+			});
+			html += "</div>";
+		});
+		available.innerHTML = html;
+		selected.innerHTML = columnDraft.selected
+			.map(function (field) {
+				var info = meta[field] || { title: field };
+				return (
+					'<div class="usis-mat-col-chip" draggable="true" data-col-field="' +
+					escHtml(field) +
+					'">' +
+					"<span>" +
+					escHtml(info.title) +
+					"</span>" +
+					gripHtml() +
+					"</div>"
+				);
+			})
+			.join("");
+
+		Array.prototype.forEach.call(available.querySelectorAll("[data-col-field]"), function (box) {
+			box.addEventListener("change", function () {
+				toggleDraftColumn(box.getAttribute("data-col-field"), box.checked);
+			});
+		});
+		Array.prototype.forEach.call(selected.querySelectorAll(".usis-mat-col-chip"), function (chip) {
+			chip.addEventListener("dragstart", function (e) {
+				columnDragField = chip.getAttribute("data-col-field");
+				chip.classList.add("is-dragging");
+				if (e.dataTransfer) {
+					e.dataTransfer.effectAllowed = "move";
+					e.dataTransfer.setData("text/plain", columnDragField);
+				}
+			});
+			chip.addEventListener("dragend", function () {
+				columnDragField = null;
+				chip.classList.remove("is-dragging");
+				Array.prototype.forEach.call(selected.querySelectorAll(".usis-mat-col-chip"), function (el) {
+					el.classList.remove("is-drop-target");
+				});
+			});
+			chip.addEventListener("dragover", function (e) {
+				e.preventDefault();
+				if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+				chip.classList.add("is-drop-target");
+			});
+			chip.addEventListener("dragleave", function () {
+				chip.classList.remove("is-drop-target");
+			});
+			chip.addEventListener("drop", function (e) {
+				e.preventDefault();
+				chip.classList.remove("is-drop-target");
+				moveDraftColumn(columnDragField, chip.getAttribute("data-col-field"));
+			});
+		});
+		setColumnApplyEnabled();
+	}
+
+	function openColumnCustomizer() {
+		hideActionsMenu();
+		columnDraft.selected = visibleColumnFields().slice();
+		columnDraft.baseline = draftKey(columnDraft.selected);
+		renderColumnCustomizer();
+		var modalEl = document.getElementById("usis-mat-cols-modal");
+		if (!modalEl) return;
+		if (typeof bootstrap !== "undefined" && bootstrap.Modal) {
+			bootstrap.Modal.getOrCreateInstance(modalEl).show();
+		}
+	}
+
+	function applyColumnDraft() {
+		if (!columnDraft.selected.length) {
+			notifyErr("Keep at least one column visible.");
+			return;
+		}
+		var widths = {};
+		if (catalogTable) {
+			catalogTable.getColumns().forEach(function (col) {
+				var def = col.getDefinition() || {};
+				if (def.field) widths[def.field] = col.getWidth();
+			});
+		}
+		var seen = {};
+		var layout = [];
+		columnDraft.selected.forEach(function (field) {
+			if (!field || seen[field]) return;
+			layout.push({ field: field, visible: true, width: widths[field] });
+			seen[field] = true;
+		});
+		allColumnFields().forEach(function (field) {
+			if (seen[field]) return;
+			layout.push({ field: field, visible: false, width: widths[field] });
+			seen[field] = true;
+		});
 		try {
-			localStorage.removeItem(COL_LAYOUT_KEY);
+			localStorage.setItem(COL_LAYOUT_KEY, JSON.stringify(layout));
 		} catch (e) {}
 		var rows = catalogTable ? catalogTable.getData() : [];
 		buildTable();
 		if (catalogTable) catalogTable.setData(rows);
-		loadFacets();
+		var modalEl = document.getElementById("usis-mat-cols-modal");
+		if (modalEl && typeof bootstrap !== "undefined" && bootstrap.Modal) {
+			var inst = bootstrap.Modal.getInstance(modalEl);
+			if (inst) inst.hide();
+		}
+	}
+
+	function resetColumnDraft() {
+		columnDraft.selected = allColumnFields().slice();
+		renderColumnCustomizer();
 	}
 
 	function buildTable() {
@@ -871,7 +1045,6 @@
 		});
 		catalogTable.on("columnMoved", function () {
 			saveColumnLayout();
-			fillColumnMenu();
 		});
 		catalogTable.on("columnResized", saveColumnLayout);
 		catalogTable.on("tableBuilt", function () {
@@ -880,9 +1053,7 @@
 				headerCb.classList.add("form-check-input", "m-0");
 				headerCb.setAttribute("aria-label", "Select all rows on this page");
 			}
-			fillColumnMenu();
 		});
-		fillColumnMenu();
 	}
 
 	function scheduleSearch() {
@@ -1089,6 +1260,18 @@
 		if (delBtn) delBtn.addEventListener("click", function () {
 			openBulkModal("delete");
 		});
+		var colsBtn = document.getElementById("usis-mat-columns");
+		if (colsBtn) {
+			colsBtn.addEventListener("click", function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				openColumnCustomizer();
+			});
+		}
+		var colsApply = document.getElementById("usis-mat-cols-apply");
+		if (colsApply) colsApply.addEventListener("click", applyColumnDraft);
+		var colsReset = document.getElementById("usis-mat-cols-reset");
+		if (colsReset) colsReset.addEventListener("click", resetColumnDraft);
 		if (apply) apply.addEventListener("click", applyBulk);
 		var fieldEl = document.getElementById("usis-mat-bulk-field");
 		if (fieldEl) fieldEl.addEventListener("change", updateSelectionUi);

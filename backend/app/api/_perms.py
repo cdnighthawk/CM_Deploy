@@ -285,6 +285,8 @@ def can_manage_directory_users(cu: CurrentUser) -> bool:
     """Whether the caller may use admin user/role directory APIs (list/edit users, assign roles)."""
     if _is_admin(cu):
         return True
+    if has_request_context() and getattr(g, "impersonation_id", None) is not None:
+        return True
     from ..permissions.access import has_module_access
 
     return has_module_access(cu, "user_admin", "admin")

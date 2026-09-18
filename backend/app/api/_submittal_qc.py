@@ -57,6 +57,19 @@ STAMP_VALUES = frozenset(STAMP_TO_STATUS)
 CHECKLIST_RESULTS = frozenset({"pass", "fail", "na", "blank"})
 AI_STATUSES = frozenset({"not_run", "queued", "complete", "failed", "overridden"})
 MIN_REVIEW_SECONDS = 180
+
+
+def _min_review_seconds() -> int:
+    try:
+        from ..tenant_settings import current_tenant_setting
+
+        raw = current_tenant_setting("ai.submittal_rubber_stamp_seconds", MIN_REVIEW_SECONDS)
+        n = int(raw)
+        return n if n > 0 else MIN_REVIEW_SECONDS
+    except Exception:
+        return MIN_REVIEW_SECONDS
+
+
 PUBLIC_TOKEN_TTL_DAYS = 14
 
 
@@ -623,7 +636,7 @@ def stamp_gate_state(s: Submittal, rev: SubmittalRevision) -> dict[str, Any]:
     duration = rev.review_duration_seconds
     if rev.review_started_at and duration is None:
         duration = int((_utcnow() - rev.review_started_at).total_seconds())
-    if not ((duration or 0) >= MIN_REVIEW_SECONDS or rev.rush_exception):
+    if not ((duration or 0) >= _min_review_seconds() or rev.rush_exception):
         unmet.append("Review duration under 180 seconds (need superintendent/PM rush exception)")
     return {"canStamp": not unmet, "unmet": unmet, "reviewDurationSeconds": duration}
 
@@ -833,7 +846,7 @@ def apply_stamp(sid: uuid.UUID, rev_id: uuid.UUID, data: Mapping[str, Any], cu: 
 
 def _rubber_stamp_suspect(rev: SubmittalRevision) -> bool:
     duration = rev.review_duration_seconds or 0
-    if duration < MIN_REVIEW_SECONDS:
+    if duration < _min_review_seconds():
         return True
     comments = [c for c in (rev.checklist_items or []) if (c.comment or "").strip()]
     dispositions = [

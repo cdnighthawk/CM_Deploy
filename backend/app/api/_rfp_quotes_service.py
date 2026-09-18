@@ -45,6 +45,18 @@ def _job_shipping_for_rfp(r: Rfp) -> dict[str, Any]:
 
 
 def quotes_mailbox() -> str:
+    try:
+        from ..models.saas import TenantSetting
+        from ..tenancy import current_organization_id, include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            with include_all_orgs():
+                row = db.session.get(TenantSetting, (oid, "mail.rfp.from_address"))
+            if row is not None and row.value_json:
+                return str(row.value_json).strip() or "quotes@gousis.com"
+    except Exception:
+        pass
     configured = ""
     try:
         configured = str(current_app.config.get("QUOTES_MAILBOX") or "").strip()
@@ -57,6 +69,18 @@ def quotes_mailbox() -> str:
 
 def quotes_from_name() -> str:
     try:
+        from ..models.saas import TenantSetting
+        from ..tenancy import current_organization_id, include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            with include_all_orgs():
+                row = db.session.get(TenantSetting, (oid, "mail.rfp.from_name"))
+            if row is not None and row.value_json:
+                return str(row.value_json).strip() or "US Interior Specialties"
+    except Exception:
+        pass
+    try:
         name = str(current_app.config.get("QUOTES_FROM_NAME") or "").strip()
     except RuntimeError:
         name = ""
@@ -64,6 +88,18 @@ def quotes_from_name() -> str:
 
 
 def quotes_bcc_self() -> bool:
+    try:
+        from ..models.saas import TenantSetting
+        from ..tenancy import current_organization_id, include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            with include_all_orgs():
+                row = db.session.get(TenantSetting, (oid, "mail.rfp.bcc_self"))
+            if row is not None and row.value_json is not None:
+                return bool(row.value_json)
+    except Exception:
+        pass
     try:
         val = current_app.config.get("RFP_MAIL_BCC_SELF")
     except RuntimeError:

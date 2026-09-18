@@ -125,6 +125,40 @@
 		});
 	}
 
+	function wireImpersonationBanner(body, base) {
+		var imp = body && body.impersonation;
+		var existing = document.getElementById("usis-impersonation-banner");
+		if (!imp || !imp.active) {
+			if (existing) existing.remove();
+			return;
+		}
+		if (!existing) {
+			existing = document.createElement("div");
+			existing.id = "usis-impersonation-banner";
+			existing.className = "usis-impersonation-banner";
+			existing.setAttribute("role", "status");
+			var wrap = document.getElementById("main-wrapper") || document.body;
+			wrap.insertBefore(existing, wrap.firstChild);
+		}
+		existing.innerHTML =
+			'<span>Viewing ' +
+			String(imp.tenant_name || "tenant").replace(/</g, "&lt;") +
+			' — </span><button type="button" class="btn btn-sm btn-light" id="usis-impersonation-end">End session</button>';
+		var btn = document.getElementById("usis-impersonation-end");
+		if (btn) {
+			btn.onclick = function () {
+				fetch(base + "/api/admin/impersonate/end", {
+					method: "POST",
+					credentials: "include",
+					headers: { Accept: "application/json", "Content-Type": "application/json" },
+					body: "{}",
+				}).then(function () {
+					window.location.href = "/admin";
+				});
+			};
+		}
+	}
+
 	function refreshSessionHeaderDisplay() {
 		var base = apiBase();
 		fetch(base + "/api/v1/auth/status", {
@@ -169,6 +203,7 @@
 				});
 				setHeaderInitials(headerInitials(u));
 				wireOrgSwitcher(body, base);
+				wireImpersonationBanner(body, base);
 			})
 			.catch(function () {
 				/* ignore */

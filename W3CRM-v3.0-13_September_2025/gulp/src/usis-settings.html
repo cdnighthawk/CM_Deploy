@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	@@include("elements/meta.html", { "fileName": "usis-settings.html" })
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
+</head>
+<body>
+	@@include("elements/preloader.html")
+	<div id="main-wrapper">
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", { "fileName": "Settings" })
+			</div>
+			<div class="container-fluid">
+				<div class="usis-page-header mb-3">
+					<div class="usis-page-header__text">
+						<span class="usis-overline">Settings</span>
+						<h1 class="h5 mb-1" id="usis-set-title">Settings</h1>
+						<p class="text-muted small mb-0" id="usis-set-lead">Company controls for this tenant. Each topic opens one form.</p>
+					</div>
+					<div class="usis-page-header__actions" id="usis-set-actions"></div>
+				</div>
+				<div class="alert d-none py-2 px-3 mb-3" id="usis-set-flash" role="status"></div>
+				<div id="usis-set-root"><p class="text-muted">Loading…</p></div>
+			</div>
+		</main>
+		@@include("elements/footer.html")
+	</div>
+	@@include("elements/script.html")
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-settings.js"></script>
+</body>
+</html>

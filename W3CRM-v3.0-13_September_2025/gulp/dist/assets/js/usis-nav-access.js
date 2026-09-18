@@ -160,8 +160,24 @@
 			.then(function (res) {
 				if (!res.ok) return;
 				var caps = (res.body && res.body.capabilities) || {};
+				var platform = !!caps.is_platform_operator;
+				document.querySelectorAll("#usis-platform-admin-nav, [data-usis-module='platform']").forEach(function (li) {
+					if (platform) {
+						li.style.display = "";
+						li.removeAttribute("aria-hidden");
+					} else {
+						li.style.display = "none";
+						li.setAttribute("aria-hidden", "true");
+					}
+				});
 				if (caps.is_superuser) return;
 				applyNav(caps.modules || {});
+				if (!platform) {
+					document.querySelectorAll("#usis-platform-admin-nav, [data-usis-module='platform']").forEach(function (li) {
+						li.style.display = "none";
+						li.setAttribute("aria-hidden", "true");
+					});
+				}
 			})
 			.catch(function () {});
 	}

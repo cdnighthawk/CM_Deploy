@@ -1,15 +1,23 @@
-"""SaaS tenant (paying company account). Distinct from directory ``Company`` rows."""
+"""SaaS tenant (paying company account). Distinct from directory ``Company`` rows.
+
+This row *is* the Tenant from the SaaS admin ticket. Do not add a parallel
+``tenants`` table. Billing fields live here; key/value controls live on
+``TenantSetting``.
+"""
 from __future__ import annotations
 
 import uuid
 from typing import List, Optional
 
-from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin
+
+TENANT_STATUSES = ("trial", "active", "past_due", "suspended", "closed")
+TENANT_PLANS = ("field", "office", "full")
 
 ORG_ROLE_OWNER = "owner"
 ORG_ROLE_ADMIN = "admin"
@@ -28,6 +36,16 @@ class Organization(UUIDPKMixin, TimestampMixin, db.Model):
     entra_tenant_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     allow_join_by_domain: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     storage_prefix: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    legal_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    dba: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    cslb: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    fein_last4: Mapped[Optional[str]] = mapped_column(String(4), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    plan_key: Mapped[str] = mapped_column(String(20), nullable=False, default="full")
+    seat_cap_office: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    seat_cap_field: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    seat_cap_vendor_token: Mapped[int] = mapped_column(Integer, nullable=False, default=500)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     members: Mapped[List["OrganizationMember"]] = relationship(
         back_populates="organization", cascade="all, delete-orphan"

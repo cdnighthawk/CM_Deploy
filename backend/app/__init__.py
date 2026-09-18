@@ -194,6 +194,11 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(correspondence_bp)
     app.register_blueprint(time_bp)
     app.register_blueprint(hires_bp)
+    from .api._saas_admin import admin_bp as saas_admin_bp
+    from .api._saas_admin import settings_bp as saas_settings_bp
+
+    app.register_blueprint(saas_settings_bp)
+    app.register_blueprint(saas_admin_bp)
     app.register_blueprint(hrms_bp)
     app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
@@ -215,6 +220,8 @@ def create_app(config_object: str | None = None) -> Flask:
             or path.startswith("/api/correspondence")
             or path.startswith("/api/time")
             or path.startswith("/api/hires")
+            or path.startswith("/api/settings")
+            or path.startswith("/api/admin")
         )
 
     @app.before_request
@@ -277,6 +284,70 @@ def create_app(config_object: str | None = None) -> Flask:
         if cu.user is None:
             return None
         return enforce_module_access_for_path(path, request.method, cu)
+
+    @app.before_request
+    def _enforce_plan_entitlements() -> None:
+        """Thin plan gate: hiring, correspondence, spec split, field API only."""
+        from .api._perms import allow_dev_anonymous_access, current_user
+        from .tenant_settings import module_enabled
+        from .tenancy import current_organization_id
+
+        if request.method == "OPTIONS":
+            return None
+        path = request.path
+        if allow_dev_anonymous_access():
+            return None
+        module = None
+        if path.startswith("/api/hires") and "/api/public/" not in path:
+            module = "hiring"
+        elif path.startswith("/api/correspondence"):
+            module = "correspondence"
+        elif path.startswith("/api/field"):
+            module = "field"
+        elif "/spec-scan" in path or path.endswith("/spec-book/import") or "/spec-trade-map" in path:
+            module = "spec_split"
+        if module is None:
+            return None
+        oid = current_organization_id()
+        if oid is None:
+            return None
+        try:
+            if module_enabled(oid, module):
+                return None
+        except Exception:
+            return None
+        return jsonify({"error": "This module is not on your plan."}), 403
+
+    @app.before_request
+    def _gate_settings_admin_pages() -> None:
+        path = (request.path or "").rstrip("/") or "/"
+        if request.method == "OPTIONS":
+            return None
+        is_settings = path == "/settings" or path.startswith("/settings/") or path.endswith("/usis-settings.html")
+        is_admin = path == "/admin" or path.startswith("/admin/") or path.endswith("/usis-admin.html")
+        if not (is_settings or is_admin):
+            return None
+        from .api._perms import allow_dev_anonymous_access, current_user
+        from .api._saas_admin import SaasError, require_company_admin, require_platform_operator
+
+        if allow_dev_anonymous_access():
+            return None
+        cu = current_user()
+        try:
+            if is_admin:
+                require_platform_operator(cu)
+            else:
+                require_company_admin(cu)
+        except SaasError as exc:
+            wants_json = "application/json" in (request.headers.get("Accept") or "")
+            if wants_json or path.startswith("/api/"):
+                return jsonify({"error": exc.message}), exc.status
+            return (
+                "<!doctype html><title>Forbidden</title><p>%s</p>" % exc.message,
+                exc.status,
+                {"Content-Type": "text/html; charset=utf-8"},
+            )
+        return None
 
     @app.before_request
     def _attach_request_id() -> None:

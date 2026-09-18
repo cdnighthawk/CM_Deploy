@@ -146,6 +146,35 @@ def _org_status_fields(user) -> dict[str, Any]:
     }
 
 
+def _impersonation_status_fields() -> dict[str, Any]:
+    from flask import session as flask_session
+
+    from ..models.organization import Organization
+    from ..models.saas import ImpersonationSession
+    from ..tenancy import include_all_orgs
+
+    raw = flask_session.get("impersonation_id") if flask_session else None
+    if not raw:
+        return {"impersonation": None}
+    try:
+        sid = uuid.UUID(str(raw))
+    except (TypeError, ValueError):
+        return {"impersonation": None}
+    with include_all_orgs():
+        row = db.session.get(ImpersonationSession, sid)
+        if row is None or row.ended_at is not None:
+            return {"impersonation": None}
+        org = db.session.get(Organization, row.organization_id)
+    return {
+        "impersonation": {
+            "active": True,
+            "banner": True,
+            "tenant_id": str(row.organization_id),
+            "tenant_name": (org.legal_name or org.name) if org is not None else "tenant",
+        }
+    }
+
+
 @bp.get("/auth/status")
 def auth_status():
     """Return whether the browser session is signed in (``session['user_id']``)."""
@@ -198,8 +227,11 @@ def auth_status():
                 "username": u.username,
                 "first_name": u.first_name,
                 "last_name": u.last_name,
+                "is_platform_operator": bool(getattr(u, "is_platform_operator", False)),
             },
+            "is_platform_operator": bool(getattr(u, "is_platform_operator", False)),
             **_org_status_fields(u),
+            **_impersonation_status_fields(),
         }
     )
 

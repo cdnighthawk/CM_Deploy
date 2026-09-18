@@ -126,12 +126,24 @@ def ensure_usis_organization() -> Organization:
         try:
             org = db.session.scalar(select(Organization).where(Organization.slug == USIS_ORG_SLUG))
             if org is not None:
+                if not (org.legal_name or "").strip():
+                    org.legal_name = org.name or "US Interior Specialties"
+                if not (org.plan_key or "").strip():
+                    org.plan_key = "full"
+                if not (org.status or "").strip():
+                    org.status = "active"
                 return org
             org = Organization(
                 name="US Interior Specialties",
                 slug=USIS_ORG_SLUG,
                 microsoft_sso_enabled=True,
                 storage_prefix="",
+                legal_name="US Interior Specialties",
+                status="active",
+                plan_key="full",
+                seat_cap_office=50,
+                seat_cap_field=50,
+                seat_cap_vendor_token=500,
             )
             db.session.add(org)
             db.session.flush()
@@ -275,6 +287,24 @@ def init_tenancy(app) -> None:
             return
         raw = session.get(SESSION_ORG_KEY) if session else None
         parsed = _parse_uuid(raw)
+        imp = _parse_uuid(session.get("impersonation_id") if session else None)
+        if imp is not None:
+            try:
+                from .models.saas import ImpersonationSession
+
+                with include_all_orgs():
+                    row = db.session.get(ImpersonationSession, imp)
+                if row is not None and row.ended_at is None:
+                    g.organization_id = row.organization_id
+                    g.impersonation_id = row.id
+                    return
+            except Exception:
+                try:
+                    db.session.rollback()
+                except Exception:
+                    pass
+            session.pop("impersonation_id", None)
+            session.pop("impersonation_operator_id", None)
         if parsed is not None:
             g.organization_id = parsed
 
@@ -421,6 +451,12 @@ def provision_organization(*, name: str, copy_catalog: bool = False) -> Organiza
             slug=slugify_org_name(name),
             microsoft_sso_enabled=False,
             storage_prefix=None,
+            legal_name=(name or "").strip()[:255] or "New company",
+            status="trial",
+            plan_key="full",
+            seat_cap_office=25,
+            seat_cap_field=25,
+            seat_cap_vendor_token=100,
         )
         db.session.add(org)
         db.session.flush()

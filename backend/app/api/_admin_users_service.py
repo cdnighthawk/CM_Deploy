@@ -96,6 +96,7 @@ def user_public(u: User) -> dict[str, Any]:
         "office": office,
         "is_active": u.is_active,
         "is_superuser": u.is_superuser,
+        "is_platform_operator": bool(getattr(u, "is_platform_operator", False)),
         "has_password": bool(u.password_hash),
         "last_login_at": _iso(u.last_login_at),
         "last_seen_at": _iso(u.last_seen_at),

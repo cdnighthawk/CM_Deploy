@@ -94,6 +94,12 @@
 	function parseError(res, body) {
 		if (res.status === 401) return "Your session expired. Sign in again, then retry.";
 		if (res.status === 403) return (body && body.error) || "Platform administrator required.";
+		if (res.status === 502 || res.status === 504) {
+			return (
+				(body && body.error) ||
+				"The server stopped while copying the catalog. Uncheck Copy catalog and retry, or wait and try again."
+			);
+		}
 		return (body && body.error) || "Request failed (" + res.status + ").";
 	}
 

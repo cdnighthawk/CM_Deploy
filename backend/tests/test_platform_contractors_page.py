@@ -41,6 +41,7 @@ def test_src_page_and_script_exist():
     assert 'credentials = opts.credentials || "include"' in js
     assert "Set-password email sent" in js
     assert "email dry-run" in js
+    assert "Uncheck Copy catalog" in js
     assert "/api/v1/integrations/buildingconnected/oauth/start" in js
     assert "organization_id=" in js
     assert "usis-bc-oauth" in js

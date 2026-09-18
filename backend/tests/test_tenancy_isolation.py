@@ -43,6 +43,17 @@ def _skip_if_no_orgs(flask_app) -> None:
             pytest.skip(f"organizations schema missing: {exc}")
 
 
+def test_catalog_copy_uses_insert_select_not_orm_all():
+    src = (Path(__file__).resolve().parents[1] / "app" / "tenancy.py").read_text(encoding="utf-8")
+    start = src.index("def copy_material_catalog")
+    end = src.index("\ndef slugify_org_name")
+    body = src[start:end]
+    assert "insert(src).from_select" in body
+    assert "func.gen_random_uuid()" in body
+    assert "null()" in body
+    assert ".all()" not in body
+
+
 def _login(client, email: str, password: str):
     r = client.post("/auth/login", data={"email": email, "password": password}, follow_redirects=False)
     assert r.status_code == 302, r.get_data(as_text=True)

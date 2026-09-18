@@ -6,6 +6,7 @@ from typing import Any
 
 from flask import current_app, request
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from ..extensions import db
 from ..models import User
@@ -133,6 +134,16 @@ def register_platform_org_routes(bp) -> None:
             return create_organization(current_user(), request.get_json(silent=True) or {})
         except PlatformError as exc:
             return _jsonify({"error": exc.message}, exc.status)
+        except IntegrityError:
+            db.session.rollback()
+            return _jsonify({"error": "A contractor with that name already exists."}, 409)
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("platform create organization failed")
+            return _jsonify(
+                {"error": "Could not create contractor. Uncheck Copy catalog and retry, or try again."},
+                500,
+            )
 
     @bp.post("/platform/organizations/<org_id>/invites")
     def platform_invite(org_id: str):

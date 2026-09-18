@@ -6,7 +6,8 @@ from contextlib import contextmanager
 from typing import Any, Iterator, Optional
 
 from flask import g, has_app_context, has_request_context, session
-from sqlalchemy import event, inspect as sa_inspect, select
+from sqlalchemy import event, func, insert, inspect as sa_inspect, literal, null, select
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import ORMExecuteState, Session, with_loader_criteria
 
 from .extensions import db
@@ -333,37 +334,66 @@ def stored_key_allowed(object_key: str) -> bool:
 
 
 def copy_material_catalog(source_org_id: uuid.UUID, dest_org_id: uuid.UUID) -> int:
-    """Copy SKU/CSI/labor units into dest; strip USIS ``cost``."""
+    """Copy SKU/CSI/labor units into dest; strip USIS ``cost``.
+
+    Runs as one ``INSERT … SELECT`` so a full catalog copy does not load every
+    row into the Flask worker (that OOMs the 512 MB Render instance → 502).
+    """
     from .models.material_pricing import MaterialPrice
 
-    count = 0
+    src = MaterialPrice.__table__
+    dest_org = literal(str(dest_org_id)).cast(PGUUID(as_uuid=True))
+    stmt = insert(src).from_select(
+        [
+            "id",
+            "organization_id",
+            "manufacturer",
+            "item",
+            "category",
+            "csi_spec_section",
+            "description",
+            "mounting_type",
+            "cost",
+            "labor_per",
+            "labor_units_per_hour",
+            "labor_rate_unit",
+            "size_width_in",
+            "size_height_in",
+            "currency",
+            "unit_of_measure",
+            "created_at",
+            "updated_at",
+        ],
+        select(
+            func.gen_random_uuid(),
+            dest_org,
+            src.c.manufacturer,
+            src.c.item,
+            src.c.category,
+            src.c.csi_spec_section,
+            src.c.description,
+            src.c.mounting_type,
+            null(),
+            src.c.labor_per,
+            src.c.labor_units_per_hour,
+            src.c.labor_rate_unit,
+            src.c.size_width_in,
+            src.c.size_height_in,
+            src.c.currency,
+            src.c.unit_of_measure,
+            func.now(),
+            func.now(),
+        ).where(src.c.organization_id == source_org_id),
+    )
     with include_all_orgs():
-        rows = db.session.scalars(
-            select(MaterialPrice).where(MaterialPrice.organization_id == source_org_id)
-        ).all()
-        for src in rows:
-            db.session.add(
-                MaterialPrice(
-                    organization_id=dest_org_id,
-                    manufacturer=src.manufacturer,
-                    item=src.item,
-                    category=src.category,
-                    csi_spec_section=src.csi_spec_section,
-                    description=src.description,
-                    mounting_type=src.mounting_type,
-                    cost=None,
-                    labor_per=src.labor_per,
-                    labor_units_per_hour=src.labor_units_per_hour,
-                    labor_rate_unit=src.labor_rate_unit,
-                    size_width_in=src.size_width_in,
-                    size_height_in=src.size_height_in,
-                    currency=src.currency,
-                    unit_of_measure=src.unit_of_measure,
-                )
-            )
-            count += 1
+        result = db.session.execute(stmt)
         db.session.flush()
-    return count
+        n = result.rowcount
+        if n is None or n < 0:
+            n = db.session.scalar(
+                select(func.count()).select_from(src).where(src.c.organization_id == dest_org_id)
+            )
+    return int(n or 0)
 
 
 def slugify_org_name(name: str) -> str:

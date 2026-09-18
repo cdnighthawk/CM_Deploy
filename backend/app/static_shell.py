@@ -167,6 +167,41 @@ def _is_demo_shell_html(rel: str) -> bool:
     return any(name.startswith(prefix) for prefix in _DEMO_HTML_PREFIXES)
 
 
+def saas_console_kind(path: str) -> str | None:
+    """Return ``settings`` or ``admin`` for SaaS console URLs; else None.
+
+    ``/admin/organizations`` is the platform console. ``/admin/usis-profile.html``
+    and ``/admin/assets/...`` are not — W3CRM already used those relative URLs.
+    """
+    p = (path or "").split("?", 1)[0].rstrip("/") or "/"
+    if p == "/usis-admin.html" or p.endswith("/usis-admin.html"):
+        return "admin"
+    if p == "/usis-settings.html" or p.endswith("/usis-settings.html"):
+        return "settings"
+    for prefix, kind in (("/admin", "admin"), ("/settings", "settings")):
+        if p == prefix:
+            return kind
+        if p.startswith(prefix + "/"):
+            first = p[len(prefix) + 1 :].split("/", 1)[0]
+            if not first or first == "assets" or "." in first:
+                return None
+            return kind
+    return None
+
+
+def _redirect_html_stolen_by_console(req_path: str, root: Path):
+    """``/admin/usis-profile.html`` is My profile, not the platform console."""
+    for prefix in ("/admin/", "/settings/"):
+        if not req_path.startswith(prefix) or not req_path.endswith(".html"):
+            continue
+        leaf = req_path.rsplit("/", 1)[-1]
+        if not leaf or _is_demo_shell_html(leaf):
+            continue
+        if (root / leaf).is_file():
+            return redirect("/" + leaf, code=302)
+    return None
+
+
 def branded_404():
     """USIS 404 page when the static shell exists; otherwise Flask's default."""
     root = resolve_static_root()
@@ -242,11 +277,15 @@ def serve_static(subpath: str):
         return redirect("/admin/organizations/" + req_path[len("/admin/tenants/") :], code=302)
     if req_path == "/admin/health":
         return redirect("/admin/usage", code=302)
-    if req_path == "/settings" or req_path.startswith("/settings/"):
+    stolen = _redirect_html_stolen_by_console(req_path, root)
+    if stolen is not None:
+        return stolen
+    kind = saas_console_kind(req_path)
+    if kind == "settings":
         settings_page = root / "usis-settings.html"
         if settings_page.is_file():
             return send_from_directory(root, "usis-settings.html")
-    if req_path == "/admin" or req_path.startswith("/admin/"):
+    if kind == "admin":
         admin_page = root / "usis-admin.html"
         if admin_page.is_file():
             return send_from_directory(root, "usis-admin.html")

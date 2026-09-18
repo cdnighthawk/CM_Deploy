@@ -83,6 +83,13 @@ def test_src_pages_exist():
     assert 'href="/admin"' in nav
     assert 'id="usis-platform-admin-nav"' in nav
     assert 'href="/settings/people"' in nav
+    for name in ("usis-settings.html", "usis-admin.html", "usis-profile.html"):
+        html = (src / name).read_text(encoding="utf-8")
+        assert '<base href="/">' in html
+        assert 'href="/assets/css/style.css"' in html
+        assert 'href="/assets/css/usis-ui.css"' in html
+    boot = (src / "assets/js/usis-theme-boot.js").read_text(encoding="utf-8")
+    assert 'href = "/assets/css/usis-ui.css' in boot
     css = (src / "assets/css/usis-ui.css").read_text(encoding="utf-8")
     assert ".usis-impersonation-banner" in css
     assert ".usis-console-rail" in css
@@ -305,7 +312,20 @@ def test_dist_mirrors_when_present():
     assert "usis-settings.js" in html
     assert "usis-ui.css" in html
     assert "usis-console-rail" in html
-    assert (dist / "usis-admin.html").read_text(encoding="utf-8").count("usis-adm-rail") >= 1
+    assert '<base href="/">' in html
+    assert 'href="/assets/css/style.css"' in html
+    assert "/assets/js/usis-theme-boot.js" in html
+    assert 'href="assets/css/style.css"' not in html
+    admin_html = (dist / "usis-admin.html").read_text(encoding="utf-8")
+    assert admin_html.count("usis-adm-rail") >= 1
+    assert '<base href="/">' in admin_html
+    assert 'href="/assets/css/style.css"' in admin_html
+    profile = dist / "usis-profile.html"
+    if profile.is_file():
+        profile_html = profile.read_text(encoding="utf-8")
+        assert '<base href="/">' in profile_html
+        assert 'href="/assets/css/style.css"' in profile_html
+        assert "/assets/css/usis-ui.css" in profile_html
 
 
 def test_settings_overview_and_roles(client, flask_app, no_dev_admin):

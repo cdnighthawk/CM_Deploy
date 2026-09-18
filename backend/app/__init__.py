@@ -363,9 +363,10 @@ def create_app(config_object: str | None = None) -> Flask:
         path = (request.path or "").rstrip("/") or "/"
         if request.method == "OPTIONS":
             return None
-        is_settings = path == "/settings" or path.startswith("/settings/") or path.endswith("/usis-settings.html")
-        is_admin = path == "/admin" or path.startswith("/admin/") or path.endswith("/usis-admin.html")
-        if not (is_settings or is_admin):
+        from .static_shell import saas_console_kind
+
+        kind = saas_console_kind(path)
+        if kind is None:
             return None
         from .api._perms import allow_dev_anonymous_access, current_user
         from .api._saas_admin import SaasError, require_company_admin, require_platform_operator
@@ -374,7 +375,7 @@ def create_app(config_object: str | None = None) -> Flask:
             return None
         cu = current_user()
         try:
-            if is_admin:
+            if kind == "admin":
                 require_platform_operator(cu)
             else:
                 require_company_admin(cu)

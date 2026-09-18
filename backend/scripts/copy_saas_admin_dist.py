@@ -187,12 +187,28 @@ def swap_main(html: str, filename: str, script: str, main: str) -> str:
     return html
 
 
+def ensure_root_asset_base(html: str) -> str:
+    """Console shells are served under /settings/* and /admin/*; relative assets 404."""
+    if '<base href="/">' not in html and "<base href='/'>" not in html:
+        html = html.replace("<head>", '<head>\n\t<base href="/">', 1)
+    html = html.replace('href="assets/css/style.css"', 'href="/assets/css/style.css"')
+    html = html.replace('href="assets/css/usis-ui.css"', 'href="/assets/css/usis-ui.css"')
+    html = html.replace('src="assets/js/usis-theme-boot.js"', 'src="/assets/js/usis-theme-boot.js"')
+    html = html.replace('src="assets/js/usis-theme-boot.js?', 'src="/assets/js/usis-theme-boot.js?')
+    style_tag = '<link class="main-css" href="/assets/css/style.css" rel="stylesheet">'
+    ui_after_style = style_tag + '\n\t<link href="/assets/css/usis-ui.css" rel="stylesheet">'
+    if style_tag in html and ui_after_style not in html:
+        html = html.replace(style_tag, ui_after_style, 1)
+    return html
+
+
 def _copy_assets() -> None:
     for rel in (
         "assets/js/usis-settings.js",
         "assets/js/usis-admin.js",
         "assets/js/usis-auth-links.js",
         "assets/js/usis-nav-access.js",
+        "assets/js/usis-theme-boot.js",
         "assets/css/usis-ui.css",
         "elements/deznav-construction.html",
     ):
@@ -249,6 +265,10 @@ def main() -> None:
         )
         if "usis-settings.html\"><strong>USIS Settings" not in text and old in text:
             idx.write_text(text.replace(old, new, 1), encoding="utf-8")
+    for name in ("usis-settings.html", "usis-admin.html", "usis-profile.html"):
+        page = DIST / name
+        if page.is_file():
+            page.write_text(ensure_root_asset_base(page.read_text(encoding="utf-8")), encoding="utf-8")
     print("dist html written, nav patched", patched)
 
 

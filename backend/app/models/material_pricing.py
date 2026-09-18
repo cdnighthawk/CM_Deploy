@@ -1,15 +1,20 @@
 """Manufacturer material list pricing (multi-vendor catalog rows)."""
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Numeric, String, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import text
 
 from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin, TenantMixin
+
+if TYPE_CHECKING:
+    from .company import Company
 
 
 class MaterialPrice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
@@ -40,4 +45,13 @@ class MaterialPrice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     )
     unit_of_measure: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default=text("'EA'")
+    )
+    supplier_company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("companies.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    supplier_company: Mapped[Optional["Company"]] = relationship(
+        foreign_keys=[supplier_company_id]
     )

@@ -955,6 +955,7 @@ def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str
         "labor_hours": _num_or_none(hours),
         "labor_units_per_hour": _num_or_none(mp.labor_units_per_hour),
         "labor_rate_unit": mp.labor_rate_unit,
+        **_material_supplier_fields(mp),
     }
 
 
@@ -1131,7 +1132,7 @@ def _lead_estimate_detail(row: LeadEstimate, estimate: Estimate | None = None) -
             select(TakeoffLineItem)
             .where(TakeoffLineItem.lead_estimate_id == row.id)
             .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-            .options(joinedload(TakeoffLineItem.material_price))
+            .options(joinedload(TakeoffLineItem.material_price).joinedload(MaterialPrice.supplier_company))
         ).all()
     out["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
     out["takeoff_line_count"] = len(lines)
@@ -4963,6 +4964,25 @@ def _sync_material_labor_row(row: MaterialPrice) -> None:
     sync_material_labor(row)
 
 
+def _material_supplier_fields(m: MaterialPrice, *, load_contacts: bool = False) -> dict[str, Any]:
+    from ..company_email import company_order_email
+
+    company = m.supplier_company
+    if company is None and m.supplier_company_id is not None:
+        company = db.session.get(Company, m.supplier_company_id)
+    if company is None or company.deleted_at is not None:
+        return {
+            "supplier_company_id": None,
+            "supplier_name": None,
+            "supplier_email": None,
+        }
+    return {
+        "supplier_company_id": str(company.id),
+        "supplier_name": company.name,
+        "supplier_email": company_order_email(company, load_contacts=load_contacts),
+    }
+
+
 def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
     from ..material_labor import labor_production_display
 
@@ -4987,6 +5007,7 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
         "unit_of_measure": m.unit_of_measure,
         "currency": m.currency,
         **_material_size_fields(m),
+        **_material_supplier_fields(m),
     }
 
 
@@ -5004,6 +5025,8 @@ def _material_price_list_filters() -> dict[str, Any]:
         "cost": (request.args.get("cost") or "").strip(),
         "labor_per": (request.args.get("labor_per") or "").strip(),
         "size": (request.args.get("size") or "").strip(),
+        "supplier": (request.args.get("supplier") or "").strip(),
+        "supplier_company_id": (request.args.get("supplier_company_id") or "").strip(),
     }
 
 
@@ -5033,6 +5056,8 @@ def _material_prices_query(
     cost: str = "",
     labor_per: str = "",
     size: str = "",
+    supplier: str = "",
+    supplier_company_id: str = "",
 ):
     from ..csi_catalog import DIVISION_NAMES
     from ..csi_spec import csi_storage_variants
@@ -5087,6 +5112,18 @@ def _material_prices_query(
                 stmt = stmt.where(or_(*[MaterialPrice.csi_spec_section.like(f"{k}%") for k in matches]))
             else:
                 stmt = stmt.where(MaterialPrice.csi_spec_section.ilike(f"%{csi_division}%"))
+    sid = _parse_uuid_param(supplier_company_id) if supplier_company_id else None
+    if supplier_company_id and not sid:
+        stmt = stmt.where(literal(False))
+    elif sid:
+        stmt = stmt.where(MaterialPrice.supplier_company_id == sid)
+    if supplier:
+        like_name = f"%{supplier}%"
+        stmt = stmt.where(
+            MaterialPrice.supplier_company_id.in_(
+                select(Company.id).where(Company.deleted_at.is_(None), Company.name.ilike(like_name))
+            )
+        )
     if q:
         like = f"%{q}%"
         clauses = [
@@ -5101,6 +5138,11 @@ def _material_prices_query(
         q_digits = re.sub(r"\D", "", q)
         if 2 <= len(q_digits) <= 6:
             clauses.append(MaterialPrice.csi_spec_section.ilike(f"{q_digits}%"))
+        clauses.append(
+            MaterialPrice.supplier_company_id.in_(
+                select(Company.id).where(Company.deleted_at.is_(None), Company.name.ilike(like))
+            )
+        )
         stmt = stmt.where(or_(*clauses))
     return stmt.order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
 
@@ -5120,6 +5162,7 @@ _MATERIAL_BULK_FIELDS = frozenset(
         "unit_of_measure",
         "size_width_in",
         "size_height_in",
+        "supplier_company_id",
     }
 )
 
@@ -5151,6 +5194,8 @@ def _coerce_material_bulk_value(field: str, value: Any) -> Any:
         if not norm:
             raise ApiError("CSI must look like 08 71 00", 400)
         return norm
+    if field == "supplier_company_id":
+        return _resolve_supplier_company_id(value)
     if field in ("manufacturer", "item", "unit_of_measure"):
         text = (str(value).strip() if value is not None else "") or ""
         if not text:
@@ -5169,11 +5214,39 @@ def _coerce_material_bulk_value(field: str, value: Any) -> Any:
     return text[: limits.get(field, 120)] or None
 
 
+def _resolve_supplier_company_id(value: Any) -> uuid.UUID | None:
+    if value in (None, ""):
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return None
+    pid = _parse_uuid_param(raw)
+    if pid:
+        company = db.session.get(Company, pid)
+        if company is None or company.deleted_at is not None:
+            raise ApiError("supplier company not found", 400)
+        return pid
+    rows = db.session.scalars(
+        select(Company).where(Company.deleted_at.is_(None), func.lower(Company.name) == raw.lower())
+    ).all()
+    if len(rows) == 1:
+        return rows[0].id
+    if len(rows) > 1:
+        raise ApiError("multiple companies match that supplier name", 400)
+    like_rows = db.session.scalars(
+        select(Company).where(Company.deleted_at.is_(None), Company.name.ilike(raw))
+    ).all()
+    if len(like_rows) == 1:
+        return like_rows[0].id
+    raise ApiError("supplier company not found", 400)
+
+
 _MATERIAL_PATCH_FIELDS = _MATERIAL_BULK_FIELDS | {"currency"}
 
 
 def _material_price_detail(m: MaterialPrice) -> dict[str, Any]:
     out = _material_price_public(m)
+    out.update(_material_supplier_fields(m, load_contacts=True))
     out["created_at"] = m.created_at.isoformat() if m.created_at else None
     out["updated_at"] = m.updated_at.isoformat() if m.updated_at else None
     return out
@@ -5682,7 +5755,7 @@ def _door_opening_detail(opening: DoorOpening) -> dict[str, Any]:
         select(TakeoffLineItem)
         .where(TakeoffLineItem.door_opening_id == opening.id)
         .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-        .options(joinedload(TakeoffLineItem.material_price))
+        .options(joinedload(TakeoffLineItem.material_price).joinedload(MaterialPrice.supplier_company))
     ).all()
     base["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
     base["takeoff_line_count"] = len(lines)
@@ -6140,7 +6213,9 @@ def list_material_pricing_desktop():
     from ..services.employee_pc_cache import material_pricing_cache_row, refresh_company_from_db
 
     rows = db.session.scalars(
-        select(MaterialPrice).order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
+        select(MaterialPrice)
+        .options(joinedload(MaterialPrice.supplier_company))
+        .order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
     ).all()
     refresh_company_from_db()
     return _jsonify({"items": [material_pricing_cache_row(m) for m in rows], "entity": "material_pricing"})
@@ -6185,7 +6260,9 @@ def list_material_prices():
     filters = _material_price_list_filters()
     base = _material_prices_query(**filters)
     total = db.session.scalar(select(func.count()).select_from(base.subquery())) or 0
-    rows = db.session.scalars(base.offset(offset).limit(limit)).all()
+    rows = db.session.scalars(
+        base.options(joinedload(MaterialPrice.supplier_company)).offset(offset).limit(limit)
+    ).all()
     return _jsonify(
         {
             "items": [_material_price_public(m) for m in rows],
@@ -6302,6 +6379,21 @@ def _facet_size_values(filters: dict[str, Any], *, limit: int = 500) -> list[str
     return sizes
 
 
+def _facet_supplier_values(filters: dict[str, Any], *, limit: int = 500) -> list[str]:
+    stmt = (
+        _facet_base(filters, "supplier", "supplier_company_id")
+        .join(Company, Company.id == MaterialPrice.supplier_company_id)
+        .with_only_columns(Company.name)
+        .where(Company.deleted_at.is_(None))
+        .where(Company.name.is_not(None))
+        .where(Company.name != "")
+        .distinct()
+        .order_by(Company.name.asc())
+        .limit(max(1, min(limit, 1000)))
+    )
+    return [r for r in db.session.scalars(stmt).all() if r]
+
+
 def _facet_csi_items(filters: dict[str, Any]) -> list[dict[str, Any]]:
     from ..csi_spec import digits_from_csi
 
@@ -6346,6 +6438,7 @@ def list_material_price_facets():
             "mounting_types": _facet_text_values(filters, MaterialPrice.mounting_type, "mounting_type"),
             "units": _facet_text_values(filters, MaterialPrice.unit_of_measure, "unit_of_measure", limit=100),
             "labor": _facet_labor_values(filters),
+            "suppliers": _facet_supplier_values(filters),
             "entity": "material_price_facets",
         }
     )
@@ -6500,6 +6593,8 @@ def bulk_patch_material_prices():
             skipped.append({"id": str(pid), "error": "not found"})
             continue
         setattr(row, field, new_value)
+        if field == "supplier_company_id":
+            row.supplier_company = db.session.get(Company, new_value) if new_value else None
         _sync_material_labor_row(row)
         updated.append(_material_price_public(row))
     try:
@@ -6511,7 +6606,9 @@ def bulk_patch_material_prices():
         {
             "ok": True,
             "field": field,
-            "value": new_value
+            "value": str(new_value)
+            if field == "supplier_company_id" and new_value is not None
+            else new_value
             if field not in ("cost", "labor_per", "labor_units_per_hour")
             else _num_or_none(new_value),
             "updated": updated,
@@ -6556,6 +6653,10 @@ def patch_material_price(price_id: str):
     try:
         for field, value in updates.items():
             setattr(row, field, _coerce_material_bulk_value(field, value))
+        if "supplier_company_id" in updates:
+            row.supplier_company = (
+                db.session.get(Company, row.supplier_company_id) if row.supplier_company_id else None
+            )
         _sync_material_labor_row(row)
     except ApiError as exc:
         return _jsonify({"error": exc.message}), exc.status
@@ -6587,7 +6688,7 @@ def cost_suggestions_material():
         variants = csi_storage_variants(csi)
         if variants:
             stmt = stmt.where(MaterialPrice.csi_spec_section.in_(variants))
-    stmt = stmt.limit(25)
+    stmt = stmt.options(joinedload(MaterialPrice.supplier_company)).limit(25)
     rows = db.session.scalars(stmt).all()
     return _jsonify({"items": [_material_price_public(m) for m in rows], "entity": "material_prices"})
 

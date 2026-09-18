@@ -16,6 +16,7 @@
 		mounting_types: [],
 		units: [],
 		labor: [],
+		suppliers: [],
 	};
 	var state = {
 		q: "",
@@ -29,6 +30,7 @@
 		labor: "",
 		uom: "",
 		size: "",
+		supplier: "",
 		offset: 0,
 		limit: 100,
 		total: 0,
@@ -106,6 +108,8 @@
 
 	var detailItem = null;
 	var detailEditing = false;
+	var supplierSearchTimer = null;
+	var supplierPickerBound = false;
 
 	function escHtml(s) {
 		return String(s == null ? "" : s)
@@ -208,6 +212,95 @@
 		}
 	}
 
+	function supplierEmailHint(item) {
+		var hint = document.getElementById("usis-mat-edit-supplier-email");
+		if (!hint) return;
+		if (item && item.supplier_email) {
+			hint.innerHTML =
+				'Email: <a href="mailto:' +
+				escHtml(item.supplier_email) +
+				'">' +
+				escHtml(item.supplier_email) +
+				"</a>";
+		} else if (item && item.supplier_company_id) {
+			hint.textContent = "No email on this company. Add one in Companies so supplier notices can send.";
+		} else {
+			hint.textContent = "Link the company you buy this item from. Their email is used for supplier notices.";
+		}
+	}
+
+	function hideSupplierMenu() {
+		var menu = document.getElementById("usis-mat-edit-supplier-menu");
+		if (menu) menu.classList.add("d-none");
+	}
+
+	function searchSupplierCompanies(q) {
+		return jsonFetch(apiBase() + "/api/v1/companies?limit=20&q=" + encodeURIComponent(q)).then(function (d) {
+			return d.items || [];
+		});
+	}
+
+	function renderSupplierMenu(items) {
+		var menu = document.getElementById("usis-mat-edit-supplier-menu");
+		if (!menu) return;
+		menu.innerHTML = "";
+		if (!items.length) {
+			menu.innerHTML = '<div class="list-group-item small text-muted">No matching companies</div>';
+			menu.classList.remove("d-none");
+			return;
+		}
+		items.forEach(function (c) {
+			var btn = document.createElement("button");
+			btn.type = "button";
+			btn.className = "list-group-item list-group-item-action py-1 small";
+			btn.textContent = (c.name || "Company") + (c.email ? " · " + c.email : "");
+			btn.addEventListener("mousedown", function (e) {
+				e.preventDefault();
+			});
+			btn.addEventListener("click", function () {
+				var idEl = document.getElementById("usis-mat-edit-supplier-id");
+				var nameEl = document.getElementById("usis-mat-edit-supplier");
+				if (idEl) idEl.value = c.id || "";
+				if (nameEl) nameEl.value = c.name || "";
+				supplierEmailHint({
+					supplier_company_id: c.id,
+					supplier_email: c.email || "",
+				});
+				hideSupplierMenu();
+			});
+			menu.appendChild(btn);
+		});
+		menu.classList.remove("d-none");
+	}
+
+	function bindSupplierPicker() {
+		if (supplierPickerBound) return;
+		var input = document.getElementById("usis-mat-edit-supplier");
+		var hidden = document.getElementById("usis-mat-edit-supplier-id");
+		if (!input) return;
+		supplierPickerBound = true;
+		input.addEventListener("input", function () {
+			if (hidden) hidden.value = "";
+			clearTimeout(supplierSearchTimer);
+			var q = (input.value || "").trim();
+			if (!q) {
+				hideSupplierMenu();
+				supplierEmailHint(null);
+				return;
+			}
+			supplierSearchTimer = setTimeout(function () {
+				searchSupplierCompanies(q)
+					.then(renderSupplierMenu)
+					.catch(function () {
+						hideSupplierMenu();
+					});
+			}, 250);
+		});
+		input.addEventListener("blur", function () {
+			setTimeout(hideSupplierMenu, 200);
+		});
+	}
+
 	function fillDetailForm(item) {
 		var map = {
 			"usis-mat-edit-manufacturer": item.manufacturer,
@@ -228,6 +321,12 @@
 			var el = document.getElementById(id);
 			if (el) el.value = map[id] == null ? "" : String(map[id]);
 		});
+		var supplierId = document.getElementById("usis-mat-edit-supplier-id");
+		var supplierName = document.getElementById("usis-mat-edit-supplier");
+		if (supplierId) supplierId.value = item.supplier_company_id || "";
+		if (supplierName) supplierName.value = item.supplier_name || "";
+		supplierEmailHint(item);
+		bindSupplierPicker();
 		var unitEl = document.getElementById("usis-mat-edit-rate-unit");
 		if (unitEl) unitEl.value = item.labor_rate_unit === "SF" || item.labor_rate_unit === "LF" ? item.labor_rate_unit : "";
 		syncLaborFromRate();
@@ -243,6 +342,8 @@
 		var rows = [
 			["Item", dash(item.item)],
 			["Manufacturer", dash(item.manufacturer)],
+			["Buy from", dash(item.supplier_name)],
+			["Supplier email", dash(item.supplier_email)],
 			["Category", dash(item.category)],
 			["Division", division],
 			["CSI section", dash(item.csi_spec_section)],
@@ -310,6 +411,7 @@
 			labor_per: inputVal("usis-mat-edit-labor"),
 			unit_of_measure: inputVal("usis-mat-edit-uom"),
 			currency: inputVal("usis-mat-edit-currency"),
+			supplier_company_id: inputVal("usis-mat-edit-supplier-id") || inputVal("usis-mat-edit-supplier"),
 		};
 	}
 
@@ -360,7 +462,8 @@
 			state.cost ||
 			state.labor ||
 			state.uom ||
-			state.size
+			state.size ||
+			state.supplier
 		);
 	}
 
@@ -377,6 +480,7 @@
 		if (state.labor) p.set("labor_per", state.labor);
 		if (state.uom) p.set("unit_of_measure", state.uom);
 		if (state.size) p.set("size", state.size);
+		if (state.supplier) p.set("supplier", state.supplier);
 		return p;
 	}
 
@@ -555,6 +659,7 @@
 				facetLists.mounting_types = d.mounting_types || [];
 				facetLists.units = d.units || [];
 				facetLists.labor = d.labor || [];
+				facetLists.suppliers = d.suppliers || [];
 				refillHeaderFilters();
 			})
 			.catch(function () {
@@ -565,6 +670,7 @@
 				facetLists.mounting_types = [];
 				facetLists.units = [];
 				facetLists.labor = [];
+				facetLists.suppliers = [];
 			});
 	}
 
@@ -602,7 +708,7 @@
 		if (next) next.disabled = state.offset + state.limit >= state.total;
 	}
 
-	var COL_LAYOUT_KEY = "usis-mat-col-layout-v1";
+	var COL_LAYOUT_KEY = "usis-mat-col-layout-v2";
 
 	function selectionColumnDef() {
 		return {
@@ -630,6 +736,37 @@
 				minWidth: 148,
 				tooltip: true,
 				headerFilter: selectFilter("manufacturer", "manufacturers", "Manufacturer filter"),
+			},
+			{
+				title: "Buy from",
+				field: "supplier_name",
+				width: 170,
+				minWidth: 140,
+				tooltip: function (e, cell) {
+					var row = cell.getRow().getData() || {};
+					if (row.supplier_email) return row.supplier_name + " · " + row.supplier_email;
+					return row.supplier_name || "";
+				},
+				headerFilter: selectFilter("supplier", "suppliers", "Supplier filter"),
+				formatter: function (cell) {
+					var row = cell.getRow().getData() || {};
+					var name = row.supplier_name;
+					if (!name) return "—";
+					if (row.supplier_email) {
+						var a = document.createElement("a");
+						a.href = "mailto:" + String(row.supplier_email);
+						a.textContent = String(name);
+						a.title = String(row.supplier_email);
+						a.addEventListener("mousedown", function (e) {
+							e.stopPropagation();
+						});
+						a.addEventListener("click", function (e) {
+							e.stopPropagation();
+						});
+						return a;
+					}
+					return String(name);
+				},
 			},
 			{
 				title: "Item",
@@ -799,7 +936,7 @@
 	}
 
 	var COLUMN_GROUPS = [
-		{ title: "Catalog", fields: ["manufacturer", "item", "description"] },
+		{ title: "Catalog", fields: ["manufacturer", "supplier_name", "item", "description"] },
 		{ title: "Classification", fields: ["csi_display", "category", "size_display", "mounting_type"] },
 		{ title: "Pricing", fields: ["cost", "labor_production", "labor_per", "unit_of_measure"] },
 	];

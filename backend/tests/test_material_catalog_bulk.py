@@ -376,3 +376,129 @@ def test_patch_material_price_rejects_blank_item(client, catalog_rows):
         json={"item": ""},
     )
     assert r.status_code == 400
+
+
+def test_material_price_supplier_link_filter_and_bulk(client, catalog_rows):
+    from app.models.company import Company, Contact
+
+    vendor_id = None
+    vendor_name = "BuyFrom-" + uuid.uuid4().hex[:6]
+    with client.application.app_context():
+        vendor = Company(
+            name=vendor_name,
+            company_type="vendor",
+            email="orders@" + vendor_name.lower() + ".example.com",
+        )
+        db.session.add(vendor)
+        db.session.flush()
+        db.session.add(
+            Contact(
+                company_id=vendor.id,
+                first_name="Pat",
+                last_name="Buyer",
+                email="pat@" + vendor_name.lower() + ".example.com",
+                is_primary=True,
+            )
+        )
+        db.session.commit()
+        vendor_id = str(vendor.id)
+    try:
+        listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&limit=50")
+        assert listed.status_code == 200
+        hit = next(x for x in listed.get_json()["items"] if x["id"] == catalog_rows[0])
+        assert hit["supplier_company_id"] is None
+        assert hit["supplier_name"] is None
+        assert hit["supplier_email"] is None
+
+        patched = client.patch(
+            f"/api/v1/material-prices/{catalog_rows[0]}",
+            json={"supplier_company_id": vendor_id},
+        )
+        assert patched.status_code == 200, patched.get_json()
+        item = patched.get_json()["item"]
+        assert item["supplier_company_id"] == vendor_id
+        assert item["supplier_name"] == vendor_name
+        assert item["supplier_email"] == "orders@" + vendor_name.lower() + ".example.com"
+
+        by_id = client.get("/api/v1/material-prices?supplier_company_id=" + vendor_id)
+        assert by_id.status_code == 200
+        ids = {x["id"] for x in by_id.get_json()["items"]}
+        assert catalog_rows[0] in ids
+        assert catalog_rows[1] not in ids
+
+        by_name = client.get("/api/v1/material-prices?supplier=" + vendor_name)
+        assert by_name.status_code == 200
+        assert any(x["id"] == catalog_rows[0] for x in by_name.get_json()["items"])
+
+        facets = client.get("/api/v1/material-prices/facets")
+        assert facets.status_code == 200
+        assert vendor_name in facets.get_json()["suppliers"]
+
+        bulk = client.post(
+            "/api/v1/material-prices/bulk",
+            json={"ids": catalog_rows, "field": "supplier_company_id", "value": vendor_name},
+        )
+        assert bulk.status_code == 200, bulk.get_json()
+        assert bulk.get_json()["updated_count"] == 2
+        assert all(x["supplier_company_id"] == vendor_id for x in bulk.get_json()["updated"])
+
+        cleared = client.patch(
+            f"/api/v1/material-prices/{catalog_rows[0]}",
+            json={"supplier_company_id": ""},
+        )
+        assert cleared.status_code == 200, cleared.get_json()
+        assert cleared.get_json()["item"]["supplier_company_id"] is None
+
+        missing = client.patch(
+            f"/api/v1/material-prices/{catalog_rows[0]}",
+            json={"supplier_company_id": "No Such Vendor"},
+        )
+        assert missing.status_code == 400
+    finally:
+        with client.application.app_context():
+            for mid in catalog_rows:
+                row = db.session.get(MaterialPrice, uuid.UUID(mid))
+                if row is not None:
+                    row.supplier_company_id = None
+            company = db.session.get(Company, uuid.UUID(vendor_id))
+            if company is not None:
+                db.session.delete(company)
+            db.session.commit()
+
+
+def test_material_price_supplier_email_falls_back_to_contact(client, catalog_rows):
+    from app.models.company import Company, Contact
+
+    vendor_id = None
+    vendor_name = "Inbox-" + uuid.uuid4().hex[:6]
+    with client.application.app_context():
+        vendor = Company(name=vendor_name, company_type="vendor", email=None)
+        db.session.add(vendor)
+        db.session.flush()
+        db.session.add(
+            Contact(
+                company_id=vendor.id,
+                first_name="Sam",
+                last_name="Sales",
+                email="sales@" + vendor_name.lower() + ".example.com",
+                is_primary=True,
+            )
+        )
+        db.session.commit()
+        vendor_id = str(vendor.id)
+    try:
+        patched = client.patch(
+            f"/api/v1/material-prices/{catalog_rows[0]}",
+            json={"supplier_company_id": vendor_id},
+        )
+        assert patched.status_code == 200, patched.get_json()
+        assert patched.get_json()["item"]["supplier_email"] == "sales@" + vendor_name.lower() + ".example.com"
+    finally:
+        with client.application.app_context():
+            row = db.session.get(MaterialPrice, uuid.UUID(catalog_rows[0]))
+            if row is not None:
+                row.supplier_company_id = None
+            company = db.session.get(Company, uuid.UUID(vendor_id))
+            if company is not None:
+                db.session.delete(company)
+            db.session.commit()

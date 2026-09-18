@@ -282,6 +282,7 @@
                                                     <option value="size_width_in">Size width (in)</option>
                                                     <option value="size_height_in">Size height (in)</option>
                                                     <option value="manufacturer">Manufacturer</option>
+                                                    <option value="supplier_company_id">Buy from (supplier)</option>
                                                     <option value="item">Item</option>
                                                     <option value="description">Description</option>
                                                     <option value="mounting_type">Mounting</option>
@@ -296,7 +297,7 @@
                                             <div class="mb-3" id="usis-mat-bulk-value-wrap">
                                                 <label class="form-label" for="usis-mat-bulk-value">New value</label>
                                                 <input type="text" id="usis-mat-bulk-value" class="form-control" placeholder="Type the new value" autocomplete="off">
-                                                <div class="form-text">Division examples: 08 71 00 or 10 44 00. Leave blank to clear optional fields. Manufacturer + item must stay unique.</div>
+                                                <div class="form-text">Division examples: 08 71 00 or 10 44 00. Leave blank to clear optional fields. Manufacturer + item must stay unique. Buy from accepts a company name or id.</div>
                                             </div>
                                             <p class="small text-danger d-none" id="usis-mat-bulk-delete-hint">This permanently removes the selected catalog rows. Takeoff and spec links to those items are cleared.</p>
                                             <div class="form-check">
@@ -329,6 +330,13 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label" for="usis-mat-edit-manufacturer">Manufacturer</label>
                                                         <input type="text" class="form-control" id="usis-mat-edit-manufacturer" maxlength="120" required>
+                                                    </div>
+                                                    <div class="col-md-6 position-relative">
+                                                        <label class="form-label" for="usis-mat-edit-supplier">Buy from</label>
+                                                        <input type="hidden" id="usis-mat-edit-supplier-id" value="">
+                                                        <input type="search" class="form-control" id="usis-mat-edit-supplier" placeholder="Search a supplier company" autocomplete="off">
+                                                        <div class="list-group position-absolute w-100 shadow-sm d-none" id="usis-mat-edit-supplier-menu" style="z-index: 30;"></div>
+                                                        <div class="form-text" id="usis-mat-edit-supplier-email"></div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label" for="usis-mat-edit-category">Category</label>
@@ -1412,7 +1420,7 @@
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
-    <script src="assets/js/construction-material.js?v=20260917o"></script>
+    <script src="assets/js/construction-material.js?v=20260918a"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	    

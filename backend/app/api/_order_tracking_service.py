@@ -95,7 +95,9 @@ def _vendor_contact_email(c: Commitment) -> str | None:
     )
     if primary and primary.email:
         return primary.email.strip()
-    return None
+    from ..company_email import company_order_email
+
+    return company_order_email(vendor, load_contacts=False)
 
 
 def _load_schedule_item(project_id: uuid.UUID, item_id: uuid.UUID | None) -> ProjectScheduleItem | None:

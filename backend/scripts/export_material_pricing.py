@@ -55,6 +55,7 @@ def main() -> None:
     from app.material_size import sheet_area_sf, size_display
     from app.models.material_pricing import MaterialPrice
     from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
 
     stamp = datetime.now().strftime("%Y-%m-%d")
     export_dir = _BACKEND_ROOT / "data" / "catalog" / "exports"
@@ -76,7 +77,9 @@ def main() -> None:
                 "Set DATABASE_URL to the Render usis-cm-db External URL before exporting."
             )
         rows = db.session.scalars(
-            select(MaterialPrice).order_by(
+            select(MaterialPrice)
+            .options(joinedload(MaterialPrice.supplier_company))
+            .order_by(
                 MaterialPrice.csi_spec_section.asc().nulls_last(),
                 MaterialPrice.manufacturer.asc(),
                 MaterialPrice.category.asc().nulls_last(),
@@ -108,6 +111,9 @@ def main() -> None:
             "labor_production",
             "currency",
             "unit_of_measure",
+            "supplier_company_id",
+            "supplier_name",
+            "supplier_email",
             "created_at",
             "updated_at",
         ]
@@ -165,6 +171,11 @@ def main() -> None:
                         or "",
                         "currency": m.currency or "",
                         "unit_of_measure": m.unit_of_measure or "",
+                        "supplier_company_id": str(m.supplier_company_id) if m.supplier_company_id else "",
+                        "supplier_name": (m.supplier_company.name if m.supplier_company else ""),
+                        "supplier_email": (
+                            (m.supplier_company.email or "") if m.supplier_company else ""
+                        ),
                         "created_at": _iso(getattr(m, "created_at", None)),
                         "updated_at": _iso(getattr(m, "updated_at", None)),
                     }

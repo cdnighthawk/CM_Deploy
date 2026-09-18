@@ -363,7 +363,9 @@ def test_platform_create_org_and_invite(client, flask_app, no_dev_admin):
         json={"name": f"Platform Co {token}", "copy_catalog": False},
     )
     assert created.status_code == 201, created.get_data(as_text=True)
-    org_id = created.get_json()["item"]["id"]
+    created_item = created.get_json()["item"]
+    org_id = created_item["id"]
+    assert created_item.get("buildingconnected", {}).get("connected") is False
     invited = client.post(
         f"/api/v1/platform/organizations/{org_id}/invites",
         json={"email": invite_email, "first_name": "Pat"},
@@ -375,8 +377,9 @@ def test_platform_create_org_and_invite(client, flask_app, no_dev_admin):
 
     listed = client.get("/api/v1/platform/organizations")
     assert listed.status_code == 200
-    names = [o["name"] for o in listed.get_json()["items"]]
-    assert any(f"Platform Co {token}" == n for n in names)
+    match = next(o for o in listed.get_json()["items"] if o["id"] == org_id)
+    assert match["buildingconnected"]["connected"] is False
+    assert "/integrations/buildingconnected/oauth/start" in match["buildingconnected"]["oauth_start_url"]
 
     non_admin = f"iso_notplat_{token}@t.com"
     with flask_app.app_context():

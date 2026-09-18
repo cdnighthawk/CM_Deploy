@@ -17,6 +17,7 @@ from ..tenancy import (
     organization_public,
     provision_organization,
 )
+from ._integration_bc import buildingconnected_status_public
 from ._perms import CurrentUser, current_user
 
 
@@ -37,14 +38,21 @@ def _jsonify(obj: Any, status: int = 200):
     return jsonify(obj), status
 
 
+def _organization_setup_public(org: Organization) -> dict:
+    item = organization_public(org)
+    item["buildingconnected"] = buildingconnected_status_public(org.id)
+    return item
+
+
 def list_organizations(cu: CurrentUser) -> tuple[Any, int]:
     _require_platform(cu)
     with include_all_orgs():
         rows = db.session.scalars(select(Organization).order_by(Organization.name.asc())).all()
+        items = [_organization_setup_public(o) for o in rows]
     return _jsonify(
         {
             "entity": "organizations",
-            "items": [organization_public(o) for o in rows],
+            "items": items,
         }
     )
 
@@ -61,7 +69,7 @@ def create_organization(cu: CurrentUser, data: dict[str, Any]) -> tuple[Any, int
         copy_catalog = True
     org = provision_organization(name=name, copy_catalog=bool(copy_catalog))
     db.session.commit()
-    return _jsonify({"entity": "organization", "item": organization_public(org)}, 201)
+    return _jsonify({"entity": "organization", "item": _organization_setup_public(org)}, 201)
 
 
 def invite_organization_admin(cu: CurrentUser, org_id: uuid.UUID, data: dict[str, Any]) -> tuple[Any, int]:

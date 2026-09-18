@@ -154,6 +154,51 @@
 			});
 	}
 
+	function loadBcStatus() {
+		var statusEl = $("usis-co-bc-status");
+		var btn = $("usis-co-bc-connect");
+		return fetchJson("/api/v1/integrations/buildingconnected/status")
+			.then(function (d) {
+				var connected = !!(d && d.connected);
+				if (statusEl) {
+					statusEl.textContent = connected
+						? "Connected. Bid Board sync uses this company’s Autodesk account."
+						: "Not connected. Connect BuildingConnected so leads pull into this company.";
+					statusEl.className = "small mb-0 " + (connected ? "text-success" : "text-muted");
+				}
+				if (btn) btn.textContent = connected ? "Reconnect BuildingConnected" : "Connect BuildingConnected";
+			})
+			.catch(function (err) {
+				if (statusEl) {
+					statusEl.textContent = (err && err.message) || "Could not check BuildingConnected status.";
+					statusEl.className = "small mb-0 text-danger";
+				}
+			});
+	}
+
+	function openBcOauth() {
+		var width = 520;
+		var height = 720;
+		var left = Math.max(0, Math.round((window.screenX || 0) + ((window.outerWidth || 900) - width) / 2));
+		var top = Math.max(0, Math.round((window.screenY || 0) + ((window.outerHeight || 700) - height) / 2));
+		var url =
+			(window.usisApiBase ? window.usisApiBase() : "") +
+			"/api/v1/integrations/buildingconnected/oauth/start?return_to=" +
+			encodeURIComponent("/usis-company-settings.html");
+		var popup = window.open(
+			url,
+			"usisBcOauth",
+			"popup=yes,width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
+		);
+		if (!popup) {
+			flash("Pop-up blocked. Allow pop-ups for this site, then try Connect BuildingConnected again.", "error");
+			return;
+		}
+		try {
+			popup.focus();
+		} catch (e) {}
+	}
+
 	document.addEventListener("DOMContentLoaded", function () {
 		var add = $("usis-co-add");
 		if (add) add.addEventListener("click", function () {
@@ -176,6 +221,20 @@
 				if (del) remove(del.getAttribute("data-co-del"));
 			});
 		}
+		var bcBtn = $("usis-co-bc-connect");
+		if (bcBtn) bcBtn.addEventListener("click", openBcOauth);
+		window.addEventListener("message", function (event) {
+			if (event.origin !== window.location.origin) return;
+			var data = event.data;
+			if (!data || data.source !== "usis-bc-oauth") return;
+			if (data.ok) {
+				flash("BuildingConnected connected for this company.", "success");
+			} else {
+				flash(data.error || "BuildingConnected reconnect failed.", "error");
+			}
+			loadBcStatus();
+		});
 		load();
+		loadBcStatus();
 	});
 })();

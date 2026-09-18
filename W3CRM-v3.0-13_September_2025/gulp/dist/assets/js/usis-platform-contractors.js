@@ -5,6 +5,8 @@
 	"use strict";
 
 	var inviteOnly = false;
+	var wizardStep = 1;
+	var RETURN_TO = "/usis-platform-contractors.html";
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") {
@@ -105,13 +107,23 @@
 		var tbody = document.getElementById("usis-pc-tbody");
 		if (!tbody) return;
 		if (!items || !items.length) {
-			tbody.innerHTML = '<tr><td colspan="4" class="text-muted">No contractor companies yet.</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No contractor companies yet.</td></tr>';
 			return;
 		}
 		tbody.innerHTML = items
 			.map(function (o) {
 				var id = esc(o.id);
 				var sso = o.microsoft_sso_enabled ? "Yes" : "No";
+				var bc = (o.buildingconnected && o.buildingconnected.connected) ? "Connected" : "Not connected";
+				var bcClass = o.buildingconnected && o.buildingconnected.connected ? "text-success" : "text-muted";
+				var bcBtn =
+					'<button type="button" class="btn btn-sm btn-outline-secondary" data-usis-pc-bc="' +
+					id +
+					'" data-usis-pc-name="' +
+					esc(o.name) +
+					'">' +
+					(o.buildingconnected && o.buildingconnected.connected ? "Reconnect BC" : "Connect BC") +
+					"</button>";
 				return (
 					"<tr>" +
 					"<td>" +
@@ -123,7 +135,14 @@
 					"<td>" +
 					sso +
 					"</td>" +
-					'<td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary" data-usis-pc-invite="' +
+					'<td class="' +
+					bcClass +
+					'">' +
+					bc +
+					"</td>" +
+					'<td class="text-end text-nowrap">' +
+					bcBtn +
+					' <button type="button" class="btn btn-sm btn-outline-primary" data-usis-pc-invite="' +
 					id +
 					'" data-usis-pc-name="' +
 					esc(o.name) +
@@ -136,7 +155,7 @@
 
 	function loadOrgs() {
 		var tbody = document.getElementById("usis-pc-tbody");
-		if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Loading…</td></tr>';
+		if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Loading…</td></tr>';
 		return apiFetch("/api/v1/platform/organizations")
 			.then(function (res) {
 				return jsonOrEmpty(res).then(function (body) {
@@ -178,11 +197,81 @@
 		if (inst) inst.hide();
 	}
 
+	function setWizardStep(step) {
+		wizardStep = step;
+		var profile = document.getElementById("usis-pc-step-profile");
+		var bc = document.getElementById("usis-pc-step-bc");
+		var saveBtn = document.getElementById("usis-pc-save");
+		var secondary = document.getElementById("usis-pc-secondary");
+		if (profile) profile.classList.toggle("d-none", step === 2);
+		if (bc) bc.classList.toggle("d-none", step !== 2);
+		if (step === 2) {
+			if (saveBtn) saveBtn.textContent = "Connect BuildingConnected";
+			if (secondary) {
+				secondary.textContent = "Skip for now";
+				secondary.setAttribute("data-bs-dismiss", "modal");
+			}
+			document.getElementById("usis-pc-modal-title").textContent = "Connect BuildingConnected";
+		} else if (inviteOnly) {
+			if (saveBtn) saveBtn.textContent = "Send invite";
+			if (secondary) secondary.textContent = "Cancel";
+		} else {
+			if (saveBtn) saveBtn.textContent = "Create and invite";
+			if (secondary) secondary.textContent = "Cancel";
+		}
+	}
+
+	function oauthStartUrl(orgId) {
+		var url = apiBase() + "/api/v1/integrations/buildingconnected/oauth/start";
+		var params = [];
+		if (orgId) params.push("organization_id=" + encodeURIComponent(orgId));
+		params.push("return_to=" + encodeURIComponent(RETURN_TO));
+		return url + "?" + params.join("&");
+	}
+
+	function openBcOauth(orgId) {
+		var width = 520;
+		var height = 720;
+		var left = Math.max(0, Math.round((window.screenX || 0) + ((window.outerWidth || 900) - width) / 2));
+		var top = Math.max(0, Math.round((window.screenY || 0) + ((window.outerHeight || 700) - height) / 2));
+		var popup = window.open(
+			oauthStartUrl(orgId),
+			"usisBcOauth",
+			"popup=yes,width=" + width + ",height=" + height + ",left=" + left + ",top=" + top
+		);
+		if (!popup) {
+			modalErr("Pop-up blocked. Allow pop-ups for this site, then click Connect BuildingConnected again.");
+			return false;
+		}
+		try {
+			popup.focus();
+		} catch (e) {}
+		return true;
+	}
+
+	function setBcStatus(text, kind) {
+		var el = document.getElementById("usis-pc-bc-status");
+		if (!el) return;
+		el.textContent = text || "";
+		el.className = "small mb-0" + (kind === "success" ? " text-success" : kind === "error" ? " text-danger" : "");
+	}
+
+	function showBcStep(orgId, name, intro) {
+		document.getElementById("usis-pc-org-id").value = orgId || "";
+		var nameEl = document.getElementById("usis-pc-bc-org-name");
+		if (nameEl) nameEl.textContent = name || "this contractor";
+		var introEl = document.getElementById("usis-pc-bc-intro");
+		if (introEl) introEl.textContent = intro || "Connect this company’s BuildingConnected account so Bid Board leads stay in their login.";
+		setBcStatus("Not connected yet.");
+		modalErr("");
+		setWizardStep(2);
+		showModal();
+	}
+
 	function openCreate() {
 		inviteOnly = false;
 		modalErr("");
 		document.getElementById("usis-pc-modal-title").textContent = "Add contractor";
-		document.getElementById("usis-pc-save").textContent = "Create and invite";
 		document.getElementById("usis-pc-org-id").value = "";
 		document.getElementById("usis-pc-name").value = "";
 		document.getElementById("usis-pc-first").value = "";
@@ -191,6 +280,7 @@
 		document.getElementById("usis-pc-catalog").checked = true;
 		document.getElementById("usis-pc-name-wrap").classList.remove("d-none");
 		document.getElementById("usis-pc-catalog-wrap").classList.remove("d-none");
+		setWizardStep(1);
 		showModal();
 	}
 
@@ -198,7 +288,6 @@
 		inviteOnly = true;
 		modalErr("");
 		document.getElementById("usis-pc-modal-title").textContent = "Invite admin — " + (name || "contractor");
-		document.getElementById("usis-pc-save").textContent = "Send invite";
 		document.getElementById("usis-pc-org-id").value = orgId || "";
 		document.getElementById("usis-pc-name").value = name || "";
 		document.getElementById("usis-pc-first").value = "";
@@ -206,6 +295,7 @@
 		document.getElementById("usis-pc-email").value = "";
 		document.getElementById("usis-pc-name-wrap").classList.add("d-none");
 		document.getElementById("usis-pc-catalog-wrap").classList.add("d-none");
+		setWizardStep(1);
 		showModal();
 	}
 
@@ -230,6 +320,18 @@
 	}
 
 	function save() {
+		if (wizardStep === 2) {
+			var orgId = document.getElementById("usis-pc-org-id").value;
+			if (!orgId) {
+				modalErr("Missing company id.");
+				return;
+			}
+			modalErr("");
+			setBcStatus("Waiting for Autodesk sign-in…");
+			openBcOauth(orgId);
+			return;
+		}
+
 		var email = (document.getElementById("usis-pc-email").value || "").trim().toLowerCase();
 		var first = (document.getElementById("usis-pc-first").value || "").trim();
 		var last = (document.getElementById("usis-pc-last").value || "").trim();
@@ -293,8 +395,12 @@
 						);
 						return loadOrgs();
 					}
-					hideModal();
 					showFlash("Contractor created. " + inviteMessage(inv.body), "success");
+					showBcStep(
+						org.id,
+						org.name || name,
+						"Contractor created. Connect this company’s BuildingConnected account so Bid Board leads stay in their login."
+					);
 					return loadOrgs();
 				});
 			})
@@ -335,11 +441,34 @@
 		var tbody = document.getElementById("usis-pc-tbody");
 		if (tbody) {
 			tbody.addEventListener("click", function (ev) {
+				var bcBtn = ev.target.closest("[data-usis-pc-bc]");
+				if (bcBtn) {
+					showBcStep(
+						bcBtn.getAttribute("data-usis-pc-bc"),
+						bcBtn.getAttribute("data-usis-pc-name"),
+						"Connect this company’s BuildingConnected account so Bid Board leads stay in their login."
+					);
+					return;
+				}
 				var btn = ev.target.closest("[data-usis-pc-invite]");
 				if (!btn) return;
 				openInvite(btn.getAttribute("data-usis-pc-invite"), btn.getAttribute("data-usis-pc-name"));
 			});
 		}
+		window.addEventListener("message", function (event) {
+			if (event.origin !== window.location.origin) return;
+			var data = event.data;
+			if (!data || data.source !== "usis-bc-oauth") return;
+			if (data.ok) {
+				setBcStatus("BuildingConnected is connected for this company.", "success");
+				showFlash("BuildingConnected connected.", "success");
+				loadOrgs();
+				window.setTimeout(hideModal, 700);
+				return;
+			}
+			setBcStatus(data.error || "BuildingConnected reconnect failed.", "error");
+			modalErr(data.error || "BuildingConnected reconnect failed.");
+		});
 		checkAccessThenLoad();
 	}
 

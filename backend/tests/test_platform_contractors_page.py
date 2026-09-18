@@ -27,6 +27,11 @@ def test_src_page_and_script_exist():
     assert "usis-platform-contractors.js" in html
     assert "Add contractor" in html
     assert "Copy catalog without USIS prices" in html
+    assert "Connect BuildingConnected" in html
+    settings_src = SRC / "usis-company-settings.html"
+    assert "Connect BuildingConnected" in settings_src.read_text(encoding="utf-8")
+    assert "/api/v1/integrations/buildingconnected/status" in (SRC / "assets/js/usis-company-settings.js").read_text(encoding="utf-8")
+    assert "BuildingConnected" in html
     assert "Platform administrator required" in html
     assert "/api/v1/platform/organizations" in js
     assert "/api/v1/platform/organizations/" in js
@@ -36,6 +41,9 @@ def test_src_page_and_script_exist():
     assert 'credentials = opts.credentials || "include"' in js
     assert "Set-password email sent" in js
     assert "email dry-run" in js
+    assert "/api/v1/integrations/buildingconnected/oauth/start" in js
+    assert "organization_id=" in js
+    assert "usis-bc-oauth" in js
 
 
 def test_src_nav_uses_platform_module_not_user_admin():
@@ -66,6 +74,7 @@ def test_dist_mirrors_page_script_and_nav():
     projects = (DIST / "construction/projects.html").read_text(encoding="utf-8")
     assert 'data-usis-module="platform"' in settings
     assert 'href="usis-platform-contractors.html"' in settings
+    assert "Connect BuildingConnected" in settings
     assert 'data-usis-module="platform"' in projects
     assert 'href="usis-platform-contractors.html"' in projects
     index = DIST_INDEX.read_text(encoding="utf-8")

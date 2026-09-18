@@ -25,7 +25,7 @@
 					<div class="usis-page-header__text">
 						<span class="usis-overline">Admin</span>
 						<h1 class="h5 mb-1">Contractors</h1>
-						<p class="text-muted small mb-0">Create a separate login company with its own data. This is not the vendor directory on Companies.</p>
+						<p class="text-muted small mb-0">Create a separate login company with its own data and BuildingConnected account. This is not the vendor directory on Companies.</p>
 					</div>
 					<div class="usis-page-header__actions">
 						<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-pc-refresh">Refresh</button>
@@ -35,7 +35,7 @@
 				<div class="alert d-none py-2 px-3 mb-3" id="usis-pc-flash" role="status"></div>
 				<div class="card border-0 shadow-sm" id="usis-pc-card">
 					<div class="card-body">
-						<p class="text-muted small mb-3">Each contractor gets an organization, a self company named after it, and an invited admin who sets a password by email. User admin still only manages people inside the company you are signed into.</p>
+						<p class="text-muted small mb-3">Each contractor gets an organization, a self company named after it, and an invited admin who sets a password by email. Connect their BuildingConnected account during setup so Bid Board leads stay in that company. User admin still only manages people inside the company you are signed into.</p>
 						<div class="table-responsive">
 							<table class="table table-sm table-hover align-middle mb-0">
 								<thead class="table-light">
@@ -43,10 +43,11 @@
 										<th>Name</th>
 										<th>Slug</th>
 										<th>Microsoft SSO</th>
+										<th>BuildingConnected</th>
 										<th></th>
 									</tr>
 								</thead>
-								<tbody id="usis-pc-tbody"><tr><td colspan="4" class="text-muted">Loading…</td></tr></tbody>
+								<tbody id="usis-pc-tbody"><tr><td colspan="5" class="text-muted">Loading…</td></tr></tbody>
 							</table>
 						</div>
 					</div>
@@ -66,31 +67,39 @@
 				<div class="modal-body">
 					<div class="alert alert-danger py-2 d-none" id="usis-pc-err" role="alert"></div>
 					<input type="hidden" id="usis-pc-org-id" value="">
-					<div class="mb-2" id="usis-pc-name-wrap">
-						<label class="form-label small mb-0" for="usis-pc-name">Company name</label>
-						<input type="text" class="form-control form-control-sm" id="usis-pc-name" maxlength="255" placeholder="e.g. Acme Interiors">
-					</div>
-					<div class="row g-2 mb-2">
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-pc-first">Admin first name</label>
-							<input type="text" class="form-control form-control-sm" id="usis-pc-first" maxlength="120">
+					<div id="usis-pc-step-profile">
+						<div class="mb-2" id="usis-pc-name-wrap">
+							<label class="form-label small mb-0" for="usis-pc-name">Company name</label>
+							<input type="text" class="form-control form-control-sm" id="usis-pc-name" maxlength="255" placeholder="e.g. Acme Interiors">
 						</div>
-						<div class="col-md-6">
-							<label class="form-label small mb-0" for="usis-pc-last">Admin last name</label>
-							<input type="text" class="form-control form-control-sm" id="usis-pc-last" maxlength="120">
+						<div class="row g-2 mb-2">
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-pc-first">Admin first name</label>
+								<input type="text" class="form-control form-control-sm" id="usis-pc-first" maxlength="120">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label small mb-0" for="usis-pc-last">Admin last name</label>
+								<input type="text" class="form-control form-control-sm" id="usis-pc-last" maxlength="120">
+							</div>
+						</div>
+						<div class="mb-2">
+							<label class="form-label small mb-0" for="usis-pc-email">Admin email</label>
+							<input type="email" class="form-control form-control-sm" id="usis-pc-email" maxlength="255" placeholder="admin@company.com" required>
+						</div>
+						<div class="form-check" id="usis-pc-catalog-wrap">
+							<input class="form-check-input" type="checkbox" id="usis-pc-catalog" checked>
+							<label class="form-check-label small" for="usis-pc-catalog">Copy catalog without USIS prices</label>
 						</div>
 					</div>
-					<div class="mb-2">
-						<label class="form-label small mb-0" for="usis-pc-email">Admin email</label>
-						<input type="email" class="form-control form-control-sm" id="usis-pc-email" maxlength="255" placeholder="admin@company.com" required>
-					</div>
-					<div class="form-check" id="usis-pc-catalog-wrap">
-						<input class="form-check-input" type="checkbox" id="usis-pc-catalog" checked>
-						<label class="form-check-label small" for="usis-pc-catalog">Copy catalog without USIS prices</label>
+					<div id="usis-pc-step-bc" class="d-none">
+						<h6 class="mb-2">Connect BuildingConnected</h6>
+						<p class="mb-2" id="usis-pc-bc-intro">Contractor created. Connect this company’s BuildingConnected account so Bid Board leads stay in their login.</p>
+						<p class="small text-muted">In the Autodesk window, sign in as a BuildingConnected user from <strong id="usis-pc-bc-org-name">this contractor</strong> — not the USIS Autodesk account.</p>
+						<p class="small mb-0" id="usis-pc-bc-status">Not connected yet.</p>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal" id="usis-pc-secondary">Cancel</button>
 					<button type="button" class="btn btn-sm btn-primary" id="usis-pc-save">Create and invite</button>
 				</div>
 			</div>

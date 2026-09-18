@@ -20,7 +20,7 @@ services:
     buildCommand: >-
       (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) || true;
       pip install -r requirements.txt
-    # Redeploy trigger: catalog column customizer (2026-09-17p)
+    # Redeploy trigger: catalog column widths (2026-09-17q)
     preDeployCommand: flask db upgrade
     startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --timeout 180
     healthCheckPath: /healthz
@@ -39,6 +39,8 @@ services:
         value: "0"
       - key: USIS_ALLOW_SELF_REGISTER
         value: "1"
+      - key: USIS_ALLOW_COMPANY_SELF_SIGNUP
+        value: "0"
       - key: USIS_APP_PUBLIC_URL
         value: https://www.usiscm.com
       - key: USIS_API_DEV_ALLOW_ANY

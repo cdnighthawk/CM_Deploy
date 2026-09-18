@@ -7,7 +7,18 @@ from .chat import ChatConversation, ChatMessage, ChatParticipant
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
 from .organization import Organization, OrganizationMember
-from .saas import FeatureFlag, ImpersonationSession, PlatformAudit, TenantEntitlement, TenantSetting
+from .saas import (
+    FeatureFlag,
+    ImpersonationSession,
+    OrganizationNote,
+    OrganizationSeatOverage,
+    OrganizationSendDomain,
+    PlanDefault,
+    PlatformAudit,
+    PlatformJob,
+    TenantEntitlement,
+    TenantSetting,
+)
 from .user_activity import UserActivityDaily, UserActivityEvent
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .change_management import (
@@ -293,7 +304,12 @@ __all__ = [
     "OrganizationMember",
     "FeatureFlag",
     "ImpersonationSession",
+    "OrganizationNote",
+    "OrganizationSeatOverage",
+    "OrganizationSendDomain",
+    "PlanDefault",
     "PlatformAudit",
+    "PlatformJob",
     "TenantEntitlement",
     "TenantSetting",
     "OwnerChangeOrder",

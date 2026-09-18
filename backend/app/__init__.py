@@ -19,6 +19,16 @@ from flask_cors import CORS
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 
+def _plan_empty_html(message: str) -> str:
+    msg = (message or "This module is not on your plan. Ask USIS if you need it.").replace("<", "&lt;")
+    return (
+        "<!doctype html><html><head><meta charset='utf-8'><title>USIS CM</title>"
+        "<style>body{font-family:Segoe UI,Arial,sans-serif;margin:48px;color:#1F4E5F}"
+        ".box{max-width:480px;margin:auto;text-align:center}</style></head><body>"
+        f"<div class='box'><h1>Not on your plan</h1><p>{msg}</p></div></body></html>"
+    )
+
+
 def _running_under_pytest() -> bool:
     """True only inside pytest, not ``flask run`` that inherited ``USIS_TESTING``."""
     return "pytest" in sys.modules or bool(os.environ.get("PYTEST_CURRENT_TEST"))
@@ -297,7 +307,31 @@ def create_app(config_object: str | None = None) -> Flask:
         path = request.path
         if allow_dev_anonymous_access():
             return None
-        module = None
+        if path.startswith("/api/public/") or path.startswith("/public/"):
+            return None
+        oid = current_organization_id()
+        if oid is None:
+            return None
+        from .models.organization import Organization
+        from .tenancy import include_all_orgs
+
+        with include_all_orgs():
+            org = db.session.get(Organization, oid)
+        suspended = org is not None and (org.status or "") in ("suspended", "closed")
+        is_settings = path == "/api/settings" or path.startswith("/api/settings/") or path == "/settings" or path.startswith("/settings/")
+        is_overview = path in ("/api/settings/overview", "/settings", "/settings/")
+        if suspended and not is_overview:
+            if request.method not in ("GET", "HEAD") and is_settings:
+                return jsonify({"error": "Organization is suspended. Settings are read-only."}), 403
+            if not is_settings:
+                wants_json = path.startswith("/api/") or "application/json" in (request.headers.get("Accept") or "")
+                msg = "This organization is suspended."
+                if wants_json:
+                    return jsonify({"error": msg}), 403
+                return _plan_empty_html(msg), 403
+        from .api._saas_console import plan_module_for_path
+
+        module = plan_module_for_path(path)
         if path.startswith("/api/hires") and "/api/public/" not in path:
             module = "hiring"
         elif path.startswith("/api/correspondence"):
@@ -306,17 +340,23 @@ def create_app(config_object: str | None = None) -> Flask:
             module = "field"
         elif "/spec-scan" in path or path.endswith("/spec-book/import") or "/spec-trade-map" in path:
             module = "spec_split"
+        if module == "local_ai":
+            body = request.get_json(silent=True) or {}
+            provider = str((body or {}).get("provider") or request.args.get("provider") or "").strip().lower()
+            if provider not in ("local", "llama", "ollama"):
+                return None
         if module is None:
-            return None
-        oid = current_organization_id()
-        if oid is None:
             return None
         try:
             if module_enabled(oid, module):
                 return None
         except Exception:
             return None
-        return jsonify({"error": "This module is not on your plan."}), 403
+        msg = "This module is not on your plan. Ask USIS if you need it."
+        wants_json = path.startswith("/api/") or "application/json" in (request.headers.get("Accept") or "")
+        if wants_json:
+            return jsonify({"error": msg, "module": module}), 403
+        return _plan_empty_html(msg), 403
 
     @app.before_request
     def _gate_settings_admin_pages() -> None:

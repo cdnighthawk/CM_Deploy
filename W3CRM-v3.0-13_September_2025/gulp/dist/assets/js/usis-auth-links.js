@@ -141,7 +141,9 @@
 			wrap.insertBefore(existing, wrap.firstChild);
 		}
 		existing.innerHTML =
-			'<span>Viewing ' +
+			'<span>Viewing as ' +
+			String(imp.target_user_name || "Company Admin").replace(/</g, "&lt;") +
+			" @ " +
 			String(imp.tenant_name || "tenant").replace(/</g, "&lt;") +
 			' — </span><button type="button" class="btn btn-sm btn-light" id="usis-impersonation-end">End session</button>';
 		var btn = document.getElementById("usis-impersonation-end");

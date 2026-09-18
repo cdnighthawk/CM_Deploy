@@ -100,6 +100,9 @@ def test_src_pages_exist():
         "AI",
         "Integrations",
         "Audit",
+        "Spend bands",
+        "assignment_policy",
+        "Creator",
     ):
         assert label in settings_js
     admin_js = (src / "assets/js/usis-admin.js").read_text(encoding="utf-8")
@@ -379,4 +382,86 @@ def test_admin_overview_operator_only(client, flask_app, no_dev_admin):
     assert locks.status_code == 200
     orgs = client.get("/api/admin/organizations")
     assert orgs.status_code == 200
+
+
+def test_last_platform_operator_cannot_be_deleted(client, flask_app, no_dev_admin):
+    _skip_if_missing(flask_app)
+    with flask_app.app_context():
+        org = ensure_usis_organization()
+        ops = db.session.scalars(select(User).where(User.is_platform_operator.is_(True))).all()
+        for u in ops[1:]:
+            u.is_platform_operator = False
+        if not ops:
+            op = _user("onlyop_" + uuid.uuid4().hex[:8] + "@t.com", operator=True)
+            add_member(op.id, org.id, ORG_ROLE_ADMIN)
+            email = op.email
+            uid = str(op.id)
+        else:
+            email = ops[0].email
+            uid = str(ops[0].id)
+            if not ops[0].password_hash:
+                from werkzeug.security import generate_password_hash
+
+                ops[0].password_hash = generate_password_hash("secret123")
+        db.session.commit()
+    _login(client, email, "secret123")
+    r = client.delete("/api/admin/operators/" + uid)
+    assert r.status_code == 400
+    assert "last" in ((r.get_json() or {}).get("error") or "").lower()
+
+
+def test_publish_po_bands_does_not_change_inflight_version(client, flask_app, no_dev_admin):
+    _skip_if_missing(flask_app)
+    with flask_app.app_context():
+        try:
+            db.session.execute(text("SELECT 1 FROM workflow_definitions LIMIT 1"))
+            db.session.execute(text("SELECT 1 FROM workflow_instances LIMIT 1"))
+        except (OperationalError, ProgrammingError) as exc:
+            pytest.skip(f"workflow schema missing: {exc}")
+        from app.api._workflow_service import PROCESS_PURCHASE_ORDER, ensure_default_definition, start_instance
+        from app.models import WorkflowInstance
+        from app.tenancy import set_current_organization_id
+
+        org = ensure_usis_organization()
+        role = _admin_role()
+        u = _user("po_" + uuid.uuid4().hex[:8] + "@t.com")
+        add_member(u.id, org.id, ORG_ROLE_ADMIN)
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        set_current_organization_id(org.id)
+        definition = ensure_default_definition(process_key=PROCESS_PURCHASE_ORDER)
+        frozen = int(definition.version)
+        inst = start_instance(
+            process_key=PROCESS_PURCHASE_ORDER,
+            subject_type="test_po",
+            subject_id=uuid.uuid4(),
+        )
+        inst_id = inst.id
+        db.session.commit()
+        email = u.email
+    _login(client, email, "secret123")
+    r = client.post(
+        "/api/settings/money",
+        json={"po.band_pm": 6000, "po.band_0": 0, "po.band_director": 25000, "tm.requires_co": True},
+    )
+    assert r.status_code == 200, r.get_data(as_text=True)
+    skip = client.put("/api/settings/po.skip_down", json={"value": True})
+    assert skip.status_code == 403
+    with flask_app.app_context():
+        from app.models import WorkflowInstance
+
+        row = db.session.get(WorkflowInstance, inst_id)
+        assert row is not None
+        assert int(row.definition_version) == frozen
+
+
+def test_src_money_and_admin_v2_labels():
+    src = GULP / "src"
+    settings_js = (src / "assets/js/usis-settings.js").read_text(encoding="utf-8")
+    assert "Spend bands" in settings_js
+    assert "Workflow pack" in settings_js
+    admin_js = (src / "assets/js/usis-admin.js").read_text(encoding="utf-8")
+    assert "usis-adm-tabs" in admin_js
+    assert "/api/admin/operators" in admin_js
+    assert "not metered yet" in admin_js
+    assert "Force end" in admin_js
 

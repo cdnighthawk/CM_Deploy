@@ -161,6 +161,7 @@
 				if (!res.ok) return;
 				var caps = (res.body && res.body.capabilities) || {};
 				var platform = !!caps.is_platform_operator;
+				var ents = caps.entitlements || {};
 				document.querySelectorAll("#usis-platform-admin-nav, [data-usis-module='platform']").forEach(function (li) {
 					if (platform) {
 						li.style.display = "";
@@ -170,6 +171,32 @@
 						li.setAttribute("aria-hidden", "true");
 					}
 				});
+				if (ents.time === false) {
+					var timeNav = document.getElementById("usis-time-nav");
+					if (timeNav) {
+						timeNav.style.display = "none";
+						timeNav.setAttribute("aria-hidden", "true");
+					}
+				}
+				if (ents.hiring === false) {
+					document.querySelectorAll('a[href*="people-hiring"], a[href="/people/hiring"]').forEach(function (a) {
+						var li = a.closest("li");
+						if (li) {
+							li.style.display = "none";
+							li.setAttribute("aria-hidden", "true");
+						}
+					});
+				}
+				if (caps.org_status === "suspended") {
+					var wrap = document.getElementById("main-wrapper") || document.body;
+					if (!document.getElementById("usis-suspended-banner")) {
+						var ban = document.createElement("div");
+						ban.id = "usis-suspended-banner";
+						ban.className = "alert alert-warning mb-0";
+						ban.textContent = "This organization is suspended. Settings are read-only.";
+						wrap.insertBefore(ban, wrap.firstChild);
+					}
+				}
 				if (caps.is_superuser) return;
 				applyNav(caps.modules || {});
 				if (!platform) {

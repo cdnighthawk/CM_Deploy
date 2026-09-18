@@ -191,6 +191,8 @@ def _copy_assets() -> None:
     for rel in (
         "assets/js/usis-settings.js",
         "assets/js/usis-admin.js",
+        "assets/js/usis-auth-links.js",
+        "assets/js/usis-nav-access.js",
         "assets/css/usis-ui.css",
         "elements/deznav-construction.html",
     ):

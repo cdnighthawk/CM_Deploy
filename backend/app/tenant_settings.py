@@ -16,7 +16,7 @@ from sqlalchemy import select
 
 from .extensions import db
 from .models.organization import Organization, USIS_ORG_SLUG
-from .models.saas import FeatureFlag, TenantEntitlement, TenantSetting
+from .models.saas import FeatureFlag, OrganizationSendDomain, PlanDefault, TenantEntitlement, TenantSetting
 from .tenancy import current_organization_id, include_all_orgs
 
 LOCKED_MESSAGE = "Platform policy — cannot be changed."
@@ -94,6 +94,16 @@ SETTING_DEFAULTS: dict[str, Any] = {
     "company.offices": [],
     "company.letterhead_document_id": None,
     "company.public_hostname": "",
+    "company.public_hostname_status": "pending",
+    "project.default_trades": [
+        "Drywall",
+        "Paint",
+        "Flooring",
+        "Ceilings",
+        "Trim",
+        "Div 10",
+    ],
+    "project.who_may_create": ["admin", "pm", "estimator"],
     "security.sso_m365_tenant_id": "",
     "security.mfa_required_roles": ["president", "hr", "ap"],
     "security.session_idle_minutes": 480,
@@ -150,6 +160,11 @@ PLATFORM_ONLY_KEYS = frozenset({"ai.local_endpoint", "ai.tenant_call_cap_daily"}
 FEATURE_FLAG_CATALOG: dict[str, dict[str, Any]] = {
     "rfp.b2_files_page": {"default_on": False, "description": "RFP B2 files page"},
     "ai.local_model": {"default_on": True, "description": "Local AI selectable in ChatBot"},
+    "spec_split": {"default_on": True, "description": "Split specs into sections"},
+    "hiring_packet": {"default_on": True, "description": "Hiring packet"},
+    "time_live": {"default_on": True, "description": "Time live map"},
+    "local_ai": {"default_on": True, "description": "Local Llama provider in ChatBot"},
+    "correspondence_ingest": {"default_on": False, "description": "Correspondence mailbox ingest"},
 }
 
 _CACHE: dict[tuple[str, str], Any] = {}
@@ -209,12 +224,60 @@ def current_tenant_setting(key: str, default: Any = None) -> Any:
     return tenant_setting(current_organization_id(), key, default)
 
 
-def from_address_allowed(address: str) -> bool:
+def live_send_domains(tenant_id: uuid.UUID | None) -> tuple[str, ...]:
+    extra: list[str] = []
+    if tenant_id is not None:
+        with include_all_orgs():
+            rows = db.session.scalars(
+                select(OrganizationSendDomain).where(
+                    OrganizationSendDomain.organization_id == tenant_id,
+                    OrganizationSendDomain.status == "live",
+                )
+            ).all()
+        extra = [str(r.domain or "").strip().lower() for r in rows if r.domain]
+    return tuple(d for d in (*ALLOWED_FROM_DOMAINS, *extra) if d)
+
+
+def from_address_allowed(address: str, tenant_id: uuid.UUID | None = None) -> bool:
     addr = (address or "").strip().lower()
     if "@" not in addr:
         return False
     domain = addr.rsplit("@", 1)[-1]
-    return any(domain == d or domain.endswith("." + d) for d in ALLOWED_FROM_DOMAINS)
+    oid = tenant_id if tenant_id is not None else current_organization_id()
+    return any(domain == d or domain.endswith("." + d) for d in live_send_domains(oid))
+
+
+def plan_default_modules(plan_key: str) -> frozenset[str]:
+    """Plan default module set. Persisted rows override the code catalog without stripping org overrides."""
+    key = (plan_key or "full").strip().lower()
+    if key not in PLAN_KEYS:
+        key = "full"
+    with include_all_orgs():
+        rows = db.session.scalars(select(PlanDefault).where(PlanDefault.plan_key == key)).all()
+    if not rows:
+        return PLAN_DEFAULT_MODULES.get(key, PLAN_DEFAULT_MODULES["full"])
+    return frozenset(r.module_key for r in rows if r.enabled)
+
+
+def set_plan_default_modules(plan_key: str, modules: list[str] | set[str] | frozenset[str]) -> frozenset[str]:
+    key = (plan_key or "").strip().lower()
+    if key not in PLAN_KEYS:
+        raise ValueError("invalid plan_key")
+    wanted = {str(m).strip() for m in modules if str(m).strip() in MODULE_KEYS}
+    with include_all_orgs():
+        existing = {
+            r.module_key: r
+            for r in db.session.scalars(select(PlanDefault).where(PlanDefault.plan_key == key)).all()
+        }
+        for mk in MODULE_KEYS:
+            on = mk in wanted
+            row = existing.get(mk)
+            if row is None:
+                db.session.add(PlanDefault(plan_key=key, module_key=mk, enabled=on))
+            else:
+                row.enabled = on
+        db.session.flush()
+    return frozenset(wanted)
 
 
 def set_tenant_setting(
@@ -228,7 +291,7 @@ def set_tenant_setting(
     if key in LOCKED_KEYS and not allow_locked:
         raise LockedSettingError(key)
     if key in ("mail.rfp.from_address", "mail.field.from_address", "mail.hire.from_address"):
-        if value and not from_address_allowed(str(value)):
+        if value and not from_address_allowed(str(value), tenant_id):
             raise ValueError("From address must use an allow-listed company domain.")
     if key == "ai.dump_correspondence_to_grok" and value:
         raise LockedSettingError(key)
@@ -277,7 +340,7 @@ def module_enabled(tenant_id: uuid.UUID | None, module_key: str) -> bool:
             return bool(row.enabled)
         org = db.session.get(Organization, tenant_id)
     plan = (org.plan_key if org is not None else None) or "full"
-    allowed = PLAN_DEFAULT_MODULES.get(plan, PLAN_DEFAULT_MODULES["full"])
+    allowed = plan_default_modules(plan)
     return module_key in allowed
 
 

@@ -140,3 +140,98 @@ class ImpersonationSession(UUIDPKMixin, db.Model):
     )
     ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     banner_ack: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class OrganizationSendDomain(UUIDPKMixin, TimestampMixin, db.Model):
+    """Approved outbound mail domains. Default live domain is gousis.com (code)."""
+
+    __tablename__ = "organization_send_domains"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "domain", name="uq_organization_send_domains_org_domain"),
+    )
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    domain: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    requested_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class OrganizationNote(UUIDPKMixin, db.Model):
+    """Operator support journal. Not visible to the contractor."""
+
+    __tablename__ = "organization_notes"
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    actor_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class OrganizationSeatOverage(UUIDPKMixin, TimestampMixin, db.Model):
+    """Temporary seat-cap overage. Invites stay blocked unless a live row exists."""
+
+    __tablename__ = "organization_seat_overages"
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    seat_kind: Mapped[str] = mapped_column(String(20), nullable=False, default="office")
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+
+class PlatformJob(UUIDPKMixin, TimestampMixin, db.Model):
+    """Queued export / wipe. Wipe does not delete in-request."""
+
+    __tablename__ = "platform_jobs"
+
+    organization_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    job_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    payload_json: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+
+
+class PlanDefault(UUIDPKMixin, TimestampMixin, db.Model):
+    """Persisted plan default module set. Missing row = inherit code PLAN_DEFAULT_MODULES."""
+
+    __tablename__ = "plan_defaults"
+    __table_args__ = (UniqueConstraint("plan_key", "module_key", name="uq_plan_defaults_plan_module"),)
+
+    plan_key: Mapped[str] = mapped_column(String(20), nullable=False)
+    module_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

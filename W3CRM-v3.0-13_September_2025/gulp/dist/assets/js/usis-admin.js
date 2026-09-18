@@ -1,8 +1,21 @@
 /**
- * Platform Admin — tenants, flags, health, audit, impersonate.
+ * Platform Admin console — inner left rail + organization workspace.
  */
 (function () {
 	"use strict";
+
+	var FALLBACK_RAIL = [
+		{ id: "overview", path: "/admin", title: "Overview" },
+		{ id: "organizations", path: "/admin/organizations", title: "Organizations" },
+		{ id: "provision", path: "/admin/provision", title: "Provision" },
+		{ id: "plans", path: "/admin/plans", title: "Plans & entitlements" },
+		{ id: "flags", path: "/admin/flags", title: "Feature flags" },
+		{ id: "usage", path: "/admin/usage", title: "Usage & health" },
+		{ id: "support", path: "/admin/support", title: "Support" },
+		{ id: "operators", path: "/admin/operators", title: "Operators" },
+		{ id: "audit", path: "/admin/audit", title: "Audit" },
+		{ id: "policy", path: "/admin/policy", title: "Policy locks" },
+	];
 
 	function apiBase() {
 		if (typeof window.usisApiBase === "function") return window.usisApiBase();
@@ -36,12 +49,18 @@
 
 	function pageKind() {
 		var p = (window.location.pathname || "").replace(/\\/g, "/");
-		var m = p.match(/\/admin\/tenants\/([^/]+)/i);
+		var m = p.match(/\/admin\/(?:organizations|tenants)\/([^/]+)/i);
 		if (m) return { kind: "tenant", id: decodeURIComponent(m[1]) };
 		if (/\/admin\/flags/i.test(p)) return { kind: "flags" };
-		if (/\/admin\/health/i.test(p)) return { kind: "health" };
+		if (/\/admin\/(?:usage|health)/i.test(p)) return { kind: "usage" };
 		if (/\/admin\/audit/i.test(p)) return { kind: "audit" };
-		return { kind: "list" };
+		if (/\/admin\/provision/i.test(p)) return { kind: "provision" };
+		if (/\/admin\/plans/i.test(p)) return { kind: "plans" };
+		if (/\/admin\/support/i.test(p)) return { kind: "support" };
+		if (/\/admin\/operators/i.test(p)) return { kind: "operators" };
+		if (/\/admin\/policy/i.test(p)) return { kind: "policy" };
+		if (/\/admin\/organizations/i.test(p) || /\/admin\/tenants\/?$/i.test(p)) return { kind: "organizations" };
+		return { kind: "overview" };
 	}
 
 	function flash(msg, kind) {
@@ -55,6 +74,30 @@
 	function chip(status) {
 		if (window.USISUi && window.USISUi.statusChip) return window.USISUi.statusChip(status || "");
 		return esc(status || "");
+	}
+
+	function healthDot(st) {
+		if (st === "ok") return "🟢";
+		if (st === "warn") return "🟡";
+		return "🔴";
+	}
+
+	function renderRail(activeId) {
+		var nav = document.getElementById("usis-adm-rail");
+		if (!nav) return;
+		var html = '<ul class="nav flex-column">';
+		FALLBACK_RAIL.forEach(function (t) {
+			html +=
+				'<li class="nav-item"><a class="nav-link' +
+				(t.id === activeId ? " active" : "") +
+				'" href="' +
+				esc(t.path) +
+				'">' +
+				esc(t.title) +
+				"</a></li>";
+		});
+		html += "</ul>";
+		nav.innerHTML = html;
 	}
 
 	function askReason(title, cb) {
@@ -80,55 +123,91 @@
 		if (modal) modal.show();
 	}
 
-	function navLinks() {
+	function kpiCard(label, value) {
 		return (
-			'<a class="btn btn-sm btn-outline-secondary" href="/admin">Tenants</a> ' +
-			'<a class="btn btn-sm btn-outline-secondary" href="/admin/flags">Flags</a> ' +
-			'<a class="btn btn-sm btn-outline-secondary" href="/admin/health">Health</a> ' +
-			'<a class="btn btn-sm btn-outline-secondary" href="/admin/audit">Audit</a>'
+			'<div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-3"><div class="small text-muted">' +
+			esc(label) +
+			'</div><div class="h5 mb-0">' +
+			esc(value) +
+			"</div></div></div></div>"
 		);
 	}
 
+	function renderOverview() {
+		document.getElementById("usis-adm-title").textContent = "Overview";
+		document.getElementById("usis-adm-lead").textContent = "Platform health, seats, and recent audit.";
+		fetchJson("/api/admin/overview").then(function (r) {
+			if (r.status === 403) {
+				document.getElementById("usis-adm-forbidden").classList.remove("d-none");
+				document.getElementById("usis-adm-root").innerHTML = "";
+				return;
+			}
+			var d = r.body || {};
+			var by = d.organizations_by_status || {};
+			var seats = d.seats || {};
+			var health = d.health || {};
+			var html = '<div class="row g-3 mb-3">';
+			html += kpiCard("Organizations", d.organization_count || 0);
+			html += kpiCard("Trial / active / suspended", (by.trial || 0) + " / " + (by.active || 0) + " / " + (by.suspended || 0));
+			html += kpiCard("Office seats", (seats.office_used || 0) + " / " + (seats.office_cap || "—"));
+			html += kpiCard("Field seats", (seats.field_used || 0) + " / " + (seats.field_cap || "—"));
+			html += kpiCard("Open impersonations", d.open_impersonations || 0);
+			html += kpiCard("AI calls today", d.ai_calls_today == null ? "not metered yet" : d.ai_calls_today);
+			html += "</div><div class=\"d-flex flex-wrap gap-2 mb-3\">";
+			Object.keys(health).forEach(function (k) {
+				html +=
+					'<span class="badge text-bg-light border">' +
+					healthDot(health[k].status) +
+					" " +
+					esc(k) +
+					"</span>";
+			});
+			html +=
+				'</div><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h6">Last 20 platform audit rows</h2><div class="table-responsive"><table class="table table-sm mb-0"><thead class="table-light"><tr><th>When</th><th>Action</th><th>Reason</th></tr></thead><tbody>';
+			(d.audit || []).forEach(function (row) {
+				html +=
+					"<tr><td>" +
+					esc(row.created_at || "") +
+					"</td><td>" +
+					esc(row.action || "") +
+					"</td><td>" +
+					esc(row.reason || "") +
+					"</td></tr>";
+			});
+			if (!(d.audit || []).length) html += '<tr><td colspan="3" class="text-muted">No audit rows.</td></tr>';
+			html += "</tbody></table></div></div></div>";
+			document.getElementById("usis-adm-root").innerHTML = html;
+		});
+	}
+
 	function renderList() {
-		document.getElementById("usis-adm-title").textContent = "Admin";
-		document.getElementById("usis-adm-actions").innerHTML =
-			navLinks() + ' <button type="button" class="btn btn-sm btn-primary" id="usis-adm-add">Add tenant</button>';
-		fetchJson("/api/admin/tenants").then(function (r) {
+		document.getElementById("usis-adm-title").textContent = "Organizations";
+		document.getElementById("usis-adm-lead").textContent = "Every subscriber company.";
+		fetchJson("/api/admin/organizations").then(function (r) {
 			if (r.status === 403) {
 				document.getElementById("usis-adm-forbidden").classList.remove("d-none");
 				document.getElementById("usis-adm-root").innerHTML = "";
 				return;
 			}
 			var items = (r.body && r.body.items) || [];
-			var kpis = document.getElementById("usis-adm-kpis");
-			kpis.classList.remove("d-none");
-			var seats = 0;
-			items.forEach(function (t) {
-				seats += (t.seats && t.seats.office_used) || 0;
-			});
-			kpis.innerHTML =
-				'<div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Tenants</div><div class="h5 mb-0">' +
-				items.length +
-				"</div></div></div></div>" +
-				'<div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Office seats used</div><div class="h5 mb-0">' +
-				seats +
-				"</div></div></div></div>";
 			var html = '<div class="card border-0 shadow-sm"><div class="card-body">';
 			if (!items.length) {
 				html +=
 					window.USISUi && window.USISUi.emptyState
-						? window.USISUi.emptyState({ title: "No tenants", body: "Create the first subscriber company." })
-						: "<p class=\"text-muted\">No tenants.</p>";
+						? window.USISUi.emptyState({ title: "No organizations", body: "Provision the first subscriber company." })
+						: "<p class=\"text-muted\">No organizations.</p>";
 			} else {
 				html +=
-					'<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Name</th><th>Status</th><th>Plan</th><th>Office seats</th><th>Field devices</th><th>Last activity</th></tr></thead><tbody>';
+					'<div class="table-responsive"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Name</th><th>Slug</th><th>Status</th><th>Plan</th><th>Office seats</th><th>Field devices</th><th>Last activity</th></tr></thead><tbody>';
 				items.forEach(function (t) {
 					var s = t.seats || {};
 					html +=
-						'<tr style="cursor:pointer" data-href="/admin/tenants/' +
+						'<tr style="cursor:pointer" data-href="/admin/organizations/' +
 						esc(t.id) +
 						'"><td>' +
 						esc(t.legal_name || t.name) +
+						"</td><td>" +
+						esc(t.slug || "") +
 						"</td><td>" +
 						chip(t.status) +
 						"</td><td>" +
@@ -150,32 +229,22 @@
 					window.location.href = tr.getAttribute("data-href");
 				});
 			});
-			var add = document.getElementById("usis-adm-add");
-			if (add) {
-				add.addEventListener("click", function () {
-					var name = window.prompt("Company name");
-					if (!name) return;
-					fetchJson("/api/admin/tenants", { method: "POST", body: { name: name } }).then(function (res) {
-						if (!res.ok) return flash((res.body && res.body.error) || "Create failed", "danger");
-						flash("Tenant created.", "success");
-						renderList();
-					});
-				});
-			}
 		});
 	}
 
 	function renderTenant(id) {
-		document.getElementById("usis-adm-actions").innerHTML = navLinks();
-		fetchJson("/api/admin/tenants/" + encodeURIComponent(id)).then(function (r) {
+		document.getElementById("usis-adm-lead").textContent = "Organization workspace.";
+		fetchJson("/api/admin/organizations/" + encodeURIComponent(id)).then(function (r) {
 			if (!r.ok) {
-				document.getElementById("usis-adm-root").innerHTML = "<p class=\"text-danger\">" + esc((r.body && r.body.error) || "Not found") + "</p>";
+				document.getElementById("usis-adm-root").innerHTML =
+					"<p class=\"text-danger\">" + esc((r.body && r.body.error) || "Not found") + "</p>";
 				return;
 			}
 			var t = r.body.item;
 			document.getElementById("usis-adm-title").textContent = t.legal_name || t.name;
 			var html = '<div class="card border-0 shadow-sm mb-3"><div class="card-body">';
-			html += '<div class="row g-2 mb-3"><div class="col-md-4"><label class="form-label small">Status</label><select class="form-select form-select-sm" id="usis-adm-status">';
+			html +=
+				'<div class="row g-2 mb-3"><div class="col-md-4"><label class="form-label small">Status</label><select class="form-select form-select-sm" id="usis-adm-status">';
 			["trial", "active", "past_due", "suspended", "closed"].forEach(function (st) {
 				html += '<option value="' + st + '"' + (t.status === st ? " selected" : "") + ">" + st + "</option>";
 			});
@@ -239,17 +308,22 @@
 				var danger = payload.status === "suspended" || payload.status === "closed";
 				function send(reason) {
 					payload.reason = reason;
-					fetchJson("/api/admin/tenants/" + encodeURIComponent(id), { method: "PATCH", body: payload }).then(function (res) {
-						if (!res.ok) return flash((res.body && res.body.error) || "Save failed", "danger");
-						flash("Saved.", "success");
-					});
+					fetchJson("/api/admin/organizations/" + encodeURIComponent(id), { method: "PATCH", body: payload }).then(
+						function (res) {
+							if (!res.ok) return flash((res.body && res.body.error) || "Save failed", "danger");
+							flash("Saved.", "success");
+						}
+					);
 				}
 				if (danger) askReason("Suspend or close tenant", send);
 				else send(payload.reason);
 			});
 			document.getElementById("usis-adm-impersonate").addEventListener("click", function () {
 				askReason("Impersonate " + (t.legal_name || t.name), function (reason) {
-					fetchJson("/api/admin/tenants/" + encodeURIComponent(id) + "/impersonate", { method: "POST", body: { reason: reason } }).then(function (res) {
+					fetchJson("/api/admin/organizations/" + encodeURIComponent(id) + "/impersonate", {
+						method: "POST",
+						body: { reason: reason },
+					}).then(function (res) {
 						if (!res.ok) return flash((res.body && res.body.error) || "Impersonate failed", "danger");
 						window.location.href = "/settings";
 					});
@@ -268,7 +342,6 @@
 
 	function renderFlags() {
 		document.getElementById("usis-adm-title").textContent = "Feature flags";
-		document.getElementById("usis-adm-actions").innerHTML = navLinks();
 		fetchJson("/api/admin/flags").then(function (r) {
 			var items = (r.body && r.body.items) || [];
 			var html = '<div class="card border-0 shadow-sm"><div class="card-body">';
@@ -300,49 +373,211 @@
 		});
 	}
 
-	function healthDot(st) {
-		if (st === "ok") return "🟢";
-		if (st === "warn") return "🟡";
-		return "🔴";
-	}
-
 	function renderHealth() {
-		document.getElementById("usis-adm-title").textContent = "Health";
-		document.getElementById("usis-adm-actions").innerHTML = navLinks();
-		fetchJson("/api/admin/health").then(function (r) {
+		document.getElementById("usis-adm-title").textContent = "Usage & health";
+		fetchJson("/api/admin/usage").then(function (r) {
 			var items = (r.body && r.body.items) || {};
 			var html = '<div class="card border-0 shadow-sm"><div class="card-body"><ul class="list-unstyled mb-0">';
 			Object.keys(items).forEach(function (k) {
-				html += "<li class=\"mb-2\">" + healthDot(items[k].status) + " <strong>" + esc(k) + "</strong> — " + esc(items[k].detail || "") + "</li>";
+				html +=
+					"<li class=\"mb-2\">" +
+					healthDot(items[k].status) +
+					" <strong>" +
+					esc(k) +
+					"</strong> — " +
+					esc(items[k].detail || "") +
+					"</li>";
 			});
 			html += "</ul></div></div>";
 			document.getElementById("usis-adm-root").innerHTML = html;
 		});
-		fetchJson("/api/ai/status").then(function () {});
 	}
 
 	function renderAudit() {
 		document.getElementById("usis-adm-title").textContent = "Audit";
-		document.getElementById("usis-adm-actions").innerHTML = navLinks();
 		fetchJson("/api/admin/audit").then(function (r) {
 			var items = (r.body && r.body.items) || [];
-			var html = '<div class="card border-0 shadow-sm"><div class="card-body"><div class="table-responsive"><table class="table table-sm"><thead class="table-light"><tr><th>When</th><th>Action</th><th>Tenant</th><th>Reason</th></tr></thead><tbody>';
-			if (!items.length) html += "<tr><td colspan=\"4\" class=\"text-muted\">No audit rows.</td></tr>";
+			var html =
+				'<div class="card border-0 shadow-sm"><div class="card-body"><div class="table-responsive"><table class="table table-sm"><thead class="table-light"><tr><th>When</th><th>Action</th><th>Tenant</th><th>Reason</th></tr></thead><tbody>';
+			if (!items.length) html += '<tr><td colspan="4" class="text-muted">No audit rows.</td></tr>';
 			items.forEach(function (row) {
-				html += "<tr><td>" + esc(row.created_at || "") + "</td><td>" + esc(row.action) + "</td><td>" + esc(row.tenant_id || "") + "</td><td>" + esc(row.reason || "") + "</td></tr>";
+				html +=
+					"<tr><td>" +
+					esc(row.created_at || "") +
+					"</td><td>" +
+					esc(row.action) +
+					"</td><td>" +
+					esc(row.tenant_id || "") +
+					"</td><td>" +
+					esc(row.reason || "") +
+					"</td></tr>";
 			});
 			html += "</tbody></table></div></div></div>";
 			document.getElementById("usis-adm-root").innerHTML = html;
 		});
 	}
 
+	function renderProvision() {
+		document.getElementById("usis-adm-title").textContent = "Provision";
+		document.getElementById("usis-adm-lead").textContent = "Create an Organization. Does not copy USIS jobs or hire packets.";
+		var html =
+			'<div class="card border-0 shadow-sm"><div class="card-body">' +
+			'<div class="mb-3"><label class="form-label small">Legal name</label><input class="form-control form-control-sm" id="usis-adm-prov-name"></div>' +
+			'<div class="row g-2 mb-3"><div class="col-md-4"><label class="form-label small">Plan</label><select class="form-select form-select-sm" id="usis-adm-prov-plan"><option value="full">full</option><option value="office">office</option><option value="field">field</option></select></div>' +
+			'<div class="col-md-4"><label class="form-label small">Office seats</label><input class="form-control form-control-sm" id="usis-adm-prov-office" value="25"></div>' +
+			'<div class="col-md-4"><label class="form-label small">Field seats</label><input class="form-control form-control-sm" id="usis-adm-prov-field" value="25"></div></div>' +
+			'<div class="mb-3"><label class="form-label small">First Company Admin email (optional)</label><input class="form-control form-control-sm" id="usis-adm-prov-email" type="email"></div>' +
+			'<div class="d-flex justify-content-end"><button type="button" class="btn btn-sm btn-primary" id="usis-adm-prov-go">Create organization</button></div></div></div>';
+		document.getElementById("usis-adm-root").innerHTML = html;
+		document.getElementById("usis-adm-prov-go").addEventListener("click", function () {
+			var name = document.getElementById("usis-adm-prov-name").value;
+			if (!name) return flash("Legal name is required.", "danger");
+			fetchJson("/api/admin/organizations", {
+				method: "POST",
+				body: {
+					name: name,
+					plan_key: document.getElementById("usis-adm-prov-plan").value,
+					copy_catalog: false,
+				},
+			}).then(function (res) {
+				if (!res.ok) return flash((res.body && res.body.error) || "Create failed", "danger");
+				var id = res.body && res.body.item && res.body.item.id;
+				var cap = {
+					seat_cap_office: parseInt(document.getElementById("usis-adm-prov-office").value, 10),
+					seat_cap_field: parseInt(document.getElementById("usis-adm-prov-field").value, 10),
+					reason: "provision seat caps from admin console",
+				};
+				var next = Promise.resolve();
+				if (id) {
+					next = fetchJson("/api/admin/organizations/" + encodeURIComponent(id), { method: "PATCH", body: cap });
+				}
+				next.then(function () {
+					flash("Organization created.", "success");
+					if (id) window.location.href = "/admin/organizations/" + encodeURIComponent(id);
+				});
+			});
+		});
+	}
+
+	function renderPlans() {
+		document.getElementById("usis-adm-title").textContent = "Plans & entitlements";
+		fetchJson("/api/admin/plans").then(function (r) {
+			var items = (r.body && r.body.items) || [];
+			var html = '<div class="row g-3">';
+			items.forEach(function (p) {
+				html +=
+					'<div class="col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><h2 class="h6 text-capitalize">' +
+					esc(p.plan_key) +
+					'</h2><p class="small text-muted mb-2">Default modules. Per-org overrides stay on the organization workspace.</p><ul class="small mb-0">';
+				(p.modules || []).forEach(function (m) {
+					html += "<li>" + esc(m) + "</li>";
+				});
+				html += "</ul></div></div></div>";
+			});
+			html += "</div>";
+			document.getElementById("usis-adm-root").innerHTML = html;
+		});
+	}
+
+	function renderSupport() {
+		document.getElementById("usis-adm-title").textContent = "Support";
+		document.getElementById("usis-adm-lead").textContent = "Find an organization. Job files stay hidden until you impersonate.";
+		fetchJson("/api/admin/organizations").then(function (r) {
+			var items = (r.body && r.body.items) || [];
+			var html =
+				'<div class="mb-3"><input class="form-control form-control-sm" id="usis-adm-support-q" placeholder="Name, slug, or email"></div>' +
+				'<div class="card border-0 shadow-sm"><div class="card-body p-0"><div class="list-group list-group-flush" id="usis-adm-support-list"></div></div></div>';
+			document.getElementById("usis-adm-root").innerHTML = html;
+			function draw(q) {
+				var needle = (q || "").toLowerCase();
+				var host = document.getElementById("usis-adm-support-list");
+				var rows = items.filter(function (t) {
+					if (!needle) return true;
+					return (
+						String(t.legal_name || t.name || "").toLowerCase().indexOf(needle) >= 0 ||
+						String(t.slug || "").toLowerCase().indexOf(needle) >= 0
+					);
+				});
+				host.innerHTML = rows
+					.map(function (t) {
+						return (
+							'<div class="list-group-item d-flex justify-content-between align-items-center"><div><strong>' +
+							esc(t.legal_name || t.name) +
+							"</strong> <span class=\"text-muted small\">" +
+							esc(t.slug) +
+							" · " +
+							esc(t.plan_key) +
+							"</span></div><div><a class=\"btn btn-sm btn-outline-secondary me-1\" href=\"/admin/organizations/" +
+							esc(t.id) +
+							'">Open</a><button type="button" class="btn btn-sm btn-outline-primary usis-adm-sup-imp" data-id="' +
+							esc(t.id) +
+							'" data-name="' +
+							esc(t.legal_name || t.name) +
+							'">Impersonate</button></div></div>'
+						);
+					})
+					.join("") || '<div class="p-3 text-muted">No matches.</div>';
+				document.querySelectorAll(".usis-adm-sup-imp").forEach(function (btn) {
+					btn.addEventListener("click", function () {
+						askReason("Impersonate " + btn.getAttribute("data-name"), function (reason) {
+							fetchJson("/api/admin/organizations/" + encodeURIComponent(btn.getAttribute("data-id")) + "/impersonate", {
+								method: "POST",
+								body: { reason: reason },
+							}).then(function (res) {
+								if (!res.ok) return flash((res.body && res.body.error) || "Failed", "danger");
+								window.location.href = "/settings";
+							});
+						});
+					});
+				});
+			}
+			draw("");
+			document.getElementById("usis-adm-support-q").addEventListener("input", function (ev) {
+				draw(ev.target.value);
+			});
+		});
+	}
+
+	function renderOperators() {
+		document.getElementById("usis-adm-title").textContent = "Operators";
+		document.getElementById("usis-adm-root").innerHTML =
+			window.USISUi && window.USISUi.emptyState
+				? window.USISUi.emptyState({
+						title: "Operator list",
+						body: "Add and remove platform operators in a later slice. One operator flag is enough for v2 until then.",
+					})
+				: "<p class=\"text-muted\">Operator list ships in a later slice.</p>";
+	}
+
+	function renderPolicy() {
+		document.getElementById("usis-adm-title").textContent = "Policy locks";
+		document.getElementById("usis-adm-lead").textContent = "These keys can never be set true.";
+		fetchJson("/api/admin/policy").then(function (r) {
+			var items = (r.body && r.body.items) || [];
+			var html = '<div class="card border-0 shadow-sm"><div class="card-body"><ul class="mb-0">';
+			items.forEach(function (it) {
+				html += "<li><code>" + esc(it.key) + "</code> — " + esc(it.message || "locked") + "</li>";
+			});
+			html += "</ul></div></div>";
+			document.getElementById("usis-adm-root").innerHTML = html;
+		});
+	}
+
 	function boot() {
 		var page = pageKind();
+		var railId = page.kind === "tenant" ? "organizations" : page.kind;
+		renderRail(railId);
 		if (page.kind === "tenant") return renderTenant(page.id);
 		if (page.kind === "flags") return renderFlags();
-		if (page.kind === "health") return renderHealth();
+		if (page.kind === "usage") return renderHealth();
 		if (page.kind === "audit") return renderAudit();
-		renderList();
+		if (page.kind === "provision") return renderProvision();
+		if (page.kind === "plans") return renderPlans();
+		if (page.kind === "support") return renderSupport();
+		if (page.kind === "operators") return renderOperators();
+		if (page.kind === "policy") return renderPolicy();
+		if (page.kind === "organizations") return renderList();
+		renderOverview();
 	}
 
 	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

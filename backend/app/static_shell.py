@@ -232,6 +232,16 @@ def serve_static(subpath: str):
     career_target = _CAREER_PATH_REDIRECTS.get(req_path)
     if career_target:
         return redirect(career_target, code=302)
+    if req_path in ("/usis-user-directory.html", "/usis-user-directory"):
+        return redirect("/settings/people", code=302)
+    if req_path == "/settings/users":
+        return redirect("/settings/people", code=302)
+    if req_path == "/admin/tenants":
+        return redirect("/admin/organizations", code=302)
+    if req_path.startswith("/admin/tenants/"):
+        return redirect("/admin/organizations/" + req_path[len("/admin/tenants/") :], code=302)
+    if req_path == "/admin/health":
+        return redirect("/admin/usage", code=302)
     if req_path == "/settings" or req_path.startswith("/settings/"):
         settings_page = root / "usis-settings.html"
         if settings_page.is_file():

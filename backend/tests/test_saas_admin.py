@@ -79,11 +79,42 @@ def test_src_pages_exist():
     assert (src / "assets/js/usis-settings.js").is_file()
     assert (src / "assets/js/usis-admin.js").is_file()
     nav = (src / "elements/deznav-construction.html").read_text(encoding="utf-8")
-    assert "usis-settings.html" in nav
-    assert "usis-admin.html" in nav
+    assert 'href="/settings"' in nav
+    assert 'href="/admin"' in nav
     assert 'id="usis-platform-admin-nav"' in nav
+    assert 'href="/settings/people"' in nav
     css = (src / "assets/css/usis-ui.css").read_text(encoding="utf-8")
     assert ".usis-impersonation-banner" in css
+    assert ".usis-console-rail" in css
+    settings_js = (src / "assets/js/usis-settings.js").read_text(encoding="utf-8")
+    for label in (
+        "Overview",
+        "People & access",
+        "Roles & templates",
+        "Projects & defaults",
+        "Money & workflows",
+        "Mail & senders",
+        "Files & public links",
+        "Time & field",
+        "Hiring",
+        "AI",
+        "Integrations",
+        "Audit",
+    ):
+        assert label in settings_js
+    admin_js = (src / "assets/js/usis-admin.js").read_text(encoding="utf-8")
+    for label in (
+        "Overview",
+        "Organizations",
+        "Provision",
+        "Plans & entitlements",
+        "Feature flags",
+        "Usage & health",
+        "Support",
+        "Operators",
+        "Policy locks",
+    ):
+        assert label in admin_js
 
 
 def test_helper_default_then_override(flask_app):
@@ -270,3 +301,82 @@ def test_dist_mirrors_when_present():
     html = (dist / "usis-settings.html").read_text(encoding="utf-8")
     assert "usis-settings.js" in html
     assert "usis-ui.css" in html
+    assert "usis-console-rail" in html
+    assert (dist / "usis-admin.html").read_text(encoding="utf-8").count("usis-adm-rail") >= 1
+
+
+def test_settings_overview_and_roles(client, flask_app, no_dev_admin):
+    _skip_if_missing(flask_app)
+    with flask_app.app_context():
+        org = ensure_usis_organization()
+        role = _admin_role()
+        u = _user("ov_" + uuid.uuid4().hex[:8] + "@t.com")
+        add_member(u.id, org.id, ORG_ROLE_ADMIN)
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        db.session.commit()
+        email = u.email
+    _login(client, email, "secret123")
+    ov = client.get("/api/settings/overview")
+    assert ov.status_code == 200, ov.get_data(as_text=True)
+    body = ov.get_json() or {}
+    assert "seats" in body
+    assert "plan_key" in body
+    pack = client.get("/api/settings")
+    assert pack.status_code == 200
+    titles = [t.get("title") for t in (pack.get_json() or {}).get("rail") or []]
+    assert titles[0] == "Overview"
+    assert "People & access" in titles
+    assert len(titles) == 14
+    roles = client.get("/api/settings/roles")
+    assert roles.status_code == 200
+    assert "catalog" in (roles.get_json() or {})
+
+
+def test_invite_at_seat_cap_409(client, flask_app, no_dev_admin):
+    _skip_if_missing(flask_app)
+    with flask_app.app_context():
+        org = ensure_usis_organization()
+        role = _admin_role()
+        u = _user("cap_" + uuid.uuid4().hex[:8] + "@t.com")
+        add_member(u.id, org.id, ORG_ROLE_ADMIN)
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+        org.seat_cap_office = 1
+        db.session.commit()
+        email = u.email
+    _login(client, email, "secret123")
+    r = client.post(
+        "/api/settings/users/invite",
+        json={"email": "extra_" + uuid.uuid4().hex[:8] + "@t.com", "seat_kind": "office"},
+    )
+    assert r.status_code == 409, r.get_data(as_text=True)
+    assert "seat cap" in ((r.get_json() or {}).get("error") or "").lower()
+
+
+def test_user_directory_redirects_to_people(client, flask_app, no_dev_admin):
+    _skip_if_missing(flask_app)
+    r = client.get("/usis-user-directory.html", follow_redirects=False)
+    assert r.status_code in (301, 302)
+    loc = r.headers.get("Location") or ""
+    assert loc.endswith("/settings/people") or "/settings/people" in loc
+
+
+def test_admin_overview_operator_only(client, flask_app, no_dev_admin):
+    _skip_if_missing(flask_app)
+    with flask_app.app_context():
+        org = ensure_usis_organization()
+        op = _user("aov_" + uuid.uuid4().hex[:8] + "@t.com", operator=True)
+        add_member(op.id, org.id, ORG_ROLE_ADMIN)
+        db.session.commit()
+        email = op.email
+    _login(client, email, "secret123")
+    r = client.get("/api/admin/overview")
+    assert r.status_code == 200, r.get_data(as_text=True)
+    body = r.get_json() or {}
+    assert "organizations_by_status" in body
+    plans = client.get("/api/admin/plans")
+    assert plans.status_code == 200
+    locks = client.get("/api/admin/policy")
+    assert locks.status_code == 200
+    orgs = client.get("/api/admin/organizations")
+    assert orgs.status_code == 200
+

@@ -9,6 +9,8 @@ Slice 0 mapping (do not invent a parallel tree):
 - Hire settings → ``HireCompanySetting`` plus ``hire.*`` keys here
 - Time policy → ``HrmsModuleSetting`` key ``timekeeping_policy`` plus ``time.require_cost_code``
 - Audit → ``PlatformAudit`` (cross-tenant). Existing ``AuditLog`` stays tenant-scoped.
+- People directory → ``User`` / ``UserRole`` / ``Role`` / ``RoleModulePermission`` (old page ``usis-user-directory.html``)
+- v2 consoles: ``/settings/*`` 14-item rail, ``/admin/*`` 10-item rail. No second Tenant table.
 """
 from __future__ import annotations
 
@@ -30,7 +32,10 @@ from ..models.saas import FeatureFlag, ImpersonationSession, PlatformAudit
 from ..tenant_settings import (
     FEATURE_FLAG_CATALOG,
     LOCKED_KEYS,
+    LOCKED_MESSAGE,
     MODULE_KEYS,
+    PLAN_DEFAULT_MODULES,
+    PLAN_KEYS,
     PLATFORM_ONLY_KEYS,
     SETTING_DEFAULTS,
     LockedSettingError,
@@ -54,7 +59,15 @@ from ._perms import CurrentUser, can_manage_directory_users, current_user
 settings_bp = Blueprint("api_settings", __name__, url_prefix="/api/settings")
 admin_bp = Blueprint("api_admin_saas", __name__, url_prefix="/api/admin")
 
-SETTING_TOPICS = (
+SETTINGS_RAIL = (
+    {
+        "id": "overview",
+        "path": "/settings",
+        "title": "Overview",
+        "description": "Seats, plan, and recent changes for this company",
+        "icon": "home",
+        "keys": [],
+    },
     {
         "id": "company",
         "path": "/settings/company",
@@ -73,19 +86,11 @@ SETTING_TOPICS = (
         ],
     },
     {
-        "id": "users",
-        "path": "/settings/users",
-        "title": "Users & roles",
-        "description": "Invite, deactivate, and assign roles",
+        "id": "people",
+        "path": "/settings/people",
+        "title": "People & access",
+        "description": "Company directory, invites, and seats",
         "icon": "users",
-        "keys": [],
-    },
-    {
-        "id": "security",
-        "path": "/settings/security",
-        "title": "Security",
-        "description": "SSO, MFA roles, session timeouts",
-        "icon": "lock",
         "keys": [
             "security.sso_m365_tenant_id",
             "security.mfa_required_roles",
@@ -93,33 +98,38 @@ SETTING_TOPICS = (
             "security.session_max_minutes",
             "security.password_reset_hours",
         ],
+        "aliases": ["users", "security"],
+    },
+    {
+        "id": "roles",
+        "path": "/settings/roles",
+        "title": "Roles & templates",
+        "description": "Permission templates: tool × level",
+        "icon": "shield",
+        "keys": [],
+    },
+    {
+        "id": "projects",
+        "path": "/settings/projects",
+        "title": "Projects & defaults",
+        "description": "New-project defaults and estimate stage labels",
+        "icon": "folder",
+        "keys": ["estimate.stage_labels"],
+    },
+    {
+        "id": "money",
+        "path": "/settings/money",
+        "title": "Money & workflows",
+        "description": "PO bands and published workflow steps",
+        "icon": "dollar-sign",
+        "keys": ["po.band_0", "po.band_pm", "po.band_director", "po.band_president", "po.skip_down", "tm.requires_co"],
+        "aliases": ["workflows"],
     },
     {
         "id": "mail",
         "path": "/settings/mail",
-        "title": "Mail & spam",
-        "description": "Allow-listed mailboxes and never-auto-spam",
-        "icon": "inbox",
-        "keys": [
-            "mail.allow_mailboxes",
-            "mail.spam_confidence_move",
-            "mail.never_auto_spam_domains",
-            "mail.never_auto_spam_subjects",
-        ],
-    },
-    {
-        "id": "correspondence",
-        "path": "/settings/correspondence",
-        "title": "Correspondence",
-        "description": "Teams ingest and archive options",
-        "icon": "archive",
-        "keys": ["correspondence.teams_ingest"],
-    },
-    {
-        "id": "senders",
-        "path": "/settings/senders",
-        "title": "Email senders",
-        "description": "quotes@, field@, and hire From addresses",
+        "title": "Mail & senders",
+        "description": "From addresses, spam, and never-auto lists",
         "icon": "send",
         "keys": [
             "mail.rfp.from_address",
@@ -127,44 +137,25 @@ SETTING_TOPICS = (
             "mail.rfp.bcc_self",
             "mail.field.from_address",
             "mail.hire.from_address",
+            "mail.allow_mailboxes",
+            "mail.spam_confidence_move",
+            "mail.never_auto_spam_domains",
+            "mail.never_auto_spam_subjects",
         ],
+        "aliases": ["senders"],
     },
     {
-        "id": "workflows",
-        "path": "/settings/workflows",
-        "title": "Workflows",
-        "description": "Published steps for PO, submittal, hire, T&M",
-        "icon": "git-branch",
-        "keys": [],
-    },
-    {
-        "id": "money",
-        "path": "/settings/money",
-        "title": "Money gates",
-        "description": "PO bands and T&M change-order rule",
-        "icon": "dollar-sign",
-        "keys": ["po.band_0", "po.band_pm", "po.band_director", "po.band_president", "po.skip_down", "tm.requires_co"],
-    },
-    {
-        "id": "time-field",
-        "path": "/settings/time-field",
-        "title": "Time & field",
-        "description": "Cost codes, geofence, sign-off",
-        "icon": "clock",
-        "keys": ["time.require_cost_code", "field.geofence_mode", "field.signoff_required"],
-    },
-    {
-        "id": "hiring",
-        "path": "/settings/hiring",
-        "title": "Hiring",
-        "description": "W-4 and I-9 editions (not the hire register)",
-        "icon": "user-plus",
-        "keys": ["hire.w4_edition", "hire.i9_edition", "hire.ssn_on_user"],
+        "id": "correspondence",
+        "path": "/settings/correspondence",
+        "title": "Correspondence",
+        "description": "Allow-listed mailboxes and Teams ingest",
+        "icon": "archive",
+        "keys": ["correspondence.teams_ingest"],
     },
     {
         "id": "files",
         "path": "/settings/files",
-        "title": "Files & tokens",
+        "title": "Files & public links",
         "description": "Public token TTL and legal footer",
         "icon": "file",
         "keys": [
@@ -176,17 +167,30 @@ SETTING_TOPICS = (
         ],
     },
     {
-        "id": "integrations",
-        "path": "/settings/integrations",
-        "title": "Integrations",
-        "description": "QuickBooks, Teams, and B2 status",
-        "icon": "link",
-        "keys": ["qb.company_file_name", "qb.employee_add", "edd.auto_file", "punch.auto_push_procore"],
+        "id": "time-field",
+        "path": "/settings/time-field",
+        "title": "Time & field",
+        "description": "Cost codes, geofence, sign-off, devices",
+        "icon": "clock",
+        "keys": [
+            "time.require_cost_code",
+            "field.geofence_mode",
+            "field.signoff_required",
+            "punch.auto_push_procore",
+        ],
+    },
+    {
+        "id": "hiring",
+        "path": "/settings/hiring",
+        "title": "Hiring",
+        "description": "W-4 and I-9 editions (not the hire register)",
+        "icon": "user-plus",
+        "keys": ["hire.w4_edition", "hire.i9_edition", "hire.ssn_on_user", "qb.employee_add", "edd.auto_file"],
     },
     {
         "id": "ai",
         "path": "/settings/ai",
-        "title": "AI defaults",
+        "title": "AI",
         "description": "Review modes, rubber-stamp, scan cap",
         "icon": "cpu",
         "keys": [
@@ -203,14 +207,73 @@ SETTING_TOPICS = (
         ],
     },
     {
+        "id": "integrations",
+        "path": "/settings/integrations",
+        "title": "Integrations",
+        "description": "SMTP, B2, QuickBooks, and Local AI status",
+        "icon": "link",
+        "keys": ["qb.company_file_name"],
+    },
+    {
         "id": "audit",
         "path": "/settings/audit",
-        "title": "Audit (this tenant)",
+        "title": "Audit",
         "description": "Setting changes for this company",
         "icon": "list",
         "keys": [],
     },
 )
+
+ADMIN_RAIL = (
+    {
+        "id": "overview",
+        "path": "/admin",
+        "title": "Overview",
+        "description": "Platform health, seats, and recent audit",
+    },
+    {
+        "id": "organizations",
+        "path": "/admin/organizations",
+        "title": "Organizations",
+        "description": "Every subscriber company",
+        "aliases": ["tenants"],
+    },
+    {"id": "provision", "path": "/admin/provision", "title": "Provision", "description": "Create an Organization"},
+    {
+        "id": "plans",
+        "path": "/admin/plans",
+        "title": "Plans & entitlements",
+        "description": "Default module sets for field / office / full",
+    },
+    {
+        "id": "flags",
+        "path": "/admin/flags",
+        "title": "Feature flags",
+        "description": "Platform defaults and per-org overrides",
+    },
+    {
+        "id": "usage",
+        "path": "/admin/usage",
+        "title": "Usage & health",
+        "description": "SMTP, B2, Scout, Celery",
+        "aliases": ["health"],
+    },
+    {"id": "support", "path": "/admin/support", "title": "Support", "description": "Find an org and impersonate"},
+    {"id": "operators", "path": "/admin/operators", "title": "Operators", "description": "Platform operator accounts"},
+    {"id": "audit", "path": "/admin/audit", "title": "Audit", "description": "Cross-org privileged log"},
+    {
+        "id": "policy",
+        "path": "/admin/policy",
+        "title": "Policy locks",
+        "description": "Keys the API will never set true",
+    },
+)
+
+# v1 name kept so existing callers still import the topic list.
+SETTING_TOPICS = SETTINGS_RAIL
+
+AUDITOR_ROLE_CODES = frozenset({"auditor", "read_only", "readonly"})
+AUDITOR_NO_ADMIN_MODULES = frozenset({"hr", "hrms", "ap", "procurement", "user_admin"})
 
 
 class SaasError(Exception):
@@ -347,6 +410,150 @@ def _seat_usage(org: Organization) -> dict[str, Any]:
     }
 
 
+def _optional_metric(fn):
+    try:
+        return fn()
+    except Exception:
+        db.session.rollback()
+        return None
+
+
+def _assert_seat_available(org: Organization, seat_kind: str) -> None:
+    usage = _seat_usage(org)
+    kind = (seat_kind or "office").strip().lower()
+    if kind == "field":
+        cap = org.seat_cap_field
+        used = usage["field_used"]
+        label = "Field device"
+    else:
+        cap = org.seat_cap_office
+        used = usage["office_used"]
+        label = "Office"
+    if cap is not None and int(used) >= int(cap):
+        raise SaasError(
+            f"{label} seat cap reached ({used} / {cap}). Ask USIS to raise the cap or grant a temporary overage.",
+            409,
+        )
+
+
+def _enrich_directory_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    ids = []
+    for it in items:
+        uid = _parse_uuid(it.get("id"))
+        if uid is not None:
+            ids.append(uid)
+    counts: dict[uuid.UUID, int] = {}
+    if ids:
+        rows = db.session.execute(
+            select(MobileRefreshToken.user_id, func.count())
+            .where(
+                MobileRefreshToken.user_id.in_(ids),
+                MobileRefreshToken.revoked_at.is_(None),
+            )
+            .group_by(MobileRefreshToken.user_id)
+        ).all()
+        counts = {uid: int(n) for uid, n in rows}
+    for it in items:
+        uid = _parse_uuid(it.get("id"))
+        n = counts.get(uid, 0) if uid else 0
+        it["devices"] = n
+        it["seat_kind"] = "field" if n else "office"
+        it["status"] = "active" if it.get("is_active") else "inactive"
+    return items
+
+
+def _health_checks() -> dict[str, dict[str, Any]]:
+    checks: dict[str, dict[str, Any]] = {}
+    try:
+        from ..ai import config as ai_config
+
+        checks["ai"] = {
+            "status": "ok" if ai_config.is_configured() else "warn",
+            "detail": "xAI configured" if ai_config.is_configured() else "xAI not configured",
+        }
+    except Exception as exc:
+        checks["ai"] = {"status": "fail", "detail": str(exc)[:200]}
+    try:
+        from ._notifications import _mail_configured
+
+        checks["smtp"] = {
+            "status": "ok" if _mail_configured() else "warn",
+            "detail": "mail configured" if _mail_configured() else "mail not configured",
+        }
+    except Exception as exc:
+        checks["smtp"] = {"status": "fail", "detail": str(exc)[:200]}
+    try:
+        from ..services.object_storage import b2_enabled
+
+        on = bool(b2_enabled())
+        checks["b2"] = {"status": "ok" if on else "warn", "detail": "B2 configured" if on else "B2 not configured"}
+    except Exception:
+        b2_on = bool(
+            (current_app.config.get("B2_APPLICATION_KEY_ID") or "")
+            and (current_app.config.get("B2_APPLICATION_KEY") or "")
+            and (current_app.config.get("B2_BUCKET_NAME") or "")
+        )
+        checks["b2"] = {"status": "ok" if b2_on else "warn", "detail": "B2 env" if b2_on else "B2 not configured"}
+    broker = (os.environ.get("CELERY_BROKER_URL") or current_app.config.get("CELERY_BROKER_URL") or "").strip()
+    checks["celery"] = {
+        "status": "ok" if broker else "warn",
+        "detail": "broker set" if broker else "no Celery broker",
+    }
+    with include_all_orgs():
+        n = db.session.scalar(select(func.count()).select_from(Organization)) or 0
+    checks["tenants"] = {"status": "ok", "detail": f"{int(n)} tenants"}
+    return checks
+
+
+def _settings_kpis(oid: uuid.UUID) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+
+    def open_rfps():
+        from ..models import Rfp
+
+        closed = ("awarded", "closed", "cancelled", "canceled", "void")
+        return int(
+            db.session.scalar(
+                select(func.count()).select_from(Rfp).where(func.lower(Rfp.status).notin_(closed))
+            )
+            or 0
+        )
+
+    def hires_in_flight():
+        from ..models.hiring import HirePacket
+
+        done = ("closed", "void")
+        return int(
+            db.session.scalar(
+                select(func.count()).select_from(HirePacket).where(HirePacket.stage.notin_(done))
+            )
+            or 0
+        )
+
+    def clocked_in():
+        from ..models.field_ops import TimeEntry
+
+        return int(
+            db.session.scalar(
+                select(func.count())
+                .select_from(TimeEntry)
+                .where(TimeEntry.ended_at.is_(None), TimeEntry.voided.is_(False), TimeEntry.status != "closed")
+            )
+            or 0
+        )
+
+    val = _optional_metric(open_rfps)
+    if val is not None:
+        out["open_rfps"] = val
+    val = _optional_metric(hires_in_flight)
+    if val is not None:
+        out["hires_in_flight"] = val
+    val = _optional_metric(clocked_in)
+    if val is not None:
+        out["clocked_in"] = val
+    return out
+
+
 def _apply_company_fields(org: Organization, key: str, value: Any) -> None:
     if key == "company.legal_name":
         org.legal_name = str(value or "")[:255] or org.name
@@ -476,11 +683,118 @@ def settings_index():
         {
             "entity": "settings",
             "tenant_id": str(oid),
-            "topics": SETTING_TOPICS,
+            "rail": SETTINGS_RAIL,
+            "topics": SETTINGS_RAIL,
             "items": [_setting_public(k, values.get(k)) for k in SETTING_DEFAULTS if k not in PLATFORM_ONLY_KEYS],
             "locked_keys": sorted(LOCKED_KEYS),
         }
     )
+
+
+@settings_bp.get("/overview")
+def settings_overview():
+    try:
+        cu = current_user()
+        oid = require_company_admin(cu)
+    except SaasError as exc:
+        return _json({"error": exc.message}, exc.status)
+    with include_all_orgs():
+        org = db.session.get(Organization, oid)
+    if org is None:
+        return _json({"error": "tenant not found"}, 404)
+    seats = _seat_usage(org)
+    modules = {key: module_enabled(oid, key) for key in MODULE_KEYS}
+    recent = db.session.scalars(
+        select(PlatformAudit)
+        .where(PlatformAudit.organization_id == oid)
+        .order_by(PlatformAudit.created_at.desc())
+        .limit(10)
+    ).all()
+    return _json(
+        {
+            "entity": "settings_overview",
+            "tenant_id": str(oid),
+            "legal_name": org.legal_name or org.name,
+            "plan_key": org.plan_key or "full",
+            "status": org.status or "active",
+            "seats": seats,
+            "modules": modules,
+            "kpis": _settings_kpis(oid),
+            "recent_changes": [_audit_public(r) for r in recent],
+            "can": {"invite": True, "new_project": True, "audit": True},
+        }
+    )
+
+
+@settings_bp.get("/roles")
+def settings_roles():
+    from . import _admin_users_service as admin_users_svc
+    from ..permissions.applicant import APPLICANT_ROLE_CODE
+    from ..permissions.modules import ALL_LEVELS, catalog_public
+
+    try:
+        cu = current_user()
+        require_company_admin(cu)
+        items = [
+            row
+            for row in admin_users_svc.list_roles(cu)
+            if (row.get("code") or "") != APPLICANT_ROLE_CODE
+        ]
+    except SaasError as exc:
+        return _json({"error": exc.message}, exc.status)
+    except admin_users_svc.ApiError as exc:
+        return _json({"error": exc.message}, exc.status)
+    return _json(
+        {
+            "entity": "roles",
+            "items": items,
+            "catalog": catalog_public(),
+            "levels": list(ALL_LEVELS),
+        }
+    )
+
+
+@settings_bp.put("/roles/<template_id>")
+def settings_role_put(template_id: str):
+    from . import _admin_users_service as admin_users_svc
+
+    rid = _parse_uuid(template_id)
+    if rid is None:
+        return _json({"error": "invalid role id"}, 400)
+    try:
+        cu = current_user()
+        oid = require_company_admin(cu)
+        body = request.get_json(silent=True) or {}
+        if not isinstance(body, dict):
+            return _json({"error": "JSON body required"}, 400)
+        existing = admin_users_svc.get_role(cu, rid)
+        if existing is None:
+            return _json({"error": "role not found"}, 404)
+        code = (existing.get("code") or "").strip().lower()
+        perms = body.get("permissions")
+        if isinstance(perms, dict) and code in AUDITOR_ROLE_CODES:
+            for mk in AUDITOR_NO_ADMIN_MODULES:
+                if str(perms.get(mk) or "").strip().lower() == "admin":
+                    raise SaasError("Auditor is read-only and cannot be given Admin on Hiring or Money.", 403)
+            for mk, level in perms.items():
+                if str(level).strip().lower() == "admin":
+                    raise SaasError("Auditor is read-only everywhere.", 403)
+        item = admin_users_svc.patch_role(cu, rid, body)
+        write_platform_audit(
+            action="role.update",
+            actor_user_id=cu.id,
+            organization_id=oid,
+            before=existing.get("permissions"),
+            after=(item or {}).get("permissions"),
+        )
+        db.session.commit()
+    except SaasError as exc:
+        db.session.rollback()
+        return _json({"error": exc.message}, exc.status)
+    except admin_users_svc.ApiError as exc:
+        db.session.rollback()
+        return _json({"error": exc.message}, exc.status)
+    return _json({"entity": "role", "item": item})
 
 
 @settings_bp.put("/<path:key>")
@@ -509,6 +823,7 @@ def settings_users():
         cu = current_user()
         require_company_admin(cu)
         items, total = admin_users_svc.list_users(cu, q=request.args.get("q"), limit=200, offset=0)
+        items = _enrich_directory_items(items)
     except SaasError as exc:
         return _json({"error": exc.message}, exc.status)
     except admin_users_svc.ApiError as exc:
@@ -526,6 +841,20 @@ def settings_invite():
         cu = current_user()
         oid = require_company_admin(cu)
         data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            data = {}
+        else:
+            data = dict(data)
+        if data.get("role_id") and not data.get("role_ids"):
+            data["role_ids"] = [data.get("role_id")]
+        seat_kind = str(data.get("seat_kind") or "office").strip().lower()
+        if seat_kind not in ("office", "field"):
+            seat_kind = "office"
+        with include_all_orgs():
+            org = db.session.get(Organization, oid)
+        if org is None:
+            raise SaasError("no current tenant", 403)
+        _assert_seat_available(org, seat_kind)
         item = admin_users_svc.create_user(cu, data)
         uid = _parse_uuid(item.get("id"))
         email_sent = False
@@ -551,6 +880,39 @@ def settings_invite():
         db.session.rollback()
         return _json({"error": exc.message}, exc.status)
     return _json({"entity": "user_invite", "item": item, "email_sent": email_sent, "dry_run": dry_run}, 201)
+
+
+@settings_bp.post("/users/<user_id>/roles")
+def settings_user_roles(user_id: str):
+    from . import _admin_users_service as admin_users_svc
+
+    uid = _parse_uuid(user_id)
+    if uid is None:
+        return _json({"error": "invalid user id"}, 400)
+    try:
+        cu = current_user()
+        oid = require_company_admin(cu)
+        body = request.get_json(silent=True) or {}
+        role_ids = body.get("role_ids") if isinstance(body, dict) else None
+        if body.get("role_id") and not role_ids:
+            role_ids = [body.get("role_id")]
+        item = admin_users_svc.patch_user(cu, uid, {"role_ids": role_ids or []})
+        if item is None:
+            return _json({"error": "user not found"}, 404)
+        write_platform_audit(
+            action="user.roles",
+            actor_user_id=cu.id,
+            organization_id=oid,
+            after={"user_id": str(uid), "role_ids": [r.get("id") for r in (item.get("roles") or [])]},
+        )
+        db.session.commit()
+    except SaasError as exc:
+        db.session.rollback()
+        return _json({"error": exc.message}, exc.status)
+    except admin_users_svc.ApiError as exc:
+        db.session.rollback()
+        return _json({"error": exc.message}, exc.status)
+    return _json({"entity": "user", "item": item})
 
 
 @settings_bp.post("/users/<user_id>/deactivate")
@@ -766,6 +1128,108 @@ def _audit_public(row: PlatformAudit) -> dict[str, Any]:
         "ip": row.ip_address,
         "created_at": row.created_at.isoformat() if row.created_at else None,
     }
+
+
+@admin_bp.get("/overview")
+def admin_overview():
+    try:
+        require_platform_operator(current_user())
+    except SaasError as exc:
+        return _json({"error": exc.message}, exc.status)
+    with include_all_orgs():
+        orgs = db.session.scalars(select(Organization)).all()
+        open_imp = (
+            db.session.scalar(
+                select(func.count())
+                .select_from(ImpersonationSession)
+                .where(ImpersonationSession.ended_at.is_(None))
+            )
+            or 0
+        )
+        audit_rows = db.session.scalars(
+            select(PlatformAudit).order_by(PlatformAudit.created_at.desc()).limit(20)
+        ).all()
+    by_status: dict[str, int] = {s: 0 for s in ("trial", "active", "past_due", "suspended", "closed")}
+    office_used = office_cap = field_used = field_cap = 0
+    for org in orgs:
+        st = org.status or "active"
+        by_status[st] = by_status.get(st, 0) + 1
+        seats = _seat_usage(org)
+        office_used += seats["office_used"]
+        office_cap += int(org.seat_cap_office or 0)
+        field_used += seats["field_used"]
+        field_cap += int(org.seat_cap_field or 0)
+    return _json(
+        {
+            "entity": "admin_overview",
+            "rail": ADMIN_RAIL,
+            "organizations_by_status": by_status,
+            "organization_count": len(orgs),
+            "seats": {
+                "office_used": office_used,
+                "office_cap": office_cap,
+                "field_used": field_used,
+                "field_cap": field_cap,
+            },
+            "ai_calls_today": None,
+            "health": _health_checks(),
+            "open_impersonations": int(open_imp),
+            "audit": [_audit_public(r) for r in audit_rows],
+        }
+    )
+
+
+@admin_bp.get("/plans")
+def admin_plans():
+    try:
+        require_platform_operator(current_user())
+    except SaasError as exc:
+        return _json({"error": exc.message}, exc.status)
+    items = []
+    for key in PLAN_KEYS:
+        items.append(
+            {
+                "plan_key": key,
+                "modules": sorted(PLAN_DEFAULT_MODULES.get(key) or ()),
+            }
+        )
+    return _json({"entity": "plans", "items": items, "all_modules": list(MODULE_KEYS)})
+
+
+@admin_bp.get("/policy-locks")
+@admin_bp.get("/policy")
+def admin_policy_locks():
+    try:
+        require_platform_operator(current_user())
+    except SaasError as exc:
+        return _json({"error": exc.message}, exc.status)
+    items = [{"key": k, "message": LOCKED_MESSAGE, "locked_value": False} for k in sorted(LOCKED_KEYS)]
+    return _json({"entity": "policy_locks", "items": items})
+
+
+@admin_bp.get("/organizations")
+def admin_organizations():
+    return admin_tenants()
+
+
+@admin_bp.post("/organizations")
+def admin_create_organization():
+    return admin_create_tenant()
+
+
+@admin_bp.get("/organizations/<tenant_id>")
+def admin_get_organization(tenant_id: str):
+    return admin_get_tenant(tenant_id)
+
+
+@admin_bp.patch("/organizations/<tenant_id>")
+def admin_patch_organization(tenant_id: str):
+    return admin_patch_tenant(tenant_id)
+
+
+@admin_bp.post("/organizations/<tenant_id>/impersonate")
+def admin_impersonate_organization(tenant_id: str):
+    return admin_impersonate(tenant_id)
 
 
 @admin_bp.get("/tenants")
@@ -1058,51 +1522,13 @@ def admin_put_flag(key: str):
 
 
 @admin_bp.get("/health")
+@admin_bp.get("/usage")
 def admin_health():
     try:
         require_platform_operator(current_user())
     except SaasError as exc:
         return _json({"error": exc.message}, exc.status)
-    checks: dict[str, dict[str, Any]] = {}
-    try:
-        from ..ai import config as ai_config
-
-        checks["ai"] = {
-            "status": "ok" if ai_config.is_configured() else "warn",
-            "detail": "xAI configured" if ai_config.is_configured() else "xAI not configured",
-        }
-    except Exception as exc:
-        checks["ai"] = {"status": "fail", "detail": str(exc)[:200]}
-    try:
-        from ._notifications import _mail_configured
-
-        checks["smtp"] = {
-            "status": "ok" if _mail_configured() else "warn",
-            "detail": "mail configured" if _mail_configured() else "mail not configured",
-        }
-    except Exception as exc:
-        checks["smtp"] = {"status": "fail", "detail": str(exc)[:200]}
-    try:
-        from ..services.object_storage import b2_enabled
-
-        on = bool(b2_enabled())
-        checks["b2"] = {"status": "ok" if on else "warn", "detail": "B2 configured" if on else "B2 not configured"}
-    except Exception:
-        b2_on = bool(
-            (current_app.config.get("B2_APPLICATION_KEY_ID") or "")
-            and (current_app.config.get("B2_APPLICATION_KEY") or "")
-            and (current_app.config.get("B2_BUCKET_NAME") or "")
-        )
-        checks["b2"] = {"status": "ok" if b2_on else "warn", "detail": "B2 env" if b2_on else "B2 not configured"}
-    broker = (os.environ.get("CELERY_BROKER_URL") or current_app.config.get("CELERY_BROKER_URL") or "").strip()
-    checks["celery"] = {
-        "status": "ok" if broker else "warn",
-        "detail": "broker set" if broker else "no Celery broker",
-    }
-    with include_all_orgs():
-        n = db.session.scalar(select(func.count()).select_from(Organization)) or 0
-    checks["tenants"] = {"status": "ok", "detail": f"{int(n)} tenants"}
-    return _json({"entity": "health", "items": checks})
+    return _json({"entity": "health", "items": _health_checks()})
 
 
 @admin_bp.get("/audit")

@@ -2750,3 +2750,52 @@ body.usis-sv-open {
 .usis-settings-tiles .card-body {
 	min-height: 6.5rem;
 }
+.usis-console {
+	display: flex;
+	align-items: flex-start;
+	gap: 1.25rem;
+}
+.usis-console-rail {
+	width: 220px;
+	flex: 0 0 220px;
+	position: sticky;
+	top: 1rem;
+	padding: 0.35rem 0;
+}
+.usis-console-rail .nav-link {
+	color: #334155;
+	border-radius: 0.35rem;
+	padding: 0.4rem 0.75rem;
+	font-family: "Source Sans 3", sans-serif;
+	font-size: 0.9rem;
+}
+.usis-console-rail .nav-link:hover {
+	background: rgba(31, 78, 95, 0.08);
+	color: #1f4e5f;
+}
+.usis-console-rail .nav-link.active {
+	background: #1f4e5f;
+	color: #fff;
+}
+.usis-console-main {
+	min-width: 0;
+	flex: 1;
+}
+.usis-console-card .h5 {
+	font-family: "Source Sans 3", sans-serif;
+}
+.usis-role-matrix th,
+.usis-role-matrix td {
+	vertical-align: middle;
+	font-size: 0.85rem;
+}
+@media (max-width: 767.98px) {
+	.usis-console {
+		flex-direction: column;
+	}
+	.usis-console-rail {
+		width: 100%;
+		flex-basis: auto;
+		position: static;
+	}
+}

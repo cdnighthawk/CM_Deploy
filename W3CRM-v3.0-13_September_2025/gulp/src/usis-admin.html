@@ -21,17 +21,22 @@
 				<div class="alert alert-warning d-none py-2 px-3 mb-3" id="usis-adm-forbidden" role="alert">
 					Platform operator required.
 				</div>
-				<div class="usis-page-header mb-3" id="usis-adm-header">
-					<div class="usis-page-header__text">
-						<span class="usis-overline">Admin</span>
-						<h1 class="h5 mb-1" id="usis-adm-title">Admin</h1>
-						<p class="text-muted small mb-0" id="usis-adm-lead">Tenants, plans, seats, flags, and impersonation.</p>
+				<div class="usis-console">
+					<nav class="usis-console-rail" id="usis-adm-rail" aria-label="Admin"></nav>
+					<div class="usis-console-main">
+						<div class="usis-page-header mb-3" id="usis-adm-header">
+							<div class="usis-page-header__text">
+								<span class="usis-overline">Admin</span>
+								<h1 class="h5 mb-1" id="usis-adm-title">Admin</h1>
+								<p class="text-muted small mb-0" id="usis-adm-lead">Platform operations for every organization.</p>
+							</div>
+							<div class="usis-page-header__actions" id="usis-adm-actions"></div>
+						</div>
+						<div class="alert d-none py-2 px-3 mb-3" id="usis-adm-flash" role="status"></div>
+						<div id="usis-adm-kpis" class="row g-2 mb-3 d-none"></div>
+						<div id="usis-adm-root"><p class="text-muted">Loading…</p></div>
 					</div>
-					<div class="usis-page-header__actions" id="usis-adm-actions"></div>
 				</div>
-				<div class="alert d-none py-2 px-3 mb-3" id="usis-adm-flash" role="status"></div>
-				<div id="usis-adm-kpis" class="row g-2 mb-3 d-none"></div>
-				<div id="usis-adm-root"><p class="text-muted">Loading…</p></div>
 			</div>
 		</main>
 		@@include("elements/footer.html")

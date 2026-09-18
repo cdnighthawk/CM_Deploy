@@ -371,11 +371,19 @@ def test_platform_create_org_and_invite(client, flask_app, no_dev_admin):
     _login(client, admin_email, "plat-pw")
     created = client.post(
         "/api/v1/platform/organizations",
-        json={"name": f"Platform Co {token}", "copy_catalog": False},
+        json={"name": f"Platform Co {token}", "copy_catalog": True},
     )
     assert created.status_code == 201, created.get_data(as_text=True)
     created_item = created.get_json()["item"]
     org_id = created_item["id"]
+    with flask_app.app_context():
+        with include_all_orgs():
+            copied = db.session.scalar(
+                select(func.count())
+                .select_from(MaterialPrice)
+                .where(MaterialPrice.organization_id == uuid.UUID(org_id))
+            )
+        assert copied == 0
     assert created_item.get("buildingconnected", {}).get("connected") is False
     invited = client.post(
         f"/api/v1/platform/organizations/{org_id}/invites",

@@ -65,10 +65,7 @@ def create_organization(cu: CurrentUser, data: dict[str, Any]) -> tuple[Any, int
     name = str(data.get("name") or "").strip()
     if not name:
         raise PlatformError("name is required")
-    copy_catalog = data.get("copy_catalog")
-    if copy_catalog is None:
-        copy_catalog = True
-    org = provision_organization(name=name, copy_catalog=bool(copy_catalog))
+    org = provision_organization(name=name, copy_catalog=False)
     db.session.commit()
     return _jsonify({"entity": "organization", "item": _organization_setup_public(org)}, 201)
 
@@ -140,10 +137,7 @@ def register_platform_org_routes(bp) -> None:
         except SQLAlchemyError:
             db.session.rollback()
             current_app.logger.exception("platform create organization failed")
-            return _jsonify(
-                {"error": "Could not create contractor. Uncheck Copy catalog and retry, or try again."},
-                500,
-            )
+            return _jsonify({"error": "Could not create contractor. Try again."}, 500)
 
     @bp.post("/platform/organizations/<org_id>/invites")
     def platform_invite(org_id: str):
@@ -167,7 +161,7 @@ def register_platform_org_routes(bp) -> None:
         name = str(body.get("name") or "").strip()
         if not name:
             return _jsonify({"error": "name is required"}, 400)
-        org = provision_organization(name=name, copy_catalog=True)
+        org = provision_organization(name=name, copy_catalog=False)
         add_member(cu.user.id, org.id, ORG_ROLE_OWNER)
         db.session.commit()
         from ..tenancy import set_current_organization_id

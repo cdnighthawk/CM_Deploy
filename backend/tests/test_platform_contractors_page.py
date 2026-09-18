@@ -26,7 +26,7 @@ def test_src_page_and_script_exist():
     js = SRC_JS.read_text(encoding="utf-8")
     assert "usis-platform-contractors.js" in html
     assert "Add contractor" in html
-    assert "Copy catalog without USIS prices" in html
+    assert "Copy catalog without USIS prices" not in html
     assert "Connect BuildingConnected" in html
     settings_src = SRC / "usis-company-settings.html"
     assert "Connect BuildingConnected" in settings_src.read_text(encoding="utf-8")
@@ -36,12 +36,11 @@ def test_src_page_and_script_exist():
     assert "/api/v1/platform/organizations" in js
     assert "/api/v1/platform/organizations/" in js
     assert "/invites" in js
-    assert "copy_catalog" in js
+    assert "copy_catalog" not in js
     assert "is_superuser" in js
     assert 'credentials = opts.credentials || "include"' in js
     assert "Set-password email sent" in js
     assert "email dry-run" in js
-    assert "Uncheck Copy catalog" in js
     assert "/api/v1/integrations/buildingconnected/oauth/start" in js
     assert "organization_id=" in js
     assert "usis-bc-oauth" in js
@@ -69,6 +68,7 @@ def test_dist_mirrors_page_script_and_nav():
     html = DIST_PAGE.read_text(encoding="utf-8")
     assert "usis-platform-contractors.js" in html
     assert "Add contractor" in html
+    assert "Copy catalog without USIS prices" not in html
     assert 'data-usis-module="platform"' in html
     assert 'href="usis-platform-contractors.html"' in html
     settings = (DIST / "usis-company-settings.html").read_text(encoding="utf-8")

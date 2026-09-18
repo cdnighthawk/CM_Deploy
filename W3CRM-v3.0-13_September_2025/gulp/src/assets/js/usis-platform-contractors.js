@@ -94,12 +94,6 @@
 	function parseError(res, body) {
 		if (res.status === 401) return "Your session expired. Sign in again, then retry.";
 		if (res.status === 403) return (body && body.error) || "Platform administrator required.";
-		if (res.status === 502 || res.status === 504) {
-			return (
-				(body && body.error) ||
-				"The server stopped while copying the catalog. Uncheck Copy catalog and retry, or wait and try again."
-			);
-		}
 		return (body && body.error) || "Request failed (" + res.status + ").";
 	}
 
@@ -283,9 +277,7 @@
 		document.getElementById("usis-pc-first").value = "";
 		document.getElementById("usis-pc-last").value = "";
 		document.getElementById("usis-pc-email").value = "";
-		document.getElementById("usis-pc-catalog").checked = true;
 		document.getElementById("usis-pc-name-wrap").classList.remove("d-none");
-		document.getElementById("usis-pc-catalog-wrap").classList.remove("d-none");
 		setWizardStep(1);
 		showModal();
 	}
@@ -300,7 +292,6 @@
 		document.getElementById("usis-pc-last").value = "";
 		document.getElementById("usis-pc-email").value = "";
 		document.getElementById("usis-pc-name-wrap").classList.add("d-none");
-		document.getElementById("usis-pc-catalog-wrap").classList.add("d-none");
 		setWizardStep(1);
 		showModal();
 	}
@@ -382,8 +373,7 @@
 			done();
 			return;
 		}
-		var copyCatalog = document.getElementById("usis-pc-catalog").checked;
-		postJson("/api/v1/platform/organizations", { name: name, copy_catalog: copyCatalog })
+		postJson("/api/v1/platform/organizations", { name: name })
 			.then(function (created) {
 				if (!created.res.ok) {
 					modalErr(parseError(created.res, created.body));

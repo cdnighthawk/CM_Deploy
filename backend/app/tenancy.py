@@ -411,7 +411,7 @@ def slugify_org_name(name: str) -> str:
         return candidate
 
 
-def provision_organization(*, name: str, copy_catalog: bool = True) -> Organization:
+def provision_organization(*, name: str, copy_catalog: bool = False) -> Organization:
     from .models.company import Company
 
     usis = ensure_usis_organization()

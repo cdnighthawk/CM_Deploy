@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .project import Project
 
 
-class SafetyTrainingRecord(UUIDPKMixin, TimestampMixin, db.Model):
+class SafetyTrainingRecord(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Regulatory / site certifications (OSHA, forklift, First Aid, etc.) — Safety canonical store."""
 
     __tablename__ = "safety_training_records"

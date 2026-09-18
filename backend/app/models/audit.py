@@ -9,10 +9,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class AuditLog(UUIDPKMixin, TimestampMixin, db.Model):
+class AuditLog(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "audit_log"
 
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(

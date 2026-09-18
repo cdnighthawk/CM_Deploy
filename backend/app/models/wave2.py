@@ -11,10 +11,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class Transmittal(UUIDPKMixin, TimestampMixin, db.Model):
+class Transmittal(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "transmittals"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -36,7 +36,7 @@ class Transmittal(UUIDPKMixin, TimestampMixin, db.Model):
     items: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
-class PunchlistItem(UUIDPKMixin, TimestampMixin, db.Model):
+class PunchlistItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "punchlist_items"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -69,7 +69,7 @@ class PunchlistItem(UUIDPKMixin, TimestampMixin, db.Model):
     attachments: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
-class WorkOrder(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkOrder(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "work_orders"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -88,7 +88,7 @@ class WorkOrder(UUIDPKMixin, TimestampMixin, db.Model):
     amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
 
 
-class AnticipatedCost(UUIDPKMixin, TimestampMixin, db.Model):
+class AnticipatedCost(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "anticipated_costs"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -105,7 +105,7 @@ class AnticipatedCost(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class PurchaseOrderChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
+class PurchaseOrderChangeOrder(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "purchase_order_change_orders"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -126,7 +126,7 @@ class PurchaseOrderChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
     line_snapshot: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
-class SubInvoice(UUIDPKMixin, TimestampMixin, db.Model):
+class SubInvoice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "sub_invoices"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -153,7 +153,7 @@ class SubInvoice(UUIDPKMixin, TimestampMixin, db.Model):
     lines: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
-class Meeting(UUIDPKMixin, TimestampMixin, db.Model):
+class Meeting(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "meetings"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -176,7 +176,7 @@ class Meeting(UUIDPKMixin, TimestampMixin, db.Model):
     items: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
-class SafetyIncident(UUIDPKMixin, TimestampMixin, db.Model):
+class SafetyIncident(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "safety_incidents"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -192,7 +192,7 @@ class SafetyIncident(UUIDPKMixin, TimestampMixin, db.Model):
     injuries: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
 
-class CompanyInsurancePolicy(UUIDPKMixin, TimestampMixin, db.Model):
+class CompanyInsurancePolicy(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "company_insurance_policies"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -206,7 +206,7 @@ class CompanyInsurancePolicy(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class CompanyLicense(UUIDPKMixin, TimestampMixin, db.Model):
+class CompanyLicense(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "company_licenses"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -219,7 +219,7 @@ class CompanyLicense(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class IssueCompany(UUIDPKMixin, TimestampMixin, db.Model):
+class IssueCompany(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "issue_companies"
     __table_args__ = (UniqueConstraint("issue_id", "company_id", name="uq_issue_companies_issue_company"),)
 
@@ -232,7 +232,7 @@ class IssueCompany(UUIDPKMixin, TimestampMixin, db.Model):
     role: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
 
 
-class WorkflowAmountRule(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowAmountRule(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_amount_rules"
 
     transaction_type: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
@@ -242,7 +242,7 @@ class WorkflowAmountRule(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class QcChecklist(UUIDPKMixin, TimestampMixin, db.Model):
+class QcChecklist(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "qc_checklists"
 
     project_id: Mapped[uuid.UUID] = mapped_column(

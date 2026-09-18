@@ -11,9 +11,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..extensions import db
+from .base import TenantMixin
 
 
-class ProjectMember(db.Model):
+class ProjectMember(TenantMixin, db.Model):
     __tablename__ = "project_members"
     __table_args__ = (UniqueConstraint("user_id", "project_id", name="uq_project_members_user_project"),)
 

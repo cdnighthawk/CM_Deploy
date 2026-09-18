@@ -10,13 +10,13 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .project import Project
 
 
-class PrimeContractSovLine(UUIDPKMixin, TimestampMixin, db.Model):
+class PrimeContractSovLine(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "prime_contract_sov_lines"
 
     project_id: Mapped[uuid.UUID] = mapped_column(

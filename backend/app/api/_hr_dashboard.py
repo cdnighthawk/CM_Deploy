@@ -72,6 +72,11 @@ def _safety_training_label(training_type: str) -> str:
 
 def _can_view_hr_employee_detail(cu: CurrentUser, target_user_id: uuid.UUID) -> bool:
     """Plan 19: hr_admin / admin / executive see others; any user may see self."""
+    from ..tenancy import current_organization_id, user_is_member
+
+    oid = current_organization_id()
+    if oid is not None and not user_is_member(target_user_id, oid):
+        return False
     if cu.is_dev_admin:
         return True
     if cu.has_role("admin", "hr_admin", "executive"):
@@ -336,8 +341,11 @@ def register_hr_routes(bp: Blueprint) -> None:
 
     @bp.get("/hr/employees/<uuid:user_id>")
     def hr_employee_summary(user_id: uuid.UUID):
+        from ..tenancy import current_organization_id, user_is_member
+
         u = db.session.get(User, user_id)
-        if u is None:
+        oid = current_organization_id()
+        if u is None or (oid is not None and not user_is_member(user_id, oid)):
             return _jsonify({"entity": "hr_employee_summary", "error": "user not found"}), 404
 
         cu = current_user()

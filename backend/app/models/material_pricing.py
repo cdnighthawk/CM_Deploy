@@ -9,13 +9,18 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import text
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class MaterialPrice(UUIDPKMixin, TimestampMixin, db.Model):
+class MaterialPrice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "material_pricing"
     __table_args__ = (
-        UniqueConstraint("manufacturer", "item", name="uq_material_pricing_manufacturer_item"),
+        UniqueConstraint(
+            "organization_id",
+            "manufacturer",
+            "item",
+            name="uq_material_pricing_org_manufacturer_item",
+        ),
     )
 
     manufacturer: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
@@ -26,6 +31,8 @@ class MaterialPrice(UUIDPKMixin, TimestampMixin, db.Model):
     mounting_type: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
     labor_per: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    labor_units_per_hour: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    labor_rate_unit: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     size_width_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
     size_height_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
     currency: Mapped[str] = mapped_column(

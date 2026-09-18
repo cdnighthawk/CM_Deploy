@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class ProjectScheduleItem(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectScheduleItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Named date range on a project (e.g. floor / area installation). Optional crew + assignee."""
 
     __tablename__ = "project_schedule_items"

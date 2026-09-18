@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class Issue(UUIDPKMixin, TimestampMixin, db.Model):
+class Issue(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "tracker_issues"
     __table_args__ = (
         UniqueConstraint("source_type", "source_id", name="uq_tracker_issues_source"),
@@ -59,7 +59,7 @@ class Issue(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class IssueEvent(UUIDPKMixin, TimestampMixin, db.Model):
+class IssueEvent(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "tracker_issue_events"
 
     issue_id: Mapped[uuid.UUID] = mapped_column(

@@ -5,13 +5,13 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
 class Role(UUIDPKMixin, TimestampMixin, db.Model):
@@ -111,12 +111,25 @@ class MobileRefreshToken(UUIDPKMixin, db.Model):
     user: Mapped["User"] = relationship(back_populates="mobile_refresh_tokens")
 
 
-class UserRole(db.Model):
+class UserRole(TenantMixin, db.Model):
     __tablename__ = "user_roles"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "organization_id",
+            "role_id",
+            name="uq_user_roles_user_org_role",
+        ),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
         primary_key=True,
     )
     role_id: Mapped[uuid.UUID] = mapped_column(

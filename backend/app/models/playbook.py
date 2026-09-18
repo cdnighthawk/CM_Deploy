@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -34,7 +34,7 @@ checklist_run_step_status_enum = ENUM(
 )
 
 
-class ChecklistTemplate(UUIDPKMixin, TimestampMixin, db.Model):
+class ChecklistTemplate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "checklist_templates"
 
     company_id: Mapped[uuid.UUID] = mapped_column(
@@ -56,7 +56,7 @@ class ChecklistTemplate(UUIDPKMixin, TimestampMixin, db.Model):
     runs: Mapped[List["ChecklistRun"]] = relationship(back_populates="template")
 
 
-class ChecklistTemplateStep(UUIDPKMixin, TimestampMixin, db.Model):
+class ChecklistTemplateStep(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "checklist_template_steps"
 
     template_id: Mapped[uuid.UUID] = mapped_column(
@@ -80,7 +80,7 @@ class ChecklistTemplateStep(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class ChecklistRun(UUIDPKMixin, TimestampMixin, db.Model):
+class ChecklistRun(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "checklist_runs"
 
     template_id: Mapped[uuid.UUID] = mapped_column(
@@ -114,7 +114,7 @@ class ChecklistRun(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class ChecklistRunStep(UUIDPKMixin, TimestampMixin, db.Model):
+class ChecklistRunStep(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "checklist_run_steps"
 
     run_id: Mapped[uuid.UUID] = mapped_column(

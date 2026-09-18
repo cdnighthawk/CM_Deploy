@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 TIME_FLAG_TYPES = (
     "offsite",
@@ -34,7 +34,7 @@ GEOFENCE_MODES = ("flag", "block")
 GEOFENCE_SHAPES = ("circle", "polygon")
 
 
-class TimeCostCode(UUIDPKMixin, TimestampMixin, db.Model):
+class TimeCostCode(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Company labor-bucket library for punches. Not Sage/JCC SKUs."""
 
     __tablename__ = "time_cost_codes"
@@ -51,7 +51,7 @@ class TimeCostCode(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class ProjectTimeCostCode(db.Model):
+class ProjectTimeCostCode(TenantMixin, db.Model):
     __tablename__ = "project_time_cost_codes"
     __table_args__ = (UniqueConstraint("project_id", "time_cost_code_id", name="uq_project_time_cost_codes"),)
 
@@ -66,7 +66,7 @@ class ProjectTimeCostCode(db.Model):
     is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class EmployeeTimeProfile(UUIDPKMixin, TimestampMixin, db.Model):
+class EmployeeTimeProfile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "employee_time_profiles"
     __table_args__ = (UniqueConstraint("user_id", name="uq_employee_time_profiles_user"),)
 
@@ -87,7 +87,7 @@ class EmployeeTimeProfile(UUIDPKMixin, TimestampMixin, db.Model):
     is_clock_eligible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class ProjectGeofence(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectGeofence(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "project_geofences"
     __table_args__ = (UniqueConstraint("project_id", name="uq_project_geofences_project"),)
 
@@ -105,7 +105,7 @@ class ProjectGeofence(UUIDPKMixin, TimestampMixin, db.Model):
     shift_end_hour: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 
-class TimeBreadcrumb(UUIDPKMixin, db.Model):
+class TimeBreadcrumb(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "time_breadcrumbs"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -126,7 +126,7 @@ class TimeBreadcrumb(UUIDPKMixin, db.Model):
     )
 
 
-class TimeFlag(UUIDPKMixin, TimestampMixin, db.Model):
+class TimeFlag(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "time_flags"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -152,7 +152,7 @@ class TimeFlag(UUIDPKMixin, TimestampMixin, db.Model):
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class TimecardDay(UUIDPKMixin, TimestampMixin, db.Model):
+class TimecardDay(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "timecard_days"
     __table_args__ = (UniqueConstraint("user_id", "work_date", name="uq_timecard_days_user_date"),)
 
@@ -173,7 +173,7 @@ class TimecardDay(UUIDPKMixin, TimestampMixin, db.Model):
     injury_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class TimecardPeriod(UUIDPKMixin, TimestampMixin, db.Model):
+class TimecardPeriod(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "timecard_periods"
 
     period_start: Mapped[date] = mapped_column(Date, nullable=False, index=True)
@@ -194,7 +194,7 @@ class TimecardPeriod(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class TimecardPeriodEmployee(UUIDPKMixin, TimestampMixin, db.Model):
+class TimecardPeriodEmployee(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "timecard_period_employees"
     __table_args__ = (UniqueConstraint("period_id", "user_id", name="uq_timecard_period_employees"),)
 

@@ -932,9 +932,13 @@ def log_ae_action(sid: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> d
 
 def public_upload(token: str, data: Mapping[str, Any]) -> dict[str, Any]:
     raw = (token or "").strip()
-    s = db.session.scalar(select(Submittal).where(Submittal.public_token == raw))
+    from ..tenancy import bind_request_organization, include_all_orgs
+
+    with include_all_orgs():
+        s = db.session.scalar(select(Submittal).where(Submittal.public_token == raw))
     if s is None:
         raise ApiError("submittal not found", 404)
+    bind_request_organization(s.organization_id)
     if s.public_token_expires_at and s.public_token_expires_at < _utcnow():
         raise ApiError("upload token expired", 403)
     file_url = str(data.get("file_url") or "").strip()

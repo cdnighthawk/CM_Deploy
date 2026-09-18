@@ -18,6 +18,11 @@ __all__ = ["ApiError", "list_employee_dispatches", "create_employee_dispatch"]
 
 
 def _can_view_hr_employee_detail(cu: CurrentUser, target_user_id: uuid.UUID) -> bool:
+    from ..tenancy import current_organization_id, user_is_member
+
+    oid = current_organization_id()
+    if oid is not None and not user_is_member(target_user_id, oid):
+        return False
     if cu.is_dev_admin:
         return True
     if cu.has_role("admin", "hr_admin", "executive"):

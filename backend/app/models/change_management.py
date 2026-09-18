@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -39,7 +39,7 @@ PRIME_CO_STATUSES = ("draft", "submitted", "approved", "void", "pending_submissi
 SCO_STATUSES = ("draft", "issued", "approved", "void", "pending_submission", "pending", "not_approved")
 
 
-class ChangeProposalRequest(UUIDPKMixin, TimestampMixin, db.Model):
+class ChangeProposalRequest(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "change_proposal_requests"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -75,7 +75,7 @@ class ChangeProposalRequest(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class ChangeProposalRequestItem(UUIDPKMixin, TimestampMixin, db.Model):
+class ChangeProposalRequestItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "change_proposal_request_items"
 
     cpr_id: Mapped[uuid.UUID] = mapped_column(
@@ -96,7 +96,7 @@ class ChangeProposalRequestItem(UUIDPKMixin, TimestampMixin, db.Model):
     cost_code: Mapped[Optional["CostCode"]] = relationship("CostCode")
 
 
-class OwnerChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
+class OwnerChangeOrder(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "owner_change_orders"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -136,7 +136,7 @@ class OwnerChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class OwnerChangeOrderItem(UUIDPKMixin, TimestampMixin, db.Model):
+class OwnerChangeOrderItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "owner_change_order_items"
 
     change_order_id: Mapped[uuid.UUID] = mapped_column(
@@ -157,7 +157,7 @@ class OwnerChangeOrderItem(UUIDPKMixin, TimestampMixin, db.Model):
     cost_code: Mapped[Optional["CostCode"]] = relationship("CostCode")
 
 
-class SubcontractChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
+class SubcontractChangeOrder(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "subcontract_change_orders"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -184,7 +184,7 @@ class SubcontractChangeOrder(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class SubcontractChangeOrderItem(UUIDPKMixin, TimestampMixin, db.Model):
+class SubcontractChangeOrderItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "subcontract_change_order_items"
 
     sco_id: Mapped[uuid.UUID] = mapped_column(

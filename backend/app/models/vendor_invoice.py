@@ -11,10 +11,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class VendorInvoice(UUIDPKMixin, TimestampMixin, db.Model):
+class VendorInvoice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "vendor_invoices"
 
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="received", index=True)
@@ -82,7 +82,7 @@ class VendorInvoice(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class VendorInvoiceLine(UUIDPKMixin, TimestampMixin, db.Model):
+class VendorInvoiceLine(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "vendor_invoice_lines"
 
     invoice_id: Mapped[uuid.UUID] = mapped_column(
@@ -103,7 +103,7 @@ class VendorInvoiceLine(UUIDPKMixin, TimestampMixin, db.Model):
     invoice: Mapped["VendorInvoice"] = relationship("VendorInvoice", back_populates="lines")
 
 
-class VendorInvoiceFile(UUIDPKMixin, TimestampMixin, db.Model):
+class VendorInvoiceFile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "vendor_invoice_files"
     __table_args__ = (
         UniqueConstraint("invoice_id", "document_id", name="uq_vendor_invoice_files_invoice_document"),
@@ -122,7 +122,7 @@ class VendorInvoiceFile(UUIDPKMixin, TimestampMixin, db.Model):
     invoice: Mapped[VendorInvoice] = relationship(back_populates="files")
 
 
-class VendorInvoiceEvent(UUIDPKMixin, db.Model):
+class VendorInvoiceEvent(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "vendor_invoice_events"
 
     invoice_id: Mapped[uuid.UUID] = mapped_column(

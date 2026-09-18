@@ -9,14 +9,14 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .lead_estimate import LeadEstimate
     from .takeoff_line_item import TakeoffLineItem
 
 
-class DoorOpening(UUIDPKMixin, TimestampMixin, db.Model):
+class DoorOpening(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "door_openings"
     __table_args__ = (
         UniqueConstraint("lead_estimate_id", "mark", name="uq_door_openings_lead_mark"),

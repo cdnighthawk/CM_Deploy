@@ -152,8 +152,10 @@ def local_path(category: UploadCategory, object_name: str) -> Path:
 
 
 def object_key(category: UploadCategory, object_name: str) -> str:
-    """Full B2/S3 object key (category segment + optional env prefix)."""
-    prefix = (current_app.config.get("B2_PREFIX") or "").strip().strip("/")
+    """Full B2/S3 object key (env prefix + org segment + category + name)."""
+    from ..tenancy import current_storage_prefix
+
+    prefix = current_storage_prefix()
     parts = [p for p in (prefix, category.value, object_name) if p]
     return "/".join(parts)
 
@@ -338,6 +340,10 @@ def save_upload(category: UploadCategory, object_name: str, file) -> int:
         if hasattr(file, "mimetype"):
             content_type = (getattr(file, "mimetype", None) or "").strip() or None
         key = object_key(category, object_name)
+        from ..tenancy import stored_key_allowed
+
+        if not stored_key_allowed(key):
+            raise StorageError("storage key is outside the current organization", 403)
         try:
             _put_bytes(key, payload, content_type=content_type)
         except StorageError as exc:
@@ -787,8 +793,13 @@ def send_stored_file(
     download_name: str,
 ) -> Response | None:
     """Stream a stored object, or ``None`` when missing."""
+    from ..tenancy import stored_key_allowed
+
+    key = object_key(category, object_name)
+    if not stored_key_allowed(key):
+        return None
     if b2_enabled():
-        data = _get_bytes(object_key(category, object_name))
+        data = _get_bytes(key)
         if data is None:
             data = _local_payload_if_present(category, object_name)
         if data is None:

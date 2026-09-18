@@ -58,6 +58,42 @@ def test_read_url_and_family_aliases():
         path.unlink(missing_ok=True)
 
 
+def test_read_production_rate_derives_hours():
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(
+            ["Manufacturer", "Item", "Production rate", "Production unit", "Unit of measure"]
+        )
+        w.writerow(["Pawling", "HR-100", "8", "Feet per hour", "LF"])
+        path = Path(f.name)
+    try:
+        rows = read_material_csv(path)
+        assert rows[0]["labor_units_per_hour"] == Decimal("8")
+        assert rows[0]["labor_rate_unit"] == "LF"
+        assert rows[0]["labor_per"] == Decimal("0.1250")
+        assert rows[0]["unit_of_measure"] == "LF"
+    finally:
+        path.unlink(missing_ok=True)
+
+
+def test_read_sqft_rate_converts_ea_catalog_uom():
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(
+            ["Manufacturer", "Item", "Production rate", "Production unit", "Labor"]
+        )
+        w.writerow(["Inpro", "INPRO-405", "30", "SQFT Per Hour", "0.1667"])
+        path = Path(f.name)
+    try:
+        rows = read_material_csv(path)
+        assert rows[0]["unit_of_measure"] == "SF"
+        assert rows[0]["labor_units_per_hour"] == Decimal("30")
+        assert rows[0]["labor_rate_unit"] == "SF"
+        assert rows[0]["labor_per"] == Decimal("0.0333")
+    finally:
+        path.unlink(missing_ok=True)
+
+
 def test_read_size_columns():
     with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="", encoding="utf-8") as f:
         w = csv.writer(f)

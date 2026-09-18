@@ -51,6 +51,7 @@ def main() -> None:
     from app.csi_catalog import DIVISION_NAMES, title_for_code
     from app.csi_spec import digits_from_csi, format_csi_display
     from app.extensions import db
+    from app.material_labor import labor_production_display
     from app.material_size import sheet_area_sf, size_display
     from app.models.material_pricing import MaterialPrice
     from sqlalchemy import select
@@ -102,6 +103,9 @@ def main() -> None:
             "sheet_area_sf",
             "cost",
             "labor_per",
+            "labor_units_per_hour",
+            "labor_rate_unit",
+            "labor_production",
             "currency",
             "unit_of_measure",
             "created_at",
@@ -151,6 +155,14 @@ def main() -> None:
                         else str(sheet_area_sf(m.size_width_in, m.size_height_in)),
                         "cost": "" if m.cost is None else str(m.cost),
                         "labor_per": "" if m.labor_per is None else str(m.labor_per),
+                        "labor_units_per_hour": ""
+                        if m.labor_units_per_hour is None
+                        else str(m.labor_units_per_hour),
+                        "labor_rate_unit": m.labor_rate_unit or "",
+                        "labor_production": labor_production_display(
+                            m.labor_units_per_hour, m.labor_rate_unit
+                        )
+                        or "",
                         "currency": m.currency or "",
                         "unit_of_measure": m.unit_of_measure or "",
                         "created_at": _iso(getattr(m, "created_at", None)),

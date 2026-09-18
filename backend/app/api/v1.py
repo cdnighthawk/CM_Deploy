@@ -122,6 +122,30 @@ def client_debug_log():
     return jsonify({"ok": True})
 
 
+def _org_status_fields(user) -> dict[str, Any]:
+    from ..tenancy import (
+        current_organization_id,
+        organization_public,
+        organizations_for_user,
+    )
+
+    orgs = organizations_for_user(user.id) if user is not None else []
+    current = current_organization_id()
+    current_pub = None
+    if current is not None:
+        for o in orgs:
+            if o.id == current:
+                current_pub = organization_public(o)
+                break
+    return {
+        "organizations": [organization_public(o) for o in orgs],
+        "current_organization_id": str(current) if current else None,
+        "current_organization": current_pub,
+        "needs_organization_pick": user is not None and current is None and len(orgs) > 1,
+        "can_create_organization": bool(current_app.config.get("USIS_ALLOW_COMPANY_SELF_SIGNUP")),
+    }
+
+
 @bp.get("/auth/status")
 def auth_status():
     """Return whether the browser session is signed in (``session['user_id']``)."""
@@ -146,6 +170,7 @@ def auth_status():
                         "first_name": "Local",
                         "last_name": "Dev",
                     },
+                    **_org_status_fields(None),
                 }
             )
         return _jsonify(
@@ -154,6 +179,7 @@ def auth_status():
                 "user": None,
                 "microsoft_sso_enabled": ms_on,
                 "self_register_enabled": allow_register,
+                "can_create_organization": bool(current_app.config.get("USIS_ALLOW_COMPANY_SELF_SIGNUP")),
             }
         )
     u = cu.user
@@ -173,6 +199,7 @@ def auth_status():
                 "first_name": u.first_name,
                 "last_name": u.last_name,
             },
+            **_org_status_fields(u),
         }
     )
 
@@ -223,7 +250,12 @@ def auth_register():
     db.session.add(u)
     db.session.flush()
     from ..permissions.applicant import assign_applicant_role
+    from ..tenancy import add_member, ensure_usis_organization, set_current_organization_id
+    from ..models.organization import ORG_ROLE_MEMBER
 
+    usis = ensure_usis_organization()
+    add_member(u.id, usis.id, ORG_ROLE_MEMBER)
+    set_current_organization_id(usis.id)
     assign_applicant_role(u)
     db.session.commit()
 
@@ -244,6 +276,31 @@ def auth_register():
             },
         }
     ), 201
+
+
+@bp.post("/auth/organization")
+def auth_switch_organization():
+    """Set the current organization for this session (company switcher)."""
+    cu = current_user()
+    if cu.user is None:
+        return _jsonify({"error": "authentication required"}), 401
+    body = request.get_json(silent=True) or {}
+    raw = body.get("organization_id") or body.get("id")
+    from ..tenancy import bind_organization_for_user, current_organization_id, user_is_member
+
+    try:
+        oid = uuid.UUID(str(raw).strip())
+    except (TypeError, ValueError, AttributeError):
+        return _jsonify({"error": "organization_id is required"}), 400
+    if not user_is_member(cu.user.id, oid):
+        return _jsonify({"error": "not a member of that organization"}), 403
+    bind_organization_for_user(cu.user.id, preferred=oid)
+    return _jsonify(
+        {
+            "ok": True,
+            "current_organization_id": str(current_organization_id()) if current_organization_id() else None,
+        }
+    )
 
 
 @bp.post("/auth/password-reset/request")
@@ -873,8 +930,19 @@ def _material_size_fields(m: MaterialPrice) -> dict[str, Any]:
 
 
 def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str, Any]:
+    from ..material_labor import labor_hours_for_takeoff
     from ..material_size import suggested_sheet_count
 
+    hours = labor_hours_for_takeoff(
+        t.quantity,
+        t.unit,
+        catalog_uom=mp.unit_of_measure,
+        labor_per=mp.labor_per,
+        units_per_hour=mp.labor_units_per_hour,
+        rate_unit=mp.labor_rate_unit,
+        size_width_in=mp.size_width_in,
+        size_height_in=mp.size_height_in,
+    )
     return {
         "id": str(mp.id),
         "manufacturer": mp.manufacturer,
@@ -884,6 +952,9 @@ def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str
         "suggested_sheets": suggested_sheet_count(
             t.quantity, t.unit, mp.size_width_in, mp.size_height_in
         ),
+        "labor_hours": _num_or_none(hours),
+        "labor_units_per_hour": _num_or_none(mp.labor_units_per_hour),
+        "labor_rate_unit": mp.labor_rate_unit,
     }
 
 
@@ -4886,7 +4957,15 @@ def _csi_extras(raw: str | None) -> dict[str, Any]:
     }
 
 
+def _sync_material_labor_row(row: MaterialPrice) -> None:
+    from ..material_labor import sync_material_labor
+
+    sync_material_labor(row)
+
+
 def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
+    from ..material_labor import labor_production_display
+
     extra = _csi_extras(m.csi_spec_section)
     return {
         "id": str(m.id),
@@ -4902,6 +4981,9 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
         "mounting_type": m.mounting_type,
         "cost": _num_or_none(m.cost),
         "labor_per": _num_or_none(m.labor_per),
+        "labor_units_per_hour": _num_or_none(m.labor_units_per_hour),
+        "labor_rate_unit": m.labor_rate_unit,
+        "labor_production": labor_production_display(m.labor_units_per_hour, m.labor_rate_unit),
         "unit_of_measure": m.unit_of_measure,
         "currency": m.currency,
         **_material_size_fields(m),
@@ -5033,6 +5115,8 @@ _MATERIAL_BULK_FIELDS = frozenset(
         "mounting_type",
         "cost",
         "labor_per",
+        "labor_units_per_hour",
+        "labor_rate_unit",
         "unit_of_measure",
         "size_width_in",
         "size_height_in",
@@ -5043,13 +5127,22 @@ _MATERIAL_BULK_FIELDS = frozenset(
 def _coerce_material_bulk_value(field: str, value: Any) -> Any:
     from ..csi_spec import digits_from_csi, normalize_csi_spec_section
 
-    if field in ("cost", "labor_per", "size_width_in", "size_height_in"):
+    if field in ("cost", "labor_per", "labor_units_per_hour", "size_width_in", "size_height_in"):
         if value in (None, ""):
             return None
         try:
             return Decimal(str(value).strip())
         except Exception as exc:
             raise ApiError(f"{field} must be a number", 400) from exc
+    if field == "labor_rate_unit":
+        from ..material_labor import normalize_rate_unit
+
+        if value in (None, ""):
+            return None
+        unit = normalize_rate_unit(str(value))
+        if not unit:
+            raise ApiError("labor rate unit must be SF, LF, or EA", 400)
+        return unit
     if field == "csi_spec_section":
         if value in (None, ""):
             return None
@@ -6407,6 +6500,7 @@ def bulk_patch_material_prices():
             skipped.append({"id": str(pid), "error": "not found"})
             continue
         setattr(row, field, new_value)
+        _sync_material_labor_row(row)
         updated.append(_material_price_public(row))
     try:
         db.session.commit()
@@ -6417,7 +6511,9 @@ def bulk_patch_material_prices():
         {
             "ok": True,
             "field": field,
-            "value": new_value if field not in ("cost", "labor_per") else _num_or_none(new_value),
+            "value": new_value
+            if field not in ("cost", "labor_per", "labor_units_per_hour")
+            else _num_or_none(new_value),
             "updated": updated,
             "updated_count": len(updated),
             "failed": skipped,
@@ -6460,6 +6556,7 @@ def patch_material_price(price_id: str):
     try:
         for field, value in updates.items():
             setattr(row, field, _coerce_material_bulk_value(field, value))
+        _sync_material_labor_row(row)
     except ApiError as exc:
         return _jsonify({"error": exc.message}), exc.status
     try:
@@ -6575,6 +6672,9 @@ _integration_textura.register_textura_routes(bp)
 from . import _auth_mobile  # noqa: E402
 
 _auth_mobile.register_mobile_auth_routes(bp)
+from . import _platform_orgs as _platform_orgs_mod  # noqa: E402
+
+_platform_orgs_mod.register_platform_org_routes(bp)
 from . import _user_activity_service as _user_activity_svc  # noqa: E402
 
 _user_activity_svc.register_activity_routes(bp)

@@ -14,10 +14,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class WorkflowDefinition(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowDefinition(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_definitions"
     __table_args__ = (
         UniqueConstraint(
@@ -51,7 +51,7 @@ class WorkflowDefinition(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class WorkflowDefinitionStep(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowDefinitionStep(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_definition_steps"
 
     definition_id: Mapped[uuid.UUID] = mapped_column(
@@ -73,7 +73,7 @@ class WorkflowDefinitionStep(UUIDPKMixin, TimestampMixin, db.Model):
     definition: Mapped["WorkflowDefinition"] = relationship(back_populates="steps")
 
 
-class WorkflowQueue(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowQueue(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_queues"
     __table_args__ = (UniqueConstraint("process_key", "queue_key", name="uq_workflow_queues_process_key"),)
 
@@ -87,7 +87,7 @@ class WorkflowQueue(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class WorkflowQueueMember(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowQueueMember(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_queue_members"
     __table_args__ = (UniqueConstraint("queue_id", "user_id", name="uq_workflow_queue_members_user"),)
 
@@ -108,7 +108,7 @@ class WorkflowQueueMember(UUIDPKMixin, TimestampMixin, db.Model):
     user = relationship("User", foreign_keys=[user_id])
 
 
-class WorkflowInstance(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowInstance(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_instances"
 
     process_key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
@@ -132,7 +132,7 @@ class WorkflowInstance(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class WorkflowInstanceStep(UUIDPKMixin, TimestampMixin, db.Model):
+class WorkflowInstanceStep(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "workflow_instance_steps"
 
     instance_id: Mapped[uuid.UUID] = mapped_column(

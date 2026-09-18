@@ -52,10 +52,18 @@ def _rfp_by_token(token: str) -> tuple[Rfp | None, RfpVendorQuote | None]:
     raw = (token or "").strip()
     if not raw:
         return None, None
-    quote = db.session.scalar(select(RfpVendorQuote).where(RfpVendorQuote.invite_token == raw))
-    if quote is not None:
-        return db.session.get(Rfp, quote.rfp_id), quote
-    rfp = db.session.scalar(select(Rfp).where(Rfp.public_token == raw))
+    from .tenancy import bind_request_organization, include_all_orgs
+
+    with include_all_orgs():
+        quote = db.session.scalar(select(RfpVendorQuote).where(RfpVendorQuote.invite_token == raw))
+        if quote is not None:
+            rfp = db.session.get(Rfp, quote.rfp_id)
+            if rfp is not None:
+                bind_request_organization(rfp.organization_id)
+            return rfp, quote
+        rfp = db.session.scalar(select(Rfp).where(Rfp.public_token == raw))
+    if rfp is not None:
+        bind_request_organization(rfp.organization_id)
     return rfp, None
 
 
@@ -398,10 +406,13 @@ def public_submittal_form(token: str):
     from sqlalchemy import select as sel
 
     from .models import Submittal
+    from .tenancy import bind_request_organization, include_all_orgs
 
-    s = db.session.scalar(sel(Submittal).where(Submittal.public_token == token))
+    with include_all_orgs():
+        s = db.session.scalar(sel(Submittal).where(Submittal.public_token == token))
     if s is None:
         return "<p>Submittal not found</p>", 404
+    bind_request_organization(s.organization_id)
     title = s.title
     number = s.submittal_number or f"#{s.number}"
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

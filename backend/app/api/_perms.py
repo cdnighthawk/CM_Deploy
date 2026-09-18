@@ -137,12 +137,22 @@ def _parse_uuid(raw: Optional[str]) -> Optional[uuid.UUID]:
 
 
 def _role_codes_for(user: User) -> frozenset[str]:
+    from sqlalchemy import select as sa_select
+
+    from ..models import Role, UserRole
+    from ..tenancy import current_organization_id, include_all_orgs
+
     codes: set[str] = set()
     if user.is_superuser:
         codes.add("admin")
-    for ur in user.roles or ():
-        if ur.role is not None and ur.role.code:
-            codes.add(ur.role.code)
+    org_id = current_organization_id()
+    stmt = sa_select(Role.code).join(UserRole, UserRole.role_id == Role.id).where(UserRole.user_id == user.id)
+    if org_id is not None:
+        stmt = stmt.where(UserRole.organization_id == org_id)
+    with include_all_orgs():
+        for code in db.session.scalars(stmt):
+            if code:
+                codes.add(code)
     return frozenset(codes)
 
 
@@ -177,21 +187,32 @@ def current_user() -> CurrentUser:
        tooling; otherwise anonymous requests are unauthenticated.
     """
 
+    from ..tenancy import bind_organization_for_user, default_organization_id, set_current_organization_id
+
+    def _finish(u: User, *, jwt_org=None) -> CurrentUser:
+        preferred = jwt_org
+        if has_request_context():
+            hdr = _parse_uuid(request.headers.get("X-Usis-Organization-Id"))
+            if hdr is not None:
+                preferred = hdr
+        bind_organization_for_user(u.id, preferred=preferred)
+        return CurrentUser(
+            user=u,
+            role_codes=_role_codes_for(u),
+            granular=_granular_for(u),
+            module_access=_module_access_for(u),
+        )
+
     if has_request_context():
         existing = getattr(g, "current_user", None)
         if isinstance(existing, CurrentUser):
             return existing
 
-        from ._auth_mobile import bearer_user_from_request
+        from ._auth_mobile import bearer_org_id_from_request, bearer_user_from_request
 
         bearer_u = bearer_user_from_request()
         if bearer_u is not None:
-            cu = CurrentUser(
-                user=bearer_u,
-                role_codes=_role_codes_for(bearer_u),
-                granular=_granular_for(bearer_u),
-                module_access=_module_access_for(bearer_u),
-            )
+            cu = _finish(bearer_u, jwt_org=bearer_org_id_from_request())
             g.current_user = cu
             return cu
 
@@ -204,12 +225,7 @@ def current_user() -> CurrentUser:
                 if uid is not None:
                     u = db.session.get(User, uid)
                     if u is not None:
-                        cu = CurrentUser(
-                            user=u,
-                            role_codes=_role_codes_for(u),
-                            granular=_granular_for(u),
-                            module_access=_module_access_for(u),
-                        )
+                        cu = _finish(u)
                         g.current_user = cu
                         return cu
 
@@ -218,12 +234,7 @@ def current_user() -> CurrentUser:
         if sess_uid is not None:
             u = db.session.get(User, sess_uid)
             if u is not None and getattr(u, "is_active", True):
-                cu = CurrentUser(
-                    user=u,
-                    role_codes=_role_codes_for(u),
-                    granular=_granular_for(u),
-                    module_access=_module_access_for(u),
-                )
+                cu = _finish(u)
                 g.current_user = cu
                 return cu
             session.pop("user_id", None)
@@ -233,12 +244,7 @@ def current_user() -> CurrentUser:
         if env_uid is not None:
             u = db.session.get(User, env_uid)
             if u is not None:
-                cu = CurrentUser(
-                    user=u,
-                    role_codes=_role_codes_for(u),
-                    granular=_granular_for(u),
-                    module_access=_module_access_for(u),
-                )
+                cu = _finish(u)
                 if has_request_context():
                     g.current_user = cu
                 return cu
@@ -255,6 +261,9 @@ def current_user() -> CurrentUser:
         )
         if has_request_context():
             g.current_user = cu
+            oid = default_organization_id()
+            if oid is not None:
+                set_current_organization_id(oid)
         return cu
 
     cu = CurrentUser(user=None, role_codes=frozenset(), granular=frozenset())

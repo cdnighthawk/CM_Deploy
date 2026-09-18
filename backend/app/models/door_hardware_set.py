@@ -10,13 +10,13 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .material_pricing import MaterialPrice
 
 
-class DoorHardwareSet(UUIDPKMixin, TimestampMixin, db.Model):
+class DoorHardwareSet(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "door_hardware_sets"
     __table_args__ = (UniqueConstraint("code", name="uq_door_hardware_sets_code"),)
 
@@ -32,7 +32,7 @@ class DoorHardwareSet(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class DoorHardwareSetItem(UUIDPKMixin, TimestampMixin, db.Model):
+class DoorHardwareSetItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "door_hardware_set_items"
 
     hardware_set_id: Mapped[uuid.UUID] = mapped_column(

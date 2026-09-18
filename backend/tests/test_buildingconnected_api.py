@@ -93,13 +93,13 @@ def test_bc_oauth_callback_persists_tokens(monkeypatch, client, flask_app):
         assert b"usis-bc-oauth" in r.data
         assert b"Back to Leads" in r.data
         with flask_app.app_context():
-            row = db.session.get(BuildingConnectedOAuthToken, "default")
+            row = db.session.scalar(select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == "default"))
             assert row is not None
             assert row.access_token == "at-test"
             assert _integration_bc._decrypt_refresh(row.refresh_token_encrypted) == "rt-test"
     finally:
         with flask_app.app_context():
-            row = db.session.get(BuildingConnectedOAuthToken, "default")
+            row = db.session.scalar(select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == "default"))
             if row is not None:
                 db.session.delete(row)
                 db.session.commit()
@@ -199,7 +199,7 @@ def test_bc_sync_upserts_lead_estimates(monkeypatch, client, flask_app):
             assert row is not None
     finally:
         with flask_app.app_context():
-            tok = db.session.get(BuildingConnectedOAuthToken, "default")
+            tok = db.session.scalar(select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == "default"))
             if tok is not None:
                 db.session.delete(tok)
             for le in db.session.scalars(

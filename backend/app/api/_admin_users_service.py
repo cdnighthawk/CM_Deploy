@@ -215,6 +215,14 @@ def list_users(
     qn = (q or "").strip().lower()
     stmt = select(User)
     count_stmt = select(func.count()).select_from(User)
+    from ..models.organization import OrganizationMember
+    from ..tenancy import current_organization_id
+
+    oid = current_organization_id()
+    if oid is not None:
+        member_ids = select(OrganizationMember.user_id).where(OrganizationMember.organization_id == oid)
+        stmt = stmt.where(User.id.in_(member_ids))
+        count_stmt = count_stmt.where(User.id.in_(member_ids))
     if not include_applicants:
         applicant_ids = applicant_only_user_id_subquery()
         stmt = stmt.where(User.id.notin_(applicant_ids))
@@ -241,6 +249,11 @@ def list_users(
 
 def get_user(cu: CurrentUser, user_id: uuid.UUID) -> dict[str, Any] | None:
     _require_admin(cu)
+    from ..tenancy import current_organization_id, user_is_member
+
+    oid = current_organization_id()
+    if oid is not None and not user_is_member(user_id, oid):
+        return None
     u = db.session.scalar(
         select(User)
         .where(User.id == user_id)
@@ -378,6 +391,12 @@ def create_user(cu: CurrentUser, data: dict[str, Any]) -> dict[str, Any]:
     _apply_office_id(u, data)
     db.session.add(u)
     db.session.flush()
+    from ..models.organization import ORG_ROLE_MEMBER
+    from ..tenancy import add_member, current_organization_id
+
+    oid = current_organization_id()
+    if oid is not None:
+        add_member(u.id, oid, ORG_ROLE_MEMBER)
     role_ids = _parse_role_ids(data.get("role_ids"))
     _set_roles(u, role_ids)
     db.session.flush()

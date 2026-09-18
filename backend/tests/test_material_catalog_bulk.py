@@ -302,6 +302,74 @@ def test_patch_material_price(client, catalog_rows):
     assert hit["description"] == "Updated hinge"
 
 
+def test_patch_production_rate_derives_hours_and_uom(client, catalog_rows):
+    r = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={
+            "unit_of_measure": "SF",
+            "labor_units_per_hour": "30",
+            "labor_rate_unit": "SQFT Per Hour",
+        },
+    )
+    assert r.status_code == 200, r.get_json()
+    item = r.get_json()["item"]
+    assert item["labor_units_per_hour"] == 30
+    assert item["labor_rate_unit"] == "SF"
+    assert item["labor_per"] == 0.0333
+    assert item["unit_of_measure"] == "SF"
+    assert item["labor_production"] == "30 SF/hr"
+
+    uom = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": [catalog_rows[1]], "field": "unit_of_measure", "value": "LF"},
+    )
+    assert uom.status_code == 200, uom.get_json()
+    bulk = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": [catalog_rows[1]], "field": "labor_units_per_hour", "value": "8"},
+    )
+    assert bulk.status_code == 200, bulk.get_json()
+    unit = client.post(
+        "/api/v1/material-prices/bulk",
+        json={"ids": [catalog_rows[1]], "field": "labor_rate_unit", "value": "LF"},
+    )
+    assert unit.status_code == 200, unit.get_json()
+    listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&limit=50")
+    hit = next(x for x in listed.get_json()["items"] if x["id"] == catalog_rows[1])
+    assert hit["labor_units_per_hour"] == 8
+    assert hit["labor_rate_unit"] == "LF"
+    assert hit["labor_per"] == 0.125
+    assert hit["unit_of_measure"] == "LF"
+
+
+def test_patch_sf_rate_converts_ea_not_lf(client, catalog_rows):
+    sf = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={"labor_units_per_hour": "30", "labor_rate_unit": "SF"},
+    )
+    assert sf.status_code == 200, sf.get_json()
+    item = sf.get_json()["item"]
+    assert item["unit_of_measure"] == "SF"
+    assert item["labor_units_per_hour"] == 30
+    assert item["labor_per"] == 0.0333
+
+    lf = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[1]}",
+        json={
+            "unit_of_measure": "EA",
+            "labor_per": "0.1667",
+            "labor_units_per_hour": "8",
+            "labor_rate_unit": "LF",
+        },
+    )
+    assert lf.status_code == 200, lf.get_json()
+    kept = lf.get_json()["item"]
+    assert kept["unit_of_measure"] == "EA"
+    assert kept["labor_per"] == 0.1667
+    assert kept["labor_units_per_hour"] is None
+    assert kept["labor_rate_unit"] is None
+
+
 def test_patch_material_price_rejects_blank_item(client, catalog_rows):
     r = client.patch(
         f"/api/v1/material-prices/{catalog_rows[0]}",

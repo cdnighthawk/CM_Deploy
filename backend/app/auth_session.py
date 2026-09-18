@@ -239,6 +239,9 @@ def login():
 
     session["user_id"] = str(u.id)
     session.permanent = bool(remember)
+    from .tenancy import bind_organization_for_user
+
+    bind_organization_for_user(u.id)
     from .api._user_activity_service import record_login
 
     record_login(u, "password")
@@ -260,6 +263,9 @@ def logout():
             record_logout(user)
             db.session.commit()
     session.pop("user_id", None)
+    from .tenancy import SESSION_ORG_KEY
+
+    session.pop(SESSION_ORG_KEY, None)
     flash("You have been signed out.", "info")
     nxt = (request.args.get("next") or "").strip() or None
     shell = _resolve_shell_redirect(nxt)
@@ -355,6 +361,12 @@ def microsoft_sso_callback():
 
     u = db.session.scalar(select(User).where(User.email == email))
     jit = bool(cfg.get("MS_ENTRA_ALLOW_JIT_USER"))
+    from .tenancy import add_member, entra_organization, set_current_organization_id
+    from .models.organization import ORG_ROLE_MEMBER
+
+    entra_org = entra_organization()
+    if entra_org is None:
+        return redirect(_redirect_to_shell_login(next_after_login=next_url, ms_error="not_configured"))
     if u is None:
         if not jit:
             return redirect(_redirect_to_shell_login(next_after_login=next_url, ms_error="not_registered"))
@@ -370,9 +382,12 @@ def microsoft_sso_callback():
         u.first_name = given or None
         u.last_name = family or None
         db.session.add(u)
+        db.session.flush()
+        add_member(u.id, entra_org.id, ORG_ROLE_MEMBER)
         db.session.commit()
     if not u.is_active:
         return redirect(_redirect_to_shell_login(next_after_login=next_url, ms_error="inactive"))
+    add_member(u.id, entra_org.id, ORG_ROLE_MEMBER)
 
     from .api._user_activity_service import record_login
 
@@ -380,4 +395,5 @@ def microsoft_sso_callback():
     db.session.commit()
     session["user_id"] = str(u.id)
     session.permanent = True
+    set_current_organization_id(entra_org.id)
     return redirect(_login_redirect_target(next_url))

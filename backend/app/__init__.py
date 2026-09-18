@@ -162,11 +162,13 @@ def create_app(config_object: str | None = None) -> Flask:
         )
 
     from . import models  # noqa: F401  (register mappers with SQLAlchemy)
+    from . import tenancy as tenancy_mod  # noqa: F401  (tenant query listeners)
 
     from .auth_session import auth_bp
 
     app.register_blueprint(auth_bp)
     app.permanent_session_lifetime = app.config.get("PERMANENT_SESSION_LIFETIME", timedelta(days=14))
+    tenancy_mod.init_tenancy(app)
 
     from .ai.blueprint import bp as ai_bp
     from .api import v1_bp

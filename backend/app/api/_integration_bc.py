@@ -46,6 +46,12 @@ _PAGE_UPSERT = 100
 _BULK_WRITE_MAX = 100
 
 
+def _bc_oauth_row(label: str = "default") -> BuildingConnectedOAuthToken | None:
+    return db.session.scalar(
+        select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == label)
+    )
+
+
 class BcWriteError(Exception):
     def __init__(self, message: str, status: int = 400, extra: dict | None = None):
         super().__init__(message)
@@ -311,7 +317,7 @@ def _persist_token_payload(data: dict) -> None:
     exp: datetime | None = None
     if expires_in > 0:
         exp = datetime.now(timezone.utc) + timedelta(seconds=max(0, expires_in - 120))
-    row = db.session.get(BuildingConnectedOAuthToken, "default")
+    row = _bc_oauth_row()
     enc = _encrypt_refresh(refresh)
     if row is None:
         db.session.add(
@@ -329,7 +335,7 @@ def _persist_token_payload(data: dict) -> None:
 
 
 def _refresh_tokens_unlocked() -> None:
-    row = db.session.get(BuildingConnectedOAuthToken, "default")
+    row = _bc_oauth_row()
     if row is None:
         raise RuntimeError("BuildingConnected is not connected (complete OAuth first).")
     rt = _decrypt_refresh(row.refresh_token_encrypted)
@@ -350,7 +356,7 @@ def _refresh_tokens_unlocked() -> None:
 
 
 def _ensure_access_token() -> str:
-    row = db.session.get(BuildingConnectedOAuthToken, "default")
+    row = _bc_oauth_row()
     if row is None:
         raise RuntimeError("BuildingConnected is not connected (complete OAuth first).")
     now = datetime.now(timezone.utc)
@@ -617,7 +623,7 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 try:
                     _refresh_tokens_unlocked()
                     db.session.commit()
-                    row = db.session.get(BuildingConnectedOAuthToken, "default")
+                    row = _bc_oauth_row()
                     if not row or not row.access_token:
                         raise RuntimeError("no access token after refresh") from None
                     loaded, skipped, errors = _pull_and_upsert(row.access_token)

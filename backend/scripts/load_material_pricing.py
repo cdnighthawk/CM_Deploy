@@ -67,6 +67,10 @@ def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> No
                 "mounting_type": ins.excluded.mounting_type,
                 "cost": ins.excluded.cost,
                 "labor_per": func.coalesce(ins.excluded.labor_per, table.c.labor_per),
+                "labor_units_per_hour": func.coalesce(
+                    ins.excluded.labor_units_per_hour, table.c.labor_units_per_hour
+                ),
+                "labor_rate_unit": func.coalesce(ins.excluded.labor_rate_unit, table.c.labor_rate_unit),
                 "size_width_in": func.coalesce(ins.excluded.size_width_in, table.c.size_width_in),
                 "size_height_in": func.coalesce(ins.excluded.size_height_in, table.c.size_height_in),
                 "currency": ins.excluded.currency,

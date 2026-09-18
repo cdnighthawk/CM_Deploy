@@ -14,10 +14,10 @@ if TYPE_CHECKING:
     from .material_pricing import MaterialPrice
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class TakeoffLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+class TakeoffLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "takeoff_line_items"
 
     lead_estimate_id: Mapped[Optional[uuid.UUID]] = mapped_column(

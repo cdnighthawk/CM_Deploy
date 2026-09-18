@@ -18,6 +18,19 @@ _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "mounting_type": ("mounting type", "mounting", "mount type", "mount"),
     "cost": ("cost", "price", "unit price", "unit cost", "material cost"),
     "labor_per": ("labor per", "labor", "labor cost", "labor $", "install labor"),
+    "labor_units_per_hour": (
+        "labor_units_per_hour",
+        "labor units per hour",
+        "production rate",
+        "units per hour",
+        "units/hr",
+    ),
+    "labor_rate_unit": (
+        "labor_rate_unit",
+        "labor rate unit",
+        "production unit",
+        "rate unit",
+    ),
     "unit_of_measure": ("unit of measure", "uom", "unit", "units"),
     "currency": ("currency",),
     "csi_spec_section": (
@@ -251,6 +264,16 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
     mounting_type = _blank_to_none(_get_cell(row, col_map, "mounting_type"))
     cost = _parse_decimal(_get_cell(row, col_map, "cost"))
     labor_per = _parse_decimal(_get_cell(row, col_map, "labor_per"))
+    labor_units_per_hour = (
+        _parse_decimal(_get_cell(row, col_map, "labor_units_per_hour"))
+        if "labor_units_per_hour" in col_map
+        else None
+    )
+    labor_rate_unit = None
+    if "labor_rate_unit" in col_map:
+        from app.material_labor import normalize_rate_unit
+
+        labor_rate_unit = normalize_rate_unit(_get_cell(row, col_map, "labor_rate_unit"))
     uom = _blank_to_none(_get_cell(row, col_map, "unit_of_measure")) or "EA"
     currency = (_blank_to_none(_get_cell(row, col_map, "currency")) or "USD").upper()[:3]
     csi_raw = _blank_to_none(_get_cell(row, col_map, "csi_spec_section"))
@@ -280,9 +303,27 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
         "mounting_type": mounting_type[:120] if mounting_type else None,
         "cost": cost,
         "labor_per": labor_per,
+        "labor_units_per_hour": labor_units_per_hour,
+        "labor_rate_unit": labor_rate_unit,
         "currency": currency,
         "unit_of_measure": uom[:20],
     }
+    if labor_units_per_hour is not None and labor_rate_unit:
+        from types import SimpleNamespace
+
+        from app.material_labor import sync_material_labor
+
+        tmp = SimpleNamespace(
+            labor_units_per_hour=labor_units_per_hour,
+            labor_rate_unit=labor_rate_unit,
+            labor_per=labor_per,
+            unit_of_measure=payload["unit_of_measure"],
+        )
+        sync_material_labor(tmp)
+        payload["labor_per"] = tmp.labor_per
+        payload["labor_units_per_hour"] = tmp.labor_units_per_hour
+        payload["labor_rate_unit"] = tmp.labor_rate_unit
+        payload["unit_of_measure"] = tmp.unit_of_measure
     if "size_width_in" in col_map or "size_height_in" in col_map or "size" in col_map:
         payload["size_width_in"] = size_width_in
         payload["size_height_in"] = size_height_in

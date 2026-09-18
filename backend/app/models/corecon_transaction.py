@@ -28,10 +28,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class CoreconTransaction(UUIDPKMixin, TimestampMixin, db.Model):
+class CoreconTransaction(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "corecon_transactions"
     __table_args__ = (
         UniqueConstraint(

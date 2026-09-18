@@ -123,7 +123,7 @@ def test_textura_credentials_and_sync_projects_invoices(client, flask_app, monke
                 db.session.delete(proj)
             for log in db.session.scalars(select(TexturaSyncLog)).all():
                 db.session.delete(log)
-            cred = db.session.get(TexturaCredential, "default")
+            cred = db.session.scalar(select(TexturaCredential).where(TexturaCredential.label == "default"))
             if cred is not None:
                 db.session.delete(cred)
             db.session.commit()
@@ -164,7 +164,7 @@ def test_textura_project_scoped_sync(client, flask_app, monkeypatch):
                 for pa in list(p.pay_applications):
                     db.session.delete(pa)
                 db.session.delete(p)
-            cred = db.session.get(TexturaCredential, "default")
+            cred = db.session.scalar(select(TexturaCredential).where(TexturaCredential.label == "default"))
             if cred:
                 db.session.delete(cred)
             db.session.commit()

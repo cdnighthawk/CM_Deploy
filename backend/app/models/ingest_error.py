@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class IngestErrorEvent(UUIDPKMixin, TimestampMixin, db.Model):
+class IngestErrorEvent(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "ingest_error_events"
 
     batch_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)

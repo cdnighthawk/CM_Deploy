@@ -11,10 +11,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from ..extensions import db
-from .base import UUIDPKMixin
+from .base import UUIDPKMixin, TenantMixin
 
 
-class UserActivityEvent(UUIDPKMixin, db.Model):
+class UserActivityEvent(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "user_activity_events"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -39,7 +39,7 @@ class UserActivityEvent(UUIDPKMixin, db.Model):
     )
 
 
-class UserActivityDaily(UUIDPKMixin, db.Model):
+class UserActivityDaily(UUIDPKMixin, TenantMixin, db.Model):
     """One Pacific-calendar-day rollup of active time and work counts."""
 
     __tablename__ = "user_activity_daily"

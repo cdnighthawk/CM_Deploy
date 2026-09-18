@@ -16,7 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 HIRE_STAGES = (
     "draft",
@@ -41,7 +41,7 @@ I9_ATTESTATIONS = (
 I9_LISTS = ("A", "B", "C")
 
 
-class FormTemplate(UUIDPKMixin, TimestampMixin, db.Model):
+class FormTemplate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Official (or USIS working-copy) blank + field map. In-flight packets freeze ids."""
 
     __tablename__ = "form_templates"
@@ -58,11 +58,16 @@ class FormTemplate(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class HireCompanySetting(db.Model):
+class HireCompanySetting(TenantMixin, db.Model):
     """Key/value hire settings. Secret values (FEIN, EDD) are Fernet ciphertext."""
 
     __tablename__ = "hire_company_settings"
 
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
     key: Mapped[str] = mapped_column(String(80), primary_key=True)
     value_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_secret: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -71,7 +76,7 @@ class HireCompanySetting(db.Model):
     )
 
 
-class HirePacket(UUIDPKMixin, TimestampMixin, db.Model):
+class HirePacket(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_packets"
 
     user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -152,7 +157,7 @@ class HirePacket(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class HirePerson(UUIDPKMixin, TimestampMixin, db.Model):
+class HirePerson(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """1:1 identity on the packet. Encrypted SSN + DOB."""
 
     __tablename__ = "hire_people"
@@ -190,7 +195,7 @@ class HirePerson(UUIDPKMixin, TimestampMixin, db.Model):
     packet: Mapped["HirePacket"] = relationship(back_populates="person")
 
 
-class HireTaxElection(UUIDPKMixin, TimestampMixin, db.Model):
+class HireTaxElection(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_tax_elections"
     __table_args__ = (UniqueConstraint("packet_id", "form_key", "version", name="uq_hire_tax_elections_form_ver"),)
 
@@ -211,7 +216,7 @@ class HireTaxElection(UUIDPKMixin, TimestampMixin, db.Model):
     packet: Mapped["HirePacket"] = relationship(back_populates="tax_elections")
 
 
-class HireI9(UUIDPKMixin, TimestampMixin, db.Model):
+class HireI9(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_i9s"
     __table_args__ = (UniqueConstraint("packet_id", name="uq_hire_i9s_packet"),)
 
@@ -244,7 +249,7 @@ class HireI9(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class HireI9Document(UUIDPKMixin, TimestampMixin, db.Model):
+class HireI9Document(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_i9_documents"
 
     i9_id: Mapped[uuid.UUID] = mapped_column(
@@ -264,7 +269,7 @@ class HireI9Document(UUIDPKMixin, TimestampMixin, db.Model):
     i9: Mapped["HireI9"] = relationship(back_populates="documents")
 
 
-class HireDirectDeposit(UUIDPKMixin, TimestampMixin, db.Model):
+class HireDirectDeposit(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_direct_deposits"
     __table_args__ = (UniqueConstraint("packet_id", name="uq_hire_direct_deposits_packet"),)
 
@@ -284,7 +289,7 @@ class HireDirectDeposit(UUIDPKMixin, TimestampMixin, db.Model):
     packet: Mapped["HirePacket"] = relationship(back_populates="direct_deposit")
 
 
-class HireEmergencyContact(UUIDPKMixin, TimestampMixin, db.Model):
+class HireEmergencyContact(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_emergency_contacts"
 
     packet_id: Mapped[uuid.UUID] = mapped_column(
@@ -298,7 +303,7 @@ class HireEmergencyContact(UUIDPKMixin, TimestampMixin, db.Model):
     packet: Mapped["HirePacket"] = relationship(back_populates="emergency_contacts")
 
 
-class HireNoticeAck(UUIDPKMixin, TimestampMixin, db.Model):
+class HireNoticeAck(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_notice_acks"
     __table_args__ = (UniqueConstraint("packet_id", "notice_key", name="uq_hire_notice_acks_key"),)
 
@@ -314,7 +319,7 @@ class HireNoticeAck(UUIDPKMixin, TimestampMixin, db.Model):
     packet: Mapped["HirePacket"] = relationship(back_populates="notice_acks")
 
 
-class HireSignature(UUIDPKMixin, TimestampMixin, db.Model):
+class HireSignature(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hire_signatures"
 
     packet_id: Mapped[uuid.UUID] = mapped_column(
@@ -336,7 +341,7 @@ class HireSignature(UUIDPKMixin, TimestampMixin, db.Model):
     packet: Mapped["HirePacket"] = relationship(back_populates="signatures")
 
 
-class HireArtifact(UUIDPKMixin, TimestampMixin, db.Model):
+class HireArtifact(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Stored draft/signed PDFs and payroll exports under hr/hires/<packet_id>/."""
 
     __tablename__ = "hire_artifacts"

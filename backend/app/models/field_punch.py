@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 PUNCH_LISTS = ("ours", "gc")
 PUNCH_STATUSES = ("open", "in_progress", "ready_to_inspect", "closed")
@@ -40,7 +40,7 @@ PUNCH_TRADES = (
 PUNCH_OPEN_STATUSES = ("open", "in_progress", "ready_to_inspect")
 
 
-class FieldPunchItem(UUIDPKMixin, TimestampMixin, db.Model):
+class FieldPunchItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "punch_items"
     __table_args__ = (
         UniqueConstraint("local_id", name="uq_punch_items_local_id"),
@@ -101,7 +101,7 @@ class FieldPunchItem(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class PunchDistribution(UUIDPKMixin, TimestampMixin, db.Model):
+class PunchDistribution(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "punch_distributions"
     __table_args__ = (UniqueConstraint("local_id", name="uq_punch_distributions_local_id"),)
 
@@ -123,7 +123,7 @@ class PunchDistribution(UUIDPKMixin, TimestampMixin, db.Model):
     punch_item: Mapped[FieldPunchItem] = relationship(back_populates="distributions")
 
 
-class PunchNotifyLog(UUIDPKMixin, TimestampMixin, db.Model):
+class PunchNotifyLog(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "punch_notify_logs"
 
     punch_item_id: Mapped[uuid.UUID] = mapped_column(

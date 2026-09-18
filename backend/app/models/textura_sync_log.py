@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class TexturaSyncLog(UUIDPKMixin, TimestampMixin, db.Model):
+class TexturaSyncLog(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "textura_sync_logs"
 
     direction: Mapped[str] = mapped_column(String(16), nullable=False, default="export")

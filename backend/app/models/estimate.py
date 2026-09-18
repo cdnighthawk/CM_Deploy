@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .takeoff_line_item import TakeoffLineItem
 
 
-class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
+class Estimate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimates"
 
     lead_estimate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -130,7 +130,7 @@ class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class EstimateLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_line_items"
 
     estimate_id: Mapped[uuid.UUID] = mapped_column(

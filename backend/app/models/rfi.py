@@ -37,7 +37,7 @@ from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ rfi_field_requirement_enum = ENUM(
 # ---------------------------------------------------------------------------
 
 
-class Rfi(UUIDPKMixin, TimestampMixin, db.Model):
+class Rfi(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfis"
     __table_args__ = (
         UniqueConstraint("project_id", "number", "revision_index", name="uq_rfis_project_number_rev"),
@@ -266,7 +266,7 @@ class Rfi(UUIDPKMixin, TimestampMixin, db.Model):
 # ---------------------------------------------------------------------------
 
 
-class RfiAssignee(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiAssignee(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_assignees"
     __table_args__ = (UniqueConstraint("rfi_id", "user_id", name="uq_rfi_assignees_rfi_user"),)
 
@@ -290,7 +290,7 @@ class RfiAssignee(UUIDPKMixin, TimestampMixin, db.Model):
     user = relationship("User", foreign_keys=[user_id])
 
 
-class RfiDistribution(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiDistribution(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_distribution"
     __table_args__ = (UniqueConstraint("rfi_id", "user_id", name="uq_rfi_distribution_rfi_user"),)
 
@@ -316,7 +316,7 @@ class RfiDistribution(UUIDPKMixin, TimestampMixin, db.Model):
 # ---------------------------------------------------------------------------
 
 
-class RfiReply(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiReply(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_replies"
 
     rfi_id: Mapped[uuid.UUID] = mapped_column(
@@ -338,7 +338,7 @@ class RfiReply(UUIDPKMixin, TimestampMixin, db.Model):
     author = relationship("User", foreign_keys=[author_user_id])
 
 
-class RfiAudit(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiAudit(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_audit"
 
     rfi_id: Mapped[uuid.UUID] = mapped_column(
@@ -366,7 +366,7 @@ class RfiAudit(UUIDPKMixin, TimestampMixin, db.Model):
 # ---------------------------------------------------------------------------
 
 
-class RfiRevision(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiRevision(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Immutable snapshot of an RFI when ``revise`` is performed."""
 
     __tablename__ = "rfi_revisions"
@@ -387,7 +387,7 @@ class RfiRevision(UUIDPKMixin, TimestampMixin, db.Model):
     payload_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
 
-class RfiCustomFieldDef(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiCustomFieldDef(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_custom_field_defs"
 
     company_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -403,7 +403,7 @@ class RfiCustomFieldDef(UUIDPKMixin, TimestampMixin, db.Model):
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
-class RfiCustomFieldValue(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiCustomFieldValue(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_custom_field_values"
     __table_args__ = (
         UniqueConstraint("rfi_id", "field_def_id", name="uq_rfi_custom_field_values_rfi_def"),
@@ -430,7 +430,7 @@ class RfiCustomFieldValue(UUIDPKMixin, TimestampMixin, db.Model):
     field_def = relationship("RfiCustomFieldDef", foreign_keys=[field_def_id])
 
 
-class RfiConfigurableField(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiConfigurableField(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Per-project configurable fieldset: marks each Procore field
     required / optional / hidden (see Procore "Configurable Fieldsets")."""
 
@@ -456,7 +456,7 @@ class RfiConfigurableField(UUIDPKMixin, TimestampMixin, db.Model):
 # ---------------------------------------------------------------------------
 
 
-class RfiSavedView(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiSavedView(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_saved_views"
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -485,7 +485,7 @@ class RfiSavedView(UUIDPKMixin, TimestampMixin, db.Model):
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
-class RfiColumnPref(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiColumnPref(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_column_prefs"
     __table_args__ = (
         UniqueConstraint("user_id", "scope_key", name="uq_rfi_column_prefs_user_scope"),
@@ -507,7 +507,7 @@ class RfiColumnPref(UUIDPKMixin, TimestampMixin, db.Model):
 # ---------------------------------------------------------------------------
 
 
-class RfiNotificationLog(UUIDPKMixin, TimestampMixin, db.Model):
+class RfiNotificationLog(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_notification_log"
 
     rfi_id: Mapped[uuid.UUID] = mapped_column(

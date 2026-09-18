@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 PRETASK_STATUSES = ("draft", "submitted")
 
@@ -45,7 +45,7 @@ def default_pretask_attendees() -> list[dict[str, str]]:
     return [empty_pretask_attendee() for _ in range(4)]
 
 
-class DailyPretask(UUIDPKMixin, TimestampMixin, db.Model):
+class DailyPretask(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One daily pre-task safety plan per project, workday, and crew lead."""
 
     __tablename__ = "daily_pretasks"

@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class ProjectContract(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectContract(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """A named owner contract on a project. One row may be the billing primary."""
 
     __tablename__ = "project_contracts"

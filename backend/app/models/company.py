@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import SoftDeleteMixin, TimestampMixin, UUIDPKMixin
+from .base import SoftDeleteMixin, TimestampMixin, UUIDPKMixin, TenantMixin
 
 company_type_enum = ENUM(
     "gc",
@@ -25,7 +25,7 @@ company_type_enum = ENUM(
 )
 
 
-class Company(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
+class Company(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, TenantMixin, db.Model):
     __tablename__ = "companies"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
@@ -59,7 +59,7 @@ class Company(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
     )
 
 
-class CompanyOffice(UUIDPKMixin, TimestampMixin, db.Model):
+class CompanyOffice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Named USIS office used as a ship-to and as the leads distance origin."""
 
     __tablename__ = "company_offices"
@@ -86,7 +86,7 @@ class CompanyOffice(UUIDPKMixin, TimestampMixin, db.Model):
     company: Mapped["Company"] = relationship(back_populates="offices")
 
 
-class Contact(UUIDPKMixin, TimestampMixin, db.Model):
+class Contact(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "contacts"
 
     company_id: Mapped[Optional[uuid.UUID]] = mapped_column(

@@ -11,10 +11,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
 from .auth import User
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class ChatConversation(UUIDPKMixin, TimestampMixin, db.Model):
+class ChatConversation(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "chat_conversations"
     __table_args__ = (
         UniqueConstraint("pair_key", name="uq_chat_conversations_pair_key"),
@@ -36,7 +36,7 @@ class ChatConversation(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class ChatParticipant(TimestampMixin, db.Model):
+class ChatParticipant(TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "chat_participants"
 
     conversation_id: Mapped[uuid.UUID] = mapped_column(
@@ -58,7 +58,7 @@ class ChatParticipant(TimestampMixin, db.Model):
     user: Mapped[User] = relationship("User", foreign_keys=[user_id])
 
 
-class ChatMessage(UUIDPKMixin, TimestampMixin, db.Model):
+class ChatMessage(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "chat_messages"
 
     conversation_id: Mapped[uuid.UUID] = mapped_column(

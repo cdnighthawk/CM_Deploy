@@ -155,6 +155,9 @@ class Config:
     else:
         USIS_ALLOW_SELF_REGISTER: bool = os.environ.get("FLASK_ENV", "").strip().lower() == "development"
 
+    _org_signup_raw = (os.environ.get("USIS_ALLOW_COMPANY_SELF_SIGNUP") or "").strip().lower()
+    USIS_ALLOW_COMPANY_SELF_SIGNUP: bool = _org_signup_raw in ("1", "true", "yes", "on")
+
     _perm_days_raw = (os.environ.get("PERMANENT_SESSION_DAYS") or "14").strip()
     try:
         _perm_days = max(1, min(int(_perm_days_raw), 365))

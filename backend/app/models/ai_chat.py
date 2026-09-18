@@ -10,10 +10,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
 from .auth import User
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class AiChatSession(UUIDPKMixin, TimestampMixin, db.Model):
+class AiChatSession(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "ai_chat_sessions"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -33,7 +33,7 @@ class AiChatSession(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class AiChatMessage(UUIDPKMixin, TimestampMixin, db.Model):
+class AiChatMessage(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "ai_chat_messages"
 
     session_id: Mapped[uuid.UUID] = mapped_column(

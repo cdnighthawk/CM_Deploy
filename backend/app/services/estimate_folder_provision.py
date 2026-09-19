@@ -24,7 +24,7 @@ from urllib.request import Request, urlopen
 
 from flask import current_app, has_app_context
 from sqlalchemy import event
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, object_session
 
 from ..extensions import db
 
@@ -173,6 +173,10 @@ def is_configured() -> bool:
     return bool(provision_url() or provision_root())
 
 
+def _estimate_session(est: Any):
+    return object_session(est) or db.session
+
+
 def job_number_for_estimate(est: Any) -> str:
     lead = getattr(est, "lead_estimate", None)
     if lead is not None:
@@ -183,7 +187,7 @@ def job_number_for_estimate(est: Any) -> str:
     if project_id is not None:
         from ..models import Project
 
-        project = db.session.get(Project, project_id)
+        project = _estimate_session(est).get(Project, project_id)
         if project is not None:
             number = str(getattr(project, "number", None) or "").strip()
             if number:
@@ -348,31 +352,46 @@ def provision_estimate_folder_by_id(
     requested_by: str | None = None,
     persist: bool = True,
 ) -> ProvisionResult:
-    """Load an estimate, provision, optionally persist status. Never raises."""
+    """Load an estimate, provision, optionally persist status. Never raises.
+
+    Persistence uses a standalone session so this is safe from SQLAlchemy
+    ``after_commit`` (the request session is already in the committed state).
+    """
     try:
         eid = estimate_id if isinstance(estimate_id, uuid.UUID) else uuid.UUID(str(estimate_id))
     except (TypeError, ValueError):
         return ProvisionResult(ok=False, status=STATUS_FAILED, error="invalid estimate id")
     from ..models import Estimate
 
-    est = db.session.get(Estimate, eid)
-    if est is None:
-        logger.error("estimate folder provision: estimate not found id=%s", eid)
-        return ProvisionResult(ok=False, status=STATUS_FAILED, error="estimate not found")
-    result = provision_estimate_folder(est, requested_by=requested_by)
-    if result.status == STATUS_UNCONFIGURED:
-        return result
+    result: ProvisionResult | None = None
     try:
-        apply_result_to_estimate(est, result)
-        if persist:
-            db.session.commit()
+        with Session(bind=db.engine) as session:
+            est = session.get(Estimate, eid)
+            if est is None:
+                logger.error("estimate folder provision: estimate not found id=%s", eid)
+                return ProvisionResult(ok=False, status=STATUS_FAILED, error="estimate not found")
+            result = provision_estimate_folder(est, requested_by=requested_by)
+            if persist and result.status != STATUS_UNCONFIGURED:
+                apply_result_to_estimate(est, result)
+                session.commit()
     except Exception:
         logger.exception("estimate folder provision could not persist status estimate_id=%s", eid)
-        try:
-            db.session.rollback()
-        except Exception:
-            pass
-    return result
+        if result is None:
+            return ProvisionResult(ok=False, status=STATUS_FAILED, error="provision persist failed")
+    _expire_cached_estimate(eid)
+    return result or ProvisionResult(ok=False, status=STATUS_FAILED, error="provision failed")
+
+
+def _expire_cached_estimate(estimate_id: uuid.UUID) -> None:
+    """Drop a stale identity-map copy so the request session reloads status."""
+    try:
+        from ..models import Estimate
+
+        for obj in list(db.session.identity_map.values()):
+            if isinstance(obj, Estimate) and obj.id == estimate_id:
+                db.session.expire(obj)
+    except Exception:
+        pass
 
 
 def schedule_estimate_folder_provision(

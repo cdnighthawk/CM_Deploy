@@ -13,7 +13,15 @@ from app.services import estimate_folder_provision as provision
 
 
 def _make_lead(external_id: str, **kwargs) -> LeadEstimate:
-    le = LeadEstimate(external_id=external_id, name=kwargs.pop("name", "Folder parent"), **kwargs)
+    from app.tenancy import ensure_usis_organization
+
+    org = ensure_usis_organization()
+    le = LeadEstimate(
+        external_id=external_id,
+        name=kwargs.pop("name", "Folder parent"),
+        organization_id=org.id,
+        **kwargs,
+    )
     db.session.add(le)
     db.session.commit()
     return le

@@ -39,6 +39,8 @@ from .document import Document, Drawing, DrawingAnnotation
 from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
+from .hardware_set import HARDWARE_CATEGORIES, HardwareSet, HardwareSetItem
+from .opening_type import OpeningType
 from .estimate import Estimate, EstimateLineItem
 from .estimate_spec_package import (
     EstimateSpecMention,
@@ -234,6 +236,10 @@ __all__ = [
     "DoorHardwareSet",
     "DoorHardwareSetItem",
     "DoorOpening",
+    "HARDWARE_CATEGORIES",
+    "HardwareSet",
+    "HardwareSetItem",
+    "OpeningType",
     "Drawing",
     "DrawingAnnotation",
     "DrawingSet",

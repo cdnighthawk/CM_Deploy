@@ -28,6 +28,28 @@ _MODE_HINTS: dict[str, str] = {
         "Return structured findings: severity (Critical/Major/Minor/Info), title, detail, "
         "spec_citation, drawing_ref, suggested_checklist_item, cost_impact, delay_impact_days."
     ),
+    "door_schedule_extract": (
+        "You extract a commercial door schedule into structured openings. "
+        "Return ONLY JSON: {openings:[{mark,qty,leaf_count,width_in,height_in,thickness_in,hand,"
+        "fire_rating_min,material,door_type_code,frame_type_code,frame_material,frame_construction,"
+        "wall_thickness_in,frame_gauge,hardware_set_no,location,sheet_ref,remarks,scope_flag}],"
+        "sets:[],warnings:[string]}. "
+        "Store sizes in inches. Hands are LH RH LHR RHR LHRB RHRB PAIR unknown. "
+        "Do not invent set bills of materials. A schedule extract may leave sets empty. "
+        "Do not coerce hardware into openings. Cap one schedule sheet. Hard max 20 pages. "
+        "Never include unit costs, markup, tax, or other estimates."
+    ),
+    "hardware_set_extract": (
+        "You extract hardware sets from CSI 08 71 00 (or a hardware schedule) into structured sets. "
+        "Return ONLY JSON: {openings:[],sets:[{set_no,title,items:[{qty,category,description,"
+        "manufacturer,catalog,function,finish,size,notes}]}],warnings:[string]}. "
+        "Categories must be one of: hinge pivot lockset exit_device closer stop kick_plate "
+        "armor_plate push_pull flush_bolt coordinator threshold seal door_bottom silencer "
+        "viewer overhead_stop holder position_switch power other. "
+        "Item qty is per opening (or per pair if the set is written for pairs). "
+        "A hardware extract may leave openings empty. Do not coerce. "
+        "One spec section per call. Hard max 20 pages. Never include unit costs or other estimates."
+    ),
     "spec_package_review": (
         "You extract Basis of Design and listed alternates from uploaded project-manual / spec PDFs "
         "for US Interior Specialties (installer: drywall, paint, flooring, ceilings, trim, Division 10). "

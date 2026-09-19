@@ -126,6 +126,8 @@ SETTING_DEFAULTS: dict[str, Any] = {
     "ai.mode.submittal_review": True,
     "ai.mode.bid_feasibility": True,
     "ai.mode.email_classify": True,
+    "ai.mode.door_schedule_extract": True,
+    "ai.mode.hardware_set_extract": True,
     "ai.submittal_rubber_stamp_seconds": 180,
     "ai.email_scan_cap_per_run": 400,
     "ai.dump_correspondence_to_grok": False,

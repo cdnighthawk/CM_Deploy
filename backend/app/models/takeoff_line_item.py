@@ -104,6 +104,12 @@ class TakeoffLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
         index=True,
         comment="door, frame, hardware — UI grouping for door schedule lines",
     )
+    source_kind: Mapped[Optional[str]] = mapped_column(
+        String(40),
+        nullable=True,
+        index=True,
+        comment="manual | opening — how this takeoff line was created",
+    )
     wage_rate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("wage_rates.id", ondelete="SET NULL"),

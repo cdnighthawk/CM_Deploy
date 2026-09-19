@@ -25,6 +25,8 @@
 		analytics_review: "Reports",
 		submittal_review: "Submittals",
 		spec_package_review: "Spec package",
+		door_schedule_extract: "Door schedule",
+		hardware_set_extract: "Hardware sets",
 	};
 
 	var MAX_ATTACH = 4;

@@ -211,6 +211,8 @@ SETTINGS_RAIL = (
             "ai.mode.submittal_review",
             "ai.mode.bid_feasibility",
             "ai.mode.email_classify",
+            "ai.mode.door_schedule_extract",
+            "ai.mode.hardware_set_extract",
             "ai.submittal_rubber_stamp_seconds",
             "ai.email_scan_cap_per_run",
             "ai.dump_correspondence_to_grok",

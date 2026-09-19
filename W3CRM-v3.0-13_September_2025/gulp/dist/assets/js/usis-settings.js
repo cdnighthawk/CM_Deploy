@@ -51,6 +51,8 @@
 		"ai.mode.submittal_review": "Submittal review",
 		"ai.mode.bid_feasibility": "Bid feasibility",
 		"ai.mode.email_classify": "Email leftover classify",
+		"ai.mode.door_schedule_extract": "Door schedule extract",
+		"ai.mode.hardware_set_extract": "Hardware set extract",
 		"ai.submittal_rubber_stamp_seconds": "Rubber-stamp seconds",
 		"ai.email_scan_cap_per_run": "7-day scan cap",
 		"ai.dump_correspondence_to_grok": "Dump correspondence to Grok",

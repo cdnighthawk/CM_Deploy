@@ -278,6 +278,12 @@ def patch_rfp(rfp: Rfp, data: Mapping[str, Any], *, confirm_source: bool = False
 
 
 def _product_snapshot_from_takeoff(tl: TakeoffLineItem) -> Any | None:
+    cfg = tl.configuration_json
+    if isinstance(cfg, dict) and (
+        cfg.get("sourceKind") == "opening" or cfg.get("configuratorKey") == "opening_assembly"
+    ):
+        snap = {k: v for k, v in cfg.items() if k not in {"unit_cost", "unitCost", "extended_total"}}
+        return snap
     md = tl.measurement_data
     if not isinstance(md, dict):
         return None

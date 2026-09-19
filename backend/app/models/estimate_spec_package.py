@@ -46,6 +46,7 @@ class SpecTradeMap(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
         Boolean, nullable=False, default=True, server_default="true"
     )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    trade_group: Mapped[Optional[str]] = mapped_column(String(40), nullable=True, index=True)
 
 
 class EstimateSpecScan(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):

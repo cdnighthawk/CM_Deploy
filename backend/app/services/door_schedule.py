@@ -493,7 +493,6 @@ def import_door_schedule(
     if mode not in ("merge", "replace"):
         raise ValueError("mode must be merge or replace")
     batch_id = uuid.uuid4()
-    hardware_sets = load_hardware_sets_by_code()
 
     if mode == "replace":
         opening_ids = db.session.scalars(
@@ -563,7 +562,7 @@ def import_door_schedule(
             op.source_row = fields.get("source_row")
             op.import_batch_id = batch_id
             updated += 1
-        rebuild_opening_lines(op, hardware_sets, preserve_priced=False)
+        # Job-scoped Openings Apply writes takeoff lines; import only stores the register.
 
     db.session.flush()
     openings = db.session.scalars(

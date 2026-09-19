@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, current_app, request
 
 from ..extensions import db
 from ..models import AuditLog, Estimate
@@ -163,7 +163,11 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         est = _get_estimate(estimate_id)
         if est is None:
             return _jsonify({"error": "estimate not found"}), 404
-        return _jsonify({"item": _estimate_detail_item(est), "entity": "estimate"})
+        try:
+            return _jsonify({"item": _estimate_detail_item(est), "entity": "estimate"})
+        except Exception as exc:
+            current_app.logger.exception("GET estimate failed")
+            return _jsonify({"error": str(exc)[:300]}), 500
 
     @bp.get("/estimates/<estimate_id>/bid-scope")
     def get_estimate_bid_scope(estimate_id: str):
@@ -367,14 +371,24 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
                 if data.get("sort_order") is not None
                 else est_svc.next_sort_order(estimate_id=est.id),
             )
+            if getattr(t, "source_kind", None) is None and hasattr(t, "source_kind"):
+                t.source_kind = "manual"
             _apply_takeoff_payload(t, data, partial=False)
         except (ValueError, TypeError) as exc:
             return _jsonify({"error": str(exc)}), 400
         db.session.add(t)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.exception("create estimate takeoff line failed")
+            return _jsonify({"error": str(exc)[:300]}), 500
         from ..services.employee_pc_cache import cache_takeoff_for_line
 
-        cache_takeoff_for_line(t)
+        try:
+            cache_takeoff_for_line(t)
+        except Exception:
+            current_app.logger.exception("takeoff cache after create failed")
         return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
     @bp.get("/estimates/<estimate_id>/render/quote-report")

@@ -1074,6 +1074,7 @@ def _takeoff_line_public(t: TakeoffLineItem, *, labor_rates: dict[str, Any] | No
         "estimate_id": str(t.estimate_id) if t.estimate_id else None,
         "door_opening_id": str(t.door_opening_id) if t.door_opening_id else None,
         "line_role": t.line_role,
+        "source_kind": getattr(t, "source_kind", None),
         "wage_rate_id": labor.get("wage_rate_id"),
         "labor_crew": labor.get("labor_crew") or [],
         "labor_trade": labor.get("labor_trade"),
@@ -5796,7 +5797,10 @@ def create_takeoff_line(identifier: str):
     db.session.commit()
     from ..services.employee_pc_cache import cache_takeoff_for_line
 
-    cache_takeoff_for_line(t)
+    try:
+        cache_takeoff_for_line(t)
+    except Exception:
+        current_app.logger.exception("takeoff cache after create failed")
     _sync_jcc_for_takeoff_line(t)
     return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
@@ -6087,7 +6091,6 @@ def create_door_opening(identifier: str):
     )
     db.session.add(op)
     db.session.flush()
-    door_schedule_svc.rebuild_opening_lines(op, preserve_priced=False)
     db.session.commit()
     return _jsonify({"item": _door_opening_detail(op), "entity": "door_opening"}), 201
 
@@ -7008,9 +7011,12 @@ from ._independent_estimate_routes import register_independent_estimate_routes  
 from ._issue_routes import register_issue_routes  # noqa: E402
 from ._golden_state_planroom import register_golden_state_planroom_routes  # noqa: E402
 
+from ._openings_estimate_routes import register_openings_estimate_routes  # noqa: E402
+
 register_extra_routes(bp)
 register_estimate_spec_routes(bp)
 register_independent_estimate_routes(bp)
+register_openings_estimate_routes(bp)
 register_issue_routes(bp)
 register_golden_state_planroom_routes(bp)
 _hr_dashboard.register_hr_routes(bp)

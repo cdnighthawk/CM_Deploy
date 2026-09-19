@@ -129,7 +129,8 @@ def test_jl_seed_parses_to_real_skus():
         assert row["currency"] == "USD"
         desc = row["description"] or ""
         assert len(desc) > 40
-        assert "activarcpg.com" in desc
+        assert "activarcpg.com" in (row["manufacturer_url"] or "")
+        assert "activarcpg.com" not in desc
         mount = row["mounting_type"] or ""
         assert mount
         if row["item"] not in _SERIES:

@@ -1,0 +1,69 @@
+manufacturer,item,category,csi_spec_section,description,currency,unit_of_measure
+ASI,ASI-COMP-METAL,Lockers,10 51 13,ASI Competitor Metal Locker (Powder Coated Steel),USD,EA
+ASI,ASI-CONFIG-1TIER,Lockers,10 51 00,ASI Locker Configuration - Single-Tier,USD,EA
+ASI,ASI-CONFIG-2TIER,Lockers,10 51 00,ASI Locker Configuration - Double-Tier,USD,EA
+ASI,ASI-CONFIG-3TIER,Lockers,10 51 00,ASI Locker Configuration - Triple-Tier,USD,EA
+ASI,ASI-CONFIG-4TIER,Lockers,10 51 00,ASI Locker Configuration - Four-Tier,USD,EA
+ASI,ASI-CONFIG-5TIER,Lockers,10 51 00,ASI Locker Configuration - Five-Tier,USD,EA
+ASI,ASI-CONFIG-6TIER,Lockers,10 51 00,ASI Locker Configuration - Six-Tier,USD,EA
+ASI,ASI-CONFIG-ZSTYLE,Lockers,10 51 00,ASI Locker Configuration - Two-Person Z-Style,USD,EA
+ASI,ASI-CUBBY-PHEN,Lockers,10 51 29,ASI Phenolic Cubbies,USD,EA
+ASI,ASI-CUBBY-PLASTIC,Lockers,10 51 26,ASI Plastic Cubbies,USD,EA
+ASI,ASI-METAL-CLR-01,Lockers,10 51 13,ASI Metal Locker Color - Tan #01,USD,EA
+ASI,ASI-METAL-CLR-03,Lockers,10 51 13,ASI Metal Locker Color - Almond #03,USD,EA
+ASI,ASI-METAL-CLR-04,Lockers,10 51 13,ASI Metal Locker Color - Plum #04,USD,EA
+ASI,ASI-METAL-CLR-05,Lockers,10 51 13,ASI Metal Locker Color - Orange #05,USD,EA
+ASI,ASI-METAL-CLR-06,Lockers,10 51 13,ASI Metal Locker Color - Mist Green #06,USD,EA
+ASI,ASI-METAL-CLR-11,Lockers,10 51 13,ASI Metal Locker Color - Black #11,USD,EA
+ASI,ASI-METAL-CLR-23,Lockers,10 51 13,ASI Metal Locker Color - Charcoal #23,USD,EA
+ASI,ASI-METAL-CLR-25,Lockers,10 51 13,ASI Metal Locker Color - Gray #25,USD,EA
+ASI,ASI-METAL-CLR-29,Lockers,10 51 13,ASI Metal Locker Color - White #29,USD,EA
+ASI,ASI-METAL-CLR-31,Lockers,10 51 13,ASI Metal Locker Color - Sky Blue #31,USD,EA
+ASI,ASI-METAL-CLR-36,Lockers,10 51 13,ASI Metal Locker Color - Blue Frost #36,USD,EA
+ASI,ASI-METAL-CLR-45,Lockers,10 51 13,ASI Metal Locker Color - Red #45,USD,EA
+ASI,ASI-METAL-CLR-49,Lockers,10 51 13,ASI Metal Locker Color - Burgundy #49,USD,EA
+ASI,ASI-METAL-CLR-50,Lockers,10 51 13,ASI Metal Locker Color - Yellow #50,USD,EA
+ASI,ASI-METAL-CLR-53,Lockers,10 51 13,ASI Metal Locker Color - Pine Forest #53,USD,EA
+ASI,ASI-PHEN-TRAD,Lockers,10 51 29,ASI Phenolic Traditional Locker,USD,EA
+ASI,ASI-PHEN-TRADPLUS,Lockers,10 51 29,ASI Phenolic Traditional Plus Locker,USD,EA
+ASI,ASI-PLASTIC-CLR-9200,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Gray #9200,USD,EA
+ASI,ASI-PLASTIC-CLR-9205,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Black #9205,USD,EA
+ASI,ASI-PLASTIC-CLR-9211,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Burgundy #9211,USD,EA
+ASI,ASI-PLASTIC-CLR-9233,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Moss #9233,USD,EA
+ASI,ASI-PLASTIC-CLR-9235,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Cream #9235,USD,EA
+ASI,ASI-PLASTIC-CLR-9237,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Charcoal #9237,USD,EA
+ASI,ASI-PLASTIC-CLR-9400,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Folkstone Gray #9400,USD,EA
+ASI,ASI-PLASTIC-CLR-9500,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Ivory Essence Speckle #9500,USD,EA
+ASI,ASI-PLASTIC-CLR-9509,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Blue #9509,USD,EA
+ASI,ASI-PLASTIC-CLR-9658,Lockers,10 51 26,ASI Plastic HDPE Locker Color - Caramel #9658,USD,EA
+ASI,ASI-PLASTIC-TRAD,Lockers,10 51 26,ASI Plastic Traditional HDPE Locker,USD,EA
+ASI,ASI-PLASTIC-TRADPLUS,Lockers,10 51 26,ASI Plastic Traditional Plus HDPE Locker,USD,EA
+ASI,ASI-PRO-METAL,Lockers,10 51 13,ASI Pro Metal Athletic Locker (Powder Coated Steel),USD,EA
+ASI,ASI-SIZE-12x12x60,Lockers,10 51 00,ASI Locker Size 12x12x60,USD,EA
+ASI,ASI-SIZE-12x12x66,Lockers,10 51 00,ASI Locker Size 12x12x66,USD,EA
+ASI,ASI-SIZE-12x12x72,Lockers,10 51 00,ASI Locker Size 12x12x72,USD,EA
+ASI,ASI-SIZE-12x12x78,Lockers,10 51 00,ASI Locker Size 12x12x78,USD,EA
+ASI,ASI-SIZE-12x15x60,Lockers,10 51 00,ASI Locker Size 12x15x60,USD,EA
+ASI,ASI-SIZE-12x15x66,Lockers,10 51 00,ASI Locker Size 12x15x66,USD,EA
+ASI,ASI-SIZE-12x15x72,Lockers,10 51 00,ASI Locker Size 12x15x72,USD,EA
+ASI,ASI-SIZE-12x15x78,Lockers,10 51 00,ASI Locker Size 12x15x78,USD,EA
+ASI,ASI-SIZE-12x18x60,Lockers,10 51 00,ASI Locker Size 12x18x60,USD,EA
+ASI,ASI-SIZE-12x18x66,Lockers,10 51 00,ASI Locker Size 12x18x66,USD,EA
+ASI,ASI-SIZE-12x18x72,Lockers,10 51 00,ASI Locker Size 12x18x72,USD,EA
+ASI,ASI-SIZE-12x18x78,Lockers,10 51 00,ASI Locker Size 12x18x78,USD,EA
+ASI,ASI-SIZE-15x15x60,Lockers,10 51 00,ASI Locker Size 15x15x60,USD,EA
+ASI,ASI-SIZE-15x15x72,Lockers,10 51 00,ASI Locker Size 15x15x72,USD,EA
+ASI,ASI-SIZE-15x15x78,Lockers,10 51 00,ASI Locker Size 15x15x78,USD,EA
+ASI,ASI-SIZE-15x18x60,Lockers,10 51 00,ASI Locker Size 15x18x60,USD,EA
+ASI,ASI-SIZE-15x18x72,Lockers,10 51 00,ASI Locker Size 15x18x72,USD,EA
+ASI,ASI-SIZE-15x18x78,Lockers,10 51 00,ASI Locker Size 15x18x78,USD,EA
+ASI,ASI-SIZE-18x18x60,Lockers,10 51 00,ASI Locker Size 18x18x60,USD,EA
+ASI,ASI-SIZE-18x18x72,Lockers,10 51 00,ASI Locker Size 18x18x72,USD,EA
+ASI,ASI-SIZE-18x18x78,Lockers,10 51 00,ASI Locker Size 18x18x78,USD,EA
+ASI,ASI-SIZE-24x18x72,Lockers,10 51 00,ASI Locker Size 24x18x72,USD,EA
+ASI,ASI-SIZE-24x21x72,Lockers,10 51 00,ASI Locker Size 24x21x72,USD,EA
+ASI,ASI-SIZE-24x24x72,Lockers,10 51 00,ASI Locker Size 24x24x72,USD,EA
+ASI,ASI-SPEC-16P,Lockers,10 51 13,ASI Specialty 16-Person Metal Locker,USD,EA
+ASI,ASI-SPEC-WALL,Lockers,10 51 13,ASI Specialty Wall-Mounted Metal Locker,USD,EA
+ASI,ASI-TRAD-METAL,Lockers,10 51 13,ASI Traditional Metal Locker (Powder Coated Steel),USD,EA
+ASI,ASI-TRADPLUS-METAL,Lockers,10 51 13,ASI Traditional Plus Metal Locker (Powder Coated Steel),USD,EA

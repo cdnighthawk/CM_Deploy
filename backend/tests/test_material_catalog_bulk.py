@@ -268,6 +268,7 @@ def test_get_material_price_detail(client, catalog_rows):
     item = r.get_json()["item"]
     assert item["id"] == catalog_rows[0]
     assert item["manufacturer"] == "BulkMfg"
+    assert "manufacturer_url" in item
     assert item["csi_display"] == "08 71 00"
     assert "created_at" in item
     assert "updated_at" in item
@@ -300,6 +301,33 @@ def test_patch_material_price(client, catalog_rows):
     listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&limit=50")
     hit = next(x for x in listed.get_json()["items"] if x["id"] == catalog_rows[0])
     assert hit["description"] == "Updated hinge"
+
+
+def test_patch_material_price_manufacturer_url(client, catalog_rows):
+    r = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={"manufacturer_url": "www.bobrick.com/products/b-6806"},
+    )
+    assert r.status_code == 200, r.get_json()
+    item = r.get_json()["item"]
+    assert item["manufacturer_url"] == "https://www.bobrick.com/products/b-6806"
+
+    listed = client.get("/api/v1/material-prices?manufacturer=BulkMfg&limit=50")
+    hit = next(x for x in listed.get_json()["items"] if x["id"] == catalog_rows[0])
+    assert hit["manufacturer_url"] == "https://www.bobrick.com/products/b-6806"
+
+    bad = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={"manufacturer_url": "javascript:alert(1)"},
+    )
+    assert bad.status_code == 400
+
+    cleared = client.patch(
+        f"/api/v1/material-prices/{catalog_rows[0]}",
+        json={"manufacturer_url": ""},
+    )
+    assert cleared.status_code == 200, cleared.get_json()
+    assert cleared.get_json()["item"]["manufacturer_url"] is None
 
 
 def test_patch_production_rate_derives_hours_and_uom(client, catalog_rows):
@@ -504,16 +532,16 @@ def test_material_price_supplier_email_falls_back_to_contact(client, catalog_row
             db.session.commit()
 
 
-def test_material_prices_list_accepts_full_catalog_limit(client):
-    r = client.get("/api/v1/material-prices?limit=5000")
+def test_material_prices_list_accepts_page_limit(client):
+    r = client.get("/api/v1/material-prices?limit=100")
     assert r.status_code == 200
     data = r.get_json()
-    assert data["limit"] == 5000
+    assert data["limit"] == 100
     assert "items" in data
     assert "total" in data
 
 
-def test_material_prices_list_caps_limit_at_5000(client):
+def test_material_prices_list_caps_limit_at_500(client):
     r = client.get("/api/v1/material-prices?limit=99999")
     assert r.status_code == 200
-    assert r.get_json()["limit"] == 5000
+    assert r.get_json()["limit"] == 500

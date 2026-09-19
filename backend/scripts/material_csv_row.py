@@ -11,11 +11,23 @@ from typing import Any
 # Canonical field -> accepted header variants (case-insensitive match on stripped names).
 _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "manufacturer": ("manufacturer", "vendor", "mfg", "brand", "supplier"),
+    "manufacturer_url": (
+        "manufacturer_url",
+        "manufacturer url",
+        "url",
+        "source url",
+        "source_url",
+        "product url",
+        "product_url",
+        "link",
+        "webpage",
+        "website",
+        "web site",
+    ),
     "item": ("item", "part", "part number", "part #", "part no", "sku", "model", "catalog #", "catalog no"),
     "category": ("category", "type", "product type", "family", "product family"),
     "description": ("description", "desc", "product description", "name"),
-    "url": ("url", "source url", "source_url", "product url", "product_url", "link", "webpage"),
-    "mounting_type": ("mounting type", "mounting", "mount type", "mount"),
+    "mounting_type": ("mounting_type", "mounting type", "mounting", "mount type", "mount"),
     "cost": ("cost", "price", "unit price", "unit cost", "material cost"),
     "labor_per": ("labor per", "labor", "labor cost", "labor $", "install labor"),
     "labor_units_per_hour": (
@@ -46,6 +58,7 @@ _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     ),
     "size_width_in": ("size_width_in", "width_in", "width", "w"),
     "size_height_in": ("size_height_in", "height_in", "length_in", "height", "length", "h"),
+    "size_depth_in": ("size_depth_in", "depth_in", "depth", "d"),
     "size": ("size", "sheet size", "wxh", "w x h"),
 }
 
@@ -71,7 +84,7 @@ _INPRO_MANUFACTURER_ALIASES = frozenset(
     }
 )
 
-_SKU_PREFIXES = ("INPRO-", "IPC-", "CS-")
+_SKU_PREFIXES = ("COLUMBIA-", "HOLLMAN-", "PENCO-", "INPRO-", "IPC-", "CS-")
 
 
 def sku_key(item: str | None) -> str:
@@ -258,9 +271,11 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
 
     category = _blank_to_none(_get_cell(row, col_map, "category"))
     description = _blank_to_none(_get_cell(row, col_map, "description"))
-    url = _blank_to_none(_get_cell(row, col_map, "url"))
-    if url and (not description or url not in description):
-        description = f"{description} {url}".strip() if description else url
+    from app.material_url import split_description_url
+
+    description, manufacturer_url = split_description_url(
+        description, _blank_to_none(_get_cell(row, col_map, "manufacturer_url"))
+    )
     mounting_type = _blank_to_none(_get_cell(row, col_map, "mounting_type"))
     cost = _parse_decimal(_get_cell(row, col_map, "cost"))
     labor_per = _parse_decimal(_get_cell(row, col_map, "labor_per"))
@@ -282,11 +297,23 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
         from app.csi_spec import normalize_csi_spec_section
 
         csi_spec_section = normalize_csi_spec_section(csi_raw)
+    from app.locker_csi import infer_locker_csi
 
-    from app.material_size import parse_size_cell
+    inferred_csi = infer_locker_csi(
+        manufacturer=manufacturer,
+        item=item,
+        category=category,
+        description=description,
+        csi_spec_section=csi_spec_section,
+    )
+    if inferred_csi:
+        csi_spec_section = inferred_csi
 
-    size_width_in = _parse_decimal(_get_cell(row, col_map, "size_width_in")) if "size_width_in" in col_map else None
-    size_height_in = _parse_decimal(_get_cell(row, col_map, "size_height_in")) if "size_height_in" in col_map else None
+    from app.material_size import parse_inch_value, parse_size_cell
+
+    size_width_in = parse_inch_value(_get_cell(row, col_map, "size_width_in")) if "size_width_in" in col_map else None
+    size_height_in = parse_inch_value(_get_cell(row, col_map, "size_height_in")) if "size_height_in" in col_map else None
+    size_depth_in = parse_inch_value(_get_cell(row, col_map, "size_depth_in")) if "size_depth_in" in col_map else None
     if (size_width_in is None or size_height_in is None) and "size" in col_map:
         parsed_w, parsed_h = parse_size_cell(_get_cell(row, col_map, "size"))
         if size_width_in is None:
@@ -296,6 +323,7 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
 
     payload: dict[str, object] = {
         "manufacturer": manufacturer[:120],
+        "manufacturer_url": manufacturer_url,
         "item": item[:120],
         "category": category[:120] if category else None,
         "csi_spec_section": csi_spec_section,
@@ -324,9 +352,15 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
         payload["labor_units_per_hour"] = tmp.labor_units_per_hour
         payload["labor_rate_unit"] = tmp.labor_rate_unit
         payload["unit_of_measure"] = tmp.unit_of_measure
-    if "size_width_in" in col_map or "size_height_in" in col_map or "size" in col_map:
+    if (
+        "size_width_in" in col_map
+        or "size_height_in" in col_map
+        or "size_depth_in" in col_map
+        or "size" in col_map
+    ):
         payload["size_width_in"] = size_width_in
         payload["size_height_in"] = size_height_in
+        payload["size_depth_in"] = size_depth_in
     return payload
 
 
@@ -340,3 +374,42 @@ def read_material_csv(csv_path: Path) -> list[dict[str, object]]:
                 continue
             payloads.append(row_to_payload(row, col_map))
     return payloads
+
+
+# Finish-color SKUs (Charcoal 0077-FH, Ice White 410-SEI, HDPE Gray 9200, …) are not
+# catalog styles. Style rows stay: BOB-DESIGNER-1040, BOB-DURALINE-*, ASI-HDPE, ASI-PC-STEEL.
+_PARTITION_COLOR_ITEM = re.compile(
+    r"^(?:BOB-DL-|BOB-DS-|BOB-SC-SCO|ASI-HDPE-\d|ASI-PC-\d)",
+    re.IGNORECASE,
+)
+
+
+def is_partition_category(category: str | None) -> bool:
+    text = (category or "").casefold()
+    return "toilet partition" in text or "toilet compartment" in text
+
+
+def is_partition_color_sku(
+    *,
+    item: str | None,
+    category: str | None,
+    description: str | None = None,
+) -> bool:
+    """True when the row is a partition finish color, not a style/material."""
+    del description  # kept for call-site compatibility
+    if not is_partition_category(category):
+        return False
+    sku = (item or "").strip()
+    return bool(sku) and _PARTITION_COLOR_ITEM.match(sku) is not None
+
+
+def drop_partition_color_skus(payloads: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [
+        payload
+        for payload in payloads
+        if not is_partition_color_sku(
+            item=str(payload.get("item") or "") or None,
+            category=str(payload.get("category") or "") or None,
+            description=str(payload.get("description") or "") or None,
+        )
+    ]

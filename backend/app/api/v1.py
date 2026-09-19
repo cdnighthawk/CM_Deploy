@@ -60,6 +60,7 @@ from . import _issue_service as issue_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
 from . import _cost_code_service as cost_code_svc
+from . import _wage_rate_service as wage_rate_svc
 from . import _material_order_service as material_order_svc
 from . import _procurement_lookup_service as proc_lookup_svc
 from . import _project_members_service as project_members_svc
@@ -5023,6 +5024,7 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
     return {
         "id": str(m.id),
         "manufacturer": m.manufacturer,
+        "manufacturer_url": m.manufacturer_url,
         "item": m.item,
         "category": m.category,
         "csi_spec_section": m.csi_spec_section,
@@ -5163,6 +5165,7 @@ def _material_prices_query(
         clauses = [
             MaterialPrice.item.ilike(like),
             MaterialPrice.manufacturer.ilike(like),
+            MaterialPrice.manufacturer_url.ilike(like),
             MaterialPrice.description.ilike(like),
             MaterialPrice.category.ilike(like),
             MaterialPrice.csi_spec_section.ilike(like),
@@ -5185,6 +5188,7 @@ def _material_prices_query(
 _MATERIAL_BULK_FIELDS = frozenset(
     {
         "manufacturer",
+        "manufacturer_url",
         "item",
         "category",
         "csi_spec_section",
@@ -5245,6 +5249,15 @@ def _coerce_material_bulk_value(field: str, value: Any) -> Any:
             raise ApiError(f"{field} cannot be blank", 400)
         limits = {"manufacturer": 120, "item": 120, "unit_of_measure": 20}
         return text[: limits[field]]
+    if field == "manufacturer_url":
+        from ..material_url import normalize_manufacturer_url
+
+        if value in (None, ""):
+            return None
+        try:
+            return normalize_manufacturer_url(value)
+        except ValueError as exc:
+            raise ApiError(str(exc), 400) from exc
     if field == "currency":
         text = (str(value).strip() if value is not None else "") or ""
         if not text:
@@ -6264,9 +6277,58 @@ def list_material_pricing_desktop():
     return _jsonify({"items": [material_pricing_cache_row(m) for m in rows], "entity": "material_pricing"})
 
 
+def _can_write_wage_rates() -> bool:
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    return bool(
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    )
+
+
+def _wage_rates_web_query() -> bool:
+    return any(
+        key in request.args
+        for key in ("limit", "offset", "q", "state", "year", "trade", "sub_area")
+    )
+
+
 @bp.get("/wage-rates")
 def list_wage_rates_desktop():
-    """Full wage-rate list for the desktop app (``GET /api/v1/wage-rates``)."""
+    """Wage rates: paginated web list when filters are present; full desktop dump otherwise."""
+    if _wage_rates_web_query():
+        try:
+            limit = int(request.args.get("limit") or 100)
+        except ValueError:
+            limit = 100
+        try:
+            offset = int(request.args.get("offset") or 0)
+        except ValueError:
+            offset = 0
+        year_raw = (request.args.get("year") or "").strip()
+        year = None
+        if year_raw:
+            try:
+                year = int(year_raw)
+            except ValueError:
+                return _jsonify({"error": "invalid year"}), 400
+        try:
+            return _jsonify(
+                wage_rate_svc.list_wage_rates(
+                    q=(request.args.get("q") or "").strip(),
+                    state=(request.args.get("state") or "").strip(),
+                    year=year,
+                    trade=(request.args.get("trade") or "").strip(),
+                    sub_area=(request.args.get("sub_area") or "").strip() or None,
+                    limit=limit,
+                    offset=offset,
+                )
+            )
+        except wage_rate_svc.ApiError as exc:
+            return _rfi_err(exc)
+
     from ..services.employee_pc_cache import refresh_company_from_db, wage_rate_cache_row
 
     rows = db.session.scalars(
@@ -6274,6 +6336,85 @@ def list_wage_rates_desktop():
     ).all()
     refresh_company_from_db()
     return _jsonify({"items": [wage_rate_cache_row(w) for w in rows], "entity": "wage_rates"})
+
+
+@bp.get("/wage-rates/facets")
+def list_wage_rate_facets():
+    return _jsonify(wage_rate_svc.wage_rate_facets())
+
+
+@bp.post("/wage-rates")
+def create_wage_rate():
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify({"item": wage_rate_svc.create_wage_rate(data), "entity": "wage_rates"}), 201
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.post("/wage-rates/import")
+def import_wage_rates():
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    upload = request.files.get("file")
+    data = request.get_json(silent=True) or {}
+    replace = False
+    try:
+        if upload is not None:
+            raw = upload.read()
+            text = raw.decode("utf-8-sig") if isinstance(raw, (bytes, bytearray)) else str(raw)
+            replace = str(request.form.get("replace") or "").strip().lower() in ("1", "true", "yes")
+            result = wage_rate_svc.import_wage_rates_csv(text, replace=replace)
+        elif isinstance(data, dict) and data.get("csv") is not None:
+            replace = bool(data.get("replace"))
+            result = wage_rate_svc.import_wage_rates_csv(str(data.get("csv") or ""), replace=replace)
+        else:
+            return _jsonify({"error": "csv is required"}), 400
+        return _jsonify(result)
+    except UnicodeDecodeError:
+        return _jsonify({"error": "csv must be UTF-8"}), 400
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.get("/wage-rates/<row_id>")
+def get_wage_rate(row_id: str):
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify({"item": wage_rate_svc.get_wage_rate(rid), "entity": "wage_rates"})
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.patch("/wage-rates/<row_id>")
+def patch_wage_rate(row_id: str):
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify({"item": wage_rate_svc.patch_wage_rate(rid, data), "entity": "wage_rates"})
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.delete("/wage-rates/<row_id>")
+def delete_wage_rate(row_id: str):
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify(wage_rate_svc.delete_wage_rate(rid))
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
 
 
 @bp.post("/pc-cache/refresh")
@@ -6298,7 +6439,7 @@ def list_material_prices():
         offset = int(request.args.get("offset") or 0)
     except ValueError:
         offset = 0
-    limit = max(1, min(limit, 5000))
+    limit = max(1, min(limit, 500))
     offset = max(0, offset)
     filters = _material_price_list_filters()
     base = _material_prices_query(**filters)
@@ -6736,6 +6877,7 @@ def cost_suggestions_material():
         or_(
             MaterialPrice.item.ilike(like),
             MaterialPrice.manufacturer.ilike(like),
+            MaterialPrice.manufacturer_url.ilike(like),
             MaterialPrice.description.ilike(like),
         )
     )

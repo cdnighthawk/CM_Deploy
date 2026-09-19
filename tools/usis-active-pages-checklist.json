@@ -44,7 +44,8 @@
     { "path": "construction/purchase-order-create.html", "in_nav": "flow" },
     { "path": "construction/specs-viewer.html", "in_nav": "flow" },
     { "path": "construction/construction-pricing.html", "in_nav": "flow" },
-    { "path": "construction/material.html", "in_nav": "flow" }
+    { "path": "construction/material.html", "in_nav": "flow" },
+    { "path": "usis-wage-rates.html", "in_nav": "deznav" }
   ],
   "shared_partials": [
     "elements/header-construction.html",

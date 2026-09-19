@@ -29,6 +29,7 @@ class MaterialPrice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     )
 
     manufacturer: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    manufacturer_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     item: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     category: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
     csi_spec_section: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)

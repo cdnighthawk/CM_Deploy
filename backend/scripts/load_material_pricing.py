@@ -2,7 +2,7 @@
 
 Repo-seed CSVs under ``backend/data/catalog`` (JL Industries cabinets,
 Construction Specialties, Inpro wall protection, later Claridge, …) upsert
-by (manufacturer, item) and never truncate the table. Blank seed labor does not
+by (organization, manufacturer, item) and never truncate the table. Blank seed labor does not
 overwrite hours already on a row. Use ``--replace-manufacturer`` to swap one
 vendor family and keep unique SKU labor.
 """
@@ -21,6 +21,7 @@ for _p in (_BACKEND_ROOT, _SCRIPTS):
 from db_csv_paths import database_files_dir, repo_catalog_seed_csvs  # noqa: E402
 from material_csv_row import (  # noqa: E402
     CatalogOldRow,
+    drop_partition_color_skus,
     is_target_manufacturer,
     plan_manufacturer_replace,
     read_material_csv,
@@ -51,19 +52,52 @@ def should_truncate_catalog_file(
     return path_count == 1
 
 
+def ensure_size_depth_column(db) -> bool:
+    """Add size_depth_in if this database has not run migration 0117 yet."""
+    from sqlalchemy import inspect, text
+
+    cols = {c["name"] for c in inspect(db.engine).get_columns("material_pricing")}
+    if "size_depth_in" in cols:
+        return False
+    db.session.execute(text("ALTER TABLE material_pricing ADD COLUMN size_depth_in NUMERIC(10, 4)"))
+    db.session.commit()
+    return True
+
+
+def ensure_manufacturer_url_column(db) -> bool:
+    """Add manufacturer_url if this database has not run migration 0118 yet."""
+    from sqlalchemy import inspect, text
+
+    cols = {c["name"] for c in inspect(db.engine).get_columns("material_pricing")}
+    if "manufacturer_url" in cols:
+        return False
+    db.session.execute(text("ALTER TABLE material_pricing ADD COLUMN manufacturer_url VARCHAR(1024)"))
+    db.session.commit()
+    return True
+
+
 def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> None:
     from sqlalchemy.dialects.postgresql import insert as pg_insert
     from sqlalchemy.sql import func
 
+    from app.tenancy import current_organization_id, default_organization_id
+
+    org_id = current_organization_id() or default_organization_id()
+    if org_id is None:
+        raise SystemExit("no organization for catalog upsert")
+
     table = MaterialPrice.__table__
     for p in payloads:
-        ins = pg_insert(table).values(**p)
+        values = dict(p)
+        values.setdefault("organization_id", org_id)
+        ins = pg_insert(table).values(**values)
         stmt = ins.on_conflict_do_update(
-            index_elements=["manufacturer", "item"],
+            constraint="uq_material_pricing_org_manufacturer_item",
             set_={
                 "category": ins.excluded.category,
                 "csi_spec_section": ins.excluded.csi_spec_section,
                 "description": ins.excluded.description,
+                "manufacturer_url": func.coalesce(ins.excluded.manufacturer_url, table.c.manufacturer_url),
                 "mounting_type": ins.excluded.mounting_type,
                 "cost": ins.excluded.cost,
                 "labor_per": func.coalesce(ins.excluded.labor_per, table.c.labor_per),
@@ -73,6 +107,7 @@ def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> No
                 "labor_rate_unit": func.coalesce(ins.excluded.labor_rate_unit, table.c.labor_rate_unit),
                 "size_width_in": func.coalesce(ins.excluded.size_width_in, table.c.size_width_in),
                 "size_height_in": func.coalesce(ins.excluded.size_height_in, table.c.size_height_in),
+                "size_depth_in": func.coalesce(ins.excluded.size_depth_in, table.c.size_depth_in),
                 "currency": ins.excluded.currency,
                 "unit_of_measure": ins.excluded.unit_of_measure,
                 "updated_at": func.now(),
@@ -138,6 +173,49 @@ def replace_manufacturer_rows(
         db.session.add(MaterialPrice(**payload))
     db.session.commit()
     return plan
+
+
+def replace_manufacturer_for_orgs(
+    db,
+    MaterialPrice,
+    payloads: list[dict[str, object]],
+    manufacturer: str,
+    *,
+    delete_leftovers: bool = True,
+):
+    """Apply a manufacturer replace/merge once per organization."""
+    from app.tenancy import default_organization_id, include_all_orgs, set_current_organization_id
+
+    with include_all_orgs():
+        from sqlalchemy import func, select
+
+        from material_csv_row import manufacturer_aliases
+
+        aliases = sorted(manufacturer_aliases(manufacturer))
+        old_models = db.session.scalars(
+            select(MaterialPrice).where(func.lower(MaterialPrice.manufacturer).in_(aliases))
+        ).all()
+        org_ids = sorted({row.organization_id for row in old_models if row.organization_id})
+
+    if not org_ids:
+        oid = default_organization_id()
+        if oid is None:
+            raise SystemExit("no manufacturer rows and no default organization")
+        org_ids = [oid]
+
+    plans = []
+    for oid in org_ids:
+        set_current_organization_id(oid)
+        plans.append(
+            replace_manufacturer_rows(
+                db,
+                MaterialPrice,
+                payloads,
+                manufacturer,
+                delete_leftovers=delete_leftovers,
+            )
+        )
+    return plans
 
 
 def main() -> None:
@@ -236,17 +314,25 @@ def main() -> None:
         paths = [_DEFAULT_BOBRICK]
 
     with app.app_context():
+        if ensure_size_depth_column(db):
+            print("Added material_pricing.size_depth_in")
+        if ensure_manufacturer_url_column(db):
+            print("Added material_pricing.manufacturer_url")
         total = 0
         for i, csv_path in enumerate(paths):
             if not csv_path.is_file():
                 print(f"Skipping missing CSV: {csv_path}")
                 continue
-            payloads = read_material_csv(csv_path)
+            raw_payloads = read_material_csv(csv_path)
+            payloads = drop_partition_color_skus(raw_payloads)
+            skipped_colors = len(raw_payloads) - len(payloads)
+            if skipped_colors:
+                print(f"Skipped {skipped_colors} partition color SKUs from {csv_path.name}")
             if args.tag_door_hardware:
                 for p in payloads:
                     p["csi_spec_section"] = "087100"
             if family_mfr:
-                plan = replace_manufacturer_rows(
+                plans = replace_manufacturer_for_orgs(
                     db,
                     MaterialPrice,
                     payloads,
@@ -254,16 +340,22 @@ def main() -> None:
                     delete_leftovers=bool(replace_mfr),
                 )
                 verb = "Replaced" if replace_mfr else "Merged"
+                updated = sum(p.updated_count for p in plans)
+                inserted = sum(p.inserted_count for p in plans)
+                deleted = sum(p.deleted_count for p in plans)
+                labor_copied = sum(p.labor_copied for p in plans)
+                unmatched = sum(p.unmatched_new for p in plans)
+                ambiguous = [key for p in plans for key in p.ambiguous_keys]
                 print(
-                    f"{verb} {family_mfr} from {csv_path.name}: "
-                    f"{plan.updated_count} updated, {plan.inserted_count} inserted, "
-                    f"{plan.deleted_count} deleted, {plan.labor_copied} labor copied, "
-                    f"{plan.unmatched_new} unmatched new, "
-                    f"{len(plan.ambiguous_keys)} ambiguous"
+                    f"{verb} {family_mfr} from {csv_path.name} across {len(plans)} org(s): "
+                    f"{updated} updated, {inserted} inserted, "
+                    f"{deleted} deleted, {labor_copied} labor copied, "
+                    f"{unmatched} unmatched new, "
+                    f"{len(ambiguous)} ambiguous"
                 )
-                if plan.ambiguous_keys:
-                    print("Ambiguous SKUs (labor not copied): " + ", ".join(plan.ambiguous_keys[:40]))
-                total += len(payloads)
+                if ambiguous:
+                    print("Ambiguous SKUs (labor not copied): " + ", ".join(ambiguous[:40]))
+                total += len(payloads) * len(plans)
                 continue
             is_repo_seed = csv_path.resolve() in seed_set
             do_truncate = should_truncate_catalog_file(

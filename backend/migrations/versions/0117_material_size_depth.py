@@ -17,10 +17,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "material_pricing",
-        sa.Column("size_depth_in", sa.Numeric(10, 4), nullable=True),
-    )
+    bind = op.get_bind()
+    cols = {c["name"] for c in sa.inspect(bind).get_columns("material_pricing")}
+    if "size_depth_in" not in cols:
+        op.add_column(
+            "material_pricing",
+            sa.Column("size_depth_in", sa.Numeric(10, 4), nullable=True),
+        )
 
 
 def downgrade() -> None:

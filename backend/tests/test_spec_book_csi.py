@@ -48,6 +48,26 @@ def test_format_and_catalog():
     assert {"00", "08", "09", "10", "23", "26", "34", "35", "49"}.issubset(divisions)
 
 
+def test_locker_spec_sections():
+    assert title_for_code("10 51 13") == "Metal Lockers (standard, heavy-duty, and welded steel)"
+    assert title_for_code("10 51 26") == "Plastic Lockers"
+    assert title_for_code("10 51 29") == "Phenolic Lockers (solid phenolic, moisture-resistant)"
+    assert title_for_code("10 51 33") == "Wood and Laminate Lockers (club and athletic lockers)"
+    assert title_for_code("10 51 43") == "Wire Mesh Storage Lockers (security cages and gear storage)"
+    catalog = public_catalog("lockers", 50)
+    codes = {row["code"] for row in catalog["items"]}
+    assert {
+        "10 51 00",
+        "10 51 13",
+        "10 51 26",
+        "10 51 29",
+        "10 51 33",
+        "10 51 43",
+    }.issubset(codes)
+    assert "10 51 16" not in codes
+    assert "10 51 23" not in codes
+
+
 def test_parse_codes_from_spec_text():
     rows = parse_codes_from_text(
         "SECTION 08 71 00 DOOR HARDWARE\n10 44 16 Fire Extinguishers\n087100 extra"

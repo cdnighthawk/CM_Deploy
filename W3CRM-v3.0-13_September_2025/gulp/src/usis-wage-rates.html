@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	@@include("elements/meta.html", {
+		"fileName": "usis-wage-rates.html",
+	})
+
+	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
+	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+	@@include("elements/preloader.html")
+
+	<div id="main-wrapper">
+
+		@@include("elements/nav-header-construction.html")
+		@@include("elements/chatbox-construction.html")
+		@@include("elements/header-construction.html")
+		@@include("elements/deznav-construction.html")
+
+		<main class="content-body">
+			<div class="page-title">
+				@@include("elements/breadcrumb.html", {
+					"fileName": "Wage rates",
+				})
+			</div>
+			<div class="container-fluid">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+					<div>
+						<h4 class="mb-1">Wage rates</h4>
+						<p class="text-muted small mb-0">Prevailing wage lookup by state, area, year, and trade. Estimates and HR pay scales use this list.</p>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<input type="file" class="d-none" id="usis-wr-import-file" accept=".csv,text/csv">
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-wr-import">Import CSV</button>
+						<button type="button" class="btn btn-primary btn-sm" id="usis-wr-add">Add rate</button>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm">
+					<div class="card-body">
+						<div class="row g-2 mb-3">
+							<div class="col-md-4">
+								<input type="search" class="form-control form-control-sm" id="usis-wr-q" placeholder="Search state, area, trade…" autocomplete="off">
+							</div>
+							<div class="col-md-2">
+								<select class="form-select form-select-sm" id="usis-wr-year" aria-label="Year">
+									<option value="">All years</option>
+								</select>
+							</div>
+							<div class="col-md-3">
+								<select class="form-select form-select-sm" id="usis-wr-state" aria-label="State">
+									<option value="">All states</option>
+								</select>
+							</div>
+							<div class="col-md-3">
+								<select class="form-select form-select-sm" id="usis-wr-trade" aria-label="Trade">
+									<option value="">All trades</option>
+								</select>
+							</div>
+						</div>
+						<div class="table-responsive">
+							<table class="table table-sm table-hover align-middle mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>Year</th>
+										<th>State</th>
+										<th>Area</th>
+										<th>Trade</th>
+										<th class="text-end">Basic</th>
+										<th class="text-end">Loaded</th>
+										<th>Notes</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody id="usis-wr-tbody"><tr><td colspan="8" class="text-muted">Loading…</td></tr></tbody>
+							</table>
+						</div>
+						<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+							<span id="usis-wr-status" class="small text-muted"></span>
+							<div class="d-flex gap-2">
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-wr-prev" disabled>Previous</button>
+								<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-wr-next" disabled>Next</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		@@include("elements/footer.html")
+
+	</div>
+
+	<div class="modal fade" id="usis-modal-wr" tabindex="-1" aria-labelledby="usis-modal-wr-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<form id="usis-wr-form">
+					<div class="modal-header">
+						<h5 class="modal-title" id="usis-modal-wr-title">Add wage rate</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<input type="hidden" id="usis-wr-id" value="">
+						<div class="alert alert-danger py-2 d-none" id="usis-wr-err" role="alert"></div>
+						<div class="row g-2">
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-wr-edit-year">Year <span class="text-danger">*</span></label>
+								<input type="number" class="form-control form-control-sm" id="usis-wr-edit-year" min="1900" max="2100" required>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-wr-edit-state">State <span class="text-danger">*</span></label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-state" maxlength="80" required autocomplete="off">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-wr-edit-area">Sub-area</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-area" maxlength="80" autocomplete="off">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label small mb-0" for="usis-wr-edit-trade">Trade <span class="text-danger">*</span></label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-trade" maxlength="120" required autocomplete="off">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-basic">Basic hourly</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-basic" inputmode="decimal">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-hw">Health &amp; welfare</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-hw" inputmode="decimal">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-pension">Pension</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-pension" inputmode="decimal">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-vacation">Vacation / holiday</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-vacation" inputmode="decimal">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-other">Other payments</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-other" inputmode="decimal">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-training">Training</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-training" inputmode="decimal">
+							</div>
+							<div class="col-12">
+								<label class="form-label small mb-0" for="usis-wr-edit-notes">Notes</label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-notes" maxlength="255">
+							</div>
+							<div class="col-12">
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" id="usis-wr-edit-assumed">
+									<label class="form-check-label" for="usis-wr-edit-assumed">Assumed rate</label>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-wr-save-new">Save &amp; New</button>
+						<button type="submit" class="btn btn-primary btn-sm">Save &amp; Close</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	@@include("elements/script.html")
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
+	<script src="assets/js/usis-notify.js"></script>
+	<script src="assets/js/usis-project-context.js"></script>
+	<script src="assets/js/deznav-init-construction.js"></script>
+	<script src="assets/js/custom.js"></script>
+	<script src="assets/js/construction.js"></script>
+	<script src="assets/js/usis-wage-rates.js?v=20260918a"></script>
+
+</body>
+</html>

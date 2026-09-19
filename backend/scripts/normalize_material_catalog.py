@@ -49,12 +49,16 @@ def _should_parse_size(row) -> bool:
 
 def _plan_row(row) -> dict[str, object] | None:
     from app.csi_spec import normalize_csi_spec_section
+    from app.locker_csi import planned_locker_csi_update
     from app.material_category import planned_category_update
     from app.material_size import parse_sheet_size, size_display
 
     changes: dict[str, object] = {}
     current_csi = (row.csi_spec_section or "").strip() or None
     new_csi = normalize_csi_spec_section(current_csi) if current_csi else None
+    locker_csi = planned_locker_csi_update(row)
+    if locker_csi:
+        new_csi = locker_csi
     if new_csi and new_csi != current_csi:
         changes["csi_spec_section"] = new_csi
     new_cat = planned_category_update(row)

@@ -91,6 +91,7 @@ def main() -> None:
         item_fields = [
             "id",
             "manufacturer",
+            "manufacturer_url",
             "item",
             "category",
             "csi_spec_section",
@@ -102,6 +103,7 @@ def main() -> None:
             "mounting_type",
             "size_width_in",
             "size_height_in",
+            "size_depth_in",
             "size_display",
             "sheet_area_sf",
             "cost",
@@ -144,6 +146,7 @@ def main() -> None:
                     {
                         "id": str(m.id),
                         "manufacturer": m.manufacturer or "",
+                        "manufacturer_url": m.manufacturer_url or "",
                         "item": m.item or "",
                         "category": category,
                         "csi_spec_section": m.csi_spec_section or "",
@@ -155,7 +158,8 @@ def main() -> None:
                         "mounting_type": m.mounting_type or "",
                         "size_width_in": "" if m.size_width_in is None else str(m.size_width_in),
                         "size_height_in": "" if m.size_height_in is None else str(m.size_height_in),
-                        "size_display": size_display(m.size_width_in, m.size_height_in) or "",
+                        "size_depth_in": "" if m.size_depth_in is None else str(m.size_depth_in),
+                        "size_display": size_display(m.size_width_in, m.size_height_in, m.size_depth_in) or "",
                         "sheet_area_sf": ""
                         if sheet_area_sf(m.size_width_in, m.size_height_in) is None
                         else str(sheet_area_sf(m.size_width_in, m.size_height_in)),

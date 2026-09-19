@@ -7,8 +7,7 @@
 	var catalogTable = null;
 	var searchTimer = null;
 	var BULK_CHUNK = 2000;
-	var CATALOG_FETCH = 5000;
-	var CATALOG_FETCH_MAX_PAGES = 20;
+	var PAGE_SIZE = 100;
 	var headerFilterFillers = [];
 	var facetLists = {
 		manufacturers: [],
@@ -33,6 +32,8 @@
 		uom: "",
 		size: "",
 		supplier: "",
+		offset: 0,
+		limit: PAGE_SIZE,
 		total: 0,
 	};
 
@@ -304,6 +305,7 @@
 	function fillDetailForm(item) {
 		var map = {
 			"usis-mat-edit-manufacturer": item.manufacturer,
+			"usis-mat-edit-manufacturer-url": item.manufacturer_url,
 			"usis-mat-edit-item": item.item,
 			"usis-mat-edit-category": item.category,
 			"usis-mat-edit-csi": item.csi_display || item.csi_spec_section,
@@ -333,6 +335,19 @@
 		syncLaborFromRate();
 	}
 
+	function fmtUrlLink(url) {
+		var href = String(url || "").trim();
+		if (!href) return "—";
+		if (!/^https?:\/\//i.test(href)) return escHtml(href);
+		return (
+			'<a href="' +
+			escHtml(href) +
+			'" target="_blank" rel="noopener noreferrer">' +
+			escHtml(href) +
+			"</a>"
+		);
+	}
+
 	function renderDetailView(item) {
 		var view = document.getElementById("usis-mat-detail-view");
 		var title = document.getElementById("usis-mat-detail-title");
@@ -343,6 +358,7 @@
 		var rows = [
 			["Item", dash(item.item)],
 			["Manufacturer", dash(item.manufacturer)],
+			["Manufacturer URL", item.manufacturer_url],
 			["Buy from", dash(item.supplier_name)],
 			["Supplier email", dash(item.supplier_email)],
 			["Category", dash(item.category)],
@@ -367,11 +383,12 @@
 			'<dl class="row mb-0">' +
 			rows
 				.map(function (pair) {
+					var body = pair[0] === "Manufacturer URL" ? fmtUrlLink(pair[1]) : escHtml(pair[1]);
 					return (
 						'<dt class="col-sm-4 col-lg-3 text-muted small">' +
 						escHtml(pair[0]) +
 						'</dt><dd class="col-sm-8 col-lg-9">' +
-						escHtml(pair[1]) +
+						body +
 						"</dd>"
 					);
 				})
@@ -400,6 +417,7 @@
 	function collectDetailEdits() {
 		return {
 			manufacturer: inputVal("usis-mat-edit-manufacturer"),
+			manufacturer_url: inputVal("usis-mat-edit-manufacturer-url"),
 			item: inputVal("usis-mat-edit-item"),
 			category: inputVal("usis-mat-edit-category"),
 			csi_spec_section: inputVal("usis-mat-edit-csi"),
@@ -487,29 +505,15 @@
 		return p;
 	}
 
-	function catalogUrl(offset) {
+	function catalogUrl() {
 		var p = filterParams();
-		p.set("limit", String(CATALOG_FETCH));
-		p.set("offset", String(offset || 0));
+		p.set("limit", String(state.limit));
+		p.set("offset", String(state.offset));
 		return apiBase() + "/api/v1/material-prices?" + p.toString();
 	}
 
 	function fetchCatalog() {
-		var all = [];
-		var total = 0;
-		function page(offset, hops) {
-			return jsonFetch(catalogUrl(offset)).then(function (d) {
-				var rows = d.items || [];
-				total = d.total != null ? Number(d.total) : offset + rows.length;
-				all = all.concat(rows);
-				var step = Number(d.limit) || rows.length || CATALOG_FETCH;
-				if (all.length < total && rows.length > 0 && hops + 1 < CATALOG_FETCH_MAX_PAGES) {
-					return page(offset + step, hops + 1);
-				}
-				return { items: all, total: total };
-			});
-		}
-		return page(0, 0);
+		return jsonFetch(catalogUrl());
 	}
 
 	function selectedCount() {
@@ -547,9 +551,9 @@
 					(state.total === 1 ? "" : "s") +
 					" matching the current filters.";
 			} else if (n) {
-				countEl.textContent = n + " row" + (n === 1 ? "" : "s") + " selected.";
+				countEl.textContent = n + " row" + (n === 1 ? "" : "s") + " selected on this page.";
 			} else {
-				countEl.textContent = "No rows selected.";
+				countEl.textContent = "No rows selected on this page.";
 			}
 		}
 		var allLabel = document.getElementById("usis-mat-bulk-all-label");
@@ -600,6 +604,7 @@
 			input.value = state[stateKey] || "";
 			input.addEventListener("input", function () {
 				state[stateKey] = (input.value || "").trim();
+				state.offset = 0;
 				setAllMatching(false);
 				scheduleSearch();
 			});
@@ -647,6 +652,7 @@
 			headerFilterFillers.push(fill);
 			select.addEventListener("change", function () {
 				state[stateKey] = (select.value || "").trim();
+				state.offset = 0;
 				setAllMatching(false);
 				scheduleSearch();
 			});
@@ -698,18 +704,14 @@
 				var empty = state.total === 0 && !hasActiveFilters();
 				setEmptyVisible(empty);
 				if (catalogTable) catalogTable.setData(rows);
-				var loaded = rows.length;
+				var from = state.total === 0 ? 0 : state.offset + 1;
+				var to = Math.min(state.offset + rows.length, state.total);
 				setStatus(
 					state.total === 0
 						? "No catalog rows"
-						: loaded < state.total
-							? "Showing " +
-								loaded.toLocaleString() +
-								" of " +
-								state.total.toLocaleString() +
-								" SKUs. Narrow the filters to see the rest."
-							: "Showing " + state.total.toLocaleString() + " SKU" + (state.total === 1 ? "" : "s")
+						: "Showing " + from.toLocaleString() + "–" + to.toLocaleString() + " of " + state.total.toLocaleString()
 				);
+				updatePager();
 				updateSelectionUi();
 			})
 			.catch(function (e) {
@@ -718,6 +720,13 @@
 				setStatus("");
 				notifyErr("Could not load material catalog. Sign in and run the CSV import. (" + String(e.message || e) + ")");
 			});
+	}
+
+	function updatePager() {
+		var prev = document.getElementById("usis-mat-prev");
+		var next = document.getElementById("usis-mat-next");
+		if (prev) prev.disabled = state.offset <= 0;
+		if (next) next.disabled = state.offset + state.limit >= state.total;
 	}
 
 	var COL_LAYOUT_KEY = "usis-mat-col-layout-v2";
@@ -748,6 +757,32 @@
 				minWidth: 148,
 				tooltip: true,
 				headerFilter: selectFilter("manufacturer", "manufacturers", "Manufacturer filter"),
+			},
+			{
+				title: "Manufacturer URL",
+				field: "manufacturer_url",
+				width: 220,
+				minWidth: 160,
+				tooltip: true,
+				formatter: function (cell) {
+					var v = cell.getValue();
+					if (v == null || v === "") return "—";
+					var href = String(v).trim();
+					if (!/^https?:\/\//i.test(href)) return href;
+					var a = document.createElement("a");
+					a.href = href;
+					a.target = "_blank";
+					a.rel = "noopener noreferrer";
+					a.textContent = href;
+					a.title = href;
+					a.addEventListener("mousedown", function (e) {
+						e.stopPropagation();
+					});
+					a.addEventListener("click", function (e) {
+						e.stopPropagation();
+					});
+					return a;
+				},
 			},
 			{
 				title: "Buy from",
@@ -948,7 +983,7 @@
 	}
 
 	var COLUMN_GROUPS = [
-		{ title: "Catalog", fields: ["manufacturer", "supplier_name", "item", "description"] },
+		{ title: "Catalog", fields: ["manufacturer", "manufacturer_url", "supplier_name", "item", "description"] },
 		{ title: "Classification", fields: ["csi_display", "category", "size_display", "mounting_type"] },
 		{ title: "Pricing", fields: ["cost", "labor_production", "labor_per", "unit_of_measure"] },
 	];
@@ -1225,7 +1260,7 @@
 			var headerCb = el.querySelector(".usis-doc-check-col input[type=checkbox]");
 			if (headerCb) {
 				headerCb.classList.add("form-check-input", "m-0");
-				headerCb.setAttribute("aria-label", "Select all loaded rows");
+				headerCb.setAttribute("aria-label", "Select all rows on this page");
 			}
 		});
 	}
@@ -1233,6 +1268,7 @@
 	function scheduleSearch() {
 		if (searchTimer) clearTimeout(searchTimer);
 		searchTimer = setTimeout(function () {
+			state.offset = 0;
 			Promise.all([loadFacets(), refreshCatalog()]);
 		}, 300);
 	}
@@ -1397,6 +1433,24 @@
 			refreshBtn.addEventListener("click", function () {
 				hideActionsMenu();
 				loadFacets().then(refreshCatalog);
+			});
+		}
+		var prev = document.getElementById("usis-mat-prev");
+		var next = document.getElementById("usis-mat-next");
+		if (prev) {
+			prev.addEventListener("click", function () {
+				hideActionsMenu();
+				state.offset = Math.max(0, state.offset - state.limit);
+				refreshCatalog();
+			});
+		}
+		if (next) {
+			next.addEventListener("click", function () {
+				hideActionsMenu();
+				if (state.offset + state.limit < state.total) {
+					state.offset += state.limit;
+					refreshCatalog();
+				}
 			});
 		}
 		var selectAll = document.getElementById("usis-mat-select-all");

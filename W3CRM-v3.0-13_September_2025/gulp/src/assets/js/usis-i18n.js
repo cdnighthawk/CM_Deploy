@@ -35,6 +35,7 @@
 		Expenses: "Gastos",
 		Playbooks: "Guías",
 		Catalog: "Catálogo",
+		"Wage rates": "Tarifas salariales",
 		"User admin": "Admin. de usuarios",
 		Procurement: "Compras",
 		Purchasing: "Compras",

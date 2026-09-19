@@ -11,10 +11,16 @@ from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
-from ..labor_burden import labor_burden_breakdown, normalize_labor_burden
+from ..labor_burden import (
+    labor_burden_breakdown,
+    labor_burden_for_state,
+    normalize_labor_burden_book,
+    public_labor_burden,
+    stored_labor_burden,
+)
 from ..models.wage_rate import WageRate
 from ..tenant_settings import current_tenant_setting, set_tenant_setting
-from ..tenancy import current_organization_id
+from ..tenancy import current_organization_id, default_organization_id
 from ._rfi_service import ApiError
 
 _RATE_FIELDS = (
@@ -82,28 +88,57 @@ def _optional_pct(val: Any) -> Decimal | None:
     return num
 
 
-def current_labor_burden() -> dict[str, float]:
+def current_labor_burden_book() -> dict[str, Any]:
     raw = current_tenant_setting("labor.burden")
-    return normalize_labor_burden(raw if isinstance(raw, dict) else None)
+    return normalize_labor_burden_book(raw if isinstance(raw, dict) else None)
 
 
-def save_labor_burden(data: Mapping[str, Any], *, actor_user_id: uuid.UUID | None = None) -> dict[str, float]:
-    tenant_id = current_organization_id()
+def current_labor_burden(state: Any = "") -> dict[str, float]:
+    return labor_burden_for_state(current_labor_burden_book(), state)
+
+
+def public_labor_burden_setting() -> dict[str, Any]:
+    return public_labor_burden(current_labor_burden_book())
+
+
+def save_labor_burden(data: Mapping[str, Any], *, actor_user_id: uuid.UUID | None = None) -> dict[str, Any]:
+    tenant_id = current_organization_id() or default_organization_id()
     if tenant_id is None:
         raise ApiError("organization required", 400)
-    normalized = normalize_labor_burden(data)
-    set_tenant_setting(tenant_id, "labor.burden", normalized, actor_user_id=actor_user_id)
+    current = current_labor_burden_book()
+    incoming = data if isinstance(data, Mapping) else {}
+    merged: dict[str, Any] = {
+        "social_security_pct": incoming.get("social_security_pct", current["social_security_pct"]),
+        "medicare_pct": incoming.get("medicare_pct", current["medicare_pct"]),
+        "futa_pct": incoming.get("futa_pct", current["futa_pct"]),
+        "suta_pct": incoming.get("suta_pct", current["suta_pct"]),
+        "workers_comp_pct": incoming.get("workers_comp_pct", current["workers_comp_pct"]),
+        "other_pct": incoming.get("other_pct", current["other_pct"]),
+    }
+    if "states" in incoming:
+        merged["states"] = incoming.get("states")
+    else:
+        merged["states"] = current["states"]
+        if any(key in incoming for key in ("suta_pct", "workers_comp_pct", "other_pct")):
+            defaults = {
+                "suta_pct": merged["suta_pct"],
+                "workers_comp_pct": merged["workers_comp_pct"],
+                "other_pct": merged["other_pct"],
+            }
+            merged["states"] = {code: dict(defaults) for code in ("CA", "FL", "HI")}
+    stored = stored_labor_burden(merged)
+    set_tenant_setting(tenant_id, "labor.burden", stored, actor_user_id=actor_user_id)
     db.session.commit()
-    return normalized
+    return public_labor_burden(stored)
 
 
 def wage_total_loaded(w: WageRate, burden: Mapping[str, Any] | None = None) -> float:
-    rates = burden if burden is not None else current_labor_burden()
+    rates = burden if burden is not None else current_labor_burden_book()
     return float(labor_burden_breakdown(w, rates)["total_loaded_hourly"])
 
 
 def wage_rate_public(w: WageRate, burden: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    rates = burden if burden is not None else current_labor_burden()
+    rates = burden if burden is not None else current_labor_burden_book()
     breakdown = labor_burden_breakdown(w, rates)
     return {
         "id": str(w.id),
@@ -241,10 +276,10 @@ def list_wage_rates(
     base = _wage_query(q=q, state=state, year=year, trade=trade, sub_area=sub_area)
     total = db.session.scalar(select(func.count()).select_from(base.order_by(None).subquery())) or 0
     rows = db.session.scalars(base.offset(offset).limit(limit)).all()
-    burden = current_labor_burden()
+    book = current_labor_burden_book()
     return {
-        "items": [wage_rate_public(w, burden) for w in rows],
-        "burden": burden,
+        "items": [wage_rate_public(w, book) for w in rows],
+        "burden": public_labor_burden(book),
         "entity": "wage_rates",
         "total": int(total),
         "limit": limit,

@@ -527,11 +527,12 @@ def catalog_item_cache_row(m) -> dict[str, Any]:
 
 
 def wage_rate_cache_row(w) -> dict[str, Any]:
-    from ..labor_burden import labor_burden_breakdown
+    from ..labor_burden import labor_burden_breakdown, labor_burden_for_state, normalize_labor_burden_book
     from ..tenant_settings import current_tenant_setting
 
     raw = current_tenant_setting("labor.burden")
-    breakdown = labor_burden_breakdown(w, raw if isinstance(raw, dict) else None)
+    book = normalize_labor_burden_book(raw if isinstance(raw, dict) else None)
+    breakdown = labor_burden_breakdown(w, labor_burden_for_state(book, getattr(w, "state", "")))
     return {
         "id": str(w.id),
         "state": w.state,

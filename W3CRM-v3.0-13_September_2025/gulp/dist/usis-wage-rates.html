@@ -514,7 +514,7 @@
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
 						<h4 class="mb-1">Wage rates</h4>
-						<p class="text-muted small mb-0">Prevailing wage lookup by state, area, year, and trade. Loaded hourly includes DIR fringes plus employer taxes, unemployment, and workers' comp.</p>
+						<p class="text-muted small mb-0">Prevailing wage lookup by state, area, year, and trade.</p>
 					</div>
 					<div class="d-flex flex-wrap gap-2">
 						<input type="file" class="d-none" id="usis-wr-import-file" accept=".csv,text/csv">
@@ -522,46 +522,12 @@
 						<button type="button" class="btn btn-primary btn-sm" id="usis-wr-add">Add rate</button>
 					</div>
 				</div>
-				<div class="card border-0 shadow-sm mb-3">
-					<div class="card-body">
-						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-							<div>
-								<h5 class="h6 mb-1">Employer burden</h5>
-								<p class="text-muted small mb-0">Percent of taxable wages (basic + vacation/holiday). Federal payroll taxes start at IRS rates; enter your unemployment and workers' comp.</p>
-							</div>
-							<button type="button" class="btn btn-outline-primary btn-sm" id="usis-wr-burden-save">Save burden</button>
-						</div>
-						<div class="alert alert-danger py-2 d-none" id="usis-wr-burden-err" role="alert"></div>
-						<div class="row g-2">
-							<div class="col-6 col-md-2">
-								<label class="form-label small mb-0" for="usis-wr-ss">Social Security %</label>
-								<input class="form-control form-control-sm" id="usis-wr-ss" inputmode="decimal">
-							</div>
-							<div class="col-6 col-md-2">
-								<label class="form-label small mb-0" for="usis-wr-medicare">Medicare %</label>
-								<input class="form-control form-control-sm" id="usis-wr-medicare" inputmode="decimal">
-							</div>
-							<div class="col-6 col-md-2">
-								<label class="form-label small mb-0" for="usis-wr-futa">FUTA %</label>
-								<input class="form-control form-control-sm" id="usis-wr-futa" inputmode="decimal">
-							</div>
-							<div class="col-6 col-md-2">
-								<label class="form-label small mb-0" for="usis-wr-suta">State unemployment %</label>
-								<input class="form-control form-control-sm" id="usis-wr-suta" inputmode="decimal" placeholder="SUI / ETT">
-							</div>
-							<div class="col-6 col-md-2">
-								<label class="form-label small mb-0" for="usis-wr-wc">Workers' comp %</label>
-								<input class="form-control form-control-sm" id="usis-wr-wc" inputmode="decimal">
-							</div>
-							<div class="col-6 col-md-2">
-								<label class="form-label small mb-0" for="usis-wr-other-burden">Other (GL, etc.) %</label>
-								<input class="form-control form-control-sm" id="usis-wr-other-burden" inputmode="decimal">
-							</div>
-						</div>
-					</div>
-				</div>
 				<div class="card border-0 shadow-sm">
 					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-2">
+							<p class="small text-muted mb-0" id="usis-wr-burden-summary"></p>
+							<button type="button" class="btn btn-link btn-sm p-0" id="usis-wr-burden-open">Set state rates</button>
+						</div>
 						<div class="row g-2 mb-3">
 							<div class="col-md-4">
 								<input type="search" class="form-control form-control-sm" id="usis-wr-q" placeholder="Search state, area, trade…" autocomplete="off">
@@ -647,6 +613,45 @@
 
 	</div>
 
+	<div class="modal fade" id="usis-modal-wr-burden" tabindex="-1" aria-labelledby="usis-modal-wr-burden-title" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-modal-wr-burden-title">Employer rates by state</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p class="small text-muted mb-2" id="usis-wr-federal-note"></p>
+					<div class="alert alert-danger py-2 d-none" id="usis-wr-burden-err" role="alert"></div>
+					<div class="table-responsive">
+						<table class="table table-sm align-middle mb-2">
+							<thead class="table-light">
+								<tr>
+									<th>State</th>
+									<th class="text-end">Unemployment %</th>
+									<th class="text-end">Workers' comp %</th>
+									<th class="text-end">Other %</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody id="usis-wr-burden-tbody"></tbody>
+						</table>
+					</div>
+					<div class="d-flex flex-wrap gap-2 align-items-center">
+						<select class="form-select form-select-sm" id="usis-wr-burden-add-state" aria-label="Add state" style="max-width:16rem">
+							<option value="">Add another state…</option>
+						</select>
+						<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-wr-burden-add">Add</button>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-wr-burden-save">Save rates</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="modal fade" id="usis-modal-wr" tabindex="-1" aria-labelledby="usis-modal-wr-title" aria-hidden="true">
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 			<div class="modal-content">
@@ -700,7 +705,7 @@
 								<input class="form-control form-control-sm" id="usis-wr-edit-training" inputmode="decimal">
 							</div>
 							<div class="col-md-4">
-								<label class="form-label small mb-0" for="usis-wr-edit-wc">Workers' comp % <span class="text-muted fw-normal">(blank = company default)</span></label>
+								<label class="form-label small mb-0" for="usis-wr-edit-wc">Workers' comp % <span class="text-muted fw-normal">(blank = this state's default)</span></label>
 								<input class="form-control form-control-sm" id="usis-wr-edit-wc" inputmode="decimal">
 							</div>
 							<div class="col-12">
@@ -756,7 +761,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-wage-rates.js?v=20260918b"></script>
+	<script src="assets/js/usis-wage-rates.js?v=20260918d"></script>
 
 </body>
 </html>

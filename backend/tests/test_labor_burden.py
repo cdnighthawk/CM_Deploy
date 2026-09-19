@@ -3,7 +3,15 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from app.labor_burden import DEFAULT_LABOR_BURDEN, labor_burden_breakdown, normalize_labor_burden
+from app.labor_burden import (
+    DEFAULT_LABOR_BURDEN,
+    labor_burden_breakdown,
+    labor_burden_for_state,
+    normalize_labor_burden,
+    normalize_labor_burden_book,
+    normalize_state_code,
+    public_labor_burden,
+)
 
 
 def test_default_burden_adds_federal_payroll_taxes():
@@ -58,3 +66,40 @@ def test_normalize_clamps_percentages():
     assert out["medicare_pct"] == 100.0
     assert out["futa_pct"] == 0.6
     assert out["suta_pct"] == 0.0
+
+
+def test_state_codes_accept_names_and_abbreviations():
+    assert normalize_state_code("ca") == "CA"
+    assert normalize_state_code("California") == "CA"
+    assert normalize_state_code("Hawaii") == "HI"
+    assert normalize_state_code("FL") == "FL"
+
+
+def test_book_always_includes_home_states():
+    book = normalize_labor_burden_book({"suta_pct": 3.4, "workers_comp_pct": 12})
+    assert set(book["states"]) >= {"CA", "FL", "HI"}
+    assert book["states"]["CA"]["suta_pct"] == 3.4
+    assert book["states"]["HI"]["workers_comp_pct"] == 12
+    public = public_labor_burden(book)
+    assert [row["state"] for row in public["states"][:3]] == ["CA", "FL", "HI"]
+    assert public["catalog"][0]["state"] == "AL"
+
+
+def test_burden_uses_the_row_state():
+    book = {
+        "states": [
+            {"state": "CA", "suta_pct": 3.4, "workers_comp_pct": 10, "other_pct": 0},
+            {"state": "FL", "suta_pct": 0.1, "workers_comp_pct": 4, "other_pct": 0},
+            {"state": "HI", "suta_pct": 4, "workers_comp_pct": 8, "other_pct": 1},
+        ]
+    }
+    ca = labor_burden_for_state(book, "California")
+    fl = labor_burden_for_state(book, "FL")
+    assert ca["suta_pct"] == 3.4
+    assert ca["workers_comp_pct"] == 10
+    assert fl["suta_pct"] == 0.1
+    assert fl["workers_comp_pct"] == 4
+    row = {"state": "HI", "basic_hourly_rate": 50}
+    out = labor_burden_breakdown(row, book)
+    assert out["burden_pct"] == 21.25
+    assert out["burden_hourly"] == 10.625

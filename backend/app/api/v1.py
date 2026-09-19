@@ -6273,6 +6273,7 @@ def _wage_rates_web_query() -> bool:
 @bp.get("/wage-rates")
 def list_wage_rates_desktop():
     """Wage rates: paginated web list when filters are present; full desktop dump otherwise."""
+    current_user()
     if _wage_rates_web_query():
         try:
             limit = int(request.args.get("limit") or 100)
@@ -6320,7 +6321,8 @@ def list_wage_rate_facets():
 
 @bp.get("/wage-rates/burden")
 def get_wage_labor_burden():
-    return _jsonify({"burden": wage_rate_svc.current_labor_burden(), "entity": "labor_burden"})
+    current_user()
+    return _jsonify({"burden": wage_rate_svc.public_labor_burden_setting(), "entity": "labor_burden"})
 
 
 @bp.put("/wage-rates/burden")

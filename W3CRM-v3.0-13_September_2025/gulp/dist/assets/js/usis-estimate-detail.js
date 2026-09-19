@@ -1083,81 +1083,15 @@
 			});
 	}
 
-	function wageSearch() {
-		var st = (document.getElementById("usis-est-wage-state") || {}).value || "";
-		var tr = (document.getElementById("usis-est-wage-trade") || {}).value || "";
-		var yr = (document.getElementById("usis-est-wage-year") || {}).value || "";
-		var out = document.getElementById("usis-est-wage-out");
-		if (!out) return;
-		if (!st.trim() || !tr.trim()) {
-			out.textContent = "Enter state and trade.";
-			return;
-		}
-		var url =
-			API +
-			"/api/v1/cost-suggestions/wage?state=" +
-			encodeURIComponent(st.trim()) +
-			"&trade=" +
-			encodeURIComponent(tr.trim()) +
-			(yr ? "&year=" + encodeURIComponent(yr.trim()) : "");
-		fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
-			.then(function (r) { return r.json(); })
-			.then(function (data) {
-				if (data.item) {
-					var item = data.item;
-					var loaded =
-						data.total_loaded_hourly != null
-							? data.total_loaded_hourly
-							: item.total_loaded_hourly;
-					var html =
-						"<div>Fully loaded hourly: <strong>$" +
-						esc(String(loaded != null ? Number(loaded).toFixed(4) : "—")) +
-						"</strong></div>";
-					if (item.fringe_hourly != null) {
-						html +=
-							'<div class="text-muted">DIR package $' +
-							esc(Number(item.fringe_hourly).toFixed(4)) +
-							" + employer burden $" +
-							esc(Number(item.burden_hourly || 0).toFixed(4)) +
-							"</div>";
-					}
-					if (item.burden_lines && item.burden_lines.length) {
-						html += '<ul class="small mb-1 mt-1 ps-3">';
-						item.burden_lines.forEach(function (line) {
-							html +=
-								"<li>" +
-								esc(line.label) +
-								" " +
-								esc(String(line.pct)) +
-								"% = $" +
-								esc(Number(line.amount).toFixed(4)) +
-								"</li>";
-						});
-						html += "</ul>";
-					}
-					html +=
-						'<pre class="small bg-light p-2 rounded mt-1 mb-0">' +
-						esc(JSON.stringify(item, null, 2)) +
-						"</pre>";
-					out.innerHTML = html;
-				} else {
-					out.innerHTML =
-						'<span class="text-muted">No exact match. Near matches: ' +
-						(data.near_matches ? data.near_matches.length : 0) +
-						"</span>";
-				}
-			})
-			.catch(function () {
-				out.textContent = "Request failed.";
-			});
-	}
-
 	var ESTD_TAB_IDS = {
 		job: "estd-tab-job",
 		drawings: "estd-tab-drawings",
 		specs: "estd-tab-specs",
 		rfi: "estd-tab-rfi",
 		takeoff: "estd-tab-takeoff",
+		"labor-rates": "estd-tab-labor-rates",
+		labor_rates: "estd-tab-labor-rates",
+		labor: "estd-tab-labor-rates",
 		estimate: "estd-tab-estimate",
 		"spec-package": "estd-tab-spec-package",
 		spec_package: "estd-tab-spec-package",
@@ -1255,8 +1189,6 @@
 				applyMaterialCost(b.getAttribute("data-cost"));
 			});
 		}
-		var ws = document.getElementById("usis-est-wage-search");
-		if (ws) ws.addEventListener("click", wageSearch);
 		var appr = document.getElementById("usis-est-approve-lock");
 		if (appr) {
 			appr.addEventListener("click", function () {

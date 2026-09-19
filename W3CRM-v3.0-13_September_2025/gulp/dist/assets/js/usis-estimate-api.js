@@ -195,6 +195,16 @@
 		postEstimateAction: postEstimateAction,
 		awardLead: awardLead,
 		resolveEstimateId: resolveEstimateId,
+		getLaborRates: function (estimateId) {
+			return fetchJson("/api/v1/estimates/" + encodeURIComponent(estimateId) + "/labor-rates");
+		},
+		putLaborRates: function (estimateId, body) {
+			return fetchJson("/api/v1/estimates/" + encodeURIComponent(estimateId) + "/labor-rates", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body || {}),
+			});
+		},
 		feeToPercent: feeToPercent,
 		percentToFee: percentToFee,
 		getSpecScan: function (estimateId, showOut) {

@@ -73,6 +73,9 @@ def _estimate_detail_item(est: Estimate) -> dict[str, Any]:
     out.update(est_svc.estimate_summary_public(est))
     out["id"] = str(est.id)
     out["created_by_email"] = est_svc.created_by_email(est.created_by_id)
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
+    out["labor_rates"] = labor_rate_svc.labor_rates_public(est)
     return out
 
 
@@ -399,3 +402,29 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
             from .v1 import _document_render_err
 
             return _document_render_err(exc)
+
+    @bp.get("/estimates/<estimate_id>/labor-rates")
+    def get_estimate_labor_rates(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        return _jsonify({"item": labor_rate_svc.labor_rates_public(est), "entity": "estimate_labor_rates"})
+
+    @bp.put("/estimates/<estimate_id>/labor-rates")
+    def put_estimate_labor_rates(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            data = {}
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        try:
+            item = labor_rate_svc.save_labor_rates(est, data)
+        except est_svc.EstimateError as exc:
+            return _err(exc)
+        db.session.commit()
+        return _jsonify({"item": item, "entity": "estimate_labor_rates"})

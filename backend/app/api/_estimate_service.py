@@ -1,6 +1,7 @@
 """First-class Estimate CRUD, lock/approve, and takeoff copy helpers."""
 from __future__ import annotations
 
+import copy
 import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -12,6 +13,7 @@ from sqlalchemy.orm import joinedload
 from ..extensions import db
 from ..models import Company, DrawingSet, Estimate, LeadEstimate, TakeoffLineItem, User
 from ._serializers import iso, lead_estimate_public, num_or_none
+from ..project_labor_rates import compact_labor_rates_summary, normalize_labor_rate_settings, stored_labor_rate_settings
 
 ESTIMATE_STATUSES = ("draft", "submitted", "awarded", "superseded", "archived")
 _LINE_COPY_SKIP = frozenset({"id", "created_at", "updated_at", "estimate_id"})
@@ -145,6 +147,25 @@ def drawing_set_public(row: DrawingSet) -> dict[str, Any]:
     }
 
 
+def _labor_rates_compact(est: Estimate) -> dict[str, Any]:
+    raw = est.labor_rates if isinstance(est.labor_rates, dict) else None
+    out = compact_labor_rates_summary(raw)
+    if out.get("state"):
+        return out
+    lead = est.lead_estimate
+    loc = lead.location if lead is not None and isinstance(getattr(lead, "location", None), dict) else {}
+    default_state = str(loc.get("state") or "").strip()
+    filled = stored_labor_rate_settings(normalize_labor_rate_settings(raw, default_state=default_state))
+    out["state"] = filled["state"]
+    return out
+
+
+def copy_labor_rates_json(source: Estimate | None) -> dict[str, Any] | None:
+    if source is None or not isinstance(source.labor_rates, dict):
+        return None
+    return copy.deepcopy(source.labor_rates)
+
+
 def estimate_summary_public(est: Estimate) -> dict[str, Any]:
     total = est.total
     if total is None:
@@ -180,6 +201,7 @@ def estimate_summary_public(est: Estimate) -> dict[str, Any]:
         "total": float(total) if total is not None else None,
         "created_at": iso(est.created_at),
         "updated_at": iso(est.updated_at),
+        "labor_rates": _labor_rates_compact(est),
     }
 
 
@@ -343,6 +365,7 @@ def create_estimate(
         drawing_set_id=source.drawing_set_id if source is not None else None,
         version_label=source.version_label if source is not None else None,
         due_at=lead.due_at,
+        labor_rates=copy_labor_rates_json(source),
     )
     _apply_create_fields(est, data, lead)
     db.session.add(est)

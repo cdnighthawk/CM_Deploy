@@ -45,6 +45,7 @@ class Estimate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     bid_location: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    labor_rates: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     due_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True, comment="Target due date for this estimate version"

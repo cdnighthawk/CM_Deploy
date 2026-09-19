@@ -678,6 +678,9 @@
 							<button class="nav-link" id="estd-tab-takeoff" data-bs-toggle="pill" data-bs-target="#estd-pane-takeoff" type="button" role="tab" aria-controls="estd-pane-takeoff" aria-selected="false">Takeoff</button>
 						</li>
 						<li class="nav-item" role="presentation">
+							<button class="nav-link" id="estd-tab-labor-rates" data-bs-toggle="pill" data-bs-target="#estd-pane-labor-rates" type="button" role="tab" aria-controls="estd-pane-labor-rates" aria-selected="false">Labor rates</button>
+						</li>
+						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="estd-tab-estimate" data-bs-toggle="pill" data-bs-target="#estd-pane-estimate" type="button" role="tab" aria-controls="estd-pane-estimate" aria-selected="true">Estimate</button>
 						</li>
 						<li class="nav-item" role="presentation">
@@ -913,6 +916,81 @@
 								</div>
 							</div>
 						</div>
+						<div class="tab-pane fade" id="estd-pane-labor-rates" role="tabpanel" aria-labelledby="estd-tab-labor-rates" tabindex="0">
+							<p id="usis-est-labor-no-est" class="text-muted mb-0">Open an estimate to set project labor rates from company wages.</p>
+							<div id="usis-est-labor-root" class="d-none">
+								<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+									<div>
+										<h5 class="mb-1">Project labor rates</h5>
+										<p class="text-muted small mb-0">Defaults to company wage rates. Add housing, per diem, mandated overtime, or other $/hr for this estimate. Rates are advisory — enter labor unit cost on the line.</p>
+									</div>
+									<button type="button" class="btn btn-primary btn-sm" id="usis-est-labor-save">Save</button>
+								</div>
+								<div id="usis-est-labor-lock" class="alert alert-secondary border py-2 small d-none" role="status">This estimate is locked. Unlock it to edit labor rates.</div>
+								<div id="usis-est-labor-err" class="alert alert-danger py-2 small d-none" role="alert"></div>
+								<div class="row g-2 mb-2">
+									<div class="col-6 col-md-2">
+										<label class="form-label small mb-0" for="usis-est-labor-state">State</label>
+										<input type="text" class="form-control form-control-sm" id="usis-est-labor-state" maxlength="2" placeholder="CA">
+									</div>
+									<div class="col-6 col-md-2">
+										<label class="form-label small mb-0" for="usis-est-labor-year">Year</label>
+										<input type="number" class="form-control form-control-sm" id="usis-est-labor-year" min="1900" max="2100">
+									</div>
+									<div class="col-12 col-md-3">
+										<label class="form-label small mb-0" for="usis-est-labor-area">Sub-area</label>
+										<input type="text" class="form-control form-control-sm" id="usis-est-labor-area" placeholder="Optional">
+									</div>
+									<div class="col-6 col-md-2">
+										<label class="form-label small mb-0" for="usis-est-labor-hours">Hours / day</label>
+										<input type="number" class="form-control form-control-sm" id="usis-est-labor-hours" min="0.25" max="24" step="0.25">
+									</div>
+									<div class="col-6 col-md-3">
+										<label class="form-label small mb-0" for="usis-est-labor-days">Days / week</label>
+										<input type="number" class="form-control form-control-sm" id="usis-est-labor-days" min="1" max="7" step="1">
+									</div>
+									<div class="col-6 col-md-3">
+										<label class="form-label small mb-0" for="usis-est-labor-perdiem">Per diem $/day</label>
+										<input type="number" class="form-control form-control-sm" id="usis-est-labor-perdiem" min="0" step="0.01">
+									</div>
+									<div class="col-6 col-md-3">
+										<label class="form-label small mb-0" for="usis-est-labor-housing">Housing $/week</label>
+										<input type="number" class="form-control form-control-sm" id="usis-est-labor-housing" min="0" step="0.01">
+									</div>
+									<div class="col-6 col-md-3">
+										<label class="form-label small mb-0" for="usis-est-labor-other">Other $/hr</label>
+										<input type="number" class="form-control form-control-sm" id="usis-est-labor-other" min="0" step="0.01">
+									</div>
+								</div>
+								<p class="small text-muted" id="usis-est-labor-schedule"></p>
+								<div class="mb-3">
+									<label class="form-label small mb-1" for="usis-est-labor-trade-q">Add trade from company wages</label>
+									<div class="input-group input-group-sm mb-2">
+										<input type="search" class="form-control" id="usis-est-labor-trade-q" placeholder="Trade, area, notes…" autocomplete="off">
+										<button type="button" class="btn btn-outline-secondary" id="usis-est-labor-trade-search">Search</button>
+									</div>
+									<div id="usis-est-labor-trade-results" class="small"></div>
+								</div>
+								<div class="table-responsive border rounded">
+									<table class="table table-sm table-hover mb-0" id="usis-est-labor-table">
+										<thead class="table-light">
+											<tr>
+												<th>Trade</th>
+												<th>State</th>
+												<th>Year</th>
+												<th class="text-end">Company</th>
+												<th class="text-end">OT</th>
+												<th class="text-end">Per diem</th>
+												<th class="text-end">Housing</th>
+												<th class="text-end">Other</th>
+												<th class="text-end">Project loaded</th>
+											</tr>
+										</thead>
+										<tbody id="usis-est-labor-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
 						<div class="tab-pane fade show active" id="estd-pane-estimate" role="tabpanel" aria-labelledby="estd-tab-estimate" tabindex="0">
 							<div id="usis-est-detail-root" class="d-none">
 								<div id="usis-est-detail-err" class="alert alert-danger d-none mb-3" role="alert"></div>
@@ -999,14 +1077,9 @@
 												</div>
 												<ul class="list-unstyled mb-0" id="usis-est-mat-results"></ul>
 												<hr class="my-3">
-												<label class="form-label mb-1">Prevailing wage (reference)</label>
-												<div class="row g-1">
-													<div class="col-4"><input type="text" class="form-control form-control-sm" id="usis-est-wage-state" placeholder="State"></div>
-													<div class="col-5"><input type="text" class="form-control form-control-sm" id="usis-est-wage-trade" placeholder="Trade"></div>
-													<div class="col-3"><input type="number" class="form-control form-control-sm" id="usis-est-wage-year" placeholder="Year"></div>
-												</div>
-												<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-est-wage-search">Lookup wage</button>
-												<div id="usis-est-wage-out" class="small mt-2 text-muted"></div>
+												<label class="form-label mb-1">Project labor rate</label>
+												<div id="usis-est-wage-out" class="small text-muted">Set on the Labor rates tab.</div>
+												<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-est-wage-open">Open Labor rates</button>
 											</div>
 										</div>
 									</div>
@@ -1197,13 +1270,14 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260906b"></script>
 	<script src="assets/js/usis-drawing-upload.js?v=20260906f"></script>
 	<script src="assets/js/usis-project-doc-panels.js?v=20260917c"></script>
-	<script src="assets/js/usis-estimate-api.js?v=20260830k"></script>
+	<script src="assets/js/usis-estimate-api.js?v=20260918c"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
-	<script src="assets/js/usis-estimate-detail.js?v=20260918b"></script>
+	<script src="assets/js/usis-estimate-detail.js?v=20260918c"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>
+	<script src="assets/js/usis-estimate-labor-rates.js?v=20260918c"></script>
 	<script src="assets/js/usis-estimate-spec-package.js?v=20260901a"></script>
 	<script>
 	(function () {

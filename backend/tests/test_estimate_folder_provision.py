@@ -99,29 +99,59 @@ def test_job_number_uuid_only_when_env_flagged(flask_app):
         assert provision.job_number_for_estimate(est) == str(eid)
 
 
-def test_job_number_falls_back_to_project_number(flask_app):
+def test_provision_skips_http_when_job_number_missing(flask_app, monkeypatch):
+    calls: list[dict] = []
+
+    def fake_http(url, payload, headers, timeout):
+        calls.append(dict(payload))
+        return 200, {"ok": True, "path": r"Y:\Estimates\should-not-create", "created": True}
+
+    monkeypatch.setattr(provision, "_http_post_json", fake_http)
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
+    flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
+    flask_app.config[provision.ALLOW_UUID_JOB_NUMBER_ENV] = ""
+    est = _bare_estimate(lead_number=None)
     with flask_app.app_context():
-        org = ensure_usis_organization()
-        project = Project(
-            name="Folder project number",
-            number="26062",
-            organization_id=org.id,
-            status="planning",
-            project_type="commercial",
-        )
-        db.session.add(project)
-        db.session.commit()
-        pid = project.id
-        try:
-            est = _bare_estimate(lead_number=None, project_id=pid)
-            assert provision.job_number_for_estimate(est) == "26062"
-            lead_wins = _bare_estimate(lead_number="26061", project_id=pid)
-            assert provision.job_number_for_estimate(lead_wins) == "26061"
-        finally:
-            row = db.session.get(Project, pid)
-            if row is not None:
-                db.session.delete(row)
-                db.session.commit()
+        result = provision.provision_estimate_folder(est)
+    assert result.ok is False
+    assert result.status == provision.STATUS_FAILED
+    assert result.error == provision.MISSING_JOB_NUMBER
+    assert calls == []
+
+
+def test_provision_uses_uuid_only_when_env_flagged(flask_app, monkeypatch):
+    calls: list[dict] = []
+
+    def fake_http(url, payload, headers, timeout):
+        calls.append(dict(payload))
+        return 200, {"ok": True, "path": r"Y:\Estimates\uuid-last-resort", "created": True}
+
+    monkeypatch.setattr(provision, "_http_post_json", fake_http)
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
+    flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
+    flask_app.config[provision.ALLOW_UUID_JOB_NUMBER_ENV] = "1"
+    eid = uuid.uuid4()
+    est = _bare_estimate(lead_number=None, estimate_id=eid)
+    with flask_app.app_context():
+        result = provision.provision_estimate_folder(est)
+    assert result.ok is True
+    assert calls and calls[0]["job_number"] == str(eid)
+    assert calls[0]["folder_name"].startswith(f"{eid} - ")
+
+
+def test_job_number_falls_back_to_project_number(flask_app, monkeypatch):
+    pid = uuid.uuid4()
+
+    def fake_project_number(_session, project_id):
+        assert project_id == pid
+        return "26062"
+
+    monkeypatch.setattr(provision, "_project_number", fake_project_number)
+    est = _bare_estimate(lead_number=None, project_id=pid)
+    with flask_app.app_context():
+        assert provision.job_number_for_estimate(est) == "26062"
+        lead_wins = _bare_estimate(lead_number="26061", project_id=pid)
+        assert provision.job_number_for_estimate(lead_wins) == "26061"
 
 
 def test_resolve_provision_endpoint_base_and_aliases():

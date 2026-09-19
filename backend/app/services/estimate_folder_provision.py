@@ -26,6 +26,7 @@ from urllib.request import Request, urlopen
 from flask import current_app, has_app_context
 from sqlalchemy import event
 from sqlalchemy.orm import Session, object_session
+from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from ..extensions import db
 
@@ -213,7 +214,10 @@ def is_configured() -> bool:
 
 
 def _estimate_session(est: Any):
-    return object_session(est) or db.session
+    try:
+        return object_session(est) or db.session
+    except UnmappedInstanceError:
+        return db.session
 
 
 def _truthy_cfg(name: str) -> bool:

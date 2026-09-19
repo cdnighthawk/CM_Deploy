@@ -378,7 +378,7 @@ class Config:
     GITHUB_DESKTOP_LOCAL_SETUP: str = (os.environ.get("GITHUB_DESKTOP_LOCAL_SETUP") or "").strip()
 
     # Estimate project folder on the office file store (on-prem agent and/or local mkdir).
-    # See docs/estimate-folder-provision.md. Do not point ESTIMATE_FOLDER_ROOT at Z:\\ from Render.
+    # See docs/estimate-folder-provision.md. Do not point ESTIMATE_FOLDER_ROOT at Y:\\Estimates from Render.
     ESTIMATE_FOLDER_PROVISION_URL: str | None = (
         os.environ.get("ESTIMATE_FOLDER_PROVISION_URL") or ""
     ).strip() or None

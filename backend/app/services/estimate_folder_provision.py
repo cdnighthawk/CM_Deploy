@@ -1,6 +1,6 @@
 """Provision a Windows-safe project folder tree when a CM estimate is created.
 
-Production CM (Render) cannot write to the office ``Z:`` / ``C:\\usis-cm`` share.
+Production CM (Render) cannot write to the office ``Y:\\Estimates`` share.
 The default path is an authenticated HTTP POST to an on-prem data-server agent.
 ``ESTIMATE_FOLDER_ROOT`` is a local/dev fallback that mkdirs only when that
 path is writable.

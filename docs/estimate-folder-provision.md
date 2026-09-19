@@ -5,10 +5,10 @@ folder tree on the company file store. That folder is the destination for
 BidDocProcessor / bid-doc copies and later CM ingest. Folder creation is part
 of the estimate-created flow — not a separate manual step.
 
-Production CM typically runs on Render. The large project share lives on
-Charles’s Windows data server (`C:\usis-cm`, `Z:`). The web process must **not**
-assume it can write `Z:\`. Prefer an authenticated HTTP call to an on-prem
-agent that can see the share.
+Production CM typically runs on Render. Estimate folders live on the Windows
+data server at **`Y:\Estimates`**. The web process must **not** assume it can
+write `Y:\`. Prefer an authenticated HTTP call to an on-prem agent that can
+see that share.
 
 ## CM hooks
 
@@ -39,7 +39,7 @@ shape as the agent response, plus the estimate item.
 | `ESTIMATE_FOLDER_PROVISION_URL` | Base URL of the data-server agent. CM POSTs `{url}/provision/estimate-folder`. If the value already ends with that path, it is not duplicated. |
 | `ESTIMATE_FOLDER_PROVISION_TOKEN` | Shared secret sent as header `X-USIS-Provision-Token`. |
 | `ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC` | HTTP timeout (default `20`, max `120`). |
-| `ESTIMATE_FOLDER_ROOT` | Direct `mkdir` only when this path exists and is writable (local/dev). Do **not** set this to `Z:\` on Render. |
+| `ESTIMATE_FOLDER_ROOT` | On-prem root. Canonical value is `Y:\Estimates`. Direct `mkdir` only when this path exists and is writable (local/dev). Do **not** set this on Render. |
 
 If both URL and root are set, CM calls the agent first and falls back to local
 mkdir only when the HTTP call fails. If neither is set, create still succeeds
@@ -49,7 +49,8 @@ Also listed in `backend/.env.example`.
 
 ## Folder template
 
-Created under `{root}/{job_or_id} - {name}/` (Windows-safe name):
+Created under `{root}/{job_or_id} - {name}/` (Windows-safe name). On the data
+server, `{root}` is **`Y:\Estimates`**:
 
 ```
 {job_or_id} - {name}/
@@ -105,7 +106,7 @@ Success response:
 ```json
 {
   "ok": true,
-  "path": "Z:\\Projects\\23044 - Turner – Bid Set",
+  "path": "Y:\\Estimates\\23044 - Turner – Bid Set",
   "created": true
 }
 ```

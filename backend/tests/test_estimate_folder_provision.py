@@ -77,7 +77,7 @@ def test_create_estimate_triggers_http_provision(client, flask_app, monkeypatch,
 
     def fake_http(url, payload, headers, timeout):
         calls.append({"url": url, "payload": dict(payload), "headers": dict(headers), "timeout": timeout})
-        return 200, {"ok": True, "path": r"Z:\Projects\23044 - Turner Bid", "created": True}
+        return 200, {"ok": True, "path": r"Y:\Estimates\23044 - Turner Bid", "created": True}
 
     monkeypatch.setattr(provision, "_http_post_json", fake_http)
     flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
@@ -104,13 +104,13 @@ def test_create_estimate_triggers_http_provision(client, flask_app, monkeypatch,
         assert calls[0]["payload"]["job_number"] == "23044"
         assert calls[0]["payload"]["name"] == "Turner – Bid Set"
         assert item["folder_provision_status"] == "ready"
-        assert item["folder_path"] == r"Z:\Projects\23044 - Turner Bid"
+        assert item["folder_path"] == r"Y:\Estimates\23044 - Turner Bid"
 
         with flask_app.app_context():
             row = db.session.get(Estimate, uuid.UUID(est_id))
             assert row is not None
             assert row.folder_provision_status == "ready"
-            assert row.folder_path == r"Z:\Projects\23044 - Turner Bid"
+            assert row.folder_path == r"Y:\Estimates\23044 - Turner Bid"
             assert row.folder_provisioned_at is not None
     finally:
         with flask_app.app_context():
@@ -189,7 +189,7 @@ def test_retry_provision_endpoint(client, flask_app, monkeypatch):
         assert created.get_json()["item"]["folder_provision_status"] == "failed"
 
         def ok_http(url, payload, headers, timeout):
-            return 200, {"ok": True, "path": r"Z:\Projects\26000 - Retry me", "created": False}
+            return 200, {"ok": True, "path": r"Y:\Estimates\26000 - Retry me", "created": False}
 
         monkeypatch.setattr(provision, "_http_post_json", ok_http)
         retried = client.post(f"/api/v1/estimates/{est_id}/provision-folder")
@@ -198,7 +198,7 @@ def test_retry_provision_endpoint(client, flask_app, monkeypatch):
         assert body["ok"] is True
         assert body["created"] is False
         assert body["item"]["folder_provision_status"] == "ready"
-        assert body["item"]["folder_path"] == r"Z:\Projects\26000 - Retry me"
+        assert body["item"]["folder_path"] == r"Y:\Estimates\26000 - Retry me"
     finally:
         with flask_app.app_context():
             _cleanup_lead(eid)
@@ -209,7 +209,7 @@ def test_extra_plan_create_estimate_triggers_provision(client, flask_app, monkey
 
     def fake_http(url, payload, headers, timeout):
         calls.append(payload["estimate_id"])
-        return 200, {"ok": True, "path": r"Z:\Projects\plan", "created": True}
+        return 200, {"ok": True, "path": r"Y:\Estimates\plan", "created": True}
 
     monkeypatch.setattr(provision, "_http_post_json", fake_http)
     flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
@@ -239,7 +239,7 @@ def test_ensure_current_estimate_schedules_provision(flask_app, monkeypatch):
 
     def fake_http(url, payload, headers, timeout):
         calls.append(payload["estimate_id"])
-        return 200, {"ok": True, "path": r"Z:\Projects\auto", "created": True}
+        return 200, {"ok": True, "path": r"Y:\Estimates\auto", "created": True}
 
     monkeypatch.setattr(provision, "_http_post_json", fake_http)
     flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"

@@ -956,7 +956,8 @@ def _material_size_fields(m: MaterialPrice) -> dict[str, Any]:
     return {
         "size_width_in": _num_or_none(m.size_width_in),
         "size_height_in": _num_or_none(m.size_height_in),
-        "size_display": size_display(m.size_width_in, m.size_height_in),
+        "size_depth_in": _num_or_none(m.size_depth_in),
+        "size_display": size_display(m.size_width_in, m.size_height_in, m.size_depth_in),
         "sheet_area_sf": sheet_area_sf(m.size_width_in, m.size_height_in),
     }
 
@@ -5122,6 +5123,7 @@ def _material_prices_query(
                 or_(
                     cast(MaterialPrice.size_width_in, String).ilike(like),
                     cast(MaterialPrice.size_height_in, String).ilike(like),
+                    cast(MaterialPrice.size_depth_in, String).ilike(like),
                 )
             )
     if csi_spec_section:
@@ -5166,6 +5168,7 @@ def _material_prices_query(
             MaterialPrice.csi_spec_section.ilike(like),
             cast(MaterialPrice.size_width_in, String).ilike(like),
             cast(MaterialPrice.size_height_in, String).ilike(like),
+            cast(MaterialPrice.size_depth_in, String).ilike(like),
         ]
         q_digits = re.sub(r"\D", "", q)
         if 2 <= len(q_digits) <= 6:
@@ -5194,6 +5197,7 @@ _MATERIAL_BULK_FIELDS = frozenset(
         "unit_of_measure",
         "size_width_in",
         "size_height_in",
+        "size_depth_in",
         "supplier_company_id",
     }
 )
@@ -5202,7 +5206,14 @@ _MATERIAL_BULK_FIELDS = frozenset(
 def _coerce_material_bulk_value(field: str, value: Any) -> Any:
     from ..csi_spec import digits_from_csi, normalize_csi_spec_section
 
-    if field in ("cost", "labor_per", "labor_units_per_hour", "size_width_in", "size_height_in"):
+    if field in (
+        "cost",
+        "labor_per",
+        "labor_units_per_hour",
+        "size_width_in",
+        "size_height_in",
+        "size_depth_in",
+    ):
         if value in (None, ""):
             return None
         try:
@@ -6287,7 +6298,7 @@ def list_material_prices():
         offset = int(request.args.get("offset") or 0)
     except ValueError:
         offset = 0
-    limit = max(1, min(limit, 500))
+    limit = max(1, min(limit, 5000))
     offset = max(0, offset)
     filters = _material_price_list_filters()
     base = _material_prices_query(**filters)
@@ -6394,17 +6405,30 @@ def _facet_size_values(filters: dict[str, Any], *, limit: int = 500) -> list[str
 
     stmt = (
         _facet_base(filters, "size")
-        .with_only_columns(MaterialPrice.size_width_in, MaterialPrice.size_height_in)
-        .where(MaterialPrice.size_width_in.is_not(None))
-        .where(MaterialPrice.size_height_in.is_not(None))
+        .with_only_columns(
+            MaterialPrice.size_width_in,
+            MaterialPrice.size_height_in,
+            MaterialPrice.size_depth_in,
+        )
+        .where(
+            or_(
+                MaterialPrice.size_width_in.is_not(None),
+                MaterialPrice.size_height_in.is_not(None),
+                MaterialPrice.size_depth_in.is_not(None),
+            )
+        )
         .distinct()
-        .order_by(MaterialPrice.size_width_in.asc(), MaterialPrice.size_height_in.asc())
+        .order_by(
+            MaterialPrice.size_width_in.asc(),
+            MaterialPrice.size_depth_in.asc(),
+            MaterialPrice.size_height_in.asc(),
+        )
         .limit(max(1, min(limit, 500)))
     )
     sizes: list[str] = []
     seen: set[str] = set()
-    for width, height in db.session.execute(stmt).all():
-        label = size_display(width, height)
+    for width, height, depth in db.session.execute(stmt).all():
+        label = size_display(width, height, depth)
         if label and label not in seen:
             seen.add(label)
             sizes.append(label)

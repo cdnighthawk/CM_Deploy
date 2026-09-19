@@ -40,6 +40,7 @@ class MaterialPrice(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     labor_rate_unit: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     size_width_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
     size_height_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    size_depth_in: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
     currency: Mapped[str] = mapped_column(
         String(3), nullable=False, server_default=text("'USD'")
     )

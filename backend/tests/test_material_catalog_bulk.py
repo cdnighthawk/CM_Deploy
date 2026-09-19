@@ -502,3 +502,18 @@ def test_material_price_supplier_email_falls_back_to_contact(client, catalog_row
             if company is not None:
                 db.session.delete(company)
             db.session.commit()
+
+
+def test_material_prices_list_accepts_full_catalog_limit(client):
+    r = client.get("/api/v1/material-prices?limit=5000")
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data["limit"] == 5000
+    assert "items" in data
+    assert "total" in data
+
+
+def test_material_prices_list_caps_limit_at_5000(client):
+    r = client.get("/api/v1/material-prices?limit=99999")
+    assert r.status_code == 200
+    assert r.get_json()["limit"] == 5000

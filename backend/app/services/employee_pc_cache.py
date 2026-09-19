@@ -469,6 +469,7 @@ def material_pricing_cache_row(m) -> dict[str, Any]:
         "laborRateUnit": m.labor_rate_unit,
         "sizeWidthIn": float(m.size_width_in) if m.size_width_in is not None else None,
         "sizeHeightIn": float(m.size_height_in) if m.size_height_in is not None else None,
+        "sizeDepthIn": float(m.size_depth_in) if m.size_depth_in is not None else None,
         "currency": m.currency or "USD",
         "unitOfMeasure": m.unit_of_measure or "EA",
         "supplierCompanyId": str(m.supplier_company_id) if getattr(m, "supplier_company_id", None) else None,
@@ -509,6 +510,7 @@ def catalog_item_cache_row(m) -> dict[str, Any]:
         "laborRateUnit": m.labor_rate_unit,
         "sizeWidthIn": float(m.size_width_in) if m.size_width_in is not None else None,
         "sizeHeightIn": float(m.size_height_in) if m.size_height_in is not None else None,
+        "sizeDepthIn": float(m.size_depth_in) if m.size_depth_in is not None else None,
         "supplierCompanyId": str(m.supplier_company_id) if getattr(m, "supplier_company_id", None) else None,
         "supplierName": (m.supplier_company.name if getattr(m, "supplier_company", None) else None),
         "supplierEmail": (

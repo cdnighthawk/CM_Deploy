@@ -7,6 +7,8 @@
 	var catalogTable = null;
 	var searchTimer = null;
 	var BULK_CHUNK = 2000;
+	var CATALOG_FETCH = 5000;
+	var CATALOG_FETCH_MAX_PAGES = 20;
 	var headerFilterFillers = [];
 	var facetLists = {
 		manufacturers: [],
@@ -31,8 +33,6 @@
 		uom: "",
 		size: "",
 		supplier: "",
-		offset: 0,
-		limit: 100,
 		total: 0,
 	};
 
@@ -310,6 +310,7 @@
 			"usis-mat-edit-description": item.description,
 			"usis-mat-edit-mounting": item.mounting_type,
 			"usis-mat-edit-width": item.size_width_in,
+			"usis-mat-edit-depth": item.size_depth_in,
 			"usis-mat-edit-height": item.size_height_in,
 			"usis-mat-edit-cost": item.cost,
 			"usis-mat-edit-rate": item.labor_units_per_hour,
@@ -349,6 +350,7 @@
 			["CSI section", dash(item.csi_spec_section)],
 			["Size", dash(item.size_display)],
 			["Width (in)", dash(item.size_width_in)],
+			["Depth (in)", dash(item.size_depth_in)],
 			["Height (in)", dash(item.size_height_in)],
 			["Sheet area (sf)", dash(item.sheet_area_sf)],
 			["Description", dash(item.description)],
@@ -404,6 +406,7 @@
 			description: inputVal("usis-mat-edit-description"),
 			mounting_type: inputVal("usis-mat-edit-mounting"),
 			size_width_in: inputVal("usis-mat-edit-width"),
+			size_depth_in: inputVal("usis-mat-edit-depth"),
 			size_height_in: inputVal("usis-mat-edit-height"),
 			cost: inputVal("usis-mat-edit-cost"),
 			labor_units_per_hour: inputVal("usis-mat-edit-rate"),
@@ -484,15 +487,29 @@
 		return p;
 	}
 
-	function catalogUrl() {
+	function catalogUrl(offset) {
 		var p = filterParams();
-		p.set("limit", String(state.limit));
-		p.set("offset", String(state.offset));
+		p.set("limit", String(CATALOG_FETCH));
+		p.set("offset", String(offset || 0));
 		return apiBase() + "/api/v1/material-prices?" + p.toString();
 	}
 
 	function fetchCatalog() {
-		return jsonFetch(catalogUrl());
+		var all = [];
+		var total = 0;
+		function page(offset, hops) {
+			return jsonFetch(catalogUrl(offset)).then(function (d) {
+				var rows = d.items || [];
+				total = d.total != null ? Number(d.total) : offset + rows.length;
+				all = all.concat(rows);
+				var step = Number(d.limit) || rows.length || CATALOG_FETCH;
+				if (all.length < total && rows.length > 0 && hops + 1 < CATALOG_FETCH_MAX_PAGES) {
+					return page(offset + step, hops + 1);
+				}
+				return { items: all, total: total };
+			});
+		}
+		return page(0, 0);
 	}
 
 	function selectedCount() {
@@ -530,9 +547,9 @@
 					(state.total === 1 ? "" : "s") +
 					" matching the current filters.";
 			} else if (n) {
-				countEl.textContent = n + " row" + (n === 1 ? "" : "s") + " selected on this page.";
+				countEl.textContent = n + " row" + (n === 1 ? "" : "s") + " selected.";
 			} else {
-				countEl.textContent = "No rows selected on this page.";
+				countEl.textContent = "No rows selected.";
 			}
 		}
 		var allLabel = document.getElementById("usis-mat-bulk-all-label");
@@ -583,7 +600,6 @@
 			input.value = state[stateKey] || "";
 			input.addEventListener("input", function () {
 				state[stateKey] = (input.value || "").trim();
-				state.offset = 0;
 				setAllMatching(false);
 				scheduleSearch();
 			});
@@ -631,7 +647,6 @@
 			headerFilterFillers.push(fill);
 			select.addEventListener("change", function () {
 				state[stateKey] = (select.value || "").trim();
-				state.offset = 0;
 				setAllMatching(false);
 				scheduleSearch();
 			});
@@ -683,14 +698,18 @@
 				var empty = state.total === 0 && !hasActiveFilters();
 				setEmptyVisible(empty);
 				if (catalogTable) catalogTable.setData(rows);
-				var from = state.total === 0 ? 0 : state.offset + 1;
-				var to = Math.min(state.offset + rows.length, state.total);
+				var loaded = rows.length;
 				setStatus(
 					state.total === 0
 						? "No catalog rows"
-						: "Showing " + from + "–" + to + " of " + state.total
+						: loaded < state.total
+							? "Showing " +
+								loaded.toLocaleString() +
+								" of " +
+								state.total.toLocaleString() +
+								" SKUs. Narrow the filters to see the rest."
+							: "Showing " + state.total.toLocaleString() + " SKU" + (state.total === 1 ? "" : "s")
 				);
-				updatePager();
 				updateSelectionUi();
 			})
 			.catch(function (e) {
@@ -699,13 +718,6 @@
 				setStatus("");
 				notifyErr("Could not load material catalog. Sign in and run the CSV import. (" + String(e.message || e) + ")");
 			});
-	}
-
-	function updatePager() {
-		var prev = document.getElementById("usis-mat-prev");
-		var next = document.getElementById("usis-mat-next");
-		if (prev) prev.disabled = state.offset <= 0;
-		if (next) next.disabled = state.offset + state.limit >= state.total;
 	}
 
 	var COL_LAYOUT_KEY = "usis-mat-col-layout-v2";
@@ -1186,7 +1198,7 @@
 		headerFilterFillers = [];
 		catalogTable = new Tabulator(el, {
 			layout: "fitDataFill",
-			height: "min(520px, 60vh)",
+			height: "min(720px, 70vh)",
 			headerFilterLiveFilter: false,
 			movableColumns: true,
 			resizableColumnFit: false,
@@ -1213,7 +1225,7 @@
 			var headerCb = el.querySelector(".usis-doc-check-col input[type=checkbox]");
 			if (headerCb) {
 				headerCb.classList.add("form-check-input", "m-0");
-				headerCb.setAttribute("aria-label", "Select all rows on this page");
+				headerCb.setAttribute("aria-label", "Select all loaded rows");
 			}
 		});
 	}
@@ -1221,7 +1233,6 @@
 	function scheduleSearch() {
 		if (searchTimer) clearTimeout(searchTimer);
 		searchTimer = setTimeout(function () {
-			state.offset = 0;
 			Promise.all([loadFacets(), refreshCatalog()]);
 		}, 300);
 	}
@@ -1371,8 +1382,6 @@
 	function wireUi() {
 		var search = document.getElementById("usis-mat-search");
 		var refreshBtn = document.getElementById("usis-mat-refresh");
-		var prev = document.getElementById("usis-mat-prev");
-		var next = document.getElementById("usis-mat-next");
 		var bulk = document.getElementById("usis-mat-bulk");
 		var delBtn = document.getElementById("usis-mat-delete");
 		var apply = document.getElementById("usis-mat-bulk-apply");
@@ -1388,22 +1397,6 @@
 			refreshBtn.addEventListener("click", function () {
 				hideActionsMenu();
 				loadFacets().then(refreshCatalog);
-			});
-		}
-		if (prev) {
-			prev.addEventListener("click", function () {
-				hideActionsMenu();
-				state.offset = Math.max(0, state.offset - state.limit);
-				refreshCatalog();
-			});
-		}
-		if (next) {
-			next.addEventListener("click", function () {
-				hideActionsMenu();
-				if (state.offset + state.limit < state.total) {
-					state.offset += state.limit;
-					refreshCatalog();
-				}
 			});
 		}
 		var selectAll = document.getElementById("usis-mat-select-all");

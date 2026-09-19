@@ -10,6 +10,24 @@ _INCH_PAIR = re.compile(
     r'(\d+(?:\.\d+)?)\s*["″]\s*[xX×]\s*(\d+(?:\.\d+)?)\s*["″]?',
     re.IGNORECASE,
 )
+_INCH_VALUE = re.compile(
+    r"""
+    ^\s*
+    (?:
+        (?P<mixed_whole>\d+(?:\.\d+)?)\s*[- ]\s*(?P<mixed_num>\d+)\s*/\s*(?P<mixed_den>\d+)
+        |
+        (?P<frac_num>\d+)\s*/\s*(?P<frac_den>\d+)
+        |
+        (?P<decimal>\d+(?:\.\d+)?)
+    )
+    \s*(?:["″]|in(?:ch(?:es)?)?)?\s*$
+    """,
+    re.VERBOSE | re.IGNORECASE,
+)
+_STANDARD_FRAC_DENS = frozenset(
+    {Decimal(2), Decimal(4), Decimal(8), Decimal(16), Decimal(32), Decimal(64)}
+)
+_MAX_CATALOG_INCHES = Decimal(240)
 _PAREN_PAIR = re.compile(
     r"\((\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)\)",
 )
@@ -31,6 +49,42 @@ _SF_UNITS = frozenset(
         "square foot",
     }
 )
+
+
+def parse_inch_value(raw: Any) -> Decimal | None:
+    """Parse a catalog inch cell: ``12``, ``36.5``, ``13-5/8``, ``5/8``.
+
+    Dual sizes (``24/72``), Excel dates, and catalog numbers over 240" are
+    ignored so a messy vendor export can still load.
+    """
+    if raw is None:
+        return None
+    if isinstance(raw, Decimal):
+        value = raw
+    else:
+        s = str(raw).strip()
+        if s == "":
+            return None
+        match = _INCH_VALUE.match(s)
+        if not match:
+            return None
+        if match.group("mixed_whole") is not None:
+            den = Decimal(match.group("mixed_den"))
+            if den not in _STANDARD_FRAC_DENS:
+                return None
+            value = Decimal(match.group("mixed_whole")) + (
+                Decimal(match.group("mixed_num")) / den
+            )
+        elif match.group("frac_num") is not None:
+            den = Decimal(match.group("frac_den"))
+            if den not in _STANDARD_FRAC_DENS:
+                return None
+            value = Decimal(match.group("frac_num")) / den
+        else:
+            value = Decimal(match.group("decimal"))
+    if value <= 0 or value > _MAX_CATALOG_INCHES:
+        return None
+    return value
 
 
 def _dec(raw: Any) -> Decimal | None:
@@ -103,16 +157,23 @@ def parse_size_cell(raw: str | None) -> tuple[Decimal | None, Decimal | None]:
     return parse_sheet_size(s)
 
 
-def size_display(width: Any, height: Any) -> str | None:
+def size_display(width: Any, height: Any, depth: Any = None) -> str | None:
     w = _dec(width)
     h = _dec(height)
-    if w is None or h is None:
-        return None
+    d = _dec(depth)
+
     def _fmt(n: Decimal) -> str:
         if n == n.to_integral_value():
             return str(int(n))
         return format(n.normalize(), "f")
 
+    if d is not None:
+        parts = [x for x in (w, d, h) if x is not None]
+        if not parts:
+            return None
+        return "×".join(_fmt(x) for x in parts)
+    if w is None or h is None:
+        return None
     return f"{_fmt(w)}×{_fmt(h)}"
 
 

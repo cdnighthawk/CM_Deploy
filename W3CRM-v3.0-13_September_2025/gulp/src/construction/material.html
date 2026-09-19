@@ -246,8 +246,6 @@
                                             <button type="button" id="usis-mat-columns" class="dropdown-item">Customize columns</button>
                                             <div class="dropdown-divider"></div>
                                             <button type="button" id="usis-mat-refresh" class="dropdown-item">Refresh</button>
-                                            <button type="button" id="usis-mat-prev" class="dropdown-item" disabled>Prev</button>
-                                            <button type="button" id="usis-mat-next" class="dropdown-item" disabled>Next</button>
                                         </div>
                                     </div>
                                 </div>
@@ -280,6 +278,7 @@
                                                     <option value="csi_spec_section">Division</option>
                                                     <option value="category">Category</option>
                                                     <option value="size_width_in">Size width (in)</option>
+                                                    <option value="size_depth_in">Size depth (in)</option>
                                                     <option value="size_height_in">Size height (in)</option>
                                                     <option value="manufacturer">Manufacturer</option>
                                                     <option value="supplier_company_id">Buy from (supplier)</option>
@@ -354,11 +353,15 @@
                                                         <label class="form-label" for="usis-mat-edit-mounting">Mounting</label>
                                                         <input type="text" class="form-control" id="usis-mat-edit-mounting" maxlength="120">
                                                     </div>
-                                                    <div class="col-md-3">
+                                                    <div class="col-md-4">
                                                         <label class="form-label" for="usis-mat-edit-width">Width (in)</label>
                                                         <input type="text" class="form-control" id="usis-mat-edit-width" inputmode="decimal">
                                                     </div>
-                                                    <div class="col-md-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label" for="usis-mat-edit-depth">Depth (in)</label>
+                                                        <input type="text" class="form-control" id="usis-mat-edit-depth" inputmode="decimal">
+                                                    </div>
+                                                    <div class="col-md-4">
                                                         <label class="form-label" for="usis-mat-edit-height">Height (in)</label>
                                                         <input type="text" class="form-control" id="usis-mat-edit-height" inputmode="decimal">
                                                     </div>
@@ -1420,7 +1423,7 @@
 	<script src="assets/js/usis-command-palette.js"></script>
     <script src="assets/js/deznav-init-construction.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
-    <script src="assets/js/construction-material.js?v=20260918a"></script>
+    <script src="assets/js/construction-material.js?v=20260918b"></script>
     <script src="assets/js/custom.js"></script>
     <script src="assets/js/construction.js"></script>
 	    

@@ -44,6 +44,7 @@ shape as the agent response, plus the estimate item.
 | `ESTIMATE_FOLDER_PROVISION_TOKEN` | Shared secret sent as header `X-USIS-Provision-Token`. Must match `folder_provision.py`. |
 | `ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC` | HTTP timeout (default `20`, max `120`). Optional. |
 | `ESTIMATE_FOLDER_ROOT` | On-prem root. Canonical value is `Y:\Estimates`. Direct `mkdir` only when this path exists and is writable (local/dev). Do **not** set this on Render. |
+| `ESTIMATE_FOLDER_ALLOW_UUID_JOB_NUMBER` | Last-resort only. When `1`/`true`/`yes`/`on`, folder labels may use the estimate UUID if no human job number exists. **Default OFF.** Do not enable in production. |
 
 If both URL and root are set, CM calls the agent first and falls back to local
 mkdir only when the HTTP call fails. If neither is set, create still succeeds
@@ -62,7 +63,9 @@ and not a LAN-only address unless Render can route to it.
 | `ESTIMATE_FOLDER_PROVISION_URL` | `http://<data-server-host>:5055` (or the full `http://<host>:5055/provision/estimate-folder`) |
 | `ESTIMATE_FOLDER_PROVISION_TOKEN` | Same shared secret the live agent expects |
 
-Do **not** set `ESTIMATE_FOLDER_ROOT` on Render. Optional: `ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC=20`.
+Do **not** set `ESTIMATE_FOLDER_ROOT` on Render. Do **not** set
+`ESTIMATE_FOLDER_ALLOW_UUID_JOB_NUMBER` on Render. Optional:
+`ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC=20`.
 
 On the data server, keep `C:\usis-cm\folder_provision.py` listening on **5055**
 with root **`Y:\Estimates`**.
@@ -85,9 +88,15 @@ server, `{root}` is **`Y:\Estimates`**:
   05_Reports/
 ```
 
-`{job}` is the lead `number`, else the project `number`, else the estimate
-UUID. `name` is the estimate name. The root folder includes a short
-`README.txt` explaining the tree.
+`{job}` is the lead `number` (`lead_estimates.number` — the job number
+estimators use), else the project `number` (`projects.number`). There is no
+`estimates.number` column. Folder labels **do not** fall back to the estimate
+UUID. If neither number is set, provisioning is skipped and the estimate is
+marked `folder_provision_status=failed` with `folder_provision_error=missing_job_number`
+(the estimate row is still created). Retry
+`POST /api/v1/estimates/<id>/provision-folder` after a human number exists.
+`name` is the estimate name. The root folder includes a short `README.txt`
+explaining the tree.
 
 Idempotent: if the folder already exists, the call succeeds and returns the
 path (`created: false`).

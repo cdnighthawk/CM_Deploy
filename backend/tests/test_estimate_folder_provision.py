@@ -3,13 +3,16 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 
 from sqlalchemy import select
 
 from app.extensions import db
 from app.models.estimate import Estimate
 from app.models.lead_estimate import LeadEstimate
+from app.models.project import Project
 from app.services import estimate_folder_provision as provision
+from app.tenancy import ensure_usis_organization
 
 
 def _make_lead(external_id: str, **kwargs) -> LeadEstimate:
@@ -50,6 +53,75 @@ def test_estimate_folder_name_uses_job_and_name():
     assert "Turner" in name
     assert ":" not in name
     assert "/" not in name
+
+
+def test_estimate_folder_name_does_not_use_uuid_by_default():
+    eid = uuid.uuid4()
+    name = provision.estimate_folder_name(None, "Original Estimate", estimate_id=eid)
+    assert str(eid) not in name
+    assert name.startswith("Estimate - ")
+    flagged = provision.estimate_folder_name(
+        None, "Original Estimate", estimate_id=eid, allow_uuid_fallback=True
+    )
+    assert flagged.startswith(f"{eid} - ")
+
+
+def _bare_estimate(*, lead_number=None, project_id=None, estimate_id=None):
+    return SimpleNamespace(
+        id=estimate_id or uuid.uuid4(),
+        lead_estimate=SimpleNamespace(number=lead_number, project_id=None, owning_office_id=None),
+        lead_estimate_id=None,
+        project_id=project_id,
+        name="Original Estimate",
+        title=None,
+    )
+
+
+def test_job_number_prefers_lead_number():
+    est = _bare_estimate(lead_number="26061")
+    assert provision.job_number_for_estimate(est) == "26061"
+
+
+def test_job_number_missing_is_none_not_uuid():
+    eid = uuid.uuid4()
+    est = _bare_estimate(lead_number=None, estimate_id=eid)
+    assert provision.job_number_for_estimate(est) is None
+
+
+def test_job_number_uuid_only_when_env_flagged(flask_app):
+    eid = uuid.uuid4()
+    est = _bare_estimate(lead_number=None, estimate_id=eid)
+    flask_app.config[provision.ALLOW_UUID_JOB_NUMBER_ENV] = ""
+    with flask_app.app_context():
+        assert provision.job_number_for_estimate(est) is None
+    flask_app.config[provision.ALLOW_UUID_JOB_NUMBER_ENV] = "1"
+    with flask_app.app_context():
+        assert provision.job_number_for_estimate(est) == str(eid)
+
+
+def test_job_number_falls_back_to_project_number(flask_app):
+    with flask_app.app_context():
+        org = ensure_usis_organization()
+        project = Project(
+            name="Folder project number",
+            number="26062",
+            organization_id=org.id,
+            status="planning",
+            project_type="commercial",
+        )
+        db.session.add(project)
+        db.session.commit()
+        pid = project.id
+        try:
+            est = _bare_estimate(lead_number=None, project_id=pid)
+            assert provision.job_number_for_estimate(est) == "26062"
+            lead_wins = _bare_estimate(lead_number="26061", project_id=pid)
+            assert provision.job_number_for_estimate(lead_wins) == "26061"
+        finally:
+            row = db.session.get(Project, pid)
+            if row is not None:
+                db.session.delete(row)
+                db.session.commit()
 
 
 def test_resolve_provision_endpoint_base_and_aliases():
@@ -286,3 +358,103 @@ def test_ensure_current_estimate_schedules_provision(flask_app, monkeypatch):
     finally:
         with flask_app.app_context():
             _cleanup_lead(eid)
+
+
+def test_create_estimate_missing_job_number_skips_provision(client, flask_app, monkeypatch):
+    calls: list[dict] = []
+
+    def fake_http(url, payload, headers, timeout):
+        calls.append(dict(payload))
+        return 200, {"ok": True, "path": r"Y:\Estimates\should-not-create", "created": True}
+
+    monkeypatch.setattr(provision, "_http_post_json", fake_http)
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
+    flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
+    flask_app.config[provision.ALLOW_UUID_JOB_NUMBER_ENV] = ""
+
+    eid = "est-folder-nonumber-" + uuid.uuid4().hex[:12]
+    try:
+        with flask_app.app_context():
+            le = _make_lead(eid, name="No job number")
+            lid = str(le.id)
+
+        created = client.post(f"/api/v1/leads/{lid}/estimates", json={"name": "Original Estimate"})
+        assert created.status_code == 201, created.get_data(as_text=True)
+        item = created.get_json()["item"]
+        assert calls == []
+        assert item["folder_provision_status"] == "failed"
+        assert item["folder_provision_error"] == provision.MISSING_JOB_NUMBER
+        assert item.get("folder_path") in (None, "")
+        est_id = item["id"]
+
+        with flask_app.app_context():
+            row = db.session.get(Estimate, uuid.UUID(est_id))
+            assert row is not None
+            assert row.folder_provision_status == "failed"
+            assert row.folder_provision_error == provision.MISSING_JOB_NUMBER
+            assert row.folder_path is None
+
+        with flask_app.app_context():
+            lead = db.session.get(LeadEstimate, uuid.UUID(lid))
+            assert lead is not None
+            lead.number = "26061"
+            db.session.commit()
+
+        retried = client.post(f"/api/v1/estimates/{est_id}/provision-folder")
+        assert retried.status_code == 200, retried.get_data(as_text=True)
+        assert calls and calls[0]["job_number"] == "26061"
+        assert calls[0]["folder_name"].startswith("26061 - ")
+        assert est_id not in calls[0]["folder_name"]
+        assert retried.get_json()["item"]["folder_provision_status"] == "ready"
+    finally:
+        with flask_app.app_context():
+            _cleanup_lead(eid)
+
+
+def test_create_estimate_uses_project_number_when_lead_number_missing(
+    client, flask_app, monkeypatch
+):
+    calls: list[dict] = []
+
+    def fake_http(url, payload, headers, timeout):
+        calls.append(dict(payload))
+        return 200, {"ok": True, "path": r"Y:\Estimates\26062 - Bid Set", "created": True}
+
+    monkeypatch.setattr(provision, "_http_post_json", fake_http)
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
+    flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
+
+    eid = "est-folder-projnum-" + uuid.uuid4().hex[:12]
+    pid = None
+    try:
+        with flask_app.app_context():
+            org = ensure_usis_organization()
+            project = Project(
+                name="Project number folder",
+                number="26062",
+                organization_id=org.id,
+                status="planning",
+                project_type="commercial",
+            )
+            db.session.add(project)
+            db.session.flush()
+            le = _make_lead(eid, name="Lead without number", project_id=project.id)
+            lid = str(le.id)
+            pid = project.id
+
+        created = client.post(f"/api/v1/leads/{lid}/estimates", json={"name": "Bid Set"})
+        assert created.status_code == 201, created.get_data(as_text=True)
+        item = created.get_json()["item"]
+        assert calls, "create-estimate should POST when a project number exists"
+        assert calls[0]["job_number"] == "26062"
+        assert str(item["id"]) not in calls[0]["folder_name"]
+        assert calls[0]["folder_name"].startswith("26062 - ")
+        assert item["folder_provision_status"] == "ready"
+    finally:
+        with flask_app.app_context():
+            _cleanup_lead(eid)
+            if pid is not None:
+                row = db.session.get(Project, pid)
+                if row is not None:
+                    db.session.delete(row)
+                    db.session.commit()

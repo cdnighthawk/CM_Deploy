@@ -387,6 +387,10 @@ class Config:
         os.environ.get("ESTIMATE_FOLDER_PROVISION_TOKEN") or ""
     ).strip() or None
     ESTIMATE_FOLDER_ROOT: str | None = (os.environ.get("ESTIMATE_FOLDER_ROOT") or "").strip() or None
+    # Last-resort UUID folder labels (default OFF). Do not enable on production.
+    ESTIMATE_FOLDER_ALLOW_UUID_JOB_NUMBER: str = (
+        os.environ.get("ESTIMATE_FOLDER_ALLOW_UUID_JOB_NUMBER") or ""
+    ).strip()
     try:
         ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC: float = float(
             (os.environ.get("ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC") or "20").strip() or "20"

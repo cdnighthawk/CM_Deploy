@@ -76,6 +76,18 @@ def ensure_manufacturer_url_column(db) -> bool:
     return True
 
 
+def ensure_configurator_key_column(db) -> bool:
+    """Add configurator_key if this database has not run migration 0122 yet."""
+    from sqlalchemy import inspect, text
+
+    cols = {c["name"] for c in inspect(db.engine).get_columns("material_pricing")}
+    if "configurator_key" in cols:
+        return False
+    db.session.execute(text("ALTER TABLE material_pricing ADD COLUMN configurator_key VARCHAR(80)"))
+    db.session.commit()
+    return True
+
+
 def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> None:
     from sqlalchemy.dialects.postgresql import insert as pg_insert
     from sqlalchemy.sql import func
@@ -108,6 +120,7 @@ def _upsert_payloads(db, MaterialPrice, payloads: list[dict[str, object]]) -> No
                 "size_width_in": func.coalesce(ins.excluded.size_width_in, table.c.size_width_in),
                 "size_height_in": func.coalesce(ins.excluded.size_height_in, table.c.size_height_in),
                 "size_depth_in": func.coalesce(ins.excluded.size_depth_in, table.c.size_depth_in),
+                "configurator_key": func.coalesce(ins.excluded.configurator_key, table.c.configurator_key),
                 "currency": ins.excluded.currency,
                 "unit_of_measure": ins.excluded.unit_of_measure,
                 "updated_at": func.now(),
@@ -318,6 +331,8 @@ def main() -> None:
             print("Added material_pricing.size_depth_in")
         if ensure_manufacturer_url_column(db):
             print("Added material_pricing.manufacturer_url")
+        if ensure_configurator_key_column(db):
+            print("Added material_pricing.configurator_key")
         total = 0
         for i, csv_path in enumerate(paths):
             if not csv_path.is_file():

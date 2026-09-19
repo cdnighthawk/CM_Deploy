@@ -320,8 +320,10 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         if est is None:
             return _jsonify({"error": "estimate not found"}), 404
         lines = est_svc.takeoff_lines_for_estimate(est.id)
+        from . import _estimate_labor_rate_service as labor_rate_svc
         from ..services.employee_pc_cache import maybe_write_takeoff
 
+        labor_rates = labor_rate_svc.labor_rates_public(est)
         maybe_write_takeoff(
             est.project_id,
             lines,
@@ -330,7 +332,7 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         )
         return _jsonify(
             {
-                "items": [_takeoff_line_public(x) for x in lines],
+                "items": [_takeoff_line_public(x, labor_rates=labor_rates) for x in lines],
                 "entity": "takeoff_line_items",
                 "estimate_id": str(est.id),
                 "lead_estimate_id": str(est.lead_estimate_id) if est.lead_estimate_id else None,
@@ -424,6 +426,23 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
 
         try:
             item = labor_rate_svc.save_labor_rates(est, data)
+        except est_svc.EstimateError as exc:
+            return _err(exc)
+        db.session.commit()
+        return _jsonify({"item": item, "entity": "estimate_labor_rates"})
+
+    @bp.post("/estimates/<estimate_id>/labor-rates/import-company")
+    def import_estimate_labor_rates(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            data = {}
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        try:
+            item = labor_rate_svc.import_company_trades(est, data)
         except est_svc.EstimateError as exc:
             return _err(exc)
         db.session.commit()

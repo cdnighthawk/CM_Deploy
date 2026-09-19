@@ -293,12 +293,15 @@ def test_cs_seed_csv_reads():
 
     path = repo_catalog_dir() / "construction_specialties.csv"
     rows = read_material_csv(path)
-    assert len(rows) == 420
+    assert len(rows) == 394
     assert {r["manufacturer"] for r in rows} == {"Construction Specialties"}
     assert all(r["labor_per"] is None for r in rows)
     assert all(r["cost"] is None for r in rows)
     assert {r["csi_spec_section"] for r in rows} == {"102600"}
-    assert sum(1 for r in rows if str(r.get("manufacturer_url") or "").startswith("http")) > 400
+    assert all(not str(r["item"]).lower().startswith("cs-in-stock-") for r in rows)
+    assert all(r["item"] != "CS-HR-" for r in rows)
+    assert any(r["item"] == "CS-BG-10" for r in rows)
+    assert sum(1 for r in rows if str(r.get("manufacturer_url") or "").startswith("http")) > 350
 
 
 def test_cs_csv_is_a_repo_seed():
@@ -309,6 +312,7 @@ def test_cs_csv_is_a_repo_seed():
     assert "construction_specialties_cubicle_curtain.csv" in names
     assert "inpro_wall_protection.csv" in names
     assert "penco_lockers.csv" in names
+    assert "larsen_cabinets.csv" in names
     assert "hollman_lockers.csv" in names
     assert "columbia_lockers.csv" in names
     assert "asi_lockers.csv" in names

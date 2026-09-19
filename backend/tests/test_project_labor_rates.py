@@ -12,7 +12,7 @@ from app.extensions import db
 from app.labor_burden import DEFAULT_LABOR_BURDEN, labor_burden_breakdown
 from app.models.lead_estimate import LeadEstimate
 from app.models.wage_rate import WageRate
-from app.project_labor_rates import ot_schedule, project_rate_breakdown
+from app.project_labor_rates import is_hour_unit, ot_schedule, project_rate_breakdown, suggested_unit_cost
 
 
 def test_default_schedule_matches_company_loaded():
@@ -220,4 +220,169 @@ def test_labor_rates_get_put_and_lock(client, flask_app):
         with flask_app.app_context():
             if wage_id:
                 _delete_tagged_wage_rates(tag)
+            _cleanup_lead(eid)
+
+
+def test_hour_unit_and_mixed_crew_unit_cost():
+    assert is_hour_unit("HR")
+    assert is_hour_unit("man-hours")
+    assert not is_hour_unit("CY")
+    op = str(uuid.uuid4())
+    lab = str(uuid.uuid4())
+    rates = {
+        op: {"project_loaded_hourly": 100},
+        lab: {"project_loaded_hourly": 50},
+    }
+    single = suggested_unit_cost(
+        wage_rate_id=op,
+        labor_crew=None,
+        quantity=8,
+        unit="HR",
+        rates_by_id=rates,
+    )
+    assert single == 100
+    mixed = suggested_unit_cost(
+        wage_rate_id=op,
+        labor_crew=[
+            {"wage_rate_id": op, "hours": 8},
+            {"wage_rate_id": lab, "hours": 16},
+        ],
+        quantity=10,
+        unit="CY",
+        rates_by_id=rates,
+    )
+    assert mixed == 160
+
+
+def test_import_company_trades_and_assign_labor_line(client, flask_app):
+    eid = "labor-line-" + uuid.uuid4().hex[:12]
+    tag = uuid.uuid4().hex[:8]
+    original_burden = (client.get("/api/v1/wage-rates/burden").get_json() or {}).get("burden")
+    try:
+        seed = client.put(
+            "/api/v1/wage-rates/burden",
+            json={
+                "social_security_pct": 6.2,
+                "medicare_pct": 1.45,
+                "futa_pct": 0.6,
+                "suta_pct": 0,
+                "workers_comp_pct": 0,
+                "other_pct": 0,
+            },
+        )
+        assert seed.status_code == 200, seed.get_data(as_text=True)
+        operator = client.post(
+            "/api/v1/wage-rates",
+            json={
+                "state": "CA",
+                "sub_area": "Test",
+                "year": 2098,
+                "trade": f"Operator {tag}",
+                "basic_hourly_rate": "41.5",
+                "health_welfare": "8.25",
+                "pension": "6",
+            },
+        )
+        assert operator.status_code == 201, operator.get_data(as_text=True)
+        laborer = client.post(
+            "/api/v1/wage-rates",
+            json={
+                "state": "CA",
+                "sub_area": "Test",
+                "year": 2098,
+                "trade": f"Laborer {tag}",
+                "basic_hourly_rate": "20.75",
+                "health_welfare": "8.25",
+                "pension": "6",
+            },
+        )
+        assert laborer.status_code == 201, laborer.get_data(as_text=True)
+        carpenter = client.post(
+            "/api/v1/wage-rates",
+            json={
+                "state": "CA",
+                "sub_area": "Test",
+                "year": 2098,
+                "trade": f"Carpenter {tag}",
+                "basic_hourly_rate": "41.5",
+                "health_welfare": "8.25",
+                "pension": "6",
+            },
+        )
+        assert carpenter.status_code == 201, carpenter.get_data(as_text=True)
+        op_id = operator.get_json()["item"]["id"]
+        lab_id = laborer.get_json()["item"]["id"]
+        carp_id = carpenter.get_json()["item"]["id"]
+
+        with flask_app.app_context():
+            le = _make_lead(eid, location={"city": "Los Angeles", "state": "CA"})
+            lid = str(le.id)
+
+        created = client.post(f"/api/v1/leads/{lid}/estimates", json={"name": "Foundations"})
+        assert created.status_code == 201, created.get_data(as_text=True)
+        est_id = created.get_json()["item"]["id"]
+
+        imported = client.post(
+            f"/api/v1/estimates/{est_id}/labor-rates/import-company",
+            json={"state": "CA", "year": 2098, "sub_area": "Test"},
+        )
+        assert imported.status_code == 200, imported.get_data(as_text=True)
+        body = imported.get_json()["item"]
+        ids = {row["wage_rate_id"] for row in body["trades"]}
+        assert {op_id, lab_id, carp_id} <= ids
+        assert body["imported_count"] >= 3
+        assert any(row.get("from_company") for row in body["trades"])
+        by_id = {row["wage_rate_id"]: row for row in body["trades"]}
+
+        hourly = client.post(
+            f"/api/v1/estimates/{est_id}/takeoff-lines",
+            json={
+                "description": "Operator time",
+                "quantity": 8,
+                "unit": "HR",
+                "cost_type": "L",
+                "wage_rate_id": op_id,
+                "apply_labor_rate": True,
+            },
+        )
+        assert hourly.status_code == 201, hourly.get_data(as_text=True)
+        hour_line = hourly.get_json()["item"]
+        assert hour_line["wage_rate_id"] == op_id
+        assert hour_line["labor_trade"] == f"Operator {tag}"
+        assert hour_line["unit_cost"] == by_id[op_id]["project_loaded_hourly"]
+        assert hour_line["extended_total"] == pytest.approx(8 * by_id[op_id]["project_loaded_hourly"], abs=0.02)
+
+        crew = client.post(
+            f"/api/v1/estimates/{est_id}/takeoff-lines",
+            json={
+                "description": "Concrete foundations",
+                "quantity": 10,
+                "unit": "CY",
+                "cost_type": "L",
+                "labor_crew": [
+                    {"wage_rate_id": op_id, "hours": 8},
+                    {"wage_rate_id": lab_id, "hours": 16},
+                    {"wage_rate_id": carp_id, "hours": 8},
+                ],
+                "apply_labor_rate": True,
+            },
+        )
+        assert crew.status_code == 201, crew.get_data(as_text=True)
+        crew_line = crew.get_json()["item"]
+        total = (
+            8 * by_id[op_id]["project_loaded_hourly"]
+            + 16 * by_id[lab_id]["project_loaded_hourly"]
+            + 8 * by_id[carp_id]["project_loaded_hourly"]
+        )
+        assert crew_line["labor_trade"].startswith("Crew (3")
+        assert len(crew_line["labor_crew"]) == 3
+        assert crew_line["unit_cost"] == pytest.approx(total / 10, abs=0.0002)
+        assert crew_line["extended_total"] == pytest.approx(total, abs=0.02)
+    except ProgrammingError as exc:
+        pytest.skip(f"labor trade columns missing (run flask db upgrade): {exc}")
+    finally:
+        if original_burden:
+            client.put("/api/v1/wage-rates/burden", json=original_burden)
+        with flask_app.app_context():
+            _delete_tagged_wage_rates(tag)
             _cleanup_lead(eid)

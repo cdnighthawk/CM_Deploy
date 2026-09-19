@@ -963,6 +963,51 @@ def _material_size_fields(m: MaterialPrice) -> dict[str, Any]:
     }
 
 
+def _material_configurator_fields(m: MaterialPrice) -> dict[str, Any]:
+    from ..material_configurator import public_schema
+
+    key = getattr(m, "configurator_key", None)
+    return {
+        "configurator_key": key or None,
+        "configurator": public_schema(key),
+    }
+
+
+def _apply_takeoff_configuration(t: TakeoffLineItem, data: Mapping[str, Any]) -> None:
+    if "configuration" not in data and "configuration_json" not in data:
+        return
+    raw = data.get("configuration")
+    if "configuration" not in data:
+        raw = data.get("configuration_json")
+    if raw is None or raw == "":
+        t.configuration_json = None
+        return
+    if not isinstance(raw, dict):
+        raise ValueError("configuration must be a JSON object")
+    mp = t.material_price
+    if mp is None and t.material_pricing_id is not None:
+        mp = db.session.get(MaterialPrice, t.material_pricing_id)
+        t.material_price = mp
+    if mp is None:
+        raise ValueError("configuration requires a catalog item")
+    key = getattr(mp, "configurator_key", None)
+    if not key:
+        raise ValueError("catalog item is not configurable")
+    from ..material_configurator import resolve_configuration
+
+    resolved = resolve_configuration(
+        manufacturer=mp.manufacturer,
+        item=mp.item,
+        mounting_type=mp.mounting_type,
+        base_cost=mp.cost,
+        configurator_key=key,
+        selections=raw,
+    )
+    t.configuration_json = resolved.snapshot
+    t.unit_cost = resolved.unit_cost
+    t.description = resolved.description[:500]
+
+
 def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str, Any]:
     from ..material_labor import labor_hours_for_takeoff
     from ..material_size import suggested_sheet_count
@@ -990,15 +1035,19 @@ def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str
         "labor_units_per_hour": _num_or_none(mp.labor_units_per_hour),
         "labor_rate_unit": mp.labor_rate_unit,
         **_material_supplier_fields(mp),
+        **_material_configurator_fields(mp),
     }
 
 
-def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
+def _takeoff_line_public(t: TakeoffLineItem, *, labor_rates: dict[str, Any] | None = None) -> dict[str, Any]:
     mat_cat = None
     if t.material_pricing_id is not None:
         mp = t.material_price
         if mp is not None:
             mat_cat = _takeoff_material_catalog(t, mp)
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
+    labor = labor_rate_svc.line_labor_public(t, labor_rates)
     return {
         "id": str(t.id),
         "lead_estimate_id": str(t.lead_estimate_id) if t.lead_estimate_id else None,
@@ -1018,12 +1067,17 @@ def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
         "version": t.version,
         "drawing_id": str(t.drawing_id) if t.drawing_id else None,
         "measurement_data": t.measurement_data,
+        "configuration": t.configuration_json,
         "takeoff_location": t.takeoff_location,
         "material_pricing_id": str(t.material_pricing_id) if t.material_pricing_id else None,
         "material_catalog": mat_cat,
         "estimate_id": str(t.estimate_id) if t.estimate_id else None,
         "door_opening_id": str(t.door_opening_id) if t.door_opening_id else None,
         "line_role": t.line_role,
+        "wage_rate_id": labor.get("wage_rate_id"),
+        "labor_crew": labor.get("labor_crew") or [],
+        "labor_trade": labor.get("labor_trade"),
+        "labor_rate_hourly": labor.get("labor_rate_hourly"),
         "created_at": _iso(t.created_at),
         "updated_at": _iso(t.updated_at),
     }
@@ -1157,9 +1211,13 @@ def _lead_estimate_detail(row: LeadEstimate, estimate: Estimate | None = None) -
     else:
         out["estimate_approved_by_email"] = None
     scoped = estimate or est_svc.current_estimate_for_lead(row)
+    labor_rates = None
     if scoped is not None:
         est_svc.overlay_estimate_on_lead_detail(out, scoped)
         lines = est_svc.takeoff_lines_for_estimate(scoped.id)
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        labor_rates = labor_rate_svc.labor_rates_public(scoped)
     else:
         out["current_estimate_id"] = None
         lines = db.session.scalars(
@@ -1168,7 +1226,7 @@ def _lead_estimate_detail(row: LeadEstimate, estimate: Estimate | None = None) -
             .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
             .options(joinedload(TakeoffLineItem.material_price).joinedload(MaterialPrice.supplier_company))
         ).all()
-    out["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
+    out["takeoff_lines"] = [_takeoff_line_public(x, labor_rates=labor_rates) for x in lines]
     out["takeoff_line_count"] = len(lines)
     return out
 
@@ -1269,6 +1327,10 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
         t.takeoff_location = (str(v).strip()[:500] or None) if v is not None else None
         if "material_pricing_id" in data:
             _apply_takeoff_material_pricing_fk(t, data.get("material_pricing_id"))
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
+    labor_rate_svc.apply_takeoff_labor(t, data, partial=partial)
+    _apply_takeoff_configuration(t, data)
     t.extended_total = _compute_extended(t.quantity, t.unit_cost)
 
 
@@ -5043,6 +5105,7 @@ def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
         "currency": m.currency,
         **_material_size_fields(m),
         **_material_supplier_fields(m),
+        **_material_configurator_fields(m),
     }
 
 
@@ -5203,6 +5266,7 @@ _MATERIAL_BULK_FIELDS = frozenset(
         "size_height_in",
         "size_depth_in",
         "supplier_company_id",
+        "configurator_key",
     }
 )
 
@@ -5263,6 +5327,15 @@ def _coerce_material_bulk_value(field: str, value: Any) -> Any:
         if not text:
             raise ApiError("currency cannot be blank", 400)
         return text[:3].upper()
+    if field == "configurator_key":
+        if value in (None, ""):
+            return None
+        from ..material_configurator import schema_for
+
+        key = str(value).strip()[:80]
+        if not schema_for(key):
+            raise ApiError(f"unknown configurator: {key}", 400)
+        return key
     if value in (None, ""):
         return None
     text = str(value).strip()

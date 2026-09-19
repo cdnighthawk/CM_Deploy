@@ -20,6 +20,7 @@ QUOTE_REPORT_COLUMNS: tuple[QuoteColumn, ...] = (
     QuoteColumn("section", "Section", "section", True, False),
     QuoteColumn("description", "Description", "description", True, False),
     QuoteColumn("cost_type", "Type (L/M/E/S/O)", "cost_type", False, False),
+    QuoteColumn("labor_trade", "Labor trade", "labor_trade", False, False),
     QuoteColumn("line_role", "Line role", "line_role", False, False),
     QuoteColumn("quantity", "Qty", "quantity", True, True),
     QuoteColumn("unit", "Unit", "unit", True, False),

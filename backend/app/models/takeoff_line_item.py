@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 if TYPE_CHECKING:
     from .door_opening import DoorOpening
     from .material_pricing import MaterialPrice
+    from .wage_rate import WageRate
 
 from ..extensions import db
 from .base import TimestampMixin, UUIDPKMixin, TenantMixin
@@ -66,6 +67,11 @@ class TakeoffLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
 
     drawing_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     measurement_data: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
+    configuration_json: Mapped[Optional[Any]] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="Frozen catalog option snapshot (series, material, door, handle)",
+    )
     status: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -97,4 +103,20 @@ class TakeoffLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
         nullable=True,
         index=True,
         comment="door, frame, hardware — UI grouping for door schedule lines",
+    )
+    wage_rate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("wage_rates.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Company trade copied onto this labor line",
+    )
+    wage_rate: Mapped[Optional["WageRate"]] = relationship(
+        "WageRate",
+        foreign_keys=[wage_rate_id],
+    )
+    labor_crew: Mapped[Optional[Any]] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="Mixed-trade hours: [{wage_rate_id, hours}]",
     )

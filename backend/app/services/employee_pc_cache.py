@@ -484,8 +484,8 @@ def material_pricing_cache_row(m) -> dict[str, Any]:
         "kind": "Material",
         "defaultWastePct": 0,
         "defaultMarkupPct": 0,
-        "productKind": "sku",
-        "configuratorKey": None,
+        "productKind": "sku" if not getattr(m, "configurator_key", None) else "configurable",
+        "configuratorKey": getattr(m, "configurator_key", None),
     }
 
 
@@ -520,7 +520,8 @@ def catalog_item_cache_row(m) -> dict[str, Any]:
         ),
         "defaultWastePct": 0,
         "defaultMarkupPct": 0,
-        "productKind": "sku",
+        "productKind": "sku" if not getattr(m, "configurator_key", None) else "configurable",
+        "configuratorKey": getattr(m, "configurator_key", None),
         "createdAt": _iso(getattr(m, "created_at", None)),
         "updatedAt": _iso(getattr(m, "updated_at", None)),
     }
@@ -634,13 +635,15 @@ def takeoff_line_cache_row(t) -> dict[str, Any]:
         "jobCostCodeDescription": t.job_cost_code_description,
         "section": t.section,
         "sortOrder": int(t.sort_order or 0),
+        "wageRateId": str(t.wage_rate_id) if getattr(t, "wage_rate_id", None) else None,
+        "laborCrew": getattr(t, "labor_crew", None),
         "materialPricingId": str(mid) if mid else None,
         "materialName": mat_name,
         "measurementData": t.measurement_data,
         "extendedTotalLocal": _num(t.extended_total),
         "catalogNumber": None,
         "notes": t.notes,
-        "configurationJson": None,
+        "configurationJson": getattr(t, "configuration_json", None),
         "cloudTakeoffLineId": str(t.id),
         "dirty": False,
         "deletedAt": None,

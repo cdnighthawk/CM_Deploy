@@ -169,10 +169,14 @@ def _takeoff_line_row(t: TakeoffLineItem) -> dict[str, Any]:
 
 
 def _takeoff_line_quote_row(t: TakeoffLineItem) -> dict[str, Any]:
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
     base = _takeoff_line_row(t)
     base["job_cost_code_description"] = (t.job_cost_code_description or "").strip() or None
     notes_raw = (t.notes or "").strip()
     base["notes"] = notes_raw or None
+    labor = labor_rate_svc.line_labor_public(t)
+    base["labor_trade"] = labor.get("labor_trade")
     mp = t.material_price
     if mp is not None:
         man = (mp.manufacturer or "").strip()

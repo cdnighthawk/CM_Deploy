@@ -60,6 +60,12 @@ _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "size_height_in": ("size_height_in", "height_in", "length_in", "height", "length", "h"),
     "size_depth_in": ("size_depth_in", "depth_in", "depth", "d"),
     "size": ("size", "sheet size", "wxh", "w x h"),
+    "configurator_key": (
+        "configurator_key",
+        "configurator key",
+        "configurator",
+        "options key",
+    ),
 }
 
 # Aliases that count as Construction Specialties when replacing that manufacturer.
@@ -84,7 +90,27 @@ _INPRO_MANUFACTURER_ALIASES = frozenset(
     }
 )
 
-_SKU_PREFIXES = ("COLUMBIA-", "HOLLMAN-", "PENCO-", "INPRO-", "IPC-", "CS-")
+_LARSEN_MANUFACTURER_ALIASES = frozenset(
+    {
+        "larsen",
+        "larsens",
+        "larsen's",
+        "larsen manufacturing",
+        "larsens manufacturing",
+        "larsen's manufacturing",
+    }
+)
+
+_SKU_PREFIXES = (
+    "COLUMBIA-",
+    "HOLLMAN-",
+    "PENCO-",
+    "INPRO-",
+    "IPC-",
+    "CS-",
+    "LARSENS-",
+    "LARS-",
+)
 
 
 def sku_key(item: str | None) -> str:
@@ -106,6 +132,8 @@ def manufacturer_aliases(target: str) -> frozenset[str]:
         return _CS_MANUFACTURER_ALIASES
     if t in _INPRO_MANUFACTURER_ALIASES:
         return _INPRO_MANUFACTURER_ALIASES
+    if t in _LARSEN_MANUFACTURER_ALIASES:
+        return _LARSEN_MANUFACTURER_ALIASES
     return frozenset({t})
 
 
@@ -244,7 +272,7 @@ def _normalize_header_map(fieldnames: list[str] | None) -> dict[str, str]:
 
     resolved: dict[str, str] = {}
     for canonical, aliases in _HEADER_ALIASES.items():
-        for alias in aliases:
+        for alias in (canonical, *aliases):
             if alias in lower_to_actual:
                 resolved[canonical] = lower_to_actual[alias]
                 break
@@ -276,6 +304,15 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
     description, manufacturer_url = split_description_url(
         description, _blank_to_none(_get_cell(row, col_map, "manufacturer_url"))
     )
+    if not manufacturer_url:
+        from app.catalog_product_url import infer_catalog_product_url
+
+        manufacturer_url = infer_catalog_product_url(
+            manufacturer=manufacturer,
+            item=item,
+            category=category,
+            description=description,
+        )
     mounting_type = _blank_to_none(_get_cell(row, col_map, "mounting_type"))
     cost = _parse_decimal(_get_cell(row, col_map, "cost"))
     labor_per = _parse_decimal(_get_cell(row, col_map, "labor_per"))
@@ -321,6 +358,7 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
         if size_height_in is None:
             size_height_in = parsed_h
 
+    configurator_key = _blank_to_none(_get_cell(row, col_map, "configurator_key"))
     payload: dict[str, object] = {
         "manufacturer": manufacturer[:120],
         "manufacturer_url": manufacturer_url,
@@ -336,6 +374,8 @@ def row_to_payload(row: dict[str, str], col_map: dict[str, str]) -> dict[str, ob
         "currency": currency,
         "unit_of_measure": uom[:20],
     }
+    if "configurator_key" in col_map:
+        payload["configurator_key"] = configurator_key[:80] if configurator_key else None
     if labor_units_per_hour is not None and labor_rate_unit:
         from types import SimpleNamespace
 

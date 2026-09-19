@@ -11,6 +11,7 @@ Company loaded hourly is the DIR package plus employer burden (see
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Mapping, Sequence
@@ -28,7 +29,40 @@ _DT_DAY = Decimal("12")
 _ST_WEEK = Decimal("40")
 _OT_MULT = Decimal("1.5")
 _DT_MULT = Decimal("2")
-_MAX_TRADES = 50
+_MAX_TRADES = 200
+_MAX_CREW = 20
+_SNAPSHOT_FIELDS = (
+    "trade",
+    "state",
+    "sub_area",
+    "year",
+    "basic_hourly_rate",
+    "health_welfare",
+    "pension",
+    "vacation_holiday",
+    "other_payments",
+    "training",
+    "workers_comp_pct",
+    "notes",
+    "is_assumed",
+)
+_HOUR_UNITS = frozenset(
+    {
+        "hr",
+        "hrs",
+        "hour",
+        "hours",
+        "mh",
+        "mhr",
+        "mhrs",
+        "manhour",
+        "manhours",
+        "man-hour",
+        "man-hours",
+        "man hr",
+        "man hrs",
+    }
+)
 
 DEFAULT_HOURS_PER_DAY = Decimal("8")
 DEFAULT_DAYS_PER_WEEK = Decimal("5")
@@ -157,6 +191,182 @@ def stored_labor_rate_settings(settings: Mapping[str, Any]) -> dict[str, Any]:
         "other_hourly": float(normalized["other_hourly"]),
         "wage_rate_ids": list(normalized["wage_rate_ids"]),
     }
+
+
+def is_hour_unit(unit: Any) -> bool:
+    s = re.sub(r"\s+", " ", str(unit or "").strip().lower()).rstrip(".")
+    return s in _HOUR_UNITS
+
+
+def snapshot_wage_package(row: Any) -> dict[str, Any]:
+    out: dict[str, Any] = {"wage_rate_id": str(_attr(row, "id") or _attr(row, "wage_rate_id") or "")}
+    for name in _SNAPSHOT_FIELDS:
+        val = _attr(row, name)
+        if name in ("year",):
+            out[name] = int(val) if val is not None and str(val).strip() != "" else None
+        elif name == "is_assumed":
+            out[name] = bool(val)
+        elif name in ("trade", "state", "sub_area", "notes"):
+            out[name] = str(val or "").strip()
+            if name == "notes" and not out[name]:
+                out[name] = None
+        else:
+            n = _dec(val) if val is not None and str(val).strip() != "" else None
+            out[name] = _float(n) if n is not None else None
+    if not out["wage_rate_id"]:
+        out["wage_rate_id"] = ""
+    return out
+
+
+def _snapshot_list(raw: Any) -> list[dict[str, Any]]:
+    if isinstance(raw, Mapping):
+        raw = raw.get("trades") or raw.get("trade_snapshots") or []
+    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes, bytearray)):
+        return []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in raw:
+        if not isinstance(item, Mapping):
+            continue
+        snap = snapshot_wage_package(item)
+        key = snap.get("wage_rate_id") or ""
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(snap)
+        if len(out) >= _MAX_TRADES:
+            break
+    return out
+
+
+def merge_trade_snapshots(
+    *,
+    wage_rate_ids: Sequence[str],
+    existing: Any = None,
+    fresh: Sequence[Any] | None = None,
+) -> list[dict[str, Any]]:
+    by_id: dict[str, dict[str, Any]] = {}
+    for snap in _snapshot_list(existing):
+        key = str(snap.get("wage_rate_id") or "")
+        if key:
+            by_id[key] = snap
+    for row in fresh or []:
+        snap = snapshot_wage_package(row)
+        key = str(snap.get("wage_rate_id") or "")
+        if key:
+            by_id[key] = snap
+    ordered: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw in wage_rate_ids:
+        key = str(raw)
+        if key in seen:
+            continue
+        seen.add(key)
+        snap = by_id.get(key)
+        if snap is not None:
+            ordered.append(snap)
+        if len(ordered) >= _MAX_TRADES:
+            break
+    return ordered
+
+
+def normalize_labor_crew(raw: Any) -> list[dict[str, Any]]:
+    if raw is None or raw == "":
+        return []
+    if isinstance(raw, Mapping):
+        raw = raw.get("crew") or raw.get("trades") or raw.get("labor_crew") or []
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, Sequence) or isinstance(raw, (bytes, bytearray)):
+        return []
+    out: list[dict[str, Any]] = []
+    for item in raw:
+        if isinstance(item, Mapping):
+            ids = _uuid_list(item.get("wage_rate_id") or item.get("id"))
+            hours_raw = item.get("hours")
+        else:
+            ids = _uuid_list(item)
+            hours_raw = None
+        if not ids:
+            continue
+        hours = None
+        if hours_raw is not None and str(hours_raw).strip() != "":
+            hours = _dec(hours_raw)
+            if hours < 0:
+                hours = Decimal("0")
+            hours = hours.quantize(_HOUR, rounding=ROUND_HALF_UP)
+        out.append(
+            {
+                "wage_rate_id": ids[0],
+                "hours": float(hours) if hours is not None else None,
+            }
+        )
+        if len(out) >= _MAX_CREW:
+            break
+    return out
+
+
+def stored_labor_crew(crew: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "wage_rate_id": str(row.get("wage_rate_id") or ""),
+            "hours": row.get("hours"),
+        }
+        for row in crew
+        if row.get("wage_rate_id")
+    ]
+
+
+def suggested_unit_cost(
+    *,
+    wage_rate_id: str | None,
+    labor_crew: Sequence[Mapping[str, Any]] | None,
+    quantity: Any,
+    unit: Any,
+    rates_by_id: Mapping[str, Any],
+) -> Decimal | None:
+    crew = normalize_labor_crew(labor_crew)
+    qty = _dec(quantity)
+    if crew and any(row.get("hours") is not None for row in crew):
+        total = Decimal("0")
+        for row in crew:
+            rate = _rate_for(rates_by_id, str(row.get("wage_rate_id") or ""))
+            if rate is None:
+                continue
+            hours = _dec(row.get("hours"))
+            total += _money(rate * hours)
+        if qty > 0:
+            return _money(total / qty)
+        return _money(total) if total else None
+    if not wage_rate_id:
+        if len(crew) == 1:
+            wage_rate_id = str(crew[0].get("wage_rate_id") or "")
+        else:
+            return None
+    rate = _rate_for(rates_by_id, str(wage_rate_id))
+    if rate is None:
+        return None
+    if is_hour_unit(unit) or qty <= 0:
+        return _money(rate)
+    return None
+
+
+def _rate_for(rates_by_id: Mapping[str, Any], wage_rate_id: str) -> Decimal | None:
+    if not wage_rate_id:
+        return None
+    row = rates_by_id.get(wage_rate_id)
+    if row is None:
+        return None
+    if isinstance(row, Mapping):
+        val = row.get("project_loaded_hourly")
+        if val is None:
+            val = row.get("total_loaded_hourly")
+        n = _dec(val)
+        return n if val is not None else None
+    try:
+        return _dec(row)
+    except Exception:
+        return None
 
 
 def settings_public(settings: Mapping[str, Any]) -> dict[str, Any]:

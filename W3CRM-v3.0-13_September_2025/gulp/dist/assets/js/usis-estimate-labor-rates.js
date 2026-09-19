@@ -83,7 +83,7 @@
 	}
 
 	function setLocked(locked) {
-		["usis-est-labor-state", "usis-est-labor-year", "usis-est-labor-area", "usis-est-labor-hours", "usis-est-labor-days", "usis-est-labor-perdiem", "usis-est-labor-housing", "usis-est-labor-other", "usis-est-labor-trade-q", "usis-est-labor-trade-search", "usis-est-labor-save"].forEach(function (id) {
+		["usis-est-labor-state", "usis-est-labor-year", "usis-est-labor-area", "usis-est-labor-hours", "usis-est-labor-days", "usis-est-labor-perdiem", "usis-est-labor-housing", "usis-est-labor-other", "usis-est-labor-trade-q", "usis-est-labor-trade-search", "usis-est-labor-save", "usis-est-labor-import"].forEach(function (id) {
 			var n = el(id);
 			if (n) n.disabled = !!locked;
 		});
@@ -123,22 +123,25 @@
 		var out = el("usis-est-wage-out");
 		if (!out) return;
 		var trades = (item && item.trades) || [];
-		var first = trades[0];
-		if (!first) {
-			out.innerHTML = '<span class="text-muted">Add trades on the Labor rates tab. Rates stay advisory — enter labor unit cost on the line.</span>';
+		if (!trades.length) {
+			out.innerHTML = '<span class="text-muted">Import company trades on the Labor rates tab, then apply them to labor lines.</span>';
 			return;
 		}
-		var more = trades.length > 1 ? " <span class=\"text-muted\">(+ " + (trades.length - 1) + " more)</span>" : "";
-		out.innerHTML =
-			"<div>Project loaded: <strong>" +
-			esc(money4(first.project_loaded_hourly)) +
-			"</strong>/hr" +
-			more +
-			"</div><div class=\"text-muted\">" +
-			esc(first.trade) +
-			" · company " +
-			esc(money4(first.company_loaded_hourly)) +
-			"</div>";
+		out.innerHTML = trades
+			.map(function (row) {
+				return (
+					'<div class="d-flex justify-content-between align-items-start gap-2 border-bottom py-1">' +
+					"<div><div>" +
+					esc(row.trade || "Trade") +
+					"</div><div class=\"text-muted\">" +
+					esc(money4(row.project_loaded_hourly)) +
+					"/hr project loaded</div></div>" +
+					'<button type="button" class="btn btn-outline-primary btn-sm py-0 usis-est-wage-apply" data-id="' +
+					esc(row.wage_rate_id) +
+					'">Apply</button></div>'
+				);
+			})
+			.join("");
 	}
 
 	function adderCell(amount) {
@@ -248,6 +251,7 @@
 		updateScheduleNote(payload);
 		renderTrades(payload);
 		updateCostLibrary(payload);
+		document.dispatchEvent(new CustomEvent("usis-labor-rates-updated", { detail: { item: payload } }));
 	}
 
 	function fetchItem() {
@@ -274,6 +278,32 @@
 				showErr(msg);
 				if (opts && opts.flash) notifyErr(msg);
 			});
+	}
+
+	function importCompany() {
+		if (!estimateId || !Api) return;
+		if (payload && payload.locked) return;
+		var body = settingsFromForm();
+		var run = Api.importCompanyLaborRates
+			? Api.importCompanyLaborRates(estimateId, body)
+			: Api.fetchJson("/api/v1/estimates/" + encodeURIComponent(estimateId) + "/labor-rates/import-company", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
+			});
+		run.then(function (data) {
+			payload = data && data.item ? data.item : payload;
+			render(payload);
+			var n = payload && payload.imported_count != null ? payload.imported_count : 0;
+			var extra = payload && payload.truncated ? " (stopped at 200 trades)" : "";
+			notifyOk(n ? "Imported " + n + " company trade" + (n === 1 ? "" : "s") + extra + "." : "No new company trades matched this state/year.");
+			showErr("");
+			searchTrades();
+		}).catch(function (err) {
+			var msg = (err && err.message) || "Could not import company trades.";
+			showErr(msg);
+			notifyErr(msg);
+		});
 	}
 
 	function scheduleSave() {
@@ -415,6 +445,8 @@
 		if (saveBtn) saveBtn.addEventListener("click", function () {
 			save({ flash: true });
 		});
+		var importBtn = el("usis-est-labor-import");
+		if (importBtn) importBtn.addEventListener("click", importCompany);
 		["usis-est-labor-state", "usis-est-labor-year", "usis-est-labor-area", "usis-est-labor-hours", "usis-est-labor-days", "usis-est-labor-perdiem", "usis-est-labor-housing", "usis-est-labor-other"].forEach(function (id) {
 			var n = el(id);
 			if (!n) return;
@@ -469,6 +501,16 @@
 		}
 		var openBtn = el("usis-est-wage-open");
 		if (openBtn) openBtn.addEventListener("click", showTab);
+		var wageOut = el("usis-est-wage-out");
+		if (wageOut) {
+			wageOut.addEventListener("click", function (e) {
+				var apply = e.target.closest(".usis-est-wage-apply");
+				if (!apply) return;
+				document.dispatchEvent(
+					new CustomEvent("usis-apply-labor-rate", { detail: { wage_rate_id: apply.getAttribute("data-id") } })
+				);
+			});
+		}
 		document.addEventListener("usis-estimate-loaded", function (ev) {
 			var detail = (ev && ev.detail) || {};
 			applyLoaded(detail.item, detail);

@@ -439,9 +439,12 @@
 								<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 									<div>
 										<h5 class="mb-1">Project labor rates</h5>
-										<p class="text-muted small mb-0">Defaults to company wage rates. Add housing, per diem, mandated overtime, or other $/hr for this estimate. Rates are advisory — enter labor unit cost on the line.</p>
+										<p class="text-muted small mb-0">Copies company wage rates onto this estimate. Assign a trade (or a mixed-trade crew) on each labor line. Job adders — housing, per diem, mandated overtime — apply to every project trade.</p>
 									</div>
-									<button type="button" class="btn btn-primary btn-sm" id="usis-est-labor-save">Save</button>
+									<div class="d-flex flex-wrap gap-1">
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-est-labor-import">Import company trades</button>
+										<button type="button" class="btn btn-primary btn-sm" id="usis-est-labor-save">Save</button>
+									</div>
 								</div>
 								<div id="usis-est-labor-lock" class="alert alert-secondary border py-2 small d-none" role="status">This estimate is locked. Unlock it to edit labor rates.</div>
 								<div id="usis-est-labor-err" class="alert alert-danger py-2 small d-none" role="alert"></div>
@@ -555,6 +558,7 @@
 														<th data-sort-key="job_cost_code" data-filter-key="job_cost_code">Cost code</th>
 														<th data-sort-key="description" data-filter-key="description">Description</th>
 														<th class="text-nowrap" data-sort-key="cost_type" data-filter-key="cost_type">Type</th>
+														<th class="text-nowrap" data-sort-key="labor_trade" data-filter-key="labor_trade">Trade</th>
 														<th class="text-end" data-sort-key="quantity" data-filter-key="quantity">Qty</th>
 														<th data-sort-key="unit" data-filter-key="unit">UOM</th>
 														<th class="text-end" data-sort-key="unit_cost" data-filter-key="unit_cost">Unit cost</th>
@@ -594,8 +598,8 @@
 												</div>
 												<ul class="list-unstyled mb-0" id="usis-est-mat-results"></ul>
 												<hr class="my-3">
-												<label class="form-label mb-1">Project labor rate</label>
-												<div id="usis-est-wage-out" class="small text-muted">Set on the Labor rates tab.</div>
+												<label class="form-label mb-1">Project labor rates</label>
+												<div id="usis-est-wage-out" class="small text-muted">Import trades on the Labor rates tab, then assign them on labor lines.</div>
 												<button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="usis-est-wage-open">Open Labor rates</button>
 											</div>
 										</div>
@@ -624,6 +628,40 @@
 				</div>
 			</div>
 		</main>
+
+	<div class="modal fade" id="usis-est-crew-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-crew-title">
+		<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title fs-6" id="usis-est-crew-title">Crew mix</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body py-2">
+					<p class="text-muted small mb-2" id="usis-est-crew-help">Set hours for each trade on this labor task. Unit cost becomes crew total ÷ quantity (for example 1 operator + 2 laborers + carpenter + mason on a foundation).</p>
+					<div class="table-responsive">
+						<table class="table table-sm mb-2">
+							<thead class="table-light">
+								<tr>
+									<th>Trade</th>
+									<th class="text-end">Hours</th>
+									<th class="text-end">Loaded $/hr</th>
+									<th class="text-end">Extended</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody id="usis-est-crew-tbody"></tbody>
+						</table>
+					</div>
+					<button type="button" class="btn btn-outline-primary btn-sm" id="usis-est-crew-add">Add trade</button>
+					<p class="small text-muted mt-2 mb-0" id="usis-est-crew-total"></p>
+				</div>
+				<div class="modal-footer py-2">
+					<button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary btn-sm" id="usis-est-crew-save">Apply crew to line</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<div class="modal fade" id="usis-est-quote-report-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-quote-report-title">
 		<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -740,14 +778,15 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260906b"></script>
 	<script src="assets/js/usis-drawing-upload.js?v=20260906f"></script>
 	<script src="assets/js/usis-project-doc-panels.js?v=20260917c"></script>
-	<script src="assets/js/usis-estimate-api.js?v=20260918c"></script>
+	<script src="assets/js/usis-estimate-api.js?v=20260919a"></script>
+	<script src="assets/js/usis-material-configurator.js?v=20260919a"></script>
 	<script src="assets/js/usis-estimates-list.js"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
 	<script src="assets/js/usis-estimate-detail-panels.js"></script>
-	<script src="assets/js/usis-estimate-detail.js?v=20260918c"></script>
+	<script src="assets/js/usis-estimate-detail.js?v=20260919b"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js"></script>
-	<script src="assets/js/usis-estimate-labor-rates.js?v=20260918c"></script>
+	<script src="assets/js/usis-estimate-labor-rates.js?v=20260919a"></script>
 	<script src="assets/js/usis-estimate-spec-package.js?v=20260901a"></script>
 	<script>
 	(function () {

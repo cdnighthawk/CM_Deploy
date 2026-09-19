@@ -348,6 +348,21 @@
 		);
 	}
 
+	function formatConfigurator(item) {
+		var cfg = item && item.configurator;
+		if (!cfg || !cfg.groups || !cfg.groups.length) return "";
+		return cfg.groups
+			.map(function (g) {
+				var names = (g.choices || [])
+					.map(function (c) {
+						return c.label;
+					})
+					.join(", ");
+				return g.label + ": " + names;
+			})
+			.join(" | ");
+	}
+
 	function renderDetailView(item) {
 		var view = document.getElementById("usis-mat-detail-view");
 		var title = document.getElementById("usis-mat-detail-title");
@@ -371,6 +386,7 @@
 			["Sheet area (sf)", dash(item.sheet_area_sf)],
 			["Description", dash(item.description)],
 			["Mounting", dash(item.mounting_type)],
+			["Configurable options", formatConfigurator(item)],
 			["Cost", moneyText(item.cost)],
 			["Production rate", dash(item.labor_production)],
 			["Labor", hoursText(item.labor_per)],

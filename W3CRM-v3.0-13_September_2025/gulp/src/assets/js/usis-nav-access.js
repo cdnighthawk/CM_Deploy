@@ -64,6 +64,35 @@
 		}
 		retargetDemoTimeSheets();
 		insertPeopleNav();
+		insertIngestNav();
+	}
+
+	function insertIngestNav() {
+		var menu = document.getElementById("menu") || document.querySelector(".deznav ul.metismenu");
+		if (!menu || document.getElementById("usis-ingest-nav")) return;
+		var prefix = timePrefix();
+		var li = document.createElement("li");
+		li.id = "usis-ingest-nav";
+		li.setAttribute("data-usis-module", "estimate");
+		li.innerHTML =
+			'<a href="' +
+			prefix +
+			'construction/ingest.html" aria-expanded="false">' +
+			'<i class="icon feather icon-download"></i>' +
+			'<span class="nav-text" data-i18n="Ingest">Ingest</span></a>';
+		var estimate = null;
+		var items = menu.children;
+		var i;
+		for (i = 0; i < items.length; i++) {
+			var label = items[i].querySelector(":scope > a .nav-text");
+			if (label && (label.textContent || "").trim() === "Estimate") {
+				estimate = items[i];
+				break;
+			}
+		}
+		if (estimate && estimate.nextSibling) menu.insertBefore(li, estimate.nextSibling);
+		else if (estimate) estimate.insertAdjacentElement("afterend", li);
+		else menu.appendChild(li);
 	}
 
 	function insertPeopleNav() {

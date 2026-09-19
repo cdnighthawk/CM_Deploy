@@ -95,6 +95,7 @@ from .hiring import (
 )
 from .hr_dispatch import HrEmployeeDispatch
 from .ingest_error import IngestErrorEvent
+from .ingest_event import IngestAgentEvent
 from .invoice_delivery_method import InvoiceDeliveryMethod
 from .issue import Issue, IssueEvent
 from .material_order import ProjectMaterialOrder
@@ -256,6 +257,7 @@ __all__ = [
     "EstimatorStandardSpec",
     "FieldPhoto",
     "HrEmployeeDispatch",
+    "IngestAgentEvent",
     "IngestErrorEvent",
     "InvoiceDeliveryMethod",
     "Issue",

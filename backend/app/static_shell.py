@@ -18,6 +18,7 @@ _CAREER_PATH_REDIRECTS: dict[str, str] = {
     "/jobs": "/apply.html",
     "/hiring": "/apply.html",
     "/hire": "/apply/application.html",
+    "/ingest": "/construction/ingest.html",
     "/time": "/usis-time-live.html",
     "/time/live": "/usis-time-live.html",
     "/time/me": "/usis-time-me.html",

@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+	<base href="../">
+
 	<!-- Title -->
 	<title>USIS</title>
 	
@@ -36,7 +39,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/usis-documents-hub.html">
+	<link rel="canonical" href="https://www.usiscm.com/ingest.html">
 	
 	<!-- Plugins Stylesheet -->
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
@@ -49,13 +52,31 @@
 	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
 	<script src="assets/js/usis-api-base-default.js"></script>
 	<script src="assets/js/usis-api-base.js"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
+	<script src="assets/js/usis-project-context.js?v=20260915a"></script>
 	<script src="assets/js/usis-api-fetch.js"></script>
-	<script src="assets/js/usis-theme-boot.js"></script>
+	<script src="assets/js/usis-theme-boot.js?v=20260906e"></script>
+
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<style>
+		#usis-ingest-dash-table { font-size: 0.8125rem; }
+		#usis-ingest-dash-table td, #usis-ingest-dash-table th { padding: 0.28rem 0.45rem; vertical-align: middle; }
+		.usis-ingest-stat { min-width: 9.5rem; }
+		.usis-ingest-stat .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: #6c757d; }
+		.usis-ingest-stat .value { font-size: 0.95rem; font-weight: 600; }
+		.usis-ingest-stat.stale .value { color: #c92a2a; }
+		.usis-ingest-filters { display: grid; grid-template-columns: 1fr; gap: 0.45rem; }
+		@media (min-width: 768px) {
+			.usis-ingest-filters { grid-template-columns: minmax(10rem, 1.6fr) repeat(4, minmax(7rem, 1fr)) auto; align-items: end; }
+		}
+		.usis-ingest-new-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+		.usis-ingest-new-list a { font-size: 0.78rem; }
+		.usis-ingest-path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.72rem; }
+	</style>
+
 </head>
 <body>
+
 	<!-- Start - Preloader -->
 	<div id="preloader">
 		<div class="lds-ripple">
@@ -64,7 +85,9 @@
 		</div>
 	</div>
 	<!-- End - Preloader -->
+
 	<div id="main-wrapper">
+
 		<!-- Start - Nav Header -->
 		<div class="nav-header">
 			<a href="usis-dashboard-dark.html" class="brand-logo usis-brand-logo" aria-label="USIS CM">
@@ -217,7 +240,6 @@
 										</div>
 									</li>
 									<li class="d-none usis-org-switcher-wrap"><hr class="dropdown-divider"></li>
-
 									<li>
 										<a class="dropdown-item" href="usis-profile.html">
 											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -328,10 +350,16 @@
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
 						</a>
 					</li>
-										<li data-usis-module="estimate">
+					<li data-usis-module="estimate">
 						<a href="construction/estimate.html" aria-expanded="false">
 							<i class="icon feather icon-file-text"></i>
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
+						</a>
+					</li>
+					<li data-usis-module="estimate" id="usis-ingest-nav">
+						<a href="construction/ingest.html" aria-expanded="false">
+							<i class="icon feather icon-download"></i>
+							<span class="nav-text" data-i18n="Ingest">Ingest</span>
 						</a>
 					</li>
 					<li data-usis-module="projects">
@@ -473,11 +501,12 @@
 		</div>
 		<!-- End - Sidebar Navigation -->
 
+
 		<main class="content-body">
 			<div class="page-title">
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb">
-						<li><h1 data-i18n="Documents hub">Documents hub</h1></li>
+						<li><h1 data-i18n="Ingest">Ingest</h1></li>
 						<li class="breadcrumb-item">
 							<a href="usis-dashboard-dark.html">
 								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -496,7 +525,7 @@
 						<li class="breadcrumb-item active" aria-current="page">
 
 
-							<span data-i18n="Documents hub">Documents hub</span>
+							<span data-i18n="Ingest">Ingest</span>
 
 						</li>
 					</ol>
@@ -504,14 +533,106 @@
 
 			</div>
 
-						<div class="container-fluid">
-				<p class="text-muted small">Requires <code>?project_id=</code> (UUID). QC packages live in the <a href="usis-submittal-register.html">Submittal register</a>. Teams/email files: <a href="usis-correspondence.html">Correspondence archive</a>. ACCDocs activity: <a href="construction/ingest.html">Ingest</a>. Bulk folder upload: <a href="usis-ingest.html">Mass ingest</a>.</p>
-				<div class="mb-2">
-					<button type="button" class="btn btn-sm btn-primary" id="usis-doc-add">Register document (JSON)</button>
+			<div class="container-fluid pb-5">
+				<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+					<div>
+						<h1 class="h4 mb-1" data-i18n="Ingest">Ingest</h1>
+						<p class="small text-muted mb-0">ACCDocs / Forma uploads from the Windows data-server agent. CM observes; the watcher still runs on the office server.</p>
+					</div>
+					<div class="d-flex flex-wrap gap-2">
+						<a class="btn btn-sm btn-outline-secondary" href="usis-documents-hub.html">Documents hub</a>
+						<a class="btn btn-sm btn-outline-secondary" href="usis-ingest.html">Mass ingest</a>
+						<button type="button" class="btn btn-sm btn-outline-primary" id="usis-ingest-dash-reload">Refresh</button>
+					</div>
 				</div>
-				<ul class="list-group" id="usis-doc-list"></ul>
+
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body py-3">
+						<div class="d-flex flex-wrap gap-3" id="usis-ingest-dash-status">
+							<div class="usis-ingest-stat"><div class="label">Last upload</div><div class="value" id="usis-ingest-stat-upload">—</div></div>
+							<div class="usis-ingest-stat"><div class="label">Last agent event</div><div class="value" id="usis-ingest-stat-agent">—</div></div>
+							<div class="usis-ingest-stat"><div class="label">Last rescan</div><div class="value" id="usis-ingest-stat-rescan">—</div></div>
+							<div class="usis-ingest-stat"><div class="label">Open ingest errors</div><div class="value" id="usis-ingest-stat-errors">—</div></div>
+							<div class="usis-ingest-stat"><div class="label">New ACC projects</div><div class="value" id="usis-ingest-stat-new">—</div></div>
+						</div>
+						<div class="small text-muted mt-2" id="usis-ingest-dash-hint"></div>
+					</div>
+				</div>
+
+				<div class="card border-0 shadow-sm mb-3" id="usis-ingest-new-card">
+					<div class="card-body py-3">
+						<div class="d-flex justify-content-between align-items-center mb-2">
+							<h2 class="h6 mb-0">Projects with recent uploads</h2>
+							<span class="small text-muted" id="usis-ingest-new-count"></span>
+						</div>
+						<div class="usis-ingest-new-list" id="usis-ingest-new-list">
+							<span class="text-muted small">Loading…</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="usis-ingest-filters mb-3">
+					<div>
+						<label class="form-label small mb-1" for="usis-ingest-dash-q">Search</label>
+						<input class="form-control form-control-sm" id="usis-ingest-dash-q" type="search" placeholder="File, path, job number…" autocomplete="off">
+					</div>
+					<div>
+						<label class="form-label small mb-1" for="usis-ingest-dash-kind">Kind</label>
+						<select class="form-select form-select-sm" id="usis-ingest-dash-kind">
+							<option value="all">All</option>
+							<option value="drawing">Drawings</option>
+							<option value="document">Documents</option>
+						</select>
+					</div>
+					<div>
+						<label class="form-label small mb-1" for="usis-ingest-dash-source">Source</label>
+						<select class="form-select form-select-sm" id="usis-ingest-dash-source">
+							<option value="all">All uploads</option>
+							<option value="ingest">ACC / mass ingest</option>
+							<option value="autodesk_desktop_connector">ACCDocs agent</option>
+							<option value="mass_ingest">Mass ingest</option>
+						</select>
+					</div>
+					<div>
+						<label class="form-label small mb-1" for="usis-ingest-dash-days">Window</label>
+						<select class="form-select form-select-sm" id="usis-ingest-dash-days">
+							<option value="3">3 days</option>
+							<option value="7">7 days</option>
+							<option value="14" selected>14 days</option>
+							<option value="30">30 days</option>
+							<option value="90">90 days</option>
+						</select>
+					</div>
+					<div>
+						<label class="form-label small mb-1" for="usis-ingest-dash-project">Job / estimate</label>
+						<input class="form-control form-control-sm" id="usis-ingest-dash-project" placeholder="Filter by name or number" autocomplete="off">
+					</div>
+					<div class="small text-muted pb-1" id="usis-ingest-dash-count"></div>
+				</div>
+
+				<div class="card border-0 shadow-sm">
+					<div class="table-responsive">
+						<table class="table table-sm table-hover align-middle mb-0" id="usis-ingest-dash-table">
+							<thead>
+								<tr>
+									<th>When</th>
+									<th>Kind</th>
+									<th>File</th>
+									<th>Job / estimate</th>
+									<th>Source</th>
+									<th>Y:\Estimates</th>
+									<th class="text-end">Open</th>
+								</tr>
+							</thead>
+							<tbody id="usis-ingest-dash-tbody">
+								<tr><td colspan="7" class="text-muted">Loading ingest activity…</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
 			</div>
 		</main>
+
 		<!-- USIS mobile bottom nav — visible below md -->
 <nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="USIS primary">
 	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
@@ -544,24 +665,27 @@
 		</div>
 		<!-- End - Footer -->
 	</div>
+
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/js/usis-i18n.js"></script>
 	<script src="assets/js/usis-report-problem.js"></script>
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js?v=20260917a"></script>
+<script src="assets/js/usis-nav-access.js?v=20260919ingest"></script>
 	<script src="assets/js/usis-command-palette.js?v=20260905b"></script>
 	<script src="assets/js/usis-header-bell.js?v=20260912a"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js?v=20260906a"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
+	<script src="assets/js/usis-ui.js?v=20260919p"></script>
+	<script src="assets/js/usis-project-context.js?v=20260915a"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
 	<script src="assets/vendor/metismenu/dist/metisMenu.min.js"></script>
 	<script src="assets/vendor/@yaireo/tagify/dist/tagify.js"></script>
+	<script src="assets/vendor/i18n/i18n.js"></script>
+	<script src="assets/js/translator.js"></script>
 	<script src="assets/js/aiReviewBus.js"></script>
 	<script src="assets/js/usis-notify.js"></script>
 	<script src="assets/js/usis-project-context.js"></script>
@@ -569,6 +693,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-documents-hub.js?v=20260906b"></script>
+	<script src="assets/js/usis-ingest-dashboard.js?v=20260919a"></script>
+
 </body>
 </html>

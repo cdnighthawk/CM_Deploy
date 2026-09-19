@@ -1763,6 +1763,30 @@ def _record_session_ingest_failure(metadata: dict[str, Any], kind: str, message:
     return row
 
 
+@bp.get("/ingest/activity")
+def session_ingest_activity():
+    """Recent drawings/documents plus agent status for the CM Ingest panel."""
+    from ..services.ingest_activity import list_ingest_activity
+
+    try:
+        payload = list_ingest_activity(
+            kind=request.args.get("kind") or "all",
+            source=request.args.get("source") or "all",
+            project_id=request.args.get("project_id") or request.args.get("projectId"),
+            lead_estimate_id=request.args.get("lead_estimate_id")
+            or request.args.get("estimate_id")
+            or request.args.get("leadEstimateId"),
+            q=request.args.get("q") or request.args.get("search") or "",
+            since=request.args.get("since"),
+            days=request.args.get("days") or 14,
+            limit=request.args.get("limit") or 80,
+            offset=request.args.get("offset") or 0,
+        )
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    return _jsonify(payload)
+
+
 @bp.get("/ingest/projects")
 def session_ingest_projects():
     """Job/lead picker for the mass ingest tool (same matching as Bearer ingest)."""

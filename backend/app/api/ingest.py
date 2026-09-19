@@ -4,6 +4,7 @@ GET  /api/projects
 POST /api/documents
 POST /api/drawings
 POST /api/drawings/<drawing_id>/file
+POST /api/ingest/events
 """
 from __future__ import annotations
 
@@ -66,6 +67,33 @@ def _require_ingest_auth():
     if not _matches_any(token, keys):
         return jsonify({"error": "Invalid API key."}), 401
     return None
+
+
+@bp.post("/api/ingest/events")
+def ingest_report_event():
+    """Token-protected heartbeat from the Windows ACCDocs/Forma agent."""
+    denied = _require_ingest_auth()
+    if denied is not None:
+        return denied
+    from ..services.ingest_activity import record_agent_event
+
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({"error": "JSON object required"}), 400
+    try:
+        item = record_agent_event(payload)
+        db.session.commit()
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({"error": str(exc)}), 400
+    except RuntimeError as exc:
+        db.session.rollback()
+        return jsonify({"error": str(exc)}), 503
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("ingest event record failed")
+        return jsonify({"error": "ingest event record failed"}), 500
+    return jsonify({"item": item, "entity": "ingest_event"}), 201
 
 
 @bp.get("/api/projects")

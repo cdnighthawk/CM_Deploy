@@ -1104,13 +1104,42 @@
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				if (data.item) {
-					out.innerHTML =
-						"<div>Loaded hourly (reference): <strong>$" +
-						esc(String(data.total_loaded_hourly != null ? data.total_loaded_hourly.toFixed(4) : "—")) +
-						"</strong></div>" +
+					var item = data.item;
+					var loaded =
+						data.total_loaded_hourly != null
+							? data.total_loaded_hourly
+							: item.total_loaded_hourly;
+					var html =
+						"<div>Fully loaded hourly: <strong>$" +
+						esc(String(loaded != null ? Number(loaded).toFixed(4) : "—")) +
+						"</strong></div>";
+					if (item.fringe_hourly != null) {
+						html +=
+							'<div class="text-muted">DIR package $' +
+							esc(Number(item.fringe_hourly).toFixed(4)) +
+							" + employer burden $" +
+							esc(Number(item.burden_hourly || 0).toFixed(4)) +
+							"</div>";
+					}
+					if (item.burden_lines && item.burden_lines.length) {
+						html += '<ul class="small mb-1 mt-1 ps-3">';
+						item.burden_lines.forEach(function (line) {
+							html +=
+								"<li>" +
+								esc(line.label) +
+								" " +
+								esc(String(line.pct)) +
+								"% = $" +
+								esc(Number(line.amount).toFixed(4)) +
+								"</li>";
+						});
+						html += "</ul>";
+					}
+					html +=
 						'<pre class="small bg-light p-2 rounded mt-1 mb-0">' +
-						esc(JSON.stringify(data.item, null, 2)) +
+						esc(JSON.stringify(item, null, 2)) +
 						"</pre>";
+					out.innerHTML = html;
 				} else {
 					out.innerHTML =
 						'<span class="text-muted">No exact match. Near matches: ' +

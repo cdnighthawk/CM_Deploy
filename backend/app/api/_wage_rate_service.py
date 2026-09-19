@@ -11,7 +11,10 @@ from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
+from ..labor_burden import labor_burden_breakdown, normalize_labor_burden
 from ..models.wage_rate import WageRate
+from ..tenant_settings import current_tenant_setting, set_tenant_setting
+from ..tenancy import current_organization_id
 from ._rfi_service import ApiError
 
 _RATE_FIELDS = (
@@ -23,12 +26,15 @@ _RATE_FIELDS = (
     "training",
 )
 
+_PCT_FIELDS = ("workers_comp_pct",)
+
 _EDITABLE = (
     "state",
     "sub_area",
     "year",
     "trade",
     *_RATE_FIELDS,
+    *_PCT_FIELDS,
     "notes",
     "is_assumed",
 )
@@ -67,22 +73,38 @@ def _assumed_from_notes(notes: str | None, explicit: Any | None = None) -> bool:
     return "assumed" in (notes or "").lower()
 
 
-def wage_total_loaded(w: WageRate) -> float:
-    total = Decimal("0")
-    for col in (
-        w.basic_hourly_rate,
-        w.health_welfare,
-        w.pension,
-        w.vacation_holiday,
-        w.other_payments,
-        w.training,
-    ):
-        if col is not None:
-            total += col
-    return float(total.quantize(Decimal("0.0001")))
+def _optional_pct(val: Any) -> Decimal | None:
+    num = _optional_decimal(val)
+    if num is None:
+        return None
+    if num < 0 or num > Decimal("100"):
+        raise ApiError("percentage must be between 0 and 100", 400)
+    return num
 
 
-def wage_rate_public(w: WageRate) -> dict[str, Any]:
+def current_labor_burden() -> dict[str, float]:
+    raw = current_tenant_setting("labor.burden")
+    return normalize_labor_burden(raw if isinstance(raw, dict) else None)
+
+
+def save_labor_burden(data: Mapping[str, Any], *, actor_user_id: uuid.UUID | None = None) -> dict[str, float]:
+    tenant_id = current_organization_id()
+    if tenant_id is None:
+        raise ApiError("organization required", 400)
+    normalized = normalize_labor_burden(data)
+    set_tenant_setting(tenant_id, "labor.burden", normalized, actor_user_id=actor_user_id)
+    db.session.commit()
+    return normalized
+
+
+def wage_total_loaded(w: WageRate, burden: Mapping[str, Any] | None = None) -> float:
+    rates = burden if burden is not None else current_labor_burden()
+    return float(labor_burden_breakdown(w, rates)["total_loaded_hourly"])
+
+
+def wage_rate_public(w: WageRate, burden: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    rates = burden if burden is not None else current_labor_burden()
+    breakdown = labor_burden_breakdown(w, rates)
     return {
         "id": str(w.id),
         "state": w.state,
@@ -95,9 +117,15 @@ def wage_rate_public(w: WageRate) -> dict[str, Any]:
         "vacation_holiday": float(w.vacation_holiday) if w.vacation_holiday is not None else None,
         "other_payments": float(w.other_payments) if w.other_payments is not None else None,
         "training": float(w.training) if w.training is not None else None,
+        "workers_comp_pct": float(w.workers_comp_pct) if w.workers_comp_pct is not None else None,
         "notes": w.notes,
         "is_assumed": bool(w.is_assumed),
-        "total_loaded_hourly": wage_total_loaded(w),
+        "fringe_hourly": breakdown["fringe_hourly"],
+        "burden_hourly": breakdown["burden_hourly"],
+        "taxable_hourly": breakdown["taxable_hourly"],
+        "burden_pct": breakdown["burden_pct"],
+        "burden_lines": breakdown["lines"],
+        "total_loaded_hourly": breakdown["total_loaded_hourly"],
     }
 
 
@@ -128,6 +156,10 @@ def values_from_mapping(data: Mapping[str, Any], *, partial: bool = False) -> di
         if partial and field not in data:
             continue
         out[field] = _optional_decimal(data.get(field))
+    for field in _PCT_FIELDS:
+        if field not in data:
+            continue
+        out[field] = _optional_pct(data.get(field))
     if not partial or "notes" in data:
         notes = _blank(data.get("notes")) or None
         if notes:
@@ -141,21 +173,22 @@ def values_from_mapping(data: Mapping[str, Any], *, partial: bool = False) -> di
 
 
 def csv_row_values(norm: Mapping[str, str]) -> dict[str, Any]:
-    return values_from_mapping(
-        {
-            "state": norm.get("state", ""),
-            "sub_area": norm.get("sub_area", ""),
-            "year": norm.get("year", ""),
-            "trade": norm.get("trade", ""),
-            "basic_hourly_rate": norm.get("basic_hourly_rate", ""),
-            "health_welfare": norm.get("health_welfare", ""),
-            "pension": norm.get("pension", ""),
-            "vacation_holiday": norm.get("vacation_holiday", ""),
-            "other_payments": norm.get("other_payments", ""),
-            "training": norm.get("training", ""),
-            "notes": norm.get("notes", ""),
-        }
-    )
+    payload: dict[str, Any] = {
+        "state": norm.get("state", ""),
+        "sub_area": norm.get("sub_area", ""),
+        "year": norm.get("year", ""),
+        "trade": norm.get("trade", ""),
+        "basic_hourly_rate": norm.get("basic_hourly_rate", ""),
+        "health_welfare": norm.get("health_welfare", ""),
+        "pension": norm.get("pension", ""),
+        "vacation_holiday": norm.get("vacation_holiday", ""),
+        "other_payments": norm.get("other_payments", ""),
+        "training": norm.get("training", ""),
+        "notes": norm.get("notes", ""),
+    }
+    if "workers_comp_pct" in norm:
+        payload["workers_comp_pct"] = norm.get("workers_comp_pct", "")
+    return values_from_mapping(payload)
 
 
 def _wage_query(
@@ -208,8 +241,10 @@ def list_wage_rates(
     base = _wage_query(q=q, state=state, year=year, trade=trade, sub_area=sub_area)
     total = db.session.scalar(select(func.count()).select_from(base.order_by(None).subquery())) or 0
     rows = db.session.scalars(base.offset(offset).limit(limit)).all()
+    burden = current_labor_burden()
     return {
-        "items": [wage_rate_public(w) for w in rows],
+        "items": [wage_rate_public(w, burden) for w in rows],
+        "burden": burden,
         "entity": "wage_rates",
         "total": int(total),
         "limit": limit,

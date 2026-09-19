@@ -7,6 +7,17 @@ import uuid
 def test_wage_rates_crud_and_import(client):
     tag = uuid.uuid4().hex[:8]
     state = f"ZZ-{tag}"
+    client.put(
+        "/api/v1/wage-rates/burden",
+        json={
+            "social_security_pct": 6.2,
+            "medicare_pct": 1.45,
+            "futa_pct": 0.6,
+            "suta_pct": 0,
+            "workers_comp_pct": 0,
+            "other_pct": 0,
+        },
+    )
     created = client.post(
         "/api/v1/wage-rates",
         json={
@@ -25,7 +36,9 @@ def test_wage_rates_crud_and_import(client):
     assert item["sub_area"] == "Clark"
     assert item["year"] == 2099
     assert item["basic_hourly_rate"] == 41.5
-    assert item["total_loaded_hourly"] == 55.75
+    assert item["fringe_hourly"] == 55.75
+    assert item["total_loaded_hourly"] == 59.1738
+    assert item["burden_hourly"] == 3.4238
     row_id = item["id"]
 
     listed = client.get(f"/api/v1/wage-rates?limit=50&q={tag}")
@@ -86,3 +99,49 @@ def test_wage_rates_crud_and_import(client):
     assert deleted.status_code == 200
     missing = client.get(f"/api/v1/wage-rates/{row_id}")
     assert missing.status_code == 404
+
+    burden_get = client.get("/api/v1/wage-rates/burden")
+    assert burden_get.status_code == 200
+    burden = burden_get.get_json()["burden"]
+    assert burden["social_security_pct"] == 6.2
+    assert burden["medicare_pct"] == 1.45
+    assert burden["futa_pct"] == 0.6
+
+    saved = client.put(
+        "/api/v1/wage-rates/burden",
+        json={"suta_pct": "3.4", "workers_comp_pct": "12", "other_pct": "1.5"},
+    )
+    assert saved.status_code == 200, saved.get_data(as_text=True)
+    saved_burden = saved.get_json()["burden"]
+    assert saved_burden["suta_pct"] == 3.4
+    assert saved_burden["workers_comp_pct"] == 12
+    assert saved_burden["social_security_pct"] == 6.2
+
+    wc_row = client.post(
+        "/api/v1/wage-rates",
+        json={
+            "state": state,
+            "sub_area": "Orange",
+            "year": 2097,
+            "trade": f"Glazier {tag}",
+            "basic_hourly_rate": "50",
+            "workers_comp_pct": "8",
+        },
+    )
+    assert wc_row.status_code == 201, wc_row.get_data(as_text=True)
+    wc_item = wc_row.get_json()["item"]
+    assert wc_item["workers_comp_pct"] == 8
+    wc_line = next(line for line in wc_item["burden_lines"] if line["key"] == "workers_comp_pct")
+    assert wc_line["pct"] == 8
+    assert wc_line["amount"] == 4
+    client.put(
+        "/api/v1/wage-rates/burden",
+        json={
+            "social_security_pct": 6.2,
+            "medicare_pct": 1.45,
+            "futa_pct": 0.6,
+            "suta_pct": 0,
+            "workers_comp_pct": 0,
+            "other_pct": 0,
+        },
+    )

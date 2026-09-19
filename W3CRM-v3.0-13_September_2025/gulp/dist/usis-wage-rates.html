@@ -514,12 +514,50 @@
 				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 					<div>
 						<h4 class="mb-1">Wage rates</h4>
-						<p class="text-muted small mb-0">Prevailing wage lookup by state, area, year, and trade. Estimates and HR pay scales use this list.</p>
+						<p class="text-muted small mb-0">Prevailing wage lookup by state, area, year, and trade. Loaded hourly includes DIR fringes plus employer taxes, unemployment, and workers' comp.</p>
 					</div>
 					<div class="d-flex flex-wrap gap-2">
 						<input type="file" class="d-none" id="usis-wr-import-file" accept=".csv,text/csv">
 						<button type="button" class="btn btn-outline-primary btn-sm" id="usis-wr-import">Import CSV</button>
 						<button type="button" class="btn btn-primary btn-sm" id="usis-wr-add">Add rate</button>
+					</div>
+				</div>
+				<div class="card border-0 shadow-sm mb-3">
+					<div class="card-body">
+						<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+							<div>
+								<h5 class="h6 mb-1">Employer burden</h5>
+								<p class="text-muted small mb-0">Percent of taxable wages (basic + vacation/holiday). Federal payroll taxes start at IRS rates; enter your unemployment and workers' comp.</p>
+							</div>
+							<button type="button" class="btn btn-outline-primary btn-sm" id="usis-wr-burden-save">Save burden</button>
+						</div>
+						<div class="alert alert-danger py-2 d-none" id="usis-wr-burden-err" role="alert"></div>
+						<div class="row g-2">
+							<div class="col-6 col-md-2">
+								<label class="form-label small mb-0" for="usis-wr-ss">Social Security %</label>
+								<input class="form-control form-control-sm" id="usis-wr-ss" inputmode="decimal">
+							</div>
+							<div class="col-6 col-md-2">
+								<label class="form-label small mb-0" for="usis-wr-medicare">Medicare %</label>
+								<input class="form-control form-control-sm" id="usis-wr-medicare" inputmode="decimal">
+							</div>
+							<div class="col-6 col-md-2">
+								<label class="form-label small mb-0" for="usis-wr-futa">FUTA %</label>
+								<input class="form-control form-control-sm" id="usis-wr-futa" inputmode="decimal">
+							</div>
+							<div class="col-6 col-md-2">
+								<label class="form-label small mb-0" for="usis-wr-suta">State unemployment %</label>
+								<input class="form-control form-control-sm" id="usis-wr-suta" inputmode="decimal" placeholder="SUI / ETT">
+							</div>
+							<div class="col-6 col-md-2">
+								<label class="form-label small mb-0" for="usis-wr-wc">Workers' comp %</label>
+								<input class="form-control form-control-sm" id="usis-wr-wc" inputmode="decimal">
+							</div>
+							<div class="col-6 col-md-2">
+								<label class="form-label small mb-0" for="usis-wr-other-burden">Other (GL, etc.) %</label>
+								<input class="form-control form-control-sm" id="usis-wr-other-burden" inputmode="decimal">
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="card border-0 shadow-sm">
@@ -661,6 +699,10 @@
 								<label class="form-label small mb-0" for="usis-wr-edit-training">Training</label>
 								<input class="form-control form-control-sm" id="usis-wr-edit-training" inputmode="decimal">
 							</div>
+							<div class="col-md-4">
+								<label class="form-label small mb-0" for="usis-wr-edit-wc">Workers' comp % <span class="text-muted fw-normal">(blank = company default)</span></label>
+								<input class="form-control form-control-sm" id="usis-wr-edit-wc" inputmode="decimal">
+							</div>
 							<div class="col-12">
 								<label class="form-label small mb-0" for="usis-wr-edit-notes">Notes</label>
 								<input class="form-control form-control-sm" id="usis-wr-edit-notes" maxlength="255">
@@ -669,6 +711,12 @@
 								<div class="form-check">
 									<input class="form-check-input" type="checkbox" id="usis-wr-edit-assumed">
 									<label class="form-check-label" for="usis-wr-edit-assumed">Assumed rate</label>
+								</div>
+							</div>
+							<div class="col-12">
+								<div class="border rounded p-2 bg-light" id="usis-wr-calc">
+									<div class="small text-muted mb-1">Loaded hourly</div>
+									<div id="usis-wr-calc-body" class="small mb-0">Enter a basic wage to see taxes, unemployment, and workers' comp.</div>
 								</div>
 							</div>
 						</div>
@@ -708,7 +756,7 @@
 	<script src="assets/js/deznav-init-construction.js"></script>
 	<script src="assets/js/custom.js"></script>
 	<script src="assets/js/construction.js"></script>
-	<script src="assets/js/usis-wage-rates.js?v=20260918a"></script>
+	<script src="assets/js/usis-wage-rates.js?v=20260918b"></script>
 
 </body>
 </html>

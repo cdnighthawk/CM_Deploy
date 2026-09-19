@@ -10,6 +10,22 @@
 	var items = [];
 	var keepOpen = false;
 	var searchTimer = null;
+	var burden = {
+		social_security_pct: 6.2,
+		medicare_pct: 1.45,
+		futa_pct: 0.6,
+		suta_pct: 0,
+		workers_comp_pct: 0,
+		other_pct: 0,
+	};
+	var BURDEN_LINES = [
+		{ key: "social_security_pct", label: "Social Security" },
+		{ key: "medicare_pct", label: "Medicare" },
+		{ key: "futa_pct", label: "Federal unemployment (FUTA)" },
+		{ key: "suta_pct", label: "State unemployment" },
+		{ key: "workers_comp_pct", label: "Workers' compensation" },
+		{ key: "other_pct", label: "Other (GL, etc.)" },
+	];
 
 	function api() {
 		return window.USIS_API || {};
@@ -47,6 +63,117 @@
 		return num.toFixed(2);
 	}
 
+	function money4(n) {
+		var num = Number(n);
+		if (isNaN(num)) return "0.0000";
+		return num.toFixed(4);
+	}
+
+	function numVal(raw) {
+		var s = String(raw == null ? "" : raw).trim();
+		if (s === "") return 0;
+		var n = Number(s);
+		return isNaN(n) ? 0 : n;
+	}
+
+	function round4(n) {
+		return Math.round(Number(n) * 10000) / 10000;
+	}
+
+	function clampPct(n) {
+		if (n < 0) return 0;
+		if (n > 100) return 100;
+		return round4(n);
+	}
+
+	function burdenFromForm() {
+		return {
+			social_security_pct: clampPct(numVal(val("usis-wr-ss"))),
+			medicare_pct: clampPct(numVal(val("usis-wr-medicare"))),
+			futa_pct: clampPct(numVal(val("usis-wr-futa"))),
+			suta_pct: clampPct(numVal(val("usis-wr-suta"))),
+			workers_comp_pct: clampPct(numVal(val("usis-wr-wc"))),
+			other_pct: clampPct(numVal(val("usis-wr-other-burden"))),
+		};
+	}
+
+	function fillBurdenForm(rates) {
+		burden = rates || burden;
+		setVal("usis-wr-ss", burden.social_security_pct);
+		setVal("usis-wr-medicare", burden.medicare_pct);
+		setVal("usis-wr-futa", burden.futa_pct);
+		setVal("usis-wr-suta", burden.suta_pct);
+		setVal("usis-wr-wc", burden.workers_comp_pct);
+		setVal("usis-wr-other-burden", burden.other_pct);
+	}
+
+	function calcLoaded(row, rates) {
+		var basic = numVal(row && row.basic_hourly_rate);
+		var vacation = numVal(row && row.vacation_holiday);
+		var taxable = round4(basic + vacation);
+		var fringe = round4(
+			basic +
+				numVal(row && row.health_welfare) +
+				numVal(row && row.pension) +
+				vacation +
+				numVal(row && row.other_payments) +
+				numVal(row && row.training)
+		);
+		var wcOverride = row && row.workers_comp_pct != null && String(row.workers_comp_pct).trim() !== "";
+		var lines = BURDEN_LINES.map(function (meta) {
+			var pct = rates[meta.key];
+			if (meta.key === "workers_comp_pct" && wcOverride) pct = clampPct(numVal(row.workers_comp_pct));
+			var amount = round4((taxable * pct) / 100);
+			return { key: meta.key, label: meta.label, pct: pct, amount: amount };
+		});
+		var burdenHourly = round4(
+			lines.reduce(function (sum, line) {
+				return sum + line.amount;
+			}, 0)
+		);
+		return {
+			taxable: taxable,
+			fringe: fringe,
+			burden: burdenHourly,
+			loaded: round4(fringe + burdenHourly),
+			lines: lines,
+		};
+	}
+
+	function renderCalc() {
+		var box = el("usis-wr-calc-body");
+		if (!box) return;
+		var rates = burdenFromForm();
+		var row = payload();
+		var out = calcLoaded(row, rates);
+		if (!out.fringe && !out.taxable) {
+			box.textContent = "Enter a basic wage to see taxes, unemployment, and workers' comp.";
+			return;
+		}
+		var html =
+			'<div class="d-flex justify-content-between"><span>DIR package (wage + fringes)</span><strong>$' +
+			esc(money4(out.fringe)) +
+			"</strong></div>" +
+			'<div class="text-muted">Taxable wages (basic + vacation): $' +
+			esc(money4(out.taxable)) +
+			"</div>";
+		out.lines.forEach(function (line) {
+			html +=
+				'<div class="d-flex justify-content-between"><span>' +
+				esc(line.label) +
+				" (" +
+				esc(String(line.pct)) +
+				'%)</span><span>$' +
+				esc(money4(line.amount)) +
+				"</span></div>";
+		});
+		html +=
+			'<hr class="my-1"><div class="d-flex justify-content-between"><span>Fully loaded</span><strong>$' +
+			esc(money4(out.loaded)) +
+			" / hr</strong></div>";
+		box.innerHTML = html;
+	}
+
 	function modal() {
 		var node = el("usis-modal-wr");
 		if (!node || !window.bootstrap || !window.bootstrap.Modal) return null;
@@ -72,6 +199,7 @@
 			vacation_holiday: val("usis-wr-edit-vacation"),
 			other_payments: val("usis-wr-edit-other"),
 			training: val("usis-wr-edit-training"),
+			workers_comp_pct: val("usis-wr-edit-wc"),
 			notes: val("usis-wr-edit-notes"),
 			is_assumed: !!(el("usis-wr-edit-assumed") && el("usis-wr-edit-assumed").checked),
 		};
@@ -91,6 +219,7 @@
 		setVal("usis-wr-edit-vacation", row && row.vacation_holiday != null ? row.vacation_holiday : "");
 		setVal("usis-wr-edit-other", row && row.other_payments != null ? row.other_payments : "");
 		setVal("usis-wr-edit-training", row && row.training != null ? row.training : "");
+		setVal("usis-wr-edit-wc", row && row.workers_comp_pct != null ? row.workers_comp_pct : "");
 		setVal("usis-wr-edit-notes", row ? row.notes : "");
 		var assumed = el("usis-wr-edit-assumed");
 		if (assumed) assumed.checked = !!(row && row.is_assumed);
@@ -99,6 +228,7 @@
 		var saveNew = el("usis-wr-save-new");
 		if (saveNew) saveNew.classList.toggle("d-none", !!row);
 		setErr("");
+		renderCalc();
 	}
 
 	function openForm(row) {
@@ -187,6 +317,7 @@
 			.then(function (data) {
 				items = (data && data.items) || [];
 				total = data && data.total != null ? Number(data.total) : items.length;
+				if (data && data.burden) fillBurdenForm(data.burden);
 				render();
 			})
 			.catch(function () {
@@ -222,6 +353,47 @@
 				fillSelect("usis-wr-trade", data && data.trades, null, "All trades");
 			})
 			.catch(function () {});
+	}
+
+	function loadBurden() {
+		return fetchJson("/api/v1/wage-rates/burden")
+			.then(function (data) {
+				if (data && data.burden) fillBurdenForm(data.burden);
+			})
+			.catch(function () {
+				fillBurdenForm(burden);
+			});
+	}
+
+	function setBurdenErr(msg) {
+		var box = el("usis-wr-burden-err");
+		if (!box) return;
+		box.textContent = msg || "";
+		box.classList.toggle("d-none", !msg);
+	}
+
+	function saveBurden() {
+		var body = burdenFromForm();
+		setBurdenErr("");
+		return fetchJson("/api/v1/wage-rates/burden", { method: "PUT", body: body })
+			.then(function (data) {
+				if (data && data.burden) fillBurdenForm(data.burden);
+				else fillBurdenForm(body);
+				renderCalc();
+				return load();
+			})
+			.catch(function (err) {
+				var msg = "Could not save employer burden.";
+				if (err && err.body) {
+					try {
+						var parsed = JSON.parse(err.body);
+						msg = parsed.error || msg;
+					} catch (e) {
+						msg = String(err.body).slice(0, 240) || msg;
+					}
+				}
+				setBurdenErr(msg);
+			});
 	}
 
 	function save() {
@@ -296,6 +468,7 @@
 
 	function onReady() {
 		loadFacets().then(load);
+		loadBurden();
 		var add = el("usis-wr-add");
 		if (add)
 			add.addEventListener("click", function () {
@@ -352,6 +525,29 @@
 				save();
 			});
 		}
+		var burdenSave = el("usis-wr-burden-save");
+		if (burdenSave)
+			burdenSave.addEventListener("click", function () {
+				saveBurden();
+			});
+		[
+			"usis-wr-ss",
+			"usis-wr-medicare",
+			"usis-wr-futa",
+			"usis-wr-suta",
+			"usis-wr-wc",
+			"usis-wr-other-burden",
+			"usis-wr-edit-basic",
+			"usis-wr-edit-hw",
+			"usis-wr-edit-pension",
+			"usis-wr-edit-vacation",
+			"usis-wr-edit-other",
+			"usis-wr-edit-training",
+			"usis-wr-edit-wc",
+		].forEach(function (id) {
+			var node = el(id);
+			if (node) node.addEventListener("input", renderCalc);
+		});
 		var tbody = el("usis-wr-tbody");
 		if (tbody) {
 			tbody.addEventListener("click", function (e) {

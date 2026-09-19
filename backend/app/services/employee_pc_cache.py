@@ -527,6 +527,11 @@ def catalog_item_cache_row(m) -> dict[str, Any]:
 
 
 def wage_rate_cache_row(w) -> dict[str, Any]:
+    from ..labor_burden import labor_burden_breakdown
+    from ..tenant_settings import current_tenant_setting
+
+    raw = current_tenant_setting("labor.burden")
+    breakdown = labor_burden_breakdown(w, raw if isinstance(raw, dict) else None)
     return {
         "id": str(w.id),
         "state": w.state,
@@ -541,6 +546,10 @@ def wage_rate_cache_row(w) -> dict[str, Any]:
         "training": _num(w.training),
         "notes": w.notes,
         "isAssumed": bool(w.is_assumed),
+        "workersCompPct": _num(getattr(w, "workers_comp_pct", None)),
+        "fringeHourly": breakdown["fringe_hourly"],
+        "burdenHourly": breakdown["burden_hourly"],
+        "totalLoadedHourly": breakdown["total_loaded_hourly"],
     }
 
 

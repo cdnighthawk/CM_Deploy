@@ -15,6 +15,7 @@ from flask import has_request_context, request, session
 from sqlalchemy import select
 
 from .extensions import db
+from .labor_burden import DEFAULT_LABOR_BURDEN
 from .models.organization import Organization, USIS_ORG_SLUG
 from .models.saas import FeatureFlag, OrganizationSendDomain, PlanDefault, TenantEntitlement, TenantSetting
 from .tenancy import current_organization_id, include_all_orgs
@@ -153,6 +154,7 @@ SETTING_DEFAULTS: dict[str, Any] = {
     "hire.w4_edition": "2026",
     "hire.i9_edition": "01/20/25",
     "hire.ssn_on_user": False,
+    "labor.burden": dict(DEFAULT_LABOR_BURDEN),
 }
 
 PLATFORM_ONLY_KEYS = frozenset({"ai.local_endpoint", "ai.tenant_call_cap_daily"})

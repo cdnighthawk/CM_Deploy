@@ -5319,36 +5319,11 @@ def _load_material_price(price_id: str) -> tuple[MaterialPrice | None, tuple[Any
 
 
 def _wage_rate_public(w: WageRate) -> dict[str, Any]:
-    return {
-        "id": str(w.id),
-        "state": w.state,
-        "sub_area": w.sub_area,
-        "year": w.year,
-        "trade": w.trade,
-        "basic_hourly_rate": _num_or_none(w.basic_hourly_rate),
-        "health_welfare": _num_or_none(w.health_welfare),
-        "pension": _num_or_none(w.pension),
-        "vacation_holiday": _num_or_none(w.vacation_holiday),
-        "other_payments": _num_or_none(w.other_payments),
-        "training": _num_or_none(w.training),
-        "notes": w.notes,
-        "is_assumed": w.is_assumed,
-    }
+    return wage_rate_svc.wage_rate_public(w)
 
 
 def _wage_total_loaded(w: WageRate) -> float:
-    total = Decimal("0")
-    for col in (
-        w.basic_hourly_rate,
-        w.health_welfare,
-        w.pension,
-        w.vacation_holiday,
-        w.other_payments,
-        w.training,
-    ):
-        if col is not None:
-            total += col
-    return float(total.quantize(Decimal("0.0001")))
+    return wage_rate_svc.wage_total_loaded(w)
 
 
 @bp.get("/lead-estimates/<identifier>")
@@ -6341,6 +6316,25 @@ def list_wage_rates_desktop():
 @bp.get("/wage-rates/facets")
 def list_wage_rate_facets():
     return _jsonify(wage_rate_svc.wage_rate_facets())
+
+
+@bp.get("/wage-rates/burden")
+def get_wage_labor_burden():
+    return _jsonify({"burden": wage_rate_svc.current_labor_burden(), "entity": "labor_burden"})
+
+
+@bp.put("/wage-rates/burden")
+def put_wage_labor_burden():
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    data = request.get_json(silent=True) or {}
+    body = data.get("burden") if isinstance(data.get("burden"), dict) else data
+    try:
+        cu = current_user()
+        burden = wage_rate_svc.save_labor_burden(body, actor_user_id=getattr(cu, "id", None))
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+    return _jsonify({"burden": burden, "entity": "labor_burden"})
 
 
 @bp.post("/wage-rates")

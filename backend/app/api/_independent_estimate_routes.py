@@ -169,6 +169,46 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
             current_app.logger.exception("GET estimate failed")
             return _jsonify({"error": str(exc)[:300]}), 500
 
+    @bp.post("/estimates/<estimate_id>/provision-folder")
+    def provision_job_estimate_folder(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        cu = current_user()
+        if not (cu.is_dev_admin or cu.has_role("admin", "superuser")):
+            return _jsonify(
+                {
+                    "error": "admin or superuser role required to provision estimate folders",
+                    "error_code": "PROVISION_FORBIDDEN",
+                }
+            ), 403
+        from ..services.estimate_folder_provision import provision_estimate_folder_by_id, requested_by_label
+
+        requested_by = requested_by_label(
+            cu.user.id if cu.user else None,
+            cu.user.email if cu.user else None,
+        )
+        result = provision_estimate_folder_by_id(est.id, requested_by=requested_by, persist=True)
+        est = _get_estimate(estimate_id)
+        body = {
+            "ok": result.ok,
+            "created": result.created,
+            "path": result.path,
+            "status": result.status,
+            "error": result.error,
+            "item": _estimate_detail_item(est) if est is not None else None,
+            "entity": "estimate_folder_provision",
+        }
+        if result.status == "unconfigured":
+            body["error"] = (
+                "folder provisioner is not configured "
+                "(set ESTIMATE_FOLDER_PROVISION_URL or ESTIMATE_FOLDER_ROOT)"
+            )
+            return _jsonify(body), 503
+        if not result.ok:
+            return _jsonify(body), 502
+        return _jsonify(body)
+
     @bp.get("/estimates/<estimate_id>/bid-scope")
     def get_estimate_bid_scope(estimate_id: str):
         eid = _parse_uuid_param(estimate_id)

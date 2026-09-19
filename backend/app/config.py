@@ -377,6 +377,22 @@ class Config:
     GITHUB_DESKTOP_TOKEN: str = (os.environ.get("GITHUB_DESKTOP_TOKEN") or "").strip()
     GITHUB_DESKTOP_LOCAL_SETUP: str = (os.environ.get("GITHUB_DESKTOP_LOCAL_SETUP") or "").strip()
 
+    # Estimate project folder on the office file store (on-prem agent and/or local mkdir).
+    # See docs/estimate-folder-provision.md. Do not point ESTIMATE_FOLDER_ROOT at Z:\\ from Render.
+    ESTIMATE_FOLDER_PROVISION_URL: str | None = (
+        os.environ.get("ESTIMATE_FOLDER_PROVISION_URL") or ""
+    ).strip() or None
+    ESTIMATE_FOLDER_PROVISION_TOKEN: str | None = (
+        os.environ.get("ESTIMATE_FOLDER_PROVISION_TOKEN") or ""
+    ).strip() or None
+    ESTIMATE_FOLDER_ROOT: str | None = (os.environ.get("ESTIMATE_FOLDER_ROOT") or "").strip() or None
+    try:
+        ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC: float = float(
+            (os.environ.get("ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC") or "20").strip() or "20"
+        )
+    except ValueError:
+        ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC = 20.0
+
 
 def client_debug_log_dev_open() -> bool:
     """True when anonymous ``POST /api/v1/__debug/client-log`` is allowed (local dev only).

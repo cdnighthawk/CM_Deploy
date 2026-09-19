@@ -93,6 +93,14 @@ class Estimate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
         nullable=True,
         index=True,
     )
+    folder_provision_status: Mapped[Optional[str]] = mapped_column(
+        String(32), nullable=True, index=True
+    )
+    folder_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    folder_provisioned_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    folder_provision_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     lead_estimate: Mapped[Optional["LeadEstimate"]] = relationship(
         "LeadEstimate",

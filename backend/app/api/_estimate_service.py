@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload
 
 from ..extensions import db
 from ..models import Company, DrawingSet, Estimate, LeadEstimate, TakeoffLineItem, User
+from ..services.estimate_folder_provision import requested_by_label, schedule_estimate_folder_provision
 from ._serializers import iso, lead_estimate_public, num_or_none
 from ..project_labor_rates import compact_labor_rates_summary, normalize_labor_rate_settings, stored_labor_rate_settings
 
@@ -109,6 +110,7 @@ def ensure_current_estimate(lead: LeadEstimate, *, user_id: uuid.UUID | None = N
     db.session.add(est)
     db.session.flush()
     mark_current(est)
+    schedule_estimate_folder_provision(est.id, requested_by=requested_by_label(user_id))
     return est
 
 
@@ -202,6 +204,10 @@ def estimate_summary_public(est: Estimate) -> dict[str, Any]:
         "created_at": iso(est.created_at),
         "updated_at": iso(est.updated_at),
         "labor_rates": _labor_rates_compact(est),
+        "folder_provision_status": est.folder_provision_status,
+        "folder_path": est.folder_path,
+        "folder_provisioned_at": iso(est.folder_provisioned_at),
+        "folder_provision_error": est.folder_provision_error,
     }
 
 
@@ -387,6 +393,7 @@ def create_estimate(
     if make_current or has_current is None:
         mark_current(est)
     db.session.flush()
+    schedule_estimate_folder_provision(est.id, requested_by=requested_by_label(user_id))
     return est
 
 

@@ -74,6 +74,12 @@ services:
       # Autodesk Desktop Connector ingest agent (Bearer token for /api/projects etc.).
       - key: CM_API_KEY
         sync: false
+      # On-prem estimate folder agent (C:\usis-cm\folder_provision.py on port 5055, root Y:\Estimates).
+      # Set a URL Render can reach (not 127.0.0.1). Do not set ESTIMATE_FOLDER_ROOT on Render.
+      - key: ESTIMATE_FOLDER_PROVISION_URL
+        sync: false
+      - key: ESTIMATE_FOLDER_PROVISION_TOKEN
+        sync: false
       # Backblaze B2 — set in Render Dashboard (see docs/backblaze-b2.md).
       # Use B2_PREFIX=prod/usis-cm on Render; dev machines use dev/usis-cm in backend/.env.
       - key: B2_APPLICATION_KEY_ID

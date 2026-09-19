@@ -535,6 +535,13 @@ def register_extra_routes(bp: Blueprint) -> None:
             from ._estimate_service import mark_current
 
             mark_current(e)
+        from ..services.estimate_folder_provision import requested_by_label, schedule_estimate_folder_provision
+
+        cu = current_user()
+        schedule_estimate_folder_provision(
+            e.id,
+            requested_by=requested_by_label(cu.user.id if cu.user else None, cu.user.email if cu.user else None),
+        )
         db.session.commit()
         return (
             _jsonify(

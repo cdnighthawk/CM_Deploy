@@ -346,7 +346,7 @@ def create_estimate(
 
     name = str(data.get("name") or data.get("title") or "").strip()[:255]
     if not name:
-        name = "New Estimate" if source is None else f"{source.name} copy"
+        name = "New Proposal" if source is None else f"{source.name} copy"
 
     est = Estimate(
         lead_estimate_id=lead.id,

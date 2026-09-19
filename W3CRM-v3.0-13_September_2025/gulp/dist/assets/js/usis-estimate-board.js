@@ -225,11 +225,11 @@
 			(jobHref ? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>' : "") +
 			'<a class="dropdown-item" href="' +
 			(lidEnc ? detailHref : "javascript:void(0);") +
-			'">Takeoff / estimate</a>' +
+			'">Takeoff / proposal</a>' +
 			(lidEnc
 				? '<button type="button" class="dropdown-item usis-est-row-create" data-lead-id="' +
 					esc(String(row.id || row.external_id || "")) +
-					'">New estimate</button>'
+					'">New proposal</button>'
 				: "") +
 			(window.USISAdminDelete && window.USISAdminDelete.menuItemHtml
 				? window.USISAdminDelete.menuItemHtml(

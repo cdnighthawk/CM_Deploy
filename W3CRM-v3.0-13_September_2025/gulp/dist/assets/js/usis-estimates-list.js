@@ -75,7 +75,7 @@
 		if (!tb) return;
 		if (!estimates.length) {
 			tb.innerHTML =
-				'<tr><td colspan="7" class="text-center text-muted py-4">No estimates yet. Create one to start takeoff and pricing.</td></tr>';
+				'<tr><td colspan="7" class="text-center text-muted py-4">No proposals yet. Create one to start takeoff and pricing.</td></tr>';
 			return;
 		}
 		tb.innerHTML = estimates
@@ -118,7 +118,7 @@
 					(window.USISAdminDelete && window.USISAdminDelete.buttonHtml
 						? " " +
 						  window.USISAdminDelete.buttonHtml(row.id, "/api/v1/estimates/" + encodeURIComponent(row.id), {
-								label: "this estimate",
+								label: "this proposal",
 							})
 						: "") +
 					"</td></tr>"
@@ -145,7 +145,7 @@
 			})
 			.join("");
 		if (!estimates.length) {
-			sel.innerHTML = '<option value="">No existing estimates</option>';
+			sel.innerHTML = '<option value="">No existing proposals</option>';
 		}
 	}
 
@@ -183,11 +183,11 @@
 		var show = !leadId;
 		wrap.classList.toggle("d-none", !show);
 		if (!show) return;
-		var opts = '<option value="">Select a lead…</option>';
+		var opts = '<option value="">Select an estimate…</option>';
 		(items || []).forEach(function (row) {
 			var id = row.id || row.external_id;
 			if (!id) return;
-			var label = (row.name || "Lead") + (row.number ? " · #" + row.number : "");
+			var label = (row.name || "Estimate") + (row.number ? " · #" + row.number : "");
 			var selAttr = selectedId && String(id) === String(selectedId) ? " selected" : "";
 			opts += '<option value="' + esc(String(id)) + '"' + selAttr + ">" + esc(label) + "</option>";
 		});
@@ -207,7 +207,7 @@
 		copyFromId = opts.copyFromId || "";
 		showModalErr("");
 		var title = document.getElementById("usis-est-create-title");
-		if (title) title.textContent = copyFromId ? "Copy estimate" : "New estimate";
+		if (title) title.textContent = copyFromId ? "Copy proposal" : "New proposal";
 		fillLeadPicker(opts.leadOptions || window.__USIS_ESTIMATE_LEADS || [], leadId);
 		var nameEl = document.getElementById("usis-est-create-name");
 		var gcEl = document.getElementById("usis-est-create-gc");
@@ -222,7 +222,7 @@
 			}
 		}
 		if (nameEl) {
-			nameEl.value = src ? src.name + " copy" : "Original Estimate";
+			nameEl.value = src ? src.name + " copy" : "Original Proposal";
 			nameEl.focus();
 		}
 		if (gcEl) gcEl.value = src && src.gc_name ? src.gc_name : "";
@@ -258,7 +258,7 @@
 		if (!Api || !leadId) return;
 		showListErr("");
 		var tb = document.getElementById("usis-lead-estimates-tbody");
-		if (tb) tb.innerHTML = '<tr><td colspan="7" class="text-muted">Loading estimates…</td></tr>';
+		if (tb) tb.innerHTML = '<tr><td colspan="7" class="text-muted">Loading proposals…</td></tr>';
 		Api.listForLead(leadId)
 			.then(function (data) {
 				estimates = data.items || [];
@@ -275,7 +275,7 @@
 		if (!Api) return;
 		var createLeadId = resolveCreateLeadId();
 		if (!createLeadId) {
-			showModalErr("Choose a lead for this estimate.");
+			showModalErr("Choose an estimate for this proposal.");
 			return;
 		}
 		var nameEl = document.getElementById("usis-est-create-name");
@@ -312,7 +312,7 @@
 		if (copying) {
 			var copyId = copySel ? String(copySel.value || "").trim() : copyFromId;
 			if (!copyId) {
-				showModalErr("Choose an estimate to copy from.");
+				showModalErr("Choose a proposal to copy from.");
 				return;
 			}
 			body.copy_from_estimate_id = copyId;
@@ -323,7 +323,7 @@
 		Api.createForLead(createLeadId, body)
 			.then(function (data) {
 				var item = data.item || {};
-				if (!item.id) throw new Error("Create succeeded but no estimate id was returned.");
+				if (!item.id) throw new Error("Create succeeded but no proposal id was returned.");
 				window.location.href = Api.estimateDetailHref(item.id);
 			})
 			.catch(function (err) {
@@ -337,7 +337,7 @@
 		var root = document.getElementById("usis-lead-estimates-root");
 		if (root) {
 			leadId = leadIdFromUrl();
-			if (!leadId) showListErr("Open this page from the Leads table to manage estimates.");
+			if (!leadId) showListErr("Open this page from the Leads table to manage proposals.");
 		}
 		var newBtn = document.getElementById("usis-lead-est-new");
 		if (newBtn) newBtn.addEventListener("click", function () {

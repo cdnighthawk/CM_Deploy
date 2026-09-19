@@ -1120,11 +1120,11 @@
 	function openCreateEstimate(opts) {
 		var id = currentLeadId();
 		if (!window.USISEstimateCreate) {
-			flashErr("Create estimate is not available on this page.");
+			flashErr("Create proposal is not available on this page.");
 			return;
 		}
 		if (!id) {
-			flashErr("Open this page from a lead, then create an estimate.");
+			flashErr("Open this page from an estimate, then create a proposal.");
 			return;
 		}
 		window.USISEstimateCreate.open(id, opts || {});
@@ -1166,7 +1166,7 @@
 				(item.name || item.title || "—") +
 				" · " +
 				(item.number || (item.lead && item.lead.number) || "—") +
-				" · estimate " +
+				" · proposal " +
 				item.id;
 		}
 		var noId = document.getElementById("usis-est-detail-no-id");
@@ -1240,31 +1240,95 @@
 			});
 	}
 
+	function humanizeFetchError(e) {
+		var msg = (e && e.message) || String(e || "Request failed");
+		if ((e && (e.status === 502 || e.status === 503)) || /<!DOCTYPE|<\s*html/i.test(msg)) {
+			return "The server failed while saving. Try Add line again in a moment.";
+		}
+		if (e && e.status === 403) {
+			return mapApiError(e.body || {}, e.status);
+		}
+		return msg;
+	}
+
+	function showCreatedLine(item) {
+		if (!item) return false;
+		if (!leadItem) leadItem = { id: leadKey, takeoff_lines: [] };
+		var lines = (leadItem.takeoff_lines || []).filter(function (ln) {
+			return String(ln && ln.id) !== String(item.id);
+		});
+		lines.push(item);
+		leadItem.takeoff_lines = lines;
+		if (item.id) leadKey = leadItem.id || leadKey;
+		var wrap = document.getElementById("usis-est-detail-root");
+		if (wrap) wrap.classList.remove("d-none");
+		var noId = document.getElementById("usis-est-detail-no-id");
+		if (noId) noId.classList.add("d-none");
+		var idline = document.getElementById("usis-est-detail-idline");
+		if (idline && /Loading estimate/i.test(idline.textContent || "")) {
+			idline.textContent = (leadItem.name || "Estimate") + " · " + (leadKey || "");
+		}
+		renderTable(lines);
+		renderRollup(lines, leadItem.fee_percentage);
+		applyTakeoffLockUI();
+		return true;
+	}
+
 	function addLine() {
 		if (!leadKey) return;
 		if (leadItem && leadItem.estimate_locked_at) {
 			showErr("This estimate is locked.");
 			return;
 		}
-		fetch(API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
-			method: "POST",
-			headers: { "Content-Type": "application/json", Accept: "application/json" },
-			credentials: "include",
-			body: JSON.stringify({
-				description: "New line",
-				quantity: 1,
-				unit: "EA",
-				unit_cost: 0,
-				cost_type: "M",
-			}),
-		})
-			.then(function (r) {
-				if (r.status === 403) throw new Error("Writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)");
-				if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || "HTTP " + r.status); });
+		var addBtn = document.getElementById("usis-est-add-line");
+		if (addBtn) addBtn.disabled = true;
+		showErr("");
+		var payload = {
+			description: "New line",
+			quantity: 1,
+			unit: "EA",
+			unit_cost: 0,
+			cost_type: "M",
+		};
+		var req = Api
+			? Api.createTakeoffLine(leadKey, payload)
+			: fetch(API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
+					method: "POST",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
+					body: JSON.stringify(payload),
+				}).then(function (r) {
+					return r.text().then(function (text) {
+						var j = {};
+						try {
+							j = text && text.trim().charAt(0) !== "<" ? JSON.parse(text) : {};
+						} catch (eAdd) {
+							j = {};
+						}
+						if (r.status === 403) throw new Error(mapApiError(j, r.status));
+						if (!r.ok) {
+							var err = new Error(j.error || (r.status === 502 ? "The server failed while saving. Try Add line again in a moment." : "HTTP " + r.status));
+							err.status = r.status;
+							err.body = j;
+							throw err;
+						}
+						return j;
+					});
+				});
+		req
+			.then(function (data) {
+				var item = data && data.item;
+				if (showCreatedLine(item)) {
+					flashOk("Line added.");
+					return;
+				}
 				return loadDetail();
 			})
 			.catch(function (e) {
-				showErr(e.message || String(e));
+				showErr(humanizeFetchError(e));
+			})
+			.then(function () {
+				if (addBtn && !(leadItem && leadItem.estimate_locked_at)) addBtn.disabled = false;
 			});
 	}
 
@@ -1345,7 +1409,7 @@
 		} else if (leadKey) {
 			url = API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines";
 		} else {
-			showErr("Open an estimate before adding catalog items.");
+			showErr("Open a proposal before adding catalog items.");
 			return;
 		}
 		fetch(url, {
@@ -1525,10 +1589,10 @@
 		var appr = document.getElementById("usis-est-approve-lock");
 		if (appr) {
 			appr.addEventListener("click", function () {
-				if (!window.confirm("Approve this estimate and lock takeoff editing?")) return;
+				if (!window.confirm("Approve this proposal and lock takeoff editing?")) return;
 				postEstimateAction("approve")
 					.then(function () {
-						flashOk("Estimate approved and locked.");
+						flashOk("Proposal approved and locked.");
 						return loadDetail();
 					})
 					.catch(function (e) {
@@ -1539,10 +1603,10 @@
 		var lck = document.getElementById("usis-est-lock-draft");
 		if (lck) {
 			lck.addEventListener("click", function () {
-				if (!window.confirm("Lock this estimate (no formal approval recorded)?")) return;
+				if (!window.confirm("Lock this proposal (no formal approval recorded)?")) return;
 				postEstimateAction("lock")
 					.then(function () {
-						flashOk("Estimate locked.");
+						flashOk("Proposal locked.");
 						return loadDetail();
 					})
 					.catch(function (e) {
@@ -1553,10 +1617,10 @@
 		var unl = document.getElementById("usis-est-unlock");
 		if (unl) {
 			unl.addEventListener("click", function () {
-				if (!window.confirm("Unlock takeoff editing for this estimate?")) return;
+				if (!window.confirm("Unlock takeoff editing for this proposal?")) return;
 				postEstimateAction("unlock")
 					.then(function () {
-						flashOk("Estimate unlocked.");
+						flashOk("Proposal unlocked.");
 						return loadDetail();
 					})
 					.catch(function (e) {

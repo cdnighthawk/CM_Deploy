@@ -401,7 +401,7 @@
 		"usis-projects-table": { url: "/api/v1/projects/{id}", label: "project" },
 		"usis-bc-leads-table": { url: "/api/v1/lead-estimates/{id}", label: "lead" },
 		"usis-estimate-table": { url: "/api/v1/lead-estimates/{id}", label: "estimate" },
-		"usis-lead-estimates-table": { url: "/api/v1/estimates/{id}", label: "estimate" },
+		"usis-lead-estimates-table": { url: "/api/v1/estimates/{id}", label: "proposal" },
 	};
 
 	(function injectHideUntilReady() {

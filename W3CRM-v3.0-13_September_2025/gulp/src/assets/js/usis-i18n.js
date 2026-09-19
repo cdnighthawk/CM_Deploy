@@ -15,6 +15,8 @@
 		Leads: "Prospectos",
 		Lead: "Prospecto",
 		Estimate: "Estimación",
+		Proposal: "Propuesta",
+		"New proposal": "Nueva propuesta",
 		"GS Plan": "Plan GS",
 		Projects: "Proyectos",
 		Calendar: "Calendario",

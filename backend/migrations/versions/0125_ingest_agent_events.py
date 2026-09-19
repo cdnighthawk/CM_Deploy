@@ -1,7 +1,7 @@
 """Persist ACCDocs/Forma agent status events for the CM Ingest panel.
 
-Revision ID: 0124_ingest_evt
-Revises: 0123_openings
+Revision ID: 0125_ingest_evt
+Revises: 0124_est_folder
 """
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0124_ingest_evt"
-down_revision: Union[str, Sequence[str], None] = "0123_openings"
+revision: str = "0125_ingest_evt"
+down_revision: Union[str, Sequence[str], None] = "0124_est_folder"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

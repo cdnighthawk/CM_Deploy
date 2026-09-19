@@ -52,6 +52,31 @@ def test_estimate_folder_name_uses_job_and_name():
     assert "/" not in name
 
 
+def test_resolve_provision_endpoint_base_and_aliases():
+    assert (
+        provision.resolve_provision_endpoint("http://data-server.example:5055")
+        == "http://data-server.example:5055/provision/estimate-folder"
+    )
+    assert (
+        provision.resolve_provision_endpoint("http://data-server.example:5055/provision/estimate-folder")
+        == "http://data-server.example:5055/provision/estimate-folder"
+    )
+    assert (
+        provision.resolve_provision_endpoint("http://data-server.example:5055/provision/estimate-folder/")
+        == "http://data-server.example:5055/provision/estimate-folder"
+    )
+    assert (
+        provision.resolve_provision_endpoint("http://data-server.example:5055/provision/estimate-folders")
+        == "http://data-server.example:5055/provision/estimate-folders"
+    )
+    assert (
+        provision.resolve_provision_endpoint("http://data-server.example:5055/estimate-folder")
+        == "http://data-server.example:5055/estimate-folder"
+    )
+    assert provision.resolve_provision_endpoint("") is None
+    assert provision.resolve_provision_endpoint(None) is None
+
+
 def test_create_local_folder_tree_idempotent(tmp_path: Path):
     dest, created = provision.create_local_folder_tree(tmp_path, "23044 - Sample Job")
     assert created is True
@@ -80,7 +105,7 @@ def test_create_estimate_triggers_http_provision(client, flask_app, monkeypatch,
         return 200, {"ok": True, "path": r"Y:\Estimates\23044 - Turner Bid", "created": True}
 
     monkeypatch.setattr(provision, "_http_post_json", fake_http)
-    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
     flask_app.config["ESTIMATE_FOLDER_PROVISION_TOKEN"] = "secret-token"
     flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
 
@@ -98,11 +123,12 @@ def test_create_estimate_triggers_http_provision(client, flask_app, monkeypatch,
         item = created.get_json()["item"]
         est_id = item["id"]
         assert calls, "create-estimate should POST to the provisioner"
-        assert calls[0]["url"].endswith("/provision/estimate-folder")
+        assert calls[0]["url"] == "http://data-server.example:5055/provision/estimate-folder"
         assert calls[0]["headers"][provision.PROVISION_HEADER] == "secret-token"
         assert calls[0]["payload"]["estimate_id"] == est_id
         assert calls[0]["payload"]["job_number"] == "23044"
         assert calls[0]["payload"]["name"] == "Turner – Bid Set"
+        assert "project_uuid" in calls[0]["payload"]
         assert item["folder_provision_status"] == "ready"
         assert item["folder_path"] == r"Y:\Estimates\23044 - Turner Bid"
 
@@ -122,7 +148,7 @@ def test_create_estimate_survives_provision_failure(client, flask_app, monkeypat
         raise TimeoutError("provisioner timed out")
 
     monkeypatch.setattr(provision, "_http_post_json", boom)
-    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
     flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
 
     eid = "est-folder-fail-" + uuid.uuid4().hex[:12]
@@ -170,7 +196,7 @@ def test_create_estimate_local_mkdir(client, flask_app, tmp_path):
 
 
 def test_retry_provision_endpoint(client, flask_app, monkeypatch):
-    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
     flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
 
     def fail_once(*_args, **_kwargs):
@@ -212,7 +238,7 @@ def test_extra_plan_create_estimate_triggers_provision(client, flask_app, monkey
         return 200, {"ok": True, "path": r"Y:\Estimates\plan", "created": True}
 
     monkeypatch.setattr(provision, "_http_post_json", fake_http)
-    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
     flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
 
     eid = "est-folder-plan-" + uuid.uuid4().hex[:12]
@@ -242,7 +268,7 @@ def test_ensure_current_estimate_schedules_provision(flask_app, monkeypatch):
         return 200, {"ok": True, "path": r"Y:\Estimates\auto", "created": True}
 
     monkeypatch.setattr(provision, "_http_post_json", fake_http)
-    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:8741"
+    flask_app.config["ESTIMATE_FOLDER_PROVISION_URL"] = "http://data-server.example:5055"
     flask_app.config["ESTIMATE_FOLDER_ROOT"] = ""
 
     eid = "est-folder-ensure-" + uuid.uuid4().hex[:12]

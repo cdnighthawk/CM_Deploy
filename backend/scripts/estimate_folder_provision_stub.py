@@ -4,6 +4,7 @@
 Implements the data-server contract in docs/estimate-folder-provision.md:
 
     POST /provision/estimate-folder
+    Aliases: /provision/estimate-folders, /estimate-folder
     Header: X-USIS-Provision-Token
     Body: { estimate_id, job_number, name, project_uuid?, requested_by? }
     Response: { ok, path, created }
@@ -28,6 +29,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 from app.services.estimate_folder_provision import (  # noqa: E402
     PROVISION_HEADER,
+    PROVISION_PATH_ALIASES,
     create_local_folder_tree,
     estimate_folder_name,
 )
@@ -57,7 +59,7 @@ def main() -> int:
 
         def do_POST(self) -> None:  # noqa: N802
             path = (self.path or "").split("?", 1)[0].rstrip("/") or "/"
-            if path != "/provision/estimate-folder":
+            if path not in PROVISION_PATH_ALIASES:
                 self._json(404, {"ok": False, "error": "not found"})
                 return
             got = (self.headers.get(PROVISION_HEADER) or "").strip()

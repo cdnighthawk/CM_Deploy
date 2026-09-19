@@ -31,6 +31,17 @@ from ..extensions import db
 logger = logging.getLogger(__name__)
 
 PROVISION_HEADER = "X-USIS-Provision-Token"
+PROVISION_PATH = "/provision/estimate-folder"
+# Live agent (C:\\usis-cm\\folder_provision.py:5055) uses PROVISION_PATH.
+# ESTIMATE_FOLDER_PROVISION_URL may be a base URL or the full path; these endings
+# are treated as already-complete so the path is not appended twice.
+PROVISION_PATH_ALIASES: frozenset[str] = frozenset(
+    {
+        "/provision/estimate-folder",
+        "/provision/estimate-folders",
+        "/estimate-folder",
+    }
+)
 DEFAULT_TIMEOUT_SEC = 20.0
 FOLDER_NAME_MAX = 150
 STATUS_READY = "ready"
@@ -143,6 +154,17 @@ def provision_url() -> str | None:
         return None
     url = str(raw).strip()
     return url or None
+
+
+def resolve_provision_endpoint(url: str | None) -> str | None:
+    """Build the POST URL. Accepts a base URL or a full/alias path."""
+    raw = str(url or "").strip()
+    if not raw:
+        return None
+    endpoint = raw.rstrip("/")
+    if any(endpoint.endswith(alias) for alias in PROVISION_PATH_ALIASES):
+        return endpoint
+    return endpoint + PROVISION_PATH
 
 
 def provision_token() -> str | None:
@@ -279,9 +301,9 @@ def _post_to_agent(payload: Mapping[str, Any]) -> ProvisionResult:
     url = provision_url()
     if not url:
         return ProvisionResult(ok=False, status=STATUS_UNCONFIGURED, error="ESTIMATE_FOLDER_PROVISION_URL is not set")
-    endpoint = url.rstrip("/")
-    if not endpoint.endswith("/provision/estimate-folder"):
-        endpoint = endpoint + "/provision/estimate-folder"
+    endpoint = resolve_provision_endpoint(url)
+    if not endpoint:
+        return ProvisionResult(ok=False, status=STATUS_UNCONFIGURED, error="ESTIMATE_FOLDER_PROVISION_URL is not set")
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
     token = provision_token()
     if token:

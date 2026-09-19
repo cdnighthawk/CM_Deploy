@@ -455,9 +455,12 @@ def _iso(value: Any) -> str | None:
 
 
 def material_pricing_cache_row(m) -> dict[str, Any]:
+    url = getattr(m, "manufacturer_url", None)
     return {
         "id": str(m.id),
         "manufacturer": m.manufacturer or "",
+        "manufacturerUrl": url,
+        "productUrl": url,
         "item": m.item or "",
         "category": m.category,
         "csiSpecSection": m.csi_spec_section,
@@ -491,10 +494,13 @@ def material_pricing_cache_row(m) -> dict[str, Any]:
 
 def catalog_item_cache_row(m) -> dict[str, Any]:
     item = m.item or ""
+    url = getattr(m, "manufacturer_url", None)
     return {
         "id": str(m.id),
         "name": item,
         "manufacturer": m.manufacturer or "",
+        "manufacturerUrl": url,
+        "productUrl": url,
         "item": item,
         "category": m.category or "",
         "csiSpecSection": m.csi_spec_section,

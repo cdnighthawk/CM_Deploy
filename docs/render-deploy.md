@@ -61,7 +61,7 @@ There is **no CORS environment variable**. CORS is a rule on the B2 bucket, not 
 
 After saving env vars, trigger **Manual Deploy** (or push to `main`) so the service restarts with B2 enabled. New uploads use B2; existing files on the Render disk are not migrated automatically ([backblaze-b2.md](backblaze-b2.md) §6).
 
-**Memory / desktop ingest:** `usis-cm` is **Starter (512 MB)** with **one** gunicorn worker by default (`WEB_CONCURRENCY`, default `1`). Two workers on Starter ran the process out of memory when USISPdfApp retried hundreds of native B2 mints. For a 500-sheet ingest, use **Standard (2 GB)** and set `WEB_CONCURRENCY=2`, and set `B2_BUCKET_ID` so mint does not `list_buckets`. Do not raise workers on Starter.
+**Memory / desktop ingest:** `usis-cm` is **Standard (2 GB)** with **one** gunicorn worker and **four threads** (`WEB_CONCURRENCY=1`, `WEB_THREADS=4`). Starter (512 MB) plus a sync worker could not answer `/healthz` while the 5-minute invoice-mailbox cron parsed PDFs (up to 70s), which Render logged as Instance failed. Do not set `WEB_CONCURRENCY=2` until RAM is confirmed. Set `B2_BUCKET_ID` so mint does not `list_buckets`.
 
 If any B2 secret was pasted in chat or committed, **rotate** the application key in Backblaze and update Render env vars.
 

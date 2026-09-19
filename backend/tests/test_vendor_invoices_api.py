@@ -225,6 +225,59 @@ def test_mailbox_sync_requires_graph(client):
     assert "Graph" in (r.get_json().get("error") or "")
 
 
+def test_kick_async_invoice_sync_false_when_busy(flask_app):
+    from app.ap import _mailbox as ap_mail
+
+    assert ap_mail._SYNC_LOCK.acquire(blocking=False)
+    try:
+        assert ap_mail.kick_async_invoice_mailbox_sync(flask_app) is False
+    finally:
+        ap_mail._SYNC_LOCK.release()
+
+
+def test_invoice_inprocess_poll_skipped_on_render(flask_app, monkeypatch):
+    from app.ap import _sync_loop as loop
+
+    monkeypatch.setenv("RENDER", "true")
+    loop._STARTED = False
+    loop.start_invoice_mailbox_sync_loop(flask_app)
+    assert loop._STARTED is False
+
+
+def test_mailbox_sync_cron_async_on_render(client, flask_app, monkeypatch):
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    flask_app.config["BC_SYNC_CRON_SECRET"] = "inv-cron-secret"
+    seen: list[object] = []
+
+    def fake_kick(app):
+        seen.append(app)
+        return True
+
+    monkeypatch.setattr("app.ap._mailbox.kick_async_invoice_mailbox_sync", fake_kick)
+    denied = client.post("/api/v1/ap/mailbox/sync")
+    assert denied.status_code == 401
+    ok = client.post("/api/v1/ap/mailbox/sync", headers={"X-Cron-Secret": "inv-cron-secret"})
+    assert ok.status_code == 202, ok.get_data(as_text=True)
+    item = ok.get_json()["item"]
+    assert item["async"] is True
+    assert item["started"] is True
+    assert item["busy"] is False
+    assert len(seen) == 1
+
+
+def test_mailbox_sync_cron_async_busy_on_render(client, flask_app, monkeypatch):
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    flask_app.config["BC_SYNC_CRON_SECRET"] = "inv-cron-secret"
+    monkeypatch.setattr("app.ap._mailbox.kick_async_invoice_mailbox_sync", lambda app: False)
+    ok = client.post("/api/v1/ap/mailbox/sync", headers={"X-Cron-Secret": "inv-cron-secret"})
+    assert ok.status_code == 202, ok.get_data(as_text=True)
+    item = ok.get_json()["item"]
+    assert item["started"] is False
+    assert item["busy"] is True
+
+
 def test_mailbox_sync_cron_secret(client, flask_app, monkeypatch):
     monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
     flask_app.config["BC_SYNC_CRON_SECRET"] = "inv-cron-secret"

@@ -13,16 +13,18 @@ services:
   - type: web
     name: usis-cm
     runtime: python
-    # Starter is 512 MB. Two gunicorn workers plus pymupdf/boto3 OOM during a
-    # desktop mint retry herd. Default 1 worker; on Standard (2 GB) set WEB_CONCURRENCY=2.
-    plan: starter
+    # Starter (512 MB) + one sync worker cannot answer /healthz while the
+    # 5-minute invoice-mailbox cron holds the worker (up to 70s). That is
+    # Instance failed. Standard is 2 GB. Keep 1 worker; threads let health
+    # checks through. Do not set WEB_CONCURRENCY=2 until RAM is confirmed.
+    plan: standard
     rootDir: backend
     buildCommand: >-
       (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) || true;
       pip install -r requirements.txt
-    # Redeploy trigger: catalog column widths (2026-09-17q)
+    # Redeploy trigger: mailbox cron must not block /healthz (2026-09-19)
     preDeployCommand: flask db upgrade
-    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --timeout 180
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --threads ${WEB_THREADS:-4} --timeout 180
     healthCheckPath: /healthz
     disk:
       name: usis-instance
@@ -35,6 +37,8 @@ services:
         value: app:create_app
       - key: FLASK_ENV
         value: production
+      - key: WEB_THREADS
+        value: "4"
       - key: USIS_BOOTSTRAP_LEADS_ON_STARTUP
         value: "0"
       - key: USIS_ALLOW_SELF_REGISTER

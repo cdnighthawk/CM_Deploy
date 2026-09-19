@@ -395,6 +395,11 @@ class Config:
         ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC = 20.0
 
 
+def running_on_render() -> bool:
+    """True when the process is a Render web/cron service (``RENDER=true``)."""
+    return (os.environ.get("RENDER") or "").strip().lower() in ("true", "1", "yes", "on")
+
+
 def client_debug_log_dev_open() -> bool:
     """True when anonymous ``POST /api/v1/__debug/client-log`` is allowed (local dev only).
 

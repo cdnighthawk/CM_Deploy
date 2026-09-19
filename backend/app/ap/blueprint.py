@@ -67,9 +67,31 @@ def ap_mailbox_sync():
     from flask import current_app
 
     from ..api._integration_bc import cron_secret_matches
+    from ..config import running_on_render
+    from ._mailbox import kick_async_invoice_mailbox_sync
 
     cu = current_user()
     as_cron = cron_secret_matches(request, current_app)
+    # One sync gunicorn worker cannot answer /healthz while this request
+    # parses invoice PDFs (up to 70s). On Render the 5-minute cron then
+    # looks like Instance failed. Return 202 and finish in a thread.
+    if as_cron and running_on_render():
+        started = kick_async_invoice_mailbox_sync(current_app._get_current_object())
+        return (
+            jsonify(
+                {
+                    "entity": "ap_mailbox_sync",
+                    "item": {
+                        "accepted": True,
+                        "async": True,
+                        "started": started,
+                        "busy": not started,
+                        "mailbox": invoice_mailbox(),
+                    },
+                }
+            ),
+            202,
+        )
     return _handle(
         lambda: jsonify({"entity": "ap_mailbox_sync", "item": sync_mailbox(cu, as_cron=as_cron)})
     )

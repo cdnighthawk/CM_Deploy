@@ -670,3 +670,32 @@ def _sync_invoice_mailbox_locked(
         "busy": False,
         "truncated": truncated,
     }
+
+
+def kick_async_invoice_mailbox_sync(app) -> bool:
+    """Run ``sync_invoice_mailbox`` on a daemon thread so the request worker is free.
+
+    Returns False when a sync is already holding ``_SYNC_LOCK``.
+    """
+    if not _SYNC_LOCK.acquire(blocking=False):
+        return False
+    _SYNC_LOCK.release()
+
+    def _run() -> None:
+        with app.app_context():
+            from ..extensions import db
+
+            try:
+                result = sync_invoice_mailbox(actor_user_id=None)
+                db.session.commit()
+                if result.get("created") or result.get("duplicates") or result.get("errors"):
+                    app.logger.info("async invoice mailbox sync %s", result)
+            except Exception:
+                try:
+                    db.session.rollback()
+                except Exception:
+                    pass
+                app.logger.exception("async invoice mailbox sync failed")
+
+    threading.Thread(target=_run, name="invoice-mailbox-sync-cron", daemon=True).start()
+    return True

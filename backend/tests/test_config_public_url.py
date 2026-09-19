@@ -20,6 +20,17 @@ def reload_config(monkeypatch):
     importlib.reload(config_mod)
 
 
+def test_running_on_render(monkeypatch):
+    from app.config import running_on_render
+
+    monkeypatch.delenv("RENDER", raising=False)
+    assert running_on_render() is False
+    monkeypatch.setenv("RENDER", "true")
+    assert running_on_render() is True
+    monkeypatch.setenv("RENDER", "0")
+    assert running_on_render() is False
+
+
 def test_public_url_drives_cors_and_post_login(reload_config, monkeypatch):
     monkeypatch.setenv("USIS_APP_PUBLIC_URL", "https://www.usiscm.com/")
     monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://usis-cm.onrender.com")

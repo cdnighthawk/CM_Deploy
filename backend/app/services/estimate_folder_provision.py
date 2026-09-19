@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import re
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -449,8 +450,9 @@ def _on_after_commit(session: Session) -> None:
     queue = list(session.info.pop(_SESSION_QUEUE_KEY, []) or [])
     if not queue or session.info.get(_SESSION_RUNNING_KEY):
         return
-    session.info[_SESSION_RUNNING_KEY] = True
-    try:
+    from ..config import running_on_render
+
+    def _run_queue() -> None:
         for item in queue:
             eid = item.get("estimate_id")
             if eid is None:
@@ -459,6 +461,25 @@ def _on_after_commit(session: Session) -> None:
                 provision_estimate_folder_by_id(eid, requested_by=item.get("requested_by"), persist=True)
             except Exception:
                 logger.exception("estimate folder provision crashed estimate_id=%s", eid)
+
+    # On Render, a 20s HTTP timeout to the office agent would block the only
+    # gunicorn worker and fail /healthz. Local/tests stay synchronous so create
+    # responses include folder_provision_status.
+    if running_on_render():
+        app = current_app._get_current_object() if has_app_context() else None
+
+        def _run() -> None:
+            if app is None:
+                _run_queue()
+                return
+            with app.app_context():
+                _run_queue()
+
+        threading.Thread(target=_run, name="estimate-folder-provision", daemon=True).start()
+        return
+    session.info[_SESSION_RUNNING_KEY] = True
+    try:
+        _run_queue()
     finally:
         session.info.pop(_SESSION_RUNNING_KEY, None)
 

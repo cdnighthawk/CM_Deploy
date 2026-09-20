@@ -44,10 +44,23 @@ Missing or wrong token → **401**.
 | `project_id` | Filter to a CM `projects.id` **or** `lead_estimates.id` (the agent sometimes stores a lead UUID as `project_id`). |
 | `folder_provision_status` | Exact status (`ready`, `failed`, `unconfigured`, …). Alias: `status`. |
 | `has_folder` | `1`/`true` = only rows with `folder_path`. `0`/`false` = only rows without. |
+| `due_from` | Inclusive lower bound on bid due (`due_at`). ISO date (`YYYY-MM-DD`, UTC midnight) or datetime. Alias: `due_after`. |
+| `due_to` | Inclusive upper bound on bid due (`due_at`). Date-only values include the whole UTC day. Alias: `due_before`. Omit for any future date. |
 | `limit` | Page size (default **500**, max **2000**). |
 | `offset` | Skip N filtered rows (default **0**). |
 
-Invalid `limit` / `offset` → **400**.
+Invalid `limit` / `offset` / `due_from` / `due_to` → **400**. `due_from` after `due_to` → **400**.
+
+Rows with a null `due_at` are omitted when either due bound is set.
+
+**Desktop window (today − 30 days through any future date):**
+
+```
+GET /api/ingest/estimates?due_from=2026-08-21
+Authorization: Bearer $CM_API_KEY
+```
+
+Use `due_from=<today minus 30 days>` and omit `due_to`. Same `due_from` / `due_to` names as `GET /api/v1/lead-estimates`.
 
 ## Response
 
@@ -73,6 +86,7 @@ Invalid `limit` / `offset` → **400**.
       ],
       "folder_hints": ["26061", "Civic Center", "Original Estimate"],
       "archived": false,
+      "due_at": "2026-09-30T17:00:00+00:00",
       "updated_at": "2026-09-19T21:04:00+00:00"
     }
   ],
@@ -84,6 +98,16 @@ Invalid `limit` / `offset` → **400**.
 }
 ```
 
+`due_at` is the bid-due timestamp. The column name is **`due_at`** (not
+`submitted_at` / `bid_due_at`). Source:
+
+1. `estimates.due_at` when set (copied from the lead when the estimate is created)
+2. else `lead_estimates.due_at` (BuildingConnected CSV **`dueAt`**)
+
+There is **no** submitted-date column on `estimates` or `lead_estimates`.
+“Submitted” is `lead_estimates.submission_state` (`SUBMITTED`, `WILL_SUBMIT`,
+`UNDECIDED`, …), not a timestamp.
+
 `job_number` is `lead_estimates.number`, else `projects.number`. It is **never**
 the estimate UUID (and a UUID stored in a number column is ignored). If neither
 human number exists, `job_number` is `null` — do not invent a folder name.
@@ -92,8 +116,9 @@ human number exists, `job_number` is `null` — do not invent a folder name.
 when the data-server agent succeeded). `null` means the folder was never
 written on the estimate; keep the library fallback.
 
-Scan is capped at 5000 newest estimates. Use `q` / `project_id` / `has_folder`
-when the office has more than one page.
+Scan is capped at 5000 newest estimates (after `due_from` / `due_to` when set).
+Use `q` / `project_id` / `has_folder` / `due_from` when the office has more
+than one page.
 
 ## Matching ACCDocs `project_key` / `project_id`
 
@@ -127,6 +152,13 @@ Example:
 
 ```
 GET /api/ingest/estimates?q=25270&has_folder=1
+Authorization: Bearer $CM_API_KEY
+```
+
+Due window (last 30 days through future):
+
+```
+GET /api/ingest/estimates?due_from=2026-08-21
 Authorization: Bearer $CM_API_KEY
 ```
 

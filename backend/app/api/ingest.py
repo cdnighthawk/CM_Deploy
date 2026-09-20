@@ -161,6 +161,8 @@ def ingest_list_estimates():
             folder_provision_status=request.args.get("folder_provision_status")
             or request.args.get("status"),
             has_folder=_parse_has_folder(request.args.get("has_folder")),
+            due_from=request.args.get("due_from") or request.args.get("due_after"),
+            due_to=request.args.get("due_to") or request.args.get("due_before"),
             limit=request.args.get("limit"),
             offset=request.args.get("offset"),
         )

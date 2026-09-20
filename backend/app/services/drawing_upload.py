@@ -7,12 +7,12 @@ import uuid
 from typing import Any
 
 from pypdf import PdfReader, PdfWriter
-from sqlalchemy import select
+from sqlalchemy import select, update
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from ..extensions import db
-from ..models import Drawing
+from ..models import Document, Drawing
 from ..services.object_storage import (
     StorageError,
     UploadCategory,
@@ -25,9 +25,21 @@ from ..services.drawing_label import label_drawing
 from ..services.project_file_keys import (
     drawing_object_candidates,
     drawing_storage_relpath,
+    preferred_document_object_name,
     preferred_drawing_object_name,
+    document_storage_relpath,
     safe_filename,
 )
+
+B2_UPLOAD_URL_UNAVAILABLE = "B2_UPLOAD_URL_UNAVAILABLE"
+B2_MINT_UNAVAILABLE_MESSAGE = (
+    "The website could not mint a Backblaze upload URL. The drawing row is on usiscm, but the PDF was not stored."
+)
+B2_MINT_UNAVAILABLE_DOCUMENT_MESSAGE = (
+    "The website could not mint a Backblaze upload URL. The document row is on usiscm, but the file was not stored."
+)
+FILE_PENDING_CODE = "FILE_PENDING"
+FILE_PENDING_MESSAGE = "file not on cloud yet"
 
 
 def resolve_drawing_object_name(d: Drawing) -> str | None:
@@ -47,22 +59,167 @@ def delete_drawing_objects(d: Drawing) -> None:
         delete_stored(UploadCategory.DRAWINGS, name)
 
 
+def _as_b2_native_hint(raw: dict | None) -> dict | None:
+    """Normalize a mint dict to the locked native-B2 contract, or None.
+
+    Never returns ``s3_presigned_put``, ``presignedPut``, or an ``X-Amz-`` URL.
+    Old keys (``url``, ``authorization``, ``mode``) stay set so desktop 0.1.162
+    can read them, but ``protocol`` / ``kind`` are always ``b2-native``.
+    """
+    if not isinstance(raw, dict):
+        return None
+    from .object_storage import is_native_b2_upload_url
+
+    url = str(raw.get("uploadUrl") or raw.get("url") or raw.get("upload_url") or "").strip()
+    mode = str(raw.get("protocol") or raw.get("kind") or raw.get("mode") or "").strip().lower().replace("_", "-")
+    if mode in {"s3-presigned-put", "s3", "presigned", "s3-presigned"}:
+        return None
+    if not is_native_b2_upload_url(url):
+        return None
+    if mode and mode not in {"b2-native", "b2native"}:
+        return None
+    token = str(
+        raw.get("authorizationToken") or raw.get("authorization") or raw.get("token") or ""
+    ).strip()
+    if not token:
+        return None
+    file_name = str(raw.get("fileName") or raw.get("file_name") or "").strip()
+    bucket_id = str(raw.get("bucketId") or raw.get("bucket_id") or "").strip()
+    expires_at = str(raw.get("expiresAt") or raw.get("expires_at") or "").strip()
+    return {
+        "protocol": "b2-native",
+        "kind": "b2-native",
+        "mode": "b2_native",
+        "uploadUrl": url,
+        "url": url,
+        "authorizationToken": token,
+        "authorization": token,
+        "fileName": file_name,
+        "file_name": file_name,
+        "bucketId": bucket_id or None,
+        "expiresAt": expires_at or None,
+        "sha1_header": raw.get("sha1_header") or "X-Bz-Content-Sha1",
+    }
+
+
+def mint_unavailable_body(*, kind: str = "drawing", detail: str | None = None) -> dict[str, Any]:
+    message = B2_MINT_UNAVAILABLE_DOCUMENT_MESSAGE if kind == "document" else B2_MINT_UNAVAILABLE_MESSAGE
+    error: dict[str, Any] = {"code": B2_UPLOAD_URL_UNAVAILABLE, "message": message}
+    if detail:
+        error["detail"] = detail
+    return {"error": error}
+
+
+def drawing_file_pending(d) -> bool:
+    tags = d.tags if isinstance(getattr(d, "tags", None), dict) else {}
+    return bool(tags.get("file_pending"))
+
+
+def document_file_pending(d) -> bool:
+    return drawing_file_pending(d)
+
+
+def file_pending_error_body() -> dict[str, Any]:
+    return {"error": {"code": FILE_PENDING_CODE, "message": FILE_PENDING_MESSAGE}}
+
+
+def parse_ack_payload(payload: dict[str, Any] | None) -> dict[str, Any]:
+    """Accept locked ``{ item: { b2FileId, ... } }`` and the older flat keys."""
+    raw = payload if isinstance(payload, dict) else {}
+    item = raw.get("item") if isinstance(raw.get("item"), dict) else raw
+
+    def text(*keys: str) -> str | None:
+        for key in keys:
+            value = item.get(key)
+            if value is None and item is not raw:
+                value = raw.get(key)
+            if value is None:
+                continue
+            text_value = str(value).strip()
+            if text_value:
+                return text_value
+        return None
+
+    byte_size = None
+    for key in ("contentLength", "content_length", "byte_size", "byteSize"):
+        raw_size = item.get(key)
+        if raw_size is None and item is not raw:
+            raw_size = raw.get(key)
+        if raw_size is None:
+            continue
+        try:
+            byte_size = int(raw_size)
+        except (TypeError, ValueError) as exc:
+            raise DrawingUploadError("byte_size must be an integer", 400) from exc
+        break
+    return {
+        "b2_file_id": text("b2FileId", "b2_file_id", "fileId"),
+        "b2_file_name": text("b2FileName", "b2_file_name", "fileName"),
+        "content_sha1": text("contentSha1", "content_sha1"),
+        "content_hash": text("sha256", "content_hash", "contentHash"),
+        "content_type": text("contentType", "content_type"),
+        "byte_size": byte_size,
+    }
+
+
 def native_upload_hint_for_drawing(d: Drawing) -> dict | None:
     """Mint a native ``b2_upload_file`` session for this drawing, or None.
 
     Desktop ingest (USISPdfApp) writes the PDF itself. Never return an S3
     presigned PUT: those are signed locally with boto3 and never talk to B2.
     """
-    from .object_storage import is_native_b2_upload_url, native_upload_session
+    from .object_storage import native_upload_session
 
     name = preferred_drawing_object_name(d)
     native = native_upload_session(UploadCategory.DRAWINGS, name)
-    if not native:
-        return None
-    url = str(native.get("url") or "")
-    if native.get("mode") != "b2_native" or not is_native_b2_upload_url(url):
-        return None
-    return native
+    return _as_b2_native_hint(native)
+
+
+def native_upload_hint_for_document(d: Document) -> dict | None:
+    """Mint a native ``b2_upload_file`` session for a non-drawing document."""
+    from .object_storage import native_upload_session
+
+    name = preferred_document_object_name(d)
+    native = native_upload_session(UploadCategory.DOCUMENTS, name)
+    return _as_b2_native_hint(native)
+
+
+def _apply_ack_tags(
+    row,
+    *,
+    obj_name: str,
+    byte_size: int,
+    content_hash: str | None,
+    b2_file_id: str | None,
+    b2_file_name: str | None,
+    content_sha1: str | None,
+    content_type: str | None,
+    default_mime: str,
+) -> None:
+    tags = dict(row.tags) if isinstance(row.tags, dict) else {}
+    existing_id = str(tags.get("b2_file_id") or "").strip()
+    if existing_id and b2_file_id and existing_id == b2_file_id and not tags.get("file_pending"):
+        if byte_size and not row.file_size_bytes:
+            row.file_size_bytes = int(byte_size)
+        return
+    tags["storage_object"] = obj_name
+    tags.pop("file_pending", None)
+    tags.pop("storage_error", None)
+    digest = (content_hash or "").strip().lower()
+    if digest:
+        tags["content_hash"] = digest
+    if b2_file_id:
+        tags["b2_file_id"] = b2_file_id
+    if b2_file_name:
+        tags["b2_file_name"] = b2_file_name
+    if content_sha1:
+        tags["content_sha1"] = content_sha1
+    row.tags = tags
+    row.file_size_bytes = int(byte_size)
+    if content_type:
+        row.mime_type = content_type[:120]
+    elif not row.mime_type:
+        row.mime_type = default_mime
 
 
 def ack_drawing_file(
@@ -70,31 +227,124 @@ def ack_drawing_file(
     *,
     byte_size: int | None = None,
     content_hash: str | None = None,
+    b2_file_id: str | None = None,
+    b2_file_name: str | None = None,
+    content_sha1: str | None = None,
+    content_type: str | None = None,
 ) -> int:
     """Mark a drawing as stored after the client wrote the object (native B2).
 
     Prefer HEAD of B2 when that works. If the S3 gateway is still dropping,
     trust the client's byte size so ingest can clear ``file_pending``.
+    Idempotent on the same ``b2FileId``.
     """
-    obj_name = preferred_drawing_object_name(d)
-    sz = stored_size(UploadCategory.DRAWINGS, obj_name)
+    obj_name = (b2_file_name or "").strip() or preferred_drawing_object_name(d)
+    tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+    stored_name = str(tags.get("storage_object") or "").strip()
+    if stored_name:
+        obj_name = stored_name
+    sz = stored_size(UploadCategory.DRAWINGS, preferred_drawing_object_name(d))
+    if not sz:
+        sz = stored_size(UploadCategory.DRAWINGS, obj_name)
     if not sz:
         if byte_size and int(byte_size) > 0:
             sz = int(byte_size)
         else:
             raise DrawingUploadError("file not found in storage", 404)
-    tags = dict(d.tags) if isinstance(d.tags, dict) else {}
-    tags["storage_object"] = obj_name
-    tags.pop("file_pending", None)
-    tags.pop("storage_error", None)
-    digest = (content_hash or "").strip().lower()
-    if digest:
-        tags["content_hash"] = digest
-    d.tags = tags
+    _apply_ack_tags(
+        d,
+        obj_name=preferred_drawing_object_name(d),
+        byte_size=int(sz),
+        content_hash=content_hash,
+        b2_file_id=b2_file_id,
+        b2_file_name=b2_file_name,
+        content_sha1=content_sha1,
+        content_type=content_type,
+        default_mime="application/pdf",
+    )
     d.file_url = f"/api/v1/drawings/{d.id}/file"
-    d.file_size_bytes = int(sz)
-    d.mime_type = "application/pdf"
+    d.mime_type = (content_type or d.mime_type or "application/pdf")[:120]
     return int(sz)
+
+
+def ack_document_file(
+    d: Document,
+    *,
+    byte_size: int | None = None,
+    content_hash: str | None = None,
+    b2_file_id: str | None = None,
+    b2_file_name: str | None = None,
+    content_sha1: str | None = None,
+    content_type: str | None = None,
+) -> int:
+    """Mark a document as stored after the client wrote the object (native B2)."""
+    obj_name = preferred_document_object_name(d)
+    sz = stored_size(UploadCategory.DOCUMENTS, obj_name)
+    if not sz:
+        if byte_size and int(byte_size) > 0:
+            sz = int(byte_size)
+        else:
+            raise DrawingUploadError("file not found in storage", 404)
+    _apply_ack_tags(
+        d,
+        obj_name=obj_name,
+        byte_size=int(sz),
+        content_hash=content_hash,
+        b2_file_id=b2_file_id,
+        b2_file_name=b2_file_name,
+        content_sha1=content_sha1,
+        content_type=content_type,
+        default_mime="application/octet-stream",
+    )
+    d.file_url = f"/api/v1/documents/{d.id}/file"
+    return int(sz)
+
+
+def load_catalog_document(doc_id: uuid.UUID) -> Document | None:
+    """Load a drawing or document without blowing up on unmapped document_type identities."""
+    drawing = db.session.get(Drawing, doc_id)
+    if drawing is not None:
+        return drawing
+    try:
+        return db.session.get(Document, doc_id)
+    except AssertionError:
+        return _document_from_core(doc_id)
+
+
+def _document_from_core(doc_id: uuid.UUID) -> Document | None:
+    rec = db.session.execute(select(Document.__table__).where(Document.__table__.c.id == doc_id)).mappings().first()
+    if rec is None:
+        return None
+    obj = Document()
+    for key, value in rec.items():
+        if key == "document_type":
+            continue
+        try:
+            setattr(obj, key, value)
+        except Exception:
+            pass
+    object.__setattr__(obj, "document_type", rec.get("document_type") or "other")
+    return obj
+
+
+def persist_document_ack(doc_id: uuid.UUID, row: Document) -> None:
+    """Write ack fields for a document that may not be a safe ORM identity."""
+    try:
+        attached = db.session.get(Document, doc_id)
+    except AssertionError:
+        attached = None
+    if attached is not None and attached is row:
+        return
+    db.session.execute(
+        update(Document.__table__)
+        .where(Document.__table__.c.id == doc_id)
+        .values(
+            tags=row.tags,
+            file_url=row.file_url,
+            file_size_bytes=row.file_size_bytes,
+            mime_type=row.mime_type,
+        )
+    )
 
 
 def replace_drawing_file(d: Drawing, pdf_bytes: bytes) -> int:
@@ -186,7 +436,7 @@ def _mark_file_pending(d: Drawing, obj_name: str, message: str) -> None:
 
 def create_pending_drawing(
     *,
-    project_id: uuid.UUID,
+    project_id: uuid.UUID | None,
     sheet_number: str | None,
     sheet_title: str | None,
     revision: str | None,
@@ -262,6 +512,66 @@ def create_pending_drawing(
     from ..api._drawing_hygiene import apply_hygiene
 
     apply_hygiene(d)
+    return d
+
+
+def create_pending_document(
+    *,
+    project_id: uuid.UUID | None,
+    filename: str | None,
+    document_type: str | None = None,
+    title: str | None = None,
+    mime_type: str | None = None,
+    content_hash: str | None = None,
+    client_id: uuid.UUID | None = None,
+) -> Document:
+    """Insert a catalog document row and wait for the client to write bytes to B2."""
+    raw_name = (filename or "").strip() or "document"
+    orig = safe_filename(raw_name, default="document")
+    raw_type = (document_type or "other").strip().lower() or "other"
+    allowed = {
+        "rfi",
+        "submittal",
+        "specification",
+        "contract",
+        "change_order",
+        "invoice",
+        "photo",
+        "report",
+        "ai_review_export",
+        "safety_doc",
+        "permit",
+        "other",
+    }
+    dtype = raw_type if raw_type in allowed else "other"
+    existing = db.session.get(Document, client_id) if client_id is not None else None
+    if existing is not None and not isinstance(existing, Drawing):
+        d = existing
+        d.project_id = project_id
+        d.title = (title or d.title or orig)[:500]
+        d.original_filename = orig[:500]
+        if mime_type:
+            d.mime_type = mime_type[:120]
+    else:
+        d = Document(
+            id=client_id,
+            project_id=project_id,
+            document_type=dtype,
+            title=(title or orig)[:500],
+            original_filename=orig[:500],
+            mime_type=(mime_type or "application/octet-stream")[:120],
+            file_size_bytes=0,
+        )
+        db.session.add(d)
+        db.session.flush()
+    obj_name = document_storage_relpath(d)
+    _mark_file_pending(d, obj_name, "waiting for client B2 upload")
+    digest = (content_hash or "").strip().lower()
+    if digest:
+        tags = dict(d.tags) if isinstance(d.tags, dict) else {}
+        tags["content_hash"] = digest
+        d.tags = tags
+    d.file_url = f"/api/v1/documents/{d.id}/file"
     return d
 
 

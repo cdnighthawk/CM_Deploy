@@ -9,7 +9,7 @@ The website and API **read drawings from B2**, not from the office NAS. Local de
 | Category | API examples | Object key pattern |
 |----------|--------------|-------------------|
 | Drawings | `POST /api/v1/projects/<id>/drawings` | `{prefix}/drawings/{job}/{discipline}/{set}/{filename}.pdf` (legacy `{uuid}.pdf` still served) |
-| Project documents | `POST /api/documents` | `{prefix}/documents/{job}/{type}/{filename}` (legacy `{uuid}_{filename}` still served) |
+| Project documents | `POST /api/documents` (JSON metadata) + native B2 | `{prefix}/documents/{job}/{type}/{filename}` (legacy `{uuid}_{filename}` still served) |
 | Spec sections | `POST .../spec_sections/<id>/file` | `{prefix}/spec_sections/{job}/specifications/{code}_{filename}.pdf` (legacy `{uuid}.pdf` still served) |
 | RFI attachments | `POST /api/v1/rfis/<id>/attachments/upload` | `{prefix}/rfi_attachments/<uuid><ext>` |
 | HR I-9 photos | `POST /api/v1/hr/me/i9-section1/documents` | `{prefix}/hr_i9/<uuid><ext>` |
@@ -171,7 +171,9 @@ All four required vars must be set or the app falls back to local `instance/` pa
 
 If `b2_get_upload_url` is failing, create still returns 201 (catalog accepted). `POST /api/v1/drawings/<id>/upload-session` returns **503** `{ "error": "B2_UPLOAD_URL_UNAVAILABLE" }` with `Retry-After`. After a mint failure the process cools down ~20s and skips further B2 control-plane calls so a desktop retry herd does not OOM Starter.
 
-**Desktop mint (USISPdfApp)** uses native B2 only. Successful `POST /api/v1/jobs/<id>/drawings` is **201** with the catalog `item` even if mint fails (a non-2xx here is treated as “the website did not accept the drawing row”). The `upload` object is present only for a native `b2_upload_file` URL + auth token (`mode: b2_native`). It never includes an S3 presigned PUT (`X-Amz-` / `s3.us-west-004.backblazeb2.com`). If native mint fails, the 201 body has `upload_error: B2_UPLOAD_URL_UNAVAILABLE` and no `upload`. `POST /api/v1/drawings/<id>/upload-session` still responds **503** `{ "error": "B2_UPLOAD_URL_UNAVAILABLE" }` when mint cannot be issued.
+**Desktop mint (USISPdfApp and `C:\\usis-cm\\uploader.py`)** uses native B2 only. Successful `POST /api/v1/jobs/<id>/drawings` (session) or `POST /api/drawings` (API key, JSON) is **201** with the catalog row even if mint fails. The `upload` object is present only for a native `b2_upload_file` URL + auth token (`protocol: b2-native`, also `mode: b2_native` for older clients). It never includes an S3 presigned PUT (`X-Amz-` / `s3.us-west-004.backblazeb2.com`). If native mint fails, the 201 body has `upload_error: B2_UPLOAD_URL_UNAVAILABLE` and no `upload`. `POST /api/v1/drawings/<id>/upload-session` and `/b2-upload-url` respond **503** `{ "error": { "code": "B2_UPLOAD_URL_UNAVAILABLE", "message": "..." } }` when mint cannot be issued.
+
+**Agent multipart is gone.** `POST /api/drawings` and `POST /api/documents` with `multipart/form-data` (PDF bytes through Render) return **410** `AGENT_MULTIPART_FORBIDDEN`. Browser session uploads (`POST /api/v1/projects/<id>/drawings`, `POST /api/v1/ingest/files`) still accept multipart so the website UI is unchanged. `PUT /api/v1/drawings/<id>/content` is **410**.
 
 After deploy, new uploads go to B2. Existing files on the Render disk are **not** migrated automatically; copy them with the B2 CLI or a one-off sync script if needed.
 

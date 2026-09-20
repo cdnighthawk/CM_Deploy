@@ -16,10 +16,22 @@ from werkzeug.utils import secure_filename
 from ..api._lead_estimate_queries import _not_archived_or_declined, _not_grouped_child
 from ..extensions import db
 from ..models import Document, Drawing, LeadEstimate, Project
-from .drawing_upload import _create_drawing_row
+from .drawing_upload import (
+    _create_drawing_row,
+    create_pending_document,
+    create_pending_drawing,
+    native_upload_hint_for_document,
+    native_upload_hint_for_drawing,
+)
 from .lead_workspace import attach_lead_and_estimates, ensure_lead_workspace_project
 from .object_storage import StorageError, UploadCategory, save_upload
 from .project_file_keys import preferred_document_object_name
+
+AGENT_MULTIPART_CODE = "AGENT_MULTIPART_FORBIDDEN"
+AGENT_MULTIPART_MESSAGE = (
+    "Desktop agents must upload file bytes to Backblaze B2, not Render. "
+    "POST JSON metadata, mint a native B2 URL, POST the file to B2, then ack-file."
+)
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
@@ -399,11 +411,16 @@ def _document_tags(doc: Document) -> dict[str, Any]:
 
 
 def find_by_content_hash(checksum: str, project_id: uuid.UUID | None) -> Document | None:
-    q = select(Document).where(Document.tags.contains({"content_hash": checksum}))
+    from .drawing_upload import load_catalog_document
+
+    q = select(Document.id).where(Document.tags.contains({"content_hash": checksum}))
     if project_id is not None:
         q = q.where(Document.project_id == project_id)
     q = q.order_by(Document.created_at.desc())
-    return db.session.scalars(q).first()
+    doc_id = db.session.scalar(q)
+    if doc_id is None:
+        return None
+    return load_catalog_document(doc_id)
 
 
 def serialize_ingest_doc(doc: Document, *, kind: str, project: dict[str, Any] | None) -> dict[str, Any]:
@@ -429,8 +446,186 @@ def serialize_ingest_doc(doc: Document, *, kind: str, project: dict[str, Any] | 
         "sourceId": text(tags.get("source_id")) or None,
         "lead_estimate_id": text(tags.get("lead_estimate_id")) or (project or {}).get("lead_estimate_id"),
         "file_url": doc.file_url,
+        "file_pending": bool(tags.get("file_pending")),
+        "b2_key": text(tags.get("storage_object")) or None,
         "createdAt": created,
     }
+
+
+def agent_multipart_forbidden_body() -> dict[str, Any]:
+    return {
+        "error": {
+            "code": AGENT_MULTIPART_CODE,
+            "message": AGENT_MULTIPART_MESSAGE,
+        },
+        "use": {
+            "create": "POST /api/drawings or POST /api/documents with application/json (no file body)",
+            "mint": "POST /api/drawings/{id}/b2-upload-url or POST /api/documents/{id}/b2-upload-url",
+            "ack": "POST /api/drawings/{id}/ack-file or POST /api/documents/{id}/ack-file",
+        },
+    }
+
+
+def _reject_embedded_bytes(metadata: dict[str, Any]) -> None:
+    for key in ("file", "bytes", "content", "pdf", "data", "file_base64", "base64"):
+        value = metadata.get(key)
+        if isinstance(value, str) and len(value) > 1000:
+            raise IngestError(AGENT_MULTIPART_MESSAGE, 410)
+        if isinstance(value, (bytes, bytearray)) and len(value) > 256:
+            raise IngestError(AGENT_MULTIPART_MESSAGE, 410)
+
+
+def handle_ingest_register(metadata: dict[str, Any], *, kind: str) -> tuple[dict[str, Any], int]:
+    """Create a catalog row from JSON only. Bytes go to B2 from the desktop."""
+    if not isinstance(metadata, dict):
+        metadata = {}
+    _reject_embedded_bytes(metadata)
+
+    checksum = text(metadata.get("content_hash") or metadata.get("contentHash") or metadata.get("sha256"))
+    project, matched_by = resolve_ingest_project(metadata)
+    job_id, project = bind_ingest_workspace(project)
+    if project and project.get("kind") == "job" and matched_by is None:
+        matched_by = "workspace"
+
+    if checksum:
+        existing = find_by_content_hash(checksum.lower(), job_id)
+        if existing is not None:
+            tags = _document_tags(existing)
+            existing_kind = "drawing" if isinstance(existing, Drawing) else "document"
+            item = serialize_ingest_doc(existing, kind=existing_kind, project=project)
+            if not tags.get("file_pending"):
+                body: dict[str, Any] = {
+                    "document": item,
+                    "duplicate": True,
+                    "project": project,
+                    "matchedBy": matched_by,
+                }
+                if existing_kind == "drawing":
+                    body["drawing"] = item
+                return body, 200
+            return _register_existing_pending(existing, existing_kind, project, matched_by)
+
+    filename = (
+        text(metadata.get("filename") or metadata.get("file_name") or metadata.get("fileName"))
+        or "upload"
+    )
+    filename = filename.replace("\\", "/").split("/")[-1][:500] or "upload"
+    mime = (
+        text(metadata.get("mimeType") or metadata.get("mime_type") or metadata.get("contentType"))
+        or ("application/pdf" if kind == "drawing" else "application/octet-stream")
+    )
+    if kind == "drawing" and "pdf" not in mime.lower() and not filename.lower().endswith(".pdf"):
+        raise IngestError("POST /drawings requires a PDF filename or mimeType.")
+
+    source = (
+        text(metadata.get("source") or metadata.get("sourceSystem"))
+        or "autodesk_desktop_connector"
+    )
+    source_id = text(metadata.get("source_id") or metadata.get("sourceId") or metadata.get("relative_path")) or checksum
+    tags = {
+        "source": source,
+        "source_id": source_id or filename,
+    }
+    if checksum:
+        tags["content_hash"] = checksum.lower()
+    folder_name = text(
+        metadata.get("folder_name") or metadata.get("folderName") or metadata.get("project_folder")
+    )
+    if folder_name:
+        tags["folder_name"] = folder_name
+    if project and project.get("lead_estimate_id"):
+        tags["lead_estimate_id"] = project["lead_estimate_id"]
+    if project and project.get("project_number"):
+        tags["project_number"] = project["project_number"]
+    if job_id:
+        tags["project_id"] = str(job_id)
+    rel = text(metadata.get("relative_path") or metadata.get("relativePath") or metadata.get("source_path"))
+    if rel:
+        tags["relative_path"] = rel
+
+    client_id = as_uuid(metadata.get("id") or metadata.get("drawing_id") or metadata.get("drawingId") or metadata.get("document_id"))
+
+    if kind == "drawing":
+        from .drawing_label import label_drawing, parse_folder_path
+
+        folder_labels = parse_folder_path(rel or filename)
+        labeled = label_drawing(
+            filename=filename,
+            folder_path=rel or filename,
+            sheet_number=text(metadata.get("sheet_number") or metadata.get("sheetNumber")) or None,
+            sheet_title=text(metadata.get("sheet_title") or metadata.get("sheetTitle") or metadata.get("title")) or None,
+            discipline=text(metadata.get("discipline")) or folder_labels.get("discipline"),
+            drawing_set=text(metadata.get("drawing_set") or metadata.get("drawingSet")) or folder_labels.get("drawing_set"),
+            revision=text(metadata.get("revision")) or None,
+        )
+        row = create_pending_drawing(
+            project_id=job_id,
+            sheet_number=labeled["sheet_number"],
+            sheet_title=labeled["sheet_title"],
+            revision=labeled["revision"] or "0",
+            source_file_name=filename,
+            discipline=labeled["discipline"],
+            drawing_set=labeled["drawing_set"],
+            client_id=client_id,
+            content_hash=checksum.lower() if checksum else None,
+        )
+        row.tags = {**_document_tags(row), **tags}
+        db.session.flush()
+        return _register_response(row, "drawing", project, matched_by), 201
+
+    raw_type = text(metadata.get("document_type") or metadata.get("documentType")).lower() or "other"
+    dtype = raw_type if raw_type in _DOCUMENT_TYPES and raw_type != "drawing" else "other"
+    title = text(metadata.get("title")) or filename
+    row = create_pending_document(
+        project_id=job_id,
+        filename=filename,
+        document_type=dtype,
+        title=title,
+        mime_type=mime,
+        content_hash=checksum.lower() if checksum else None,
+        client_id=client_id,
+    )
+    row.tags = {**_document_tags(row), **tags}
+    db.session.flush()
+    return _register_response(row, "document", project, matched_by), 201
+
+
+def _register_existing_pending(
+    row: Document, kind: str, project: dict[str, Any] | None, matched_by: str | None
+) -> tuple[dict[str, Any], int]:
+    body = _register_response(row, kind, project, matched_by)
+    body["duplicate"] = False
+    body["reused"] = True
+    return body, 200
+
+
+def _register_response(
+    row: Document, kind: str, project: dict[str, Any] | None, matched_by: str | None
+) -> dict[str, Any]:
+    item = serialize_ingest_doc(row, kind=kind, project=project)
+    body: dict[str, Any] = {
+        "document": item,
+        "project": project,
+        "matchedBy": matched_by,
+        "file_pending": True,
+        "entity": kind,
+    }
+    if kind == "drawing":
+        body["drawing"] = item
+        hint = native_upload_hint_for_drawing(row) if isinstance(row, Drawing) else None
+    else:
+        hint = native_upload_hint_for_document(row)
+    if hint:
+        body["upload"] = hint
+        body["item"] = hint
+    else:
+        from .object_storage import mint_last_error
+
+        body["upload_error"] = "B2_UPLOAD_URL_UNAVAILABLE"
+        detail = mint_last_error()
+        if detail:
+            body["upload_error_detail"] = detail
+    return body
 
 
 def handle_ingest_upload(file: FileStorage | None, metadata: dict[str, Any], *, kind: str) -> tuple[dict[str, Any], int]:

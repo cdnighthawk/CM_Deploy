@@ -45,6 +45,18 @@ def test_as_b2_native_hint_accepts_b2_upload_file():
     assert hint.get("presignedPut") is None
 
 
+def test_as_b2_native_hint_accepts_missing_kind_when_url_is_native():
+    hint = _as_b2_native_hint(
+        {
+            "url": "https://pod-000-1001-00.backblaze.com/b2api/v2/b2_upload_file/x",
+            "authorization": "tok",
+            "file_name": "a.pdf",
+        }
+    )
+    assert hint is not None
+    assert hint["protocol"] == "b2-native"
+
+
 def test_native_upload_hint_does_not_call_s3_presign(flask_app):
     d = MagicMock()
     d.id = "11111111-1111-1111-1111-111111111111"

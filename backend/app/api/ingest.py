@@ -1,6 +1,8 @@
 """Bearer ingest API for the Autodesk Desktop Connector agent.
 
 GET  /api/projects
+GET  /api/ingest/estimates
+GET  /api/estimates
 POST /api/documents          JSON metadata only (bytes go to B2)
 POST /api/drawings           JSON metadata only (bytes go to B2)
 POST /api/drawings/<id>/b2-upload-url
@@ -125,6 +127,46 @@ def ingest_list_projects():
         or ""
     )
     return jsonify({"projects": list_ingest_projects(query)})
+
+
+def _parse_has_folder(raw: str | None) -> bool | None:
+    value = (raw or "").strip().lower()
+    if value in {"1", "true", "yes", "ready"}:
+        return True
+    if value in {"0", "false", "no"}:
+        return False
+    return None
+
+
+@bp.get("/api/ingest/estimates")
+@bp.get("/api/estimates")
+def ingest_list_estimates():
+    """Compact estimate → Y:\\Estimates folder map for the desktop ingest agent."""
+    denied = _require_ingest_auth()
+    if denied is not None:
+        return denied
+    from ..services.ingest_estimates import list_ingest_estimates
+
+    query = (
+        request.args.get("q")
+        or request.args.get("folder")
+        or request.args.get("project_key")
+        or request.args.get("project_number")
+        or ""
+    )
+    try:
+        payload = list_ingest_estimates(
+            query=query,
+            project_id=request.args.get("project_id") or request.args.get("projectId"),
+            folder_provision_status=request.args.get("folder_provision_status")
+            or request.args.get("status"),
+            has_folder=_parse_has_folder(request.args.get("has_folder")),
+            limit=request.args.get("limit"),
+            offset=request.args.get("offset"),
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify(payload)
 
 
 @bp.post("/api/documents")

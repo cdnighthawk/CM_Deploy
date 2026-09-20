@@ -7,10 +7,10 @@ only — never the estimate UUID.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
 from ..extensions import db
@@ -28,6 +28,65 @@ def _iso(dt: datetime | None) -> str | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.isoformat()
+
+
+def _as_utc(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def effective_due_at(est: Estimate, lead: LeadEstimate | None) -> datetime | None:
+    """Bid due: ``estimates.due_at``, else BuildingConnected ``lead_estimates.due_at`` (CSV dueAt).
+
+    There is no ``submitted_at`` on either table. ``submission_state`` is an enum
+    (UNDECIDED / WILL_SUBMIT / SUBMITTED / …), not a timestamp.
+    """
+    due = getattr(est, "due_at", None)
+    if due is not None:
+        return due
+    if lead is not None:
+        return getattr(lead, "due_at", None)
+    return None
+
+
+def parse_due_bound(raw: Any, *, label: str, end_of_day: bool = False) -> datetime | None:
+    """Parse ``due_from`` / ``due_to``. Date-only ISO (YYYY-MM-DD) is UTC midnight,
+    or end of that UTC day when ``end_of_day`` (so ``due_to=2026-09-20`` is inclusive).
+    """
+    if raw is None:
+        return None
+    text_in = str(raw).strip()
+    if not text_in:
+        return None
+    if " " in text_in and "T" in text_in and text_in.count("-") >= 2:
+        # Query strings turn "+00:00" into a space.
+        text_in = text_in.replace(" ", "+", 1)
+    date_only = len(text_in) == 10 and text_in[4] == "-" and text_in[7] == "-"
+    if date_only:
+        try:
+            day = datetime.fromisoformat(text_in).date()
+        except ValueError as exc:
+            raise ValueError(f"invalid {label} (use ISO-8601 date or datetime)") from exc
+        clock = time(23, 59, 59, 999999) if end_of_day else time(0, 0, 0)
+        return datetime.combine(day, clock, tzinfo=timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(text_in.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"invalid {label} (use ISO-8601 date or datetime)") from exc
+    return _as_utc(parsed)
+
+
+def _effective_due_sql():
+    lead_due = (
+        select(LeadEstimate.due_at)
+        .where(LeadEstimate.id == Estimate.lead_estimate_id)
+        .correlate(Estimate)
+        .scalar_subquery()
+    )
+    return func.coalesce(Estimate.due_at, lead_due)
 
 
 def human_job_number(*candidates: Any) -> str | None:
@@ -123,6 +182,7 @@ def serialize_ingest_estimate(
         "projects": compact_projects,
         "folder_hints": folder_hints,
         "archived": archived,
+        "due_at": _iso(effective_due_at(est, lead)),
         "updated_at": _iso(est.updated_at),
     }
 
@@ -161,12 +221,29 @@ def _parse_limit_offset(limit: Any, offset: Any) -> tuple[int, int]:
     return lim, off
 
 
+def due_at_in_range(due: datetime | None, *, due_from: datetime | None, due_to: datetime | None) -> bool:
+    if due_from is None and due_to is None:
+        return True
+    if due is None:
+        return False
+    instant = _as_utc(due)
+    if instant is None:
+        return False
+    if due_from is not None and instant < due_from:
+        return False
+    if due_to is not None and instant > due_to:
+        return False
+    return True
+
+
 def list_ingest_estimates(
     *,
     query: str = "",
     project_id: str | None = None,
     folder_provision_status: str | None = None,
     has_folder: bool | None = None,
+    due_from: Any = None,
+    due_to: Any = None,
     limit: Any = DEFAULT_LIMIT,
     offset: Any = 0,
 ) -> dict[str, Any]:
@@ -174,17 +251,25 @@ def list_ingest_estimates(
     q = text(query)
     status = text(folder_provision_status).lower()
     pid = as_uuid(project_id)
+    start = parse_due_bound(due_from, label="due_from")
+    end = parse_due_bound(due_to, label="due_to", end_of_day=True)
+    if start is not None and end is not None and start > end:
+        raise ValueError("due_from must be on or before due_to")
 
-    rows = list(
-        db.session.scalars(
-            select(Estimate)
-            .options(joinedload(Estimate.lead_estimate).joinedload(LeadEstimate.project))
-            .order_by(Estimate.updated_at.desc(), Estimate.created_at.desc())
-            .limit(MAX_SCAN)
-        )
-        .unique()
-        .all()
+    stmt = (
+        select(Estimate)
+        .options(joinedload(Estimate.lead_estimate).joinedload(LeadEstimate.project))
+        .order_by(Estimate.updated_at.desc(), Estimate.created_at.desc())
     )
+    if start is not None or end is not None:
+        effective_due = _effective_due_sql()
+        if start is not None:
+            stmt = stmt.where(effective_due.isnot(None), effective_due >= start)
+        if end is not None:
+            stmt = stmt.where(effective_due.isnot(None), effective_due <= end)
+    stmt = stmt.limit(MAX_SCAN)
+
+    rows = list(db.session.scalars(stmt).unique().all())
     project_ids: set[uuid.UUID] = set()
     for est in rows:
         if est.project_id:
@@ -219,6 +304,8 @@ def list_ingest_estimates(
         if has_folder is False and item.get("folder_path"):
             continue
         if q and not estimate_matches_query(item, q):
+            continue
+        if not due_at_in_range(effective_due_at(est, lead), due_from=start, due_to=end):
             continue
         items.append(item)
 

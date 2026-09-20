@@ -17,6 +17,30 @@ def _auth(flask_app, key: str = "cmk_test_ingest_key"):
     }
 
 
+def _ensure_org(flask_app):
+    from sqlalchemy import text
+
+    from app.tenancy import set_current_organization_id
+
+    with flask_app.app_context():
+        row = db.session.execute(text("SELECT id FROM organizations WHERE slug = 'usis'")).first()
+        if row is None:
+            oid = uuid.uuid4()
+            db.session.execute(
+                text(
+                    "INSERT INTO organizations (id, name, slug, microsoft_sso_enabled, allow_join_by_domain, "
+                    "status, plan_key, seat_cap_office, seat_cap_field, seat_cap_vendor_token) "
+                    "VALUES (:id, :name, 'usis', false, false, 'active', 'full', 50, 50, 500)"
+                ),
+                {"id": oid, "name": "US Interior Specialties"},
+            )
+            db.session.commit()
+        else:
+            oid = row[0]
+        set_current_organization_id(oid)
+        return oid
+
+
 def test_human_job_number_skips_uuid():
     uid = str(uuid.uuid4())
     assert human_job_number(None, None) is None
@@ -51,7 +75,8 @@ def test_ingest_estimates_returns_folder_map(client, flask_app):
     suffix = uuid.uuid4().hex[:8]
     number = "26" + suffix[:4]
     with flask_app.app_context():
-        job = Project(name=f"Civic Center {suffix}", number=number)
+        org_id = _ensure_org(flask_app)
+        job = Project(name=f"Civic Center {suffix}", number=number, organization_id=org_id)
         db.session.add(job)
         db.session.flush()
         lead = LeadEstimate(
@@ -62,6 +87,7 @@ def test_ingest_estimates_returns_folder_map(client, flask_app):
             is_archived=False,
             is_parent=True,
             submission_state="UNDECIDED",
+            organization_id=org_id,
         )
         db.session.add(lead)
         db.session.flush()
@@ -72,6 +98,7 @@ def test_ingest_estimates_returns_folder_map(client, flask_app):
             is_current=True,
             folder_provision_status="ready",
             folder_path=rf"Y:\Estimates\{number} - Original Estimate",
+            organization_id=org_id,
         )
         db.session.add(est)
         db.session.commit()
@@ -116,7 +143,8 @@ def test_ingest_estimates_job_number_from_project_not_uuid(client, flask_app):
     suffix = uuid.uuid4().hex[:8]
     number = "24" + suffix[:4]
     with flask_app.app_context():
-        job = Project(name=f"High School {suffix}", number=number)
+        org_id = _ensure_org(flask_app)
+        job = Project(name=f"High School {suffix}", number=number, organization_id=org_id)
         db.session.add(job)
         db.session.flush()
         est = Estimate(
@@ -124,6 +152,7 @@ def test_ingest_estimates_job_number_from_project_not_uuid(client, flask_app):
             project_id=job.id,
             folder_provision_status="ready",
             folder_path=rf"Y:\Estimates\{number} - Plan set",
+            organization_id=org_id,
         )
         db.session.add(est)
         db.session.commit()
@@ -142,6 +171,7 @@ def test_ingest_estimates_omits_uuid_when_no_human_number(client, flask_app):
     headers = _auth(flask_app)
     suffix = uuid.uuid4().hex[:8]
     with flask_app.app_context():
+        org_id = _ensure_org(flask_app)
         lead = LeadEstimate(
             external_id=f"ingest-est-nonum-{suffix}",
             name=f"No Number {suffix}",
@@ -149,10 +179,11 @@ def test_ingest_estimates_omits_uuid_when_no_human_number(client, flask_app):
             is_archived=False,
             is_parent=True,
             submission_state="UNDECIDED",
+            organization_id=org_id,
         )
         db.session.add(lead)
         db.session.flush()
-        est = Estimate(name="Draft", lead_estimate_id=lead.id)
+        est = Estimate(name="Draft", lead_estimate_id=lead.id, organization_id=org_id)
         db.session.add(est)
         db.session.commit()
         est_id = str(est.id)
@@ -168,7 +199,8 @@ def test_ingest_estimates_matches_accdocs_project_key(client, flask_app):
     headers = _auth(flask_app)
     suffix = uuid.uuid4().hex[:8]
     with flask_app.app_context():
-        job = Project(name=f"Turner Bid {suffix}", number="240142")
+        org_id = _ensure_org(flask_app)
+        job = Project(name=f"Turner Bid {suffix}", number="240142", organization_id=org_id)
         db.session.add(job)
         db.session.flush()
         est = Estimate(
@@ -176,6 +208,7 @@ def test_ingest_estimates_matches_accdocs_project_key(client, flask_app):
             project_id=job.id,
             folder_provision_status="ready",
             folder_path=r"Y:\Estimates\240142 - Turner Bid Set",
+            organization_id=org_id,
         )
         db.session.add(est)
         db.session.commit()

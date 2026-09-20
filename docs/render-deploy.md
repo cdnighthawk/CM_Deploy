@@ -36,7 +36,7 @@ Optional overrides:
 | `CORS_ORIGINS` | Auto from `USIS_APP_PUBLIC_URL`, else `RENDER_EXTERNAL_URL` |
 | `USIS_POST_LOGIN_REDIRECT` | `{USIS_APP_PUBLIC_URL}/usis-dashboard.html` if public URL set, else Render default |
 | `USIS_APP_PUBLIC_URL` | Canonical HTTPS origin (required for custom domain; see §8) |
-| `CM_API_KEY` | Long-lived Bearer token for the Autodesk ingest PC (`GET /api/projects`, `GET /api/ingest/estimates`, `POST /api/documents`, `POST /api/drawings`). Do not commit. |
+| `CM_API_KEY` | Long-lived Bearer token for the Autodesk ingest PC (`GET /api/projects`, `GET /api/ingest/estimates`, JSON `POST /api/documents` / `POST /api/drawings`). Do not POST file bytes to those routes — mint native B2, then ack. Do not commit. |
 | `ESTIMATE_FOLDER_PROVISION_URL` | Base URL of `C:\usis-cm\folder_provision.py` (port **5055**). Example: `http://<data-server-host>:5055`. Must be reachable from Render. Do not set `ESTIMATE_FOLDER_ROOT` on Render. |
 | `ESTIMATE_FOLDER_PROVISION_TOKEN` | Shared secret; CM sends header `X-USIS-Provision-Token`. Must match the live agent. |
 

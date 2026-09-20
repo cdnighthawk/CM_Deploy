@@ -97,35 +97,25 @@ def test_ingest_activity_lists_recent_uploads(client, flask_app):
 
     drawn = client.post(
         "/api/drawings",
-        data={
-            "file": (io.BytesIO(pdf), "A101_PLAN.pdf"),
-            "metadata": json.dumps(
-                {
-                    "project_id": pid,
-                    "source": "autodesk_desktop_connector",
-                    "relative_path": f"{number}/Architectural/A101_PLAN.pdf",
-                }
-            ),
+        json={
+            "filename": "A101_PLAN.pdf",
+            "project_id": pid,
+            "source": "autodesk_desktop_connector",
+            "relative_path": f"{number}/Architectural/A101_PLAN.pdf",
         },
-        content_type="multipart/form-data",
         headers=headers,
     )
     assert drawn.status_code == 201, drawn.get_data(as_text=True)
 
     spec = client.post(
         "/api/documents",
-        data={
-            "file": (io.BytesIO(b"%PDF-1.4 spec"), "Addendum-1.pdf"),
-            "metadata": json.dumps(
-                {
-                    "project_id": pid,
-                    "source": "autodesk_desktop_connector",
-                    "document_type": "specification",
-                    "relative_path": f"{number}/Specs/Addendum-1.pdf",
-                }
-            ),
+        json={
+            "filename": "Addendum-1.pdf",
+            "project_id": pid,
+            "source": "autodesk_desktop_connector",
+            "document_type": "specification",
+            "relative_path": f"{number}/Specs/Addendum-1.pdf",
         },
-        content_type="multipart/form-data",
         headers=headers,
     )
     assert spec.status_code == 201, spec.get_data(as_text=True)

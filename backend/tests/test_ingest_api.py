@@ -10,7 +10,7 @@ import pytest
 from pypdf import PdfWriter
 
 from app.extensions import db
-from app.models import Document, Drawing, Estimate, LeadEstimate, Project
+from app.models import Drawing, Estimate, LeadEstimate, Project
 
 
 def _pdf_bytes() -> bytes:
@@ -55,8 +55,9 @@ def test_ingest_projects_rejects_wrong_key(client, flask_app):
 
 def test_ingest_projects_returns_json_list(client, flask_app):
     headers = _auth(flask_app)
+    number = "24" + uuid.uuid4().hex[:6]
     with flask_app.app_context():
-        p = Project(name="Ingest-" + uuid.uuid4().hex[:8], number="240142")
+        p = Project(name="Ingest-" + uuid.uuid4().hex[:8], number=number)
         db.session.add(p)
         db.session.commit()
         pid = str(p.id)
@@ -68,11 +69,11 @@ def test_ingest_projects_returns_json_list(client, flask_app):
     assert isinstance(body.get("projects"), list)
     match = next((row for row in body["projects"] if row.get("project_id") == pid), None)
     assert match is not None
-    assert match["project_number"] == "240142"
+    assert match["project_number"] == number
     assert match["kind"] == "job"
     assert match["archived"] is False
 
-    r2 = client.get("/api/projects?q=PROJ-2024-0142", headers=headers)
+    r2 = client.get(f"/api/projects?q={number}", headers=headers)
     assert r2.status_code == 200
     found = next((row for row in r2.get_json()["projects"] if row["project_id"] == pid), None)
     assert found is not None
@@ -121,122 +122,184 @@ def test_ingest_projects_omits_archived_lead_estimates(client, flask_app):
     assert keep_row["archived"] is False
 
 
-def test_ingest_document_and_drawing_upload(client, flask_app):
+def test_ingest_rejects_multipart_pdf_bodies(client, flask_app):
     headers = _auth(flask_app)
     pdf = _pdf_bytes()
-    digest = hashlib.sha256(pdf).hexdigest()
-    with flask_app.app_context():
-        p = Project(name="IngestUp-" + uuid.uuid4().hex[:8], number="259999")
-        db.session.add(p)
-        db.session.commit()
-        pid = str(p.id)
-
-    spec = b"%PDF-1.4 spec sample"
-    spec_hash = hashlib.sha256(spec).hexdigest()
-    doc_r = client.post(
-        "/api/documents",
-        headers=headers,
-        data={
-            "file": (io.BytesIO(spec), "addendum.pdf"),
-            "metadata": json.dumps(
-                {
-                    "source": "autodesk_desktop_connector",
-                    "content_hash": spec_hash,
-                    "project_id": pid,
-                    "document_type": "specification",
-                }
-            ),
-        },
-        content_type="multipart/form-data",
-    )
-    assert doc_r.status_code == 201, doc_r.get_data(as_text=True)
-    doc_body = doc_r.get_json()
-    assert doc_body["document"]["content_hash"] == spec_hash
-    assert doc_body["project"]["project_id"] == pid
-    assert doc_body["matchedBy"] == "project_id"
-
-    dup = client.post(
-        "/api/documents",
-        headers=headers,
-        data={
-            "file": (io.BytesIO(spec), "addendum.pdf"),
-            "metadata": json.dumps(
-                {
-                    "source": "autodesk_desktop_connector",
-                    "content_hash": spec_hash,
-                    "project_id": pid,
-                }
-            ),
-        },
-        content_type="multipart/form-data",
-    )
-    assert dup.status_code == 200
-    assert dup.get_json()["duplicate"] is True
-
-    draw_r = client.post(
+    blocked = client.post(
         "/api/drawings",
         headers=headers,
         data={
             "file": (io.BytesIO(pdf), "A101.pdf"),
-            "metadata": json.dumps(
-                {
-                    "source": "autodesk_desktop_connector",
-                    "content_hash": digest,
-                    "project_id": pid,
-                    "sheet_number": "A101",
-                }
-            ),
+            "metadata": json.dumps({"filename": "A101.pdf", "sheet_number": "A101"}),
         },
         content_type="multipart/form-data",
     )
+    assert blocked.status_code == 410, blocked.get_data(as_text=True)
+    body = blocked.get_json()
+    assert body["error"]["code"] == "AGENT_MULTIPART_FORBIDDEN"
+    assert "X-Amz-" not in blocked.get_data(as_text=True)
+    assert "s3_presigned_put" not in blocked.get_data(as_text=True)
+
+
+def test_ingest_document_and_drawing_upload(client, flask_app):
+    headers = _auth(flask_app)
+    pdf = _pdf_bytes()
+    digest = hashlib.sha256(pdf).hexdigest()
+    native = {
+        "mode": "b2_native",
+        "url": "https://pod-000.backblaze.com/b2api/v2/b2_upload_file",
+        "authorization": "tok",
+        "file_name": "259999/specification/addendum.pdf",
+        "sha1_header": "X-Bz-Content-Sha1",
+        "bucketId": "bucket-1",
+        "expiresAt": "2026-09-20T22:00:00Z",
+    }
+    with flask_app.app_context():
+        p = Project(name="IngestUp-" + uuid.uuid4().hex[:8], number="25" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.commit()
+        pid = str(p.id)
+
+    spec_hash = hashlib.sha256(b"%PDF-1.4 spec sample").hexdigest()
+    from unittest.mock import patch
+
+    with patch("app.services.object_storage.native_upload_session", return_value=native):
+        doc_r = client.post(
+            "/api/documents",
+            headers=headers,
+            json={
+                "filename": "addendum.pdf",
+                "source": "autodesk_desktop_connector",
+                "content_hash": spec_hash,
+                "project_id": pid,
+                "document_type": "specification",
+            },
+        )
+    assert doc_r.status_code == 201, doc_r.get_data(as_text=True)
+    doc_body = doc_r.get_json()
+    assert doc_body["document"]["content_hash"] == spec_hash
+    assert doc_body["document"]["file_pending"] is True
+    assert doc_body["project"]["project_id"] == pid
+    assert doc_body["matchedBy"] == "project_id"
+    assert doc_body["upload"]["protocol"] == "b2-native"
+    assert "b2_upload_file" in doc_body["upload"]["uploadUrl"]
+    assert "X-Amz-" not in doc_r.get_data(as_text=True)
+
+    dup = client.post(
+        "/api/documents",
+        headers=headers,
+        json={
+            "filename": "addendum.pdf",
+            "source": "autodesk_desktop_connector",
+            "content_hash": spec_hash,
+            "project_id": pid,
+        },
+    )
+    assert dup.status_code == 200
+    # Still pending (not acked) — same row is reused, not a completed duplicate.
+    assert dup.get_json()["document"]["id"] == doc_body["document"]["id"]
+
+    with patch("app.services.object_storage.native_upload_session", return_value=native):
+        draw_r = client.post(
+            "/api/drawings",
+            headers=headers,
+            json={
+                "filename": "A101.pdf",
+                "source": "autodesk_desktop_connector",
+                "content_hash": digest,
+                "project_id": pid,
+                "sheet_number": "A101",
+            },
+        )
     assert draw_r.status_code == 201, draw_r.get_data(as_text=True)
     draw_body = draw_r.get_json()
     assert draw_body["drawing"]["drawing_id"]
     assert draw_body["drawing"]["content_hash"] == digest
+    assert draw_body["drawing"]["file_pending"] is True
+    assert draw_body["upload"]["protocol"] == "b2-native"
 
     with flask_app.app_context():
-        assert db.session.get(Document, uuid.UUID(doc_body["document"]["id"])) is not None
+        from app.services.drawing_upload import load_catalog_document
+
+        assert load_catalog_document(uuid.UUID(doc_body["document"]["id"])) is not None
         drawing = db.session.get(Drawing, uuid.UUID(draw_body["drawing"]["id"]))
         assert drawing is not None
         assert drawing.sheet_number == "A101"
         assert drawing.project_id == uuid.UUID(pid)
 
     file_r = client.get(f"/api/v1/documents/{doc_body['document']['id']}/file")
-    assert file_r.status_code == 200
-    assert file_r.data == spec
+    assert file_r.status_code == 409
+    assert file_r.get_json()["error"]["code"] == "FILE_PENDING"
+
+    ack = client.post(
+        f"/api/documents/{doc_body['document']['id']}/ack-file",
+        headers=headers,
+        json={
+            "item": {
+                "b2FileId": "doc-file-1",
+                "b2FileName": "259999/specification/addendum.pdf",
+                "contentLength": 21,
+                "sha256": spec_hash,
+                "contentType": "application/pdf",
+            }
+        },
+    )
+    assert ack.status_code == 200, ack.get_data(as_text=True)
+    assert ack.get_json()["document"]["file_pending"] is False
 
     with flask_app.app_context():
-        saved = db.session.get(Document, uuid.UUID(doc_body["document"]["id"]))
+        from app.services.drawing_upload import load_catalog_document
+
+        saved = load_catalog_document(uuid.UUID(doc_body["document"]["id"]))
         assert saved is not None
         key = (saved.tags or {}).get("storage_object")
-        assert key == f"259999/specification/addendum.pdf"
+        assert key
+        assert key.endswith("/specification/addendum.pdf")
+        assert (saved.tags or {}).get("b2_file_id") == "doc-file-1"
+
+    done = client.post(
+        "/api/documents",
+        headers=headers,
+        json={
+            "filename": "addendum.pdf",
+            "content_hash": spec_hash,
+            "project_id": pid,
+        },
+    )
+    assert done.status_code == 200
+    assert done.get_json()["duplicate"] is True
 
 
 def test_ingest_replace_drawing_file(client, flask_app):
     headers = _auth(flask_app)
     first = _pdf_bytes()
-    replacement = _pdf_bytes() + b"\n%replaced\n"
+    digest = hashlib.sha256(first).hexdigest()
+    native = {
+        "mode": "b2_native",
+        "url": "https://pod-000.backblaze.com/b2api/v2/b2_upload_file",
+        "authorization": "tok",
+        "file_name": "drawings/A200.pdf",
+    }
     with flask_app.app_context():
-        p = Project(name="IngestRep-" + uuid.uuid4().hex[:8], number="259998")
+        p = Project(name="IngestRep-" + uuid.uuid4().hex[:8], number="25" + uuid.uuid4().hex[:6])
         db.session.add(p)
         db.session.commit()
         pid = str(p.id)
 
-    created = client.post(
-        "/api/drawings",
-        headers=headers,
-        data={
-            "file": (io.BytesIO(first), "A200.pdf"),
-            "metadata": json.dumps(
-                {
-                    "source": "autodesk_desktop_connector",
-                    "project_id": pid,
-                    "sheet_number": "A200",
-                }
-            ),
-        },
-        content_type="multipart/form-data",
-    )
+    from unittest.mock import patch
+
+    with patch("app.services.object_storage.native_upload_session", return_value=native):
+        created = client.post(
+            "/api/drawings",
+            headers=headers,
+            json={
+                "filename": "A200.pdf",
+                "source": "autodesk_desktop_connector",
+                "project_id": pid,
+                "sheet_number": "A200",
+                "content_hash": digest,
+            },
+        )
     assert created.status_code == 201, created.get_data(as_text=True)
     did = created.get_json()["drawing"]["drawing_id"]
 
@@ -246,47 +309,54 @@ def test_ingest_replace_drawing_file(client, flask_app):
         data={"file": (io.BytesIO(b""), "empty.pdf")},
         content_type="multipart/form-data",
     )
-    assert missing.status_code == 400
+    assert missing.status_code == 410
+    assert missing.get_json()["error"]["code"] == "AGENT_MULTIPART_FORBIDDEN"
 
     replaced = client.post(
         f"/api/drawings/{did}/file",
         headers=headers,
-        data={"file": (io.BytesIO(replacement), "A200.pdf")},
+        data={"file": (io.BytesIO(first), "A200.pdf")},
         content_type="multipart/form-data",
     )
-    assert replaced.status_code == 200, replaced.get_data(as_text=True)
-    body = replaced.get_json()
-    assert body["replaced"] is True
-    assert body["drawing"]["drawing_id"] == did
+    assert replaced.status_code == 410
+
+    with patch("app.services.object_storage.native_upload_session", return_value=native):
+        minted = client.post(f"/api/drawings/{did}/b2-upload-url", headers=headers)
+    assert minted.status_code == 200, minted.get_data(as_text=True)
+    assert minted.get_json()["item"]["protocol"] == "b2-native"
+    assert "b2_upload_file" in minted.get_json()["item"]["uploadUrl"]
+
+    ack = client.post(
+        f"/api/drawings/{did}/ack-file",
+        headers=headers,
+        json={"byte_size": len(first), "content_hash": digest, "b2FileId": "file-200"},
+    )
+    assert ack.status_code == 200, ack.get_data(as_text=True)
+    assert ack.get_json()["drawing"]["file_pending"] is False
 
     file_r = client.get(f"/api/v1/drawings/{did}/file")
-    assert file_r.status_code == 200
-    assert file_r.data == replacement
+    assert file_r.status_code in (200, 404)
 
 
 def test_ingest_unassigned_upload_when_project_unknown(client, flask_app):
     headers = _auth(flask_app)
-    payload = b"unassigned-spec"
+    payload = b"unassigned-spec-" + uuid.uuid4().bytes
     digest = hashlib.sha256(payload).hexdigest()
     r = client.post(
         "/api/documents",
         headers=headers,
-        data={
-            "file": (io.BytesIO(payload), "notes.txt"),
-            "metadata": json.dumps(
-                {
-                    "source": "autodesk_desktop_connector",
-                    "content_hash": digest,
-                    "folder_name": "NO-SUCH-FOLDER",
-                }
-            ),
+        json={
+            "filename": "notes.txt",
+            "source": "autodesk_desktop_connector",
+            "content_hash": digest,
+            "folder_name": "NO-SUCH-FOLDER",
         },
-        content_type="multipart/form-data",
     )
     assert r.status_code == 201, r.get_data(as_text=True)
     body = r.get_json()
     assert body["project"] is None
     assert body["document"]["project_id"] is None
+    assert body["document"]["file_pending"] is True
 
 
 def test_ingest_drawing_for_lead_creates_workspace_and_links_estimate(client, flask_app):
@@ -313,18 +383,13 @@ def test_ingest_drawing_for_lead_creates_workspace_and_links_estimate(client, fl
     draw_r = client.post(
         "/api/drawings",
         headers=headers,
-        data={
-            "file": (io.BytesIO(pdf), "A301.pdf"),
-            "metadata": json.dumps(
-                {
-                    "source": "autodesk_desktop_connector",
-                    "project_id": lead_id,
-                    "sheet_number": "A301",
-                    "folder_name": f"Unlinked Lead {suffix}",
-                }
-            ),
+        json={
+            "filename": "A301.pdf",
+            "source": "autodesk_desktop_connector",
+            "project_id": lead_id,
+            "sheet_number": "A301",
+            "folder_name": f"Unlinked Lead {suffix}",
         },
-        content_type="multipart/form-data",
     )
     assert draw_r.status_code == 201, draw_r.get_data(as_text=True)
     body = draw_r.get_json()

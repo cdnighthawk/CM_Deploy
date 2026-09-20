@@ -1357,7 +1357,7 @@ def _lead_estimates_health_count_filter() -> Any:
 
 @bp.get("/lead-estimates")
 def list_lead_estimates():
-    """Paged list of ``lead_estimates`` (default: Leads = undecided / no state, not archived)."""
+    """Paged list of ``lead_estimates`` (Leads = undecided / still due; All = every board state including past due)."""
     try:
         limit = max(1, min(int(request.args.get("limit", 200)), 1000))
         offset = max(0, int(request.args.get("offset", 0)))

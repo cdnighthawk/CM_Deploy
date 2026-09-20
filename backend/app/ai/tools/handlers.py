@@ -482,7 +482,7 @@ def _register_all() -> None:
                 {
                     "submission_state": {
                         "type": "string",
-                        "description": "e.g. undecided, will_submit, submitted",
+                        "description": "e.g. undecided, will_submit, submitted, all",
                     },
                     "limit": {"type": "integer"},
                     "offset": {"type": "integer"},

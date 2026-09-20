@@ -492,7 +492,11 @@ def _pull_and_upsert(
     *,
     full: bool = False,
     max_pages: int | None = None,
+    organization_id: uuid.UUID | None = None,
 ) -> tuple[int, int, int]:
+    org_id = organization_id or current_organization_id()
+    if org_id is not None:
+        bind_request_organization(org_id)
     base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
     updated_at_range = _opportunities_updated_at_range(full=full)
     page_cap = int(max_pages) if max_pages is not None else (500 if full else 50)
@@ -504,7 +508,9 @@ def _pull_and_upsert(
         nonlocal loaded, skipped, errors, batch
         if not batch:
             return
-        l, s, e = upsert_lead_estimate_norm_rows(db.session, batch)
+        l, s, e = upsert_lead_estimate_norm_rows(
+            db.session, batch, organization_id=org_id
+        )
         loaded += l
         skipped += s
         errors += e
@@ -512,10 +518,11 @@ def _pull_and_upsert(
         db.session.expunge_all()
 
     log.info(
-        "BuildingConnected pull full=%s pages=%s updatedAt=%s",
+        "BuildingConnected pull full=%s pages=%s updatedAt=%s org=%s",
         full,
         page_cap,
         updated_at_range,
+        org_id,
     )
     with BuildingConnectedClient(access_token, base) as cli:
         for item in cli.iter_opportunities(
@@ -523,6 +530,8 @@ def _pull_and_upsert(
             max_pages=page_cap,
         ):
             norm = bc_api_project_to_norm(item)
+            if not norm.get("source"):
+                norm["source"] = "buildingconnected"
             oid = norm.get("id")
             if isinstance(oid, str) and oid:
                 if oid in seen:
@@ -535,12 +544,22 @@ def _pull_and_upsert(
     return loaded, skipped, errors
 
 
-def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
+def _run_sync_job(
+    app,
+    access_token: str,
+    *,
+    full: bool = False,
+    organization_id: uuid.UUID | None = None,
+) -> None:
     global _SYNC_RUNNING, _SYNC_STARTED_AT
     loaded = skipped = errors = 0
     with app.app_context():
         try:
-            loaded, skipped, errors = _pull_and_upsert(access_token, full=full)
+            if organization_id is not None:
+                bind_request_organization(organization_id)
+            loaded, skipped, errors = _pull_and_upsert(
+                access_token, full=full, organization_id=organization_id
+            )
             db.session.commit()
             log.info(
                 "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s full=%s",
@@ -557,7 +576,9 @@ def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
                     _refresh_tokens_unlocked()
                     db.session.commit()
                     token = _ensure_access_token()
-                    loaded, skipped, errors = _pull_and_upsert(token, full=full)
+                    loaded, skipped, errors = _pull_and_upsert(
+                        token, full=full, organization_id=organization_id
+                    )
                     db.session.commit()
                     log.info(
                         "BuildingConnected sync complete after refresh: loaded=%s skipped=%s errors=%s",
@@ -732,10 +753,11 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 _SYNC_RUNNING = True
                 _SYNC_STARTED_AT = time.monotonic()
             app = current_app._get_current_object()
+            org_id = current_organization_id()
             threading.Thread(
                 target=_run_sync_job,
                 args=(app, access),
-                kwargs={"full": want_full},
+                kwargs={"full": want_full, "organization_id": org_id},
                 daemon=True,
                 name="bc-sync",
             ).start()
@@ -767,7 +789,9 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                     row = _bc_oauth_row()
                     if not row or not row.access_token:
                         raise RuntimeError("no access token after refresh") from None
-                    loaded, skipped, errors = _pull_and_upsert(row.access_token)
+                    loaded, skipped, errors = _pull_and_upsert(
+                        row.access_token, full=want_full, organization_id=current_organization_id()
+                    )
                     db.session.commit()
                 except Exception as exc2:
                     db.session.rollback()

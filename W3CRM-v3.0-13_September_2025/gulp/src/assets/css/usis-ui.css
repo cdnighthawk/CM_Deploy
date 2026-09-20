@@ -2666,6 +2666,10 @@ body.usis-sv-open {
 	font-weight: 600;
 	white-space: nowrap;
 }
+.usis-est-due--past {
+	color: var(--usis-text-secondary);
+	font-weight: 500;
+}
 .usis-est-client {
 	display: inline-flex;
 	align-items: flex-start;

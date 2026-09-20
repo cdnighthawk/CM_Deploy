@@ -179,6 +179,7 @@ def lead_estimate_public(row: LeadEstimate) -> dict[str, Any]:
         "rom": num_or_none(row.rom),
         "win_probability": num_or_none(row.win_probability),
         "primary_estimate_id": str(row.primary_estimate_id) if row.primary_estimate_id else None,
+        "current_estimate_id": str(row.primary_estimate_id) if row.primary_estimate_id else None,
         "primary_rfp_id": str(row.primary_rfp_id) if row.primary_rfp_id else None,
         "estimate_locked_at": iso(row.estimate_locked_at),
         "estimate_approved_at": iso(row.estimate_approved_at),

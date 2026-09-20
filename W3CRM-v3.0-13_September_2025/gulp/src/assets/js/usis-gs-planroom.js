@@ -52,6 +52,7 @@
 			{ board: "lead", state: "undecided" },
 			{ board: "will_submit", state: "will_submit" },
 			{ board: "submitted", state: "submitted" },
+			{ board: "all", state: "all" },
 		].forEach(function (row) {
 			fetch(api + "/api/v1/lead-estimates?limit=1&submission_state=" + encodeURIComponent(row.state), {
 				credentials: "include",

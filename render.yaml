@@ -75,6 +75,8 @@ services:
         sync: false
       - key: BC_SYNC_CRON_SECRET
         sync: false
+      - key: BUILDINGCONNECTED_SYNC_ENABLED
+        value: "1"
       # Autodesk Desktop Connector ingest agent (Bearer token for /api/projects etc.).
       - key: CM_API_KEY
         sync: false
@@ -146,3 +148,22 @@ services:
           envVarKey: BC_SYNC_CRON_SECRET
       - key: CALENDAR_REMINDER_URL
         value: https://www.usiscm.com/api/v1/integrations/calendar-reminders/run
+
+  - type: cron
+    name: usis-bc-hourly-sync
+    runtime: python
+    plan: starter
+    rootDir: backend
+    schedule: "0 * * * *"
+    buildCommand: echo skip
+    startCommand: python scripts/trigger_hourly_bc_sync.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: BC_SYNC_CRON_SECRET
+        fromService:
+          name: usis-cm
+          type: web
+          envVarKey: BC_SYNC_CRON_SECRET
+      - key: BC_SYNC_URL
+        value: https://www.usiscm.com/api/v1/integrations/buildingconnected/sync

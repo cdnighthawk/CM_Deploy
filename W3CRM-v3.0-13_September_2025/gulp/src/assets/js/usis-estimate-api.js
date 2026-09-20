@@ -26,17 +26,32 @@
 		return "";
 	}
 
+	function looksLikeHtml(text) {
+		var t = String(text || "").replace(/^\uFEFF/, "").trim();
+		return t.charAt(0) === "<" || /^<!DOCTYPE/i.test(t);
+	}
+
 	function parseJsonResponse(res) {
 		return res.text().then(function (text) {
 			var body = {};
+			var html = looksLikeHtml(text);
 			try {
-				body = text ? JSON.parse(text) : {};
+				body = text && !html ? JSON.parse(text) : {};
 			} catch (e) {
 				body = {};
+				html = true;
 			}
-			var err = new Error(
-				(body && body.error) || (text && !body.error ? text.slice(0, 180) : "HTTP " + res.status)
-			);
+			var msg = (body && body.error) || "";
+			if (!msg) {
+				if (res.status === 403) {
+					msg = "Saving is disabled on the server (TAKEOFF_API_WRITES_ENABLED).";
+				} else if (html || res.status === 502 || res.status === 503) {
+					msg = "The server failed (HTTP " + res.status + "). Try again in a moment.";
+				} else {
+					msg = "HTTP " + res.status;
+				}
+			}
+			var err = new Error(msg);
 			err.status = res.status;
 			err.body = body;
 			err.error_code = body && body.error_code;
@@ -190,6 +205,13 @@
 		listForLead: listForLead,
 		createForLead: createForLead,
 		getEstimate: getEstimate,
+		createTakeoffLine: function (estimateId, body) {
+			return fetchJson("/api/v1/estimates/" + encodeURIComponent(estimateId) + "/takeoff-lines", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body || {}),
+			});
+		},
 		getLead: getLead,
 		listDrawingSets: listDrawingSets,
 		postEstimateAction: postEstimateAction,

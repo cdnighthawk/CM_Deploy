@@ -354,7 +354,7 @@
 			var dist = formatDistanceMiles(row.distance_miles);
 			var bidDue = formatBidDueDate(row.due_at);
 			var apiRoot = (API || "").replace(/\/$/, "");
-			var estimateId = row.current_estimate_id || "";
+			var estimateId = row.current_estimate_id || row.primary_estimate_id || "";
 			var estHref = estimateId
 				? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
 				: lidEnc

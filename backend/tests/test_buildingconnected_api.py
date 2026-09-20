@@ -713,6 +713,21 @@ def test_estimate_ui_filter_excludes_grouped_children():
     assert queue_sql == sql
 
 
+def test_all_ui_filter_keeps_past_due():
+    from sqlalchemy.dialects import postgresql
+
+    from app.api._lead_estimate_queries import lead_estimates_ui_filter
+
+    sql = str(
+        lead_estimates_ui_filter("all").compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert "child" in sql
+    assert "due_at" not in sql or sql.count("due_at") == 0
+
+
 def test_submitted_ui_filter_keeps_past_due():
     from sqlalchemy.dialects import postgresql
 
@@ -763,6 +778,10 @@ def test_group_summary_for_lead_roles(monkeypatch):
         due_at=None,
         source=None,
         crm_stage="New Lead",
+        market_sector=None,
+        expected_start_at=None,
+        final_value=None,
+        rom=None,
         win_probability=None,
         members=None,
         bc_updated_at=None,
@@ -789,6 +808,10 @@ def test_group_summary_for_lead_roles(monkeypatch):
         due_at=None,
         source=None,
         crm_stage="New Lead",
+        market_sector=None,
+        expected_start_at=None,
+        final_value=None,
+        rom=None,
         win_probability=None,
         members=None,
         bc_updated_at=None,

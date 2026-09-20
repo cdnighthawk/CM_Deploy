@@ -281,7 +281,7 @@
 		el.classList.remove("d-none");
 		var linkId = item.external_id || item.id;
 		var linkEnc = encodeURIComponent(String(linkId));
-		var estimateId = item.current_estimate_id || null;
+		var estimateId = item.current_estimate_id || item.primary_estimate_id || null;
 		var estHref = estimateId
 			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
 			: "construction/estimate-detail.html?id=" + linkEnc;

@@ -356,9 +356,9 @@
 			var apiRoot = (API || "").replace(/\/$/, "");
 			var estimateId = row.current_estimate_id || row.primary_estimate_id || "";
 			var estHref = estimateId
-				? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
+				? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId) + "&from=leads&lead_id=" + lidEnc
 				: lidEnc
-					? "construction/estimate-detail.html?id=" + lidEnc
+					? "construction/estimate-detail.html?id=" + lidEnc + "&from=leads"
 					: "javascript:void(0);";
 			var quoteHref = estimateId
 				? (apiRoot ? apiRoot : "") + "/api/v1/estimates/" + encodeURIComponent(estimateId) + "/render/quote-report"

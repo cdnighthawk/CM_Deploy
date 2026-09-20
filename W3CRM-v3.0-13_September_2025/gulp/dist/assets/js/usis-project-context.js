@@ -4,9 +4,9 @@
  * about that job. Company-wide lists (Projects, Estimate, Leads, dashboard) keep
  * the last job in session for defaults, but do not show it in the breadcrumb.
  *
- * Lead detail reuses this builder (linked workspace project → job-name crumb) but
- * its list parent is Leads (`construction/leads.html`) unless the user actually
- * opened the lead from Active projects (`from=projects` or a projects referrer).
+ * Lead/estimate detail reuse this builder (linked workspace project → job-name
+ * crumb) but their list parent is Leads or Estimates unless the user opened the
+ * page from Active projects (`from=projects` or a projects referrer).
  */
 (function (global) {
   "use strict";
@@ -15,6 +15,7 @@
 
   var KEY = "usis.activeProjectId";
   var LEAD_ORIGIN_KEY = "usis.leadDetail.origin";
+  var ESTIMATE_ORIGIN_KEY = "usis.estimateDetail.origin";
   var crumbState = { projectId: null, item: null, inflight: null };
   var PROJECTS_LIST = {
     href: "construction/projects.html",
@@ -25,6 +26,11 @@
     href: "construction/leads.html",
     label: "Leads",
     i18n: "Leads",
+  };
+  var ESTIMATES_LIST = {
+    href: "construction/estimate.html",
+    label: "Estimates",
+    i18n: "Estimates",
   };
 
   function projectIdFromQuery() {
@@ -170,6 +176,14 @@
     return /lead-detail\.html$/i.test(pagePath());
   }
 
+  function isEstimateDetailPage() {
+    return /estimate-detail\.html$/i.test(pagePath());
+  }
+
+  function usesDetailListTrail() {
+    return isLeadDetailPage() || isEstimateDetailPage();
+  }
+
   function queryParam(name) {
     try {
       return (new URLSearchParams(global.location.search).get(name) || "").trim();
@@ -178,8 +192,18 @@
     }
   }
 
-  function leadIdFromQuery() {
+  function recordIdFromQuery() {
     return queryParam("id");
+  }
+
+  function leadIdFromQuery() {
+    if (isLeadDetailPage()) return recordIdFromQuery();
+    return queryParam("lead_id") || queryParam("leadId");
+  }
+
+  function estimateIdFromQuery() {
+    if (isEstimateDetailPage()) return recordIdFromQuery();
+    return queryParam("estimate_id") || queryParam("estimateId");
   }
 
   function normalizeListOrigin(raw) {
@@ -188,6 +212,7 @@
       return "projects";
     }
     if (s === "leads" || s === "lead") return "leads";
+    if (s === "estimates" || s === "estimate") return "estimates";
     return "";
   }
 
@@ -208,57 +233,91 @@
   function originFromReferrer() {
     var p = referrerPathname();
     if (/(^|\/)(projects|project-detail)\.html$/.test(p)) return "projects";
-    if (/(^|\/)leads\.html$/.test(p)) return "leads";
+    if (/(^|\/)(leads|lead-detail)\.html$/.test(p)) return "leads";
+    if (/(^|\/)estimate\.html$/.test(p)) return "estimates";
     return "";
   }
 
-  function persistLeadOrigin(origin) {
-    var leadId = leadIdFromQuery();
-    if (!leadId || !origin) return;
+  function originStorageKey() {
+    if (isLeadDetailPage()) {
+      var leadId = recordIdFromQuery();
+      return leadId ? LEAD_ORIGIN_KEY + ":" + leadId : "";
+    }
+    if (isEstimateDetailPage()) {
+      var estimateId = recordIdFromQuery();
+      return estimateId ? ESTIMATE_ORIGIN_KEY + ":" + estimateId : "";
+    }
+    return "";
+  }
+
+  function persistDetailOrigin(origin) {
+    var key = originStorageKey();
+    if (!key || !origin) return;
     try {
-      global.sessionStorage.setItem(LEAD_ORIGIN_KEY + ":" + leadId, origin);
+      global.sessionStorage.setItem(key, origin);
     } catch (e) {}
   }
 
-  function storedLeadOrigin() {
-    var leadId = leadIdFromQuery();
-    if (!leadId) return "";
+  function storedDetailOrigin() {
+    var key = originStorageKey();
+    if (!key) return "";
     try {
-      return normalizeListOrigin(global.sessionStorage.getItem(LEAD_ORIGIN_KEY + ":" + leadId));
+      return normalizeListOrigin(global.sessionStorage.getItem(key));
     } catch (e) {
       return "";
     }
   }
 
-  function leadDetailOrigin() {
+  function defaultDetailOrigin() {
+    return isEstimateDetailPage() ? "estimates" : "leads";
+  }
+
+  function detailListOrigin() {
+    if (!usesDetailListTrail()) return "projects";
     var fromQuery = normalizeListOrigin(queryParam("from"));
     if (fromQuery) {
-      persistLeadOrigin(fromQuery);
+      persistDetailOrigin(fromQuery);
       return fromQuery;
     }
     var fromRef = originFromReferrer();
     if (fromRef) {
-      persistLeadOrigin(fromRef);
+      persistDetailOrigin(fromRef);
       return fromRef;
     }
-    var stored = storedLeadOrigin();
+    var stored = storedDetailOrigin();
     if (stored) return stored;
-    persistLeadOrigin("leads");
-    return "leads";
+    var fallback = defaultDetailOrigin();
+    persistDetailOrigin(fallback);
+    return fallback;
   }
 
   function listCrumbSpec() {
-    if (isLeadDetailPage() && leadDetailOrigin() !== "projects") {
-      return LEADS_LIST;
-    }
+    if (!usesDetailListTrail()) return PROJECTS_LIST;
+    var origin = detailListOrigin();
+    if (origin === "leads") return LEADS_LIST;
+    if (origin === "estimates") return ESTIMATES_LIST;
     return PROJECTS_LIST;
   }
 
   function jobCrumbHref(projectId) {
-    if (isLeadDetailPage() && leadDetailOrigin() !== "projects") {
+    var origin = usesDetailListTrail() ? detailListOrigin() : "projects";
+    if (origin === "leads") {
       var lid = leadIdFromQuery();
       if (lid) return "construction/lead-detail.html?id=" + encodeURIComponent(lid);
+      var estFromLead = estimateIdFromQuery();
+      if (estFromLead) {
+        return "construction/estimate-detail.html?id=" + encodeURIComponent(estFromLead);
+      }
       return LEADS_LIST.href;
+    }
+    if (origin === "estimates") {
+      var eid = estimateIdFromQuery();
+      if (eid) return "construction/estimate-detail.html?id=" + encodeURIComponent(eid);
+      var leadFromEst = leadIdFromQuery();
+      if (leadFromEst) {
+        return "construction/lead-detail.html?id=" + encodeURIComponent(leadFromEst);
+      }
+      return ESTIMATES_LIST.href;
     }
     if (projectId) {
       return "construction/project-detail.html?id=" + encodeURIComponent(projectId);
@@ -275,14 +334,22 @@
       a.setAttribute("data-i18n", spec.i18n);
       a.textContent = spec.label;
     }
+    paintBackLink(spec);
     return li;
+  }
+
+  function paintBackLink(spec) {
+    var a = document.getElementById("usis-estd-back-link");
+    if (!a || !spec) return;
+    a.setAttribute("href", spec.href);
+    a.textContent = "← Back to " + spec.label;
   }
 
   function setProjectsCrumbVisible(on) {
     var spec = listCrumbSpec();
     var li = paintListCrumb(spec);
     if (!li) return;
-    if (on || isLeadDetailPage()) li.classList.remove("d-none");
+    if (on || usesDetailListTrail()) li.classList.remove("d-none");
     else li.classList.add("d-none");
   }
 
@@ -337,16 +404,16 @@
     var li = document.getElementById("usis-project-crumb");
     var link = document.getElementById("usis-project-crumb-link");
     if (!li || !link) {
-      setProjectsCrumbVisible(!!(item && projectId) || isLeadDetailPage());
+      setProjectsCrumbVisible(!!(item && projectId) || usesDetailListTrail());
       return;
     }
     var label = crumbLabel(item);
     if (!label || !projectId) {
       link.textContent = "";
       link.removeAttribute("title");
-      link.setAttribute("href", isLeadDetailPage() ? jobCrumbHref(null) : spec.href);
+      link.setAttribute("href", usesDetailListTrail() ? jobCrumbHref(null) : spec.href);
       li.classList.add("d-none");
-      setProjectsCrumbVisible(isLeadDetailPage());
+      setProjectsCrumbVisible(usesDetailListTrail());
       return;
     }
     link.textContent = label;
@@ -448,7 +515,7 @@
       document.body.classList.add("usis-has-bottomnav");
     }
     ensureCrumbs();
-    if (isLeadDetailPage()) {
+    if (usesDetailListTrail()) {
       setProjectsCrumbVisible(true);
     }
     var fromQuery = readQuery();

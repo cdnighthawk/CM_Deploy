@@ -25,7 +25,10 @@ def test_project_context_js_special_cases_lead_detail_list_trail():
     assert "construction/leads.html" in text
     assert 'label: "Leads"' in text
     assert "lead-detail.html" in text
-    assert "leadDetailOrigin" in text
+    assert "estimate-detail.html" in text
+    assert "construction/estimate.html" in text
+    assert 'label: "Estimates"' in text
+    assert "detailListOrigin" in text
 
 
 def test_leads_list_and_projects_pass_origin_query():
@@ -45,7 +48,16 @@ def test_lead_detail_page_keeps_back_to_leads():
     html = (DIST / "construction/lead-detail.html").read_text(encoding="utf-8")
     assert "Back to Leads" in html
     assert 'href="construction/leads.html"' in html
-    assert "usis-project-context.js?v=20260915a" in html
+    assert "usis-project-context.js?v=20260920a" in html
+
+
+def test_estimate_detail_page_keeps_back_to_estimates():
+    if not DIST.is_dir():
+        pytest.skip("gulp/dist not present")
+    html = (DIST / "construction/estimate-detail.html").read_text(encoding="utf-8")
+    assert "Back to Estimates" in html
+    assert 'id="usis-estd-back-link"' in html
+    assert "usis-project-context.js?v=20260920a" in html
 
 
 def test_breadcrumb_builder_routes_lead_detail_through_leads():

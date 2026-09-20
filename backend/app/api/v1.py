@@ -2143,7 +2143,9 @@ def get_drawing_pdf_file(drawing_id: str):
     Production reads Backblaze B2. On an employee PC without B2 credentials,
     Flask may reuse ``%LOCALAPPDATA%\\USISCM\\{projectId}\\{drawingId}`` (and
     legacy USISPdfApp / flat USISCM\\drawings folders).
+    Pending rows (not yet acked) return 409 FILE_PENDING, never 200 empty.
     """
+    from ..services.drawing_upload import drawing_file_pending, file_pending_error_body
     from ..services.employee_pc_cache import respond_drawing_pdf
 
     did = _parse_uuid_param(drawing_id)
@@ -2152,11 +2154,73 @@ def get_drawing_pdf_file(drawing_id: str):
     row = db.session.get(Drawing, did)
     if row is None:
         return _jsonify({"error": "drawing not found"}), 404
+    if drawing_file_pending(row):
+        return _jsonify(file_pending_error_body()), 409
     name = _drawing_object_name(row)
     resp = respond_drawing_pdf(row, name)
     if resp is None:
         return _jsonify({"error": "file not found on server"}), 404
     return resp
+
+
+@bp.route("/drawings/<drawing_id>/file", methods=["HEAD"])
+def head_drawing_pdf_file(drawing_id: str):
+    """Freshness check. Same pending/acked rules as GET. Does not hit the S3 gateway."""
+    from ..services.drawing_upload import drawing_file_pending, file_pending_error_body
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    if drawing_file_pending(row):
+        return _jsonify(file_pending_error_body()), 409
+    resp = Response(status=200)
+    resp.headers["Content-Type"] = "application/pdf"
+    if row.file_size_bytes:
+        resp.headers["Content-Length"] = str(int(row.file_size_bytes))
+    return resp
+
+
+@bp.get("/drawings/<drawing_id>/file-status")
+def get_drawing_file_status(drawing_id: str):
+    from ..services.drawing_upload import drawing_file_pending
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    tags = row.tags if isinstance(row.tags, dict) else {}
+    return _jsonify(
+        {
+            "item": {
+                "filePending": drawing_file_pending(row),
+                "byteSize": row.file_size_bytes,
+                "sha256": tags.get("content_hash"),
+                "b2FileId": tags.get("b2_file_id"),
+            },
+            "entity": "drawing_file_status",
+        }
+    )
+
+
+@bp.put("/drawings/<drawing_id>/content")
+def put_drawing_content_gone(drawing_id: str):
+    """Removed. Desktop must never PUT PDF bytes through Render."""
+    return (
+        _jsonify(
+            {
+                "error": {
+                    "code": "GONE",
+                    "message": "PUT /content is removed. Mint a native B2 URL, POST bytes to Backblaze, then ack-file.",
+                }
+            }
+        ),
+        410,
+    )
 
 
 @bp.put("/drawings/<drawing_id>/file")
@@ -2309,21 +2373,20 @@ def _resolve_job_project(job_id: uuid.UUID) -> Project | None:
 def _native_b2_mint_or_none(row: Drawing) -> dict | None:
     """Native ``b2_upload_file`` mint only. Rejects S3 / SigV4 URLs if produced."""
     from ..services.drawing_upload import native_upload_hint_for_drawing
-    from ..services.object_storage import is_native_b2_upload_url
 
-    hint = native_upload_hint_for_drawing(row)
-    if not hint:
-        return None
-    url = str(hint.get("url") or "")
-    if hint.get("mode") != "b2_native" or not is_native_b2_upload_url(url):
-        current_app.logger.warning(
-            "rejected non-native drawing mint drawing=%s mode=%s url=%s",
-            getattr(row, "id", None),
-            hint.get("mode"),
-            url[:180],
-        )
-        return None
-    return hint
+    return native_upload_hint_for_drawing(row)
+
+
+def _b2_mint_unavailable_response(*, kind: str = "drawing"):
+    from ..services.drawing_upload import mint_unavailable_body
+    from ..services.object_storage import mint_last_error, mint_retry_after_seconds
+
+    wait = mint_retry_after_seconds() or 20
+    body = mint_unavailable_body(kind=kind, detail=mint_last_error() or None)
+    resp = _jsonify(body)
+    resp.status_code = 503
+    resp.headers["Retry-After"] = str(wait)
+    return resp
 
 
 @bp.post("/jobs/<job_id>/drawings")
@@ -2414,6 +2477,7 @@ def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tupl
 
 
 @bp.post("/drawings/<drawing_id>/upload-session")
+@bp.post("/drawings/<drawing_id>/b2-upload-url")
 def create_drawing_upload_session(drawing_id: str):
     """Mint a one-shot native B2 URL so the desktop can POST the PDF without Render."""
     did = _parse_uuid_param(drawing_id)
@@ -2426,24 +2490,25 @@ def create_drawing_upload_session(drawing_id: str):
         return _jsonify({"error": "drawing not found"}), 404
     native = _native_b2_mint_or_none(row)
     if not native:
-        from ..services.object_storage import mint_last_error, mint_retry_after_seconds
-
-        wait = mint_retry_after_seconds() or 20
-        body = {"error": "B2_UPLOAD_URL_UNAVAILABLE"}
-        detail = mint_last_error()
-        if detail:
-            body["detail"] = detail
-        resp = _jsonify(body)
-        resp.status_code = 503
-        resp.headers["Retry-After"] = str(wait)
-        return resp
-    return _jsonify({"upload": native, "item": _drawing_public(row), "entity": "drawing"}), 200
+        current_app.logger.warning(
+            "b2 native mint unavailable drawing=%s",
+            row.id,
+        )
+        return _b2_mint_unavailable_response(kind="drawing")
+    return _jsonify(
+        {
+            "item": native,
+            "upload": native,
+            "drawing": _drawing_public(row),
+            "entity": "drawing",
+        }
+    ), 200
 
 
 @bp.post("/drawings/<drawing_id>/ack-file")
 def ack_drawing_stored_file(drawing_id: str):
     """Clear file_pending after the client wrote the object to B2 (native upload)."""
-    from ..services.drawing_upload import DrawingUploadError, ack_drawing_file
+    from ..services.drawing_upload import DrawingUploadError, ack_drawing_file, parse_ack_payload
 
     did = _parse_uuid_param(drawing_id)
     if not did:
@@ -2457,20 +2522,201 @@ def ack_drawing_stored_file(drawing_id: str):
     if not isinstance(payload, dict):
         payload = {}
     try:
-        raw_size = payload.get("byte_size")
-        if raw_size is None:
-            raw_size = payload.get("byteSize")
-        byte_size = int(raw_size) if raw_size is not None else None
-    except (TypeError, ValueError):
-        return _jsonify({"error": "byte_size must be an integer"}), 400
-    content_hash = str(payload.get("content_hash") or payload.get("contentHash") or "").strip() or None
-    try:
-        ack_drawing_file(row, byte_size=byte_size, content_hash=content_hash)
+        fields = parse_ack_payload(payload)
+        ack_drawing_file(
+            row,
+            byte_size=fields["byte_size"],
+            content_hash=fields["content_hash"],
+            b2_file_id=fields["b2_file_id"],
+            b2_file_name=fields["b2_file_name"],
+            content_sha1=fields["content_sha1"],
+            content_type=fields["content_type"],
+        )
         db.session.commit()
     except DrawingUploadError as exc:
         db.session.rollback()
         return _jsonify({"error": exc.message}), exc.status
     return _jsonify({"item": _drawing_public(row), "entity": "drawing"}), 200
+
+
+def _document_catalog_public(d: Document) -> dict[str, Any]:
+    tags = d.tags if isinstance(d.tags, dict) else {}
+    return {
+        "id": str(d.id),
+        "document_type": d.document_type,
+        "title": d.title,
+        "file_url": d.file_url,
+        "original_filename": d.original_filename,
+        "project_id": str(d.project_id) if d.project_id else None,
+        "file_pending": bool(tags.get("file_pending")),
+        "file_size_bytes": d.file_size_bytes,
+        "content_hash": tags.get("content_hash"),
+        "b2_file_id": tags.get("b2_file_id"),
+        "created_at": _iso(d.created_at),
+    }
+
+
+@bp.post("/jobs/<job_id>/documents")
+def create_job_document(job_id: str):
+    """Desktop ingest: catalog row only. The file is written straight to B2."""
+    from ..services.drawing_upload import create_pending_document, native_upload_hint_for_document
+
+    jid = _parse_uuid_param(job_id)
+    if not jid:
+        return _jsonify({"error": "invalid job id"}), 400
+    project = _resolve_job_project(jid)
+    if project is None:
+        return _jsonify({"error": "job not found."}), 404
+    if not _project_exists(project.id):
+        return _jsonify({"error": "job not found."}), 404
+
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
+
+    def text(*keys: str, max_len: int = 500) -> str | None:
+        for key in keys:
+            raw = item.get(key)
+            if raw is None:
+                continue
+            value = str(raw).strip()
+            if value:
+                return value[:max_len]
+        return None
+
+    client_id = _parse_uuid_param(str(item.get("id") or item.get("documentId") or ""))
+    row = create_pending_document(
+        project_id=project.id,
+        filename=text("sourceFileName", "source_file_name", "fileName", "original_filename", "filename"),
+        document_type=text("documentType", "document_type", max_len=50),
+        title=text("title", max_len=500),
+        mime_type=text("mimeType", "mime_type", "contentType", max_len=120),
+        content_hash=text("contentHash", "content_hash", "sha256", max_len=128),
+        client_id=client_id,
+    )
+    db.session.commit()
+    native = native_upload_hint_for_document(row)
+    body: dict[str, Any] = {
+        "item": _document_catalog_public(row),
+        "entity": "document",
+        "file_pending": True,
+    }
+    if native:
+        body["upload"] = native
+    else:
+        from ..services.object_storage import mint_last_error, mint_retry_after_seconds
+
+        current_app.logger.warning(
+            "b2 native mint unavailable after document create document=%s last_err=%s cooldown=%ss",
+            row.id,
+            mint_last_error() or "-",
+            mint_retry_after_seconds(),
+        )
+        body["upload_error"] = "B2_UPLOAD_URL_UNAVAILABLE"
+        detail = mint_last_error()
+        if detail:
+            body["upload_error_detail"] = detail
+    return _jsonify(body), 201
+
+
+@bp.post("/documents/<document_id>/upload-session")
+@bp.post("/documents/<document_id>/b2-upload-url")
+def create_document_upload_session(document_id: str):
+    from ..services.drawing_upload import native_upload_hint_for_document
+
+    did = _parse_uuid_param(document_id)
+    if not did:
+        return _jsonify({"error": "invalid document id"}), 400
+    from ..services.drawing_upload import load_catalog_document
+
+    row = load_catalog_document(did)
+    if row is None:
+        return _jsonify({"error": "document not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "document not found"}), 404
+    if isinstance(row, Drawing):
+        native = _native_b2_mint_or_none(row)
+        kind = "drawing"
+        public = _drawing_public(row)
+    else:
+        native = native_upload_hint_for_document(row)
+        kind = "document"
+        public = _document_catalog_public(row)
+    if not native:
+        return _b2_mint_unavailable_response(kind=kind)
+    return _jsonify({"item": native, "upload": native, kind: public, "entity": kind}), 200
+
+
+@bp.post("/documents/<document_id>/ack-file")
+def ack_document_stored_file(document_id: str):
+    from ..services.drawing_upload import (
+        DrawingUploadError,
+        ack_document_file,
+        ack_drawing_file,
+        load_catalog_document,
+        parse_ack_payload,
+        persist_document_ack,
+    )
+
+    did = _parse_uuid_param(document_id)
+    if not did:
+        return _jsonify({"error": "invalid document id"}), 400
+    row = load_catalog_document(did)
+    if row is None:
+        return _jsonify({"error": "document not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "document not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    try:
+        fields = parse_ack_payload(payload)
+        if isinstance(row, Drawing):
+            ack_drawing_file(
+                row,
+                byte_size=fields["byte_size"],
+                content_hash=fields["content_hash"],
+                b2_file_id=fields["b2_file_id"],
+                b2_file_name=fields["b2_file_name"],
+                content_sha1=fields["content_sha1"],
+                content_type=fields["content_type"],
+            )
+            public = _drawing_public(row)
+            kind = "drawing"
+        else:
+            ack_document_file(
+                row,
+                byte_size=fields["byte_size"],
+                content_hash=fields["content_hash"],
+                b2_file_id=fields["b2_file_id"],
+                b2_file_name=fields["b2_file_name"],
+                content_sha1=fields["content_sha1"],
+                content_type=fields["content_type"],
+            )
+            persist_document_ack(row.id, row)
+            public = _document_catalog_public(row)
+            kind = "document"
+        db.session.commit()
+    except DrawingUploadError as exc:
+        db.session.rollback()
+        return _jsonify({"error": exc.message}), exc.status
+    return _jsonify({"item": public, "entity": kind}), 200
+
+
+@bp.put("/documents/<document_id>/content")
+def put_document_content_gone(document_id: str):
+    return (
+        _jsonify(
+            {
+                "error": {
+                    "code": "GONE",
+                    "message": "PUT /content is removed. Mint a native B2 URL, POST bytes to Backblaze, then ack-file.",
+                }
+            }
+        ),
+        410,
+    )
 
 
 @bp.patch("/drawings/<drawing_id>")

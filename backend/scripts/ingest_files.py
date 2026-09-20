@@ -22,6 +22,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 _BACKEND = Path(__file__).resolve().parents[1]
 _SCRIPTS = Path(__file__).resolve().parent
@@ -92,6 +93,17 @@ def _append_manifest(path: Path, item: dict[str, Any]) -> None:
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        while True:
+            chunk = fh.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sha1(path: Path) -> str:
+    digest = hashlib.sha1()
     with path.open("rb") as fh:
         while True:
             chunk = fh.read(1024 * 1024)
@@ -179,22 +191,17 @@ def _from_body(item: dict[str, Any], body: dict[str, Any], status: int) -> dict[
 
 
 def _ingest_remote(path: Path, item: dict[str, Any], args: argparse.Namespace, client) -> dict[str, Any]:
+    """Register metadata on usiscm, POST bytes to native B2, then ack. Never POST the file to Render."""
     checksum = _sha256(path)
     meta = _metadata(item, args, checksum)
     kind = item["kind"]
     url = args.base_url.rstrip("/") + ("/api/drawings" if kind == "drawing" else "/api/documents")
     last_error = "upload failed"
     last_status = 0
+    headers = {"Authorization": f"Bearer {args.api_key}", "Content-Type": "application/json"}
     for attempt in range(1, args.retries + 1):
         try:
-            with path.open("rb") as fh:
-                response = client.post(
-                    url,
-                    headers={"Authorization": f"Bearer {args.api_key}"},
-                    data={"metadata": json.dumps(meta), "kind": kind, "content_hash": checksum},
-                    files={"file": (path.name, fh, _mime_for(path))},
-                    timeout=args.timeout,
-                )
+            response = client.post(url, headers=headers, json=meta, timeout=args.timeout)
             last_status = response.status_code
             if response.status_code in _RETRY_STATUSES:
                 last_error = f"HTTP {response.status_code}"
@@ -204,11 +211,81 @@ def _ingest_remote(path: Path, item: dict[str, Any], args: argparse.Namespace, c
                 body = response.json()
             except Exception:
                 body = {}
-            if response.status_code in (200, 201) and isinstance(body, dict):
-                return _from_body(item, body, response.status_code)
-            last_error = str((body or {}).get("error") or response.text or f"HTTP {response.status_code}")[:500]
-            if response.status_code < 500:
+            if response.status_code == 410:
+                err = body.get("error") if isinstance(body, dict) else {}
+                last_error = str((err or {}).get("message") or body or "AGENT_MULTIPART_FORBIDDEN")[:500]
                 break
+            if response.status_code not in (200, 201) or not isinstance(body, dict):
+                last_error = str((body or {}).get("error") or response.text or f"HTTP {response.status_code}")[:500]
+                if response.status_code < 500:
+                    break
+                time.sleep(min(30, 2 ** (attempt - 1)))
+                continue
+            if body.get("duplicate"):
+                return _from_body(item, body, response.status_code)
+            upload = body.get("upload") if isinstance(body.get("upload"), dict) else None
+            if not upload:
+                last_error = str(body.get("upload_error") or "B2_UPLOAD_URL_UNAVAILABLE")
+                time.sleep(min(30, 2 ** (attempt - 1)))
+                continue
+            protocol = str(upload.get("protocol") or upload.get("kind") or upload.get("mode") or "")
+            put_url = str(upload.get("uploadUrl") or upload.get("url") or "")
+            if (
+                "s3_presigned_put" in protocol
+                or "X-Amz-" in put_url
+                or "b2_upload_file" not in put_url
+            ):
+                return {**item, "status": "error", "error": "S3_FALLBACK_FORBIDDEN", "http_status": last_status}
+            token = str(upload.get("authorizationToken") or upload.get("authorization") or "")
+            file_name = str(upload.get("fileName") or upload.get("file_name") or path.name)
+            sha1 = _sha1(path)
+            with path.open("rb") as fh:
+                b2 = client.post(
+                    put_url,
+                    headers={
+                        "Authorization": token,
+                        "Content-Type": _mime_for(path),
+                        "X-Bz-File-Name": quote(file_name, safe=""),
+                        "X-Bz-Content-Sha1": sha1,
+                    },
+                    content=fh,
+                    timeout=args.timeout,
+                )
+            if b2.status_code >= 400:
+                last_error = f"B2 HTTP {b2.status_code}"
+                time.sleep(min(30, 2 ** (attempt - 1)))
+                continue
+            try:
+                b2_body = b2.json()
+            except Exception:
+                b2_body = {}
+            row = body.get("drawing") or body.get("document") or {}
+            row_id = row.get("id") or row.get("drawing_id") or row.get("document_id")
+            if not row_id:
+                return _from_body(item, body, response.status_code)
+            ack_url = args.base_url.rstrip("/") + (
+                f"/api/drawings/{row_id}/ack-file" if kind == "drawing" else f"/api/documents/{row_id}/ack-file"
+            )
+            ack = client.post(
+                ack_url,
+                headers=headers,
+                json={
+                    "item": {
+                        "b2FileId": b2_body.get("fileId") or "",
+                        "b2FileName": b2_body.get("fileName") or file_name,
+                        "contentSha1": b2_body.get("contentSha1") or sha1,
+                        "contentLength": path.stat().st_size,
+                        "sha256": checksum,
+                        "contentType": _mime_for(path),
+                    }
+                },
+                timeout=args.timeout,
+            )
+            if ack.status_code >= 400:
+                last_error = f"ack-file HTTP {ack.status_code}"
+                time.sleep(min(30, 2 ** (attempt - 1)))
+                continue
+            return _from_body(item, body, response.status_code)
         except Exception as exc:
             last_error = str(exc)
             time.sleep(min(30, 2 ** (attempt - 1)))

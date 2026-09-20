@@ -18,6 +18,7 @@ import json
 import os
 import threading
 import time
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -590,12 +591,15 @@ def native_upload_session(category: UploadCategory, object_name: str) -> dict | 
                     )
                 _mint_circuit["open_until"] = 0.0
                 _mint_circuit["last_error"] = ""
+                expires = datetime.now(timezone.utc) + timedelta(hours=23)
                 return {
                     "mode": "b2_native",
                     "url": url,
                     "authorization": token,
                     "file_name": key,
                     "sha1_header": "X-Bz-Content-Sha1",
+                    "bucketId": str(info.get("bucketId") or _configured_b2_bucket_id() or ""),
+                    "expiresAt": expires.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 }
             except Exception as exc:
                 last = exc

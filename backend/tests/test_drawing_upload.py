@@ -671,13 +671,36 @@ def test_drawing_upload_session_and_ack_file(client):
     assert sess.status_code == 200, sess.get_data(as_text=True)
     upload = sess.get_json()["upload"]
     assert upload["mode"] == "b2_native"
+    assert upload["protocol"] == "b2-native"
+    assert upload["kind"] == "b2-native"
+    assert upload["uploadUrl"] == upload["url"]
     assert "b2_upload_file" in upload["url"]
     assert "X-Amz-" not in upload["url"]
     assert upload.get("authorization") == "tok"
+    assert upload.get("authorizationToken") == "tok"
+    assert sess.get_json()["item"]["protocol"] == "b2-native"
+
+    alias = None
+    with patch(
+        "app.services.object_storage.native_upload_session",
+        return_value=native,
+    ):
+        alias = client.post(f"/api/v1/drawings/{did}/b2-upload-url")
+    assert alias.status_code == 200, alias.get_data(as_text=True)
+    assert alias.get_json()["item"]["protocol"] == "b2-native"
 
     ack = client.post(
         f"/api/v1/drawings/{did}/ack-file",
-        json={"byte_size": len(payload), "content_hash": "abc"},
+        json={
+            "item": {
+                "b2FileId": "file-1",
+                "b2FileName": "drawings/A1.pdf",
+                "contentSha1": "abc",
+                "contentLength": len(payload),
+                "sha256": "abc",
+                "contentType": "application/pdf",
+            }
+        },
     )
     assert ack.status_code == 200, ack.get_data(as_text=True)
     assert ack.get_json()["item"]["file_pending"] is False
@@ -723,12 +746,61 @@ def test_drawing_upload_session_returns_503_when_native_mint_fails(client):
         sess = client.post(f"/api/v1/drawings/{did}/upload-session")
     assert sess.status_code == 503, sess.get_data(as_text=True)
     body = sess.get_json()
-    assert body["error"] == "B2_UPLOAD_URL_UNAVAILABLE"
+    assert body["error"]["code"] == "B2_UPLOAD_URL_UNAVAILABLE"
+    assert "X-Amz-" not in body["error"]["message"]
     assert body.get("upload") is None
     assert sess.headers.get("Retry-After")
     blob = sess.get_data(as_text=True)
     assert "X-Amz-" not in blob
     assert "s3.us-west-004" not in blob
+    assert "s3_presigned_put" not in blob
+
+
+def test_drawing_content_put_is_gone(client):
+    with client.application.app_context():
+        p = Project(name="DrawGone-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        d = Drawing(project_id=p.id, title="A1", original_filename="A1.pdf", mime_type="application/pdf")
+        db.session.add(d)
+        db.session.commit()
+        did = str(d.id)
+
+    gone = client.put(f"/api/v1/drawings/{did}/content", data=b"%PDF-1.4 not allowed")
+    assert gone.status_code == 410
+    assert gone.get_json()["error"]["code"] == "GONE"
+    assert "X-Amz-" not in gone.get_data(as_text=True)
+
+
+def test_drawing_file_pending_is_409(client):
+    from app.services.drawing_upload import create_pending_drawing
+
+    with client.application.app_context():
+        p = Project(name="DrawPend-" + uuid.uuid4().hex[:8])
+        db.session.add(p)
+        db.session.flush()
+        row = create_pending_drawing(
+            project_id=p.id,
+            sheet_number="A1",
+            sheet_title="Site",
+            revision="0",
+            source_file_name="A1.pdf",
+        )
+        db.session.commit()
+        did = str(row.id)
+
+    file_r = client.get(f"/api/v1/drawings/{did}/file")
+    assert file_r.status_code == 409, file_r.get_data(as_text=True)
+    assert file_r.get_json()["error"]["code"] == "FILE_PENDING"
+    assert file_r.data != b""
+    assert b"%PDF" not in file_r.data
+
+    head = client.head(f"/api/v1/drawings/{did}/file")
+    assert head.status_code == 409
+
+    status = client.get(f"/api/v1/drawings/{did}/file-status")
+    assert status.status_code == 200
+    assert status.get_json()["item"]["filePending"] is True
 
 
 def test_jobs_drawings_creates_pending_row_and_returns_b2_upload(client):
@@ -870,3 +942,65 @@ def test_jobs_drawings_rejects_s3_looking_mint_url(client):
     blob = r.get_data(as_text=True)
     assert "X-Amz-" not in blob
     assert "s3.us-west-004" not in blob
+
+
+def test_jobs_documents_creates_pending_row_and_returns_b2_upload(client):
+    from unittest.mock import patch
+
+    from app.models import Document
+
+    with client.application.app_context():
+        p = Project(name="JobDoc-" + uuid.uuid4().hex[:8], number="J" + uuid.uuid4().hex[:6])
+        db.session.add(p)
+        db.session.flush()
+        pid = str(p.id)
+        db.session.commit()
+
+    did = str(uuid.uuid4())
+    native = {
+        "mode": "b2_native",
+        "url": "https://pod-000.backblaze.com/b2api/v2/b2_upload_file",
+        "authorization": "tok",
+        "file_name": "J1/specification/addendum.pdf",
+        "sha1_header": "X-Bz-Content-Sha1",
+    }
+    with patch("app.services.object_storage.native_upload_session", return_value=native):
+        r = client.post(
+            f"/api/v1/jobs/{pid}/documents",
+            json={
+                "item": {
+                    "id": did,
+                    "fileName": "addendum.pdf",
+                    "documentType": "specification",
+                    "contentHash": "abc",
+                }
+            },
+        )
+    assert r.status_code == 201, r.get_data(as_text=True)
+    body = r.get_json()
+    assert body["file_pending"] is True
+    assert body["item"]["id"] == did
+    assert body["upload"]["protocol"] == "b2-native"
+    assert "b2_upload_file" in body["upload"]["uploadUrl"]
+    assert "X-Amz-" not in r.get_data(as_text=True)
+
+    with patch("app.services.object_storage.native_upload_session", return_value=native):
+        sess = client.post(f"/api/v1/documents/{did}/b2-upload-url")
+    assert sess.status_code == 200
+    assert sess.get_json()["item"]["protocol"] == "b2-native"
+
+    ack = client.post(
+        f"/api/v1/documents/{did}/ack-file",
+        json={"item": {"b2FileId": "doc-1", "contentLength": 12, "sha256": "abc"}},
+    )
+    assert ack.status_code == 200, ack.get_data(as_text=True)
+    assert ack.get_json()["item"]["file_pending"] is False
+
+    gone = client.put(f"/api/v1/documents/{did}/content", data=b"nope")
+    assert gone.status_code == 410
+    with client.application.app_context():
+        from app.services.drawing_upload import load_catalog_document
+
+        row = load_catalog_document(uuid.UUID(did))
+        assert row is not None
+        assert (row.tags or {}).get("b2_file_id") == "doc-1"

@@ -89,6 +89,10 @@ server, `{root}` is **`Y:\Estimates`**:
 UUID. `name` is the estimate name. The root folder includes a short
 `README.txt` explaining the tree.
 
+The Windows ingest agent should **read** `folder_path` from
+[`docs/ingest-estimate-sync.md`](ingest-estimate-sync.md)
+(`GET /api/ingest/estimates` with `CM_API_KEY`). Do not add a second provisioner.
+
 Idempotent: if the folder already exists, the call succeeds and returns the
 path (`created: false`).
 

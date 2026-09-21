@@ -216,6 +216,13 @@
 		listDrawingSets: listDrawingSets,
 		postEstimateAction: postEstimateAction,
 		awardLead: awardLead,
+		patchLead: function (leadId, body) {
+			return fetchJson("/api/v1/lead-estimates/" + encodeURIComponent(leadId), {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body || {}),
+			});
+		},
 		resolveEstimateId: resolveEstimateId,
 		getLaborRates: function (estimateId) {
 			return fetchJson("/api/v1/estimates/" + encodeURIComponent(estimateId) + "/labor-rates");

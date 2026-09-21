@@ -64,7 +64,14 @@ def test_patch_lead_due_at(client, flask_app):
         db.session.add(le)
         db.session.commit()
         uid = str(le.id)
+    est_id: str | None = None
     try:
+        created = client.post(
+            "/api/v1/estimates",
+            json={"lead_estimate_id": uid, "title": "V1"},
+        )
+        assert created.status_code == 201
+        est_id = created.get_json()["item"]["id"]
         r = client.patch(
             f"/api/v1/lead-estimates/{uid}",
             json={"due_at": "2026-06-15T12:00:00+00:00"},
@@ -76,12 +83,27 @@ def test_patch_lead_due_at(client, flask_app):
             row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
             assert row is not None
             assert row.due_at is not None
+            erow = db.session.scalar(select(Estimate).where(Estimate.id == uuid.UUID(est_id)))
+            assert erow is not None
+            assert erow.due_at is not None
+            assert erow.due_at.astimezone(timezone.utc).date().isoformat() == "2026-06-15"
+        cleared = client.patch(f"/api/v1/lead-estimates/{uid}", json={"due_at": None})
+        assert cleared.status_code == 200
+        assert cleared.get_json()["item"]["due_at"] is None
+        with flask_app.app_context():
+            erow = db.session.scalar(select(Estimate).where(Estimate.id == uuid.UUID(est_id)))
+            assert erow is not None
+            assert erow.due_at is None
     finally:
         with flask_app.app_context():
+            if est_id:
+                erow = db.session.scalar(select(Estimate).where(Estimate.id == uuid.UUID(est_id)))
+                if erow:
+                    db.session.delete(erow)
             row = db.session.scalar(select(LeadEstimate).where(LeadEstimate.external_id == eid))
             if row:
                 db.session.delete(row)
-                db.session.commit()
+            db.session.commit()
 
 
 def test_estimate_due_at_create_and_patch(client, flask_app):

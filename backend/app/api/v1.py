@@ -5686,6 +5686,12 @@ def get_lead_estimate(identifier: str):
     return _jsonify({"item": item, "entity": "lead_estimate"})
 
 
+def _sync_estimate_due_at(lead: LeadEstimate) -> None:
+    """Keep proposal due dates aligned with the lead bid due date."""
+    for est in db.session.scalars(select(Estimate).where(Estimate.lead_estimate_id == lead.id)):
+        est.due_at = lead.due_at
+
+
 @bp.patch("/lead-estimates/<identifier>")
 def patch_lead_estimate(identifier: str):
     """Update CRM fields (``crm_stage``, ``win_probability``, ``due_at``)."""
@@ -5707,8 +5713,11 @@ def patch_lead_estimate(identifier: str):
             row.win_probability = _decimal_from_json(wp, Decimal("0")).quantize(Decimal("0.0001"))
     if "due_at" in data:
         row.due_at = rfi_svc._parse_dt(data.get("due_at"))
+        _sync_estimate_due_at(row)
     db.session.commit()
-    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+    item = _lead_estimate_detail(row)
+    item["group_summary"] = _group_summary_for_lead(row)
+    return _jsonify({"item": item, "entity": "lead_estimate"})
 
 
 @bp.delete("/lead-estimates/<identifier>")

@@ -225,6 +225,7 @@
 											<div class="small fw-medium" id="usis-estd-job-badge-due"></div>
 											<div class="small text-muted" id="usis-estd-job-status"></div>
 											<div class="mt-2 d-flex flex-wrap justify-content-md-end gap-1">
+												<button type="button" class="btn btn-outline-primary btn-sm" id="usis-estd-job-edit-btn" data-i18n="Edit">Edit</button>
 												<button type="button" class="btn btn-success btn-sm usis-estd-award-job">Award Job</button>
 												<a class="btn btn-outline-success btn-sm d-none usis-estd-open-job">Open Job</a>
 											</div>
@@ -629,6 +630,27 @@
 			</div>
 		</main>
 
+	<div class="modal fade" id="usis-estd-job-edit-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-estd-job-edit-title">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="usis-estd-job-edit-title" data-i18n="Edit job information">Edit job information</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="alert alert-danger py-2 d-none" id="usis-estd-job-edit-err" role="alert"></div>
+					<label class="form-label small mb-0" for="usis-estd-job-edit-due" data-i18n="Bid due date">Bid due date</label>
+					<input type="datetime-local" class="form-control form-control-sm" id="usis-estd-job-edit-due" step="60">
+					<p class="text-muted small mb-0 mt-2">Shown on this estimate, the estimates board, and Job information. Leave blank to clear the date.</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-sm btn-primary" id="usis-estd-job-edit-save">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<div class="modal fade" id="usis-est-crew-modal" tabindex="-1" aria-hidden="true" aria-labelledby="usis-est-crew-title">
 		<div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
 			<div class="modal-content">
@@ -778,11 +800,11 @@
 	<script src="assets/js/usis-specs-book-tab.js?v=20260906b"></script>
 	<script src="assets/js/usis-drawing-upload.js?v=20260906f"></script>
 	<script src="assets/js/usis-project-doc-panels.js?v=20260917c"></script>
-	<script src="assets/js/usis-estimate-api.js?v=20260919d"></script>
+	<script src="assets/js/usis-estimate-api.js?v=20260921a"></script>
 	<script src="assets/js/usis-material-configurator.js?v=20260919a"></script>
 	<script src="assets/js/usis-estimates-list.js?v=20260919p"></script>
 	<script src="assets/js/usis-table-autofilter.js"></script>
-	<script src="assets/js/usis-estimate-detail-panels.js"></script>
+	<script src="assets/js/usis-estimate-detail-panels.js?v=20260921a"></script>
 	<script src="assets/js/usis-estimate-detail.js?v=20260919p"></script>
 	<script src="assets/js/usis-ai-workflow.js"></script>
 	<script src="assets/js/usis-estimate-takeoff-tab.js?v=20260919p"></script>

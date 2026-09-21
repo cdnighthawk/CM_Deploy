@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from app.extensions import db
 from app.models import Estimate, LeadEstimate, Project
@@ -87,6 +88,7 @@ def test_ingest_estimates_returns_folder_map(client, flask_app):
             is_archived=False,
             is_parent=True,
             submission_state="UNDECIDED",
+            due_at=datetime(2026, 9, 30, 17, 0, tzinfo=timezone.utc),
             organization_id=org_id,
         )
         db.session.add(lead)
@@ -98,6 +100,7 @@ def test_ingest_estimates_returns_folder_map(client, flask_app):
             is_current=True,
             folder_provision_status="ready",
             folder_path=rf"Y:\Estimates\{number} - Original Estimate",
+            due_at=datetime(2026, 9, 30, 17, 0, tzinfo=timezone.utc),
             organization_id=org_id,
         )
         db.session.add(est)
@@ -126,6 +129,7 @@ def test_ingest_estimates_returns_folder_map(client, flask_app):
     assert number in match["folder_hints"]
     assert any(p["id"] == job_id for p in match["projects"])
     assert as_uuid_or_none(match["job_number"]) is None
+    assert match["due_at"] and "2026-09-30" in match["due_at"]
 
     alias = client.get("/api/estimates", headers=headers)
     assert alias.status_code == 200
@@ -247,3 +251,99 @@ def test_ingest_estimates_pagination_and_bad_limit(client, flask_app):
 
     bad = client.get("/api/ingest/estimates?limit=nope", headers=headers)
     assert bad.status_code == 400
+
+
+def test_ingest_estimates_due_from_through_future(client, flask_app):
+    headers = _auth(flask_app)
+    suffix = uuid.uuid4().hex[:8]
+    now = datetime.now(timezone.utc)
+    with flask_app.app_context():
+        org_id = _ensure_org(flask_app)
+        old_lead = LeadEstimate(
+            external_id=f"ingest-due-old-{suffix}",
+            name=f"Old Bid {suffix}",
+            number="21" + suffix[:4],
+            is_archived=False,
+            is_parent=True,
+            submission_state="SUBMITTED",
+            due_at=now - timedelta(days=45),
+            organization_id=org_id,
+        )
+        recent_lead = LeadEstimate(
+            external_id=f"ingest-due-recent-{suffix}",
+            name=f"Recent Bid {suffix}",
+            number="22" + suffix[:4],
+            is_archived=False,
+            is_parent=True,
+            submission_state="SUBMITTED",
+            due_at=now - timedelta(days=10),
+            organization_id=org_id,
+        )
+        future_lead = LeadEstimate(
+            external_id=f"ingest-due-future-{suffix}",
+            name=f"Future Bid {suffix}",
+            number="23" + suffix[:4],
+            is_archived=False,
+            is_parent=True,
+            submission_state="WILL_SUBMIT",
+            due_at=now + timedelta(days=20),
+            organization_id=org_id,
+        )
+        undated_lead = LeadEstimate(
+            external_id=f"ingest-due-none-{suffix}",
+            name=f"No Due {suffix}",
+            number="24" + suffix[:4],
+            is_archived=False,
+            is_parent=True,
+            submission_state="UNDECIDED",
+            due_at=None,
+            organization_id=org_id,
+        )
+        db.session.add_all([old_lead, recent_lead, future_lead, undated_lead])
+        db.session.flush()
+        old_est = Estimate(name="Old", lead_estimate_id=old_lead.id, organization_id=org_id)
+        recent_est = Estimate(
+            name="Recent",
+            lead_estimate_id=recent_lead.id,
+            due_at=recent_lead.due_at,
+            organization_id=org_id,
+        )
+        future_est = Estimate(name="Future", lead_estimate_id=future_lead.id, organization_id=org_id)
+        undated_est = Estimate(name="Undated", lead_estimate_id=undated_lead.id, organization_id=org_id)
+        db.session.add_all([old_est, recent_est, future_est, undated_est])
+        db.session.commit()
+        old_id = str(old_est.id)
+        recent_id = str(recent_est.id)
+        future_id = str(future_est.id)
+        undated_id = str(undated_est.id)
+
+    due_from = (now - timedelta(days=30)).date().isoformat()
+    listed = client.get(f"/api/ingest/estimates?due_from={due_from}", headers=headers)
+    assert listed.status_code == 200, listed.get_data(as_text=True)
+    ids = {row["id"] for row in listed.get_json()["estimates"]}
+    assert recent_id in ids
+    assert future_id in ids
+    assert old_id not in ids
+    assert undated_id not in ids
+    recent = next(row for row in listed.get_json()["estimates"] if row["id"] == recent_id)
+    assert recent["due_at"]
+    future = next(row for row in listed.get_json()["estimates"] if row["id"] == future_id)
+    assert future["due_at"]
+
+    bounded = client.get(
+        f"/api/ingest/estimates?due_from={due_from}&due_to={now.date().isoformat()}",
+        headers=headers,
+    )
+    assert bounded.status_code == 200
+    bounded_ids = {row["id"] for row in bounded.get_json()["estimates"]}
+    assert recent_id in bounded_ids
+    assert future_id not in bounded_ids
+
+    alias = client.get(f"/api/ingest/estimates?due_after={due_from}", headers=headers)
+    assert alias.status_code == 200
+    assert recent_id in {row["id"] for row in alias.get_json()["estimates"]}
+
+    bad = client.get("/api/ingest/estimates?due_from=not-a-date", headers=headers)
+    assert bad.status_code == 400
+    inverted = client.get("/api/ingest/estimates?due_from=2026-12-01&due_to=2026-01-01", headers=headers)
+    assert inverted.status_code == 400

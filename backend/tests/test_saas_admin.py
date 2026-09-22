@@ -93,6 +93,11 @@ def test_src_pages_exist():
     css = (src / "assets/css/usis-ui.css").read_text(encoding="utf-8")
     assert ".usis-impersonation-banner" in css
     assert ".usis-console-rail" in css
+    assert "--usis-primary: #1e4b8f" in css
+    assert "--usis-stamp: #c8102e" in css
+    assert "--usis-ai: #6d28d9" in css
+    assert "#1f4e5f" not in css
+    assert ".btn.usis-ai-review" in css
     settings_js = (src / "assets/js/usis-settings.js").read_text(encoding="utf-8")
     for label in (
         "Overview",

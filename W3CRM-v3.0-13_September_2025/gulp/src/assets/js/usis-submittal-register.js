@@ -27,7 +27,7 @@
 		if (window.USISUi && window.USISUi.severityChip) {
 			return window.USISUi.severityChip(sev);
 		}
-		var color = { critical: "#B42318", major: "#C47B17", minor: "#1F4E5F", info: "#1F4E5F" }[String(sev).toLowerCase()] || "#5C6B76";
+		var color = { critical: "#B42318", major: "#C47B17", minor: "#1E4B8F", info: "#1E4B8F" }[String(sev).toLowerCase()] || "#5C6B76";
 		return '<span title="' + esc(sev) + '" class="usis-status-dot" style="background:' + color + '"></span> ' + esc(sev);
 	}
 

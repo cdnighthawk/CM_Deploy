@@ -55,10 +55,16 @@ def _draw_working_copy(
 
     doc = fitz.open()
     page = doc.new_page(width=612, height=792)
-    y = 36
+    stamp = (0.784, 0.063, 0.180)
+    america = (0.118, 0.294, 0.561)
+    page.draw_rect(fitz.Rect(0, 0, 612, 4), color=stamp, fill=stamp)
+    y = 40
     page.insert_text((36, y), _WORKING, fontsize=8, color=(0.45, 0.15, 0.1))
     y += 18
-    page.insert_text((36, y), title, fontsize=14, color=(0.12, 0.31, 0.37))
+    page.insert_text((36, y), "WorX", fontsize=12, color=america)
+    page.insert_text((90, y), "CM", fontsize=12, color=stamp)
+    y += 20
+    page.insert_text((36, y), title, fontsize=14, color=america)
     y += 22
     if watermark:
         page.insert_text((220, 400), "DRAFT", fontsize=48, color=(0.85, 0.85, 0.85), rotate=0)

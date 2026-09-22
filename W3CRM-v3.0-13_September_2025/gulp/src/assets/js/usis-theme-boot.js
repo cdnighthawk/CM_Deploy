@@ -41,6 +41,29 @@
 		applyToEl(doc.body, theme);
 	}
 
+	function applyWordmark(doc) {
+		if (!doc) {
+			return;
+		}
+		var titles = doc.querySelectorAll(".usis-logo-title");
+		var i;
+		var el;
+		for (i = 0; i < titles.length; i++) {
+			el = titles[i];
+			if (el.getAttribute("data-usis-wordmark") === "1") {
+				continue;
+			}
+			el.setAttribute("data-usis-wordmark", "1");
+			el.classList.add("usis-wordmark");
+			el.innerHTML =
+				'<span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span>';
+		}
+		var logos = doc.querySelectorAll(".usis-brand-logo");
+		for (i = 0; i < logos.length; i++) {
+			logos[i].setAttribute("aria-label", "WorX CM");
+		}
+	}
+
 	function ensureUiCss() {
 		var doc = global.document;
 		if (!doc || !doc.head) {
@@ -53,8 +76,9 @@
 		}
 		var link = doc.createElement("link");
 		link.rel = "stylesheet";
-		link.href = "/assets/css/usis-ui.css?v=20260906e";
+		link.href = "/assets/css/usis-ui.css?v=20260921a";
 		doc.head.appendChild(link);
+		applyWordmark(doc);
 	}
 
 	var theme = resolveTheme();

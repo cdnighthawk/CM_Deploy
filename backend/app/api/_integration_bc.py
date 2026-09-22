@@ -354,7 +354,7 @@ def _bc_oauth_browser_page(
   <title>{escape(title)}</title>
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 2rem; color: #1b242c; }}
-    a {{ color: #1f4e5f; }}
+    a {{ color: #1e4b8f; }}
     .muted {{ color: #5c6b76; margin-top: 0.75rem; }}
   </style>
 </head>

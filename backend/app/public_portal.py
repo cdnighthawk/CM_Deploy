@@ -24,10 +24,13 @@ public_bp = Blueprint("public_portal", __name__)
 _PUBLIC_CHROME = """
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650;700&display=swap" rel="stylesheet">
 <style>
-:root{--usis-primary:#1F4E5F;--usis-bg:#F4F6F8;--usis-paper:#fff;--usis-text:#1B242C;--usis-muted:#5C6B76;--usis-line:#E3E8EE}
+:root{--usis-primary:#1E4B8F;--usis-primary-dark:#163A6E;--usis-stamp:#C8102E;--usis-bg:#F4F6F8;--usis-paper:#fff;--usis-text:#1B242C;--usis-muted:#5C6B73;--usis-line:#E3E8EE}
 body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background:var(--usis-bg);color:var(--usis-text);margin:0}
-.usis-public-rfp-header{background:var(--usis-paper);border-bottom:1px solid var(--usis-line);padding:12px 16px}
+.usis-public-rfp-header{background:var(--usis-paper);border-bottom:1px solid var(--usis-line);border-top:3px solid var(--usis-stamp);padding:12px 16px}
 .usis-public-rfp-header strong{font-size:1.125rem}
+.usis-wordmark{font-weight:650;letter-spacing:-0.01em}
+.usis-wordmark__worx{color:var(--usis-primary)}
+.usis-wordmark__cm{color:var(--usis-stamp)}
 .usis-public-rfp .wrap{max-width:40rem;margin:0 auto;padding:24px 16px}
 .usis-public-rfp .card-like{background:var(--usis-paper);border:1px solid var(--usis-line);border-radius:10px;padding:16px}
 .usis-public-rfp h1{font-size:1.375rem;font-weight:650;margin:0 0 .35rem}
@@ -36,12 +39,13 @@ body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background
 .usis-public-rfp .prewrap{white-space:pre-wrap}
 .usis-public-rfp .form-control,.usis-public-rfp .form-select{font-size:.8125rem;border-radius:8px}
 .usis-public-rfp .btn-primary{background:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px;width:100%}
+.usis-public-rfp .btn-primary:hover,.usis-public-rfp .btn-primary:focus{background:var(--usis-primary-dark);border-color:var(--usis-primary-dark)}
 .usis-public-rfp .btn-outline-primary{color:var(--usis-primary);border-color:var(--usis-primary);font-weight:600;border-radius:8px}
 .usis-public-rfp .table{font-size:.8125rem}
 .usis-chip{display:inline-flex;align-items:center;height:24px;padding:0 .55rem;border:1px solid var(--usis-line);border-radius:999px;font-size:12px;font-weight:600;color:var(--usis-muted)}
 .usis-public-rfp a{color:var(--usis-primary)}
 .usis-drop{border:1.5px dashed var(--usis-line);border-radius:10px;padding:18px 12px;text-align:center;background:#fafbfc;cursor:pointer}
-.usis-drop.is-drag{border-color:var(--usis-primary);background:#eef5f7}
+.usis-drop.is-drag{border-color:var(--usis-primary);background:#e6edf6}
 .usis-drop strong{display:block;font-size:.9rem}
 
 </style>
@@ -180,7 +184,7 @@ def public_rfp_get(token: str):
     {_PUBLIC_CHROME}</head>
     <body class="usis-public-rfp">
     <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
-      <strong>US Interior Specialties</strong>
+      <strong class="usis-wordmark"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></strong>
       <span class="usis-chip">RFP{(' · due ' + str(due)[:10]) if due else ''}</span>
     </header>
     <div class="wrap"><div class="card-like">
@@ -421,7 +425,7 @@ def public_submittal_form(token: str):
     {_PUBLIC_CHROME}</head>
     <body class="usis-public-rfp">
     <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
-      <strong>US Interior Specialties</strong>
+      <strong class="usis-wordmark"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></strong>
       <span class="usis-chip">{number}</span>
     </header>
     <div class="wrap"><div class="card-like">

@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
+from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -23,7 +24,7 @@ def _plan_empty_html(message: str) -> str:
     msg = (message or "This module is not on your plan. Ask USIS if you need it.").replace("<", "&lt;")
     return (
         "<!doctype html><html><head><meta charset='utf-8'><title>USIS CM</title>"
-        "<style>body{font-family:Segoe UI,Arial,sans-serif;margin:48px;color:#1F4E5F}"
+        "<style>body{font-family:Segoe UI,Arial,sans-serif;margin:48px;color:#1E4B8F}"
         ".box{max-width:480px;margin:auto;text-align:center}</style></head><body>"
         f"<div class='box'><h1>Not on your plan</h1><p>{msg}</p></div></body></html>"
     )
@@ -111,18 +112,35 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
     return out
 
 
+def cookie_domain_for_host(host: str | None) -> str | None:
+    """Return ``.example.com`` so apex and www share a cookie on that registrable domain."""
+    raw = (host or "").split(":")[0].strip().lower()
+    if not raw or raw.endswith(".onrender.com") or raw in ("localhost", "127.0.0.1"):
+        return None
+    parts = [p for p in raw.split(".") if p]
+    if len(parts) < 2:
+        return None
+    return "." + ".".join(parts[-2:])
+
+
 def _session_cookie_domain_from_public_url() -> str | None:
-    """Return ``.example.com`` for custom domains so apex and www share the session cookie."""
+    """Canonical cookie domain from ``USIS_APP_PUBLIC_URL`` (tests and fallback)."""
     public_url = (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip()
     if not public_url:
         return None
     host = (urlparse(public_url).hostname or "").strip().lower()
-    if not host or host.endswith(".onrender.com") or host in ("localhost", "127.0.0.1"):
-        return None
-    parts = host.split(".")
-    if len(parts) < 2:
-        return None
-    return "." + ".".join(parts[-2:])
+    return cookie_domain_for_host(host)
+
+
+class HostCookieSessionInterface(SecureCookieSessionInterface):
+    """Use the request hostname so usiscm.com and worxcm.com each get their own cookie scope."""
+
+    def get_cookie_domain(self, app):
+        try:
+            host = request.host
+        except RuntimeError:
+            return _session_cookie_domain_from_public_url()
+        return cookie_domain_for_host(host)
 
 
 def _apply_production_middleware(app: Flask) -> None:
@@ -134,10 +152,10 @@ def _apply_production_middleware(app: Flask) -> None:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.session_interface = HostCookieSessionInterface()
     cookie_domain = _session_cookie_domain_from_public_url()
     if cookie_domain:
-        app.config["SESSION_COOKIE_DOMAIN"] = cookie_domain
-        app.logger.info("SESSION_COOKIE_DOMAIN=%s", cookie_domain)
+        app.logger.info("session cookie domain follows request host (canonical %s)", cookie_domain)
 
 
 def _should_autoload_bc_csv() -> bool:

@@ -5,10 +5,17 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Sign in — USIS</title>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" crossorigin="anonymous">
+	<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;650;700&display=swap" rel="stylesheet">
 	<style>
-		body { min-height: 100vh; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); }
-		.usis-login-card { max-width: 28rem; border-radius: 0.75rem; }
+		:root{--usis-primary:#1E4B8F;--usis-primary-dark:#163A6E;--usis-stamp:#C8102E;--usis-canvas:#F4F6F8;--usis-paper:#fff;--usis-text:#1B242C;--usis-muted:#5C6B76}
+		body { min-height: 100vh; margin: 0; font-family: "Source Sans 3", system-ui, sans-serif; background: var(--usis-canvas); color: var(--usis-text); border-top: 3px solid var(--usis-stamp); }
+		.usis-login-card { max-width: 28rem; border-radius: 0.75rem; border: 1px solid #E3E8EE; }
 		.usis-login-logo { max-height: 4.5rem; width: auto; object-fit: contain; }
+		.usis-wordmark { font-weight: 650; letter-spacing: -0.01em; }
+		.usis-wordmark__worx { color: var(--usis-primary); }
+		.usis-wordmark__cm { color: var(--usis-stamp); }
+		.btn-primary { --bs-btn-bg: var(--usis-primary); --bs-btn-border-color: var(--usis-primary); --bs-btn-hover-bg: var(--usis-primary-dark); --bs-btn-hover-border-color: var(--usis-primary-dark); --bs-btn-active-bg: var(--usis-primary-dark); }
+		a { color: var(--usis-primary); }
 	</style>
 </head>
 <body class="d-flex align-items-center py-5">
@@ -18,8 +25,9 @@
 				<div class="card shadow-sm usis-login-card mx-auto">
 					<div class="card-body p-4 p-md-5">
 						<div class="text-center mb-4">
-							<img src="{{ logo_remote }}" alt="US Interior Specialties" class="usis-login-logo mb-2"
+							<img src="{{ logo_remote }}" alt="WorX CM" class="usis-login-logo mb-2"
 								onerror="this.onerror=null;this.src='{{ url_for('static', filename='branding/usis-wordmark.svg') }}'">
+							<p class="usis-wordmark h3 mb-1"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></p>
 							<p class="text-muted small mb-0">Sign in to the USIS workspace</p>
 						</div>
 						{% with messages = get_flashed_messages(with_categories=true) %}

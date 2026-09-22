@@ -102,7 +102,7 @@
 				type: "solid",
 				opacity: 1,
 			},
-			colors: ["#1F4E5F"],
+			colors: ["#1E4B8F"],
 			dataLabels: { enabled: false },
 			xaxis: {
 				categories: labels,

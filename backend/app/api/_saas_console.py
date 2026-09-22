@@ -387,7 +387,7 @@ def settings_mail_test():
 
     mail = send_plain_notification_email(
         to=to,
-        subject="USIS CM test send",
+        subject="USIS mail test",
         body="This is a Settings → Mail test send. It is addressed only to the signed-in Company Admin.",
         from_addr=str(tenant_setting(oid, "mail.rfp.from_address") or "quotes@gousis.com"),
     )

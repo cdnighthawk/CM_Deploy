@@ -23,7 +23,7 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 def _plan_empty_html(message: str) -> str:
     msg = (message or "This module is not on your plan. Ask USIS if you need it.").replace("<", "&lt;")
     return (
-        "<!doctype html><html><head><meta charset='utf-8'><title>USIS CM</title>"
+        "<!doctype html><html><head><meta charset='utf-8'><title>WorX CM</title>"
         "<style>body{font-family:Segoe UI,Arial,sans-serif;margin:48px;color:#1E4B8F}"
         ".box{max-width:480px;margin:auto;text-align:center}</style></head><body>"
         f"<div class='box'><h1>Not on your plan</h1><p>{msg}</p></div></body></html>"

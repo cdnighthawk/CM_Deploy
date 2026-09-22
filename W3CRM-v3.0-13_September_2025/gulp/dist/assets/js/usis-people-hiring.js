@@ -245,7 +245,7 @@
 			var rows = data.items || [];
 			var tb = root.querySelector("tbody");
 			if (!rows.length) {
-				tb.innerHTML = '<tr><td colspan="5">' + empty("No people", "Users appear here after they exist in USIS CM.") + "</td></tr>";
+				tb.innerHTML = '<tr><td colspan="5">' + empty("No people", "Users appear here after they exist in WorX CM.") + "</td></tr>";
 				return;
 			}
 			tb.innerHTML = rows.map(function (r) {

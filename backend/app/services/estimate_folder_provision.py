@@ -62,7 +62,7 @@ FOLDER_TEMPLATE: tuple[str, ...] = (
 )
 
 README_NAME = "README.txt"
-README_TEXT = """USIS CM estimate project folder
+README_TEXT = """WorX CM estimate project folder
 
 Created automatically when an estimate is created in CM. This tree is the
 destination for BidDocProcessor / bid-doc copies and later CM ingest.

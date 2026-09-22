@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 from ..extensions import db
 from ..models import Company, Contact, Document, Project, Rfp, RfpDrawing, RfpLineItem, RfpVendorQuote
 from ..services.object_storage import UploadCategory, save_upload
+from ..branding import company_email_header_html
 from ._notifications import (
     GraphMailError,
     download_mailbox_attachment,
@@ -519,10 +520,7 @@ def build_invite_email(
     )
     html = (
         "<html><body style='font-family:Source Sans 3,system-ui,sans-serif;color:#1B242C;margin:0;padding:0'>"
-        "<div style='border-top:3px solid #C8102E;background:#fff;padding:12px 16px'>"
-        "<span style='font-weight:650;font-size:18px;color:#1E4B8F'>WorX</span> "
-        "<span style='font-weight:650;font-size:18px;color:#C8102E'>CM</span>"
-        "</div>"
+        f"{company_email_header_html(public_app_origin())}"
         "<div style='padding:16px 16px 24px'>"
         f"<p>Hello {escape(quote.vendor_label)},</p>"
         f"<p>Please submit a quote for <strong>{escape(title)}</strong>.</p>"

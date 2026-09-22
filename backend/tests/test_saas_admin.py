@@ -80,6 +80,11 @@ def test_src_pages_exist():
     assert (src / "assets/js/usis-admin.js").is_file()
     nav = (src / "elements/deznav-construction.html").read_text(encoding="utf-8")
     assert 'href="/settings"' in nav
+    assert "WorX CM" in nav
+    brand = (src / "elements/nav-brand-usis.html").read_text(encoding="utf-8")
+    assert "worx-cm-icon.svg" in brand
+    assert "usis-eagle-logo.png" not in brand
+    assert "WorX CM" in brand
     assert 'href="/admin"' in nav
     assert 'id="usis-platform-admin-nav"' in nav
     assert 'href="/settings/people"' in nav

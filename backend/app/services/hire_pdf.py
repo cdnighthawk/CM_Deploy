@@ -60,10 +60,15 @@ def _draw_working_copy(
     page.draw_rect(fitz.Rect(0, 0, 612, 4), color=stamp, fill=stamp)
     y = 40
     page.insert_text((36, y), _WORKING, fontsize=8, color=(0.45, 0.15, 0.1))
-    y += 18
-    page.insert_text((36, y), "WorX", fontsize=12, color=america)
-    page.insert_text((90, y), "CM", fontsize=12, color=stamp)
-    y += 20
+    y += 16
+    eagle = Path(__file__).resolve().parents[1] / "static" / "branding" / "usis-eagle-logo.png"
+    if eagle.is_file():
+        page.insert_image(fitz.Rect(36, y, 72, y + 36), filename=str(eagle))
+        page.insert_text((80, y + 22), "USIS", fontsize=14, color=america)
+        y += 44
+    else:
+        page.insert_text((36, y + 16), "USIS", fontsize=14, color=america)
+        y += 28
     page.insert_text((36, y), title, fontsize=14, color=america)
     y += 22
     if watermark:
@@ -155,7 +160,7 @@ def render_w4(ctx: dict[str, Any], *, draft: bool, signature_png: str | None = N
     ]
     extra = [
         "Form W-4 (2026) Steps 1(c) through 4(c). Do not simplify this form. "
-        "This working copy carries the IRS-required step structure for USIS CM until an official blank is mapped.",
+        "This working copy carries the IRS-required step structure for USIS until an official blank is mapped.",
         "Step 1(c): Single or Married filing separately | Married filing jointly | Head of household.",
         "Step 2: Complete this step if you (1) hold more than one job at a time, or (2) are married filing jointly and your spouse also works.",
         "Step 3: Claim dependents and other credits (dollar amount).",

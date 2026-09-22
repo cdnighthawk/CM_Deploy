@@ -1,4 +1,4 @@
-"""Map Textura TPM export payloads into USIS CM projects and pay applications."""
+"""Map Textura TPM export payloads into WorX CM projects and pay applications."""
 from __future__ import annotations
 
 import uuid

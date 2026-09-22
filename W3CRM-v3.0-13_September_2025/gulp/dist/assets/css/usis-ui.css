@@ -236,6 +236,12 @@ html body .nav-header {
 	color: var(--usis-stamp) !important;
 }
 
+.usis-brand-logo .usis-logo-mark,
+img.usis-product-logo-mark {
+	border-radius: 0.5rem;
+	object-fit: cover;
+}
+
 body .hamburger .line,
 .nav-header .hamburger .line,
 body[data-headerbg="color_12"] .hamburger .line {

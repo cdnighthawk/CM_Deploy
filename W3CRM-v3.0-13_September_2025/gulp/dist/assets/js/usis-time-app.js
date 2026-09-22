@@ -1,5 +1,5 @@
 /**
- * USIS CM Time office UI (W3CRM + DataTables + USISUi).
+ * WorX CM Time office UI (W3CRM + DataTables + USISUi).
  */
 (function () {
 	"use strict";

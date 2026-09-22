@@ -11,6 +11,7 @@
 
 	var ES = {
 		USIS: "USIS",
+		"WorX CM": "WorX CM",
 		Dashboard: "Inicio",
 		Leads: "Prospectos",
 		Lead: "Prospecto",
@@ -75,7 +76,8 @@
 		"Email or username": "Correo o usuario",
 		Password: "Contraseña",
 		"Enter your password": "Escriba su contraseña",
-		"USIS Construction Management": "USIS Control de Obra",
+		"USIS Construction Management": "WorX CM",
+		"WorX CM": "WorX CM",
 		"Sign in to access projects, estimates, and field operations.":
 			"Inicie sesión para ver proyectos, estimaciones y trabajo de campo.",
 		"Need a staff account?": "¿Necesita una cuenta de personal?",

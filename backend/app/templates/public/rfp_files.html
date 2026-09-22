@@ -11,6 +11,7 @@
     body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background:var(--usis-bg);color:var(--usis-text);margin:0}
     .usis-public-rfp-header{background:var(--usis-paper);border-bottom:1px solid var(--usis-line);border-top:3px solid var(--usis-stamp);padding:12px 16px}
     .usis-public-rfp-header strong{font-size:1.125rem}
+    .usis-public-rfp-header img{width:32px;height:32px;border-radius:8px}
     .usis-wordmark{font-weight:650;letter-spacing:-0.01em}
     .usis-wordmark__worx{color:var(--usis-primary)}
     .usis-wordmark__cm{color:var(--usis-stamp)}
@@ -29,7 +30,10 @@
 </head>
 <body class="usis-public-rfp">
   <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
-    <strong class="usis-wordmark"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></strong>
+    <span class="d-inline-flex align-items-center gap-2">
+      <img src="/assets/images/branding/worx-cm-icon.svg" width="32" height="32" alt="">
+      <strong class="usis-wordmark"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></strong>
+    </span>
     <span class="usis-chip">RFP{% if due %} · due {{ due }}{% endif %}</span>
   </header>
   <div class="wrap">

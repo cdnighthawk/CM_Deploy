@@ -7,6 +7,7 @@ from flask import Blueprint, current_app, jsonify, redirect, render_template, re
 from markupsafe import escape
 from sqlalchemy import func, select
 
+from .branding import product_wordmark_html
 from .api._rfi_service import ApiError
 from .api._rfp_body_service import rfp_closed, serialize_drawing_row, visible_line_items
 from .api._rfp_quotes_service import record_portal_quote
@@ -28,6 +29,7 @@ _PUBLIC_CHROME = """
 body.usis-public-rfp{font-family:"Source Sans 3",system-ui,sans-serif;background:var(--usis-bg);color:var(--usis-text);margin:0}
 .usis-public-rfp-header{background:var(--usis-paper);border-bottom:1px solid var(--usis-line);border-top:3px solid var(--usis-stamp);padding:12px 16px}
 .usis-public-rfp-header strong{font-size:1.125rem}
+.usis-public-rfp-header img{width:32px;height:32px;border-radius:8px;display:block}
 .usis-wordmark{font-weight:650;letter-spacing:-0.01em}
 .usis-wordmark__worx{color:var(--usis-primary)}
 .usis-wordmark__cm{color:var(--usis-stamp)}
@@ -184,7 +186,7 @@ def public_rfp_get(token: str):
     {_PUBLIC_CHROME}</head>
     <body class="usis-public-rfp">
     <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
-      <strong class="usis-wordmark"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></strong>
+      {product_wordmark_html()}
       <span class="usis-chip">RFP{(' · due ' + str(due)[:10]) if due else ''}</span>
     </header>
     <div class="wrap"><div class="card-like">
@@ -425,7 +427,7 @@ def public_submittal_form(token: str):
     {_PUBLIC_CHROME}</head>
     <body class="usis-public-rfp">
     <header class="usis-public-rfp-header d-flex justify-content-between align-items-center gap-2">
-      <strong class="usis-wordmark"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></strong>
+      {product_wordmark_html()}
       <span class="usis-chip">{number}</span>
     </header>
     <div class="wrap"><div class="card-like">

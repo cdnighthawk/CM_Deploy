@@ -843,6 +843,7 @@ def _send_invite_email(packet: HirePacket, raw_token: str) -> None:
         job_title=packet.job_title,
         start_of_work_date=packet.start_of_work_date,
         url=url,
+        eagle_url=f"{_public_origin()}/assets/images/branding/usis-eagle-logo.png",
     )
     text = render_template(
         "email/hire_invite.txt",
@@ -1725,9 +1726,9 @@ def send_login(packet: HirePacket, cu: CurrentUser) -> dict[str, Any]:
     url = f"{origin}/page-login.html?reset={raw}"
     send_html_notification_email(
         to=user.email,
-        subject="USIS CM login",
+        subject="USIS login",
         body=f"Set your password:\n{url}\n",
-        html_body=f"<p>Set your password to use USIS CM and FinishWorks Field after your start date.</p><p><a href='{url}'>Set password</a></p>",
+        html_body=f"<p>Set your password to use USIS and FinishWorks Field after your start date.</p><p><a href='{url}'>Set password</a></p>",
         from_addr=setting("hire_mail_from", "hr@gousis.com"),
         bcc=setting("hire_mail_from", "hr@gousis.com"),
     )

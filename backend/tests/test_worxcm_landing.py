@@ -87,6 +87,50 @@ def test_walkthrough_requires_email(client):
     assert r.status_code == 400
 
 
+def test_landing_has_no_leaked_build_notes():
+    html = (resolve_landing_root() / "index.html").read_text(encoding="utf-8")
+    for leak in (
+        "Procore-class homepage structure",
+        "Legal company stays USIS",
+        "quotes@gousis.com",
+        "this page does not rebuild it",
+        "Purple Review button",
+        "Orange FAB",
+        "Application id does not change",
+        "X always capital",
+        "until cutover",
+        "project parents",
+        "Company vendor",
+        "Request sent.",
+    ):
+        assert leak not in html, leak
+    assert "Own the package" in html.replace("<br>", " ").replace("\n", " ") or "Own the" in html
+    assert "Built for the contractor who owns the scope" in html
+    assert "menu.classList.toggle" in html
+    assert "data.sent" in html
+
+
+def test_walkthrough_dry_run_is_not_ok(client, monkeypatch):
+    monkeypatch.setattr(
+        "app.api._notifications.send_html_notification_email",
+        lambda **_kwargs: {"sent": False, "dry_run": True, "error": None},
+    )
+    r = client.post(
+        "/public/walkthrough",
+        json={
+            "name": "Pat Estimator",
+            "company": "Finish Co",
+            "email": "pat@example.com",
+            "trade": "Drywall",
+        },
+    )
+    assert r.status_code == 503
+    body = r.get_json()
+    assert body["ok"] is False
+    assert body["sent"] is False
+    assert body["dry_run"] is True
+
+
 def test_walkthrough_honeypot_is_silent(client, monkeypatch):
     def boom(**kwargs):
         raise AssertionError("honeypot must not send mail")

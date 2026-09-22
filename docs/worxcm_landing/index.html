@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WorX CM — Construction management for trade contractors</title>
-  <meta name="description" content="WorX CM is construction management for specialty contractors. Bid, takeoff, buyout, field, and cost in one system. Local AI on your metal. FinishWorks Field on the phone." />
+  <meta name="description" content="WorX CM is construction management for specialty contractors. Bid, takeoff, buyout, field, and cost in one system. Local AI first. FinishWorks Field on the phone." />
   <link rel="icon" href="img/icon-america.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -52,7 +52,7 @@
     }
     .announce a { color: #fff; border-bottom: 1px solid rgba(255,255,255,.45); }
 
-    /* Nav — Procore-style sticky white bar */
+    /* Nav */
     .nav {
       position: sticky; top: 0; z-index: 50;
       background: #fff;
@@ -142,7 +142,7 @@
     }
     .hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
 
-    /* Audience — Procore “built for you” three cards */
+    /* Audience */
     .section { padding: 88px 0; }
     .kicker { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--stamp); margin-bottom: 10px; }
     h2 { font-size: clamp(32px, 4vw, 48px); letter-spacing: -.03em; line-height: 1.08; font-weight: 800; }
@@ -235,6 +235,7 @@
     }
     form.walk .full { grid-column: 1 / -1; }
     .thanks { display: none; background: #fff; color: var(--ink); padding: 28px; border-radius: 14px; }
+    .walk-err { display: none; color: #8a1f11; font-size: 14px; font-weight: 600; }
 
     /* Footer */
     footer { background: var(--navy); color: #C9D3DF; padding: 56px 0 28px; }
@@ -248,12 +249,40 @@
     @media (max-width: 900px) {
       .menu, .link-quiet { display: none; }
       .ham { display: block; }
+      .nav-row { flex-wrap: wrap; min-height: 62px; }
+      .menu.is-open {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        flex: 1 0 100%;
+        width: 100%;
+        order: 5;
+        padding: 4px 0 16px;
+      }
+      .menu.is-open > details,
+      .menu.is-open > a.top {
+        width: 100%;
+      }
+      .menu.is-open summary,
+      .menu.is-open > a.top {
+        display: block;
+        width: 100%;
+        padding: 12px 4px;
+      }
+      .menu.is-open .drop {
+        position: static;
+        min-width: 0;
+        width: 100%;
+        border: 0;
+        box-shadow: none;
+        padding: 0 0 8px 12px;
+      }
       .hero-grid, .cards-3, .mods, .ai-grid, .field-grid, .stats-row, .foot-grid, form.walk, .cta-split {
         grid-template-columns: 1fr;
       }
       .hero { padding-top: 36px; }
       .hero-photo { height: 240px; }
-      .nav-row { min-height: 62px; }
     }
   </style>
 </head>
@@ -267,7 +296,7 @@
       <a class="brand" href="#top" aria-label="WorX CM home">
         <img src="img/lockup-horizontal.jpg" alt="WorX CM" />
       </a>
-      <nav class="menu" aria-label="Primary">
+      <nav class="menu" id="site-menu" aria-label="Primary">
         <details>
           <summary>Platform</summary>
           <div class="drop">
@@ -283,7 +312,7 @@
           <div class="drop">
             <a href="#serve">Estimators <span>Takeoff, spec split, draft RFPs.</span></a>
             <a href="#serve">Project managers <span>Submittals, POs, correspondence.</span></a>
-            <a href="#serve">Owners of the trade <span>One system. Your company, your metal.</span></a>
+            <a href="#serve">Owners of the trade <span>One system. Your company.</span></a>
           </div>
         </details>
         <a class="top" href="#why">Why WorX</a>
@@ -292,7 +321,7 @@
       <div class="nav-right">
         <a class="link-quiet" href="https://www.usiscm.com/page-login.html" rel="noopener">Log in</a>
         <a class="btn btn-stamp" href="#walkthrough">Request a walkthrough</a>
-        <button class="ham" type="button" aria-label="Menu" onclick="document.querySelector('.menu').style.display = document.querySelector('.menu').style.display === 'flex' ? 'none' : 'flex'">☰</button>
+        <button class="ham" type="button" aria-label="Menu" aria-expanded="false" aria-controls="site-menu">☰</button>
       </div>
     </div>
   </header>
@@ -301,11 +330,11 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div>
-          <div class="eyebrow"><span class="dot"></span> Construction management software</div>
+          <div class="eyebrow"><span class="dot"></span> Construction management for trade contractors</div>
           <h1>Own the<br>package.</h1>
         </div>
         <div>
-          <p class="lead">Bid. Takeoff. Buyout. Field. Cost. One system for finish and specialty trades — drywall, paint, flooring, ceilings, trim, wall protection, openings.</p>
+          <p class="lead">Bid. Takeoff. Buyout. Field. Cost. One system for finish and specialty trades — drywall, paint, flooring, ceilings, trim, wall protection, and openings.</p>
           <div class="cta-row">
             <a class="btn btn-stamp btn-lg" href="#walkthrough">Request a walkthrough</a>
             <a class="ghost-link" href="#platform">See the platform →</a>
@@ -321,7 +350,7 @@
       <div class="wrap">
         <div class="kicker">Who we serve</div>
         <h2>The #1 job is winning and installing your scope.</h2>
-        <p class="sub">Procore-class homepage structure. Trade-contractor product. Estimators, PMs, and owners of the company — not a GC portal with a guest login.</p>
+        <p class="sub">Built for the contractor who owns the scope — estimators, project managers, and owners. Not a guest login on the GC’s platform.</p>
         <div class="cards-3">
           <article class="card">
             <div class="icon-pill">01</div>
@@ -338,7 +367,7 @@
           <article class="card">
             <div class="icon-pill">03</div>
             <h3>Trade owners</h3>
-            <p>Commercial and government work in California. Your vendors, your From addresses, your field app. Legal company stays USIS.</p>
+            <p>Commercial and government work. Your vendors, your sending addresses, your field app. The company stays yours.</p>
             <a class="more" href="#why">Why it is not a guest seat →</a>
           </article>
         </div>
@@ -355,7 +384,7 @@
           <div class="mod-list">
             <div class="mod"><div class="icon-pill">L</div><div><b>Leads</b><span>Plan-room filters. Bid board. Stage, not status — accepted through estimate approved.</span></div></div>
             <div class="mod"><div class="icon-pill">T</div><div><b>Takeoff</b><span>Finish packages and openings. Product family + rules, frozen on the line. Vendor quote column after award.</span></div></div>
-            <div class="mod"><div class="icon-pill">R</div><div><b>RFP</b><span>One email per Company vendor from quotes@gousis.com. Token drawing files. Side-by-side quotes. Award writes price back.</span></div></div>
+            <div class="mod"><div class="icon-pill">R</div><div><b>RFP</b><span>One email per vendor from your company address. Tokenized drawings. Side-by-side quotes. Award writes the price back onto the estimate.</span></div></div>
             <div class="mod"><div class="icon-pill">F</div><div><b>Field</b><span>FinishWorks Field: drawings, punch, time, T&amp;M with company and GC sign. Billing hours are not payroll hours.</span></div></div>
             <div class="mod"><div class="icon-pill">C</div><div><b>Cost</b><span>Material POs, 3-way match, change events. Workflows are data — amend steps without a rebuild.</span></div></div>
           </div>
@@ -370,7 +399,7 @@
           </figure>
           <div>
             <h3 style="font-size:28px;letter-spacing:-.02em;margin-bottom:10px;">RFP is mail, not a marketplace.</h3>
-            <p class="sub" style="margin-top:0">Vendors quote on a public token page. Plans are not attached as 18MB files. Comparison highlights the low number. Award can split scope. The module is already in production — this page does not rebuild it.</p>
+            <p class="sub" style="margin-top:0">Vendors quote on a private token page. Plans are not attached as 18MB files. Comparison highlights the low number. Award can split scope.</p>
           </div>
         </div>
       </div>
@@ -382,12 +411,12 @@
         <h2>Review the drawing on your metal.</h2>
         <div class="ai-grid">
           <div>
-            <p class="sub" style="margin-top:0">Dual provider. Local Llama 4 Scout for job files and submittals. Grok stays available and untouched. Drawings and correspondence are not dumped to a public corpus.</p>
+            <p class="sub" style="margin-top:0">Two providers. Local Llama reviews job files and submittals on your hardware. Grok stays available and is not fed your drawings. Correspondence is not dumped into a public corpus.</p>
             <ul class="checks">
               <li>Construction review on the live canvas, overlays included.</li>
               <li>Spec-package review proposes CSI sections, basis of design, and listed alternates.</li>
               <li>Submittal QC is a mandatory first pass — rubber-stamp if you fly through it.</li>
-              <li>Purple Review button stays purple. It is not a brand color.</li>
+              <li>Review stays a first pass you control. The model does not email vendors or file anything on its own.</li>
             </ul>
           </div>
           <aside class="ai-panel">
@@ -408,7 +437,7 @@
         <div>
           <div class="kicker">FinishWorks Field</div>
           <h2>The phone is the field product.</h2>
-          <p class="sub">Native Android and iOS — not a website squeezed onto a screen. Overview, drawings, camera, punch, time, T&amp;M. Dark field chrome. Orange FAB stays orange. Store name stays FinishWorks Field. Application id does not change.</p>
+          <p class="sub">Native Android and iOS — not the website squeezed onto a phone. Drawings, camera, punch, time, and T&amp;M. Time for billing is not time for payroll.</p>
           <ul class="checks">
             <li>GPS punch and geofence flags. Cost code optional.</li>
             <li>Ours | GC punch lists. Send to GC is explicit.</li>
@@ -420,10 +449,10 @@
 
     <section class="stats">
       <div class="wrap stats-row">
-        <div><b>One</b><span>system for bid through install</span></div>
-        <div><b>Two</b><span>AI providers — local and Grok</span></div>
-        <div><b>Six</b><span>project parents: Job, Files, Estimate, Field, Buyout, Contract</span></div>
-        <div><b>30</b><span>minutes on your live job — no fake demo tenant</span></div>
+        <div><b>One</b><span>system from bid through install</span></div>
+        <div><b>Two</b><span>AI providers, local first</span></div>
+        <div><b>Field</b><span>punch, time, and signed T&amp;M on the phone</span></div>
+        <div><b>30</b><span>minutes on your live job. No fake demo tenant</span></div>
       </div>
     </section>
 
@@ -439,7 +468,7 @@
           <tbody>
             <tr><td>Who it is for</td><td>Specialty / finish contractor</td><td>GC platform + guest access</td></tr>
             <tr><td>Takeoff</td><td>In the same system, frozen snapshots</td><td>PlanSwift or Bluebeam on the side</td></tr>
-            <tr><td>Vendor buyout</td><td>RFP from your Company list</td><td>Excel + inbox</td></tr>
+            <tr><td>Vendor buyout</td><td>RFP from your vendor list</td><td>Excel + inbox</td></tr>
             <tr><td>Field</td><td>FinishWorks Field — time and T&amp;M are separate copies</td><td>Another app, or none</td></tr>
             <tr><td>AI on drawings</td><td>Local first. No corpus dump</td><td>Whatever the GC tool uploads</td></tr>
             <tr><td>Workflows</td><td>Amendable steps, frozen in-flight</td><td>Hardcoded steppers</td></tr>
@@ -458,11 +487,11 @@
         </details>
         <details>
           <summary>What is the difference between WorX CM, USIS, and FinishWorks Field?</summary>
-          <p>WorX CM is the public product name (worxcm.com). US Interior Specialties (USIS) is the legal company. Staff login remains on usiscm.com until cutover. FinishWorks Field is the store name of the native phone apps only.</p>
+          <p>WorX CM is the product (worxcm.com). US Interior Specialties is the company behind it. FinishWorks Field is the name of the phone apps. Staff sign-in is on the company portal.</p>
         </details>
         <details>
           <summary>Do you email plan sets to vendors?</summary>
-          <p>No. Vendors get a tokenized files page. Bytes live in a private snapshot and download on a short-lived authorized URL. From / Reply-To / BCC stay on quotes@gousis.com.</p>
+          <p>No. Vendors get a tokenized files page. Files stay in a private snapshot and download on a short-lived authorized URL. Mail goes out from your company address.</p>
         </details>
         <details>
           <summary>Does Local AI send mail or file government forms?</summary>
@@ -500,11 +529,12 @@
           <label class="full">What should we open first?
             <input name="focus" placeholder="A live bid, a takeoff, last week’s RFP…" />
           </label>
+          <div class="full"><p class="walk-err" id="walk-err" role="alert"></p></div>
           <div class="full"><button class="btn btn-stamp btn-lg" type="submit" style="width:100%">Request a walkthrough</button></div>
         </form>
         <div class="thanks" id="thanks">
-          <h3>Request sent.</h3>
-          <p style="margin-top:8px;color:var(--muted)">We will reply from USIS mail and book thirty minutes on a live job — not a sandbox.</p>
+          <h3>We got it.</h3>
+          <p style="margin-top:8px;color:var(--muted)">We’ll book thirty minutes on a live job — not a sandbox.</p>
         </div>
       </div>
     </section>
@@ -537,27 +567,68 @@
         </div>
       </div>
       <div class="legal">
-        <span>© 2026 US Interior Specialties. WorX CM.</span>
-        <span>worxcm.com · X always capital · America Blue + stamp red</span>
+        <span>© 2026 US Interior Specialties. WorX CM is the product name. FinishWorks Field is the field app.</span>
       </div>
     </div>
   </footer>
   <script>
     (function () {
+      var menu = document.getElementById("site-menu");
+      var ham = document.querySelector(".ham");
+      if (menu && ham) {
+        ham.addEventListener("click", function () {
+          var open = menu.classList.toggle("is-open");
+          ham.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        menu.querySelectorAll("a").forEach(function (link) {
+          link.addEventListener("click", function () {
+            menu.classList.remove("is-open");
+            ham.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+
       var form = document.getElementById("walk-form");
       var thanks = document.getElementById("thanks");
+      var err = document.getElementById("walk-err");
       if (!form || !thanks) return;
       form.addEventListener("submit", function (event) {
         event.preventDefault();
+        if (err) {
+          err.style.display = "none";
+          err.textContent = "";
+        }
+        var btn = form.querySelector("button[type=submit]");
+        if (btn) btn.disabled = true;
         var body = {};
         new FormData(form).forEach(function (value, key) { body[key] = value; });
         fetch("/public/walkthrough", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Accept": "application/json" },
           body: JSON.stringify(body)
-        }).catch(function () {}).finally(function () {
-          form.style.display = "none";
-          thanks.style.display = "block";
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            return { ok: res.ok && data && data.ok && data.sent, data: data };
+          }).catch(function () {
+            return { ok: false, data: null };
+          });
+        }).then(function (result) {
+          if (result.ok) {
+            form.style.display = "none";
+            thanks.style.display = "block";
+            return;
+          }
+          if (err) {
+            err.textContent = "We could not send that just now. Try again in a few minutes.";
+            err.style.display = "block";
+          }
+        }).catch(function () {
+          if (err) {
+            err.textContent = "We could not send that just now. Try again in a few minutes.";
+            err.style.display = "block";
+          }
+        }).finally(function () {
+          if (btn) btn.disabled = false;
         });
       });
     })();

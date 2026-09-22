@@ -490,7 +490,7 @@ def public_walkthrough():
     if not isinstance(payload, dict):
         payload = {k: request.form.get(k, "") for k in ("name", "company", "email", "trade", "focus", "website")}
     if _walk_clip(payload.get("website"), 80):
-        return jsonify({"ok": True})
+        return jsonify({"ok": True, "sent": True})
     name = _walk_clip(payload.get("name"), _WALK_MAX["name"])
     company = _walk_clip(payload.get("company"), _WALK_MAX["company"])
     email = _walk_clip(payload.get("email"), _WALK_MAX["email"]).lower()
@@ -532,5 +532,17 @@ def public_walkthrough():
         reply_to=email,
         from_name="WorX CM",
     )
-    return jsonify({"ok": True, "dry_run": bool(result.get("dry_run")), "sent": bool(result.get("sent"))})
+    sent = bool(result.get("sent"))
+    dry_run = bool(result.get("dry_run"))
+    if sent:
+        return jsonify({"ok": True, "sent": True, "dry_run": False})
+    status = 503 if dry_run else 502
+    return jsonify(
+        {
+            "ok": False,
+            "sent": False,
+            "dry_run": dry_run,
+            "error": result.get("error") or "not sent",
+        }
+    ), status
 

@@ -4,11 +4,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Blueprint, abort, make_response, redirect, send_from_directory, session
+from flask import Blueprint, abort, make_response, redirect, request, send_from_directory, session
 
 static_shell_bp = Blueprint("static_shell", __name__)
 
-_RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz")
+_RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz", "/public/")
 
 # Public careers / hiring entry points (no ``.html`` suffix required).
 _CAREER_PATH_REDIRECTS: dict[str, str] = {
@@ -130,6 +130,46 @@ def resolve_static_root() -> Path | None:
     return None
 
 
+def resolve_landing_root() -> Path | None:
+    """Marketing homepage at ``docs/worxcm_landing`` (served on worxcm.com)."""
+    raw = (os.environ.get("USIS_LANDING_ROOT") or "").strip()
+    if raw:
+        root = Path(raw).expanduser().resolve()
+    else:
+        repo = Path(__file__).resolve().parent.parent.parent
+        root = (repo / "docs" / "worxcm_landing").resolve()
+    if root.is_dir() and (root / "index.html").is_file():
+        return root
+    return None
+
+
+def _is_worxcm_host() -> bool:
+    host = (request.host or "").split(":")[0].strip().lower()
+    return host == "worxcm.com" or host.endswith(".worxcm.com")
+
+
+def _serve_worxcm_landing(req_path: str):
+    """Homepage and ``/img/*`` for the public product domain. Else None."""
+    landing = resolve_landing_root()
+    if landing is None or not _is_worxcm_host():
+        return None
+    if req_path in ("/", "/index.html"):
+        return send_from_directory(landing, "index.html")
+    if not req_path.startswith("/img/"):
+        return None
+    rel = req_path.lstrip("/").replace("\\", "/")
+    if not rel or ".." in rel.split("/"):
+        return branded_404()
+    candidate = (landing / rel).resolve()
+    try:
+        candidate.relative_to(landing.resolve())
+    except ValueError:
+        return branded_404()
+    if candidate.is_file():
+        return send_from_directory(landing, rel)
+    return branded_404()
+
+
 def _is_reserved(path: str) -> bool:
     p = path if path.startswith("/") else f"/{path}"
     if p == "/healthz":
@@ -220,6 +260,10 @@ def serve_static(subpath: str):
     req_path = ("/" + subpath.lstrip("/")).rstrip("/") or "/"
     if _is_reserved(req_path):
         abort(404)
+
+    marketing = _serve_worxcm_landing(req_path)
+    if marketing is not None:
+        return marketing
 
     root = resolve_static_root()
     if root is None:

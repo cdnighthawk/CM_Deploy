@@ -63,6 +63,12 @@ def _public_app_url() -> str:
     return (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip().rstrip("/")
 
 
+def _extra_public_urls() -> tuple[str, ...]:
+    """Additional live hostnames (comma-separated), e.g. ``https://www.worxcm.com``."""
+    raw = (os.environ.get("USIS_APP_EXTRA_PUBLIC_URLS") or "").strip()
+    return tuple(o.strip().rstrip("/") for o in raw.split(",") if o.strip())
+
+
 def _default_post_login_redirect() -> str:
     explicit = (os.environ.get("USIS_POST_LOGIN_REDIRECT") or "").strip()
     if explicit:
@@ -107,13 +113,10 @@ def _www_origin_variants(origin: str) -> tuple[str, ...]:
     return tuple(deduped)
 
 
-def _default_cors_origins() -> tuple[str, ...]:
-    explicit = (os.environ.get("CORS_ORIGINS") or "").strip()
-    if explicit:
-        return tuple(o.strip().rstrip("/") for o in explicit.split(",") if o.strip())
+def _collect_origin_variants(*bases: str) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
-    for base in (_public_app_url(), _render_external_url()):
+    for base in bases:
         if not base:
             continue
         for variant in _www_origin_variants(base):
@@ -121,8 +124,23 @@ def _default_cors_origins() -> tuple[str, ...]:
             if key not in seen:
                 out.append(variant)
                 seen.add(key)
-    if out:
+    return out
+
+
+def _default_cors_origins() -> tuple[str, ...]:
+    extra = _extra_public_urls()
+    explicit = (os.environ.get("CORS_ORIGINS") or "").strip()
+    if explicit:
+        out = [o.strip().rstrip("/") for o in explicit.split(",") if o.strip()]
+        seen = {o.lower() for o in out}
+        for variant in _collect_origin_variants(*extra):
+            if variant.lower() not in seen:
+                out.append(variant)
+                seen.add(variant.lower())
         return tuple(out)
+    collected = _collect_origin_variants(_public_app_url(), _render_external_url(), *extra)
+    if collected:
+        return tuple(collected)
     return tuple(
         o.strip()
         for o in (
@@ -313,6 +331,9 @@ class Config:
         (os.environ.get("INVOICE_MAILBOX_SYNC_INTERVAL_SEC") or "300").strip() or "300"
     )
     QUOTES_MAILBOX: str = (os.environ.get("QUOTES_MAILBOX") or "quotes@gousis.com").strip()
+    WALKTHROUGH_MAIL_TO: str = (
+        os.environ.get("USIS_WALKTHROUGH_MAIL_TO") or "charles@gousis.com"
+    ).strip()
     QUOTES_FROM_NAME: str = (os.environ.get("QUOTES_FROM_NAME") or "US Interior Specialties").strip()
     RFP_MAIL_BCC_SELF: bool = (os.environ.get("RFP_MAIL_BCC_SELF") or "true").strip().lower() not in (
         "0",

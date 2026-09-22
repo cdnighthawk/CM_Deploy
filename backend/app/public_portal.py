@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from flask import Blueprint, redirect, render_template, request
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request
 from markupsafe import escape
 from sqlalchemy import func, select
 
@@ -466,4 +466,69 @@ def public_hire_get(token: str):
             return html, 404
         return "<p>Packet not found</p>", 404
     return render_template("public/hire.html", token=token)
+
+
+_WALK_MAX = {
+    "name": 120,
+    "company": 200,
+    "email": 200,
+    "trade": 80,
+    "focus": 800,
+}
+
+
+def _walk_clip(value: object, n: int) -> str:
+    return " ".join(str(value or "").split())[:n]
+
+
+@public_bp.route("/public/walkthrough", methods=["POST"])
+def public_walkthrough():
+    """Landing-page walkthrough requests. No login. Mail is best-effort."""
+    payload = request.get_json(silent=True) if request.is_json else None
+    if not isinstance(payload, dict):
+        payload = {k: request.form.get(k, "") for k in ("name", "company", "email", "trade", "focus", "website")}
+    if _walk_clip(payload.get("website"), 80):
+        return jsonify({"ok": True})
+    name = _walk_clip(payload.get("name"), _WALK_MAX["name"])
+    company = _walk_clip(payload.get("company"), _WALK_MAX["company"])
+    email = _walk_clip(payload.get("email"), _WALK_MAX["email"]).lower()
+    trade = _walk_clip(payload.get("trade"), _WALK_MAX["trade"])
+    focus = _walk_clip(payload.get("focus"), _WALK_MAX["focus"])
+    if not name or not company or "@" not in email or "." not in email.split("@")[-1]:
+        return jsonify({"error": "name, company, and a valid email are required"}), 400
+
+    to_addr = (current_app.config.get("WALKTHROUGH_MAIL_TO") or "charles@gousis.com").strip()
+    subject = f"WorX CM walkthrough — {company}"
+    plain = (
+        "Walkthrough request from worxcm.com\n\n"
+        f"Name: {name}\n"
+        f"Company: {company}\n"
+        f"Email: {email}\n"
+        f"Trade: {trade or '(not given)'}\n"
+        f"Open first: {focus or '(not given)'}\n"
+    )
+    html = (
+        "<div style='font-family:Source Sans 3,system-ui,sans-serif;color:#122027'>"
+        "<div style='border-top:3px solid #C8102E;padding:12px 0 8px'>"
+        "<span style='font-weight:650;font-size:18px;color:#1E4B8F'>WorX</span> "
+        "<span style='font-weight:650;font-size:18px;color:#C8102E'>CM</span></div>"
+        "<p>Walkthrough request from worxcm.com</p>"
+        f"<p><strong>Name:</strong> {escape(name)}<br>"
+        f"<strong>Company:</strong> {escape(company)}<br>"
+        f"<strong>Email:</strong> {escape(email)}<br>"
+        f"<strong>Trade:</strong> {escape(trade or '(not given)')}<br>"
+        f"<strong>Open first:</strong> {escape(focus or '(not given)')}</p>"
+        "</div>"
+    )
+    from .api._notifications import send_html_notification_email
+
+    result = send_html_notification_email(
+        to=to_addr,
+        subject=subject,
+        body=plain,
+        html_body=html,
+        reply_to=email,
+        from_name="WorX CM",
+    )
+    return jsonify({"ok": True, "dry_run": bool(result.get("dry_run")), "sent": bool(result.get("sent"))})
 

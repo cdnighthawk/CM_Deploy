@@ -15,6 +15,9 @@
 		vendorSearchSeq: 0,
 		frozen: false,
 		costCodes: [],
+		mode: null,
+		createParams: null,
+		creating: false,
 	};
 
 	function $(id) {
@@ -814,6 +817,48 @@
 			confirm: true,
 			cc_estimator: !!(($("usis-rfp-cc-estimator") || {}).checked),
 		};
+		if (state.mode === "create") {
+			if (state.creating) return Promise.resolve();
+			state.creating = true;
+			[$("usis-rfp-save"), $("usis-rfp-save-2")].forEach(function (btn) {
+				if (btn) btn.disabled = true;
+			});
+			if (state.createParams && state.createParams.project_id) body.project_id = state.createParams.project_id;
+			if (state.createParams && state.createParams.lead_estimate_id) body.lead_estimate_id = state.createParams.lead_estimate_id;
+			return fetchJson("/api/v1/rfps", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
+			})
+				.then(function (d) {
+					var item = d.item || d;
+					if (!item || !item.id) throw new Error("No RFP id returned");
+					state.id = item.id;
+					state.mode = null;
+					state.createParams = null;
+					var newUrl = "usis-rfp-detail.html?id=" + encodeURIComponent(state.id);
+					if (window.history && window.history.replaceState) {
+						window.history.replaceState({}, "", newUrl);
+					} else {
+						window.location.replace(newUrl);
+					}
+					flash("RFP created.", "success");
+					enableCreateModeActions();
+					return load().then(function (rfp) {
+						if (window.usisLoadRfpVendorSuggestions) window.usisLoadRfpVendorSuggestions();
+						return rfp;
+					});
+				})
+				.catch(function (err) {
+					flash(err.message || String(err), "error");
+				})
+				.finally(function () {
+					state.creating = false;
+					[$("usis-rfp-save"), $("usis-rfp-save-2")].forEach(function (btn) {
+						if (btn) btn.disabled = false;
+					});
+				});
+		}
 		return fetchJson("/api/v1/rfps/" + encodeURIComponent(state.id), {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
@@ -832,6 +877,57 @@
 			.catch(function (err) {
 				flash(err.message || String(err), "error");
 			});
+	}
+
+	function disableCreateModeActions() {
+		["usis-rfp-send", "usis-rfp-send-selected", "usis-rfp-sync", "usis-rfp-add-line", "usis-rfp-attach", "usis-rfp-refresh-takeoff", "usis-rfp-email-preview", "usis-rfp-clone", "usis-rfp-vendor-search"].forEach(function (id) {
+			var el = $(id);
+			if (el) el.disabled = true;
+		});
+		var takeoffPanel = $("usis-rfp-takeoff-panel");
+		if (takeoffPanel) takeoffPanel.classList.add("d-none");
+		var quotesPanel = $("usis-rfp-quotes-panel");
+		if (quotesPanel) quotesPanel.classList.add("d-none");
+		var quoteDrop = $("usis-rfp-quote-drop");
+		if (quoteDrop) quoteDrop.classList.add("d-none");
+	}
+
+	function enableCreateModeActions() {
+		["usis-rfp-send", "usis-rfp-send-selected", "usis-rfp-sync", "usis-rfp-add-line", "usis-rfp-attach", "usis-rfp-refresh-takeoff", "usis-rfp-email-preview", "usis-rfp-clone", "usis-rfp-vendor-search"].forEach(function (id) {
+			var el = $(id);
+			if (el) el.disabled = false;
+		});
+		var takeoffPanel = $("usis-rfp-takeoff-panel");
+		if (takeoffPanel) takeoffPanel.classList.remove("d-none");
+		var quotesPanel = $("usis-rfp-quotes-panel");
+		if (quotesPanel) quotesPanel.classList.remove("d-none");
+		var quoteDrop = $("usis-rfp-quote-drop");
+		if (quoteDrop) quoteDrop.classList.remove("d-none");
+	}
+
+	function initCreateMode(params) {
+		state.rfp = {
+			title: "",
+			status: "Draft",
+			due_at: null,
+			scope_of_work: "",
+			inclusions: "",
+			exclusions: "",
+			clarifications: "",
+			line_source: "manual",
+			cc_estimator: false,
+			frozen: false,
+			project_id: params.project_id || null,
+			lead_estimate_id: params.lead_estimate_id || null,
+		};
+		if (state.rfp.project_id && window.USISProjectContext && typeof window.USISProjectContext.setProjectId === "function") {
+			window.USISProjectContext.setProjectId(state.rfp.project_id);
+		}
+		renderHeader(state.rfp);
+		renderLines(state.rfp);
+		renderQuotes(state.rfp);
+		disableCreateModeActions();
+		flash("Fill in the RFP details and click Save draft to create.", "success");
 	}
 
 	function load() {
@@ -1066,6 +1162,7 @@
 	}
 
 	function searchVendors(q) {
+		if (!state.id) return;
 		var box = $("usis-rfp-vendor-results");
 		if (!box) return;
 		q = String(q || "").trim();
@@ -1255,22 +1352,47 @@
 	}
 
 	document.addEventListener("DOMContentLoaded", function () {
-		state.id = new URLSearchParams(window.location.search).get("id");
-		if (!state.id) {
-			flash("Missing ?id= rfp uuid", "error");
-			return;
+		var params = new URLSearchParams(window.location.search);
+		state.id = params.get("id");
+		state.mode = params.get("mode");
+		if (state.mode === "create") {
+			var projectId = params.get("project_id");
+			var leadEstimateId = params.get("lead_estimate_id");
+			if (!projectId && !leadEstimateId) {
+				flash("Missing project_id or lead_estimate_id for new RFP.", "error");
+				var backLink = document.createElement("a");
+				backLink.href = "usis-rfp-list.html";
+				backLink.textContent = "Return to RFP list";
+				backLink.className = "btn btn-sm btn-outline-primary mt-2";
+				var flashEl = $("usis-rfp-flash");
+				if (flashEl) flashEl.appendChild(document.createElement("br"));
+				if (flashEl) flashEl.appendChild(backLink);
+				return;
+			}
+			state.createParams = { project_id: projectId, lead_estimate_id: leadEstimateId };
+			bindQuoteDrop();
+			loadCostCodes().then(function () {
+				initCreateMode(state.createParams);
+			}).catch(function (err) {
+				flash(err.message || String(err), "error");
+			});
+		} else {
+			if (!state.id) {
+				flash("Missing ?id= rfp uuid", "error");
+				return;
+			}
+			bindQuoteDrop();
+			loadCostCodes().then(function () {
+				return load();
+			}).catch(function (err) {
+				flash(err.message || String(err), "error");
+			});
 		}
-		bindQuoteDrop();
-		loadCostCodes().then(function () {
-			return load();
-		}).catch(function (err) {
-			flash(err.message || String(err), "error");
-		});
 		document.querySelectorAll("input[name='usis-rfp-source']").forEach(function (el) {
 			el.addEventListener("change", function () {
 				applySourceUi();
-				if (el.value === "takeoff") loadTakeoff();
-				saveDraft();
+				if (el.value === "takeoff" && state.id) loadTakeoff();
+				if (state.mode !== "create") saveDraft();
 			});
 		});
 		var search = $("usis-rfp-vendor-search");

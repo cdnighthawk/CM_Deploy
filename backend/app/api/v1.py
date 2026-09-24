@@ -1393,8 +1393,9 @@ def list_lead_estimates():
         stmt = select(func.count()).select_from(LeadEstimate).where(filt)
         total = db.session.scalar(stmt) or 0
     except Exception as exc:
+        db.session.rollback()
         current_app.logger.exception("Lead estimates count query failed")
-        return _jsonify({"error": "Failed to count estimates", "details": str(exc)}), 500
+        return _jsonify({"error": "Failed to count estimates"}), 500
 
     try:
         q = select(LeadEstimate).where(filt)
@@ -1406,8 +1407,9 @@ def list_lead_estimates():
         q = q.offset(offset).limit(limit)
         rows = db.session.scalars(q).all()
     except Exception as exc:
+        db.session.rollback()
         current_app.logger.exception("Lead estimates list query failed")
-        return _jsonify({"error": "Failed to load estimates", "details": str(exc)}), 500
+        return _jsonify({"error": "Failed to load estimates"}), 500
     
     try:
         from ._office_location import office_origin_public, resolve_office_origin as _office_origin
@@ -1432,8 +1434,9 @@ def list_lead_estimates():
             }
         )
     except Exception as exc:
+        db.session.rollback()
         current_app.logger.exception("Lead estimates serialization failed")
-        return _jsonify({"error": "Failed to serialize estimates", "details": str(exc)}), 500
+        return _jsonify({"error": "Failed to serialize estimates"}), 500
 
 
 @bp.get("/estimate-queue")

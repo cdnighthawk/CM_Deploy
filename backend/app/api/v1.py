@@ -1389,38 +1389,51 @@ def list_lead_estimates():
     if crm_stage:
         filt = and_(filt, LeadEstimate.crm_stage == crm_stage)
 
-    stmt = select(func.count()).select_from(LeadEstimate).where(filt)
-    total = db.session.scalar(stmt) or 0
+    try:
+        stmt = select(func.count()).select_from(LeadEstimate).where(filt)
+        total = db.session.scalar(stmt) or 0
+    except Exception as exc:
+        current_app.logger.exception("Lead estimates count query failed")
+        return _jsonify({"error": "Failed to count estimates", "details": str(exc)}), 500
 
-    q = select(LeadEstimate).where(filt)
-    sort = (request.args.get("sort") or "").strip()
-    if sort:
-        q = q.order_by(*lead_q.lead_list_order_by(sort))
-    else:
-        q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
-    q = q.offset(offset).limit(limit)
-    rows = db.session.scalars(q).all()
-    from ._office_location import office_origin_public, resolve_office_origin as _office_origin
+    try:
+        q = select(LeadEstimate).where(filt)
+        sort = (request.args.get("sort") or "").strip()
+        if sort:
+            q = q.order_by(*lead_q.lead_list_order_by(sort))
+        else:
+            q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
+        q = q.offset(offset).limit(limit)
+        rows = db.session.scalars(q).all()
+    except Exception as exc:
+        current_app.logger.exception("Lead estimates list query failed")
+        return _jsonify({"error": "Failed to load estimates", "details": str(exc)}), 500
+    
+    try:
+        from ._office_location import office_origin_public, resolve_office_origin as _office_origin
 
-    origin = _office_origin()
-    items = []
-    for r in rows:
-        pub = _lead_estimate_public(r)
-        miles = ser.distance_miles_for_lead(r.location, origin)
-        if miles is not None:
-            pub["distance_miles"] = miles
-        items.append(pub)
+        origin = _office_origin()
+        items = []
+        for r in rows:
+            pub = _lead_estimate_public(r)
+            miles = ser.distance_miles_for_lead(r.location, origin)
+            if miles is not None:
+                pub["distance_miles"] = miles
+            items.append(pub)
 
-    return _jsonify(
-        {
-            "items": items,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-            "entity": "lead_estimates",
-            "office": office_origin_public(),
-        }
-    )
+        return _jsonify(
+            {
+                "items": items,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "entity": "lead_estimates",
+                "office": office_origin_public(),
+            }
+        )
+    except Exception as exc:
+        current_app.logger.exception("Lead estimates serialization failed")
+        return _jsonify({"error": "Failed to serialize estimates", "details": str(exc)}), 500
 
 
 @bp.get("/estimate-queue")

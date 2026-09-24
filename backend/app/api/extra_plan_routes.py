@@ -635,6 +635,10 @@ def register_extra_routes(bp: Blueprint) -> None:
     def list_rfps():
         le_id = _parse_uuid_param((request.args.get("lead_estimate_id") or "").strip())
         pj_id = _parse_uuid_param((request.args.get("project_id") or "").strip())
+        
+        if not le_id and not pj_id:
+            return _jsonify({"items": [], "entity": "rfps"}), 200
+        
         q = select(Rfp)
         if le_id and pj_id:
             q = q.where(or_(Rfp.lead_estimate_id == le_id, Rfp.project_id == pj_id))
@@ -642,8 +646,6 @@ def register_extra_routes(bp: Blueprint) -> None:
             q = q.where(Rfp.lead_estimate_id == le_id)
         elif pj_id:
             q = q.where(Rfp.project_id == pj_id)
-        else:
-            return _jsonify({"items": [], "entity": "rfps", "error": "project_id or lead_estimate_id required"}), 400
         
         try:
             rows = db.session.scalars(q.order_by(Rfp.created_at.desc()).limit(200)).all()

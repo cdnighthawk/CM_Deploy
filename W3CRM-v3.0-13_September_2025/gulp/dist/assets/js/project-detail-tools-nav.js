@@ -86,7 +86,7 @@
 		var pid = projectId();
 		var q = pid ? "?project_id=" + encodeURIComponent(pid) : "";
 		var docs = document.getElementById("usis-proj-tool-documents");
-		if (docs) docs.setAttribute("href", "javascript:void(0);");
+		if (docs) docs.setAttribute("href", "../usis-documents-hub.html" + q);
 		var rfp = document.getElementById("usis-proj-tool-rfp");
 		if (rfp) rfp.setAttribute("href", "../usis-rfp-list.html" + q);
 	}

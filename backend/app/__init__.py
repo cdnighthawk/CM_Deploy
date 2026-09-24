@@ -232,10 +232,11 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(github_webhooks_bp)
     app.register_blueprint(ingest_bp)
     from .api._in_app_notifications import register_on_app
-    from .api._messenger_service import register_on_app as register_messenger
 
     register_on_app(app)
-    register_messenger(app)
+    # Messenger (staff-to-staff chat) disabled per product scope — company uses Microsoft Teams.
+    # from .api._messenger_service import register_on_app as register_messenger
+    # register_messenger(app)
 
     def _protected_api_path(path: str) -> bool:
         return (

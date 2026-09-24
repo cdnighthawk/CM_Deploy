@@ -53,7 +53,7 @@
 			</div>
 
 			
-			<div class="container-fluid mb-3 px-0">
+			<div class="container-fluid mb-3 px-0" id="usis-powerbi-panel">
 				<div class="card rounded border-0 shadow-sm">
 					<div class="card-header border-bottom py-2">
 						<h5 class="mb-0 text-primary">Power BI</h5>
@@ -61,6 +61,9 @@
 					<div class="card-body py-3">
 						<div id="usis-powerbi-status" class="small text-muted mb-2" role="status"></div>
 						<div id="usis-powerbi-embed" class="d-none w-100 border rounded overflow-hidden usis-powerbi-embed-host" style="height: calc(100vh - 280px); min-height: 520px;"></div>
+						<div id="usis-powerbi-empty" class="d-none">
+							<p class="text-muted mb-0">Power BI reporting is not configured. Contact your administrator to enable business intelligence dashboards.</p>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -142,6 +145,7 @@
     <script src="assets/js/custom.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/powerbi-models@1.15.2/dist/models.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.23.1/dist/powerbi.min.js"></script>
+	<script src="assets/js/hide-powerbi-when-unconfigured.js"></script>
 	<script src="assets/js/reports-powerbi.js"></script>
 	<script src="assets/js/usis-reports.js"></script>
     <script src="assets/js/construction.js"></script>

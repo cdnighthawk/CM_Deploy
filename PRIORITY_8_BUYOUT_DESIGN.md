@@ -425,31 +425,35 @@ CREATE TABLE submittal_qc_checklist_items (
 
 ## Configuration
 
-### Approval Thresholds (Admin Configurable)
+### Approval Thresholds (⚠️ Admin Configurable - Placeholders Below, TBD by USIS)
 ```python
 # backend/app/config.py or settings UI
+# ⚠️ THESE ARE PLACEHOLDER VALUES - MUST BE CONFIGURED BY USIS BASED ON ACTUAL POLICY
 APPROVAL_THRESHOLDS = {
     "purchase_order": {
-        "pm_only_max": 5000.00,
-        "director_required_min": 5000.00,
-        "president_required_min": 50000.00,
+        "pm_only_max": 5000.00,          # PLACEHOLDER - TBD by USIS
+        "director_required_min": 5000.00,  # PLACEHOLDER - TBD by USIS
+        "president_required_min": 50000.00, # PLACEHOLDER - TBD by USIS
     },
     "change_order": {
-        "pm_only_max": 2500.00,
-        "director_required_min": 2500.00,
-        "president_required_min": 25000.00,
+        "pm_only_max": 2500.00,          # PLACEHOLDER - TBD by USIS
+        "director_required_min": 2500.00,  # PLACEHOLDER - TBD by USIS
+        "president_required_min": 25000.00, # PLACEHOLDER - TBD by USIS
     }
 }
 ```
 
-### Match Tolerances (Admin Configurable)
+### Match Tolerances (⚠️ Admin Configurable - Placeholders Below, TBD by USIS)
 ```python
+# ⚠️ THESE ARE PLACEHOLDER VALUES - MUST BE CONFIGURED BY USIS BASED ON ACTUAL POLICY
 MATCH_TOLERANCES = {
-    "quantity_variance_pct": 5.0,
-    "price_variance_pct": 2.0,
-    "total_variance_dollars": 100.0,
+    "quantity_variance_pct": 5.0,        # PLACEHOLDER - TBD by USIS
+    "price_variance_pct": 2.0,           # PLACEHOLDER - TBD by USIS
+    "total_variance_dollars": 100.0,     # PLACEHOLDER - TBD by USIS
 }
 ```
+
+**NOTE**: All threshold and tolerance values MUST be admin-configurable via UI and stored in database, not hardcoded. Values shown are examples only and do not represent USIS policy.
 
 ## Security Considerations
 

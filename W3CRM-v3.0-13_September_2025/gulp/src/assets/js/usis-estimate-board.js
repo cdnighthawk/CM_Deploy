@@ -426,7 +426,13 @@
 			{ credentials: "include", headers: { Accept: "application/json" } }
 		)
 			.then(function (r) {
-				if (!r.ok) throw new Error("HTTP " + r.status);
+				if (!r.ok) {
+					return r.json().catch(function () {
+						throw new Error("HTTP " + r.status + " - Server error. Please try again or contact support.");
+					}).then(function (err) {
+						throw new Error(err.error || err.message || "HTTP " + r.status);
+					});
+				}
 				return r.json();
 			})
 			.then(function (data) {
@@ -452,9 +458,13 @@
 				tbody.innerHTML =
 					'<tr><td colspan="' +
 					COLSPAN +
-					'" class="text-danger">Could not load estimates: ' +
-					esc(err.message) +
-					".</td></tr>";
+					'" class="text-center py-5">' +
+					'<div class="alert alert-danger d-inline-block text-start mb-0" role="alert">' +
+					'<i class="fas fa-exclamation-triangle me-2"></i>' +
+					'<strong>Could not load estimates</strong><br>' +
+					'<span class="small">' + esc(err.message) + '</span><br>' +
+					'<button class="btn btn-sm btn-outline-danger mt-2" onclick="window.location.reload()">Reload Page</button>' +
+					"</div></td></tr>";
 			});
 	}
 

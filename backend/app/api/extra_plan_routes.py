@@ -635,12 +635,23 @@ def register_extra_routes(bp: Blueprint) -> None:
     def list_rfps():
         le_id = _parse_uuid_param((request.args.get("lead_estimate_id") or "").strip())
         pj_id = _parse_uuid_param((request.args.get("project_id") or "").strip())
+        
+        if not le_id and not pj_id:
+            return _jsonify({"items": [], "entity": "rfps"}), 200
+        
         q = select(Rfp)
-        if le_id:
+        if le_id and pj_id:
+            q = q.where(or_(Rfp.lead_estimate_id == le_id, Rfp.project_id == pj_id))
+        elif le_id:
             q = q.where(Rfp.lead_estimate_id == le_id)
         elif pj_id:
             q = q.where(Rfp.project_id == pj_id)
-        rows = db.session.scalars(q.order_by(Rfp.created_at.desc()).limit(200)).all()
+        
+        try:
+            rows = db.session.scalars(q.order_by(Rfp.created_at.desc()).limit(200)).all()
+        except Exception as exc:
+            current_app.logger.exception("RFP list query failed")
+            return _jsonify({"error": "Failed to load RFPs", "details": str(exc)}), 500
 
         def pub(r: Rfp) -> dict[str, Any]:
             return {
@@ -736,10 +747,14 @@ def register_extra_routes(bp: Blueprint) -> None:
         rid = _parse_uuid_param(rfp_id)
         if not rid:
             return _jsonify({"error": "invalid rfp id"}), 400
-        r = db.session.get(Rfp, rid)
-        if r is None:
-            return _jsonify({"error": "rfp not found"}), 404
-        return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
+        try:
+            r = db.session.get(Rfp, rid)
+            if r is None:
+                return _jsonify({"error": "rfp not found"}), 404
+            return _jsonify({"item": serialize_rfp(r), "entity": "rfp"})
+        except Exception as exc:
+            current_app.logger.exception("RFP detail query failed")
+            return _jsonify({"error": "Failed to load RFP", "details": str(exc)}), 500
 
     @bp.patch("/rfps/<rfp_id>/job-shipping")
     def patch_rfp_job_shipping(rfp_id: str):

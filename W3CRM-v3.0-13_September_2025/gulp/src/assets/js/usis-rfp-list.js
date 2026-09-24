@@ -105,31 +105,15 @@
 		document.getElementById("usis-rfp-new").addEventListener("click", function () {
 			var le = qs("lead_estimate_id");
 			var pj = qs("project_id");
-			var body = {};
-			if (le) body.lead_estimate_id = le;
-			if (pj) body.project_id = pj;
 			if (!le && !pj) {
 				alert("Add ?lead_estimate_id= or ?project_id= to the URL first.");
 				return;
 			}
-			fetch(apiBase() + "/api/v1/rfps", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify(body),
-			})
-				.then(function (r) {
-					return r.json().then(function (j) {
-						if (!r.ok) throw new Error(j.error || r.status);
-						return j;
-					});
-				})
-				.then(function () {
-					load();
-				})
-				.catch(function (e) {
-					alert(e.message || String(e));
-				});
+			var params = [];
+			if (le) params.push("lead_estimate_id=" + encodeURIComponent(le));
+			if (pj) params.push("project_id=" + encodeURIComponent(pj));
+			params.push("mode=create");
+			window.location.href = "usis-rfp-detail.html?" + params.join("&");
 		});
 	});
 })();

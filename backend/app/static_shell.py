@@ -86,6 +86,7 @@ _DEMO_HTML_EXACT: frozenset[str] = frozenset(
         "email-read.html",
         "email-compose.html",
         "usis-all-pages-index.html",
+        "usis-messenger.html",
         "construction/add-quotation.html",
         "construction/attendance.html",
         "construction/contact-us.html",

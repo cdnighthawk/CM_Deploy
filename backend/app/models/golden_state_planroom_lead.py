@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class GoldenStatePlanroomLead(UUIDPKMixin, TimestampMixin, db.Model):
+class GoldenStatePlanroomLead(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "golden_state_planroom_leads"
 
     plan_number: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True)

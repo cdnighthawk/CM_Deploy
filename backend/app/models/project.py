@@ -5,12 +5,12 @@ import uuid
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import SoftDeleteMixin, TimestampMixin, UUIDPKMixin
+from .base import SoftDeleteMixin, TimestampMixin, UUIDPKMixin, TenantMixin
 
 project_status_enum = ENUM(
     "planning",
@@ -34,10 +34,13 @@ project_type_enum = ENUM(
 )
 
 
-class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, db.Model):
+class Project(UUIDPKMixin, TimestampMixin, SoftDeleteMixin, TenantMixin, db.Model):
     __tablename__ = "projects"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "number", name="uq_projects_org_number"),
+    )
 
-    number: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(project_status_enum, nullable=False, default="planning")

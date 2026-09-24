@@ -652,11 +652,13 @@
 			"<th></th><th>Spec</th><th>Title</th><th>Script</th><th>Status</th><th></th></tr></thead>" +
 			'<tbody id="usis-est-scope-rows"></tbody></table></div></div>' +
 			'<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">' +
+			'<div class="d-flex flex-wrap align-items-center gap-2">' +
 			'<h5 class="mb-0">Takeoff</h5>' +
-			'<div class="d-flex flex-wrap gap-2 align-items-center">' +
-			'<a class="btn btn-sm btn-outline-primary" href="construction/door-schedule.html?id=' +
-			encodeURIComponent(doorId) +
-			'">Door schedule (Div 08)</a>' +
+			'<div class="usis-seg" role="group" aria-label="Takeoff view">' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm active" id="usis-est-takeoff-view-lines" aria-pressed="true">Lines</button>' +
+			'<button type="button" class="btn btn-outline-secondary btn-sm" id="usis-est-takeoff-view-openings" aria-pressed="false">Openings</button>' +
+			"</div></div>" +
+			'<div class="d-flex flex-wrap gap-2 align-items-center" id="usis-est-takeoff-lines-actions">' +
 			'<a class="btn btn-sm btn-outline-secondary" href="construction/drawing-viewer.html?' +
 			(projectId ? "project_id=" + encodeURIComponent(projectId) + "&" : "") +
 			(leadKey ? "lead_id=" + encodeURIComponent(leadKey) + "&" : "") +
@@ -671,10 +673,13 @@
 			'<button type="button" class="btn btn-sm btn-outline-primary" id="usis-est-takeoff-rfp">Create RFP for remaining scopes</button>' +
 			'<button type="button" class="btn btn-sm usis-ai-review" id="usis-est-takeoff-firstpass">Run first-pass takeoff</button>' +
 			'<button type="button" class="btn btn-sm btn-primary" id="usis-est-takeoff-add">Add line</button></div></div>' +
+			'<div id="usis-est-takeoff-lines-panel">' +
 			'<p class="small mb-2" id="usis-est-takeoff-stepper"></p>' +
 			'<div id="usis-grid-est-takeoff" class="border rounded overflow-hidden bg-white mb-2"></div>' +
 			'<p class="small text-muted mb-2 d-none" id="usis-est-takeoff-af-status" aria-live="polite"></p>' +
-			'<p class="text-muted small mb-0">Writes require <code>TAKEOFF_API_WRITES_ENABLED=1</code> on the API. Use <strong>View</strong> when a line has a drawing to measure on the PDF.</p>';
+			'<p class="text-muted small mb-0">Writes require <code>TAKEOFF_API_WRITES_ENABLED=1</code> on the API. Use <strong>View</strong> when a line has a drawing to measure on the PDF.</p>' +
+			"</div>" +
+			'<div id="usis-est-takeoff-openings-panel" class="d-none"></div>';
 
 		var gridEl = document.getElementById("usis-grid-est-takeoff");
 		if (typeof Tabulator === "undefined") {
@@ -747,6 +752,35 @@
 		} else {
 			setTimeout(decorateTakeoffHeaders, 0);
 		}
+
+		function setTakeoffView(which) {
+			var linesPanel = document.getElementById("usis-est-takeoff-lines-panel");
+			var openingsPanel = document.getElementById("usis-est-takeoff-openings-panel");
+			var linesBtn = document.getElementById("usis-est-takeoff-view-lines");
+			var openingsBtn = document.getElementById("usis-est-takeoff-view-openings");
+			var linesActions = document.getElementById("usis-est-takeoff-lines-actions");
+			var showLines = which !== "openings";
+			if (linesPanel) linesPanel.classList.toggle("d-none", !showLines);
+			if (openingsPanel) openingsPanel.classList.toggle("d-none", showLines);
+			if (linesActions) linesActions.classList.toggle("d-none", !showLines);
+			if (linesBtn) {
+				linesBtn.classList.toggle("active", showLines);
+				linesBtn.setAttribute("aria-pressed", showLines ? "true" : "false");
+			}
+			if (openingsBtn) {
+				openingsBtn.classList.toggle("active", !showLines);
+				openingsBtn.setAttribute("aria-pressed", !showLines ? "true" : "false");
+			}
+			if (!showLines && openingsPanel && window.USISEstimateOpenings) {
+				window.USISEstimateOpenings.mount(openingsPanel, estimateKey);
+			} else if (showLines && takeoffTable && typeof takeoffTable.redraw === "function") {
+				takeoffTable.redraw(true);
+			}
+		}
+		var linesBtn = document.getElementById("usis-est-takeoff-view-lines");
+		var openingsBtn = document.getElementById("usis-est-takeoff-view-openings");
+		if (linesBtn) linesBtn.addEventListener("click", function () { setTakeoffView("lines"); });
+		if (openingsBtn) openingsBtn.addEventListener("click", function () { setTakeoffView("openings"); });
 
 		bindBidScope(estimateKey, projectId);
 
@@ -879,9 +913,9 @@
 		if (detail.missingEstimate) {
 			root.innerHTML =
 				'<div class="alert alert-light border mb-0">' +
-				'<div class="fw-semibold mb-1">Create an estimate to start takeoff</div>' +
-				'<p class="text-muted small mb-2">Takeoff lines are saved on the estimate, not the lead.</p>' +
-				'<button type="button" class="btn btn-primary btn-sm" id="usis-estd-takeoff-create">Create estimate</button>' +
+				'<div class="fw-semibold mb-1">Create a proposal to start takeoff</div>' +
+				'<p class="text-muted small mb-2">Takeoff lines are saved on the proposal, not the estimate job record.</p>' +
+				'<button type="button" class="btn btn-primary btn-sm" id="usis-estd-takeoff-create">Create proposal</button>' +
 				"</div>";
 			var takeoffCreate = document.getElementById("usis-estd-takeoff-create");
 			if (takeoffCreate) {
@@ -895,7 +929,7 @@
 		if (!item) {
 			root.innerHTML =
 				'<p class="text-danger small mb-0">' +
-				(detail.error ? String(detail.error) : "Could not load estimate.") +
+				(detail.error ? String(detail.error) : "Could not load proposal.") +
 				"</p>";
 			return;
 		}

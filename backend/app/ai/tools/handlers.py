@@ -13,7 +13,7 @@ from ...api import _rfi_service as rfi_svc
 from ...api import _serializers as ser
 from ...api._perms import CurrentUser, can_create_rfi, can_edit_rfi, can_view_rfi
 from ...extensions import db
-from ...models import Company, Contact, LeadEstimate, Project, Rfi
+from ...models import Company, Contact, Estimate, LeadEstimate, Project, Rfi
 from ...permissions.access import has_module_access
 from ...permissions.project_scope import project_access_clause
 from . import executor as ex
@@ -382,6 +382,8 @@ def _update_lead_estimate(args: dict[str, Any], cu: CurrentUser) -> dict[str, An
             row.win_probability = Decimal(str(wp)).quantize(Decimal("0.0001"))
     if "due_at" in payload:
         row.due_at = rfi_svc._parse_dt(payload.get("due_at"))
+        for est in db.session.scalars(select(Estimate).where(Estimate.lead_estimate_id == row.id)):
+            est.due_at = row.due_at
     db.session.commit()
     return {"ok": True, "entity": "lead_estimate", "item": ser.lead_estimate_public(row)}
 
@@ -482,7 +484,7 @@ def _register_all() -> None:
                 {
                     "submission_state": {
                         "type": "string",
-                        "description": "e.g. undecided, will_submit, submitted",
+                        "description": "e.g. undecided, will_submit, submitted, all",
                     },
                     "limit": {"type": "integer"},
                     "offset": {"type": "integer"},

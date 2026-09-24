@@ -7,12 +7,12 @@ from sqlalchemy import Boolean, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class CompanyCostCode(UUIDPKMixin, TimestampMixin, db.Model):
+class CompanyCostCode(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "company_cost_codes"
-    __table_args__ = (UniqueConstraint("code", name="uq_company_cost_codes_code"),)
+    __table_args__ = (UniqueConstraint("organization_id", "code", name="uq_company_cost_codes_org_code"),)
 
     code: Mapped[str] = mapped_column(String(60), nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)

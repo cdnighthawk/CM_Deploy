@@ -15,6 +15,13 @@ _START_LOCK = threading.Lock()
 def start_invoice_mailbox_sync_loop(app: Flask) -> None:
     """Poll Graph every ``INVOICE_MAILBOX_SYNC_INTERVAL_SEC`` (default 300). Set 0 to disable."""
     global _STARTED
+    from ..config import running_on_render
+
+    # Render already POSTs /api/v1/ap/mailbox/sync every 5 minutes via cron.
+    # A second in-process poll parses PDFs in the same 512 MB worker and OOMs.
+    if running_on_render():
+        app.logger.info("Invoice mailbox in-process poll skipped on Render (cron job usis-invoice-mailbox-sync)")
+        return
     if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST"):
         return
     if os.environ.get("WERKZEUG_RUN_MAIN") == "false":

@@ -18,7 +18,7 @@ Without Graph (or SMTP) env vars, the app still runs: emails are **logged as dry
    - `Tasks.Read.All` (Microsoft To Do on Dashboard → My tasks)
    - `Tasks.ReadWrite.All` (mark To Do complete from My tasks)
 2. Click **Grant admin consent** for the tenant.
-3. Create shared mailboxes `noreply@gousis.com`, `quotes@gousis.com`, and `invoices@gousis.com` in Microsoft 365 admin (no extra license).
+3. Create shared mailboxes `noreply@gousis.com`, `quotes@gousis.com`, `invoices@gousis.com`, and `projects@gousis.com` in Microsoft 365 admin (no extra license).
 4. Restrict the app with an Exchange **application access policy** so it can only access `@gousis.com` mailboxes plus those shared mailboxes. After creating a new mailbox, re-run [exchange-application-access-policy.ps1](exchange-application-access-policy.ps1) so the Graph app can Send As / read it.
 5. On Render set `MAIL_TRANSPORT=graph` and `MAIL_FROM=noreply@gousis.com`. Existing `MS_ENTRA_*` vars are reused.
 
@@ -29,6 +29,15 @@ The website always uses the **signed-in user’s** mailbox address — never a m
 Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom folders and subfolders, read, delete, flag/unflag, and compose. That page calls `GET /api/v1/mail/folders`, `GET/PATCH/DELETE /api/v1/mail/messages`, and `POST /api/v1/messages/email`. Dashboard **My tasks** (`GET /api/v1/me/tasks`, `POST /api/v1/me/tasks/complete`) lists that user’s Microsoft To Do tasks and flagged Outlook mail.
 
 **AP invoices:** `POST /api/v1/ap/mailbox/sync` reads `invoices@gousis.com`. Vendors can send there directly, or staff can forward a vendor invoice from their own inbox — USIS treats the original From:/subject as the vendor, not the employee who forwarded it. Each new message is scanned (email body plus PDF attachments) and compared to invoices already on file by invoice number, vendor/sender, amount, and PDF fingerprint. Weekly reminder emails that attach the same bill are recorded on the original invoice instead of opening a duplicate. Each request ingests a small batch (default 8 new messages, 70 seconds) so Cloudflare/Render do not return HTML 502. The web process also polls that mailbox every 5 minutes (`INVOICE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`). Production has a Render cron (`usis-invoice-mailbox-sync`) that POSTs the same route with `X-Cron-Secret` (copied from `usis-cm`, preferably over Render private networking).
+
+**Project correspondence:** Project mail (RFI, punch, PO, schedule, and compose when a project is in context) ends with a visible footer:
+
+```
+-----
+USIS-REF project=<project-uuid> thread=<thread-uuid>
+```
+
+USIS BCC’s the first address in `CORRESPONDENCE_MAILBOXES` (for example `projects@gousis.com`). Ingest reads that mailbox, finds the **last** `USIS-REF` in the body (including quoted replies), and files the message on that project even if the subject was rewritten. Password reset, HR, playbooks, `quotes@`, and `invoices@` do not get this footer. The web process polls correspondence mailboxes every 5 minutes (`CORRESPONDENCE_MAILBOX_SYNC_INTERVAL_SEC`, default `300`; `0` disables). Create the shared mailbox, then re-run [exchange-application-access-policy.ps1](exchange-application-access-policy.ps1). Correspondence files are stored under `DOCUMENT_ROOT` (use a persistent disk on Render).
 
 ## Environment variables
 
@@ -41,6 +50,8 @@ Staff open **Email** in the left menu (`usis-email.html`): Inbox, Sent, custom f
 | `INVOICE_MAILBOX_SYNC_INTERVAL_SEC` | No | `300` | In-process poll of `invoices@`; `0` disables (Render cron still runs) |
 | `INVOICE_MAILBOX_SYNC_MAX_NEW` | No | `8` | New messages ingested per sync request |
 | `INVOICE_MAILBOX_SYNC_BUDGET_SEC` | No | `70` | Stop ingest before the site gateway times out |
+| `CORRESPONDENCE_MAILBOXES` | No | `projects@gousis.com` | Shared mailbox(es) for project mail ingest; first address is BCC’d on project sends |
+| `CORRESPONDENCE_MAILBOX_SYNC_INTERVAL_SEC` | No | `300` | In-process poll of correspondence mailboxes; `0` disables |
 | `MAIL_ALLOWED_FROM_DOMAINS` | No | `gousis.com` | Staff send-as is limited to these domains |
 | `MS_ENTRA_TENANT_ID` / `CLIENT_ID` / `CLIENT_SECRET` | Yes for Graph | *(already on Render)* | Same app as Microsoft login |
 
@@ -78,7 +89,9 @@ Render does **not** provision Redis in `render.yaml`; for MVP, leave Celery unse
 |------|---------|-------------------------------|
 | **RFP invitations** | RFP detail **Send invitations** → `POST /api/v1/rfps/<id>/send` | Yes — from `quotes@gousis.com`; replies ingested by **Sync quotes mailbox** |
 | **Issue status (feedback)** | `Resolution:` comment or team close → `POST /api/webhooks/github` | Yes — employee then closes the issue to confirm |
-| **RFI notifications** | RFI create/update/forward; `POST /api/v1/rfis/<id>/email` | Yes (log row + SMTP; Celery if broker set) |
+| **RFI notifications** | RFI create/update/forward; `POST /api/v1/rfis/<id>/email` | Yes — USIS-REF footer + BCC correspondence mailbox |
+| **Punch / PO / schedule** | Punch notify, PO order-by, calendar assign/remind | Yes — same footer + BCC when a project is set |
+| **Staff compose** | Email page send, if a project is in context | Yes — footer + BCC |
 | **Playbooks** | Checklist run start / reassignment | Yes (`send_plain_notification_email`) |
 | **Admin user invite** | `POST /api/v1/admin/users` with `"send_invite": true` or `USIS_SEND_USER_INVITE_EMAIL=1` | Yes (new) |
 | **Self-register / hire** | `POST /api/v1/auth/register`, `/apply.html` | **No** — account only, no verification email |

@@ -85,7 +85,7 @@
 								<i class="icon feather icon-refresh-cw me-1"></i> Reload from API
 							</button>
 							<button type="button" class="btn btn-primary btn-sm w-xs-100" id="usis-est-add-estimate">
-								<i class="icon feather icon-plus me-1"></i> New estimate
+								<i class="icon feather icon-plus me-1"></i> <span data-i18n="New proposal">New proposal</span>
 							</button>
 						</div>
 					</div>
@@ -137,15 +137,15 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header py-2">
-					<h5 class="modal-title fs-6" id="usis-est-create-title">New estimate</h5>
+					<h5 class="modal-title fs-6" id="usis-est-create-title">New proposal</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body py-2">
 					<div class="alert alert-danger py-2 d-none" id="usis-est-create-err" role="alert"></div>
 					<div class="mb-2" id="usis-est-create-lead-wrap">
-						<label class="form-label small mb-0" for="usis-est-create-lead">Lead <span class="text-danger">*</span></label>
+						<label class="form-label small mb-0" for="usis-est-create-lead">Estimate <span class="text-danger">*</span></label>
 						<select class="form-select form-select-sm" id="usis-est-create-lead">
-							<option value="">Select a lead…</option>
+							<option value="">Select an estimate…</option>
 						</select>
 					</div>
 					<div class="mb-2">
@@ -168,7 +168,7 @@
 					</div>
 					<div class="form-check mb-2">
 						<input class="form-check-input" type="checkbox" id="usis-est-create-copy">
-						<label class="form-check-label small" for="usis-est-create-copy">Copy lines &amp; pricing from existing estimate</label>
+						<label class="form-check-label small" for="usis-est-create-copy">Copy lines &amp; pricing from existing proposal</label>
 					</div>
 					<div class="mb-0 d-none" id="usis-est-create-copy-wrap">
 						<label class="form-label small mb-0" for="usis-est-create-copy-from">Copy from</label>
@@ -204,8 +204,8 @@
 	<script src="assets/js/usis-list-bulk.js"></script>
 	<script src="assets/js/usis-bc-write.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
-	<script src="assets/js/usis-estimates-list.js"></script>
-	<script src="assets/js/usis-estimate-board.js?v=20260907a"></script>
+	<script src="assets/js/usis-estimates-list.js?v=20260919p"></script>
+	<script src="assets/js/usis-estimate-board.js?v=20260920a"></script>
 	
 </body>
 </html>

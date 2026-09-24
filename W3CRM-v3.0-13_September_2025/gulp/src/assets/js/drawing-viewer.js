@@ -173,7 +173,7 @@
 			}
 			if (res.status === 404) {
 				throw new Error(
-					"PDF not found on server. Re-upload the drawing from Project → Drawings."
+					"This drawing is listed, but the PDF is not in company storage yet."
 				);
 			}
 			if (!res.ok && res.status !== 206) {
@@ -626,6 +626,29 @@
 		if (!r) {
 			_usisDbg("B", "drawing-viewer.js:loadPdfFromRevision", "no_revision_row", { revIndex: revIndex });
 			showErr("No revision selected.");
+			pdfDoc = null;
+			updatePageLabel();
+			disposeFabric();
+			return;
+		}
+		if (r.file_pending) {
+			_usisDbg("B", "drawing-viewer.js:loadPdfFromRevision", "file_pending", {
+				revId: r && r.id,
+			});
+			showErr(
+				"This sheet is listed, but the PDF has not reached company storage yet. Leave USIS open until Ingest finishes uploading."
+			);
+			var pendingCanvas = document.getElementById("usis-dv-canvas");
+			if (pendingCanvas) {
+				var pctx = pendingCanvas.getContext("2d");
+				pendingCanvas.width = 400;
+				pendingCanvas.height = 120;
+				pctx.fillStyle = "#f8f9fa";
+				pctx.fillRect(0, 0, pendingCanvas.width, pendingCanvas.height);
+				pctx.fillStyle = "#6c757d";
+				pctx.font = "14px sans-serif";
+				pctx.fillText("PDF still uploading", 24, 64);
+			}
 			pdfDoc = null;
 			updatePageLabel();
 			disposeFabric();
@@ -1205,7 +1228,9 @@
 				" " +
 				(m.description || "") +
 				" " +
-				(m.category || "")
+				(m.category || "") +
+				" " +
+				(m.size_display || "")
 			).toLowerCase();
 			return blob.indexOf(needle) >= 0;
 		});
@@ -1218,6 +1243,48 @@
 		if (prev && Array.prototype.some.call(sel.options, function (x) { return x.value === prev; })) {
 			sel.value = prev;
 		}
+		updateTakeoffSheetHint();
+	}
+
+	function updateTakeoffSheetHint() {
+		var hint = document.getElementById("usis-dv-takeoff-modal-sheet-hint");
+		var sel = document.getElementById("usis-dv-takeoff-modal-material");
+		if (!hint) return;
+		var mid = sel && sel.value ? String(sel.value) : "";
+		var m = null;
+		if (mid) {
+			for (var i = 0; i < allMaterialsCache.length; i++) {
+				if (String(allMaterialsCache[i].id) === mid) {
+					m = allMaterialsCache[i];
+					break;
+				}
+			}
+		}
+		if (!m && currentTakeoffLine && currentTakeoffLine.material_catalog && mid) {
+			var mc = currentTakeoffLine.material_catalog;
+			if (String(mc.id || currentTakeoffLine.material_pricing_id || "") === mid) m = mc;
+		}
+		if (!m || !m.size_display) {
+			hint.textContent = "";
+			hint.classList.add("d-none");
+			return;
+		}
+		var qty = currentTakeoffLine && currentTakeoffLine.quantity != null ? Number(currentTakeoffLine.quantity) : NaN;
+		var unit = currentTakeoffLine && currentTakeoffLine.unit ? String(currentTakeoffLine.unit).replace(/\s+/g, " ").trim() : "";
+		var area = m.sheet_area_sf != null ? Number(m.sheet_area_sf) : NaN;
+		var sheets = m.suggested_sheets;
+		if (sheets == null && !isNaN(area) && area > 0 && !isNaN(qty) && /^(sf|s\.f\.?|sq\.?\s*ft\.?|sqft|square feet|square foot)$/i.test(unit)) {
+			sheets = Math.ceil(qty / area);
+		}
+		var parts = ["Sheet " + m.size_display];
+		if (!isNaN(area) && area > 0) {
+			parts.push("(" + (Number.isInteger(area) ? String(area) : area.toFixed(2).replace(/\.00$/, "")) + " SF each)");
+		}
+		if (sheets != null && !isNaN(Number(sheets))) {
+			parts.push("— " + sheets + " sheet" + (Number(sheets) === 1 ? "" : "s") + " for this takeoff");
+		}
+		hint.textContent = parts.join(" ");
+		hint.classList.remove("d-none");
 	}
 
 	function syncTakeoffModalFromLine() {
@@ -1371,6 +1438,11 @@
 			fil.addEventListener("input", function () {
 				applyMaterialFilterToSelect(fil.value);
 			});
+		}
+		var matSel = document.getElementById("usis-dv-takeoff-modal-material");
+		if (matSel && !matSel.dataset.usisSheetHintWired) {
+			matSel.dataset.usisSheetHintWired = "1";
+			matSel.addEventListener("change", updateTakeoffSheetHint);
 		}
 		var saveBtn = document.getElementById("usis-dv-takeoff-modal-save");
 		if (saveBtn && !saveBtn.dataset.usisWired) {

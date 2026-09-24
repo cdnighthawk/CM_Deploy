@@ -1,6 +1,6 @@
 Replace these placeholders with the official IRS / USCIS / EDD / Labor Commissioner PDFs.
 
-USIS CM generates labeled working copies until `uses_official_blank` is true on `form_templates`.
+USIS generates labeled working copies until `uses_official_blank` is true on `form_templates`.
 Do not treat a working copy as the agency form in an audit print.
 
 Needed downloads (current as of the hiring product lock):

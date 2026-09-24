@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WorX CM — Construction management for trade contractors</title>
+  <meta name="description" content="WorX CM is construction management for specialty contractors. Bid, takeoff, buyout, field, and cost in one system. Local AI first. FinishWorks Field on the phone." />
+  <link rel="icon" href="img/icon-america.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #1E4B8F;
+      --blue-dark: #163A6E;
+      --blue-mid: #2A5FA8;
+      --stamp: #C8102E;
+      --stamp-hover: #A50D25;
+      --ink: #122027;
+      --muted: #5C6B73;
+      --line: #E3E8EE;
+      --canvas: #F4F6F8;
+      --paper: #FFFFFF;
+      --ai: #6D28D9;
+      --ok: #2E7D4F;
+      --navy: #0E1A2B;
+      --shadow: 0 18px 50px rgba(18, 32, 39, .12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.5;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+
+    /* Announcement */
+    .announce {
+      background: var(--navy);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+    .announce .wrap {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; min-height: 42px; text-align: center;
+    }
+    .announce a { color: #fff; border-bottom: 1px solid rgba(255,255,255,.45); }
+
+    /* Nav */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+    }
+    .nav::before {
+      content: ""; display: block; height: 3px; background: var(--stamp);
+    }
+    .nav-row {
+      display: flex; align-items: center; gap: 28px; min-height: 72px;
+    }
+    .brand img { height: 44px; width: auto; }
+    .menu { display: flex; align-items: center; gap: 4px; flex: 1; }
+    .menu > details, .menu > a.top {
+      position: relative;
+    }
+    .menu summary, .menu > a.top {
+      list-style: none; cursor: pointer;
+      font-size: 15px; font-weight: 600; color: var(--ink);
+      padding: 10px 12px; border-radius: 8px;
+    }
+    .menu summary::-webkit-details-marker { display: none; }
+    .menu summary::after { content: " ▾"; font-size: 10px; color: var(--muted); }
+    .menu summary:hover, .menu > a.top:hover { background: var(--canvas); }
+    .drop {
+      position: absolute; top: calc(100% + 8px); left: 0;
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      box-shadow: var(--shadow); min-width: 280px; padding: 10px;
+    }
+    .drop a {
+      display: block; padding: 10px 12px; border-radius: 8px;
+      font-size: 14.5px; font-weight: 600;
+    }
+    .drop a span { display: block; font-weight: 500; color: var(--muted); font-size: 13px; }
+    .drop a:hover { background: var(--canvas); }
+    .nav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .link-quiet { font-weight: 600; font-size: 15px; padding: 10px 12px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 0; border-radius: 8px; font-family: inherit; font-weight: 700;
+      font-size: 15px; padding: 12px 18px; cursor: pointer;
+    }
+    .btn-stamp { background: var(--stamp); color: #fff; }
+    .btn-stamp:hover { background: var(--stamp-hover); }
+    .btn-blue { background: var(--blue); color: #fff; }
+    .btn-blue:hover { background: var(--blue-dark); }
+    .btn-ghost { background: transparent; color: var(--ink); }
+    .btn-ghost:hover { background: var(--canvas); }
+    .btn-outline {
+      background: #fff; color: var(--blue); border: 1.5px solid var(--blue);
+    }
+    .btn-lg { padding: 14px 22px; font-size: 16px; }
+    .ham { display: none; background: none; border: 0; font-size: 26px; cursor: pointer; }
+
+    /* Hero */
+    .hero {
+      background: #F3EEE6;
+      padding: 64px 0 0;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: start;
+      padding-bottom: 48px;
+    }
+    .eyebrow {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .dot {
+      width: 10px; height: 10px; background: var(--stamp); border-radius: 2px;
+    }
+    .hero h1 {
+      font-size: clamp(44px, 6vw, 76px);
+      line-height: .95; letter-spacing: -.035em; font-weight: 800;
+      margin: 16px 0 22px;
+    }
+    .hero p.lead {
+      font-size: 20px; color: var(--ink); max-width: 36ch; margin-bottom: 28px;
+    }
+    .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+    .cta-row .ghost-link { font-weight: 700; color: var(--ink); }
+    .cta-row .ghost-link:hover { color: var(--blue); }
+
+    .hero-photo {
+      width: 100%; height: 420px; overflow: hidden; background: #8b6f58;
+    }
+    .hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+
+    /* Audience */
+    .section { padding: 88px 0; }
+    .kicker { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--stamp); margin-bottom: 10px; }
+    h2 { font-size: clamp(32px, 4vw, 48px); letter-spacing: -.03em; line-height: 1.08; font-weight: 800; }
+    .sub { margin-top: 12px; color: var(--muted); font-size: 18px; max-width: 58ch; }
+    .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 40px; }
+    .card {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+      padding: 28px; min-height: 220px;
+    }
+    .card h3 { font-size: 22px; margin: 10px 0 8px; }
+    .card p { color: var(--muted); }
+    .card .more { display: inline-block; margin-top: 16px; color: var(--blue); font-weight: 700; }
+    .icon-pill {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: #E8EEF7; color: var(--blue);
+      display: grid; place-items: center; font-weight: 800;
+    }
+
+    /* Platform grid */
+    .band { background: var(--canvas); }
+    .mods { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 40px; align-items: center; }
+    .mod-list { display: grid; gap: 10px; }
+    .mod {
+      display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start;
+      background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+    }
+    .mod b { display: block; font-size: 16px; }
+    .mod span { color: var(--muted); font-size: 14.5px; }
+    .shot {
+      border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--line);
+      background: #fff;
+    }
+    .shot img { width: 100%; height: auto; }
+
+    /* AI */
+    .ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 36px; }
+    .checks { margin-top: 18px; }
+    .checks li { list-style: none; padding: 8px 0 8px 28px; position: relative; font-size: 17px; }
+    .checks li::before { content: ""; position: absolute; left: 0; top: 14px; width: 12px; height: 12px; border-radius: 3px; background: var(--ai); }
+    .ai-panel {
+      background: linear-gradient(180deg, #1B1630, #2A1B4A);
+      color: #fff; border-radius: 16px; padding: 32px;
+      min-height: 320px;
+    }
+    .ai-panel .tag { color: #C4B5FD; font-size: 12px; letter-spacing: .14em; font-weight: 700; text-transform: uppercase; }
+    .ai-panel h3 { font-size: 28px; margin: 10px 0 12px; }
+    .ai-panel p { color: #DDD6FE; }
+    .chip { display: inline-block; margin-top: 16px; background: var(--ai); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; }
+
+    /* Field split */
+    .field-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 48px; align-items: center; }
+    .phone { max-width: 380px; margin: 0 auto; border-radius: 24px; overflow: hidden; box-shadow: var(--shadow); }
+
+    /* Stats */
+    .stats {
+      background: var(--navy); color: #fff; padding: 56px 0;
+    }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: left; }
+    .stats-row b { display: block; font-size: 36px; letter-spacing: -.03em; }
+    .stats-row span { color: #B8C4D4; font-size: 15px; }
+
+    /* Contrast table */
+    .cmp { width: 100%; border-collapse: collapse; margin-top: 32px; background: #fff; border-radius: 12px; overflow: hidden; }
+    .cmp th, .cmp td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 15px; }
+    .cmp th { background: var(--canvas); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+    .cmp td:nth-child(2) { font-weight: 700; color: var(--blue); }
+
+    /* FAQ */
+    .faq details {
+      border-bottom: 1px solid var(--line); padding: 16px 0;
+    }
+    .faq summary { cursor: pointer; font-weight: 700; font-size: 18px; }
+    .faq p { margin-top: 8px; color: var(--muted); max-width: 70ch; }
+
+    /* CTA band */
+    .cta-band {
+      background: var(--blue); color: #fff; padding: 72px 0;
+    }
+    .cta-band h2 { color: #fff; }
+    .cta-band p { color: #D6E2F5; margin: 12px 0 24px; font-size: 18px; }
+    .cta-split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    form.walk {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      background: #fff; color: var(--ink); padding: 22px; border-radius: 14px; max-width: 560px;
+    }
+    form.walk label { font-size: 13px; font-weight: 700; display: grid; gap: 6px; }
+    form.walk input, form.walk select {
+      border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: inherit;
+    }
+    form.walk .full { grid-column: 1 / -1; }
+    .thanks { display: none; background: #fff; color: var(--ink); padding: 28px; border-radius: 14px; }
+    .walk-err { display: none; color: #8a1f11; font-size: 14px; font-weight: 600; }
+
+    /* Footer */
+    footer { background: var(--navy); color: #C9D3DF; padding: 56px 0 28px; }
+    .foot-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 28px; }
+    footer img { height: 56px; width: auto; margin-bottom: 12px; filter: none; }
+    footer h4 { color: #fff; margin-bottom: 12px; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+    footer a { display: block; padding: 4px 0; color: #C9D3DF; }
+    footer a:hover { color: #fff; }
+    .legal { margin-top: 36px; border-top: 1px solid #243044; padding-top: 16px; font-size: 13px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    @media (max-width: 900px) {
+      .menu, .link-quiet { display: none; }
+      .ham { display: block; }
+      .nav-row { flex-wrap: wrap; min-height: 62px; }
+      .menu.is-open {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        flex: 1 0 100%;
+        width: 100%;
+        order: 5;
+        padding: 4px 0 16px;
+      }
+      .menu.is-open > details,
+      .menu.is-open > a.top {
+        width: 100%;
+      }
+      .menu.is-open summary,
+      .menu.is-open > a.top {
+        display: block;
+        width: 100%;
+        padding: 12px 4px;
+      }
+      .menu.is-open .drop {
+        position: static;
+        min-width: 0;
+        width: 100%;
+        border: 0;
+        box-shadow: none;
+        padding: 0 0 8px 12px;
+      }
+      .hero-grid, .cards-3, .mods, .ai-grid, .field-grid, .stats-row, .foot-grid, form.walk, .cta-split {
+        grid-template-columns: 1fr;
+      }
+      .hero { padding-top: 36px; }
+      .hero-photo { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="announce">
+    <div class="wrap">Built for the specialty contractor who owns the package — not a guest seat on the GC’s platform. <a href="#walkthrough">Book 30 minutes on a live job</a></div>
+  </div>
+
+  <header class="nav">
+    <div class="wrap nav-row">
+      <a class="brand" href="#top" aria-label="WorX CM home">
+        <img src="img/lockup-horizontal.jpg" alt="WorX CM" />
+      </a>
+      <nav class="menu" id="site-menu" aria-label="Primary">
+        <details>
+          <summary>Platform</summary>
+          <div class="drop">
+            <a href="#platform">Leads &amp; bid board <span>Plan-room filters. Stage, not status.</span></a>
+            <a href="#platform">Takeoff &amp; estimating <span>Finish packages and openings.</span></a>
+            <a href="#platform">RFP &amp; buyout <span>Mail to your vendors. Side-by-side quotes.</span></a>
+            <a href="#field">Field <span>Time, punch, T&amp;M on FinishWorks Field.</span></a>
+            <a href="#platform">Cost &amp; contract <span>POs, COs, job cost — after the award.</span></a>
+          </div>
+        </details>
+        <details>
+          <summary>Who we serve</summary>
+          <div class="drop">
+            <a href="#serve">Estimators <span>Takeoff, spec split, draft RFPs.</span></a>
+            <a href="#serve">Project managers <span>Submittals, POs, correspondence.</span></a>
+            <a href="#serve">Owners of the trade <span>One system. Your company.</span></a>
+          </div>
+        </details>
+        <a class="top" href="#why">Why WorX</a>
+        <a class="top" href="#faq">FAQ</a>
+      </nav>
+      <div class="nav-right">
+        <a class="link-quiet" href="https://www.usiscm.com/page-login.html" rel="noopener">Log in</a>
+        <a class="btn btn-stamp" href="#walkthrough">Request a walkthrough</a>
+        <button class="ham" type="button" aria-label="Menu" aria-expanded="false" aria-controls="site-menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <div class="eyebrow"><span class="dot"></span> Construction management for trade contractors</div>
+          <h1>Own the<br>package.</h1>
+        </div>
+        <div>
+          <p class="lead">Bid. Takeoff. Buyout. Field. Cost. One system for finish and specialty trades — drywall, paint, flooring, ceilings, trim, wall protection, and openings.</p>
+          <div class="cta-row">
+            <a class="btn btn-stamp btn-lg" href="#walkthrough">Request a walkthrough</a>
+            <a class="ghost-link" href="#platform">See the platform →</a>
+          </div>
+        </div>
+      </div>
+      <div class="hero-photo">
+        <img src="img/hero-drywall.jpg" alt="Commercial interior drywall and paint on a live jobsite" />
+      </div>
+    </section>
+
+    <section class="section" id="serve">
+      <div class="wrap">
+        <div class="kicker">Who we serve</div>
+        <h2>The #1 job is winning and installing your scope.</h2>
+        <p class="sub">Built for the contractor who owns the scope — estimators, project managers, and owners. Not a guest login on the GC’s platform.</p>
+        <div class="cards-3">
+          <article class="card">
+            <div class="icon-pill">01</div>
+            <h3>Estimators</h3>
+            <p>Leads on a bid board. Takeoff with frozen snapshots. Spec books split to CSI sections. Draft RFPs — you still hit Send.</p>
+            <a class="more" href="#platform">Estimating workspace →</a>
+          </article>
+          <article class="card">
+            <div class="icon-pill">02</div>
+            <h3>Project managers</h3>
+            <p>Submittal QC before the GC sees it. PO spend-auth by dollar band. Correspondence stays on your server, searchable later by Local AI.</p>
+            <a class="more" href="#platform">Office tools →</a>
+          </article>
+          <article class="card">
+            <div class="icon-pill">03</div>
+            <h3>Trade owners</h3>
+            <p>Commercial and government work. Your vendors, your sending addresses, your field app. The company stays yours.</p>
+            <a class="more" href="#why">Why it is not a guest seat →</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section band" id="platform">
+      <div class="wrap">
+        <div class="kicker">Platform</div>
+        <h2>From invitation to installed work.</h2>
+        <p class="sub">The same spine as a full construction platform — leads, drawings, estimate, buyout, field, cost — shaped for the contractor who owns the finish package.</p>
+
+        <div class="mods">
+          <div class="mod-list">
+            <div class="mod"><div class="icon-pill">L</div><div><b>Leads</b><span>Plan-room filters. Bid board. Stage, not status — accepted through estimate approved.</span></div></div>
+            <div class="mod"><div class="icon-pill">T</div><div><b>Takeoff</b><span>Finish packages and openings. Product family + rules, frozen on the line. Vendor quote column after award.</span></div></div>
+            <div class="mod"><div class="icon-pill">R</div><div><b>RFP</b><span>One email per vendor from your company address. Tokenized drawings. Side-by-side quotes. Award writes the price back onto the estimate.</span></div></div>
+            <div class="mod"><div class="icon-pill">F</div><div><b>Field</b><span>FinishWorks Field: drawings, punch, time, T&amp;M with company and GC sign. Billing hours are not payroll hours.</span></div></div>
+            <div class="mod"><div class="icon-pill">C</div><div><b>Cost</b><span>Material POs, 3-way match, change events. Workflows are data — amend steps without a rebuild.</span></div></div>
+          </div>
+          <figure class="shot">
+            <img src="img/ui-takeoff.jpg" alt="WorX CM estimating takeoff table" />
+          </figure>
+        </div>
+
+        <div class="mods" style="margin-top:48px">
+          <figure class="shot">
+            <img src="img/ui-rfp.jpg" alt="WorX CM RFP vendor comparison" />
+          </figure>
+          <div>
+            <h3 style="font-size:28px;letter-spacing:-.02em;margin-bottom:10px;">RFP is mail, not a marketplace.</h3>
+            <p class="sub" style="margin-top:0">Vendors quote on a private token page. Plans are not attached as 18MB files. Comparison highlights the low number. Award can split scope.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ai">
+      <div class="wrap">
+        <div class="kicker">Local AI</div>
+        <h2>Review the drawing on your metal.</h2>
+        <div class="ai-grid">
+          <div>
+            <p class="sub" style="margin-top:0">Two providers. Local Llama reviews job files and submittals on your hardware. Grok stays available and is not fed your drawings. Correspondence is not dumped into a public corpus.</p>
+            <ul class="checks">
+              <li>Construction review on the live canvas, overlays included.</li>
+              <li>Spec-package review proposes CSI sections, basis of design, and listed alternates.</li>
+              <li>Submittal QC is a mandatory first pass — rubber-stamp if you fly through it.</li>
+              <li>Review stays a first pass you control. The model does not email vendors or file anything on its own.</li>
+            </ul>
+          </div>
+          <aside class="ai-panel">
+            <div class="tag">On the job, not in the cloud by default</div>
+            <h3>Feasibility before you chase the bid.</h3>
+            <p>Scope gaps, California code notes, suggested exclusions. You apply the line items. The model does not email your vendors.</p>
+            <span class="chip">Local first · Grok on tap</span>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section band" id="field">
+      <div class="wrap field-grid">
+        <figure class="phone">
+          <img src="img/phone-field.jpg" alt="FinishWorks Field on a jobsite phone" />
+        </figure>
+        <div>
+          <div class="kicker">FinishWorks Field</div>
+          <h2>The phone is the field product.</h2>
+          <p class="sub">Native Android and iOS — not the website squeezed onto a phone. Drawings, camera, punch, time, and T&amp;M. Time for billing is not time for payroll.</p>
+          <ul class="checks">
+            <li>GPS punch and geofence flags. Cost code optional.</li>
+            <li>Ours | GC punch lists. Send to GC is explicit.</li>
+            <li>T&amp;M emails a token page for superintendent and GC sign.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="wrap stats-row">
+        <div><b>One</b><span>system from bid through install</span></div>
+        <div><b>Two</b><span>AI providers, local first</span></div>
+        <div><b>Field</b><span>punch, time, and signed T&amp;M on the phone</span></div>
+        <div><b>30</b><span>minutes on your live job. No fake demo tenant</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="why">
+      <div class="wrap">
+        <div class="kicker">Why WorX</div>
+        <h2>Not three licenses and a guest seat.</h2>
+        <p class="sub">The GC already has a platform. The accountant already has a ledger. You still need takeoff, vendor mail, and a field phone that knows your package.</p>
+        <table class="cmp">
+          <thead>
+            <tr><th></th><th>WorX CM</th><th>Typical stack</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Who it is for</td><td>Specialty / finish contractor</td><td>GC platform + guest access</td></tr>
+            <tr><td>Takeoff</td><td>In the same system, frozen snapshots</td><td>PlanSwift or Bluebeam on the side</td></tr>
+            <tr><td>Vendor buyout</td><td>RFP from your vendor list</td><td>Excel + inbox</td></tr>
+            <tr><td>Field</td><td>FinishWorks Field — time and T&amp;M are separate copies</td><td>Another app, or none</td></tr>
+            <tr><td>AI on drawings</td><td>Local first. No corpus dump</td><td>Whatever the GC tool uploads</td></tr>
+            <tr><td>Workflows</td><td>Amendable steps, frozen in-flight</td><td>Hardcoded steppers</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section band" id="faq">
+      <div class="wrap faq">
+        <div class="kicker">FAQ</div>
+        <h2>Straight answers.</h2>
+        <details open>
+          <summary>Is this Procore?</summary>
+          <p>No. The public page follows the same kind of construction-SaaS homepage — nav, hero, audiences, platform, AI, field, FAQ — because that is how buyers scan a category. The product is WorX CM for the trade that owns the package. We do not clone Procore modules, orange chrome, or guest-seat economics.</p>
+        </details>
+        <details>
+          <summary>What is the difference between WorX CM, USIS, and FinishWorks Field?</summary>
+          <p>WorX CM is the product (worxcm.com). US Interior Specialties is the company behind it. FinishWorks Field is the name of the phone apps. Staff sign-in is on the company portal.</p>
+        </details>
+        <details>
+          <summary>Do you email plan sets to vendors?</summary>
+          <p>No. Vendors get a tokenized files page. Files stay in a private snapshot and download on a short-lived authorized URL. Mail goes out from your company address.</p>
+        </details>
+        <details>
+          <summary>Does Local AI send mail or file government forms?</summary>
+          <p>No. AI never emails vendors, never dumps correspondence to Grok, never files EDD, never pushes punch items to Procore on its own, and never writes an SSN onto a User record.</p>
+        </details>
+        <details>
+          <summary>How do we see it?</summary>
+          <p>Thirty minutes on a live job: leads → takeoff → RFP → a field T&amp;M. Not a demo tenant with fake rooms.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="cta-band" id="walkthrough">
+      <div class="wrap cta-split">
+        <div>
+          <h2>Thirty minutes on your live job.</h2>
+          <p>We walk leads, takeoff, an RFP, and a field T&amp;M. Tell us the trade and a due date. We will not invent a sandbox full of sample rooms.</p>
+        </div>
+        <form class="walk" id="walk-form" method="post" action="/public/walkthrough">
+          <label class="hp">Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+          <label>Name <input required name="name" autocomplete="name" /></label>
+          <label>Company <input required name="company" /></label>
+          <label>Email <input required type="email" name="email" autocomplete="email" /></label>
+          <label>Trade
+            <select name="trade">
+              <option>Drywall</option>
+              <option>Paint</option>
+              <option>Flooring</option>
+              <option>Ceilings</option>
+              <option>Trim / millwork</option>
+              <option>Division 10 / openings</option>
+              <option>Several finish trades</option>
+            </select>
+          </label>
+          <label class="full">What should we open first?
+            <input name="focus" placeholder="A live bid, a takeoff, last week’s RFP…" />
+          </label>
+          <div class="full"><p class="walk-err" id="walk-err" role="alert"></p></div>
+          <div class="full"><button class="btn btn-stamp btn-lg" type="submit" style="width:100%">Request a walkthrough</button></div>
+        </form>
+        <div class="thanks" id="thanks">
+          <h3>We got it.</h3>
+          <p style="margin-top:8px;color:var(--muted)">We’ll book thirty minutes on a live job — not a sandbox.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <img src="img/lockup-dark.jpg" alt="WorX CM" />
+          <p>Construction management for trade contractors. Bid. Takeoff. Buyout. Field. Cost.</p>
+        </div>
+        <div>
+          <h4>Platform</h4>
+          <a href="#platform">Leads</a>
+          <a href="#platform">Takeoff</a>
+          <a href="#platform">RFP</a>
+          <a href="#field">FinishWorks Field</a>
+          <a href="#ai">Local AI</a>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <a href="#why">Why WorX</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://www.usiscm.com/page-login.html" rel="noopener">Staff log in</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <p>WorX CM is the public product name. US Interior Specialties (USIS) is the operating company. FinishWorks Field is the field-app store name.</p>
+        </div>
+      </div>
+      <div class="legal">
+        <span>© 2026 US Interior Specialties. WorX CM is the product name. FinishWorks Field is the field app.</span>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      var menu = document.getElementById("site-menu");
+      var ham = document.querySelector(".ham");
+      if (menu && ham) {
+        ham.addEventListener("click", function () {
+          var open = menu.classList.toggle("is-open");
+          ham.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        menu.querySelectorAll("a").forEach(function (link) {
+          link.addEventListener("click", function () {
+            menu.classList.remove("is-open");
+            ham.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+
+      var form = document.getElementById("walk-form");
+      var thanks = document.getElementById("thanks");
+      var err = document.getElementById("walk-err");
+      if (!form || !thanks) return;
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (err) {
+          err.style.display = "none";
+          err.textContent = "";
+        }
+        var btn = form.querySelector("button[type=submit]");
+        if (btn) btn.disabled = true;
+        var body = {};
+        new FormData(form).forEach(function (value, key) { body[key] = value; });
+        fetch("/public/walkthrough", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(body)
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            return { ok: res.ok && data && data.ok && data.sent, data: data };
+          }).catch(function () {
+            return { ok: false, data: null };
+          });
+        }).then(function (result) {
+          if (result.ok) {
+            form.style.display = "none";
+            thanks.style.display = "block";
+            return;
+          }
+          if (err) {
+            err.textContent = "We could not send that just now. Try again in a few minutes.";
+            err.style.display = "block";
+          }
+        }).catch(function () {
+          if (err) {
+            err.textContent = "We could not send that just now. Try again in a few minutes.";
+            err.style.display = "block";
+          }
+        }).finally(function () {
+          if (btn) btn.disabled = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -81,7 +81,19 @@ def merge_policy(raw: Mapping[str, Any] | None) -> dict[str, Any]:
 def load_time_policy() -> dict[str, Any]:
     row = db.session.scalar(select(HrmsModuleSetting).where(HrmsModuleSetting.key == TIMEKEEPING_POLICY_KEY))
     raw = row.value if row is not None and isinstance(row.value, dict) else None
-    return merge_policy(raw)
+    merged = merge_policy(raw)
+    try:
+        from ..tenant_settings import current_tenant_setting
+
+        stored = current_tenant_setting("time.require_cost_code", None)
+        if stored is not None:
+            merged["require_cost_code"] = bool(stored)
+        geo = current_tenant_setting("field.geofence_mode", None)
+        if geo in ("flag", "block"):
+            merged["geofence_default_mode"] = geo
+    except Exception:
+        pass
+    return merged
 
 
 def save_time_policy(data: Mapping[str, Any]) -> dict[str, Any]:

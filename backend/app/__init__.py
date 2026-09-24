@@ -14,9 +14,20 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
+from flask.sessions import SecureCookieSessionInterface
 from flask_cors import CORS
 
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
+
+
+def _plan_empty_html(message: str) -> str:
+    msg = (message or "This module is not on your plan. Ask USIS if you need it.").replace("<", "&lt;")
+    return (
+        "<!doctype html><html><head><meta charset='utf-8'><title>WorX CM</title>"
+        "<style>body{font-family:Segoe UI,Arial,sans-serif;margin:48px;color:#1E4B8F}"
+        ".box{max-width:480px;margin:auto;text-align:center}</style></head><body>"
+        f"<div class='box'><h1>Not on your plan</h1><p>{msg}</p></div></body></html>"
+    )
 
 
 def _running_under_pytest() -> bool:
@@ -101,18 +112,35 @@ def _effective_cors_origins(configured: tuple[str, ...] | list[str] | None) -> l
     return out
 
 
+def cookie_domain_for_host(host: str | None) -> str | None:
+    """Return ``.example.com`` so apex and www share a cookie on that registrable domain."""
+    raw = (host or "").split(":")[0].strip().lower()
+    if not raw or raw.endswith(".onrender.com") or raw in ("localhost", "127.0.0.1"):
+        return None
+    parts = [p for p in raw.split(".") if p]
+    if len(parts) < 2:
+        return None
+    return "." + ".".join(parts[-2:])
+
+
 def _session_cookie_domain_from_public_url() -> str | None:
-    """Return ``.example.com`` for custom domains so apex and www share the session cookie."""
+    """Canonical cookie domain from ``USIS_APP_PUBLIC_URL`` (tests and fallback)."""
     public_url = (os.environ.get("USIS_APP_PUBLIC_URL") or "").strip()
     if not public_url:
         return None
     host = (urlparse(public_url).hostname or "").strip().lower()
-    if not host or host.endswith(".onrender.com") or host in ("localhost", "127.0.0.1"):
-        return None
-    parts = host.split(".")
-    if len(parts) < 2:
-        return None
-    return "." + ".".join(parts[-2:])
+    return cookie_domain_for_host(host)
+
+
+class HostCookieSessionInterface(SecureCookieSessionInterface):
+    """Use the request hostname so usiscm.com and worxcm.com each get their own cookie scope."""
+
+    def get_cookie_domain(self, app):
+        try:
+            host = request.host
+        except RuntimeError:
+            return _session_cookie_domain_from_public_url()
+        return cookie_domain_for_host(host)
 
 
 def _apply_production_middleware(app: Flask) -> None:
@@ -124,10 +152,10 @@ def _apply_production_middleware(app: Flask) -> None:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.session_interface = HostCookieSessionInterface()
     cookie_domain = _session_cookie_domain_from_public_url()
     if cookie_domain:
-        app.config["SESSION_COOKIE_DOMAIN"] = cookie_domain
-        app.logger.info("SESSION_COOKIE_DOMAIN=%s", cookie_domain)
+        app.logger.info("session cookie domain follows request host (canonical %s)", cookie_domain)
 
 
 def _should_autoload_bc_csv() -> bool:
@@ -162,11 +190,13 @@ def create_app(config_object: str | None = None) -> Flask:
         )
 
     from . import models  # noqa: F401  (register mappers with SQLAlchemy)
+    from . import tenancy as tenancy_mod  # noqa: F401  (tenant query listeners)
 
     from .auth_session import auth_bp
 
     app.register_blueprint(auth_bp)
     app.permanent_session_lifetime = app.config.get("PERMANENT_SESSION_LIFETIME", timedelta(days=14))
+    tenancy_mod.init_tenancy(app)
 
     from .ai.blueprint import bp as ai_bp
     from .api import v1_bp
@@ -192,15 +222,21 @@ def create_app(config_object: str | None = None) -> Flask:
     app.register_blueprint(correspondence_bp)
     app.register_blueprint(time_bp)
     app.register_blueprint(hires_bp)
+    from .api._saas_admin import admin_bp as saas_admin_bp
+    from .api._saas_admin import settings_bp as saas_settings_bp
+
+    app.register_blueprint(saas_settings_bp)
+    app.register_blueprint(saas_admin_bp)
     app.register_blueprint(hrms_bp)
     app.register_blueprint(ap_bp)
     app.register_blueprint(github_webhooks_bp)
     app.register_blueprint(ingest_bp)
     from .api._in_app_notifications import register_on_app
-    from .api._messenger_service import register_on_app as register_messenger
 
     register_on_app(app)
-    register_messenger(app)
+    # Messenger (staff-to-staff chat) disabled per product scope — company uses Microsoft Teams.
+    # from .api._messenger_service import register_on_app as register_messenger
+    # register_messenger(app)
 
     def _protected_api_path(path: str) -> bool:
         return (
@@ -213,6 +249,8 @@ def create_app(config_object: str | None = None) -> Flask:
             or path.startswith("/api/correspondence")
             or path.startswith("/api/time")
             or path.startswith("/api/hires")
+            or path.startswith("/api/settings")
+            or path.startswith("/api/admin")
         )
 
     @app.before_request
@@ -275,6 +313,101 @@ def create_app(config_object: str | None = None) -> Flask:
         if cu.user is None:
             return None
         return enforce_module_access_for_path(path, request.method, cu)
+
+    @app.before_request
+    def _enforce_plan_entitlements() -> None:
+        """Thin plan gate: hiring, correspondence, spec split, field API only."""
+        from .api._perms import allow_dev_anonymous_access, current_user
+        from .tenant_settings import module_enabled
+        from .tenancy import current_organization_id
+
+        if request.method == "OPTIONS":
+            return None
+        path = request.path
+        if allow_dev_anonymous_access():
+            return None
+        if path.startswith("/api/public/") or path.startswith("/public/"):
+            return None
+        oid = current_organization_id()
+        if oid is None:
+            return None
+        from .models.organization import Organization
+        from .tenancy import include_all_orgs
+
+        with include_all_orgs():
+            org = db.session.get(Organization, oid)
+        suspended = org is not None and (org.status or "") in ("suspended", "closed")
+        is_settings = path == "/api/settings" or path.startswith("/api/settings/") or path == "/settings" or path.startswith("/settings/")
+        is_overview = path in ("/api/settings/overview", "/settings", "/settings/")
+        if suspended and not is_overview:
+            if request.method not in ("GET", "HEAD") and is_settings:
+                return jsonify({"error": "Organization is suspended. Settings are read-only."}), 403
+            if not is_settings:
+                wants_json = path.startswith("/api/") or "application/json" in (request.headers.get("Accept") or "")
+                msg = "This organization is suspended."
+                if wants_json:
+                    return jsonify({"error": msg}), 403
+                return _plan_empty_html(msg), 403
+        from .api._saas_console import plan_module_for_path
+
+        module = plan_module_for_path(path)
+        if path.startswith("/api/hires") and "/api/public/" not in path:
+            module = "hiring"
+        elif path.startswith("/api/correspondence"):
+            module = "correspondence"
+        elif path.startswith("/api/field"):
+            module = "field"
+        elif "/spec-scan" in path or path.endswith("/spec-book/import") or "/spec-trade-map" in path:
+            module = "spec_split"
+        if module == "local_ai":
+            body = request.get_json(silent=True) or {}
+            provider = str((body or {}).get("provider") or request.args.get("provider") or "").strip().lower()
+            if provider not in ("local", "llama", "ollama"):
+                return None
+        if module is None:
+            return None
+        try:
+            if module_enabled(oid, module):
+                return None
+        except Exception:
+            return None
+        msg = "This module is not on your plan. Ask USIS if you need it."
+        wants_json = path.startswith("/api/") or "application/json" in (request.headers.get("Accept") or "")
+        if wants_json:
+            return jsonify({"error": msg, "module": module}), 403
+        return _plan_empty_html(msg), 403
+
+    @app.before_request
+    def _gate_settings_admin_pages() -> None:
+        path = (request.path or "").rstrip("/") or "/"
+        if request.method == "OPTIONS":
+            return None
+        from .static_shell import saas_console_kind
+
+        kind = saas_console_kind(path)
+        if kind is None:
+            return None
+        from .api._perms import allow_dev_anonymous_access, current_user
+        from .api._saas_admin import SaasError, require_company_admin, require_platform_operator
+
+        if allow_dev_anonymous_access():
+            return None
+        cu = current_user()
+        try:
+            if kind == "admin":
+                require_platform_operator(cu)
+            else:
+                require_company_admin(cu)
+        except SaasError as exc:
+            wants_json = "application/json" in (request.headers.get("Accept") or "")
+            if wants_json or path.startswith("/api/"):
+                return jsonify({"error": exc.message}), exc.status
+            return (
+                "<!doctype html><title>Forbidden</title><p>%s</p>" % exc.message,
+                exc.status,
+                {"Content-Type": "text/html; charset=utf-8"},
+            )
+        return None
 
     @app.before_request
     def _attach_request_id() -> None:
@@ -350,8 +483,10 @@ def create_app(config_object: str | None = None) -> Flask:
         return branded_404()
     _apply_production_middleware(app)
     from .ap._sync_loop import start_invoice_mailbox_sync_loop
+    from .api._correspondence_sync_loop import start_correspondence_mailbox_sync_loop
 
     start_invoice_mailbox_sync_loop(app)
+    start_correspondence_mailbox_sync_loop(app)
     from .services.object_storage import start_b2_cors_ensure, start_b2_disk_replay
 
     start_b2_cors_ensure(app)

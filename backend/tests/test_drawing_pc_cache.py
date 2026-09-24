@@ -242,3 +242,34 @@ def test_takeoff_write_and_skip_when_local_newer(tmp_path: Path, monkeypatch):
     assert json.loads(dest.read_text(encoding="utf-8"))["lines"][0]["description"] == "Newer"
     assert pc_cache.maybe_write_takeoff(None, [newer]) is None
     assert pc_cache.takeoff_path(None) is None
+
+
+def test_material_pricing_cache_row_includes_manufacturer_url():
+    row = pc_cache.material_pricing_cache_row(
+        SimpleNamespace(
+            id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            manufacturer="Bradley",
+            manufacturer_url="https://bradleycorp.com/8324",
+            item="8324",
+            category="Specialties",
+            csi_spec_section="10 28 13",
+            description="grab bar",
+            mounting_type=None,
+            cost=None,
+            labor_per=None,
+            labor_units_per_hour=None,
+            labor_rate_unit=None,
+            size_width_in=None,
+            size_height_in=None,
+            size_depth_in=None,
+            currency="USD",
+            unit_of_measure="EA",
+            supplier_company_id=None,
+            supplier_company=None,
+            created_at=None,
+            updated_at=None,
+            configurator_key=None,
+        )
+    )
+    assert row["manufacturerUrl"] == "https://bradleycorp.com/8324"
+    assert row["productUrl"] == "https://bradleycorp.com/8324"

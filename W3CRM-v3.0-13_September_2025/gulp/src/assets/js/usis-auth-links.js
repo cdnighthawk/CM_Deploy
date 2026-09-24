@@ -74,6 +74,93 @@
 		});
 	}
 
+	function wireOrgSwitcher(body, base) {
+		var orgs = (body && body.organizations) || [];
+		var current = (body && body.current_organization_id) || "";
+		var wraps = document.querySelectorAll(".usis-org-switcher-wrap");
+		var selects = document.querySelectorAll(".usis-org-switcher");
+		var mustPick = !!(body && body.needs_organization_pick && orgs.length > 1 && !current);
+		if (!orgs.length) {
+			wraps.forEach(function (el) {
+				el.classList.add("d-none");
+			});
+			return;
+		}
+		wraps.forEach(function (el) {
+			el.classList.remove("d-none");
+		});
+		selects.forEach(function (sel) {
+			sel.disabled = orgs.length < 2;
+			if (sel.getAttribute("data-usis-org-wired") === "1") {
+				sel.value = current;
+				return;
+			}
+			sel.innerHTML = "";
+			if (mustPick) {
+				var blank = document.createElement("option");
+				blank.value = "";
+				blank.textContent = "Select company";
+				sel.appendChild(blank);
+			}
+			orgs.forEach(function (o) {
+				var opt = document.createElement("option");
+				opt.value = o.id;
+				opt.textContent = o.name || o.slug || o.id;
+				if (String(o.id) === String(current)) opt.selected = true;
+				sel.appendChild(opt);
+			});
+			sel.setAttribute("data-usis-org-wired", "1");
+			sel.addEventListener("change", function () {
+				var id = sel.value;
+				if (!id || String(id) === String(current)) return;
+				fetch(base + "/api/v1/auth/organization", {
+					method: "POST",
+					credentials: "include",
+					headers: { Accept: "application/json", "Content-Type": "application/json" },
+					body: JSON.stringify({ organization_id: id }),
+				}).then(function (res) {
+					if (res.ok) window.location.reload();
+				});
+			});
+		});
+	}
+
+	function wireImpersonationBanner(body, base) {
+		var imp = body && body.impersonation;
+		var existing = document.getElementById("usis-impersonation-banner");
+		if (!imp || !imp.active) {
+			if (existing) existing.remove();
+			return;
+		}
+		if (!existing) {
+			existing = document.createElement("div");
+			existing.id = "usis-impersonation-banner";
+			existing.className = "usis-impersonation-banner";
+			existing.setAttribute("role", "status");
+			var wrap = document.getElementById("main-wrapper") || document.body;
+			wrap.insertBefore(existing, wrap.firstChild);
+		}
+		existing.innerHTML =
+			'<span>Viewing as ' +
+			String(imp.target_user_name || "Company Admin").replace(/</g, "&lt;") +
+			" @ " +
+			String(imp.tenant_name || "tenant").replace(/</g, "&lt;") +
+			' — </span><button type="button" class="btn btn-sm btn-light" id="usis-impersonation-end">End session</button>';
+		var btn = document.getElementById("usis-impersonation-end");
+		if (btn) {
+			btn.onclick = function () {
+				fetch(base + "/api/admin/impersonate/end", {
+					method: "POST",
+					credentials: "include",
+					headers: { Accept: "application/json", "Content-Type": "application/json" },
+					body: "{}",
+				}).then(function () {
+					window.location.href = "/admin";
+				});
+			};
+		}
+	}
+
 	function refreshSessionHeaderDisplay() {
 		var base = apiBase();
 		fetch(base + "/api/v1/auth/status", {
@@ -117,6 +204,8 @@
 					el.textContent = email || username || "—";
 				});
 				setHeaderInitials(headerInitials(u));
+				wireOrgSwitcher(body, base);
+				wireImpersonationBanner(body, base);
 			})
 			.catch(function () {
 				/* ignore */

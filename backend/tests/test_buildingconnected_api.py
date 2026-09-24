@@ -93,16 +93,159 @@ def test_bc_oauth_callback_persists_tokens(monkeypatch, client, flask_app):
         assert b"usis-bc-oauth" in r.data
         assert b"Back to Leads" in r.data
         with flask_app.app_context():
-            row = db.session.get(BuildingConnectedOAuthToken, "default")
+            row = db.session.scalar(select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == "default"))
             assert row is not None
             assert row.access_token == "at-test"
             assert _integration_bc._decrypt_refresh(row.refresh_token_encrypted) == "rt-test"
     finally:
         with flask_app.app_context():
-            row = db.session.get(BuildingConnectedOAuthToken, "default")
+            row = db.session.scalar(select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == "default"))
             if row is not None:
                 db.session.delete(row)
                 db.session.commit()
+
+
+def test_bc_status_disconnected(client, flask_app):
+    _skip_if_no_bc_table(flask_app)
+    r = client.get("/api/v1/integrations/buildingconnected/status")
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body.get("entity") == "buildingconnected_status"
+    assert "connected" in body
+    assert "oauth_start_url" in body
+
+
+def test_bc_oauth_persists_token_to_requested_org(monkeypatch, client, flask_app):
+    _skip_if_no_bc_table(flask_app)
+    from sqlalchemy.exc import ProgrammingError
+
+    from app.tenancy import ensure_usis_organization, include_all_orgs, provision_organization
+
+    flask_app.config["AUTODESK_CLIENT_ID"] = "cid"
+    flask_app.config["AUTODESK_CLIENT_SECRET"] = "sec"
+    flask_app.config["AUTODESK_OAUTH_REDIRECT_URI"] = "http://127.0.0.1/cb"
+    flask_app.config["SECRET_KEY"] = "unit-test-secret-key-not-for-production-use"
+
+    def fake_exchange(**kwargs):
+        return {
+            "access_token": "at-org",
+            "refresh_token": "rt-org",
+            "expires_in": 3600,
+        }
+
+    monkeypatch.setattr(_integration_bc, "exchange_authorization_code", fake_exchange)
+
+    token = uuid.uuid4().hex[:8]
+    org_id = None
+    try:
+        with flask_app.app_context():
+            try:
+                ensure_usis_organization()
+                org = provision_organization(name=f"BC Setup {token}", copy_catalog=False)
+                db.session.commit()
+            except (OperationalError, ProgrammingError) as exc:
+                pytest.skip(f"organizations schema missing: {exc}")
+            org_id = org.id
+
+        start = client.get(
+            f"/api/v1/integrations/buildingconnected/oauth/start?organization_id={org_id}"
+            "&return_to=/usis-platform-contractors.html",
+            follow_redirects=False,
+        )
+        assert start.status_code == 302
+        with client.session_transaction() as sess:
+            assert sess.get(_integration_bc.BC_OAUTH_ORG_KEY) == str(org_id)
+            assert sess.get(_integration_bc.BC_OAUTH_RETURN_KEY) == "/usis-platform-contractors.html"
+            nonce = sess.get(_integration_bc.BC_OAUTH_STATE_KEY)
+        assert nonce
+
+        r = client.get(
+            f"/api/v1/integrations/buildingconnected/oauth/callback?code=ccode&state={nonce}",
+            follow_redirects=False,
+        )
+        assert r.status_code == 200
+        assert b"BuildingConnected is connected" in r.data
+        assert b"Back to Contractors" in r.data
+
+        with flask_app.app_context():
+            with include_all_orgs():
+                row = db.session.scalar(
+                    select(BuildingConnectedOAuthToken).where(
+                        BuildingConnectedOAuthToken.organization_id == org_id,
+                        BuildingConnectedOAuthToken.label == "default",
+                    )
+                )
+            assert row is not None
+            assert row.access_token == "at-org"
+            assert _integration_bc._decrypt_refresh(row.refresh_token_encrypted) == "rt-org"
+
+        status = client.get(f"/api/v1/integrations/buildingconnected/status?organization_id={org_id}")
+        assert status.status_code == 200
+        assert status.get_json().get("connected") is True
+        assert status.get_json().get("organization_id") == str(org_id)
+    finally:
+        if org_id is not None:
+            with flask_app.app_context():
+                from app.tenancy import include_all_orgs as _all
+
+                with _all():
+                    row = db.session.scalar(
+                        select(BuildingConnectedOAuthToken).where(
+                            BuildingConnectedOAuthToken.organization_id == org_id,
+                            BuildingConnectedOAuthToken.label == "default",
+                        )
+                    )
+                    if row is not None:
+                        db.session.delete(row)
+                    db.session.commit()
+
+
+def test_bc_oauth_start_rejects_foreign_org(client, flask_app, monkeypatch):
+    _skip_if_no_bc_table(flask_app)
+    from sqlalchemy.exc import ProgrammingError
+    from werkzeug.security import generate_password_hash
+
+    from app.models import User
+    from app.tenancy import add_member, ensure_usis_organization, provision_organization
+
+    monkeypatch.setenv("USIS_API_DEV_ALLOW_ANY", "0")
+    flask_app.config["AUTODESK_CLIENT_ID"] = "cid"
+    flask_app.config["AUTODESK_OAUTH_REDIRECT_URI"] = "http://127.0.0.1/cb"
+    token = uuid.uuid4().hex[:8]
+    email = f"bc_foreign_{token}@t.com"
+    try:
+        with flask_app.app_context():
+            try:
+                usis = ensure_usis_organization()
+                other = provision_organization(name=f"Other Co {token}", copy_catalog=False)
+                u = User(
+                    email=email,
+                    password_hash=generate_password_hash("bc-pw"),
+                    is_active=True,
+                    is_superuser=False,
+                )
+                db.session.add(u)
+                db.session.flush()
+                add_member(u.id, usis.id)
+                db.session.commit()
+            except (OperationalError, ProgrammingError) as exc:
+                pytest.skip(f"organizations schema missing: {exc}")
+            other_id = other.id
+
+        login = client.post(
+            "/auth/login",
+            data={"email": email, "password": "bc-pw"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 302
+        r = client.get(
+            f"/api/v1/integrations/buildingconnected/oauth/start?organization_id={other_id}",
+            follow_redirects=False,
+        )
+        assert r.status_code == 403
+        assert b"cannot connect BuildingConnected" in r.data
+    finally:
+        client.get("/auth/logout")
 
 
 def test_bc_sync_disabled_returns_403(client, flask_app):
@@ -199,7 +342,7 @@ def test_bc_sync_upserts_lead_estimates(monkeypatch, client, flask_app):
             assert row is not None
     finally:
         with flask_app.app_context():
-            tok = db.session.get(BuildingConnectedOAuthToken, "default")
+            tok = db.session.scalar(select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == "default"))
             if tok is not None:
                 db.session.delete(tok)
             for le in db.session.scalars(
@@ -570,6 +713,21 @@ def test_estimate_ui_filter_excludes_grouped_children():
     assert queue_sql == sql
 
 
+def test_all_ui_filter_keeps_past_due():
+    from sqlalchemy.dialects import postgresql
+
+    from app.api._lead_estimate_queries import lead_estimates_ui_filter
+
+    sql = str(
+        lead_estimates_ui_filter("all").compile(
+            dialect=postgresql.dialect(),
+            compile_kwargs={"literal_binds": True},
+        )
+    ).lower()
+    assert "child" in sql
+    assert "due_at" not in sql or sql.count("due_at") == 0
+
+
 def test_submitted_ui_filter_keeps_past_due():
     from sqlalchemy.dialects import postgresql
 
@@ -620,6 +778,10 @@ def test_group_summary_for_lead_roles(monkeypatch):
         due_at=None,
         source=None,
         crm_stage="New Lead",
+        market_sector=None,
+        expected_start_at=None,
+        final_value=None,
+        rom=None,
         win_probability=None,
         members=None,
         bc_updated_at=None,
@@ -646,6 +808,10 @@ def test_group_summary_for_lead_roles(monkeypatch):
         due_at=None,
         source=None,
         crm_stage="New Lead",
+        market_sector=None,
+        expected_start_at=None,
+        final_value=None,
+        rom=None,
         win_probability=None,
         members=None,
         bc_updated_at=None,

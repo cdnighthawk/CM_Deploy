@@ -22,10 +22,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class Location(UUIDPKMixin, TimestampMixin, db.Model):
+class Location(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_locations"
     __table_args__ = (UniqueConstraint("project_id", "path", name="uq_rfi_locations_project_path"),)
 
@@ -45,7 +45,7 @@ class Location(UUIDPKMixin, TimestampMixin, db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class SpecSection(UUIDPKMixin, TimestampMixin, db.Model):
+class SpecSection(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_spec_sections"
     __table_args__ = (UniqueConstraint("project_id", "code", name="uq_rfi_spec_sections_project_code"),)
 
@@ -62,7 +62,7 @@ class SpecSection(UUIDPKMixin, TimestampMixin, db.Model):
     pdf_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
 
 
-class CostCode(UUIDPKMixin, TimestampMixin, db.Model):
+class CostCode(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_cost_codes"
     __table_args__ = (UniqueConstraint("project_id", "code", name="uq_rfi_cost_codes_project_code"),)
 
@@ -102,7 +102,7 @@ class CostCode(UUIDPKMixin, TimestampMixin, db.Model):
     equipment_hour_budget: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
 
 
-class ProjectStage(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectStage(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_project_stages"
     __table_args__ = (UniqueConstraint("project_id", "code", name="uq_rfi_project_stages_project_code"),)
 
@@ -119,7 +119,7 @@ class ProjectStage(UUIDPKMixin, TimestampMixin, db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class SubJob(UUIDPKMixin, TimestampMixin, db.Model):
+class SubJob(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfi_sub_jobs"
     __table_args__ = (UniqueConstraint("project_id", "code", name="uq_rfi_sub_jobs_project_code"),)
 

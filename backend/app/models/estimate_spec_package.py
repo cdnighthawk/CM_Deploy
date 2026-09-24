@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 SCAN_STATUSES = (
     "detecting",
@@ -33,7 +33,7 @@ MATCH_STATUSES = ("unmatched", "family_matched", "sku_matched", "needs_configura
 VENDOR_REASONS = ("bod_house", "listed_alternate", "past_award", "trade_tag", "manual")
 
 
-class SpecTradeMap(UUIDPKMixin, TimestampMixin, db.Model):
+class SpecTradeMap(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Office allow-list of CSI prefixes USIS actually bids."""
 
     __tablename__ = "spec_trade_map"
@@ -46,9 +46,10 @@ class SpecTradeMap(UUIDPKMixin, TimestampMixin, db.Model):
         Boolean, nullable=False, default=True, server_default="true"
     )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    trade_group: Mapped[Optional[str]] = mapped_column(String(40), nullable=True, index=True)
 
 
-class EstimateSpecScan(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateSpecScan(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_spec_scans"
 
     estimate_id: Mapped[uuid.UUID] = mapped_column(
@@ -89,7 +90,7 @@ class EstimateSpecScan(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class EstimateSpecSection(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateSpecSection(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_spec_sections"
 
     scan_id: Mapped[uuid.UUID] = mapped_column(
@@ -128,7 +129,7 @@ class EstimateSpecSection(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class EstimateSpecMention(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateSpecMention(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_spec_mentions"
 
     section_id: Mapped[uuid.UUID] = mapped_column(
@@ -162,7 +163,7 @@ class EstimateSpecMention(UUIDPKMixin, TimestampMixin, db.Model):
     section: Mapped["EstimateSpecSection"] = relationship(back_populates="mentions")
 
 
-class EstimateSpecVendor(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateSpecVendor(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_spec_vendors"
 
     scan_id: Mapped[uuid.UUID] = mapped_column(

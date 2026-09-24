@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .takeoff_line_item import TakeoffLineItem
 
 
-class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
+class Estimate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimates"
 
     lead_estimate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -45,6 +45,7 @@ class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     bid_location: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    labor_rates: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
     due_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True, comment="Target due date for this estimate version"
@@ -92,6 +93,14 @@ class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
         nullable=True,
         index=True,
     )
+    folder_provision_status: Mapped[Optional[str]] = mapped_column(
+        String(32), nullable=True, index=True
+    )
+    folder_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    folder_provisioned_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    folder_provision_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     lead_estimate: Mapped[Optional["LeadEstimate"]] = relationship(
         "LeadEstimate",
@@ -130,7 +139,7 @@ class Estimate(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class EstimateLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_line_items"
 
     estimate_id: Mapped[uuid.UUID] = mapped_column(

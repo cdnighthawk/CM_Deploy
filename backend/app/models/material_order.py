@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .commitment import Commitment
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .project import Project
 
 
-class ProjectMaterialOrder(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectMaterialOrder(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "project_material_orders"
 
     project_id: Mapped[uuid.UUID] = mapped_column(

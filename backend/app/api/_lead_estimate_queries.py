@@ -195,9 +195,12 @@ def lead_estimates_ui_filter(submission_state: str) -> Any:
     if not st_in:
         raise ValueError("submission_state cannot be empty")
     board_ok = and_(_not_archived_or_declined(), _not_grouped_child())
-    norm_sql = submission_state_norm_sql()
     norms = [submission_state_norm_param(p) for p in st_in.split(",") if p.strip()]
-    state_ok = _explicit_state_ok(norm_sql, norms)
+    if not norms:
+        raise ValueError("submission_state has no valid tokens")
+    if len(norms) == 1 and norms[0] == "all":
+        return board_ok
+    state_ok = _explicit_state_ok(submission_state_norm_sql(), norms)
 
     if len(norms) == 1 and norms[0] in ("undecided", "willsubmit"):
         return and_(state_ok, board_ok, _has_open_due_date())
@@ -213,11 +216,12 @@ def lead_estimates_ui_filter_relaxed(submission_state: str, *, include_closed: b
         board_ok = _not_grouped_child()
     else:
         board_ok = and_(_not_archived_or_declined(), _not_grouped_child())
-    norm_sql = submission_state_norm_sql()
     norms = [submission_state_norm_param(p) for p in st_in.split(",") if p.strip()]
-    state_ok = _explicit_state_ok(norm_sql, norms)
-    if include_closed:
+    if not norms:
+        raise ValueError("submission_state has no valid tokens")
+    if include_closed or (len(norms) == 1 and norms[0] == "all"):
         return and_(board_ok)
+    state_ok = _explicit_state_ok(submission_state_norm_sql(), norms)
     if (not skip_open_due) and len(norms) == 1 and norms[0] in ("undecided", "willsubmit"):
         return and_(state_ok, board_ok, _has_open_due_date())
     return and_(state_ok, board_ok)

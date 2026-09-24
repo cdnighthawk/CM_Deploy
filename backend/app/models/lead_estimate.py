@@ -9,17 +9,20 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 from .auth import User
 
 
-class LeadEstimate(UUIDPKMixin, TimestampMixin, db.Model):
+class LeadEstimate(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "lead_estimates"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "external_id", name="uq_lead_estimates_org_external_id"),
+    )
 
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
@@ -31,7 +34,7 @@ class LeadEstimate(UUIDPKMixin, TimestampMixin, db.Model):
     project = relationship("Project", foreign_keys=[project_id])
 
     external_id: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, index=True, comment="CSV id"
+        String(64), nullable=False, index=True, comment="CSV id"
     )
     external_parent_id: Mapped[Optional[str]] = mapped_column(
         String(64), nullable=True, index=True, comment="CSV parentId"

@@ -78,6 +78,10 @@ LA = ZoneInfo("America/Los_Angeles")
 PROCESS_NEW_HIRE = "new_hire"
 SUBJECT_HIRE = "hire_packet"
 
+
+def _hire_setting_row(key: str) -> HireCompanySetting | None:
+    return db.session.scalar(select(HireCompanySetting).where(HireCompanySetting.key == key))
+
 _PUBLIC_FORBIDDEN = frozenset(
     {
         "user_id",
@@ -219,7 +223,7 @@ def i9_section2_due(start: date | None) -> date | None:
 
 def setting(key: str, default: str = "") -> str:
     ensure_settings()
-    row = db.session.get(HireCompanySetting, key)
+    row = _hire_setting_row(key)
     if row is None or not row.value_text:
         return default
     if row.is_secret:
@@ -232,7 +236,7 @@ def setting(key: str, default: str = "") -> str:
 
 def ensure_settings() -> None:
     for key, (val, secret) in DEFAULT_SETTINGS.items():
-        row = db.session.get(HireCompanySetting, key)
+        row = _hire_setting_row(key)
         if row is None:
             stored = encrypt_str(val) if secret and val else val
             db.session.add(HireCompanySetting(key=key, value_text=stored, is_secret=secret))
@@ -243,7 +247,7 @@ def get_settings_public(*, reveal_secrets: bool = False) -> dict[str, Any]:
     ensure_settings()
     out: dict[str, Any] = {}
     for key, (_val, secret) in DEFAULT_SETTINGS.items():
-        row = db.session.get(HireCompanySetting, key)
+        row = _hire_setting_row(key)
         raw = row.value_text if row else ""
         if secret:
             plain = ""
@@ -268,7 +272,7 @@ def patch_settings(data: dict[str, Any], cu: CurrentUser) -> dict[str, Any]:
     for key, (_val, secret) in DEFAULT_SETTINGS.items():
         if key not in data:
             continue
-        row = db.session.get(HireCompanySetting, key)
+        row = _hire_setting_row(key)
         if row is None:
             row = HireCompanySetting(key=key, is_secret=secret)
             db.session.add(row)
@@ -839,6 +843,7 @@ def _send_invite_email(packet: HirePacket, raw_token: str) -> None:
         job_title=packet.job_title,
         start_of_work_date=packet.start_of_work_date,
         url=url,
+        eagle_url=f"{_public_origin()}/assets/images/branding/usis-eagle-logo.png",
     )
     text = render_template(
         "email/hire_invite.txt",
@@ -956,9 +961,13 @@ def packet_by_token(token: str) -> HirePacket:
     if len(raw) < 16:
         raise HireApiError("packet not found", 404)
     hashed = hash_token(raw)
-    row = db.session.scalars(_packet_query().where(HirePacket.public_token_hash == hashed)).first()
+    from ..tenancy import bind_request_organization, include_all_orgs
+
+    with include_all_orgs():
+        row = db.session.scalars(_packet_query().where(HirePacket.public_token_hash == hashed)).first()
     if row is None:
         raise HireApiError("packet not found", 404)
+    bind_request_organization(row.organization_id)
     if row.stage == "void":
         raise HireApiError("packet not found", 404)
     if row.locked_at:
@@ -1717,9 +1726,9 @@ def send_login(packet: HirePacket, cu: CurrentUser) -> dict[str, Any]:
     url = f"{origin}/page-login.html?reset={raw}"
     send_html_notification_email(
         to=user.email,
-        subject="USIS CM login",
+        subject="USIS login",
         body=f"Set your password:\n{url}\n",
-        html_body=f"<p>Set your password to use USIS CM and FinishWorks Field after your start date.</p><p><a href='{url}'>Set password</a></p>",
+        html_body=f"<p>Set your password to use USIS and FinishWorks Field after your start date.</p><p><a href='{url}'>Set password</a></p>",
         from_addr=setting("hire_mail_from", "hr@gousis.com"),
         bcc=setting("hire_mail_from", "hr@gousis.com"),
     )

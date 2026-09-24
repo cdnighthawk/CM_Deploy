@@ -41,6 +41,51 @@
 		applyToEl(doc.body, theme);
 	}
 
+	var PRODUCT_ICON = "/assets/images/branding/worx-cm-icon.svg";
+
+	function applyWordmark(doc) {
+		if (!doc) {
+			return;
+		}
+		var titles = doc.querySelectorAll(".usis-logo-title");
+		var i;
+		var el;
+		var src;
+		for (i = 0; i < titles.length; i++) {
+			el = titles[i];
+			if (el.getAttribute("data-usis-wordmark") === "1") {
+				continue;
+			}
+			el.setAttribute("data-usis-wordmark", "1");
+			el.classList.add("usis-wordmark");
+			el.innerHTML =
+				'<span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span>';
+		}
+		var logos = doc.querySelectorAll(".usis-brand-logo");
+		for (i = 0; i < logos.length; i++) {
+			logos[i].setAttribute("aria-label", "WorX CM");
+		}
+		var marks = doc.querySelectorAll(
+			".usis-logo-mark, .usis-product-logo-mark, #usis-login-staff .usis-login-logo"
+		);
+		for (i = 0; i < marks.length; i++) {
+			el = marks[i];
+			if (!el || el.classList.contains("usis-public-logo-mark")) {
+				continue;
+			}
+			src = el.getAttribute("src") || "";
+			if (src.indexOf("worx-cm-icon") === -1) {
+				el.setAttribute("src", PRODUCT_ICON);
+			}
+			el.setAttribute("alt", "WorX CM");
+		}
+		var icons = doc.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]');
+		for (i = 0; i < icons.length; i++) {
+			icons[i].setAttribute("href", PRODUCT_ICON);
+			icons[i].setAttribute("type", "image/svg+xml");
+		}
+	}
+
 	function ensureUiCss() {
 		var doc = global.document;
 		if (!doc || !doc.head) {
@@ -53,8 +98,9 @@
 		}
 		var link = doc.createElement("link");
 		link.rel = "stylesheet";
-		link.href = "assets/css/usis-ui.css?v=20260906e";
+		link.href = "/assets/css/usis-ui.css?v=20260921b";
 		doc.head.appendChild(link);
+		applyWordmark(doc);
 	}
 
 	var theme = resolveTheme();

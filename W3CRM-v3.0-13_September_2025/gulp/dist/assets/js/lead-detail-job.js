@@ -281,10 +281,10 @@
 		el.classList.remove("d-none");
 		var linkId = item.external_id || item.id;
 		var linkEnc = encodeURIComponent(String(linkId));
-		var estimateId = item.current_estimate_id || null;
+		var estimateId = item.current_estimate_id || item.primary_estimate_id || null;
 		var estHref = estimateId
-			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
-			: "construction/estimate-detail.html?id=" + linkEnc;
+			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId) + "&from=leads&lead_id=" + linkEnc
+			: "construction/estimate-detail.html?id=" + linkEnc + "&from=leads";
 		var quoteHref = estimateId
 			? apiBase() + "/api/v1/estimates/" + encodeURIComponent(estimateId) + "/render/quote-report"
 			: apiBase() + "/api/v1/lead-estimates/" + linkEnc + "/render/quote-report";

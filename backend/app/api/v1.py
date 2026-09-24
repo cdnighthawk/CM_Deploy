@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import uuid
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Mapping
 
 from flask import Blueprint, Response, current_app, jsonify, request, send_file, stream_with_context
-from sqlalchemy import and_, func, literal, or_, select
+from sqlalchemy import String, and_, cast, func, literal, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
@@ -59,6 +60,7 @@ from . import _issue_service as issue_svc
 from . import _project_schedule_service as project_schedule_svc
 from . import _rfi_service as rfi_svc
 from . import _cost_code_service as cost_code_svc
+from . import _wage_rate_service as wage_rate_svc
 from . import _material_order_service as material_order_svc
 from . import _procurement_lookup_service as proc_lookup_svc
 from . import _project_members_service as project_members_svc
@@ -121,6 +123,59 @@ def client_debug_log():
     return jsonify({"ok": True})
 
 
+def _org_status_fields(user) -> dict[str, Any]:
+    from ..tenancy import (
+        current_organization_id,
+        organization_public,
+        organizations_for_user,
+    )
+
+    orgs = organizations_for_user(user.id) if user is not None else []
+    current = current_organization_id()
+    current_pub = None
+    if current is not None:
+        for o in orgs:
+            if o.id == current:
+                current_pub = organization_public(o)
+                break
+    return {
+        "organizations": [organization_public(o) for o in orgs],
+        "current_organization_id": str(current) if current else None,
+        "current_organization": current_pub,
+        "needs_organization_pick": user is not None and current is None and len(orgs) > 1,
+        "can_create_organization": bool(current_app.config.get("USIS_ALLOW_COMPANY_SELF_SIGNUP")),
+    }
+
+
+def _impersonation_status_fields() -> dict[str, Any]:
+    from flask import session as flask_session
+
+    from ..models.organization import Organization
+    from ..models.saas import ImpersonationSession
+    from ..tenancy import include_all_orgs
+
+    raw = flask_session.get("impersonation_id") if flask_session else None
+    if not raw:
+        return {"impersonation": None}
+    try:
+        sid = uuid.UUID(str(raw))
+    except (TypeError, ValueError):
+        return {"impersonation": None}
+    with include_all_orgs():
+        row = db.session.get(ImpersonationSession, sid)
+        if row is None or row.ended_at is not None:
+            return {"impersonation": None}
+        org = db.session.get(Organization, row.organization_id)
+    return {
+        "impersonation": {
+            "active": True,
+            "banner": True,
+            "tenant_id": str(row.organization_id),
+            "tenant_name": (org.legal_name or org.name) if org is not None else "tenant",
+        }
+    }
+
+
 @bp.get("/auth/status")
 def auth_status():
     """Return whether the browser session is signed in (``session['user_id']``)."""
@@ -145,6 +200,7 @@ def auth_status():
                         "first_name": "Local",
                         "last_name": "Dev",
                     },
+                    **_org_status_fields(None),
                 }
             )
         return _jsonify(
@@ -153,6 +209,7 @@ def auth_status():
                 "user": None,
                 "microsoft_sso_enabled": ms_on,
                 "self_register_enabled": allow_register,
+                "can_create_organization": bool(current_app.config.get("USIS_ALLOW_COMPANY_SELF_SIGNUP")),
             }
         )
     u = cu.user
@@ -171,7 +228,11 @@ def auth_status():
                 "username": u.username,
                 "first_name": u.first_name,
                 "last_name": u.last_name,
+                "is_platform_operator": bool(getattr(u, "is_platform_operator", False)),
             },
+            "is_platform_operator": bool(getattr(u, "is_platform_operator", False)),
+            **_org_status_fields(u),
+            **_impersonation_status_fields(),
         }
     )
 
@@ -222,7 +283,12 @@ def auth_register():
     db.session.add(u)
     db.session.flush()
     from ..permissions.applicant import assign_applicant_role
+    from ..tenancy import add_member, ensure_usis_organization, set_current_organization_id
+    from ..models.organization import ORG_ROLE_MEMBER
 
+    usis = ensure_usis_organization()
+    add_member(u.id, usis.id, ORG_ROLE_MEMBER)
+    set_current_organization_id(usis.id)
     assign_applicant_role(u)
     db.session.commit()
 
@@ -243,6 +309,31 @@ def auth_register():
             },
         }
     ), 201
+
+
+@bp.post("/auth/organization")
+def auth_switch_organization():
+    """Set the current organization for this session (company switcher)."""
+    cu = current_user()
+    if cu.user is None:
+        return _jsonify({"error": "authentication required"}), 401
+    body = request.get_json(silent=True) or {}
+    raw = body.get("organization_id") or body.get("id")
+    from ..tenancy import bind_organization_for_user, current_organization_id, user_is_member
+
+    try:
+        oid = uuid.UUID(str(raw).strip())
+    except (TypeError, ValueError, AttributeError):
+        return _jsonify({"error": "organization_id is required"}), 400
+    if not user_is_member(cu.user.id, oid):
+        return _jsonify({"error": "not a member of that organization"}), 403
+    bind_organization_for_user(cu.user.id, preferred=oid)
+    return _jsonify(
+        {
+            "ok": True,
+            "current_organization_id": str(current_organization_id()) if current_organization_id() else None,
+        }
+    )
 
 
 @bp.post("/auth/password-reset/request")
@@ -860,12 +951,103 @@ def ensure_lead_workspace_project(row: LeadEstimate, cu) -> Project:
     return proj
 
 
-def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
+def _material_size_fields(m: MaterialPrice) -> dict[str, Any]:
+    from ..material_size import sheet_area_sf, size_display
+
+    return {
+        "size_width_in": _num_or_none(m.size_width_in),
+        "size_height_in": _num_or_none(m.size_height_in),
+        "size_depth_in": _num_or_none(m.size_depth_in),
+        "size_display": size_display(m.size_width_in, m.size_height_in, m.size_depth_in),
+        "sheet_area_sf": sheet_area_sf(m.size_width_in, m.size_height_in),
+    }
+
+
+def _material_configurator_fields(m: MaterialPrice) -> dict[str, Any]:
+    from ..material_configurator import public_schema
+
+    key = getattr(m, "configurator_key", None)
+    return {
+        "configurator_key": key or None,
+        "configurator": public_schema(key),
+    }
+
+
+def _apply_takeoff_configuration(t: TakeoffLineItem, data: Mapping[str, Any]) -> None:
+    if "configuration" not in data and "configuration_json" not in data:
+        return
+    raw = data.get("configuration")
+    if "configuration" not in data:
+        raw = data.get("configuration_json")
+    if raw is None or raw == "":
+        t.configuration_json = None
+        return
+    if not isinstance(raw, dict):
+        raise ValueError("configuration must be a JSON object")
+    mp = t.material_price
+    if mp is None and t.material_pricing_id is not None:
+        mp = db.session.get(MaterialPrice, t.material_pricing_id)
+        t.material_price = mp
+    if mp is None:
+        raise ValueError("configuration requires a catalog item")
+    key = getattr(mp, "configurator_key", None)
+    if not key:
+        raise ValueError("catalog item is not configurable")
+    from ..material_configurator import resolve_configuration
+
+    resolved = resolve_configuration(
+        manufacturer=mp.manufacturer,
+        item=mp.item,
+        mounting_type=mp.mounting_type,
+        base_cost=mp.cost,
+        configurator_key=key,
+        selections=raw,
+    )
+    t.configuration_json = resolved.snapshot
+    t.unit_cost = resolved.unit_cost
+    t.description = resolved.description[:500]
+
+
+def _takeoff_material_catalog(t: TakeoffLineItem, mp: MaterialPrice) -> dict[str, Any]:
+    from ..material_labor import labor_hours_for_takeoff
+    from ..material_size import suggested_sheet_count
+
+    hours = labor_hours_for_takeoff(
+        t.quantity,
+        t.unit,
+        catalog_uom=mp.unit_of_measure,
+        labor_per=mp.labor_per,
+        units_per_hour=mp.labor_units_per_hour,
+        rate_unit=mp.labor_rate_unit,
+        size_width_in=mp.size_width_in,
+        size_height_in=mp.size_height_in,
+    )
+    return {
+        "id": str(mp.id),
+        "manufacturer": mp.manufacturer,
+        "item": mp.item,
+        "category": mp.category,
+        **_material_size_fields(mp),
+        "suggested_sheets": suggested_sheet_count(
+            t.quantity, t.unit, mp.size_width_in, mp.size_height_in
+        ),
+        "labor_hours": _num_or_none(hours),
+        "labor_units_per_hour": _num_or_none(mp.labor_units_per_hour),
+        "labor_rate_unit": mp.labor_rate_unit,
+        **_material_supplier_fields(mp),
+        **_material_configurator_fields(mp),
+    }
+
+
+def _takeoff_line_public(t: TakeoffLineItem, *, labor_rates: dict[str, Any] | None = None) -> dict[str, Any]:
     mat_cat = None
     if t.material_pricing_id is not None:
         mp = t.material_price
         if mp is not None:
-            mat_cat = {"id": str(mp.id), "manufacturer": mp.manufacturer, "item": mp.item}
+            mat_cat = _takeoff_material_catalog(t, mp)
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
+    labor = labor_rate_svc.line_labor_public(t, labor_rates)
     return {
         "id": str(t.id),
         "lead_estimate_id": str(t.lead_estimate_id) if t.lead_estimate_id else None,
@@ -885,12 +1067,18 @@ def _takeoff_line_public(t: TakeoffLineItem) -> dict[str, Any]:
         "version": t.version,
         "drawing_id": str(t.drawing_id) if t.drawing_id else None,
         "measurement_data": t.measurement_data,
+        "configuration": t.configuration_json,
         "takeoff_location": t.takeoff_location,
         "material_pricing_id": str(t.material_pricing_id) if t.material_pricing_id else None,
         "material_catalog": mat_cat,
         "estimate_id": str(t.estimate_id) if t.estimate_id else None,
         "door_opening_id": str(t.door_opening_id) if t.door_opening_id else None,
         "line_role": t.line_role,
+        "source_kind": getattr(t, "source_kind", None),
+        "wage_rate_id": labor.get("wage_rate_id"),
+        "labor_crew": labor.get("labor_crew") or [],
+        "labor_trade": labor.get("labor_trade"),
+        "labor_rate_hourly": labor.get("labor_rate_hourly"),
         "created_at": _iso(t.created_at),
         "updated_at": _iso(t.updated_at),
     }
@@ -1024,18 +1212,22 @@ def _lead_estimate_detail(row: LeadEstimate, estimate: Estimate | None = None) -
     else:
         out["estimate_approved_by_email"] = None
     scoped = estimate or est_svc.current_estimate_for_lead(row)
+    labor_rates = None
     if scoped is not None:
         est_svc.overlay_estimate_on_lead_detail(out, scoped)
         lines = est_svc.takeoff_lines_for_estimate(scoped.id)
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        labor_rates = labor_rate_svc.labor_rates_public(scoped)
     else:
         out["current_estimate_id"] = None
         lines = db.session.scalars(
             select(TakeoffLineItem)
             .where(TakeoffLineItem.lead_estimate_id == row.id)
             .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-            .options(joinedload(TakeoffLineItem.material_price))
+            .options(joinedload(TakeoffLineItem.material_price).joinedload(MaterialPrice.supplier_company))
         ).all()
-    out["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
+    out["takeoff_lines"] = [_takeoff_line_public(x, labor_rates=labor_rates) for x in lines]
     out["takeoff_line_count"] = len(lines)
     return out
 
@@ -1136,6 +1328,10 @@ def _apply_takeoff_payload(t: TakeoffLineItem, data: Mapping[str, Any], *, parti
         t.takeoff_location = (str(v).strip()[:500] or None) if v is not None else None
         if "material_pricing_id" in data:
             _apply_takeoff_material_pricing_fk(t, data.get("material_pricing_id"))
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
+    labor_rate_svc.apply_takeoff_labor(t, data, partial=partial)
+    _apply_takeoff_configuration(t, data)
     t.extended_total = _compute_extended(t.quantity, t.unit_cost)
 
 
@@ -1161,7 +1357,7 @@ def _lead_estimates_health_count_filter() -> Any:
 
 @bp.get("/lead-estimates")
 def list_lead_estimates():
-    """Paged list of ``lead_estimates`` (default: Leads = undecided / no state, not archived)."""
+    """Paged list of ``lead_estimates`` (Leads = undecided / still due; All = every board state including past due)."""
     try:
         limit = max(1, min(int(request.args.get("limit", 200)), 1000))
         offset = max(0, int(request.args.get("offset", 0)))
@@ -1193,38 +1389,51 @@ def list_lead_estimates():
     if crm_stage:
         filt = and_(filt, LeadEstimate.crm_stage == crm_stage)
 
-    stmt = select(func.count()).select_from(LeadEstimate).where(filt)
-    total = db.session.scalar(stmt) or 0
+    try:
+        stmt = select(func.count()).select_from(LeadEstimate).where(filt)
+        total = db.session.scalar(stmt) or 0
+    except Exception as exc:
+        current_app.logger.exception("Lead estimates count query failed")
+        return _jsonify({"error": "Failed to count estimates", "details": str(exc)}), 500
 
-    q = select(LeadEstimate).where(filt)
-    sort = (request.args.get("sort") or "").strip()
-    if sort:
-        q = q.order_by(*lead_q.lead_list_order_by(sort))
-    else:
-        q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
-    q = q.offset(offset).limit(limit)
-    rows = db.session.scalars(q).all()
-    from ._office_location import office_origin_public, resolve_office_origin as _office_origin
+    try:
+        q = select(LeadEstimate).where(filt)
+        sort = (request.args.get("sort") or "").strip()
+        if sort:
+            q = q.order_by(*lead_q.lead_list_order_by(sort))
+        else:
+            q = q.order_by(LeadEstimate.bc_updated_at.desc().nullslast(), LeadEstimate.name.asc())
+        q = q.offset(offset).limit(limit)
+        rows = db.session.scalars(q).all()
+    except Exception as exc:
+        current_app.logger.exception("Lead estimates list query failed")
+        return _jsonify({"error": "Failed to load estimates", "details": str(exc)}), 500
+    
+    try:
+        from ._office_location import office_origin_public, resolve_office_origin as _office_origin
 
-    origin = _office_origin()
-    items = []
-    for r in rows:
-        pub = _lead_estimate_public(r)
-        miles = ser.distance_miles_for_lead(r.location, origin)
-        if miles is not None:
-            pub["distance_miles"] = miles
-        items.append(pub)
+        origin = _office_origin()
+        items = []
+        for r in rows:
+            pub = _lead_estimate_public(r)
+            miles = ser.distance_miles_for_lead(r.location, origin)
+            if miles is not None:
+                pub["distance_miles"] = miles
+            items.append(pub)
 
-    return _jsonify(
-        {
-            "items": items,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-            "entity": "lead_estimates",
-            "office": office_origin_public(),
-        }
-    )
+        return _jsonify(
+            {
+                "items": items,
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "entity": "lead_estimates",
+                "office": office_origin_public(),
+            }
+        )
+    except Exception as exc:
+        current_app.logger.exception("Lead estimates serialization failed")
+        return _jsonify({"error": "Failed to serialize estimates", "details": str(exc)}), 500
 
 
 @bp.get("/estimate-queue")
@@ -1565,6 +1774,30 @@ def _record_session_ingest_failure(metadata: dict[str, Any], kind: str, message:
         db.session.rollback()
         return None
     return row
+
+
+@bp.get("/ingest/activity")
+def session_ingest_activity():
+    """Recent drawings/documents plus agent status for the CM Ingest panel."""
+    from ..services.ingest_activity import list_ingest_activity
+
+    try:
+        payload = list_ingest_activity(
+            kind=request.args.get("kind") or "all",
+            source=request.args.get("source") or "all",
+            project_id=request.args.get("project_id") or request.args.get("projectId"),
+            lead_estimate_id=request.args.get("lead_estimate_id")
+            or request.args.get("estimate_id")
+            or request.args.get("leadEstimateId"),
+            q=request.args.get("q") or request.args.get("search") or "",
+            since=request.args.get("since"),
+            days=request.args.get("days") or 14,
+            limit=request.args.get("limit") or 80,
+            offset=request.args.get("offset") or 0,
+        )
+    except ValueError as exc:
+        return _jsonify({"error": str(exc)}), 400
+    return _jsonify(payload)
 
 
 @bp.get("/ingest/projects")
@@ -1923,7 +2156,9 @@ def get_drawing_pdf_file(drawing_id: str):
     Production reads Backblaze B2. On an employee PC without B2 credentials,
     Flask may reuse ``%LOCALAPPDATA%\\USISCM\\{projectId}\\{drawingId}`` (and
     legacy USISPdfApp / flat USISCM\\drawings folders).
+    Pending rows (not yet acked) return 409 FILE_PENDING, never 200 empty.
     """
+    from ..services.drawing_upload import drawing_file_pending, file_pending_error_body
     from ..services.employee_pc_cache import respond_drawing_pdf
 
     did = _parse_uuid_param(drawing_id)
@@ -1932,11 +2167,73 @@ def get_drawing_pdf_file(drawing_id: str):
     row = db.session.get(Drawing, did)
     if row is None:
         return _jsonify({"error": "drawing not found"}), 404
+    if drawing_file_pending(row):
+        return _jsonify(file_pending_error_body()), 409
     name = _drawing_object_name(row)
     resp = respond_drawing_pdf(row, name)
     if resp is None:
         return _jsonify({"error": "file not found on server"}), 404
     return resp
+
+
+@bp.route("/drawings/<drawing_id>/file", methods=["HEAD"])
+def head_drawing_pdf_file(drawing_id: str):
+    """Freshness check. Same pending/acked rules as GET. Does not hit the S3 gateway."""
+    from ..services.drawing_upload import drawing_file_pending, file_pending_error_body
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    if drawing_file_pending(row):
+        return _jsonify(file_pending_error_body()), 409
+    resp = Response(status=200)
+    resp.headers["Content-Type"] = "application/pdf"
+    if row.file_size_bytes:
+        resp.headers["Content-Length"] = str(int(row.file_size_bytes))
+    return resp
+
+
+@bp.get("/drawings/<drawing_id>/file-status")
+def get_drawing_file_status(drawing_id: str):
+    from ..services.drawing_upload import drawing_file_pending
+
+    did = _parse_uuid_param(drawing_id)
+    if not did:
+        return _jsonify({"error": "invalid drawing id"}), 400
+    row = db.session.get(Drawing, did)
+    if row is None:
+        return _jsonify({"error": "drawing not found"}), 404
+    tags = row.tags if isinstance(row.tags, dict) else {}
+    return _jsonify(
+        {
+            "item": {
+                "filePending": drawing_file_pending(row),
+                "byteSize": row.file_size_bytes,
+                "sha256": tags.get("content_hash"),
+                "b2FileId": tags.get("b2_file_id"),
+            },
+            "entity": "drawing_file_status",
+        }
+    )
+
+
+@bp.put("/drawings/<drawing_id>/content")
+def put_drawing_content_gone(drawing_id: str):
+    """Removed. Desktop must never PUT PDF bytes through Render."""
+    return (
+        _jsonify(
+            {
+                "error": {
+                    "code": "GONE",
+                    "message": "PUT /content is removed. Mint a native B2 URL, POST bytes to Backblaze, then ack-file.",
+                }
+            }
+        ),
+        410,
+    )
 
 
 @bp.put("/drawings/<drawing_id>/file")
@@ -2089,21 +2386,20 @@ def _resolve_job_project(job_id: uuid.UUID) -> Project | None:
 def _native_b2_mint_or_none(row: Drawing) -> dict | None:
     """Native ``b2_upload_file`` mint only. Rejects S3 / SigV4 URLs if produced."""
     from ..services.drawing_upload import native_upload_hint_for_drawing
-    from ..services.object_storage import is_native_b2_upload_url
 
-    hint = native_upload_hint_for_drawing(row)
-    if not hint:
-        return None
-    url = str(hint.get("url") or "")
-    if hint.get("mode") != "b2_native" or not is_native_b2_upload_url(url):
-        current_app.logger.warning(
-            "rejected non-native drawing mint drawing=%s mode=%s url=%s",
-            getattr(row, "id", None),
-            hint.get("mode"),
-            url[:180],
-        )
-        return None
-    return hint
+    return native_upload_hint_for_drawing(row)
+
+
+def _b2_mint_unavailable_response(*, kind: str = "drawing"):
+    from ..services.drawing_upload import mint_unavailable_body
+    from ..services.object_storage import mint_last_error, mint_retry_after_seconds
+
+    wait = mint_retry_after_seconds() or 20
+    body = mint_unavailable_body(kind=kind, detail=mint_last_error() or None)
+    resp = _jsonify(body)
+    resp.status_code = 503
+    resp.headers["Retry-After"] = str(wait)
+    return resp
 
 
 @bp.post("/jobs/<job_id>/drawings")
@@ -2194,6 +2490,7 @@ def _optional_drawing_text(body: dict[str, Any], key: str, max_len: int) -> tupl
 
 
 @bp.post("/drawings/<drawing_id>/upload-session")
+@bp.post("/drawings/<drawing_id>/b2-upload-url")
 def create_drawing_upload_session(drawing_id: str):
     """Mint a one-shot native B2 URL so the desktop can POST the PDF without Render."""
     did = _parse_uuid_param(drawing_id)
@@ -2206,24 +2503,25 @@ def create_drawing_upload_session(drawing_id: str):
         return _jsonify({"error": "drawing not found"}), 404
     native = _native_b2_mint_or_none(row)
     if not native:
-        from ..services.object_storage import mint_last_error, mint_retry_after_seconds
-
-        wait = mint_retry_after_seconds() or 20
-        body = {"error": "B2_UPLOAD_URL_UNAVAILABLE"}
-        detail = mint_last_error()
-        if detail:
-            body["detail"] = detail
-        resp = _jsonify(body)
-        resp.status_code = 503
-        resp.headers["Retry-After"] = str(wait)
-        return resp
-    return _jsonify({"upload": native, "item": _drawing_public(row), "entity": "drawing"}), 200
+        current_app.logger.warning(
+            "b2 native mint unavailable drawing=%s",
+            row.id,
+        )
+        return _b2_mint_unavailable_response(kind="drawing")
+    return _jsonify(
+        {
+            "item": native,
+            "upload": native,
+            "drawing": _drawing_public(row),
+            "entity": "drawing",
+        }
+    ), 200
 
 
 @bp.post("/drawings/<drawing_id>/ack-file")
 def ack_drawing_stored_file(drawing_id: str):
     """Clear file_pending after the client wrote the object to B2 (native upload)."""
-    from ..services.drawing_upload import DrawingUploadError, ack_drawing_file
+    from ..services.drawing_upload import DrawingUploadError, ack_drawing_file, parse_ack_payload
 
     did = _parse_uuid_param(drawing_id)
     if not did:
@@ -2237,20 +2535,201 @@ def ack_drawing_stored_file(drawing_id: str):
     if not isinstance(payload, dict):
         payload = {}
     try:
-        raw_size = payload.get("byte_size")
-        if raw_size is None:
-            raw_size = payload.get("byteSize")
-        byte_size = int(raw_size) if raw_size is not None else None
-    except (TypeError, ValueError):
-        return _jsonify({"error": "byte_size must be an integer"}), 400
-    content_hash = str(payload.get("content_hash") or payload.get("contentHash") or "").strip() or None
-    try:
-        ack_drawing_file(row, byte_size=byte_size, content_hash=content_hash)
+        fields = parse_ack_payload(payload)
+        ack_drawing_file(
+            row,
+            byte_size=fields["byte_size"],
+            content_hash=fields["content_hash"],
+            b2_file_id=fields["b2_file_id"],
+            b2_file_name=fields["b2_file_name"],
+            content_sha1=fields["content_sha1"],
+            content_type=fields["content_type"],
+        )
         db.session.commit()
     except DrawingUploadError as exc:
         db.session.rollback()
         return _jsonify({"error": exc.message}), exc.status
     return _jsonify({"item": _drawing_public(row), "entity": "drawing"}), 200
+
+
+def _document_catalog_public(d: Document) -> dict[str, Any]:
+    tags = d.tags if isinstance(d.tags, dict) else {}
+    return {
+        "id": str(d.id),
+        "document_type": d.document_type,
+        "title": d.title,
+        "file_url": d.file_url,
+        "original_filename": d.original_filename,
+        "project_id": str(d.project_id) if d.project_id else None,
+        "file_pending": bool(tags.get("file_pending")),
+        "file_size_bytes": d.file_size_bytes,
+        "content_hash": tags.get("content_hash"),
+        "b2_file_id": tags.get("b2_file_id"),
+        "created_at": _iso(d.created_at),
+    }
+
+
+@bp.post("/jobs/<job_id>/documents")
+def create_job_document(job_id: str):
+    """Desktop ingest: catalog row only. The file is written straight to B2."""
+    from ..services.drawing_upload import create_pending_document, native_upload_hint_for_document
+
+    jid = _parse_uuid_param(job_id)
+    if not jid:
+        return _jsonify({"error": "invalid job id"}), 400
+    project = _resolve_job_project(jid)
+    if project is None:
+        return _jsonify({"error": "job not found."}), 404
+    if not _project_exists(project.id):
+        return _jsonify({"error": "job not found."}), 404
+
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    item = payload.get("item") if isinstance(payload.get("item"), dict) else payload
+
+    def text(*keys: str, max_len: int = 500) -> str | None:
+        for key in keys:
+            raw = item.get(key)
+            if raw is None:
+                continue
+            value = str(raw).strip()
+            if value:
+                return value[:max_len]
+        return None
+
+    client_id = _parse_uuid_param(str(item.get("id") or item.get("documentId") or ""))
+    row = create_pending_document(
+        project_id=project.id,
+        filename=text("sourceFileName", "source_file_name", "fileName", "original_filename", "filename"),
+        document_type=text("documentType", "document_type", max_len=50),
+        title=text("title", max_len=500),
+        mime_type=text("mimeType", "mime_type", "contentType", max_len=120),
+        content_hash=text("contentHash", "content_hash", "sha256", max_len=128),
+        client_id=client_id,
+    )
+    db.session.commit()
+    native = native_upload_hint_for_document(row)
+    body: dict[str, Any] = {
+        "item": _document_catalog_public(row),
+        "entity": "document",
+        "file_pending": True,
+    }
+    if native:
+        body["upload"] = native
+    else:
+        from ..services.object_storage import mint_last_error, mint_retry_after_seconds
+
+        current_app.logger.warning(
+            "b2 native mint unavailable after document create document=%s last_err=%s cooldown=%ss",
+            row.id,
+            mint_last_error() or "-",
+            mint_retry_after_seconds(),
+        )
+        body["upload_error"] = "B2_UPLOAD_URL_UNAVAILABLE"
+        detail = mint_last_error()
+        if detail:
+            body["upload_error_detail"] = detail
+    return _jsonify(body), 201
+
+
+@bp.post("/documents/<document_id>/upload-session")
+@bp.post("/documents/<document_id>/b2-upload-url")
+def create_document_upload_session(document_id: str):
+    from ..services.drawing_upload import native_upload_hint_for_document
+
+    did = _parse_uuid_param(document_id)
+    if not did:
+        return _jsonify({"error": "invalid document id"}), 400
+    from ..services.drawing_upload import load_catalog_document
+
+    row = load_catalog_document(did)
+    if row is None:
+        return _jsonify({"error": "document not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "document not found"}), 404
+    if isinstance(row, Drawing):
+        native = _native_b2_mint_or_none(row)
+        kind = "drawing"
+        public = _drawing_public(row)
+    else:
+        native = native_upload_hint_for_document(row)
+        kind = "document"
+        public = _document_catalog_public(row)
+    if not native:
+        return _b2_mint_unavailable_response(kind=kind)
+    return _jsonify({"item": native, "upload": native, kind: public, "entity": kind}), 200
+
+
+@bp.post("/documents/<document_id>/ack-file")
+def ack_document_stored_file(document_id: str):
+    from ..services.drawing_upload import (
+        DrawingUploadError,
+        ack_document_file,
+        ack_drawing_file,
+        load_catalog_document,
+        parse_ack_payload,
+        persist_document_ack,
+    )
+
+    did = _parse_uuid_param(document_id)
+    if not did:
+        return _jsonify({"error": "invalid document id"}), 400
+    row = load_catalog_document(did)
+    if row is None:
+        return _jsonify({"error": "document not found"}), 404
+    if row.project_id and not _project_exists(row.project_id):
+        return _jsonify({"error": "document not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    try:
+        fields = parse_ack_payload(payload)
+        if isinstance(row, Drawing):
+            ack_drawing_file(
+                row,
+                byte_size=fields["byte_size"],
+                content_hash=fields["content_hash"],
+                b2_file_id=fields["b2_file_id"],
+                b2_file_name=fields["b2_file_name"],
+                content_sha1=fields["content_sha1"],
+                content_type=fields["content_type"],
+            )
+            public = _drawing_public(row)
+            kind = "drawing"
+        else:
+            ack_document_file(
+                row,
+                byte_size=fields["byte_size"],
+                content_hash=fields["content_hash"],
+                b2_file_id=fields["b2_file_id"],
+                b2_file_name=fields["b2_file_name"],
+                content_sha1=fields["content_sha1"],
+                content_type=fields["content_type"],
+            )
+            persist_document_ack(row.id, row)
+            public = _document_catalog_public(row)
+            kind = "document"
+        db.session.commit()
+    except DrawingUploadError as exc:
+        db.session.rollback()
+        return _jsonify({"error": exc.message}), exc.status
+    return _jsonify({"item": public, "entity": kind}), 200
+
+
+@bp.put("/documents/<document_id>/content")
+def put_document_content_gone(document_id: str):
+    return (
+        _jsonify(
+            {
+                "error": {
+                    "code": "GONE",
+                    "message": "PUT /content is removed. Mint a native B2 URL, POST bytes to Backblaze, then ack-file.",
+                }
+            }
+        ),
+        410,
+    )
 
 
 @bp.patch("/drawings/<drawing_id>")
@@ -2792,7 +3271,13 @@ def compose_email():
     from ._notifications import send_compose_email
 
     result = send_compose_email(
-        to=to, subject=subject[:500], body=body, cc=cc, from_addr=from_addr
+        to=to,
+        subject=subject[:500],
+        body=body,
+        cc=cc,
+        from_addr=from_addr,
+        project_id=_parse_uuid_param(data.get("project_id")),
+        thread_id=_parse_uuid_param(data.get("thread_id")),
     )
     if not result.get("ok"):
         return _jsonify(result), 400
@@ -4839,76 +5324,363 @@ def delete_project_pay_application(project_id: str, pay_application_id: str):
         return _pay_app_err(exc)
 
 
+def _csi_extras(raw: str | None) -> dict[str, Any]:
+    from ..csi_catalog import DIVISION_NAMES, title_for_code
+    from ..csi_spec import digits_from_csi, format_csi_display
+
+    digits = digits_from_csi(raw)
+    div = digits[:2] if digits else None
+    return {
+        "csi_display": format_csi_display(raw),
+        "csi_title": title_for_code(raw),
+        "csi_division": div,
+        "csi_division_name": DIVISION_NAMES.get(div) if div else None,
+    }
+
+
+def _sync_material_labor_row(row: MaterialPrice) -> None:
+    from ..material_labor import sync_material_labor
+
+    sync_material_labor(row)
+
+
+def _material_supplier_fields(m: MaterialPrice, *, load_contacts: bool = False) -> dict[str, Any]:
+    from ..company_email import company_order_email
+
+    company = m.supplier_company
+    if company is None and m.supplier_company_id is not None:
+        company = db.session.get(Company, m.supplier_company_id)
+    if company is None or company.deleted_at is not None:
+        return {
+            "supplier_company_id": None,
+            "supplier_name": None,
+            "supplier_email": None,
+        }
+    return {
+        "supplier_company_id": str(company.id),
+        "supplier_name": company.name,
+        "supplier_email": company_order_email(company, load_contacts=load_contacts),
+    }
+
+
 def _material_price_public(m: MaterialPrice) -> dict[str, Any]:
+    from ..material_labor import labor_production_display
+
+    extra = _csi_extras(m.csi_spec_section)
     return {
         "id": str(m.id),
         "manufacturer": m.manufacturer,
+        "manufacturer_url": m.manufacturer_url,
         "item": m.item,
         "category": m.category,
         "csi_spec_section": m.csi_spec_section,
+        "csi_display": extra["csi_display"],
+        "csi_title": extra["csi_title"],
+        "csi_division": extra["csi_division"],
+        "csi_division_name": extra["csi_division_name"],
         "description": m.description,
         "mounting_type": m.mounting_type,
         "cost": _num_or_none(m.cost),
         "labor_per": _num_or_none(m.labor_per),
+        "labor_units_per_hour": _num_or_none(m.labor_units_per_hour),
+        "labor_rate_unit": m.labor_rate_unit,
+        "labor_production": labor_production_display(m.labor_units_per_hour, m.labor_rate_unit),
         "unit_of_measure": m.unit_of_measure,
         "currency": m.currency,
+        **_material_size_fields(m),
+        **_material_supplier_fields(m),
+        **_material_configurator_fields(m),
     }
 
 
-def _material_prices_query(q: str, manufacturer: str, csi_spec_section: str | None = None):
-    from ..csi_spec import normalize_csi_spec_section
+def _material_price_list_filters() -> dict[str, Any]:
+    return {
+        "q": (request.args.get("q") or "").strip(),
+        "manufacturer": (request.args.get("manufacturer") or "").strip(),
+        "csi_spec_section": (request.args.get("csi_spec_section") or "").strip() or None,
+        "csi_division": (request.args.get("csi_division") or "").strip() or None,
+        "item": (request.args.get("item") or "").strip(),
+        "category": (request.args.get("category") or "").strip(),
+        "description": (request.args.get("description") or "").strip(),
+        "mounting_type": (request.args.get("mounting_type") or "").strip(),
+        "unit_of_measure": (request.args.get("unit_of_measure") or "").strip(),
+        "cost": (request.args.get("cost") or "").strip(),
+        "labor_per": (request.args.get("labor_per") or "").strip(),
+        "size": (request.args.get("size") or "").strip(),
+        "supplier": (request.args.get("supplier") or "").strip(),
+        "supplier_company_id": (request.args.get("supplier_company_id") or "").strip(),
+    }
+
+
+def _ilike_contains(stmt, column, value: str):
+    if value:
+        stmt = stmt.where(column.ilike(f"%{value}%"))
+    return stmt
+
+
+def _exact_ci(stmt, column, value: str):
+    if value:
+        stmt = stmt.where(func.lower(column) == value.lower())
+    return stmt
+
+
+def _material_prices_query(
+    q: str,
+    manufacturer: str,
+    csi_spec_section: str | None = None,
+    csi_division: str | None = None,
+    *,
+    item: str = "",
+    category: str = "",
+    description: str = "",
+    mounting_type: str = "",
+    unit_of_measure: str = "",
+    cost: str = "",
+    labor_per: str = "",
+    size: str = "",
+    supplier: str = "",
+    supplier_company_id: str = "",
+):
+    from ..csi_catalog import DIVISION_NAMES
+    from ..csi_spec import csi_storage_variants
+    from ..material_size import parse_size_cell
 
     stmt = select(MaterialPrice)
-    if manufacturer:
-        stmt = stmt.where(MaterialPrice.manufacturer.ilike(f"%{manufacturer}%"))
+    stmt = _exact_ci(stmt, MaterialPrice.manufacturer, manufacturer)
+    stmt = _ilike_contains(stmt, MaterialPrice.item, item)
+    stmt = _exact_ci(stmt, MaterialPrice.category, category)
+    stmt = _ilike_contains(stmt, MaterialPrice.description, description)
+    stmt = _exact_ci(stmt, MaterialPrice.mounting_type, mounting_type)
+    stmt = _exact_ci(stmt, MaterialPrice.unit_of_measure, unit_of_measure)
+    if cost:
+        stmt = stmt.where(cast(MaterialPrice.cost, String).ilike(f"%{cost}%"))
+    if labor_per:
+        try:
+            stmt = stmt.where(MaterialPrice.labor_per == Decimal(labor_per))
+        except (InvalidOperation, ValueError, ArithmeticError):
+            stmt = stmt.where(cast(MaterialPrice.labor_per, String).ilike(f"%{labor_per}%"))
+    if size:
+        w, h = parse_size_cell(size)
+        if w is not None and h is not None:
+            stmt = stmt.where(
+                MaterialPrice.size_width_in == w,
+                MaterialPrice.size_height_in == h,
+            )
+        else:
+            like = f"%{size}%"
+            stmt = stmt.where(
+                or_(
+                    cast(MaterialPrice.size_width_in, String).ilike(like),
+                    cast(MaterialPrice.size_height_in, String).ilike(like),
+                    cast(MaterialPrice.size_depth_in, String).ilike(like),
+                )
+            )
     if csi_spec_section:
-        norm = normalize_csi_spec_section(csi_spec_section)
-        if norm:
-            stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
-    if q:
-        like = f"%{q}%"
+        variants = csi_storage_variants(csi_spec_section)
+        digits = re.sub(r"\D", "", str(csi_spec_section).strip())
+        if variants:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.in_(variants))
+        elif 2 <= len(digits) <= 5:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.like(f"{digits}%"))
+        else:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.ilike(f"%{csi_spec_section}%"))
+    if csi_division:
+        div_digits = re.sub(r"\D", "", str(csi_division).strip())
+        if len(div_digits) >= 1:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.like(f"{div_digits[:2]}%"))
+        else:
+            needle = str(csi_division).strip().lower()
+            matches = [k for k, v in DIVISION_NAMES.items() if needle in (v or "").lower()]
+            if matches:
+                stmt = stmt.where(or_(*[MaterialPrice.csi_spec_section.like(f"{k}%") for k in matches]))
+            else:
+                stmt = stmt.where(MaterialPrice.csi_spec_section.ilike(f"%{csi_division}%"))
+    sid = _parse_uuid_param(supplier_company_id) if supplier_company_id else None
+    if supplier_company_id and not sid:
+        stmt = stmt.where(literal(False))
+    elif sid:
+        stmt = stmt.where(MaterialPrice.supplier_company_id == sid)
+    if supplier:
+        like_name = f"%{supplier}%"
         stmt = stmt.where(
-            or_(
-                MaterialPrice.item.ilike(like),
-                MaterialPrice.manufacturer.ilike(like),
-                MaterialPrice.description.ilike(like),
-                MaterialPrice.category.ilike(like),
+            MaterialPrice.supplier_company_id.in_(
+                select(Company.id).where(Company.deleted_at.is_(None), Company.name.ilike(like_name))
             )
         )
+    if q:
+        like = f"%{q}%"
+        clauses = [
+            MaterialPrice.item.ilike(like),
+            MaterialPrice.manufacturer.ilike(like),
+            MaterialPrice.manufacturer_url.ilike(like),
+            MaterialPrice.description.ilike(like),
+            MaterialPrice.category.ilike(like),
+            MaterialPrice.csi_spec_section.ilike(like),
+            cast(MaterialPrice.size_width_in, String).ilike(like),
+            cast(MaterialPrice.size_height_in, String).ilike(like),
+            cast(MaterialPrice.size_depth_in, String).ilike(like),
+        ]
+        q_digits = re.sub(r"\D", "", q)
+        if 2 <= len(q_digits) <= 6:
+            clauses.append(MaterialPrice.csi_spec_section.ilike(f"{q_digits}%"))
+        clauses.append(
+            MaterialPrice.supplier_company_id.in_(
+                select(Company.id).where(Company.deleted_at.is_(None), Company.name.ilike(like))
+            )
+        )
+        stmt = stmt.where(or_(*clauses))
     return stmt.order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
 
 
-def _wage_rate_public(w: WageRate) -> dict[str, Any]:
-    return {
-        "id": str(w.id),
-        "state": w.state,
-        "sub_area": w.sub_area,
-        "year": w.year,
-        "trade": w.trade,
-        "basic_hourly_rate": _num_or_none(w.basic_hourly_rate),
-        "health_welfare": _num_or_none(w.health_welfare),
-        "pension": _num_or_none(w.pension),
-        "vacation_holiday": _num_or_none(w.vacation_holiday),
-        "other_payments": _num_or_none(w.other_payments),
-        "training": _num_or_none(w.training),
-        "notes": w.notes,
-        "is_assumed": w.is_assumed,
+_MATERIAL_BULK_FIELDS = frozenset(
+    {
+        "manufacturer",
+        "manufacturer_url",
+        "item",
+        "category",
+        "csi_spec_section",
+        "description",
+        "mounting_type",
+        "cost",
+        "labor_per",
+        "labor_units_per_hour",
+        "labor_rate_unit",
+        "unit_of_measure",
+        "size_width_in",
+        "size_height_in",
+        "size_depth_in",
+        "supplier_company_id",
+        "configurator_key",
     }
+)
+
+
+def _coerce_material_bulk_value(field: str, value: Any) -> Any:
+    from ..csi_spec import digits_from_csi, normalize_csi_spec_section
+
+    if field in (
+        "cost",
+        "labor_per",
+        "labor_units_per_hour",
+        "size_width_in",
+        "size_height_in",
+        "size_depth_in",
+    ):
+        if value in (None, ""):
+            return None
+        try:
+            return Decimal(str(value).strip())
+        except Exception as exc:
+            raise ApiError(f"{field} must be a number", 400) from exc
+    if field == "labor_rate_unit":
+        from ..material_labor import normalize_rate_unit
+
+        if value in (None, ""):
+            return None
+        unit = normalize_rate_unit(str(value))
+        if not unit:
+            raise ApiError("labor rate unit must be SF, LF, or EA", 400)
+        return unit
+    if field == "csi_spec_section":
+        if value in (None, ""):
+            return None
+        raw = str(value).strip()
+        norm = normalize_csi_spec_section(raw) or digits_from_csi(raw)
+        if not norm:
+            raise ApiError("CSI must look like 08 71 00", 400)
+        return norm
+    if field == "supplier_company_id":
+        return _resolve_supplier_company_id(value)
+    if field in ("manufacturer", "item", "unit_of_measure"):
+        text = (str(value).strip() if value is not None else "") or ""
+        if not text:
+            raise ApiError(f"{field} cannot be blank", 400)
+        limits = {"manufacturer": 120, "item": 120, "unit_of_measure": 20}
+        return text[: limits[field]]
+    if field == "manufacturer_url":
+        from ..material_url import normalize_manufacturer_url
+
+        if value in (None, ""):
+            return None
+        try:
+            return normalize_manufacturer_url(value)
+        except ValueError as exc:
+            raise ApiError(str(exc), 400) from exc
+    if field == "currency":
+        text = (str(value).strip() if value is not None else "") or ""
+        if not text:
+            raise ApiError("currency cannot be blank", 400)
+        return text[:3].upper()
+    if field == "configurator_key":
+        if value in (None, ""):
+            return None
+        from ..material_configurator import schema_for
+
+        key = str(value).strip()[:80]
+        if not schema_for(key):
+            raise ApiError(f"unknown configurator: {key}", 400)
+        return key
+    if value in (None, ""):
+        return None
+    text = str(value).strip()
+    limits = {"category": 120, "description": 4000, "mounting_type": 120}
+    return text[: limits.get(field, 120)] or None
+
+
+def _resolve_supplier_company_id(value: Any) -> uuid.UUID | None:
+    if value in (None, ""):
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return None
+    pid = _parse_uuid_param(raw)
+    if pid:
+        company = db.session.get(Company, pid)
+        if company is None or company.deleted_at is not None:
+            raise ApiError("supplier company not found", 400)
+        return pid
+    rows = db.session.scalars(
+        select(Company).where(Company.deleted_at.is_(None), func.lower(Company.name) == raw.lower())
+    ).all()
+    if len(rows) == 1:
+        return rows[0].id
+    if len(rows) > 1:
+        raise ApiError("multiple companies match that supplier name", 400)
+    like_rows = db.session.scalars(
+        select(Company).where(Company.deleted_at.is_(None), Company.name.ilike(raw))
+    ).all()
+    if len(like_rows) == 1:
+        return like_rows[0].id
+    raise ApiError("supplier company not found", 400)
+
+
+_MATERIAL_PATCH_FIELDS = _MATERIAL_BULK_FIELDS | {"currency"}
+
+
+def _material_price_detail(m: MaterialPrice) -> dict[str, Any]:
+    out = _material_price_public(m)
+    out.update(_material_supplier_fields(m, load_contacts=True))
+    out["created_at"] = m.created_at.isoformat() if m.created_at else None
+    out["updated_at"] = m.updated_at.isoformat() if m.updated_at else None
+    return out
+
+
+def _load_material_price(price_id: str) -> tuple[MaterialPrice | None, tuple[Any, int] | None]:
+    pid = _parse_uuid_param(price_id)
+    if not pid:
+        return None, (_jsonify({"error": "invalid material id"}), 400)
+    row = db.session.get(MaterialPrice, pid)
+    if row is None:
+        return None, (_jsonify({"error": "material not found"}), 404)
+    return row, None
+
+
+def _wage_rate_public(w: WageRate) -> dict[str, Any]:
+    return wage_rate_svc.wage_rate_public(w)
 
 
 def _wage_total_loaded(w: WageRate) -> float:
-    total = Decimal("0")
-    for col in (
-        w.basic_hourly_rate,
-        w.health_welfare,
-        w.pension,
-        w.vacation_holiday,
-        w.other_payments,
-        w.training,
-    ):
-        if col is not None:
-            total += col
-    return float(total.quantize(Decimal("0.0001")))
+    return wage_rate_svc.wage_total_loaded(w)
 
 
 @bp.get("/lead-estimates/<identifier>")
@@ -4925,6 +5697,12 @@ def get_lead_estimate(identifier: str):
     item = _lead_estimate_detail(row)
     item["group_summary"] = _group_summary_for_lead(row)
     return _jsonify({"item": item, "entity": "lead_estimate"})
+
+
+def _sync_estimate_due_at(lead: LeadEstimate) -> None:
+    """Keep proposal due dates aligned with the lead bid due date."""
+    for est in db.session.scalars(select(Estimate).where(Estimate.lead_estimate_id == lead.id)):
+        est.due_at = lead.due_at
 
 
 @bp.patch("/lead-estimates/<identifier>")
@@ -4948,8 +5726,11 @@ def patch_lead_estimate(identifier: str):
             row.win_probability = _decimal_from_json(wp, Decimal("0")).quantize(Decimal("0.0001"))
     if "due_at" in data:
         row.due_at = rfi_svc._parse_dt(data.get("due_at"))
+        _sync_estimate_due_at(row)
     db.session.commit()
-    return _jsonify({"item": _lead_estimate_detail(row), "entity": "lead_estimate"})
+    item = _lead_estimate_detail(row)
+    item["group_summary"] = _group_summary_for_lead(row)
+    return _jsonify({"item": item, "entity": "lead_estimate"})
 
 
 @bp.delete("/lead-estimates/<identifier>")
@@ -5308,7 +6089,10 @@ def create_takeoff_line(identifier: str):
     db.session.commit()
     from ..services.employee_pc_cache import cache_takeoff_for_line
 
-    cache_takeoff_for_line(t)
+    try:
+        cache_takeoff_for_line(t)
+    except Exception:
+        current_app.logger.exception("takeoff cache after create failed")
     _sync_jcc_for_takeoff_line(t)
     return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
@@ -5371,7 +6155,7 @@ def _door_opening_detail(opening: DoorOpening) -> dict[str, Any]:
         select(TakeoffLineItem)
         .where(TakeoffLineItem.door_opening_id == opening.id)
         .order_by(TakeoffLineItem.sort_order.asc(), TakeoffLineItem.created_at.asc())
-        .options(joinedload(TakeoffLineItem.material_price))
+        .options(joinedload(TakeoffLineItem.material_price).joinedload(MaterialPrice.supplier_company))
     ).all()
     base["takeoff_lines"] = [_takeoff_line_public(x) for x in lines]
     base["takeoff_line_count"] = len(lines)
@@ -5599,7 +6383,6 @@ def create_door_opening(identifier: str):
     )
     db.session.add(op)
     db.session.flush()
-    door_schedule_svc.rebuild_opening_lines(op, preserve_priced=False)
     db.session.commit()
     return _jsonify({"item": _door_opening_detail(op), "entity": "door_opening"}), 201
 
@@ -5829,15 +6612,67 @@ def list_material_pricing_desktop():
     from ..services.employee_pc_cache import material_pricing_cache_row, refresh_company_from_db
 
     rows = db.session.scalars(
-        select(MaterialPrice).order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
+        select(MaterialPrice)
+        .options(joinedload(MaterialPrice.supplier_company))
+        .order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
     ).all()
     refresh_company_from_db()
     return _jsonify({"items": [material_pricing_cache_row(m) for m in rows], "entity": "material_pricing"})
 
 
+def _can_write_wage_rates() -> bool:
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    return bool(
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    )
+
+
+def _wage_rates_web_query() -> bool:
+    return any(
+        key in request.args
+        for key in ("limit", "offset", "q", "state", "year", "trade", "sub_area")
+    )
+
+
 @bp.get("/wage-rates")
 def list_wage_rates_desktop():
-    """Full wage-rate list for the desktop app (``GET /api/v1/wage-rates``)."""
+    """Wage rates: paginated web list when filters are present; full desktop dump otherwise."""
+    current_user()
+    if _wage_rates_web_query():
+        try:
+            limit = int(request.args.get("limit") or 100)
+        except ValueError:
+            limit = 100
+        try:
+            offset = int(request.args.get("offset") or 0)
+        except ValueError:
+            offset = 0
+        year_raw = (request.args.get("year") or "").strip()
+        year = None
+        if year_raw:
+            try:
+                year = int(year_raw)
+            except ValueError:
+                return _jsonify({"error": "invalid year"}), 400
+        try:
+            return _jsonify(
+                wage_rate_svc.list_wage_rates(
+                    q=(request.args.get("q") or "").strip(),
+                    state=(request.args.get("state") or "").strip(),
+                    year=year,
+                    trade=(request.args.get("trade") or "").strip(),
+                    sub_area=(request.args.get("sub_area") or "").strip() or None,
+                    limit=limit,
+                    offset=offset,
+                )
+            )
+        except wage_rate_svc.ApiError as exc:
+            return _rfi_err(exc)
+
     from ..services.employee_pc_cache import refresh_company_from_db, wage_rate_cache_row
 
     rows = db.session.scalars(
@@ -5845,6 +6680,105 @@ def list_wage_rates_desktop():
     ).all()
     refresh_company_from_db()
     return _jsonify({"items": [wage_rate_cache_row(w) for w in rows], "entity": "wage_rates"})
+
+
+@bp.get("/wage-rates/facets")
+def list_wage_rate_facets():
+    return _jsonify(wage_rate_svc.wage_rate_facets())
+
+
+@bp.get("/wage-rates/burden")
+def get_wage_labor_burden():
+    current_user()
+    return _jsonify({"burden": wage_rate_svc.public_labor_burden_setting(), "entity": "labor_burden"})
+
+
+@bp.put("/wage-rates/burden")
+def put_wage_labor_burden():
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    data = request.get_json(silent=True) or {}
+    body = data.get("burden") if isinstance(data.get("burden"), dict) else data
+    try:
+        cu = current_user()
+        burden = wage_rate_svc.save_labor_burden(body, actor_user_id=getattr(cu, "id", None))
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+    return _jsonify({"burden": burden, "entity": "labor_burden"})
+
+
+@bp.post("/wage-rates")
+def create_wage_rate():
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify({"item": wage_rate_svc.create_wage_rate(data), "entity": "wage_rates"}), 201
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.post("/wage-rates/import")
+def import_wage_rates():
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    upload = request.files.get("file")
+    data = request.get_json(silent=True) or {}
+    replace = False
+    try:
+        if upload is not None:
+            raw = upload.read()
+            text = raw.decode("utf-8-sig") if isinstance(raw, (bytes, bytearray)) else str(raw)
+            replace = str(request.form.get("replace") or "").strip().lower() in ("1", "true", "yes")
+            result = wage_rate_svc.import_wage_rates_csv(text, replace=replace)
+        elif isinstance(data, dict) and data.get("csv") is not None:
+            replace = bool(data.get("replace"))
+            result = wage_rate_svc.import_wage_rates_csv(str(data.get("csv") or ""), replace=replace)
+        else:
+            return _jsonify({"error": "csv is required"}), 400
+        return _jsonify(result)
+    except UnicodeDecodeError:
+        return _jsonify({"error": "csv must be UTF-8"}), 400
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.get("/wage-rates/<row_id>")
+def get_wage_rate(row_id: str):
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify({"item": wage_rate_svc.get_wage_rate(rid), "entity": "wage_rates"})
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.patch("/wage-rates/<row_id>")
+def patch_wage_rate(row_id: str):
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    data = request.get_json(silent=True) or {}
+    try:
+        return _jsonify({"item": wage_rate_svc.patch_wage_rate(rid, data), "entity": "wage_rates"})
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
+
+
+@bp.delete("/wage-rates/<row_id>")
+def delete_wage_rate(row_id: str):
+    if not _can_write_wage_rates():
+        return _jsonify({"error": "wage rate edits require estimate or user admin write access"}), 403
+    rid = _parse_uuid_param(row_id)
+    if not rid:
+        return _jsonify({"error": "invalid id"}), 400
+    try:
+        return _jsonify(wage_rate_svc.delete_wage_rate(rid))
+    except wage_rate_svc.ApiError as exc:
+        return _rfi_err(exc)
 
 
 @bp.post("/pc-cache/refresh")
@@ -5871,12 +6805,12 @@ def list_material_prices():
         offset = 0
     limit = max(1, min(limit, 500))
     offset = max(0, offset)
-    q = (request.args.get("q") or "").strip()
-    manufacturer = (request.args.get("manufacturer") or "").strip()
-    csi = (request.args.get("csi_spec_section") or "").strip() or None
-    base = _material_prices_query(q, manufacturer, csi)
+    filters = _material_price_list_filters()
+    base = _material_prices_query(**filters)
     total = db.session.scalar(select(func.count()).select_from(base.subquery())) or 0
-    rows = db.session.scalars(base.offset(offset).limit(limit)).all()
+    rows = db.session.scalars(
+        base.options(joinedload(MaterialPrice.supplier_company)).offset(offset).limit(limit)
+    ).all()
     return _jsonify(
         {
             "items": [_material_price_public(m) for m in rows],
@@ -5904,9 +6838,400 @@ def list_material_price_manufacturers():
     return _jsonify({"items": names, "entity": "material_manufacturers"})
 
 
+@bp.get("/material-prices/categories")
+def list_material_price_categories():
+    """Distinct product-type categories for catalog filters."""
+    q = (request.args.get("q") or "").strip()
+    stmt = (
+        select(MaterialPrice.category)
+        .where(MaterialPrice.category.is_not(None))
+        .where(MaterialPrice.category != "")
+        .distinct()
+        .order_by(MaterialPrice.category.asc())
+    )
+    if q:
+        stmt = stmt.where(MaterialPrice.category.ilike(f"%{q}%"))
+    try:
+        limit = int(request.args.get("limit") or 300)
+    except ValueError:
+        limit = 300
+    limit = max(1, min(limit, 500))
+    names = [r for r in db.session.scalars(stmt.limit(limit)).all() if r]
+    return _jsonify({"items": names, "entity": "material_categories"})
+
+
+def _filters_omitting(filters: dict[str, Any], *keys: str) -> dict[str, Any]:
+    out = dict(filters)
+    for key in keys:
+        out[key] = None if key in ("csi_spec_section", "csi_division") else ""
+    return out
+
+
+def _facet_base(filters: dict[str, Any], *omit: str):
+    return _material_prices_query(**_filters_omitting(filters, *omit)).order_by(None)
+
+
+def _facet_text_values(filters: dict[str, Any], column, *omit: str, limit: int = 500) -> list[str]:
+    stmt = (
+        _facet_base(filters, *omit)
+        .with_only_columns(column)
+        .where(column.is_not(None))
+        .where(column != "")
+        .distinct()
+        .order_by(column.asc())
+        .limit(max(1, min(limit, 1000)))
+    )
+    return [r for r in db.session.scalars(stmt).all() if r]
+
+
+def _facet_labor_values(filters: dict[str, Any], *, limit: int = 200) -> list[str]:
+    stmt = (
+        _facet_base(filters, "labor_per")
+        .with_only_columns(MaterialPrice.labor_per)
+        .where(MaterialPrice.labor_per.is_not(None))
+        .distinct()
+        .order_by(MaterialPrice.labor_per.asc())
+        .limit(max(1, min(limit, 500)))
+    )
+    labor: list[str] = []
+    for raw in db.session.scalars(stmt).all():
+        if raw is None:
+            continue
+        d = raw if isinstance(raw, Decimal) else Decimal(str(raw))
+        if d == d.to_integral_value():
+            labor.append(str(int(d)))
+        else:
+            labor.append(format(d.normalize(), "f"))
+    return labor
+
+
+def _facet_size_values(filters: dict[str, Any], *, limit: int = 500) -> list[str]:
+    from ..material_size import size_display
+
+    stmt = (
+        _facet_base(filters, "size")
+        .with_only_columns(
+            MaterialPrice.size_width_in,
+            MaterialPrice.size_height_in,
+            MaterialPrice.size_depth_in,
+        )
+        .where(
+            or_(
+                MaterialPrice.size_width_in.is_not(None),
+                MaterialPrice.size_height_in.is_not(None),
+                MaterialPrice.size_depth_in.is_not(None),
+            )
+        )
+        .distinct()
+        .order_by(
+            MaterialPrice.size_width_in.asc(),
+            MaterialPrice.size_depth_in.asc(),
+            MaterialPrice.size_height_in.asc(),
+        )
+        .limit(max(1, min(limit, 500)))
+    )
+    sizes: list[str] = []
+    seen: set[str] = set()
+    for width, height, depth in db.session.execute(stmt).all():
+        label = size_display(width, height, depth)
+        if label and label not in seen:
+            seen.add(label)
+            sizes.append(label)
+    return sizes
+
+
+def _facet_supplier_values(filters: dict[str, Any], *, limit: int = 500) -> list[str]:
+    stmt = (
+        _facet_base(filters, "supplier", "supplier_company_id")
+        .join(Company, Company.id == MaterialPrice.supplier_company_id)
+        .with_only_columns(Company.name)
+        .where(Company.deleted_at.is_(None))
+        .where(Company.name.is_not(None))
+        .where(Company.name != "")
+        .distinct()
+        .order_by(Company.name.asc())
+        .limit(max(1, min(limit, 1000)))
+    )
+    return [r for r in db.session.scalars(stmt).all() if r]
+
+
+def _facet_csi_items(filters: dict[str, Any]) -> list[dict[str, Any]]:
+    from ..csi_spec import digits_from_csi
+
+    stmt = (
+        _facet_base(filters, "csi_spec_section", "csi_division")
+        .with_only_columns(MaterialPrice.csi_spec_section)
+        .where(MaterialPrice.csi_spec_section.is_not(None))
+        .where(MaterialPrice.csi_spec_section != "")
+        .distinct()
+        .order_by(MaterialPrice.csi_spec_section.asc())
+    )
+    items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw in db.session.scalars(stmt).all():
+        extra = _csi_extras(raw)
+        key = digits_from_csi(raw) or str(raw)
+        if key in seen:
+            continue
+        seen.add(key)
+        display = extra["csi_display"] or raw
+        title = extra["csi_title"]
+        items.append(
+            {
+                "value": key,
+                "label": f"{display} — {title}" if title else display,
+            }
+        )
+    items.sort(key=lambda row: str(row.get("value") or ""))
+    return items
+
+
+@bp.get("/material-prices/facets")
+def list_material_price_facets():
+    """Distinct values for catalog column dropdowns, scoped to the other active filters."""
+    filters = _material_price_list_filters()
+    return _jsonify(
+        {
+            "manufacturers": _facet_text_values(filters, MaterialPrice.manufacturer, "manufacturer"),
+            "categories": _facet_text_values(filters, MaterialPrice.category, "category"),
+            "csi_sections": _facet_csi_items(filters),
+            "sizes": _facet_size_values(filters),
+            "mounting_types": _facet_text_values(filters, MaterialPrice.mounting_type, "mounting_type"),
+            "units": _facet_text_values(filters, MaterialPrice.unit_of_measure, "unit_of_measure", limit=100),
+            "labor": _facet_labor_values(filters),
+            "suppliers": _facet_supplier_values(filters),
+            "entity": "material_price_facets",
+        }
+    )
+
+
+@bp.get("/material-prices/csi-sections")
+def list_material_price_csi_sections():
+    """Distinct CSI sections and divisions present in the material catalog."""
+    from ..csi_spec import digits_from_csi
+
+    rows = db.session.scalars(
+        select(MaterialPrice.csi_spec_section)
+        .where(MaterialPrice.csi_spec_section.is_not(None))
+        .where(MaterialPrice.csi_spec_section != "")
+        .distinct()
+        .order_by(MaterialPrice.csi_spec_section.asc())
+    ).all()
+    items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    divisions: dict[str, str | None] = {}
+    for raw in rows:
+        extra = _csi_extras(raw)
+        key = digits_from_csi(raw) or str(raw)
+        if extra["csi_division"]:
+            divisions[extra["csi_division"]] = extra["csi_division_name"]
+        if key in seen:
+            continue
+        seen.add(key)
+        items.append(
+            {
+                "csi_spec_section": key,
+                "csi_display": extra["csi_display"] or raw,
+                "csi_title": extra["csi_title"],
+                "csi_division": extra["csi_division"],
+                "csi_division_name": extra["csi_division_name"],
+            }
+        )
+    items.sort(key=lambda row: str(row.get("csi_spec_section") or ""))
+    return _jsonify(
+        {
+            "items": items,
+            "divisions": [
+                {"csi_division": k, "csi_division_name": v} for k, v in sorted(divisions.items())
+            ],
+            "entity": "material_csi_sections",
+        }
+    )
+
+
+@bp.get("/material-prices/ids")
+def list_material_price_ids():
+    """IDs matching the same filters as ``GET /material-prices`` (cap 5000)."""
+    filters = _material_price_list_filters()
+    base = _material_prices_query(**filters)
+    total = db.session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    ids = [str(r.id) for r in db.session.scalars(base.limit(5000)).all()]
+    return _jsonify(
+        {
+            "ids": ids,
+            "total": int(total),
+            "truncated": int(total) > len(ids),
+            "entity": "material_price_ids",
+        }
+    )
+
+
+def _material_bulk_ids(body: dict[str, Any]):
+    raw_ids = body.get("ids") or []
+    if not isinstance(raw_ids, list) or not raw_ids:
+        return None, (_jsonify({"error": "ids must be a non-empty list"}), 400)
+    if len(raw_ids) > 2000:
+        return None, (_jsonify({"error": "bulk change is limited to 2000 rows"}), 400)
+    parsed: list[uuid.UUID] = []
+    skipped: list[dict[str, str]] = []
+    seen: set[uuid.UUID] = set()
+    for raw in raw_ids:
+        pid = _parse_uuid_param(str(raw) if raw is not None else "")
+        if not pid:
+            skipped.append({"id": str(raw), "error": "invalid id"})
+            continue
+        if pid in seen:
+            continue
+        seen.add(pid)
+        parsed.append(pid)
+    return (parsed, skipped), None
+
+
+def _bulk_delete_material_prices(body: dict[str, Any]):
+    parsed_or_err = _material_bulk_ids(body)
+    if parsed_or_err[0] is None:
+        return parsed_or_err[1]
+    parsed, skipped = parsed_or_err[0]
+    rows = db.session.scalars(select(MaterialPrice).where(MaterialPrice.id.in_(parsed))).all()
+    by_id = {row.id: row for row in rows}
+    deleted: list[str] = []
+    for pid in parsed:
+        row = by_id.get(pid)
+        if row is None:
+            skipped.append({"id": str(pid), "error": "not found"})
+            continue
+        db.session.delete(row)
+        deleted.append(str(pid))
+    db.session.commit()
+    return _jsonify(
+        {
+            "ok": True,
+            "action": "delete",
+            "deleted": deleted,
+            "deleted_count": len(deleted),
+            "failed": skipped,
+            "failed_count": len(skipped),
+            "entity": "material_prices",
+        }
+    )
+
+
+@bp.post("/material-prices/bulk")
+def bulk_patch_material_prices():
+    """Set one field on many catalog rows, or delete them (action=delete)."""
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    if not (
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    ):
+        return _jsonify({"error": "catalog edits require estimate or user admin write access"}), 403
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    action = str(body.get("action") or "").strip().lower()
+    field = str(body.get("field") or "").strip()
+    if action == "delete" or field == "delete":
+        return _bulk_delete_material_prices(body)
+    if field not in _MATERIAL_BULK_FIELDS:
+        return _jsonify({"error": "field is not bulk-editable"}), 400
+    try:
+        new_value = _coerce_material_bulk_value(field, body.get("value"))
+    except ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    parsed_or_err = _material_bulk_ids(body)
+    if parsed_or_err[0] is None:
+        return parsed_or_err[1]
+    parsed, skipped = parsed_or_err[0]
+    rows = db.session.scalars(select(MaterialPrice).where(MaterialPrice.id.in_(parsed))).all()
+    by_id = {row.id: row for row in rows}
+    updated: list[dict[str, Any]] = []
+    for pid in parsed:
+        row = by_id.get(pid)
+        if row is None:
+            skipped.append({"id": str(pid), "error": "not found"})
+            continue
+        setattr(row, field, new_value)
+        if field == "supplier_company_id":
+            row.supplier_company = db.session.get(Company, new_value) if new_value else None
+        _sync_material_labor_row(row)
+        updated.append(_material_price_public(row))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return _jsonify({"error": "that manufacturer and item combination already exists"}), 409
+    return _jsonify(
+        {
+            "ok": True,
+            "field": field,
+            "value": str(new_value)
+            if field == "supplier_company_id" and new_value is not None
+            else new_value
+            if field not in ("cost", "labor_per", "labor_units_per_hour")
+            else _num_or_none(new_value),
+            "updated": updated,
+            "updated_count": len(updated),
+            "failed": skipped,
+            "failed_count": len(skipped),
+            "entity": "material_prices",
+        }
+    )
+
+
+@bp.get("/material-prices/<price_id>")
+def get_material_price(price_id: str):
+    """One catalog row, including timestamps."""
+    row, err = _load_material_price(price_id)
+    if err:
+        return err
+    return _jsonify({"item": _material_price_detail(row), "entity": "material_price"})
+
+
+@bp.patch("/material-prices/<price_id>")
+def patch_material_price(price_id: str):
+    """Update fields on one catalog row."""
+    from ..permissions.access import has_module_access
+
+    cu = current_user()
+    if not (
+        cu.is_dev_admin
+        or has_module_access(cu, "estimate", "write")
+        or has_module_access(cu, "user_admin", "write")
+    ):
+        return _jsonify({"error": "catalog edits require estimate or user admin write access"}), 403
+    row, err = _load_material_price(price_id)
+    if err:
+        return err
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return _jsonify({"error": "expected JSON object body"}), 400
+    updates = {k: v for k, v in body.items() if k in _MATERIAL_PATCH_FIELDS}
+    if not updates:
+        return _jsonify({"error": "no editable fields in body"}), 400
+    try:
+        for field, value in updates.items():
+            setattr(row, field, _coerce_material_bulk_value(field, value))
+        if "supplier_company_id" in updates:
+            row.supplier_company = (
+                db.session.get(Company, row.supplier_company_id) if row.supplier_company_id else None
+            )
+        _sync_material_labor_row(row)
+    except ApiError as exc:
+        return _jsonify({"error": exc.message}), exc.status
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return _jsonify({"error": "that manufacturer and item combination already exists"}), 409
+    return _jsonify({"item": _material_price_detail(row), "ok": True, "entity": "material_price"})
+
+
 @bp.get("/cost-suggestions/material")
 def cost_suggestions_material():
-    from ..csi_spec import normalize_csi_spec_section
+    from ..csi_spec import csi_storage_variants
 
     q = (request.args.get("q") or "").strip()
     if len(q) < 2:
@@ -5916,15 +7241,16 @@ def cost_suggestions_material():
         or_(
             MaterialPrice.item.ilike(like),
             MaterialPrice.manufacturer.ilike(like),
+            MaterialPrice.manufacturer_url.ilike(like),
             MaterialPrice.description.ilike(like),
         )
     )
     csi = (request.args.get("csi_spec_section") or "").strip() or None
     if csi:
-        norm = normalize_csi_spec_section(csi)
-        if norm:
-            stmt = stmt.where(MaterialPrice.csi_spec_section == norm)
-    stmt = stmt.limit(25)
+        variants = csi_storage_variants(csi)
+        if variants:
+            stmt = stmt.where(MaterialPrice.csi_spec_section.in_(variants))
+    stmt = stmt.options(joinedload(MaterialPrice.supplier_company)).limit(25)
     rows = db.session.scalars(stmt).all()
     return _jsonify({"items": [_material_price_public(m) for m in rows], "entity": "material_prices"})
 
@@ -5977,9 +7303,12 @@ from ._independent_estimate_routes import register_independent_estimate_routes  
 from ._issue_routes import register_issue_routes  # noqa: E402
 from ._golden_state_planroom import register_golden_state_planroom_routes  # noqa: E402
 
+from ._openings_estimate_routes import register_openings_estimate_routes  # noqa: E402
+
 register_extra_routes(bp)
 register_estimate_spec_routes(bp)
 register_independent_estimate_routes(bp)
+register_openings_estimate_routes(bp)
 register_issue_routes(bp)
 register_golden_state_planroom_routes(bp)
 _hr_dashboard.register_hr_routes(bp)
@@ -6009,6 +7338,9 @@ _integration_textura.register_textura_routes(bp)
 from . import _auth_mobile  # noqa: E402
 
 _auth_mobile.register_mobile_auth_routes(bp)
+from . import _platform_orgs as _platform_orgs_mod  # noqa: E402
+
+_platform_orgs_mod.register_platform_org_routes(bp)
 from . import _user_activity_service as _user_activity_svc  # noqa: E402
 
 _user_activity_svc.register_activity_routes(bp)

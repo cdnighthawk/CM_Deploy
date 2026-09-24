@@ -55,7 +55,7 @@ def _user_public(u: User) -> dict[str, Any]:
     }
 
 
-def issue_access_token(user_id: uuid.UUID) -> tuple[str, int]:
+def issue_access_token(user_id: uuid.UUID, organization_id: uuid.UUID | None = None) -> tuple[str, int]:
     ttl = _mobile_access_ttl()
     now = datetime.now(timezone.utc)
     exp = now + ttl
@@ -65,6 +65,8 @@ def issue_access_token(user_id: uuid.UUID) -> tuple[str, int]:
         "iat": int(now.timestamp()),
         "exp": int(exp.timestamp()),
     }
+    if organization_id is not None:
+        payload["org"] = str(organization_id)
     token = jwt.encode(
         payload,
         current_app.config["SECRET_KEY"],
@@ -75,7 +77,7 @@ def issue_access_token(user_id: uuid.UUID) -> tuple[str, int]:
     return token, int(ttl.total_seconds())
 
 
-def decode_access_token(token: str) -> uuid.UUID | None:
+def decode_access_payload(token: str) -> dict[str, Any] | None:
     try:
         payload = jwt.decode(
             token,
@@ -85,6 +87,13 @@ def decode_access_token(token: str) -> uuid.UUID | None:
     except jwt.PyJWTError:
         return None
     if payload.get("type") != _ACCESS_TYPE:
+        return None
+    return payload
+
+
+def decode_access_token(token: str) -> uuid.UUID | None:
+    payload = decode_access_payload(token)
+    if not payload:
         return None
     return _parse_uuid(payload.get("sub"))
 
@@ -173,7 +182,10 @@ def register_mobile_auth_routes(bp) -> None:
         if u is None:
             return jsonify({"error": "invalid email or password"}), 401
 
-        access_token, expires_in = issue_access_token(u.id)
+        from ..tenancy import bind_organization_for_user
+
+        org_id = bind_organization_for_user(u.id)
+        access_token, expires_in = issue_access_token(u.id, org_id)
         refresh_token = _issue_refresh_token(u, device_label=device_label)
         from ._user_activity_service import record_login
 
@@ -207,7 +219,10 @@ def register_mobile_auth_routes(bp) -> None:
             return jsonify({"error": "user inactive"}), 401
 
         _revoke_refresh_row(row)
-        access_token, expires_in = issue_access_token(u.id)
+        from ..tenancy import bind_organization_for_user, current_organization_id
+
+        org_id = bind_organization_for_user(u.id) or current_organization_id()
+        access_token, expires_in = issue_access_token(u.id, org_id)
         new_refresh = _issue_refresh_token(u, device_label=row.device_label)
         db.session.commit()
 
@@ -232,6 +247,19 @@ def register_mobile_auth_routes(bp) -> None:
             _revoke_refresh_row(row)
             db.session.commit()
         return jsonify({"ok": True})
+
+
+def bearer_org_id_from_request() -> uuid.UUID | None:
+    auth = (request.headers.get("Authorization") or "").strip()
+    if not auth.lower().startswith("bearer "):
+        return None
+    token = auth[7:].strip()
+    if not token:
+        return None
+    payload = decode_access_payload(token)
+    if not payload:
+        return None
+    return _parse_uuid(payload.get("org"))
 
 
 def bearer_user_from_request() -> User | None:

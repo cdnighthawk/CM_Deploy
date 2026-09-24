@@ -37,6 +37,7 @@
 			tb.innerHTML = '<tr><td colspan="6" class="text-muted small">No correspondence files.</td></tr>';
 			return;
 		}
+		var prevThread = null;
 		items.forEach(function (row) {
 			var extras = [];
 			if (row.downloadUrl) {
@@ -66,10 +67,13 @@
 								esc(row.id) +
 								'">File to project</button>'
 							: "");
+			var sameThread = !!(opts.groupThread && row.threadId && row.threadId === prevThread);
+			var dateCell = sameThread ? "↳ " + esc(fmtDate(row.sentAt)) : esc(fmtDate(row.sentAt));
+			prevThread = row.threadId || null;
 			var tr = document.createElement("tr");
 			tr.innerHTML =
 				"<td>" +
-				esc(fmtDate(row.sentAt)) +
+				dateCell +
 				"</td><td>" +
 				esc(row.fromName || row.fromEmail || "—") +
 				"</td><td>" +
@@ -120,7 +124,7 @@
 		if (!tb || !pid) return;
 		fetchJson("/api/correspondence?project_id=" + encodeURIComponent(pid))
 			.then(function (body) {
-				renderRows(body.items || [], "usis-proj-corr-tbody", { showProject: false, showFile: false });
+				renderRows(body.items || [], "usis-proj-corr-tbody", { showProject: false, showFile: false, groupThread: true });
 			})
 			.catch(function () {
 				tb.innerHTML = '<tr><td colspan="5" class="text-danger small">Could not load correspondence.</td></tr>';

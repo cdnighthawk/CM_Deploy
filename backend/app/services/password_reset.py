@@ -34,11 +34,22 @@ def request_password_reset(email: str) -> dict[str, object]:
     u = db.session.scalar(
         select(User).where(User.email == normalized, User.is_active.is_(True))
     )
-    if u is None or not u.password_hash:
+    if u is None or not u.is_active:
         return {"ok": True, "sent": False, "dry_run": False}
 
-    db.session.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == u.id))
+    raw_token = issue_set_password_token(u)
 
+    mail_result = send_password_reset_email(to=u.email, reset_token=raw_token)
+    return {
+        "ok": True,
+        "sent": bool(mail_result.get("sent")),
+        "dry_run": bool(mail_result.get("dry_run")),
+    }
+
+
+def issue_set_password_token(u: User) -> str:
+    """Create a one-time set-password token (invite or forgot-password)."""
+    db.session.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == u.id))
     raw_token = secrets.token_urlsafe(32)
     row = PasswordResetToken(
         id=uuid.uuid4(),
@@ -48,13 +59,7 @@ def request_password_reset(email: str) -> dict[str, object]:
     )
     db.session.add(row)
     db.session.flush()
-
-    mail_result = send_password_reset_email(to=u.email, reset_token=raw_token)
-    return {
-        "ok": True,
-        "sent": bool(mail_result.get("sent")),
-        "dry_run": bool(mail_result.get("dry_run")),
-    }
+    return raw_token
 
 
 def confirm_password_reset(token: str, new_password: str) -> None:

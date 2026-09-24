@@ -29,7 +29,7 @@ def backend_root() -> Path:
 
 
 def repo_catalog_dir() -> Path:
-    """In-repo manufacturer catalog CSVs (Claridge, JL Industries, …)."""
+    """In-repo manufacturer catalog CSVs (JL Industries, Claridge, …)."""
     return backend_root() / "data" / "catalog"
 
 

@@ -15,6 +15,23 @@ from sqlalchemy.orm import Session
 
 from .models.lead_estimate import LeadEstimate
 
+# Local Hub fields. Core INSERT omits them so Postgres uses defaults; ON CONFLICT
+# must not SET excluded.* or a BC pull wipes estimate links / CRM stage.
+_PRESERVE_ON_UPSERT = frozenset(
+    {
+        "id",
+        "created_at",
+        "organization_id",
+        "project_id",
+        "primary_estimate_id",
+        "primary_rfp_id",
+        "estimate_locked_at",
+        "estimate_approved_at",
+        "estimate_approved_by_user_id",
+        "crm_stage",
+    }
+)
+
 
 def _blank_to_none(s: str | None) -> str | None:
     if s is None:
@@ -199,16 +216,26 @@ def bc_api_project_to_norm(project: Mapping[str, Any]) -> dict[str, str | None]:
     return out
 
 
+def _organization_id_for_upsert():
+    from .tenancy import current_organization_id, default_organization_id
+
+    return current_organization_id() or default_organization_id()
+
+
+def _lead_update_col_names(table: Any) -> list[str]:
+    return [c.name for c in table.columns if c.name not in _PRESERVE_ON_UPSERT]
+
+
 def upsert_lead_estimate_norm_rows(
     sess: Session,
     norms: Iterable[dict[str, str | None]],
     *,
     batch_size: int = 500,
+    organization_id: Any = None,
 ) -> tuple[int, int, int]:
     """Upsert ``lead_estimates`` from CSV-shaped normal rows (same keys as ``_csv_row_to_db_row``)."""
     table = LeadEstimate.__table__
-    exclude_update = {"id", "created_at"}
-    update_col_names = [c.name for c in table.columns if c.name not in exclude_update]
+    update_col_names = _lead_update_col_names(table)
 
     loaded = 0
     skipped = 0
@@ -228,12 +255,26 @@ def upsert_lead_estimate_norm_rows(
             continue
         batch.append(row)
         if len(batch) >= batch_size:
-            _flush_batch(sess, table, batch, mode="upsert", update_col_names=update_col_names)
+            _flush_batch(
+                sess,
+                table,
+                batch,
+                mode="upsert",
+                update_col_names=update_col_names,
+                organization_id=organization_id,
+            )
             loaded += len(batch)
             batch.clear()
 
     if batch:
-        _flush_batch(sess, table, batch, mode="upsert", update_col_names=update_col_names)
+        _flush_batch(
+            sess,
+            table,
+            batch,
+            mode="upsert",
+            update_col_names=update_col_names,
+            organization_id=organization_id,
+        )
         loaded += len(batch)
 
     return loaded, skipped, errors
@@ -246,9 +287,16 @@ def _flush_batch(
     *,
     mode: str,
     update_col_names: list[str],
+    organization_id: Any = None,
 ) -> None:
     if not batch:
         return
+    org_id = organization_id or _organization_id_for_upsert()
+    if org_id is None:
+        raise RuntimeError("organization_id is required to upsert lead_estimates")
+    for row in batch:
+        row["organization_id"] = org_id
+    payload_keys = set(batch[0].keys())
     if mode == "truncate":
         sess.execute(pg_insert(table).values(batch))
         sess.commit()
@@ -257,11 +305,16 @@ def _flush_batch(
     ins = pg_insert(table).values(batch)
     set_: dict[str, Any] = {}
     for name in update_col_names:
+        if name not in payload_keys:
+            continue
         if name == "updated_at":
             set_[name] = func.now()
         else:
             set_[name] = getattr(ins.excluded, name)
-    ins = ins.on_conflict_do_update(index_elements=["external_id"], set_=set_)
+    ins = ins.on_conflict_do_update(
+        index_elements=["organization_id", "external_id"],
+        set_=set_,
+    )
     sess.execute(ins)
     sess.commit()
 
@@ -279,8 +332,7 @@ def load_lead_estimates_csv(
         raise FileNotFoundError(str(path))
 
     table = LeadEstimate.__table__
-    exclude_update = {"id", "created_at"}
-    update_col_names = [c.name for c in table.columns if c.name not in exclude_update]
+    update_col_names = _lead_update_col_names(table)
 
     loaded = 0
     skipped = 0

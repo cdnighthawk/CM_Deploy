@@ -1,5 +1,5 @@
 /**
- * USIS CM Time office UI (W3CRM + DataTables + USISUi).
+ * WorX CM Time office UI (W3CRM + DataTables + USISUi).
  */
 (function () {
 	"use strict";
@@ -73,7 +73,7 @@
 			esc(href || "#") +
 			'"><div class="card-body py-3"><div class="text-muted small">' +
 			esc(label) +
-			'</div><div class="fs-4 fw-semibold" style="color:#1F4E5F">' +
+			'</div><div class="fs-4 fw-semibold" style="color:#1E4B8F">' +
 			esc(String(value)) +
 			"</div></div></a>"
 		);
@@ -195,7 +195,7 @@
 			var box = document.getElementById("usis-time-me");
 			var st = data.status || "out";
 			var banner = data.sign_ready
-				? '<div class="alert mb-3" style="background:#1F4E5F;color:#fff">Time card ready to sign. <button type="button" class="btn btn-sm btn-light" id="usis-sign">Review &amp; Sign</button></div>'
+				? '<div class="alert mb-3" style="background:#1E4B8F;color:#fff">Time card ready to sign. <button type="button" class="btn btn-sm btn-light" id="usis-sign">Review &amp; Sign</button></div>'
 				: "";
 			var punchBtns = data.web_punch_allowed
 				? '<div class="btn-group mb-3" id="usis-punch-btns">' +
@@ -573,7 +573,7 @@
 					var latlngs = data.pings.map(function (p) {
 						return [p.lat, p.lon];
 					});
-					window.L.polyline(latlngs, { color: "#1F4E5F" }).addTo(map);
+					window.L.polyline(latlngs, { color: "#1E4B8F" }).addTo(map);
 				}
 			});
 		};

@@ -10,10 +10,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
 from .auth import User
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class SavedListFilter(UUIDPKMixin, TimestampMixin, db.Model):
+class SavedListFilter(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "saved_list_filters"
     __table_args__ = (
         UniqueConstraint("user_id", "table_key", "name", name="uq_saved_list_filters_user_table_name"),

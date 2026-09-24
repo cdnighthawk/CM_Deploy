@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -34,7 +34,7 @@ FULFILLMENT_STATUSES = frozenset(
 INVOICE_MATCH_STATUSES = frozenset({"unmatched", "quantity_ok", "amount_ok", "matched", "exception"})
 
 
-class PurchaseOrderShipment(UUIDPKMixin, TimestampMixin, db.Model):
+class PurchaseOrderShipment(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "purchase_order_shipments"
 
     commitment_id: Mapped[uuid.UUID] = mapped_column(
@@ -65,7 +65,7 @@ class PurchaseOrderShipment(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class PurchaseOrderShipmentLine(UUIDPKMixin, TimestampMixin, db.Model):
+class PurchaseOrderShipmentLine(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "purchase_order_shipment_lines"
 
     shipment_id: Mapped[uuid.UUID] = mapped_column(
@@ -90,7 +90,7 @@ class PurchaseOrderShipmentLine(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class PurchaseOrderReceipt(UUIDPKMixin, TimestampMixin, db.Model):
+class PurchaseOrderReceipt(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "purchase_order_receipts"
     __table_args__ = (UniqueConstraint("client_id", name="uq_purchase_order_receipts_client_id"),)
 
@@ -132,7 +132,7 @@ class PurchaseOrderReceipt(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class PurchaseOrderReceiptLine(UUIDPKMixin, TimestampMixin, db.Model):
+class PurchaseOrderReceiptLine(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "purchase_order_receipt_lines"
 
     receipt_id: Mapped[uuid.UUID] = mapped_column(

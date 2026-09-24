@@ -9,6 +9,7 @@ import os
 import secrets
 import threading
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -34,16 +35,105 @@ from ..integrations.buildingconnected_write import (
 from ..lead_estimate_csv_load import bc_api_project_to_norm, upsert_lead_estimate_norm_rows
 from ..models.buildingconnected_oauth import BuildingConnectedOAuthToken
 from ..models.lead_estimate import LeadEstimate
+from ..models.organization import Organization
+from ..tenancy import (
+    bind_request_organization,
+    current_organization_id,
+    include_all_orgs,
+    user_is_member,
+)
 
 log = logging.getLogger(__name__)
 
 BC_OAUTH_STATE_KEY = "bc_oauth_state"
+BC_OAUTH_ORG_KEY = "bc_oauth_organization_id"
+BC_OAUTH_RETURN_KEY = "bc_oauth_return_to"
 _SYNC_LOCK = threading.Lock()
 _SYNC_RUNNING = False
 _SYNC_STARTED_AT: float | None = None
 _SYNC_STALE_AFTER_SEC = 20 * 60
 _PAGE_UPSERT = 100
 _BULK_WRITE_MAX = 100
+
+
+def _parse_org_uuid(raw) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(str(raw or "").strip())
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
+def _safe_return_to(raw: str | None) -> str:
+    """Same-origin relative path only; default is Leads."""
+    default = "/construction/leads.html"
+    s = (raw or "").strip()
+    if not s.startswith("/") or s.startswith("//") or "\\" in s or ":" in s:
+        return default
+    if s.startswith("/api/"):
+        return default
+    return s[:200]
+
+
+def _return_to_label(href: str) -> str:
+    path = (href or "").split("?", 1)[0]
+    if "platform-contractors" in path:
+        return "Back to Contractors"
+    if "company-settings" in path:
+        return "Back to Company settings"
+    return "Back to Leads"
+
+
+def _can_connect_bc_org(org_id: uuid.UUID) -> bool:
+    from ._perms import current_user
+
+    cu = current_user()
+    if cu.is_dev_admin:
+        return True
+    if cu.user is None:
+        return False
+    if bool(getattr(cu.user, "is_superuser", False)):
+        return True
+    return user_is_member(cu.user.id, org_id)
+
+
+def _bc_oauth_row(
+    label: str = "default",
+    organization_id: uuid.UUID | None = None,
+) -> BuildingConnectedOAuthToken | None:
+    q = select(BuildingConnectedOAuthToken).where(BuildingConnectedOAuthToken.label == label)
+    target = organization_id or current_organization_id()
+    if target is None:
+        return db.session.scalar(q)
+    q = q.where(BuildingConnectedOAuthToken.organization_id == target)
+    with include_all_orgs():
+        return db.session.scalar(q)
+
+
+def buildingconnected_status_public(
+    organization_id: uuid.UUID | None = None,
+) -> dict:
+    """JSON-safe BC connection status for one organization."""
+    target = organization_id or current_organization_id()
+    row = _bc_oauth_row(organization_id=target) if target is not None else _bc_oauth_row()
+    connected_at = None
+    expires = None
+    if row is not None:
+        ts = row.updated_at or row.created_at
+        if ts is not None:
+            connected_at = ts.isoformat()
+        if row.access_expires_at is not None:
+            expires = row.access_expires_at.isoformat()
+    start = "/api/v1/integrations/buildingconnected/oauth/start"
+    if target is not None:
+        start += "?organization_id=" + str(target)
+    return {
+        "entity": "buildingconnected_status",
+        "connected": row is not None,
+        "organization_id": str(target) if target is not None else None,
+        "connected_at": connected_at,
+        "access_expires_at": expires,
+        "oauth_start_url": start,
+    }
 
 
 class BcWriteError(Exception):
@@ -241,10 +331,18 @@ def cron_secret_matches(req=None, app=None) -> bool:
     return secrets.compare_digest(expected, provided)
 
 
-def _bc_oauth_browser_page(*, ok: bool, message: str, status: int = 200, close: bool = True):
+def _bc_oauth_browser_page(
+    *,
+    ok: bool,
+    message: str,
+    status: int = 200,
+    close: bool = True,
+    return_to: str | None = None,
+):
     """HTML landing page after Autodesk redirects back (popup or full tab)."""
     title = "BuildingConnected connected" if ok else "BuildingConnected reconnect failed"
-    leads_href = "/construction/leads.html"
+    leads_href = _safe_return_to(return_to)
+    back_label = _return_to_label(leads_href)
     payload = json.dumps(
         {"source": "usis-bc-oauth", "ok": ok, "error": None if ok else message}
     )
@@ -256,14 +354,14 @@ def _bc_oauth_browser_page(*, ok: bool, message: str, status: int = 200, close: 
   <title>{escape(title)}</title>
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 2rem; color: #1b242c; }}
-    a {{ color: #1f4e5f; }}
+    a {{ color: #1e4b8f; }}
     .muted {{ color: #5c6b76; margin-top: 0.75rem; }}
   </style>
 </head>
 <body>
   <h1 style="font-size:1.25rem">{escape(title)}</h1>
   <p>{escape(message)}</p>
-  <p><a href="{leads_href}">Back to Leads</a></p>
+  <p><a href="{leads_href}">{escape(back_label)}</a></p>
   <p class="muted">You can close this window if it does not close on its own.</p>
   <script>
   (function () {{
@@ -302,7 +400,7 @@ def _decrypt_refresh(blob: str) -> str:
     return _fernet().decrypt(blob.encode()).decode()
 
 
-def _persist_token_payload(data: dict) -> None:
+def _persist_token_payload(data: dict, organization_id: uuid.UUID | None = None) -> None:
     at = data.get("access_token")
     refresh = data.get("refresh_token")
     expires_in = int(data.get("expires_in") or 0)
@@ -311,17 +409,21 @@ def _persist_token_payload(data: dict) -> None:
     exp: datetime | None = None
     if expires_in > 0:
         exp = datetime.now(timezone.utc) + timedelta(seconds=max(0, expires_in - 120))
-    row = db.session.get(BuildingConnectedOAuthToken, "default")
+    target = organization_id or current_organization_id()
+    if target is not None:
+        bind_request_organization(target)
     enc = _encrypt_refresh(refresh)
+    row = _bc_oauth_row(organization_id=target)
     if row is None:
-        db.session.add(
-            BuildingConnectedOAuthToken(
-                label="default",
-                refresh_token_encrypted=enc,
-                access_token=at,
-                access_expires_at=exp,
-            )
+        token = BuildingConnectedOAuthToken(
+            label="default",
+            refresh_token_encrypted=enc,
+            access_token=at,
+            access_expires_at=exp,
         )
+        if target is not None:
+            token.organization_id = target
+        db.session.add(token)
     else:
         row.refresh_token_encrypted = enc
         row.access_token = at
@@ -329,7 +431,7 @@ def _persist_token_payload(data: dict) -> None:
 
 
 def _refresh_tokens_unlocked() -> None:
-    row = db.session.get(BuildingConnectedOAuthToken, "default")
+    row = _bc_oauth_row()
     if row is None:
         raise RuntimeError("BuildingConnected is not connected (complete OAuth first).")
     rt = _decrypt_refresh(row.refresh_token_encrypted)
@@ -350,7 +452,7 @@ def _refresh_tokens_unlocked() -> None:
 
 
 def _ensure_access_token() -> str:
-    row = db.session.get(BuildingConnectedOAuthToken, "default")
+    row = _bc_oauth_row()
     if row is None:
         raise RuntimeError("BuildingConnected is not connected (complete OAuth first).")
     now = datetime.now(timezone.utc)
@@ -390,7 +492,11 @@ def _pull_and_upsert(
     *,
     full: bool = False,
     max_pages: int | None = None,
+    organization_id: uuid.UUID | None = None,
 ) -> tuple[int, int, int]:
+    org_id = organization_id or current_organization_id()
+    if org_id is not None:
+        bind_request_organization(org_id)
     base = str(current_app.config.get("BUILDINGCONNECTED_API_BASE") or "").rstrip("/")
     updated_at_range = _opportunities_updated_at_range(full=full)
     page_cap = int(max_pages) if max_pages is not None else (500 if full else 50)
@@ -402,7 +508,9 @@ def _pull_and_upsert(
         nonlocal loaded, skipped, errors, batch
         if not batch:
             return
-        l, s, e = upsert_lead_estimate_norm_rows(db.session, batch)
+        l, s, e = upsert_lead_estimate_norm_rows(
+            db.session, batch, organization_id=org_id
+        )
         loaded += l
         skipped += s
         errors += e
@@ -410,10 +518,11 @@ def _pull_and_upsert(
         db.session.expunge_all()
 
     log.info(
-        "BuildingConnected pull full=%s pages=%s updatedAt=%s",
+        "BuildingConnected pull full=%s pages=%s updatedAt=%s org=%s",
         full,
         page_cap,
         updated_at_range,
+        org_id,
     )
     with BuildingConnectedClient(access_token, base) as cli:
         for item in cli.iter_opportunities(
@@ -421,6 +530,8 @@ def _pull_and_upsert(
             max_pages=page_cap,
         ):
             norm = bc_api_project_to_norm(item)
+            if not norm.get("source"):
+                norm["source"] = "buildingconnected"
             oid = norm.get("id")
             if isinstance(oid, str) and oid:
                 if oid in seen:
@@ -433,12 +544,22 @@ def _pull_and_upsert(
     return loaded, skipped, errors
 
 
-def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
+def _run_sync_job(
+    app,
+    access_token: str,
+    *,
+    full: bool = False,
+    organization_id: uuid.UUID | None = None,
+) -> None:
     global _SYNC_RUNNING, _SYNC_STARTED_AT
     loaded = skipped = errors = 0
     with app.app_context():
         try:
-            loaded, skipped, errors = _pull_and_upsert(access_token, full=full)
+            if organization_id is not None:
+                bind_request_organization(organization_id)
+            loaded, skipped, errors = _pull_and_upsert(
+                access_token, full=full, organization_id=organization_id
+            )
             db.session.commit()
             log.info(
                 "BuildingConnected sync complete: loaded=%s skipped=%s errors=%s full=%s",
@@ -455,7 +576,9 @@ def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
                     _refresh_tokens_unlocked()
                     db.session.commit()
                     token = _ensure_access_token()
-                    loaded, skipped, errors = _pull_and_upsert(token, full=full)
+                    loaded, skipped, errors = _pull_and_upsert(
+                        token, full=full, organization_id=organization_id
+                    )
                     db.session.commit()
                     log.info(
                         "BuildingConnected sync complete after refresh: loaded=%s skipped=%s errors=%s",
@@ -478,8 +601,43 @@ def _run_sync_job(app, access_token: str, *, full: bool = False) -> None:
 
 
 def register_buildingconnected_routes(bp: Blueprint) -> None:
+    @bp.get("/integrations/buildingconnected/status")
+    def bc_status():
+        requested = _parse_org_uuid(request.args.get("organization_id"))
+        target = requested or current_organization_id()
+        if requested is not None:
+            with include_all_orgs():
+                org = db.session.get(Organization, requested)
+            if org is None:
+                return jsonify({"error": "organization not found", "entity": "buildingconnected_status"}), 404
+            if not _can_connect_bc_org(requested):
+                return jsonify({"error": "not allowed to manage BuildingConnected for that company", "entity": "buildingconnected_status"}), 403
+            target = requested
+        return jsonify(buildingconnected_status_public(target))
+
     @bp.get("/integrations/buildingconnected/oauth/start")
     def bc_oauth_start():
+        return_to = _safe_return_to(request.args.get("return_to"))
+        requested = _parse_org_uuid(request.args.get("organization_id"))
+        if requested is not None:
+            with include_all_orgs():
+                org = db.session.get(Organization, requested)
+            if org is None:
+                return _bc_oauth_browser_page(
+                    ok=False,
+                    close=False,
+                    status=404,
+                    message="That company was not found.",
+                    return_to=return_to,
+                )
+            if not _can_connect_bc_org(requested):
+                return _bc_oauth_browser_page(
+                    ok=False,
+                    close=False,
+                    status=403,
+                    message="You cannot connect BuildingConnected for that company.",
+                    return_to=return_to,
+                )
         cid = current_app.config.get("AUTODESK_CLIENT_ID")
         redir = current_app.config.get("AUTODESK_OAUTH_REDIRECT_URI") or (
             request.url_root.rstrip("/")
@@ -497,24 +655,31 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                     "(copy them from the Render usis-cm Environment), then restart Flask. "
                     "To reconnect production, use Reconnect BC on www.usiscm.com instead of localhost."
                 ),
+                return_to=return_to,
             )
         state = secrets.token_urlsafe(32)
         session[BC_OAUTH_STATE_KEY] = state
+        session[BC_OAUTH_ORG_KEY] = str(requested) if requested is not None else None
+        session[BC_OAUTH_RETURN_KEY] = return_to
         session.permanent = True
         url = build_authorize_url(client_id=cid, redirect_uri=redir, scopes=scopes, state=state)
         return redirect(url, code=302)
 
     @bp.get("/integrations/buildingconnected/oauth/callback")
     def bc_oauth_callback():
+        return_to = _safe_return_to(session.get(BC_OAUTH_RETURN_KEY))
+        target_org = _parse_org_uuid(session.get(BC_OAUTH_ORG_KEY))
         err = (request.args.get("error") or "").strip()
         if err:
-            return _bc_oauth_browser_page(ok=False, message=err, status=400)
+            return _bc_oauth_browser_page(ok=False, message=err, status=400, return_to=return_to)
         code = (request.args.get("code") or "").strip()
         state = (request.args.get("state") or "").strip()
         expected = session.pop(BC_OAUTH_STATE_KEY, None)
+        session.pop(BC_OAUTH_ORG_KEY, None)
+        session.pop(BC_OAUTH_RETURN_KEY, None)
         if not code or not state or expected != state:
             return _bc_oauth_browser_page(
-                ok=False, message="invalid or missing OAuth state/code", status=400
+                ok=False, message="invalid or missing OAuth state/code", status=400, return_to=return_to
             )
         cid = current_app.config.get("AUTODESK_CLIENT_ID")
         sec = current_app.config.get("AUTODESK_CLIENT_SECRET")
@@ -528,19 +693,22 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 close=False,
                 message="Autodesk client is not fully configured (AUTODESK_CLIENT_ID / AUTODESK_CLIENT_SECRET).",
                 status=503,
+                return_to=return_to,
             )
         try:
             data = exchange_authorization_code(
                 client_id=cid, client_secret=sec, code=code, redirect_uri=redir
             )
-            _persist_token_payload(data)
+            _persist_token_payload(data, organization_id=target_org)
             db.session.commit()
         except Exception as exc:
             db.session.rollback()
             log.warning("BuildingConnected OAuth callback failed: %s", exc)
-            return _bc_oauth_browser_page(ok=False, message=str(exc), status=400)
+            return _bc_oauth_browser_page(ok=False, message=str(exc), status=400, return_to=return_to)
         return _bc_oauth_browser_page(
-            ok=True, message="BuildingConnected is connected. You can return to Leads."
+            ok=True,
+            message="BuildingConnected is connected. You can return to setup.",
+            return_to=return_to,
         )
 
     @bp.route("/integrations/buildingconnected/sync", methods=["GET", "POST"])
@@ -585,10 +753,11 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 _SYNC_RUNNING = True
                 _SYNC_STARTED_AT = time.monotonic()
             app = current_app._get_current_object()
+            org_id = current_organization_id()
             threading.Thread(
                 target=_run_sync_job,
                 args=(app, access),
-                kwargs={"full": want_full},
+                kwargs={"full": want_full, "organization_id": org_id},
                 daemon=True,
                 name="bc-sync",
             ).start()
@@ -617,10 +786,12 @@ def register_buildingconnected_routes(bp: Blueprint) -> None:
                 try:
                     _refresh_tokens_unlocked()
                     db.session.commit()
-                    row = db.session.get(BuildingConnectedOAuthToken, "default")
+                    row = _bc_oauth_row()
                     if not row or not row.access_token:
                         raise RuntimeError("no access token after refresh") from None
-                    loaded, skipped, errors = _pull_and_upsert(row.access_token)
+                    loaded, skipped, errors = _pull_and_upsert(
+                        row.access_token, full=want_full, organization_id=current_organization_id()
+                    )
                     db.session.commit()
                 except Exception as exc2:
                     db.session.rollback()

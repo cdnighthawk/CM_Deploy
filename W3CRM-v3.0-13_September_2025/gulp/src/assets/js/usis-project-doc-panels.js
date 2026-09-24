@@ -23,27 +23,6 @@
 		return c || null;
 	}
 
-	function putDrawingThroughApi(itemId, file) {
-		var fd = new FormData();
-		fd.append("file", file, file.name || "drawing.pdf");
-		return fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(itemId) + "/file", {
-			method: "PUT",
-			credentials: "include",
-			headers: actorHeaders(),
-			body: fd,
-		}).then(function (res) {
-			return res.text().then(function (t) {
-				if (res.ok) return payloadSafe(t);
-				var msg = "The website could not store the PDF (" + res.status + ").";
-				try {
-					var j = t ? JSON.parse(t) : null;
-					if (j && (j.error || j.detail)) msg = [j.error, j.detail].filter(Boolean).join(": ");
-				} catch (e) {}
-				throw new Error(msg);
-			});
-		});
-	}
-
 	function payloadSafe(t) {
 		try {
 			return t ? JSON.parse(t) : {};
@@ -52,13 +31,104 @@
 		}
 	}
 
+	function apiErrorText(j, fallback) {
+		if (!j) return fallback;
+		var err = j.error;
+		if (err && typeof err === "object") return err.message || err.code || fallback;
+		if (err || j.detail) return [err, j.detail].filter(Boolean).join(": ");
+		return j.code || fallback;
+	}
+
+	function hashHex(algo, buf) {
+		return crypto.subtle.digest(algo, buf).then(function (dig) {
+			var bytes = new Uint8Array(dig);
+			var out = "";
+			for (var i = 0; i < bytes.length; i++) {
+				out += bytes[i].toString(16).padStart(2, "0");
+			}
+			return out;
+		});
+	}
+
+	function mintLooksLikeS3(upload) {
+		if (!upload || typeof upload !== "object") return false;
+		var kind = String(upload.protocol || upload.kind || upload.mode || "").toLowerCase();
+		if (kind.indexOf("s3") >= 0 || kind.indexOf("presign") >= 0) return true;
+		var url = String(upload.uploadUrl || upload.url || "");
+		return /X-Amz-|amazonaws|\bs3\./i.test(url);
+	}
+
+	function mintIsNativeB2(upload) {
+		if (!upload || typeof upload !== "object" || mintLooksLikeS3(upload)) return false;
+		var url = String(upload.uploadUrl || upload.url || "");
+		var kind = String(upload.protocol || upload.kind || upload.mode || "").toLowerCase().replace(/_/g, "-");
+		if (kind === "b2-native") return url.indexOf("b2_upload_file") >= 0 || /backblaze\.com/i.test(url);
+		return url.indexOf("b2_upload_file") >= 0;
+	}
+
 	function finishClientDrawingUpload(payload, file) {
 		var item = payload && payload.item;
+		var upload = payload && payload.upload;
 		if (!item || !item.id || !file) {
 			return Promise.resolve(payload);
 		}
-		return putDrawingThroughApi(item.id, file).then(function () {
-			return payload;
+		if (mintLooksLikeS3(upload)) {
+			return Promise.reject(new Error("S3_FALLBACK_FORBIDDEN"));
+		}
+		if (!mintIsNativeB2(upload)) {
+			return Promise.reject(new Error("B2_UPLOAD_URL_UNAVAILABLE"));
+		}
+		var url = String(upload.uploadUrl || upload.url || "");
+		var token = String(upload.authorizationToken || upload.authorization || upload.token || "");
+		var fileName = String(upload.fileName || upload.file_name || file.name || "drawing.pdf");
+		return file.arrayBuffer().then(function (buf) {
+			return Promise.all([hashHex("SHA-1", buf), hashHex("SHA-256", buf)]).then(function (hashes) {
+				var sha1 = hashes[0];
+				var sha256 = hashes[1];
+				return fetch(url, {
+					method: "POST",
+					credentials: "omit",
+					headers: {
+						Authorization: token,
+						"Content-Type": "application/pdf",
+						"X-Bz-File-Name": encodeURIComponent(fileName),
+						"X-Bz-Content-Sha1": sha1,
+					},
+					body: buf,
+				}).then(function (res) {
+					return res.text().then(function (t) {
+						if (!res.ok) {
+							if (res.status === 403 && /X-Amz-/i.test(url)) {
+								throw new Error("S3_FALLBACK_FORBIDDEN");
+							}
+							throw new Error("B2 upload failed (" + res.status + ")");
+						}
+						var b2 = payloadSafe(t);
+						return fetch(apiBase() + "/api/v1/drawings/" + encodeURIComponent(item.id) + "/ack-file", {
+							method: "POST",
+							credentials: "include",
+							headers: Object.assign({ "Content-Type": "application/json" }, actorHeaders()),
+							body: JSON.stringify({
+								item: {
+									b2FileId: b2.fileId || "",
+									b2FileName: b2.fileName || fileName,
+									contentSha1: b2.contentSha1 || sha1,
+									contentLength: file.size,
+									sha256: sha256,
+									contentType: "application/pdf",
+								},
+							}),
+						}).then(function (ackRes) {
+							return ackRes.text().then(function (ackT) {
+								if (!ackRes.ok) {
+									throw new Error(apiErrorText(payloadSafe(ackT), "ack-file failed (" + ackRes.status + ")"));
+								}
+								return payload;
+							});
+						});
+					});
+				});
+			});
 		});
 	}
 

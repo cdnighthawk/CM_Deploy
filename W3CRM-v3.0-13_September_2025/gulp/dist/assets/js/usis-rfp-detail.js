@@ -465,7 +465,7 @@
 		drop.addEventListener("dragover", function (ev) {
 			ev.preventDefault();
 			drop.classList.add("is-drag");
-			drop.style.borderColor = "#1F4E5F";
+			drop.style.borderColor = "#1E4B8F";
 			drop.style.background = "#eef5f7";
 		});
 		drop.addEventListener("dragleave", function () {

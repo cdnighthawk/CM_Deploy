@@ -27,7 +27,7 @@ INSERT INTO estimates (
   id, created_at, updated_at, lead_estimate_id, project_id,
   version, status, title, name, notes, total, due_at,
   fee_percentage, profit_margin, rom, is_current,
-  estimate_locked_at, approved_at
+  estimate_locked_at, approved_at, organization_id
 )
 SELECT
   gen_random_uuid(), now(), now(), le.id, le.project_id,
@@ -43,7 +43,8 @@ SELECT
   le.rom,
   true,
   le.estimate_locked_at,
-  le.estimate_approved_at
+  le.estimate_approved_at,
+  le.organization_id
 FROM lead_estimates le
 WHERE NOT EXISTS (
   SELECT 1 FROM estimates e WHERE e.lead_estimate_id = le.id
@@ -110,7 +111,7 @@ def backfill_default_estimate_for_lead(connection, lead_id) -> None:
             INSERT INTO estimates (
               id, created_at, updated_at, lead_estimate_id, project_id,
               version, status, title, name, fee_percentage, profit_margin, rom,
-              is_current, estimate_locked_at, approved_at, due_at
+              is_current, estimate_locked_at, approved_at, due_at, organization_id
             )
             SELECT
               gen_random_uuid(), now(), now(), le.id, le.project_id,
@@ -124,7 +125,8 @@ def backfill_default_estimate_for_lead(connection, lead_id) -> None:
               true,
               le.estimate_locked_at,
               le.estimate_approved_at,
-              le.due_at
+              le.due_at,
+              le.organization_id
             FROM lead_estimates le
             WHERE le.id = :lead_id
               AND NOT EXISTS (SELECT 1 FROM estimates e WHERE e.lead_estimate_id = le.id)

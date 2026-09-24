@@ -15,6 +15,7 @@ Single HTTPS web service: Gulp-built UI + Flask API + PostgreSQL. Session cookie
    - PostgreSQL `usis-cm-db`
    - Web service `usis-cm` (Python 3.12)
    - Cron job `usis-calendar-reminders` (daily 14:00 UTC; inherits `BC_SYNC_CRON_SECRET` from `usis-cm`)
+   - Cron job `usis-bc-hourly-sync` (hourly UTC; POSTs BuildingConnected Bid Board pull)
    - Cron job `usis-invoice-mailbox-sync` (every 5 minutes; same secret, calls `usis-cm` over Render private networking)
    - Persistent disk on `backend/instance` (uploads; optional if using B2 — see [backblaze-b2.md](backblaze-b2.md))
 
@@ -35,7 +36,9 @@ Optional overrides:
 | `CORS_ORIGINS` | Auto from `USIS_APP_PUBLIC_URL`, else `RENDER_EXTERNAL_URL` |
 | `USIS_POST_LOGIN_REDIRECT` | `{USIS_APP_PUBLIC_URL}/usis-dashboard.html` if public URL set, else Render default |
 | `USIS_APP_PUBLIC_URL` | Canonical HTTPS origin (required for custom domain; see §8) |
-| `CM_API_KEY` | Long-lived Bearer token for the Autodesk ingest PC (`GET /api/projects`, `POST /api/documents`, `POST /api/drawings`). Do not commit. |
+| `CM_API_KEY` | Long-lived Bearer token for the Autodesk ingest PC (`GET /api/projects`, `GET /api/ingest/estimates`, JSON `POST /api/documents` / `POST /api/drawings`). Do not POST file bytes to those routes — mint native B2, then ack. Do not commit. |
+| `ESTIMATE_FOLDER_PROVISION_URL` | Base URL of `C:\usis-cm\folder_provision.py` (port **5055**). Example: `http://<data-server-host>:5055`. Must be reachable from Render. Do not set `ESTIMATE_FOLDER_ROOT` on Render. |
+| `ESTIMATE_FOLDER_PROVISION_TOKEN` | Shared secret; CM sends header `X-USIS-Provision-Token`. Must match the live agent. |
 
 ### Object storage (Backblaze B2, recommended for production uploads)
 
@@ -59,7 +62,7 @@ There is **no CORS environment variable**. CORS is a rule on the B2 bucket, not 
 
 After saving env vars, trigger **Manual Deploy** (or push to `main`) so the service restarts with B2 enabled. New uploads use B2; existing files on the Render disk are not migrated automatically ([backblaze-b2.md](backblaze-b2.md) §6).
 
-**Memory / desktop ingest:** `usis-cm` is **Starter (512 MB)** with **one** gunicorn worker by default (`WEB_CONCURRENCY`, default `1`). Two workers on Starter ran the process out of memory when USISPdfApp retried hundreds of native B2 mints. For a 500-sheet ingest, use **Standard (2 GB)** and set `WEB_CONCURRENCY=2`, and set `B2_BUCKET_ID` so mint does not `list_buckets`. Do not raise workers on Starter.
+**Memory / desktop ingest:** `usis-cm` is **Standard (2 GB)** with **one** gunicorn worker and **four threads** (`WEB_CONCURRENCY=1`, `WEB_THREADS=4`). Starter (512 MB) plus a sync worker could not answer `/healthz` while the 5-minute invoice-mailbox cron parsed PDFs (up to 70s), which Render logged as Instance failed. Do not set `WEB_CONCURRENCY=2` until RAM is confirmed. Set `B2_BUCKET_ID` so mint does not `list_buckets`.
 
 If any B2 secret was pasted in chat or committed, **rotate** the application key in Backblaze and update Render env vars.
 

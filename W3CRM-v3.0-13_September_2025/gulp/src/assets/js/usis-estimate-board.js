@@ -1,6 +1,6 @@
 /**
- * Estimate board — Lead / Estimate / Submitted / GS Plan.
- * GET /api/v1/lead-estimates?submission_state=undecided|will_submit|submitted
+ * Estimate board — Lead / Estimate / Submitted / All / GS Plan.
+ * GET /api/v1/lead-estimates?submission_state=undecided|will_submit|submitted|all
  * Tab switches update the query only (pushState); no full page reload.
  * GS Plan navigates to the Golden State planroom page.
  */
@@ -36,6 +36,10 @@
 			'<tr><td colspan="' +
 			COLSPAN +
 			'" class="text-muted">No submitted estimates yet. Bids marked submitted in BuildingConnected will appear here.</td></tr>',
+		all:
+			'<tr><td colspan="' +
+			COLSPAN +
+			'" class="text-muted">No estimates yet (including past due). Click <strong>Reload from API</strong> or check the Flask log.</td></tr>',
 	};
 
 	function boardFromSearch(search) {
@@ -47,6 +51,7 @@
 		}
 		tab = String(tab).toLowerCase();
 		if (tab === "submitted") return "submitted";
+		if (tab === "all" || tab === "history") return "all";
 		if (tab === "lead" || tab === "leads" || tab === "undecided") return "lead";
 		if (tab === "gs_plan" || tab === "gs-plan" || tab === "gsplan") return "gs_plan";
 		return "will_submit";
@@ -58,13 +63,19 @@
 
 	function submissionStateFor(board) {
 		if (board === "submitted") return "submitted";
+		if (board === "all") return "all";
 		if (board === "lead") return "undecided";
 		return "will_submit";
+	}
+
+	function keepsPastDue(board) {
+		return board === "submitted" || board === "all";
 	}
 
 	function urlForBoard(board) {
 		var path = window.location.pathname;
 		if (board === "submitted") return path + "?tab=submitted";
+		if (board === "all") return path + "?tab=all";
 		if (board === "lead") return path + "?tab=lead";
 		if (board === "gs_plan") {
 			return path.replace(/estimate\.html$/i, "lead-goldenstate-planroom.html");
@@ -81,6 +92,7 @@
 		if (isGsPlanHref(href)) return "gs_plan";
 		if (!/estimate\.html/i.test(href)) return null;
 		if (/[?&]tab=submitted\b/i.test(href)) return "submitted";
+		if (/[?&]tab=all\b/i.test(href) || /[?&]tab=history\b/i.test(href)) return "all";
 		if (/[?&]tab=lead\b/i.test(href) || /[?&]tab=leads\b/i.test(href)) return "lead";
 		if (/[?&]tab=gs[_-]?plan\b/i.test(href)) return "gs_plan";
 		return "will_submit";
@@ -92,6 +104,7 @@
 
 	function pageTitleFor(board) {
 		if (board === "submitted") return "Construction — Submitted";
+		if (board === "all") return "Construction — All estimates";
 		if (board === "lead") return "Construction — Lead";
 		if (board === "gs_plan") return "Construction — GS Plan";
 		return "Construction — Estimate";
@@ -149,19 +162,33 @@
 				day: "numeric",
 				year: "numeric",
 			});
+			var past = d.getTime() < Date.now();
+			var cls = "usis-est-due" + (past ? " usis-est-due--past" : "");
 			if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) {
-				return '<span class="usis-est-due">' + esc(datePart) + "</span>";
+				return '<span class="' + cls + '">' + esc(datePart) + "</span>";
 			}
 			var timePart = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-			return '<span class="usis-est-due">' + esc(datePart + ", " + timePart) + "</span>";
+			return '<span class="' + cls + '">' + esc(datePart + ", " + timePart) + "</span>";
 		} catch (e) {
 			return esc(String(iso));
 		}
 	}
 
+	function submissionNorm(row) {
+		return String((row && row.submission_state) || "")
+			.toLowerCase()
+			.replace(/[_-]/g, "");
+	}
+
+	function isLeadRow(row) {
+		if (currentBoard() === "lead") return true;
+		return currentBoard() === "all" && submissionNorm(row) === "undecided";
+	}
+
 	function rowKind(row) {
 		if (row && row.is_parent === true) return "GROUP";
-		if (currentBoard() === "lead") return "LEAD";
+		if (isLeadRow(row)) return "LEAD";
+		if (currentBoard() === "all" && submissionNorm(row) === "submitted") return "SUBMITTED";
 		return "ESTIMATE";
 	}
 
@@ -183,12 +210,12 @@
 		var lidEnc = lid != null && lid !== "" ? encodeURIComponent(String(lid)) : "";
 		var estimateId = row.current_estimate_id || row.primary_estimate_id || "";
 		var detailHref = estimateId
-			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId)
+			? "construction/estimate-detail.html?id=" + encodeURIComponent(estimateId) + "&from=estimates"
 			: lidEnc
-				? "construction/estimate-detail.html?id=" + lidEnc
+				? "construction/estimate-detail.html?id=" + lidEnc + "&from=estimates"
 				: "javascript:void(0);";
 		var jobHref = lidEnc ? "construction/lead-detail.html?id=" + lidEnc : "";
-		var titleHref = currentBoard() === "lead" && jobHref ? jobHref : detailHref;
+		var titleHref = isLeadRow(row) && jobHref ? jobHref : detailHref;
 		var numInner = lidEnc
 			? '<a class="text-decoration-none" href="' + titleHref + '">' + num + "</a>"
 			: num;
@@ -225,11 +252,11 @@
 			(jobHref ? '<a class="dropdown-item" href="' + jobHref + '">Job info (BC)</a>' : "") +
 			'<a class="dropdown-item" href="' +
 			(lidEnc ? detailHref : "javascript:void(0);") +
-			'">Takeoff / estimate</a>' +
+			'">Takeoff / proposal</a>' +
 			(lidEnc
 				? '<button type="button" class="dropdown-item usis-est-row-create" data-lead-id="' +
 					esc(String(row.id || row.external_id || "")) +
-					'">New estimate</button>'
+					'">New proposal</button>'
 				: "") +
 			(window.USISAdminDelete && window.USISAdminDelete.menuItemHtml
 				? window.USISAdminDelete.menuItemHtml(
@@ -287,6 +314,7 @@
 			row.zip,
 			row.distance_miles,
 			row.due_at,
+			row.submission_state,
 			row.external_id,
 			row.id,
 		]
@@ -369,7 +397,7 @@
 		var b = String((x && x.workflow_bucket) || "").toUpperCase();
 		if (b.indexOf("CHILD") >= 0) return false;
 		if (x && x.is_parent === false && x.external_parent_id) return false;
-		if (currentBoard() === "submitted") return true;
+		if (keepsPastDue(currentBoard())) return true;
 		if (!x.due_at || isNaN(new Date(x.due_at).getTime()) || new Date(x.due_at).getTime() < Date.now()) {
 			return false;
 		}
@@ -388,14 +416,23 @@
 		restoreParkedMenu();
 		tbody.innerHTML = '<tr><td colspan="' + COLSPAN + '" class="text-muted">Loading…</td></tr>';
 		var state = submissionStateFor(board);
+		var limit = board === "all" ? 1000 : 500;
 		fetch(
 			API.replace(/\/$/, "") +
-				"/api/v1/lead-estimates?limit=500&submission_state=" +
+				"/api/v1/lead-estimates?limit=" +
+				limit +
+				"&submission_state=" +
 				encodeURIComponent(state),
 			{ credentials: "include", headers: { Accept: "application/json" } }
 		)
 			.then(function (r) {
-				if (!r.ok) throw new Error("HTTP " + r.status);
+				if (!r.ok) {
+					return r.json().catch(function () {
+						throw new Error("HTTP " + r.status + " - Server error. Please try again or contact support.");
+					}).then(function (err) {
+						throw new Error(err.error || err.message || "HTTP " + r.status);
+					});
+				}
 				return r.json();
 			})
 			.then(function (data) {
@@ -421,14 +458,18 @@
 				tbody.innerHTML =
 					'<tr><td colspan="' +
 					COLSPAN +
-					'" class="text-danger">Could not load estimates: ' +
-					esc(err.message) +
-					".</td></tr>";
+					'" class="text-center py-5">' +
+					'<div class="alert alert-danger d-inline-block text-start mb-0" role="alert">' +
+					'<i class="fas fa-exclamation-triangle me-2"></i>' +
+					'<strong>Could not load estimates</strong><br>' +
+					'<span class="small">' + esc(err.message) + '</span><br>' +
+					'<button class="btn btn-sm btn-outline-danger mt-2" onclick="window.location.reload()">Reload Page</button>' +
+					"</div></td></tr>";
 			});
 	}
 
 	function prefetchOtherCounts() {
-		["lead", "will_submit", "submitted"].forEach(function (board) {
+		["lead", "will_submit", "submitted", "all"].forEach(function (board) {
 			if (board === currentBoard()) return;
 			fetch(
 				API.replace(/\/$/, "") +
@@ -499,7 +540,7 @@
 		return window.USIS_TABLE_AUTOFILTER.bind({
 			table: "#usis-estimate-table",
 			tableId: "estimating.board",
-			defaultSort: { key: "due_at", dir: currentBoard() === "submitted" ? "desc" : "asc" },
+			defaultSort: { key: "due_at", dir: keepsPastDue(currentBoard()) ? "desc" : "asc" },
 			getRows: function () {
 				return allItems;
 			},

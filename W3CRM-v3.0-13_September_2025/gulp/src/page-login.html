@@ -9,6 +9,7 @@
 	<!-- Start - Style CSS -->
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 	<!-- End - Style CSS -->
 
 </head>
@@ -26,13 +27,13 @@
 					<div id="usis-login-staff">
 					<div class="text-center mb-4">
 						<div class="brand-logo mb-3">
-							<img class="usis-login-logo img-fluid" style="max-height:5rem;width:auto;object-fit:contain;"
-								src="assets/images/branding/usis-eagle-logo.png"
-								alt="US Interior Specialties"
-								onerror="this.onerror=null;this.src='assets/images/branding/usis-wordmark.svg'">
+							<img class="usis-login-logo usis-product-logo-mark img-fluid" style="max-height:5rem;width:auto;object-fit:contain;border-radius:0.75rem;"
+								src="assets/images/branding/worx-cm-icon.svg"
+								alt="WorX CM"
+								onerror="this.onerror=null;this.src='assets/images/branding/worx-cm-lockup.svg'">
 						</div>
-						<h3 class="mb-0" data-i18n="USIS Construction Management">USIS Construction Management</h3>
-						<p class="mb-0 text-muted" data-i18n="Sign in to access projects, estimates, and field operations.">Sign in to access projects, estimates, and field operations.</p>
+						<h3 class="mb-0 usis-wordmark" data-i18n="WorX CM"><span class="usis-wordmark__worx">WorX</span> <span class="usis-wordmark__cm">CM</span></h3>
+						<p class="mb-0 text-muted" data-i18n="Sign in with email and password. USIS employees can also use Microsoft.">Sign in with email and password. USIS employees can also use Microsoft.</p>
 					</div>
 					<form id="usis-login-form" method="post" action="">
 						<div class="mb-3">
@@ -64,7 +65,7 @@
 						</div>
 						<div id="usis-ms-login-wrap" class="d-none text-center mb-3">
 							<a id="usis-ms-login-btn" class="btn btn-outline-dark btn-lg w-100" href="#">
-								<i class="fab fa-microsoft me-2"></i><span data-i18n="Sign in with Microsoft">Sign in with Microsoft</span>
+								<i class="fab fa-microsoft me-2"></i><span data-i18n="USIS employees — Sign in with Microsoft">USIS employees — Sign in with Microsoft</span>
 							</a>
 						</div>
 						<div id="usis-login-error-alert" class="alert alert-danger py-2 small d-none" role="alert"></div>

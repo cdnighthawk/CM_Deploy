@@ -39,6 +39,13 @@
 		tb.innerHTML = '<tr><td colspan="5">Loading…</td></tr>';
 		fetch(apiBase() + "/api/v1/rfps?" + q, { credentials: "include" })
 			.then(function (r) {
+				if (!r.ok) {
+					return r.json().catch(function () {
+						throw new Error("HTTP " + r.status + " - Server error. Please try again or contact support.");
+					}).then(function (err) {
+						throw new Error(err.error || err.message || "HTTP " + r.status);
+					});
+				}
 				return r.json();
 			})
 			.then(function (data) {
@@ -82,8 +89,14 @@
 					})
 					.join("");
 			})
-			.catch(function () {
-				tb.innerHTML = '<tr><td colspan="5" class="text-danger">Failed to load</td></tr>';
+			.catch(function (err) {
+				tb.innerHTML = '<tr><td colspan="5" class="text-center py-4">' +
+					'<div class="alert alert-danger d-inline-block text-start mb-0" role="alert">' +
+					'<i class="fas fa-exclamation-triangle me-2"></i>' +
+					'<strong>Could not load RFPs</strong><br>' +
+					'<span class="small">' + esc(err.message || "Failed to load") + '</span><br>' +
+					'<button class="btn btn-sm btn-outline-danger mt-2" onclick="window.location.reload()">Reload Page</button>' +
+					"</div></td></tr>";
 			});
 	}
 

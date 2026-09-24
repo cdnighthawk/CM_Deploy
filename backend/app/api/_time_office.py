@@ -1026,9 +1026,10 @@ def period_pdf_html(period_id: uuid.UUID, cu: CurrentUser) -> str:
 
     detail = period_detail(period_id, cu)
     tmpl = """<!doctype html><html><head><meta charset="utf-8"><title>Timecard {{ p.start }} – {{ p.end }}</title>
-    <style>body{font-family:sans-serif;color:#1F4E5F;padding:24px}table{border-collapse:collapse;width:100%}
+    <style>body{font-family:sans-serif;color:#1E4B8F;padding:24px}table{border-collapse:collapse;width:100%}
     th,td{border:1px solid #ddd;padding:6px;font-size:12px}th{background:#F4F6F8}</style></head><body>
-    <h1>USIS CM — Timecard</h1><p>Period {{ p.start }} – {{ p.end }} ({{ p.status }})</p>
+    <div style="border-top:3px solid #C8102E;padding:8px 0 12px;font-weight:650"><span style="color:#1E4B8F">WorX</span> <span style="color:#C8102E">CM</span></div>
+    <h1>WorX CM — Timecard</h1><p>Period {{ p.start }} – {{ p.end }} ({{ p.status }})</p>
     <p>I attest that these hours are complete and accurate and that no hours were worked off this card.</p>
     <table><thead><tr><th>Employee</th><th>Class</th><th>Reg</th><th>OT</th><th>DT</th><th>Total</th><th>Signed</th><th>Approved</th></tr></thead><tbody>
     {% for i in items %}<tr><td>{{ i.employee }}</td><td>{{ i.classification or '' }}</td>

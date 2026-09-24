@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 document_type_enum = ENUM(
     "drawing",
@@ -58,7 +58,7 @@ annotation_severity_enum = ENUM(
 )
 
 
-class Document(UUIDPKMixin, TimestampMixin, db.Model):
+class Document(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "documents"
 
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -158,7 +158,7 @@ def _drawing_default_series_id(mapper, connection, target: Drawing) -> None:
         target.drawing_series_id = target.id
 
 
-class DrawingAnnotation(UUIDPKMixin, TimestampMixin, db.Model):
+class DrawingAnnotation(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "drawing_annotations"
 
     drawing_id: Mapped[uuid.UUID] = mapped_column(

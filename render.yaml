@@ -13,16 +13,18 @@ services:
   - type: web
     name: usis-cm
     runtime: python
-    # Starter is 512 MB. Two gunicorn workers plus pymupdf/boto3 OOM during a
-    # desktop mint retry herd. Default 1 worker; on Standard (2 GB) set WEB_CONCURRENCY=2.
-    plan: starter
+    # Starter (512 MB) + one sync worker cannot answer /healthz while the
+    # 5-minute invoice-mailbox cron holds the worker (up to 70s). That is
+    # Instance failed. Standard is 2 GB. Keep 1 worker; threads let health
+    # checks through. Do not set WEB_CONCURRENCY=2 until RAM is confirmed.
+    plan: standard
     rootDir: backend
     buildCommand: >-
       (cd ../W3CRM-v3.0-13_September_2025/gulp && npm ci && npx gulp build) || true;
       pip install -r requirements.txt
-    # Redeploy trigger: application page redirect fix (2026-05-23)
+    # Redeploy trigger: mailbox cron must not block /healthz (2026-09-19)
     preDeployCommand: flask db upgrade
-    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --timeout 180
+    startCommand: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-1} --threads ${WEB_THREADS:-4} --timeout 180
     healthCheckPath: /healthz
     disk:
       name: usis-instance
@@ -35,10 +37,14 @@ services:
         value: app:create_app
       - key: FLASK_ENV
         value: production
+      - key: WEB_THREADS
+        value: "4"
       - key: USIS_BOOTSTRAP_LEADS_ON_STARTUP
         value: "0"
       - key: USIS_ALLOW_SELF_REGISTER
         value: "1"
+      - key: USIS_ALLOW_COMPANY_SELF_SIGNUP
+        value: "0"
       - key: USIS_APP_PUBLIC_URL
         value: https://www.usiscm.com
       - key: USIS_API_DEV_ALLOW_ANY
@@ -69,8 +75,16 @@ services:
         sync: false
       - key: BC_SYNC_CRON_SECRET
         sync: false
+      - key: BUILDINGCONNECTED_SYNC_ENABLED
+        value: "1"
       # Autodesk Desktop Connector ingest agent (Bearer token for /api/projects etc.).
       - key: CM_API_KEY
+        sync: false
+      # On-prem estimate folder agent (C:\usis-cm\folder_provision.py on port 5055, root Y:\Estimates).
+      # Set a URL Render can reach (not 127.0.0.1). Do not set ESTIMATE_FOLDER_ROOT on Render.
+      - key: ESTIMATE_FOLDER_PROVISION_URL
+        sync: false
+      - key: ESTIMATE_FOLDER_PROVISION_TOKEN
         sync: false
       # Backblaze B2 — set in Render Dashboard (see docs/backblaze-b2.md).
       # Use B2_PREFIX=prod/usis-cm on Render; dev machines use dev/usis-cm in backend/.env.
@@ -134,3 +148,22 @@ services:
           envVarKey: BC_SYNC_CRON_SECRET
       - key: CALENDAR_REMINDER_URL
         value: https://www.usiscm.com/api/v1/integrations/calendar-reminders/run
+
+  - type: cron
+    name: usis-bc-hourly-sync
+    runtime: python
+    plan: starter
+    rootDir: backend
+    schedule: "0 * * * *"
+    buildCommand: echo skip
+    startCommand: python scripts/trigger_hourly_bc_sync.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: BC_SYNC_CRON_SECRET
+        fromService:
+          name: usis-cm
+          type: web
+          envVarKey: BC_SYNC_CRON_SECRET
+      - key: BC_SYNC_URL
+        value: https://www.usiscm.com/api/v1/integrations/buildingconnected/sync

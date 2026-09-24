@@ -10,14 +10,14 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .estimate import Estimate
     from .lead_estimate import LeadEstimate
 
 
-class DrawingSet(UUIDPKMixin, TimestampMixin, db.Model):
+class DrawingSet(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "drawing_sets"
 
     lead_estimate_id: Mapped[uuid.UUID] = mapped_column(

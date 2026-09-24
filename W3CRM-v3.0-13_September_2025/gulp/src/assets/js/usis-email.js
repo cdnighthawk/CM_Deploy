@@ -687,10 +687,14 @@
 		var body = (document.getElementById("usis-mail-body") || {}).value || "";
 		var btn = document.getElementById("usis-mail-send");
 		if (btn) btn.disabled = true;
+		var payload = { to: to.trim(), cc: cc.trim(), subject: subject.trim(), message: body };
+		var ctx = window.USISProjectContext;
+		var pid = ctx && typeof ctx.getProjectId === "function" ? ctx.getProjectId() : "";
+		if (pid) payload.project_id = pid;
 		api()
 			.fetchJson("/api/v1/messages/email", {
 				method: "POST",
-				body: { to: to.trim(), cc: cc.trim(), subject: subject.trim(), message: body },
+				body: payload,
 			})
 			.then(function (data) {
 				var N = notify();

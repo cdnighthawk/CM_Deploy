@@ -9,15 +9,18 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class EstimatorScript(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimatorScript(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Named automation script. process_key == script_key on the shared engine."""
 
     __tablename__ = "estimator_scripts"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "script_key", name="uq_estimator_scripts_org_script_key"),
+    )
 
-    script_key: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    script_key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     kind: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     spec_prefixes: Mapped[Optional[Any]] = mapped_column(JSONB, nullable=True)
@@ -27,11 +30,13 @@ class EstimatorScript(UUIDPKMixin, TimestampMixin, db.Model):
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
-class EstimatorStandardSpec(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimatorStandardSpec(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """USIS default bid set. Overall pass starts here unless a GC bid package wins."""
 
     __tablename__ = "estimator_standard_specs"
-    __table_args__ = (UniqueConstraint("spec_code", name="uq_estimator_standard_specs_code"),)
+    __table_args__ = (
+        UniqueConstraint("organization_id", "spec_code", name="uq_estimator_standard_specs_org_code"),
+    )
 
     spec_code: Mapped[str] = mapped_column(String(20), nullable=False)
     spec_title: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -39,7 +44,7 @@ class EstimatorStandardSpec(UUIDPKMixin, TimestampMixin, db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class EstimateBidScope(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateBidScope(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_bid_scopes"
 
     estimate_id: Mapped[uuid.UUID] = mapped_column(
@@ -61,7 +66,7 @@ class EstimateBidScope(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class EstimateBidScopeItem(UUIDPKMixin, TimestampMixin, db.Model):
+class EstimateBidScopeItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "estimate_bid_scope_items"
 
     scope_id: Mapped[uuid.UUID] = mapped_column(

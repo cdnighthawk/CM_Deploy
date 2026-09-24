@@ -455,9 +455,12 @@ def _iso(value: Any) -> str | None:
 
 
 def material_pricing_cache_row(m) -> dict[str, Any]:
+    url = getattr(m, "manufacturer_url", None)
     return {
         "id": str(m.id),
         "manufacturer": m.manufacturer or "",
+        "manufacturerUrl": url,
+        "productUrl": url,
         "item": m.item or "",
         "category": m.category,
         "csiSpecSection": m.csi_spec_section,
@@ -465,24 +468,39 @@ def material_pricing_cache_row(m) -> dict[str, Any]:
         "mountingType": m.mounting_type,
         "cost": _num(m.cost),
         "laborPer": _num(m.labor_per),
+        "laborUnitsPerHour": _num(m.labor_units_per_hour),
+        "laborRateUnit": m.labor_rate_unit,
+        "sizeWidthIn": float(m.size_width_in) if m.size_width_in is not None else None,
+        "sizeHeightIn": float(m.size_height_in) if m.size_height_in is not None else None,
+        "sizeDepthIn": float(m.size_depth_in) if m.size_depth_in is not None else None,
         "currency": m.currency or "USD",
         "unitOfMeasure": m.unit_of_measure or "EA",
+        "supplierCompanyId": str(m.supplier_company_id) if getattr(m, "supplier_company_id", None) else None,
+        "supplierName": (m.supplier_company.name if getattr(m, "supplier_company", None) else None),
+        "supplierEmail": (
+            (m.supplier_company.email or None)
+            if getattr(m, "supplier_company", None)
+            else None
+        ),
         "createdAt": _iso(getattr(m, "created_at", None)),
         "updatedAt": _iso(getattr(m, "updated_at", None)),
         "kind": "Material",
         "defaultWastePct": 0,
         "defaultMarkupPct": 0,
-        "productKind": "sku",
-        "configuratorKey": None,
+        "productKind": "sku" if not getattr(m, "configurator_key", None) else "configurable",
+        "configuratorKey": getattr(m, "configurator_key", None),
     }
 
 
 def catalog_item_cache_row(m) -> dict[str, Any]:
     item = m.item or ""
+    url = getattr(m, "manufacturer_url", None)
     return {
         "id": str(m.id),
         "name": item,
         "manufacturer": m.manufacturer or "",
+        "manufacturerUrl": url,
+        "productUrl": url,
         "item": item,
         "category": m.category or "",
         "csiSpecSection": m.csi_spec_section,
@@ -494,15 +512,34 @@ def catalog_item_cache_row(m) -> dict[str, Any]:
         "unitCost": _num(m.cost),
         "laborCostPerUnit": 0,
         "laborHoursPerUnit": _num(m.labor_per),
+        "laborUnitsPerHour": _num(m.labor_units_per_hour),
+        "laborRateUnit": m.labor_rate_unit,
+        "sizeWidthIn": float(m.size_width_in) if m.size_width_in is not None else None,
+        "sizeHeightIn": float(m.size_height_in) if m.size_height_in is not None else None,
+        "sizeDepthIn": float(m.size_depth_in) if m.size_depth_in is not None else None,
+        "supplierCompanyId": str(m.supplier_company_id) if getattr(m, "supplier_company_id", None) else None,
+        "supplierName": (m.supplier_company.name if getattr(m, "supplier_company", None) else None),
+        "supplierEmail": (
+            (m.supplier_company.email or None)
+            if getattr(m, "supplier_company", None)
+            else None
+        ),
         "defaultWastePct": 0,
         "defaultMarkupPct": 0,
-        "productKind": "sku",
+        "productKind": "sku" if not getattr(m, "configurator_key", None) else "configurable",
+        "configuratorKey": getattr(m, "configurator_key", None),
         "createdAt": _iso(getattr(m, "created_at", None)),
         "updatedAt": _iso(getattr(m, "updated_at", None)),
     }
 
 
 def wage_rate_cache_row(w) -> dict[str, Any]:
+    from ..labor_burden import labor_burden_breakdown, labor_burden_for_state, normalize_labor_burden_book
+    from ..tenant_settings import current_tenant_setting
+
+    raw = current_tenant_setting("labor.burden")
+    book = normalize_labor_burden_book(raw if isinstance(raw, dict) else None)
+    breakdown = labor_burden_breakdown(w, labor_burden_for_state(book, getattr(w, "state", "")))
     return {
         "id": str(w.id),
         "state": w.state,
@@ -517,6 +554,10 @@ def wage_rate_cache_row(w) -> dict[str, Any]:
         "training": _num(w.training),
         "notes": w.notes,
         "isAssumed": bool(w.is_assumed),
+        "workersCompPct": _num(getattr(w, "workers_comp_pct", None)),
+        "fringeHourly": breakdown["fringe_hourly"],
+        "burdenHourly": breakdown["burden_hourly"],
+        "totalLoadedHourly": breakdown["total_loaded_hourly"],
     }
 
 
@@ -556,11 +597,15 @@ def refresh_company_from_db() -> dict[str, Any]:
     """Pull live company lists and refresh USISCM\\company\\ when the payload is usable."""
     from sqlalchemy import select
 
+    from sqlalchemy.orm import joinedload
+
     from ..extensions import db
     from ..models import MaterialPrice, WageRate
 
     materials = db.session.scalars(
-        select(MaterialPrice).order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
+        select(MaterialPrice)
+        .options(joinedload(MaterialPrice.supplier_company))
+        .order_by(MaterialPrice.manufacturer.asc(), MaterialPrice.item.asc())
     ).all()
     wages = db.session.scalars(
         select(WageRate).order_by(WageRate.state.asc(), WageRate.year.desc(), WageRate.trade.asc())
@@ -596,13 +641,15 @@ def takeoff_line_cache_row(t) -> dict[str, Any]:
         "jobCostCodeDescription": t.job_cost_code_description,
         "section": t.section,
         "sortOrder": int(t.sort_order or 0),
+        "wageRateId": str(t.wage_rate_id) if getattr(t, "wage_rate_id", None) else None,
+        "laborCrew": getattr(t, "labor_crew", None),
         "materialPricingId": str(mid) if mid else None,
         "materialName": mat_name,
         "measurementData": t.measurement_data,
         "extendedTotalLocal": _num(t.extended_total),
         "catalogNumber": None,
         "notes": t.notes,
-        "configurationJson": None,
+        "configurationJson": getattr(t, "configuration_json", None),
         "cloudTakeoffLineId": str(t.id),
         "dirty": False,
         "deletedAt": None,

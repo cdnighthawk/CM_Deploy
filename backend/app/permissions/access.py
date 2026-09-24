@@ -193,6 +193,7 @@ def capabilities_for_user(user: User | None, role_codes: frozenset[str], is_supe
         "modules": perms,
         "role_codes": sorted(role_codes),
         "is_superuser": is_superuser,
+        "is_platform_operator": bool(user and getattr(user, "is_platform_operator", False)),
         "can_admin_delete": can_admin_delete,
         "catalog": catalog_public(),
         "project_scope": scope,
@@ -204,6 +205,23 @@ def capabilities_for_user(user: User | None, role_codes: frozenset[str], is_supe
     from .applicant import is_applicant_only_user
 
     out["applicant_only"] = is_applicant_only_user(user) if user else False
+    try:
+        from ..tenant_settings import MODULE_KEYS, module_enabled
+        from ..tenancy import current_organization_id
+        from ..models.organization import Organization
+        from ..extensions import db
+        from ..tenancy import include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            out["entitlements"] = {k: module_enabled(oid, k) for k in MODULE_KEYS}
+            with include_all_orgs():
+                org = db.session.get(Organization, oid)
+            if org is not None:
+                out["org_status"] = org.status or "active"
+                out["plan_key"] = org.plan_key or "full"
+    except Exception:
+        out["entitlements"] = {}
     return out
 
 

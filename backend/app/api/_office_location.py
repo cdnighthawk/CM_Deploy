@@ -65,12 +65,17 @@ def company_coords(row: Company | None) -> tuple[float, float] | None:
 
 
 def select_self_company() -> Company | None:
-    cid = db.session.scalar(
+    from ..tenancy import current_organization_id
+
+    stmt = (
         select(Company.id)
         .where(Company.company_type == "self", Company.deleted_at.is_(None))
         .order_by(Company.created_at.asc())
-        .limit(1)
     )
+    oid = current_organization_id()
+    if oid is not None:
+        stmt = stmt.where(Company.organization_id == oid)
+    cid = db.session.scalar(stmt.limit(1))
     if cid is None:
         return None
     return db.session.get(Company, cid)

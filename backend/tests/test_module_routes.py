@@ -43,6 +43,7 @@ def test_ingest_routes_use_documents_module():
     assert resolve_modules("/api/v1/ingest/projects") == ("documents",)
     assert resolve_modules("/api/v1/ingest/files") == ("documents",)
     assert resolve_modules("/api/v1/ingest/errors") == ("documents",)
+    assert resolve_modules("/api/v1/ingest/activity") == ("documents", "estimate")
 
 
 def test_desktop_ingest_ai_uses_ai_or_documents():

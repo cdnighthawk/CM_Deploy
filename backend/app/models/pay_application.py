@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .project import Project
@@ -28,7 +28,7 @@ pay_application_status_enum = ENUM(
 )
 
 
-class PayApplication(UUIDPKMixin, TimestampMixin, db.Model):
+class PayApplication(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "pay_applications"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -69,7 +69,7 @@ class PayApplication(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class PayApplicationLine(UUIDPKMixin, TimestampMixin, db.Model):
+class PayApplicationLine(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "pay_application_lines"
 
     pay_application_id: Mapped[uuid.UUID] = mapped_column(

@@ -73,7 +73,7 @@
 							<button class="nav-link" id="lead-tab-rfi" data-bs-toggle="pill" data-bs-target="#lead-pane-rfi" type="button" role="tab" aria-controls="lead-pane-rfi" aria-selected="false">RFI</button>
 						</li>
 						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="lead-tab-estimates" data-bs-toggle="pill" data-bs-target="#lead-pane-estimates" type="button" role="tab" aria-controls="lead-pane-estimates" aria-selected="false">Estimates</button>
+							<button class="nav-link" id="lead-tab-estimates" data-bs-toggle="pill" data-bs-target="#lead-pane-estimates" type="button" role="tab" aria-controls="lead-pane-estimates" aria-selected="false">Proposals</button>
 						</li>
 					</ul>
 				</div>
@@ -246,17 +246,17 @@
 							<div id="usis-lead-estimates-root">
 								<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
 									<div>
-										<h5 class="mb-0">Estimates</h5>
-										<p class="text-muted small mb-0">Independent bids and revisions for this lead. Open one to edit takeoff and pricing.</p>
+										<h5 class="mb-0">Proposals</h5>
+										<p class="text-muted small mb-0">Priced proposals and revisions for this lead. Open one to edit takeoff and pricing.</p>
 									</div>
 									<div class="d-flex flex-wrap gap-1">
-										<button type="button" class="btn btn-primary btn-sm" id="usis-lead-est-new">New Estimate</button>
-										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-lead-est-revision">Create Revision</button>
+										<button type="button" class="btn btn-primary btn-sm" id="usis-lead-est-new">New proposal</button>
+										<button type="button" class="btn btn-outline-primary btn-sm" id="usis-lead-est-revision">Create revision</button>
 									</div>
 								</div>
 								<div class="alert alert-danger py-2 mb-2 d-none" id="usis-lead-estimates-err" role="alert"></div>
 								<div class="table-responsive">
-									<table class="table table-hover table-sm align-middle mb-0" id="usis-lead-estimates-table" data-usis-admin-delete="/api/v1/estimates/{id}" data-usis-admin-delete-label="estimate">
+									<table class="table table-hover table-sm align-middle mb-0" id="usis-lead-estimates-table" data-usis-admin-delete="/api/v1/estimates/{id}" data-usis-admin-delete-label="proposal">
 										<thead class="table-light">
 											<tr>
 												<th>Name</th>
@@ -282,15 +282,15 @@
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
 				<div class="modal-header py-2">
-					<h5 class="modal-title fs-6" id="usis-est-create-title">New estimate</h5>
+					<h5 class="modal-title fs-6" id="usis-est-create-title">New proposal</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body py-2">
 					<div class="alert alert-danger py-2 d-none" id="usis-est-create-err" role="alert"></div>
 					<div class="mb-2 d-none" id="usis-est-create-lead-wrap">
-						<label class="form-label small mb-0" for="usis-est-create-lead">Lead <span class="text-danger">*</span></label>
+						<label class="form-label small mb-0" for="usis-est-create-lead">Estimate <span class="text-danger">*</span></label>
 						<select class="form-select form-select-sm" id="usis-est-create-lead">
-							<option value="">Select a lead…</option>
+							<option value="">Select an estimate…</option>
 						</select>
 					</div>
 					<div class="mb-2">
@@ -313,7 +313,7 @@
 					</div>
 					<div class="form-check mb-2">
 						<input class="form-check-input" type="checkbox" id="usis-est-create-copy">
-						<label class="form-check-label small" for="usis-est-create-copy">Copy lines &amp; pricing from existing estimate</label>
+						<label class="form-check-label small" for="usis-est-create-copy">Copy lines &amp; pricing from existing proposal</label>
 					</div>
 					<div class="mb-0 d-none" id="usis-est-create-copy-wrap">
 						<label class="form-label small mb-0" for="usis-est-create-copy-from">Copy from</label>
@@ -374,11 +374,11 @@
 	<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.2.5/dist/js/tabulator.min.js" crossorigin="anonymous"></script>
 	<script src="assets/js/usis-specs-book-tab.js?v=20260906b"></script>
 	<script src="assets/js/usis-drawing-upload.js?v=20260906f"></script>
-	<script src="assets/js/usis-project-doc-panels.js?v=20260915a"></script>
-	<script src="assets/js/lead-detail-job.js"></script>
+	<script src="assets/js/usis-project-doc-panels.js?v=20260917c"></script>
+	<script src="assets/js/lead-detail-job.js?v=20260920a"></script>
 	<script src="assets/js/lead-detail-panels.js"></script>
 	<script src="assets/js/usis-estimate-api.js"></script>
-	<script src="assets/js/usis-estimates-list.js"></script>
+	<script src="assets/js/usis-estimates-list.js?v=20260919p"></script>
 	<script>
 	(function () {
 		var p = new URLSearchParams(window.location.search);

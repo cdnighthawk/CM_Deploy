@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, current_app, request
 
 from ..extensions import db
 from ..models import AuditLog, Estimate
@@ -73,6 +73,9 @@ def _estimate_detail_item(est: Estimate) -> dict[str, Any]:
     out.update(est_svc.estimate_summary_public(est))
     out["id"] = str(est.id)
     out["created_by_email"] = est_svc.created_by_email(est.created_by_id)
+    from . import _estimate_labor_rate_service as labor_rate_svc
+
+    out["labor_rates"] = labor_rate_svc.labor_rates_public(est)
     return out
 
 
@@ -160,7 +163,51 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         est = _get_estimate(estimate_id)
         if est is None:
             return _jsonify({"error": "estimate not found"}), 404
-        return _jsonify({"item": _estimate_detail_item(est), "entity": "estimate"})
+        try:
+            return _jsonify({"item": _estimate_detail_item(est), "entity": "estimate"})
+        except Exception as exc:
+            current_app.logger.exception("GET estimate failed")
+            return _jsonify({"error": str(exc)[:300]}), 500
+
+    @bp.post("/estimates/<estimate_id>/provision-folder")
+    def provision_job_estimate_folder(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        cu = current_user()
+        if not (cu.is_dev_admin or cu.has_role("admin", "superuser")):
+            return _jsonify(
+                {
+                    "error": "admin or superuser role required to provision estimate folders",
+                    "error_code": "PROVISION_FORBIDDEN",
+                }
+            ), 403
+        from ..services.estimate_folder_provision import provision_estimate_folder_by_id, requested_by_label
+
+        requested_by = requested_by_label(
+            cu.user.id if cu.user else None,
+            cu.user.email if cu.user else None,
+        )
+        result = provision_estimate_folder_by_id(est.id, requested_by=requested_by, persist=True)
+        est = _get_estimate(estimate_id)
+        body = {
+            "ok": result.ok,
+            "created": result.created,
+            "path": result.path,
+            "status": result.status,
+            "error": result.error,
+            "item": _estimate_detail_item(est) if est is not None else None,
+            "entity": "estimate_folder_provision",
+        }
+        if result.status == "unconfigured":
+            body["error"] = (
+                "folder provisioner is not configured "
+                "(set ESTIMATE_FOLDER_PROVISION_URL or ESTIMATE_FOLDER_ROOT)"
+            )
+            return _jsonify(body), 503
+        if not result.ok:
+            return _jsonify(body), 502
+        return _jsonify(body)
 
     @bp.get("/estimates/<estimate_id>/bid-scope")
     def get_estimate_bid_scope(estimate_id: str):
@@ -317,8 +364,10 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         if est is None:
             return _jsonify({"error": "estimate not found"}), 404
         lines = est_svc.takeoff_lines_for_estimate(est.id)
+        from . import _estimate_labor_rate_service as labor_rate_svc
         from ..services.employee_pc_cache import maybe_write_takeoff
 
+        labor_rates = labor_rate_svc.labor_rates_public(est)
         maybe_write_takeoff(
             est.project_id,
             lines,
@@ -327,7 +376,7 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
         )
         return _jsonify(
             {
-                "items": [_takeoff_line_public(x) for x in lines],
+                "items": [_takeoff_line_public(x, labor_rates=labor_rates) for x in lines],
                 "entity": "takeoff_line_items",
                 "estimate_id": str(est.id),
                 "lead_estimate_id": str(est.lead_estimate_id) if est.lead_estimate_id else None,
@@ -362,14 +411,24 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
                 if data.get("sort_order") is not None
                 else est_svc.next_sort_order(estimate_id=est.id),
             )
+            if getattr(t, "source_kind", None) is None and hasattr(t, "source_kind"):
+                t.source_kind = "manual"
             _apply_takeoff_payload(t, data, partial=False)
         except (ValueError, TypeError) as exc:
             return _jsonify({"error": str(exc)}), 400
         db.session.add(t)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.exception("create estimate takeoff line failed")
+            return _jsonify({"error": str(exc)[:300]}), 500
         from ..services.employee_pc_cache import cache_takeoff_for_line
 
-        cache_takeoff_for_line(t)
+        try:
+            cache_takeoff_for_line(t)
+        except Exception:
+            current_app.logger.exception("takeoff cache after create failed")
         return _jsonify({"item": _takeoff_line_public(t), "entity": "takeoff_line_item"}), 201
 
     @bp.get("/estimates/<estimate_id>/render/quote-report")
@@ -399,3 +458,46 @@ def register_independent_estimate_routes(bp: Blueprint) -> None:
             from .v1 import _document_render_err
 
             return _document_render_err(exc)
+
+    @bp.get("/estimates/<estimate_id>/labor-rates")
+    def get_estimate_labor_rates(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        return _jsonify({"item": labor_rate_svc.labor_rates_public(est), "entity": "estimate_labor_rates"})
+
+    @bp.put("/estimates/<estimate_id>/labor-rates")
+    def put_estimate_labor_rates(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            data = {}
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        try:
+            item = labor_rate_svc.save_labor_rates(est, data)
+        except est_svc.EstimateError as exc:
+            return _err(exc)
+        db.session.commit()
+        return _jsonify({"item": item, "entity": "estimate_labor_rates"})
+
+    @bp.post("/estimates/<estimate_id>/labor-rates/import-company")
+    def import_estimate_labor_rates(estimate_id: str):
+        est = _get_estimate(estimate_id)
+        if est is None:
+            return _jsonify({"error": "estimate not found"}), 404
+        data = request.get_json(silent=True)
+        if not isinstance(data, Mapping):
+            data = {}
+        from . import _estimate_labor_rate_service as labor_rate_svc
+
+        try:
+            item = labor_rate_svc.import_company_trades(est, data)
+        except est_svc.EstimateError as exc:
+            return _err(exc)
+        db.session.commit()
+        return _jsonify({"item": item, "entity": "estimate_labor_rates"})

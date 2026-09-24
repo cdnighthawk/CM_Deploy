@@ -61,6 +61,7 @@ def main() -> None:
                 last_name=last,
                 is_active=True,
                 is_superuser=True,
+                is_platform_operator=True,
             )
             db.session.add(user)
             db.session.flush()
@@ -70,6 +71,7 @@ def main() -> None:
             user.last_name = last
             user.is_active = True
             user.is_superuser = True
+            user.is_platform_operator = True
             print(f"Updated user {email}")
 
         user.password_hash = generate_password_hash(password)

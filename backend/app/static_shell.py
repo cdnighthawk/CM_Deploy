@@ -4,20 +4,22 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Blueprint, abort, make_response, redirect, send_from_directory, session
+from flask import Blueprint, abort, make_response, redirect, request, send_from_directory, session
 
 static_shell_bp = Blueprint("static_shell", __name__)
 
-_RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz")
+_RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz", "/public/")
 
 # Public careers / hiring entry points (no ``.html`` suffix required).
 _CAREER_PATH_REDIRECTS: dict[str, str] = {
+    "/login": "/page-login.html",
     "/careers": "/apply.html",
     "/apply": "/apply.html",
     "/Apply": "/apply.html",
     "/jobs": "/apply.html",
     "/hiring": "/apply.html",
     "/hire": "/apply/application.html",
+    "/ingest": "/construction/ingest.html",
     "/time": "/usis-time-live.html",
     "/time/live": "/usis-time-live.html",
     "/time/me": "/usis-time-me.html",
@@ -85,6 +87,7 @@ _DEMO_HTML_EXACT: frozenset[str] = frozenset(
         "email-read.html",
         "email-compose.html",
         "usis-all-pages-index.html",
+        "usis-messenger.html",
         "construction/add-quotation.html",
         "construction/attendance.html",
         "construction/contact-us.html",
@@ -129,6 +132,46 @@ def resolve_static_root() -> Path | None:
     return None
 
 
+def resolve_landing_root() -> Path | None:
+    """Marketing homepage at ``docs/worxcm_landing`` (served on worxcm.com)."""
+    raw = (os.environ.get("USIS_LANDING_ROOT") or "").strip()
+    if raw:
+        root = Path(raw).expanduser().resolve()
+    else:
+        repo = Path(__file__).resolve().parent.parent.parent
+        root = (repo / "docs" / "worxcm_landing").resolve()
+    if root.is_dir() and (root / "index.html").is_file():
+        return root
+    return None
+
+
+def _is_worxcm_host() -> bool:
+    host = (request.host or "").split(":")[0].strip().lower()
+    return host == "worxcm.com" or host.endswith(".worxcm.com")
+
+
+def _serve_worxcm_landing(req_path: str):
+    """Homepage and ``/img/*`` for the public product domain. Else None."""
+    landing = resolve_landing_root()
+    if landing is None or not _is_worxcm_host():
+        return None
+    if req_path in ("/", "/index.html"):
+        return send_from_directory(landing, "index.html")
+    if not req_path.startswith("/img/"):
+        return None
+    rel = req_path.lstrip("/").replace("\\", "/")
+    if not rel or ".." in rel.split("/"):
+        return branded_404()
+    candidate = (landing / rel).resolve()
+    try:
+        candidate.relative_to(landing.resolve())
+    except ValueError:
+        return branded_404()
+    if candidate.is_file():
+        return send_from_directory(landing, rel)
+    return branded_404()
+
+
 def _is_reserved(path: str) -> bool:
     p = path if path.startswith("/") else f"/{path}"
     if p == "/healthz":
@@ -167,6 +210,41 @@ def _is_demo_shell_html(rel: str) -> bool:
     return any(name.startswith(prefix) for prefix in _DEMO_HTML_PREFIXES)
 
 
+def saas_console_kind(path: str) -> str | None:
+    """Return ``settings`` or ``admin`` for SaaS console URLs; else None.
+
+    ``/admin/organizations`` is the platform console. ``/admin/usis-profile.html``
+    and ``/admin/assets/...`` are not — W3CRM already used those relative URLs.
+    """
+    p = (path or "").split("?", 1)[0].rstrip("/") or "/"
+    if p == "/usis-admin.html" or p.endswith("/usis-admin.html"):
+        return "admin"
+    if p == "/usis-settings.html" or p.endswith("/usis-settings.html"):
+        return "settings"
+    for prefix, kind in (("/admin", "admin"), ("/settings", "settings")):
+        if p == prefix:
+            return kind
+        if p.startswith(prefix + "/"):
+            first = p[len(prefix) + 1 :].split("/", 1)[0]
+            if not first or first == "assets" or "." in first:
+                return None
+            return kind
+    return None
+
+
+def _redirect_html_stolen_by_console(req_path: str, root: Path):
+    """``/admin/usis-profile.html`` is My profile, not the platform console."""
+    for prefix in ("/admin/", "/settings/"):
+        if not req_path.startswith(prefix) or not req_path.endswith(".html"):
+            continue
+        leaf = req_path.rsplit("/", 1)[-1]
+        if not leaf or _is_demo_shell_html(leaf):
+            continue
+        if (root / leaf).is_file():
+            return redirect("/" + leaf, code=302)
+    return None
+
+
 def branded_404():
     """USIS 404 page when the static shell exists; otherwise Flask's default."""
     root = resolve_static_root()
@@ -184,6 +262,10 @@ def serve_static(subpath: str):
     req_path = ("/" + subpath.lstrip("/")).rstrip("/") or "/"
     if _is_reserved(req_path):
         abort(404)
+
+    marketing = _serve_worxcm_landing(req_path)
+    if marketing is not None:
+        return marketing
 
     root = resolve_static_root()
     if root is None:
@@ -232,6 +314,28 @@ def serve_static(subpath: str):
     career_target = _CAREER_PATH_REDIRECTS.get(req_path)
     if career_target:
         return redirect(career_target, code=302)
+    if req_path in ("/usis-user-directory.html", "/usis-user-directory"):
+        return redirect("/settings/people", code=302)
+    if req_path == "/settings/users":
+        return redirect("/settings/people", code=302)
+    if req_path == "/admin/tenants":
+        return redirect("/admin/organizations", code=302)
+    if req_path.startswith("/admin/tenants/"):
+        return redirect("/admin/organizations/" + req_path[len("/admin/tenants/") :], code=302)
+    if req_path == "/admin/health":
+        return redirect("/admin/usage", code=302)
+    stolen = _redirect_html_stolen_by_console(req_path, root)
+    if stolen is not None:
+        return stolen
+    kind = saas_console_kind(req_path)
+    if kind == "settings":
+        settings_page = root / "usis-settings.html"
+        if settings_page.is_file():
+            return send_from_directory(root, "usis-settings.html")
+    if kind == "admin":
+        admin_page = root / "usis-admin.html"
+        if admin_page.is_file():
+            return send_from_directory(root, "usis-admin.html")
 
     case_target = _CASE_INSENSITIVE_HTML_REDIRECTS.get(req_path.lower())
     if case_target and req_path != case_target:

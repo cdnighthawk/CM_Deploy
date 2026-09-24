@@ -9,7 +9,6 @@ from sqlalchemy import select
 from app.extensions import db
 from app.models.door_opening import DoorOpening
 from app.models.lead_estimate import LeadEstimate
-from app.models.takeoff_line_item import TakeoffLineItem
 
 
 @pytest.fixture
@@ -27,7 +26,7 @@ def lead_external_id(client):
             db.session.commit()
 
 
-def test_import_door_schedule_creates_openings_and_lines(client, lead_external_id):
+def test_import_door_schedule_creates_openings_only(client, lead_external_id):
     rows = [
         {
             "Door No.": "101",
@@ -74,20 +73,10 @@ def test_import_door_schedule_creates_openings_and_lines(client, lead_external_i
     assert marks == {"101", "102"}
 
     op101 = next(o for o in sched["openings"] if o["mark"] == "101")
-    assert op101["takeoff_line_count"] >= 5
-    roles = {ln["line_role"] for ln in op101["takeoff_lines"]}
-    assert "door" in roles
-    assert "frame" in roles
-    assert "hardware" in roles
-
-    r3 = client.get(f"/api/v1/lead-estimates/{lead_external_id}")
-    assert r3.status_code == 200
-    lead_lines = r3.get_json()["item"]["takeoff_lines"]
-    assert len(lead_lines) >= 8
-    assert all(ln.get("door_opening_id") for ln in lead_lines)
+    assert op101["takeoff_line_count"] == 0
 
 
-def test_patch_opening_rebuild_and_expand_hardware(client, lead_external_id):
+def test_patch_opening_does_not_auto_explode(client, lead_external_id):
     r = client.post(
         f"/api/v1/lead-estimates/{lead_external_id}/door-schedule/import",
         json={
@@ -98,19 +87,16 @@ def test_patch_opening_rebuild_and_expand_hardware(client, lead_external_id):
     )
     assert r.status_code == 201
     op_id = r.get_json()["openings"][0]["id"]
-    assert r.get_json()["openings"][0]["takeoff_line_count"] == 2
+    assert r.get_json()["openings"][0]["takeoff_line_count"] == 0
 
     r2 = client.patch(
         f"/api/v1/door-openings/{op_id}",
-        json={"hardware_set_code": "HD-1", "rebuild_lines": True},
+        json={"hardware_set_code": "HD-1"},
     )
     assert r2.status_code == 200
     item = r2.get_json()["item"]
-    assert item["takeoff_line_count"] >= 5
-
-    r3 = client.post(f"/api/v1/door-openings/{op_id}/expand-hardware")
-    assert r3.status_code == 200
-    assert r3.get_json()["hardware_lines_added"] >= 1
+    assert item["hardware_set_code"] == "HD-1"
+    assert item["takeoff_line_count"] == 0
 
 
 def test_create_hardware_set_and_item(client):
@@ -137,4 +123,4 @@ def test_create_single_door_opening(client, lead_external_id):
     assert r.status_code == 201, r.get_data(as_text=True)
     item = r.get_json()["item"]
     assert item["mark"] == "301"
-    assert item["takeoff_line_count"] == 2
+    assert item["takeoff_line_count"] == 0

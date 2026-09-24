@@ -64,6 +64,35 @@
 		}
 		retargetDemoTimeSheets();
 		insertPeopleNav();
+		insertIngestNav();
+	}
+
+	function insertIngestNav() {
+		var menu = document.getElementById("menu") || document.querySelector(".deznav ul.metismenu");
+		if (!menu || document.getElementById("usis-ingest-nav")) return;
+		var prefix = timePrefix();
+		var li = document.createElement("li");
+		li.id = "usis-ingest-nav";
+		li.setAttribute("data-usis-module", "estimate");
+		li.innerHTML =
+			'<a href="' +
+			prefix +
+			'construction/ingest.html" aria-expanded="false">' +
+			'<i class="icon feather icon-download"></i>' +
+			'<span class="nav-text" data-i18n="Ingest">Ingest</span></a>';
+		var estimate = null;
+		var items = menu.children;
+		var i;
+		for (i = 0; i < items.length; i++) {
+			var label = items[i].querySelector(":scope > a .nav-text");
+			if (label && (label.textContent || "").trim() === "Estimate") {
+				estimate = items[i];
+				break;
+			}
+		}
+		if (estimate && estimate.nextSibling) menu.insertBefore(li, estimate.nextSibling);
+		else if (estimate) estimate.insertAdjacentElement("afterend", li);
+		else menu.appendChild(li);
 	}
 
 	function insertPeopleNav() {
@@ -160,8 +189,51 @@
 			.then(function (res) {
 				if (!res.ok) return;
 				var caps = (res.body && res.body.capabilities) || {};
+				var platform = !!caps.is_platform_operator;
+				var ents = caps.entitlements || {};
+				document.querySelectorAll("#usis-platform-admin-nav, [data-usis-module='platform']").forEach(function (li) {
+					if (platform) {
+						li.style.display = "";
+						li.removeAttribute("aria-hidden");
+					} else {
+						li.style.display = "none";
+						li.setAttribute("aria-hidden", "true");
+					}
+				});
+				if (ents.time === false) {
+					var timeNav = document.getElementById("usis-time-nav");
+					if (timeNav) {
+						timeNav.style.display = "none";
+						timeNav.setAttribute("aria-hidden", "true");
+					}
+				}
+				if (ents.hiring === false) {
+					document.querySelectorAll('a[href*="people-hiring"], a[href="/people/hiring"]').forEach(function (a) {
+						var li = a.closest("li");
+						if (li) {
+							li.style.display = "none";
+							li.setAttribute("aria-hidden", "true");
+						}
+					});
+				}
+				if (caps.org_status === "suspended") {
+					var wrap = document.getElementById("main-wrapper") || document.body;
+					if (!document.getElementById("usis-suspended-banner")) {
+						var ban = document.createElement("div");
+						ban.id = "usis-suspended-banner";
+						ban.className = "alert alert-warning mb-0";
+						ban.textContent = "This organization is suspended. Settings are read-only.";
+						wrap.insertBefore(ban, wrap.firstChild);
+					}
+				}
 				if (caps.is_superuser) return;
 				applyNav(caps.modules || {});
+				if (!platform) {
+					document.querySelectorAll("#usis-platform-admin-nav, [data-usis-module='platform']").forEach(function (li) {
+						li.style.display = "none";
+						li.setAttribute("aria-hidden", "true");
+					});
+				}
 			})
 			.catch(function () {});
 	}

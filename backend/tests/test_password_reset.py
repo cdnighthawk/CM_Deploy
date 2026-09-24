@@ -51,14 +51,22 @@ def test_send_password_reset_email_builds_link(flask_app):
         assert "page-reset-password.html" in body
 
 
-def test_request_password_reset_skips_users_without_password(flask_app):
+def test_request_password_reset_allows_users_without_password(flask_app):
+    """Invitees with no password_hash still get a set-password token."""
     with flask_app.app_context():
         from app.services import password_reset as pw_reset
 
         user = MagicMock()
-        user.email = "sso@example.com"
+        user.email = "invite@example.com"
         user.password_hash = None
+        user.is_active = True
         with patch("app.services.password_reset.db") as db_mock:
             db_mock.session.scalar.return_value = user
-            result = pw_reset.request_password_reset("sso@example.com")
-    assert result["sent"] is False
+            with patch("app.services.password_reset.issue_set_password_token", return_value="tok"):
+                with patch(
+                    "app.api._notifications.send_password_reset_email",
+                    return_value={"sent": True, "dry_run": True},
+                ):
+                    result = pw_reset.request_password_reset("invite@example.com")
+    assert result["ok"] is True
+    assert result["sent"] is True

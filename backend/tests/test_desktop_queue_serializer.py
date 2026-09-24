@@ -79,6 +79,8 @@ def test_lead_estimate_public_includes_zip():
     assert item["state"] == "ID"
     assert item["zip"] == "83702"
     assert item["company_name"] == "Hoffman"
+    assert item["current_estimate_id"] is None
+    assert item["primary_estimate_id"] is None
 
 
 def test_claims_email_prefers_work_account():

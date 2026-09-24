@@ -57,6 +57,19 @@ STAMP_VALUES = frozenset(STAMP_TO_STATUS)
 CHECKLIST_RESULTS = frozenset({"pass", "fail", "na", "blank"})
 AI_STATUSES = frozenset({"not_run", "queued", "complete", "failed", "overridden"})
 MIN_REVIEW_SECONDS = 180
+
+
+def _min_review_seconds() -> int:
+    try:
+        from ..tenant_settings import current_tenant_setting
+
+        raw = current_tenant_setting("ai.submittal_rubber_stamp_seconds", MIN_REVIEW_SECONDS)
+        n = int(raw)
+        return n if n > 0 else MIN_REVIEW_SECONDS
+    except Exception:
+        return MIN_REVIEW_SECONDS
+
+
 PUBLIC_TOKEN_TTL_DAYS = 14
 
 
@@ -623,7 +636,7 @@ def stamp_gate_state(s: Submittal, rev: SubmittalRevision) -> dict[str, Any]:
     duration = rev.review_duration_seconds
     if rev.review_started_at and duration is None:
         duration = int((_utcnow() - rev.review_started_at).total_seconds())
-    if not ((duration or 0) >= MIN_REVIEW_SECONDS or rev.rush_exception):
+    if not ((duration or 0) >= _min_review_seconds() or rev.rush_exception):
         unmet.append("Review duration under 180 seconds (need superintendent/PM rush exception)")
     return {"canStamp": not unmet, "unmet": unmet, "reviewDurationSeconds": duration}
 
@@ -833,7 +846,7 @@ def apply_stamp(sid: uuid.UUID, rev_id: uuid.UUID, data: Mapping[str, Any], cu: 
 
 def _rubber_stamp_suspect(rev: SubmittalRevision) -> bool:
     duration = rev.review_duration_seconds or 0
-    if duration < MIN_REVIEW_SECONDS:
+    if duration < _min_review_seconds():
         return True
     comments = [c for c in (rev.checklist_items or []) if (c.comment or "").strip()]
     dispositions = [
@@ -932,9 +945,13 @@ def log_ae_action(sid: uuid.UUID, data: Mapping[str, Any], cu: CurrentUser) -> d
 
 def public_upload(token: str, data: Mapping[str, Any]) -> dict[str, Any]:
     raw = (token or "").strip()
-    s = db.session.scalar(select(Submittal).where(Submittal.public_token == raw))
+    from ..tenancy import bind_request_organization, include_all_orgs
+
+    with include_all_orgs():
+        s = db.session.scalar(select(Submittal).where(Submittal.public_token == raw))
     if s is None:
         raise ApiError("submittal not found", 404)
+    bind_request_organization(s.organization_id)
     if s.public_token_expires_at and s.public_token_expires_at < _utcnow():
         raise ApiError("upload token expired", 403)
     file_url = str(data.get("file_url") or "").strip()

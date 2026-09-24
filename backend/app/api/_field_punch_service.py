@@ -822,6 +822,8 @@ def send_punch_notify(
             subject=subject,
             body=text,
             html_body=html,
+            project_id=row.project_id,
+            thread_id=row.id,
         )
         dist.notified_at = sent_at
         db.session.add(dist)

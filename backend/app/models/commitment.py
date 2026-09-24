@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -58,7 +58,7 @@ commitment_resource_enum = ENUM(
 )
 
 
-class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
+class Commitment(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "commitments"
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -181,7 +181,7 @@ class Commitment(UUIDPKMixin, TimestampMixin, db.Model):
         return effective > self.needed_on_site_date
 
 
-class CommitmentLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+class CommitmentLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "commitment_line_items"
 
     commitment_id: Mapped[uuid.UUID] = mapped_column(
@@ -239,7 +239,7 @@ class CommitmentLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class CommitmentBillAllocation(UUIDPKMixin, TimestampMixin, db.Model):
+class CommitmentBillAllocation(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "commitment_bill_allocations"
 
     commitment_id: Mapped[uuid.UUID] = mapped_column(

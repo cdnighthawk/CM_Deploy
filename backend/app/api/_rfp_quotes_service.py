@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 from ..extensions import db
 from ..models import Company, Contact, Document, Project, Rfp, RfpDrawing, RfpLineItem, RfpVendorQuote
 from ..services.object_storage import UploadCategory, save_upload
+from ..branding import company_email_header_html
 from ._notifications import (
     GraphMailError,
     download_mailbox_attachment,
@@ -45,6 +46,18 @@ def _job_shipping_for_rfp(r: Rfp) -> dict[str, Any]:
 
 
 def quotes_mailbox() -> str:
+    try:
+        from ..models.saas import TenantSetting
+        from ..tenancy import current_organization_id, include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            with include_all_orgs():
+                row = db.session.get(TenantSetting, (oid, "mail.rfp.from_address"))
+            if row is not None and row.value_json:
+                return str(row.value_json).strip() or "quotes@gousis.com"
+    except Exception:
+        pass
     configured = ""
     try:
         configured = str(current_app.config.get("QUOTES_MAILBOX") or "").strip()
@@ -57,6 +70,18 @@ def quotes_mailbox() -> str:
 
 def quotes_from_name() -> str:
     try:
+        from ..models.saas import TenantSetting
+        from ..tenancy import current_organization_id, include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            with include_all_orgs():
+                row = db.session.get(TenantSetting, (oid, "mail.rfp.from_name"))
+            if row is not None and row.value_json:
+                return str(row.value_json).strip() or "US Interior Specialties"
+    except Exception:
+        pass
+    try:
         name = str(current_app.config.get("QUOTES_FROM_NAME") or "").strip()
     except RuntimeError:
         name = ""
@@ -64,6 +89,18 @@ def quotes_from_name() -> str:
 
 
 def quotes_bcc_self() -> bool:
+    try:
+        from ..models.saas import TenantSetting
+        from ..tenancy import current_organization_id, include_all_orgs
+
+        oid = current_organization_id()
+        if oid is not None:
+            with include_all_orgs():
+                row = db.session.get(TenantSetting, (oid, "mail.rfp.bcc_self"))
+            if row is not None and row.value_json is not None:
+                return bool(row.value_json)
+    except Exception:
+        pass
     try:
         val = current_app.config.get("RFP_MAIL_BCC_SELF")
     except RuntimeError:
@@ -344,7 +381,7 @@ def _prewrap_html(label: str, text: str | None) -> str:
     if not body:
         return ""
     return (
-        f"<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>{escape(label)}</h3>"
+        f"<h3 style='font-size:15px;margin:16px 0 6px;color:#1E4B8F'>{escape(label)}</h3>"
         f"<div style='white-space:pre-wrap;font-size:14px'>{escape(body)}</div>"
     )
 
@@ -409,7 +446,7 @@ def build_invite_email(
             for x in lines
         )
         line_table_html = (
-            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Line items</h3>"
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1E4B8F'>Line items</h3>"
             "<table cellpadding='6' cellspacing='0' border='1' style='border-collapse:collapse;font-size:14px'>"
             "<thead><tr><th align='left'>CSI</th><th align='left'>Description</th><th>Qty</th><th>Unit</th>"
             "<th align='left'>Notes</th></tr></thead>"
@@ -433,13 +470,13 @@ def build_invite_email(
     files_cta_text = ""
     if draw_labels:
         drawings_html = (
-            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Drawings & specifications</h3>"
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1E4B8F'>Drawings & specifications</h3>"
             f"<ul>{''.join(f'<li>{escape(label)}</li>' for label in draw_labels)}</ul>"
         )
         drawings_text = "Drawings & specifications:\n" + "\n".join(f"- {label}" for label in draw_labels) + "\n\n"
         files_cta_html = (
             "<p style='margin:20px 0'>"
-            f"<a href='{escape(files_url if not redact_token else files_display)}' style='display:inline-block;background:#1F4E5F;color:#fff;"
+            f"<a href='{escape(files_url if not redact_token else files_display)}' style='display:inline-block;background:#1E4B8F;color:#fff;"
             "text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:600'>"
             "View drawings &amp; specifications</a></p>"
         )
@@ -465,7 +502,7 @@ def build_invite_email(
             ship_bits_html.append(f"<p style='margin:0 0 6px'><strong>Expected install date:</strong> {escape(install)}</p>")
             ship_bits_text.append(f"Expected install date: {install}")
         ship_html = (
-            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1F4E5F'>Shipping &amp; install</h3>"
+            "<h3 style='font-size:15px;margin:16px 0 6px;color:#1E4B8F'>Shipping &amp; install</h3>"
             + "".join(ship_bits_html)
         )
         ship_text = "Shipping & install:\n" + "\n".join(ship_bits_text) + "\n\n"
@@ -482,7 +519,9 @@ def build_invite_email(
         + _prewrap_text("Clarifications", rfp.clarifications)
     )
     html = (
-        "<html><body style='font-family:Source Sans 3,system-ui,sans-serif;color:#1B242C'>"
+        "<html><body style='font-family:Source Sans 3,system-ui,sans-serif;color:#1B242C;margin:0;padding:0'>"
+        f"{company_email_header_html(public_app_origin())}"
+        "<div style='padding:16px 16px 24px'>"
         f"<p>Hello {escape(quote.vendor_label)},</p>"
         f"<p>Please submit a quote for <strong>{escape(title)}</strong>.</p>"
         f"{due_html}"
@@ -491,10 +530,11 @@ def build_invite_email(
         f"{line_table_html}"
         f"{drawings_html}"
         f"{files_cta_html}"
-        f"<p style='margin-top:16px'><a href='{escape(portal)}'>Open the vendor portal to submit your quote</a></p>"
+        f"<p style='margin-top:16px'><a href='{escape(portal)}' style='color:#1E4B8F'>Open the vendor portal to submit your quote</a></p>"
         f"<p>You may also reply to this email. Send quotes to {escape(ident['from_address'])} "
         f"and keep <code>[RFP {escape(rfp.mail_tag)}]</code> in the subject.</p>"
         f"<p>Thank you,<br>{escape(ident['from_name'])}</p>"
+        "</div>"
         "</body></html>"
     )
     text = (

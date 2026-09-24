@@ -56,7 +56,15 @@ DRAFT_SCAN_STATUSES = frozenset(
     {"detecting", "review_sections", "extracting", "review_products", "vendors_ready"}
 )
 
-TRADE_SEEDS: tuple[tuple[str, str, bool, int], ...] = (
+TRADE_SEEDS: tuple[tuple, ...] = (
+    ("08 11", "Hollow metal doors and frames", False, 5, "openings"),
+    ("08 12", "Metal frames", False, 6, "openings"),
+    ("08 13", "Metal doors", False, 7, "openings"),
+    ("08 14", "Wood / plastic-laminate doors", False, 8, "openings"),
+    ("08 17", "Integrated / special-function doors", False, 8, "openings"),
+    ("08 34", "Special-function doors (sound / lead / blast)", False, 8, "openings"),
+    ("08 71", "Door hardware", False, 9, "openings"),
+    ("08 81", "Glass glazing in doors", False, 9, "openings"),
     ("06 20", "Finish carpentry / trim", True, 10),
     ("06 41", "Finish carpentry / trim", True, 11),
     ("06 46", "Finish carpentry / trim", True, 12),
@@ -297,19 +305,34 @@ def heuristic_mentions_from_text(text: str, *, page_cite: str = "") -> list[dict
     return out
 
 
+def _seed_tuple(row: tuple) -> tuple[str, str, bool, int, str | None]:
+    prefix, label, default_on, order = row[0], row[1], row[2], row[3]
+    group = row[4] if len(row) > 4 else None
+    return str(prefix), str(label), bool(default_on), int(order), (str(group) if group else None)
+
+
 def ensure_trade_map() -> list[SpecTradeMap]:
     existing = {r.csi_prefix: r for r in db.session.scalars(select(SpecTradeMap)).all()}
-    if not existing:
-        for prefix, label, default_on, order in TRADE_SEEDS:
-            db.session.add(
-                SpecTradeMap(
-                    csi_prefix=prefix,
-                    trade_label=label,
-                    enabled=True,
-                    default_in_scope=default_on,
-                    sort_order=order,
-                )
+    dirty = False
+    for row in TRADE_SEEDS:
+        prefix, label, default_on, order, group = _seed_tuple(row)
+        rec = existing.get(prefix)
+        if rec is None:
+            rec = SpecTradeMap(
+                csi_prefix=prefix,
+                trade_label=label,
+                enabled=True,
+                default_in_scope=default_on,
+                sort_order=order,
+                trade_group=group,
             )
+            db.session.add(rec)
+            existing[prefix] = rec
+            dirty = True
+        elif group and not getattr(rec, "trade_group", None):
+            rec.trade_group = group
+            dirty = True
+    if dirty:
         db.session.flush()
         existing = {r.csi_prefix: r for r in db.session.scalars(select(SpecTradeMap)).all()}
     return [existing[k] for k in sorted(existing, key=lambda x: existing[x].sort_order)]

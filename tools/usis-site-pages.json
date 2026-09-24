@@ -244,9 +244,16 @@
     {
       "path": "construction/material.html",
       "order": 31,
-      "title": "Construction — Material",
-      "summary": "Construction vertical demo from the W3CRM template. USIS may reuse layout patterns for jobs, RFIs, and estimates.",
-      "category": "construction_demo"
+      "title": "Admin — Catalog",
+      "summary": "Company material catalog: search, edit, bulk change, and CSI filters.",
+      "category": "usis"
+    },
+    {
+      "path": "usis-wage-rates.html",
+      "order": 31.1,
+      "title": "Admin — Wage rates",
+      "summary": "Prevailing wage lookup by state, area, year, and trade.",
+      "category": "usis"
     },
     {
       "path": "construction/mom-detail.html",

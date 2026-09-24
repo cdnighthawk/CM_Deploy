@@ -11,9 +11,9 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
-class HrmsOrgUnit(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsOrgUnit(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_org_units"
 
     parent_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -28,17 +28,19 @@ class HrmsOrgUnit(UUIDPKMixin, TimestampMixin, db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class HrmsModuleSetting(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsModuleSetting(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_module_settings"
+    __table_args__ = (UniqueConstraint("organization_id", "key", name="uq_hrms_module_settings_org_key"),)
 
-    key: Mapped[str] = mapped_column(String(80), unique=True, nullable=False, index=True)
+    key: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     value: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
 
-class HrmsLeaveType(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsLeaveType(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_leave_types"
+    __table_args__ = (UniqueConstraint("organization_id", "code", name="uq_hrms_leave_types_org_code"),)
 
-    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     paid: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     requires_attachment: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -48,7 +50,7 @@ class HrmsLeaveType(UUIDPKMixin, TimestampMixin, db.Model):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
-class HrmsEmployeeProfile(TimestampMixin, db.Model):
+class HrmsEmployeeProfile(TimestampMixin, TenantMixin, db.Model):
     """1:1 extension of ``users`` for HR org + employment fields."""
 
     __tablename__ = "hrms_employee_profiles"
@@ -70,7 +72,7 @@ class HrmsEmployeeProfile(TimestampMixin, db.Model):
     pii_storage_hint: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
 
-class HrmsLeaveBalance(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsLeaveBalance(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_leave_balances"
     __table_args__ = (UniqueConstraint("user_id", "leave_type_id", "accrual_year", name="uq_hrms_leave_balance_user_type_year"),)
 
@@ -81,7 +83,7 @@ class HrmsLeaveBalance(UUIDPKMixin, TimestampMixin, db.Model):
     accrued_ytd_hours: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("0"))
 
 
-class HrmsLeaveRequest(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsLeaveRequest(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_leave_requests"
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -95,7 +97,7 @@ class HrmsLeaveRequest(UUIDPKMixin, TimestampMixin, db.Model):
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class HrmsTimesheetPeriod(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsTimesheetPeriod(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_timesheet_periods"
     __table_args__ = (UniqueConstraint("user_id", "period_start", name="uq_hrms_timesheet_period_user_start"),)
 
@@ -107,7 +109,7 @@ class HrmsTimesheetPeriod(UUIDPKMixin, TimestampMixin, db.Model):
     decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class HrmsTimesheetEntry(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsTimesheetEntry(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_timesheet_entries"
 
     period_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("hrms_timesheet_periods.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -120,7 +122,7 @@ class HrmsTimesheetEntry(UUIDPKMixin, TimestampMixin, db.Model):
     time_entry_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("time_entries.id", ondelete="SET NULL"), nullable=True)
 
 
-class HrmsShift(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsShift(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_shifts"
 
     org_unit_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("hrms_org_units.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -130,7 +132,7 @@ class HrmsShift(UUIDPKMixin, TimestampMixin, db.Model):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
-class HrmsShiftAssignment(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsShiftAssignment(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_shift_assignments"
     __table_args__ = (UniqueConstraint("shift_id", "user_id", name="uq_hrms_shift_assignment_shift_user"),)
 
@@ -139,7 +141,7 @@ class HrmsShiftAssignment(UUIDPKMixin, TimestampMixin, db.Model):
     assignment_status: Mapped[str] = mapped_column(String(32), nullable=False, default="assigned")
 
 
-class HrmsShiftSwap(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsShiftSwap(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_shift_swaps"
 
     from_assignment_id: Mapped[uuid.UUID] = mapped_column(
@@ -152,7 +154,7 @@ class HrmsShiftSwap(UUIDPKMixin, TimestampMixin, db.Model):
     decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class HrmsGoal(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsGoal(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_goals"
 
     owner_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -166,7 +168,7 @@ class HrmsGoal(UUIDPKMixin, TimestampMixin, db.Model):
     target_metrics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
 
-class HrmsGoalUpdate(UUIDPKMixin, db.Model):
+class HrmsGoalUpdate(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_goal_updates"
 
     goal_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("hrms_goals.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -176,7 +178,7 @@ class HrmsGoalUpdate(UUIDPKMixin, db.Model):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
-class HrmsReviewCycle(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsReviewCycle(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_review_cycles"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -186,7 +188,7 @@ class HrmsReviewCycle(UUIDPKMixin, TimestampMixin, db.Model):
     meta: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
 
-class HrmsReviewInstance(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsReviewInstance(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_review_instances"
 
     cycle_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("hrms_review_cycles.id", ondelete="CASCADE"), nullable=False)
@@ -195,7 +197,7 @@ class HrmsReviewInstance(UUIDPKMixin, TimestampMixin, db.Model):
     meta: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
 
 
-class HrmsReviewScore(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsReviewScore(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_review_scores"
 
     instance_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("hrms_review_instances.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -205,7 +207,7 @@ class HrmsReviewScore(UUIDPKMixin, TimestampMixin, db.Model):
     submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class HrmsExpenseReport(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsExpenseReport(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_expense_reports"
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -229,7 +231,7 @@ class HrmsExpenseReport(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class HrmsExpenseLine(UUIDPKMixin, TimestampMixin, db.Model):
+class HrmsExpenseLine(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_expense_lines"
 
     report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("hrms_expense_reports.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -246,7 +248,7 @@ class HrmsExpenseLine(UUIDPKMixin, TimestampMixin, db.Model):
     project: Mapped["Project"] = relationship(foreign_keys=[project_id])
 
 
-class HrmsNotification(UUIDPKMixin, db.Model):
+class HrmsNotification(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_notifications"
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -258,7 +260,7 @@ class HrmsNotification(UUIDPKMixin, db.Model):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
-class HrmsGdprConsent(UUIDPKMixin, db.Model):
+class HrmsGdprConsent(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_gdpr_consents"
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -270,7 +272,7 @@ class HrmsGdprConsent(UUIDPKMixin, db.Model):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
-class HrmsAuditLog(UUIDPKMixin, db.Model):
+class HrmsAuditLog(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "hrms_audit_logs"
 
     actor_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

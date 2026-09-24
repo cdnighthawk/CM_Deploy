@@ -51,6 +51,7 @@ def register_estimate_spec_routes(bp: Blueprint) -> None:
                         "enabled": bool(r.enabled),
                         "default_in_scope": bool(r.default_in_scope),
                         "sort_order": r.sort_order,
+                        "trade_group": getattr(r, "trade_group", None),
                     }
                     for r in rows
                 ],

@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 submittal_audit_action_enum = ENUM(
     "create",
@@ -81,7 +81,7 @@ submittal_estimate_line_items = Table(
 )
 
 
-class Submittal(UUIDPKMixin, TimestampMixin, db.Model):
+class Submittal(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "submittals"
     __table_args__ = (UniqueConstraint("project_id", "number", name="uq_submittals_project_number"),)
 
@@ -191,7 +191,7 @@ class Submittal(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class SubmittalLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+class SubmittalLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "submittal_line_items"
 
     submittal_id: Mapped[uuid.UUID] = mapped_column(
@@ -225,7 +225,7 @@ class SubmittalLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     submittal: Mapped["Submittal"] = relationship(back_populates="line_items", foreign_keys=[submittal_id])
 
 
-class SubmittalAudit(UUIDPKMixin, TimestampMixin, db.Model):
+class SubmittalAudit(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "submittal_audit"
 
     submittal_id: Mapped[uuid.UUID] = mapped_column(
@@ -248,7 +248,7 @@ class SubmittalAudit(UUIDPKMixin, TimestampMixin, db.Model):
     actor = relationship("User", foreign_keys=[actor_user_id])
 
 
-class SubmittalPdfAnnotation(UUIDPKMixin, TimestampMixin, db.Model):
+class SubmittalPdfAnnotation(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One persisted markup layer per attachment (``document_id``)."""
 
     __tablename__ = "submittal_pdf_annotations"
@@ -271,7 +271,7 @@ class SubmittalPdfAnnotation(UUIDPKMixin, TimestampMixin, db.Model):
     author = relationship("User", foreign_keys=[author_user_id])
 
 
-class SubmittalRevision(UUIDPKMixin, TimestampMixin, db.Model):
+class SubmittalRevision(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "submittal_revisions"
 
     submittal_id: Mapped[uuid.UUID] = mapped_column(
@@ -325,7 +325,7 @@ class SubmittalRevision(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class SubmittalChecklistItem(UUIDPKMixin, TimestampMixin, db.Model):
+class SubmittalChecklistItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "submittal_checklist_items"
 
     revision_id: Mapped[uuid.UUID] = mapped_column(
@@ -351,7 +351,7 @@ class SubmittalChecklistItem(UUIDPKMixin, TimestampMixin, db.Model):
     revision: Mapped["SubmittalRevision"] = relationship(back_populates="checklist_items")
 
 
-class SubmittalHold(UUIDPKMixin, TimestampMixin, db.Model):
+class SubmittalHold(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "submittal_holds"
 
     submittal_id: Mapped[uuid.UUID] = mapped_column(

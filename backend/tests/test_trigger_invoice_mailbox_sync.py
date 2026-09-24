@@ -43,6 +43,16 @@ def test_main_requires_secret(cron, monkeypatch, capsys):
     assert "BC_SYNC_CRON_SECRET is required" in capsys.readouterr().err
 
 
+def test_main_succeeds_on_202_accepted(cron, monkeypatch, capsys):
+    monkeypatch.setenv("BC_SYNC_CRON_SECRET", "shared-secret")
+    monkeypatch.setenv("USIS_WEB_HOSTPORT", "usis-cm:10000")
+    monkeypatch.setattr(cron, "post_sync", lambda url, secret, timeout=170: (202, '{"async":true}'))
+    assert cron.main() == 0
+    out = capsys.readouterr().out
+    assert "202" in out
+    assert "async" in out
+
+
 def test_main_succeeds_on_first_url(cron, monkeypatch, capsys):
     monkeypatch.setenv("BC_SYNC_CRON_SECRET", "shared-secret")
     monkeypatch.setenv("USIS_WEB_HOSTPORT", "usis-cm:10000")

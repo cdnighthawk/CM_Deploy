@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .project import Project
 
 
-class HrEmployeeDispatch(UUIDPKMixin, TimestampMixin, db.Model):
+class HrEmployeeDispatch(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One dispatch record per employee per project revision (new revision when pay changes)."""
 
     __tablename__ = "hr_employee_dispatches"

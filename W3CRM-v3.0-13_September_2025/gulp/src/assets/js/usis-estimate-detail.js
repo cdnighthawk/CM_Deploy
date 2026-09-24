@@ -16,6 +16,7 @@
 	var activeLineId = null;
 	var dirtyByLine = {};
 	var lineAutoFilter = null;
+	var matSearchItems = {};
 
 	function parentLeadId(item) {
 		if (Api) return Api.leadIdFromItem(item);
@@ -210,6 +211,41 @@
 		if (n == null || n === "" || isNaN(Number(n))) return "—";
 		var x = Number(n);
 		return x.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+	}
+
+	function money4(n) {
+		var num = Number(n);
+		if (!isFinite(num)) return "—";
+		return "$" + num.toFixed(4);
+	}
+
+	function projectTrades() {
+		var rates = (leadItem && leadItem.labor_rates) || {};
+		return rates.trades || [];
+	}
+
+	function tradeOptionsHtml(selectedId, locked) {
+		var trades = projectTrades();
+		var html = '<option value="">Trade…</option>';
+		var found = !selectedId;
+		trades.forEach(function (row) {
+			var id = row.wage_rate_id || "";
+			if (id && id === selectedId) found = true;
+			html +=
+				'<option value="' +
+				escAttr(id) +
+				'"' +
+				(id === selectedId ? " selected" : "") +
+				">" +
+				esc(row.trade || "Trade") +
+				" · " +
+				esc(money4(row.project_loaded_hourly)) +
+				"/hr</option>";
+		});
+		if (selectedId && !found) {
+			html += '<option value="' + escAttr(selectedId) + '" selected>Selected trade</option>';
+		}
+		return html;
 	}
 
 	function pct(n) {
@@ -559,16 +595,37 @@
 	function rowHtml(ln) {
 		var id = ln.id;
 		var types = ["L", "M", "E", "S", "O"];
+		var costType = (ln.cost_type || "M").charAt(0).toUpperCase();
 		var opts = types
 			.map(function (t) {
-				var sel = (ln.cost_type || "M").charAt(0).toUpperCase() === t ? " selected" : "";
+				var sel = costType === t ? " selected" : "";
 				return '<option value="' + t + '"' + sel + ">" + t + "</option>";
 			})
 			.join("");
+		var isLabor = costType === "L";
+		var crew = Array.isArray(ln.labor_crew) ? ln.labor_crew : [];
+		var crewLabel = crew.length > 1 ? "Crew (" + crew.length + ")" : "Crew";
+		var tradeCell =
+			'<div class="d-flex flex-wrap align-items-center gap-1">' +
+			'<select class="form-select form-select-sm usis-est-inp"' +
+			(isLabor ? "" : " disabled") +
+			' data-f="wage_rate_id">' +
+			tradeOptionsHtml(ln.wage_rate_id || "", !isLabor) +
+			"</select>" +
+			'<button type="button" class="btn btn-outline-secondary btn-sm py-0 usis-est-crew"' +
+			(isLabor ? "" : " disabled") +
+			' title="Mixed-trade crew">' +
+			esc(crewLabel) +
+			"</button></div>";
+		var crewAttr = crew.length ? escAttr(JSON.stringify(crew.map(function (row) {
+			return { wage_rate_id: row.wage_rate_id, hours: row.hours };
+		}))) : "";
 		return (
 			"<tr data-line-id=\"" +
 			escAttr(id) +
-			'">' +
+			'"' +
+			(crewAttr ? ' data-labor-crew="' + crewAttr + '"' : "") +
+			">" +
 			"<td><input type=\"text\" class=\"form-control form-control-sm usis-est-inp\" data-f=\"section\" value=\"" +
 			escAttr(ln.section || "") +
 			'"></td>' +
@@ -581,6 +638,9 @@
 			"<td><select class=\"form-select form-select-sm usis-est-inp\" data-f=\"cost_type\">" +
 			opts +
 			"</select></td>" +
+			"<td>" +
+			tradeCell +
+			"</td>" +
 			"<td class=\"text-end\"><input type=\"number\" step=\"any\" class=\"form-control form-control-sm text-end usis-est-inp\" data-f=\"quantity\" value=\"" +
 			escAttr(ln.quantity) +
 			'"></td>' +
@@ -605,7 +665,7 @@
 		if (!tb) return;
 		dirtyByLine = {};
 		if (!lines || !lines.length) {
-			tb.innerHTML = '<tr><td colspan="10" class="text-muted">No lines yet. Click <strong>Add line</strong>.</td></tr>';
+			tb.innerHTML = '<tr><td colspan="11" class="text-muted">No lines yet. Click <strong>Add line</strong>.</td></tr>';
 			applyLineAutoFilter();
 			return;
 		}
@@ -636,6 +696,7 @@
 					filterable: true,
 					valueOptions: ["L", "M", "E", "S", "O"],
 				},
+				{ key: "labor_trade", label: "Trade", type: "text", sortable: true, filterable: true },
 				{ key: "quantity", label: "Qty", type: "number", sortable: true, filterable: true },
 				{
 					key: "unit",
@@ -728,6 +789,20 @@
 			else if (f === "quantity" || f === "unit_cost") o[f] = inp.value === "" ? 0 : Number(inp.value);
 			else o[f] = inp.value;
 		});
+		if (o.cost_type !== "L") {
+			o.wage_rate_id = null;
+			o.labor_crew = [];
+		} else {
+			var crewRaw = tr.getAttribute("data-labor-crew");
+			if (crewRaw) {
+				try {
+					o.labor_crew = JSON.parse(crewRaw);
+				} catch (eCrew) {
+					o.labor_crew = [];
+				}
+			}
+			if (!o.wage_rate_id) o.wage_rate_id = null;
+		}
 		return o;
 	}
 
@@ -742,6 +817,11 @@
 		if (!id) return;
 		setRowStatus(tr, "…");
 		var body = gatherRowPayload(tr);
+		if (tr.getAttribute("data-apply-labor") === "1") {
+			body.apply_labor_rate = true;
+			delete body.unit_cost;
+			tr.removeAttribute("data-apply-labor");
+		}
 		fetch(API + "/api/v1/takeoff-lines/" + encodeURIComponent(id), {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -764,7 +844,23 @@
 			})
 			.then(function (data) {
 				var it = data.item;
-				if (it) updateRowExtended(tr, it.extended_total);
+				if (it) {
+					updateRowExtended(tr, it.extended_total);
+					var costInp = tr.querySelector('[data-f="unit_cost"]');
+					if (costInp && it.unit_cost != null) costInp.value = it.unit_cost;
+					if (it.labor_crew && it.labor_crew.length) {
+						tr.setAttribute("data-labor-crew", JSON.stringify(it.labor_crew.map(function (row) {
+							return { wage_rate_id: row.wage_rate_id, hours: row.hours };
+						})));
+					} else {
+						tr.removeAttribute("data-labor-crew");
+					}
+					var crewBtn = tr.querySelector(".usis-est-crew");
+					if (crewBtn) {
+						var n = (it.labor_crew || []).length;
+						crewBtn.textContent = n > 1 ? "Crew (" + n + ")" : "Crew";
+					}
+				}
 				if (leadItem && leadItem.takeoff_lines) {
 					var ix = leadItem.takeoff_lines.findIndex(function (x) { return x.id === id; });
 					if (ix >= 0) {
@@ -780,6 +876,155 @@
 				setRowStatus(tr, "!");
 				flashErr(e.message || String(e));
 			});
+	}
+
+	var crewLineId = null;
+
+	function crewRowsFromTr(tr) {
+		var raw = tr && tr.getAttribute("data-labor-crew");
+		var rows = [];
+		if (raw) {
+			try { rows = JSON.parse(raw) || []; } catch (e) { rows = []; }
+		}
+		if (!rows.length) {
+			var sel = tr && tr.querySelector('[data-f="wage_rate_id"]');
+			if (sel && sel.value) rows = [{ wage_rate_id: sel.value, hours: 8 }];
+		}
+		if (!rows.length) rows = [{ wage_rate_id: "", hours: 8 }];
+		return rows;
+	}
+
+	function gatherCrewModal() {
+		var tbody = document.getElementById("usis-est-crew-tbody");
+		if (!tbody) return [];
+		return Array.prototype.map.call(tbody.querySelectorAll("tr"), function (tr) {
+			var sel = tr.querySelector(".usis-est-crew-trade");
+			var hours = tr.querySelector(".usis-est-crew-hours");
+			return { wage_rate_id: sel ? sel.value : "", hours: hours && hours.value !== "" ? Number(hours.value) : null };
+		});
+	}
+
+	function updateCrewTotal() {
+		var note = document.getElementById("usis-est-crew-total");
+		var rows = gatherCrewModal();
+		var trades = projectTrades();
+		var total = 0;
+		var tbody = document.getElementById("usis-est-crew-tbody");
+		rows.forEach(function (row) {
+			var info = trades.filter(function (t) { return t.wage_rate_id === row.wage_rate_id; })[0];
+			if (info) total += (Number(row.hours) || 0) * (Number(info.project_loaded_hourly) || 0);
+		});
+		if (note) note.textContent = "Crew total " + money4(total) + ". Unit cost = crew total ÷ line quantity.";
+		if (!tbody) return;
+		Array.prototype.forEach.call(tbody.querySelectorAll("tr"), function (tr) {
+			var sel = tr.querySelector(".usis-est-crew-trade");
+			var hoursEl = tr.querySelector(".usis-est-crew-hours");
+			var info = trades.filter(function (t) { return sel && t.wage_rate_id === sel.value; })[0] || {};
+			var rate = Number(info.project_loaded_hourly) || 0;
+			var hours = hoursEl && hoursEl.value !== "" ? Number(hoursEl.value) : 0;
+			var rateTd = tr.querySelector(".usis-est-crew-rate");
+			var extTd = tr.querySelector(".usis-est-crew-ext");
+			if (rateTd) rateTd.textContent = money4(rate);
+			if (extTd) extTd.textContent = money4(hours * rate);
+		});
+	}
+
+	function renderCrewModal(rows) {
+		var tbody = document.getElementById("usis-est-crew-tbody");
+		if (!tbody) return;
+		var trades = projectTrades();
+		tbody.innerHTML = rows.map(function (row, idx) {
+			var opts = '<option value="">Trade…</option>';
+			trades.forEach(function (trd) {
+				var id = trd.wage_rate_id || "";
+				opts += '<option value="' + escAttr(id) + '"' + (id === row.wage_rate_id ? " selected" : "") + ">" + esc(trd.trade || "Trade") + "</option>";
+			});
+			var info = trades.filter(function (t) { return t.wage_rate_id === row.wage_rate_id; })[0] || {};
+			var hours = row.hours != null && row.hours !== "" ? Number(row.hours) : 0;
+			var rate = Number(info.project_loaded_hourly) || 0;
+			return '<tr data-idx="' + idx + '"><td><select class="form-select form-select-sm usis-est-crew-trade">' + opts + '</select></td><td><input type="number" min="0" step="0.25" class="form-control form-control-sm text-end usis-est-crew-hours" value="' + escAttr(row.hours != null ? row.hours : "") + '"></td><td class="text-end text-nowrap usis-est-crew-rate">' + esc(money4(rate)) + '</td><td class="text-end text-nowrap usis-est-crew-ext">' + esc(money4(hours * rate)) + '</td><td class="text-end"><button type="button" class="btn btn-outline-danger btn-sm py-0 usis-est-crew-del">×</button></td></tr>';
+		}).join("");
+		updateCrewTotal();
+	}
+
+	function openCrewModal(tr) {
+		crewLineId = tr.getAttribute("data-line-id");
+		activeLineId = crewLineId;
+		var typeSel = tr.querySelector('[data-f="cost_type"]');
+		if (typeSel && typeSel.value !== "L") {
+			flashErr("Set the line type to Labor (L) before assigning trades.");
+			return;
+		}
+		if (!projectTrades().length) {
+			flashErr("Import company trades on the Labor rates tab first.");
+			return;
+		}
+		renderCrewModal(crewRowsFromTr(tr));
+		var modalEl = document.getElementById("usis-est-crew-modal");
+		if (modalEl && window.bootstrap && window.bootstrap.Modal) window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+	}
+
+	function applyCrewToLine() {
+		if (!crewLineId) return;
+		var crew = gatherCrewModal().filter(function (row) { return row.wage_rate_id; });
+		if (!crew.length) {
+			flashErr("Add at least one trade.");
+			return;
+		}
+		fetch(API + "/api/v1/takeoff-lines/" + encodeURIComponent(crewLineId), {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ cost_type: "L", wage_rate_id: crew[0].wage_rate_id, labor_crew: crew, apply_labor_rate: true }),
+		})
+			.then(function (r) {
+				if (!r.ok) {
+					return r.text().then(function (text) {
+						var j = {};
+						try { j = text ? JSON.parse(text) : {}; } catch (eCrew) { j = {}; }
+						throw new Error(mapApiError(j, r.status));
+					});
+				}
+				return loadDetail();
+			})
+			.then(function () {
+				var modalEl = document.getElementById("usis-est-crew-modal");
+				if (modalEl && window.bootstrap) {
+					var inst = bootstrap.Modal.getInstance(modalEl);
+					if (inst) inst.hide();
+				}
+				flashOk("Crew mix applied.");
+			})
+			.catch(function (e) { flashErr(e.message || String(e)); });
+	}
+
+	function applyWageToActiveLine(wageRateId) {
+		if (leadItem && leadItem.estimate_locked_at) {
+			showErr("This estimate is locked.");
+			return;
+		}
+		if (!wageRateId) return;
+		if (activeLineId == null) {
+			showErr("Focus a labor line, then apply a trade rate.");
+			return;
+		}
+		fetch(API + "/api/v1/takeoff-lines/" + encodeURIComponent(activeLineId), {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			credentials: "include",
+			body: JSON.stringify({ cost_type: "L", wage_rate_id: wageRateId, labor_crew: [{ wage_rate_id: wageRateId, hours: null }], apply_labor_rate: true }),
+		})
+			.then(function (r) {
+				if (!r.ok) {
+					return r.text().then(function (text) {
+						var j = {};
+						try { j = text ? JSON.parse(text) : {}; } catch (eWage) { j = {}; }
+						throw new Error(mapApiError(j, r.status));
+					});
+				}
+				return loadDetail();
+			})
+			.catch(function (e) { flashErr(e.message || String(e)); });
 	}
 
 	function wireTable() {
@@ -805,12 +1050,33 @@
 		});
 		tb.addEventListener("change", function (e) {
 			var t = e.target;
-			if (t.classList.contains("usis-est-inp") && t.tagName === "SELECT") {
-				var tr = t.closest("tr");
-				if (tr) saveRow(tr);
+			if (!t.classList.contains("usis-est-inp") || t.tagName !== "SELECT") return;
+			var tr = t.closest("tr");
+			if (!tr) return;
+			var field = t.getAttribute("data-f");
+			if (field === "cost_type") {
+				var isLabor = t.value === "L";
+				var tradeSel = tr.querySelector('[data-f="wage_rate_id"]');
+				var crewBtn = tr.querySelector(".usis-est-crew");
+				if (tradeSel) {
+					tradeSel.disabled = !isLabor;
+					if (!isLabor) tradeSel.value = "";
+				}
+				if (crewBtn) crewBtn.disabled = !isLabor;
+				if (!isLabor) tr.removeAttribute("data-labor-crew");
 			}
+			if (field === "wage_rate_id" || field === "cost_type") {
+				tr.setAttribute("data-apply-labor", "1");
+			}
+			saveRow(tr);
 		});
 		tb.addEventListener("click", function (e) {
+			var crewBtn = e.target.closest(".usis-est-crew");
+			if (crewBtn) {
+				var crewTr = crewBtn.closest("tr");
+				if (crewTr) openCrewModal(crewTr);
+				return;
+			}
 			var btn = e.target.closest(".usis-est-del");
 			if (!btn) return;
 			var tr = btn.closest("tr");
@@ -854,11 +1120,11 @@
 	function openCreateEstimate(opts) {
 		var id = currentLeadId();
 		if (!window.USISEstimateCreate) {
-			flashErr("Create estimate is not available on this page.");
+			flashErr("Create proposal is not available on this page.");
 			return;
 		}
 		if (!id) {
-			flashErr("Open this page from a lead, then create an estimate.");
+			flashErr("Open this page from an estimate, then create a proposal.");
 			return;
 		}
 		window.USISEstimateCreate.open(id, opts || {});
@@ -900,7 +1166,7 @@
 				(item.name || item.title || "—") +
 				" · " +
 				(item.number || (item.lead && item.lead.number) || "—") +
-				" · estimate " +
+				" · proposal " +
 				item.id;
 		}
 		var noId = document.getElementById("usis-est-detail-no-id");
@@ -974,31 +1240,95 @@
 			});
 	}
 
+	function humanizeFetchError(e) {
+		var msg = (e && e.message) || String(e || "Request failed");
+		if ((e && (e.status === 502 || e.status === 503)) || /<!DOCTYPE|<\s*html/i.test(msg)) {
+			return "The server failed while saving. Try Add line again in a moment.";
+		}
+		if (e && e.status === 403) {
+			return mapApiError(e.body || {}, e.status);
+		}
+		return msg;
+	}
+
+	function showCreatedLine(item) {
+		if (!item) return false;
+		if (!leadItem) leadItem = { id: leadKey, takeoff_lines: [] };
+		var lines = (leadItem.takeoff_lines || []).filter(function (ln) {
+			return String(ln && ln.id) !== String(item.id);
+		});
+		lines.push(item);
+		leadItem.takeoff_lines = lines;
+		if (item.id) leadKey = leadItem.id || leadKey;
+		var wrap = document.getElementById("usis-est-detail-root");
+		if (wrap) wrap.classList.remove("d-none");
+		var noId = document.getElementById("usis-est-detail-no-id");
+		if (noId) noId.classList.add("d-none");
+		var idline = document.getElementById("usis-est-detail-idline");
+		if (idline && /Loading estimate/i.test(idline.textContent || "")) {
+			idline.textContent = (leadItem.name || "Estimate") + " · " + (leadKey || "");
+		}
+		renderTable(lines);
+		renderRollup(lines, leadItem.fee_percentage);
+		applyTakeoffLockUI();
+		return true;
+	}
+
 	function addLine() {
 		if (!leadKey) return;
 		if (leadItem && leadItem.estimate_locked_at) {
 			showErr("This estimate is locked.");
 			return;
 		}
-		fetch(API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
-			method: "POST",
-			headers: { "Content-Type": "application/json", Accept: "application/json" },
-			credentials: "include",
-			body: JSON.stringify({
-				description: "New line",
-				quantity: 1,
-				unit: "EA",
-				unit_cost: 0,
-				cost_type: "M",
-			}),
-		})
-			.then(function (r) {
-				if (r.status === 403) throw new Error("Writes disabled (set TAKEOFF_API_WRITES_ENABLED=1)");
-				if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || "HTTP " + r.status); });
+		var addBtn = document.getElementById("usis-est-add-line");
+		if (addBtn) addBtn.disabled = true;
+		showErr("");
+		var payload = {
+			description: "New line",
+			quantity: 1,
+			unit: "EA",
+			unit_cost: 0,
+			cost_type: "M",
+		};
+		var req = Api
+			? Api.createTakeoffLine(leadKey, payload)
+			: fetch(API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines", {
+					method: "POST",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					credentials: "include",
+					body: JSON.stringify(payload),
+				}).then(function (r) {
+					return r.text().then(function (text) {
+						var j = {};
+						try {
+							j = text && text.trim().charAt(0) !== "<" ? JSON.parse(text) : {};
+						} catch (eAdd) {
+							j = {};
+						}
+						if (r.status === 403) throw new Error(mapApiError(j, r.status));
+						if (!r.ok) {
+							var err = new Error(j.error || (r.status === 502 ? "The server failed while saving. Try Add line again in a moment." : "HTTP " + r.status));
+							err.status = r.status;
+							err.body = j;
+							throw err;
+						}
+						return j;
+					});
+				});
+		req
+			.then(function (data) {
+				var item = data && data.item;
+				if (showCreatedLine(item)) {
+					flashOk("Line added.");
+					return;
+				}
 				return loadDetail();
 			})
 			.catch(function (e) {
-				showErr(e.message || String(e));
+				showErr(humanizeFetchError(e));
+			})
+			.then(function () {
+				if (addBtn && !(leadItem && leadItem.estimate_locked_at)) addBtn.disabled = false;
 			});
 	}
 
@@ -1018,33 +1348,98 @@
 			.then(function (r) { return r.json(); })
 			.then(function (data) {
 				var items = data.items || [];
+				matSearchItems = {};
 				if (!items.length) {
 					ul.innerHTML = '<li class="text-muted small">No matches.</li>';
 					return;
 				}
 				ul.innerHTML = items
 					.map(function (m) {
+						matSearchItems[String(m.id)] = m;
 						var cost = m.cost != null ? m.cost : "—";
-						var id = "mat-" + String(m.id).replace(/[^a-z0-9-]/gi, "");
+						var configurable = !!(m.configurator && m.configurator.groups);
+						var extra = configurable
+							? '<br><span class="text-muted">' +
+							  esc(m.mounting_type || "size + mount") +
+							  " · configure material / door / handle</span>"
+							: "";
 						return (
 							'<li class="small mb-1 d-flex justify-content-between align-items-start gap-2">' +
 							"<span>" +
 							esc(m.manufacturer) +
 							" · " +
 							esc(m.item) +
+							extra +
 							'<br><span class="text-muted">$' +
 							esc(String(cost)) +
 							" / " +
 							esc(m.unit_of_measure || "") +
 							"</span></span>" +
-							'<button type="button" class="btn btn-xs btn-outline-primary btn-sm py-0 usis-mat-apply" data-cost="' +
+							'<button type="button" class="btn btn-xs btn-outline-primary btn-sm py-0 usis-mat-apply" data-id="' +
+							escAttr(m.id) +
+							'" data-cost="' +
 							escAttr(m.cost != null ? m.cost : "") +
-							'">Apply</button>' +
+							'">' +
+							(configurable ? "Configure" : "Apply") +
+							"</button>" +
 							"</li>"
 						);
 					})
 					.join("");
 			});
+	}
+
+	function applyConfiguredMaterial(item, selections) {
+		if (leadItem && leadItem.estimate_locked_at) {
+			showErr("This estimate is locked.");
+			return;
+		}
+		var payload = {
+			material_pricing_id: item.id,
+			configuration: selections || {},
+			quantity: 1,
+			unit: item.unit_of_measure || "EA",
+			cost_type: "M",
+		};
+		var url;
+		var method = "POST";
+		if (activeLineId) {
+			url = API + "/api/v1/takeoff-lines/" + encodeURIComponent(activeLineId);
+			method = "PATCH";
+		} else if (leadKey) {
+			url = API + "/api/v1/estimates/" + encodeURIComponent(leadKey) + "/takeoff-lines";
+		} else {
+			showErr("Open a proposal before adding catalog items.");
+			return;
+		}
+		fetch(url, {
+			method: method,
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
+			credentials: "include",
+			body: JSON.stringify(payload),
+		})
+			.then(function (r) {
+				if (!r.ok) {
+					return r.json().then(function (j) {
+						throw new Error((j && j.error) || "HTTP " + r.status);
+					});
+				}
+				return loadDetail();
+			})
+			.catch(function (e) {
+				flashErr(e.message || String(e));
+			});
+	}
+
+	function applyCatalogItem(item) {
+		if (!item) return;
+		if (item.configurator && window.USISMaterialConfigurator) {
+			window.USISMaterialConfigurator.open(item, item.configuration, function (configured, selections) {
+				applyConfiguredMaterial(configured, selections);
+			});
+			return;
+		}
+		applyMaterialCost(item.cost != null ? item.cost : "");
 	}
 
 	function applyMaterialCost(costStr) {
@@ -1083,52 +1478,15 @@
 			});
 	}
 
-	function wageSearch() {
-		var st = (document.getElementById("usis-est-wage-state") || {}).value || "";
-		var tr = (document.getElementById("usis-est-wage-trade") || {}).value || "";
-		var yr = (document.getElementById("usis-est-wage-year") || {}).value || "";
-		var out = document.getElementById("usis-est-wage-out");
-		if (!out) return;
-		if (!st.trim() || !tr.trim()) {
-			out.textContent = "Enter state and trade.";
-			return;
-		}
-		var url =
-			API +
-			"/api/v1/cost-suggestions/wage?state=" +
-			encodeURIComponent(st.trim()) +
-			"&trade=" +
-			encodeURIComponent(tr.trim()) +
-			(yr ? "&year=" + encodeURIComponent(yr.trim()) : "");
-		fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
-			.then(function (r) { return r.json(); })
-			.then(function (data) {
-				if (data.item) {
-					out.innerHTML =
-						"<div>Loaded hourly (reference): <strong>$" +
-						esc(String(data.total_loaded_hourly != null ? data.total_loaded_hourly.toFixed(4) : "—")) +
-						"</strong></div>" +
-						'<pre class="small bg-light p-2 rounded mt-1 mb-0">' +
-						esc(JSON.stringify(data.item, null, 2)) +
-						"</pre>";
-				} else {
-					out.innerHTML =
-						'<span class="text-muted">No exact match. Near matches: ' +
-						(data.near_matches ? data.near_matches.length : 0) +
-						"</span>";
-				}
-			})
-			.catch(function () {
-				out.textContent = "Request failed.";
-			});
-	}
-
 	var ESTD_TAB_IDS = {
 		job: "estd-tab-job",
 		drawings: "estd-tab-drawings",
 		specs: "estd-tab-specs",
 		rfi: "estd-tab-rfi",
 		takeoff: "estd-tab-takeoff",
+		"labor-rates": "estd-tab-labor-rates",
+		labor_rates: "estd-tab-labor-rates",
+		labor: "estd-tab-labor-rates",
 		estimate: "estd-tab-estimate",
 		"spec-package": "estd-tab-spec-package",
 		spec_package: "estd-tab-spec-package",
@@ -1223,18 +1581,18 @@
 			ul.addEventListener("click", function (e) {
 				var b = e.target.closest(".usis-mat-apply");
 				if (!b) return;
-				applyMaterialCost(b.getAttribute("data-cost"));
+				var item = matSearchItems[String(b.getAttribute("data-id") || "")];
+				if (item) applyCatalogItem(item);
+				else applyMaterialCost(b.getAttribute("data-cost"));
 			});
 		}
-		var ws = document.getElementById("usis-est-wage-search");
-		if (ws) ws.addEventListener("click", wageSearch);
 		var appr = document.getElementById("usis-est-approve-lock");
 		if (appr) {
 			appr.addEventListener("click", function () {
-				if (!window.confirm("Approve this estimate and lock takeoff editing?")) return;
+				if (!window.confirm("Approve this proposal and lock takeoff editing?")) return;
 				postEstimateAction("approve")
 					.then(function () {
-						flashOk("Estimate approved and locked.");
+						flashOk("Proposal approved and locked.");
 						return loadDetail();
 					})
 					.catch(function (e) {
@@ -1245,10 +1603,10 @@
 		var lck = document.getElementById("usis-est-lock-draft");
 		if (lck) {
 			lck.addEventListener("click", function () {
-				if (!window.confirm("Lock this estimate (no formal approval recorded)?")) return;
+				if (!window.confirm("Lock this proposal (no formal approval recorded)?")) return;
 				postEstimateAction("lock")
 					.then(function () {
-						flashOk("Estimate locked.");
+						flashOk("Proposal locked.");
 						return loadDetail();
 					})
 					.catch(function (e) {
@@ -1259,10 +1617,10 @@
 		var unl = document.getElementById("usis-est-unlock");
 		if (unl) {
 			unl.addEventListener("click", function () {
-				if (!window.confirm("Unlock takeoff editing for this estimate?")) return;
+				if (!window.confirm("Unlock takeoff editing for this proposal?")) return;
 				postEstimateAction("unlock")
 					.then(function () {
-						flashOk("Estimate unlocked.");
+						flashOk("Proposal unlocked.");
 						return loadDetail();
 					})
 					.catch(function (e) {
@@ -1270,6 +1628,40 @@
 					});
 			});
 		}
+		var crewAdd = document.getElementById("usis-est-crew-add");
+		if (crewAdd) {
+			crewAdd.addEventListener("click", function () {
+				var rows = gatherCrewModal();
+				rows.push({ wage_rate_id: "", hours: 8 });
+				renderCrewModal(rows);
+			});
+		}
+		var crewBody = document.getElementById("usis-est-crew-tbody");
+		if (crewBody) {
+			crewBody.addEventListener("click", function (e) {
+				var del = e.target.closest(".usis-est-crew-del");
+				if (!del) return;
+				var tr = del.closest("tr");
+				var rows = gatherCrewModal();
+				var idx = tr ? Number(tr.getAttribute("data-idx")) : -1;
+				if (idx >= 0) rows.splice(idx, 1);
+				if (!rows.length) rows = [{ wage_rate_id: "", hours: 8 }];
+				renderCrewModal(rows);
+			});
+			crewBody.addEventListener("input", updateCrewTotal);
+			crewBody.addEventListener("change", updateCrewTotal);
+		}
+		var crewSave = document.getElementById("usis-est-crew-save");
+		if (crewSave) crewSave.addEventListener("click", applyCrewToLine);
+		document.addEventListener("usis-apply-labor-rate", function (ev) {
+			var id = ev && ev.detail && ev.detail.wage_rate_id;
+			if (id) applyWageToActiveLine(id);
+		});
+		document.addEventListener("usis-labor-rates-updated", function (ev) {
+			var item = ev && ev.detail && ev.detail.item;
+			if (leadItem && item) leadItem.labor_rates = item;
+			if (leadItem && leadItem.takeoff_lines) renderTable(leadItem.takeoff_lines);
+		});
 		loadSessionMe().then(function () {
 			loadDetail();
 		});

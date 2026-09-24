@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .auth import User
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .wage_rate import WageRate
 
 
-class HrOnboardingItem(UUIDPKMixin, TimestampMixin, db.Model):
+class HrOnboardingItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hr_onboarding_items"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -35,7 +35,7 @@ class HrOnboardingItem(UUIDPKMixin, TimestampMixin, db.Model):
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
 
 
-class HrPolicyAcknowledgment(UUIDPKMixin, TimestampMixin, db.Model):
+class HrPolicyAcknowledgment(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hr_policy_acknowledgments"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -49,7 +49,7 @@ class HrPolicyAcknowledgment(UUIDPKMixin, TimestampMixin, db.Model):
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
 
 
-class HrTrainingAssignment(UUIDPKMixin, TimestampMixin, db.Model):
+class HrTrainingAssignment(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "hr_training_assignments"
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -65,7 +65,7 @@ class HrTrainingAssignment(UUIDPKMixin, TimestampMixin, db.Model):
     user: Mapped["User"] = relationship(foreign_keys=[user_id])
 
 
-class HrHireApplication(UUIDPKMixin, TimestampMixin, db.Model):
+class HrHireApplication(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Hire wizard intake; I-9 / W-4 PII stored encrypted in ``*_json_encrypted`` columns."""
 
     __tablename__ = "hr_hire_applications"
@@ -127,7 +127,7 @@ class HrHireApplication(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class HrHireI9DocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
+class HrHireI9DocumentFile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Photo of an I-9 List A / B / C supporting document for a hire wizard application."""
 
     __tablename__ = "hr_hire_i9_document_files"
@@ -148,7 +148,7 @@ class HrHireI9DocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
     hire_application: Mapped["HrHireApplication"] = relationship(back_populates="i9_document_files")
 
 
-class HrHireW4DocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
+class HrHireW4DocumentFile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Photo of a signed W-4 or other W-4 supporting document for a hire wizard application."""
 
     __tablename__ = "hr_hire_w4_document_files"
@@ -169,7 +169,7 @@ class HrHireW4DocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
     hire_application: Mapped["HrHireApplication"] = relationship(back_populates="w4_document_files")
 
 
-class HrHireUnionDocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
+class HrHireUnionDocumentFile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Photo of a union card or union dispatch slip for a hire wizard application."""
 
     __tablename__ = "hr_hire_union_document_files"
@@ -190,7 +190,7 @@ class HrHireUnionDocumentFile(UUIDPKMixin, TimestampMixin, db.Model):
     hire_application: Mapped["HrHireApplication"] = relationship(back_populates="union_document_files")
 
 
-class HrEmployeePayScale(UUIDPKMixin, TimestampMixin, db.Model):
+class HrEmployeePayScale(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Multiple pay schedules per employee (union scales, stipends, etc.). HR-owned; not prevailing wage reference rows."""
 
     __tablename__ = "hr_employee_pay_scales"
@@ -219,7 +219,7 @@ class HrEmployeePayScale(UUIDPKMixin, TimestampMixin, db.Model):
     document: Mapped[Optional["Document"]] = relationship(foreign_keys=[document_id])
 
 
-class HrEmployeeDocument(UUIDPKMixin, TimestampMixin, db.Model):
+class HrEmployeeDocument(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """HR-held document links for an employee (offer letters, IDs, etc.); file lives in ``documents``."""
 
     __tablename__ = "hr_employee_documents"

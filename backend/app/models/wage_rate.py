@@ -46,6 +46,9 @@ class WageRate(UUIDPKMixin, TimestampMixin, db.Model):
         Numeric(10, 4), nullable=True
     )
     training: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    workers_comp_pct: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(8, 4), nullable=True
+    )
     notes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_assumed: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=sa.false()

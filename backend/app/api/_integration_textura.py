@@ -19,6 +19,10 @@ from ..models import Project, TexturaCredential, TexturaSyncLog
 log = logging.getLogger(__name__)
 
 
+def _textura_row(label: str = "default") -> TexturaCredential | None:
+    return db.session.scalar(select(TexturaCredential).where(TexturaCredential.label == label))
+
+
 def _fernet() -> Fernet:
     raw = (current_app.config.get("TOKEN_ENCRYPTION_KEY") or "").strip()
     if raw:
@@ -44,7 +48,7 @@ def _textura_base_url(override: str | None = None) -> str:
 
 
 def _resolve_credentials() -> tuple[str, str, str] | None:
-    row = db.session.get(TexturaCredential, "default")
+    row = _textura_row()
     if row is not None:
         try:
             password = _decrypt_secret(row.password_encrypted)
@@ -154,7 +158,7 @@ def register_textura_routes(bp: Blueprint) -> None:
     @bp.get("/integrations/textura/status")
     def textura_status():
         creds = _resolve_credentials()
-        cred_row = db.session.get(TexturaCredential, "default")
+        cred_row = _textura_row()
         last = db.session.scalars(
             select(TexturaSyncLog).order_by(TexturaSyncLog.started_at.desc()).limit(1)
         ).first()
@@ -190,7 +194,7 @@ def register_textura_routes(bp: Blueprint) -> None:
             return jsonify({"error": "username and password are required", "entity": "textura_credentials"}), 400
         api_base = str(data.get("api_base") or "").strip() or None
         enc = _encrypt_secret(password)
-        row = db.session.get(TexturaCredential, "default")
+        row = _textura_row()
         if row is None:
             db.session.add(
                 TexturaCredential(
@@ -210,7 +214,7 @@ def register_textura_routes(bp: Blueprint) -> None:
 
     @bp.delete("/integrations/textura/credentials")
     def textura_delete_credentials():
-        row = db.session.get(TexturaCredential, "default")
+        row = _textura_row()
         if row is not None:
             db.session.delete(row)
             db.session.commit()

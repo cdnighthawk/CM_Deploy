@@ -1,6 +1,7 @@
 """First-class Estimate CRUD, lock/approve, and takeoff copy helpers."""
 from __future__ import annotations
 
+import copy
 import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -11,7 +12,9 @@ from sqlalchemy.orm import joinedload
 
 from ..extensions import db
 from ..models import Company, DrawingSet, Estimate, LeadEstimate, TakeoffLineItem, User
+from ..services.estimate_folder_provision import requested_by_label, schedule_estimate_folder_provision
 from ._serializers import iso, lead_estimate_public, num_or_none
+from ..project_labor_rates import compact_labor_rates_summary, normalize_labor_rate_settings, stored_labor_rate_settings
 
 ESTIMATE_STATUSES = ("draft", "submitted", "awarded", "superseded", "archived")
 _LINE_COPY_SKIP = frozenset({"id", "created_at", "updated_at", "estimate_id"})
@@ -107,6 +110,7 @@ def ensure_current_estimate(lead: LeadEstimate, *, user_id: uuid.UUID | None = N
     db.session.add(est)
     db.session.flush()
     mark_current(est)
+    schedule_estimate_folder_provision(est.id, requested_by=requested_by_label(user_id))
     return est
 
 
@@ -145,6 +149,25 @@ def drawing_set_public(row: DrawingSet) -> dict[str, Any]:
     }
 
 
+def _labor_rates_compact(est: Estimate) -> dict[str, Any]:
+    raw = est.labor_rates if isinstance(est.labor_rates, dict) else None
+    out = compact_labor_rates_summary(raw)
+    if out.get("state"):
+        return out
+    lead = est.lead_estimate
+    loc = lead.location if lead is not None and isinstance(getattr(lead, "location", None), dict) else {}
+    default_state = str(loc.get("state") or "").strip()
+    filled = stored_labor_rate_settings(normalize_labor_rate_settings(raw, default_state=default_state))
+    out["state"] = filled["state"]
+    return out
+
+
+def copy_labor_rates_json(source: Estimate | None) -> dict[str, Any] | None:
+    if source is None or not isinstance(source.labor_rates, dict):
+        return None
+    return copy.deepcopy(source.labor_rates)
+
+
 def estimate_summary_public(est: Estimate) -> dict[str, Any]:
     total = est.total
     if total is None:
@@ -180,6 +203,11 @@ def estimate_summary_public(est: Estimate) -> dict[str, Any]:
         "total": float(total) if total is not None else None,
         "created_at": iso(est.created_at),
         "updated_at": iso(est.updated_at),
+        "labor_rates": _labor_rates_compact(est),
+        "folder_provision_status": est.folder_provision_status,
+        "folder_path": est.folder_path,
+        "folder_provisioned_at": iso(est.folder_provisioned_at),
+        "folder_provision_error": est.folder_provision_error,
     }
 
 
@@ -324,7 +352,7 @@ def create_estimate(
 
     name = str(data.get("name") or data.get("title") or "").strip()[:255]
     if not name:
-        name = "New Estimate" if source is None else f"{source.name} copy"
+        name = "New Proposal" if source is None else f"{source.name} copy"
 
     est = Estimate(
         lead_estimate_id=lead.id,
@@ -343,6 +371,7 @@ def create_estimate(
         drawing_set_id=source.drawing_set_id if source is not None else None,
         version_label=source.version_label if source is not None else None,
         due_at=lead.due_at,
+        labor_rates=copy_labor_rates_json(source),
     )
     _apply_create_fields(est, data, lead)
     db.session.add(est)
@@ -364,6 +393,7 @@ def create_estimate(
     if make_current or has_current is None:
         mark_current(est)
     db.session.flush()
+    schedule_estimate_folder_provision(est.id, requested_by=requested_by_label(user_id))
     return est
 
 

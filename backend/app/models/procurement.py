@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import UUIDPKMixin
+from .base import UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .company import Company
@@ -43,7 +43,7 @@ class ProcurementPoType(UUIDPKMixin, db.Model):
     )
 
 
-class ProjectDirectoryCompany(UUIDPKMixin, db.Model):
+class ProjectDirectoryCompany(UUIDPKMixin, TenantMixin, db.Model):
     __tablename__ = "project_directory_companies"
     __table_args__ = (UniqueConstraint("project_id", "company_id", name="uq_project_directory_company"),)
 

@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 PACKET_STATUSES = ("draft", "published")
 
@@ -116,7 +116,7 @@ def default_project_payload() -> dict[str, Any]:
     }
 
 
-class CompanySafetyProfile(UUIDPKMixin, TimestampMixin, db.Model):
+class CompanySafetyProfile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Singleton company safety identity used to merge IIPP / WVPP / heat / HazCom."""
 
     __tablename__ = "company_safety_profiles"
@@ -128,7 +128,7 @@ class CompanySafetyProfile(UUIDPKMixin, TimestampMixin, db.Model):
     docs_generated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class ProjectSafetyProfile(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectSafetyProfile(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Site-specific safety JSON for one project (project.schema.json)."""
 
     __tablename__ = "project_safety_profiles"
@@ -145,7 +145,7 @@ class ProjectSafetyProfile(UUIDPKMixin, TimestampMixin, db.Model):
     project = relationship("Project", foreign_keys=[project_id])
 
 
-class ProjectSafetyPacket(UUIDPKMixin, TimestampMixin, db.Model):
+class ProjectSafetyPacket(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Latest generated project safety packet (HTML + snapshot)."""
 
     __tablename__ = "project_safety_packets"

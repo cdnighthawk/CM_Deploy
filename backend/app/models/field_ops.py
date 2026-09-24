@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 DAILY_REPORT_STATUSES = ("draft", "complete")
 
@@ -27,7 +27,7 @@ DEFAULT_DAILY_SECTIONS: dict[str, Any] = {
 }
 
 
-class DailyReport(UUIDPKMixin, TimestampMixin, db.Model):
+class DailyReport(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One daily report per project per calendar date."""
 
     __tablename__ = "daily_reports"
@@ -53,7 +53,7 @@ class DailyReport(UUIDPKMixin, TimestampMixin, db.Model):
     photos = relationship("FieldPhoto", back_populates="daily_report")
 
 
-class FieldPhoto(UUIDPKMixin, TimestampMixin, db.Model):
+class FieldPhoto(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Jobsite photo captured from the field app."""
 
     __tablename__ = "field_photos"
@@ -121,7 +121,7 @@ TIME_ENTRY_TYPES = ("work", "break_unpaid", "break_paid", "travel")
 DEFAULT_GEOFENCE_RADIUS_M = 250
 
 
-class TimeEntry(UUIDPKMixin, TimestampMixin, db.Model):
+class TimeEntry(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One open shift per user. A mid-day switch closes this row and opens another."""
 
     __tablename__ = "time_entries"
@@ -198,7 +198,7 @@ class TimeEntry(UUIDPKMixin, TimestampMixin, db.Model):
     punches = relationship("TimePunch", back_populates="entry", cascade="all, delete-orphan")
 
 
-class TimePunch(UUIDPKMixin, TimestampMixin, db.Model):
+class TimePunch(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Append-only clock event (in, out, break, switch, office edit)."""
 
     __tablename__ = "time_punches"

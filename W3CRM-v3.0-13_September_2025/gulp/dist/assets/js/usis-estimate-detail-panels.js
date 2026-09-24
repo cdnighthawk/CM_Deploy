@@ -255,6 +255,56 @@
 		}
 	}
 
+	function pad2(n) {
+		return (n < 10 ? "0" : "") + n;
+	}
+
+	function isoToDatetimeLocal(iso) {
+		if (!iso) return "";
+		var d = new Date(iso);
+		if (isNaN(d.getTime())) return "";
+		return (
+			d.getFullYear() +
+			"-" +
+			pad2(d.getMonth() + 1) +
+			"-" +
+			pad2(d.getDate()) +
+			"T" +
+			pad2(d.getHours()) +
+			":" +
+			pad2(d.getMinutes())
+		);
+	}
+
+	function datetimeLocalToIso(value) {
+		if (value == null || String(value).trim() === "") return null;
+		var d = new Date(String(value).trim());
+		if (isNaN(d.getTime())) return null;
+		return d.toISOString();
+	}
+
+	function leadPatchId(item) {
+		if (!item) return "";
+		var lead = item.lead || {};
+		return String(
+			item.lead_estimate_id ||
+				item.lead_id ||
+				lead.id ||
+				lead.external_id ||
+				item.external_id ||
+				item.id ||
+				""
+		);
+	}
+
+	function jobDueAt(item) {
+		if (!item) return null;
+		var lead = item.lead || {};
+		return lead.due_at || item.due_at || null;
+	}
+
+	var lastJobRaw = null;
+
 	function formatMoneyCur(n, currency) {
 		if (n == null || n === "") return null;
 		var cur = (currency || "USD").toString().trim() || "USD";
@@ -980,11 +1030,107 @@
 	}
 
 	function loadJobPanel(le) {
+		lastJobRaw = le || null;
 		setJobErr("");
 		setJobLoading(false);
 		renderJobFromLead(le);
 		renderChildOpportunity(le);
 		renderGroupSummary(le && le.group_summary, le);
+	}
+
+	function setJobEditErr(msg) {
+		var el = document.getElementById("usis-estd-job-edit-err");
+		if (!el) return;
+		if (msg) {
+			el.textContent = msg;
+			el.classList.remove("d-none");
+		} else {
+			el.textContent = "";
+			el.classList.add("d-none");
+		}
+	}
+
+	function openJobEditModal() {
+		if (!lastJobRaw) {
+			setJobErr("Job information is still loading.");
+			return;
+		}
+		var due = document.getElementById("usis-estd-job-edit-due");
+		if (due) due.value = isoToDatetimeLocal(jobDueAt(lastJobRaw));
+		setJobEditErr("");
+		var modalEl = document.getElementById("usis-estd-job-edit-modal");
+		if (modalEl && window.bootstrap) {
+			window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+		}
+	}
+
+	function refreshHeaderDue(iso) {
+		var h = document.getElementById("usis-est-header");
+		if (!h) return;
+		var p = h.querySelector("p.text-muted");
+		if (!p) return;
+		p.innerHTML = p.innerHTML.replace(/Due: [^·<]*/, "Due: " + esc(iso || "—") + " ");
+	}
+
+	function saveJobEdit() {
+		var leadId = leadPatchId(lastJobRaw);
+		if (!leadId) {
+			setJobEditErr("Could not find this job.");
+			return;
+		}
+		var dueInput = document.getElementById("usis-estd-job-edit-due");
+		var rawDue = dueInput ? dueInput.value : "";
+		var dueAt = datetimeLocalToIso(rawDue);
+		if (rawDue && !dueAt) {
+			setJobEditErr("Enter a valid bid due date.");
+			return;
+		}
+		setJobEditErr("");
+		var saveBtn = document.getElementById("usis-estd-job-edit-save");
+		if (saveBtn) saveBtn.disabled = true;
+		var api = window.USISEstimateApi;
+		var req =
+			api && typeof api.patchLead === "function"
+				? api.patchLead(leadId, { due_at: dueAt })
+				: fetch(apiBase() + "/api/v1/lead-estimates/" + encodeURIComponent(leadId), {
+						method: "PATCH",
+						credentials: "include",
+						headers: Object.assign(
+							{ Accept: "application/json", "Content-Type": "application/json" },
+							actorHeaders()
+						),
+						body: JSON.stringify({ due_at: dueAt }),
+				  }).then(function (res) {
+						return res.json().then(function (j) {
+							if (!res.ok) throw new Error((j && j.error) || "Save failed.");
+							return j;
+						});
+				  });
+		req
+			.then(function (data) {
+				var item = (data && data.item) || {};
+				if (lastJobRaw) {
+					lastJobRaw.due_at = item.due_at != null ? item.due_at : dueAt;
+					if (lastJobRaw.lead) lastJobRaw.lead.due_at = lastJobRaw.due_at;
+					if (item.group_summary) lastJobRaw.group_summary = item.group_summary;
+				}
+				loadJobPanel(lastJobRaw);
+				refreshHeaderDue(lastJobRaw && lastJobRaw.due_at);
+				var modalEl = document.getElementById("usis-estd-job-edit-modal");
+				if (modalEl && window.bootstrap) {
+					var inst = window.bootstrap.Modal.getInstance(modalEl);
+					if (inst) inst.hide();
+				}
+				if (window.USISNotify && window.USISNotify.success) {
+					window.USISNotify.success("Bid due date saved.");
+				}
+			})
+			.catch(function (err) {
+				setJobEditErr((err && err.message) || "Could not save bid due date.");
+			})
+			.then(function () {
+				if (saveBtn) saveBtn.disabled = false;
+			});
 	}
 
 	function onLeadEstimateLoaded(ev) {
@@ -1040,6 +1186,10 @@
 	document.addEventListener("usis-lead-estimate-loaded", onLeadEstimateLoaded);
 
 	document.addEventListener("DOMContentLoaded", function () {
+		var editBtn = document.getElementById("usis-estd-job-edit-btn");
+		if (editBtn) editBtn.addEventListener("click", openJobEditModal);
+		var saveBtn = document.getElementById("usis-estd-job-edit-save");
+		if (saveBtn) saveBtn.addEventListener("click", saveJobEdit);
 		loadJobFromUrl();
 	});
 })();

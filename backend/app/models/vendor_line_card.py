@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 if TYPE_CHECKING:
     from .company import Company
@@ -18,7 +18,7 @@ SUPPLY_ROLES = ("manufacturer", "distributor", "both")
 BUY_FROM = ("manufacturer", "distributor")
 
 
-class CsiBuyChannel(UUIDPKMixin, TimestampMixin, db.Model):
+class CsiBuyChannel(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """How USIS buys a CSI section: direct from the manufacturer, or through a distributor."""
 
     __tablename__ = "csi_buy_channels"
@@ -28,7 +28,7 @@ class CsiBuyChannel(UUIDPKMixin, TimestampMixin, db.Model):
     buy_from: Mapped[str] = mapped_column(String(20), nullable=False)
 
 
-class VendorLineCard(UUIDPKMixin, TimestampMixin, db.Model):
+class VendorLineCard(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One row per company + CSI section + optional manufacturer brand.
 
     Empty ``manufacturer`` means the company covers the spec without listing brands.

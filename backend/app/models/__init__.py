@@ -6,6 +6,19 @@ from .ai_chat import AiChatMessage, AiChatSession
 from .chat import ChatConversation, ChatMessage, ChatParticipant
 from .audit import AuditLog
 from .auth import MobileRefreshToken, PasswordResetToken, Role, RoleModulePermission, User, UserRole
+from .organization import Organization, OrganizationMember
+from .saas import (
+    FeatureFlag,
+    ImpersonationSession,
+    OrganizationNote,
+    OrganizationSeatOverage,
+    OrganizationSendDomain,
+    PlanDefault,
+    PlatformAudit,
+    PlatformJob,
+    TenantEntitlement,
+    TenantSetting,
+)
 from .user_activity import UserActivityDaily, UserActivityEvent
 from .buildingconnected_oauth import BuildingConnectedOAuthToken
 from .change_management import (
@@ -26,6 +39,8 @@ from .document import Document, Drawing, DrawingAnnotation
 from .drawing_set import DrawingSet
 from .door_hardware_set import DoorHardwareSet, DoorHardwareSetItem
 from .door_opening import DoorOpening
+from .hardware_set import HARDWARE_CATEGORIES, HardwareSet, HardwareSetItem
+from .opening_type import OpeningType
 from .estimate import Estimate, EstimateLineItem
 from .estimate_spec_package import (
     EstimateSpecMention,
@@ -80,6 +95,7 @@ from .hiring import (
 )
 from .hr_dispatch import HrEmployeeDispatch
 from .ingest_error import IngestErrorEvent
+from .ingest_event import IngestAgentEvent
 from .invoice_delivery_method import InvoiceDeliveryMethod
 from .issue import Issue, IssueEvent
 from .material_order import ProjectMaterialOrder
@@ -221,6 +237,10 @@ __all__ = [
     "DoorHardwareSet",
     "DoorHardwareSetItem",
     "DoorOpening",
+    "HARDWARE_CATEGORIES",
+    "HardwareSet",
+    "HardwareSetItem",
+    "OpeningType",
     "Drawing",
     "DrawingAnnotation",
     "DrawingSet",
@@ -237,6 +257,7 @@ __all__ = [
     "EstimatorStandardSpec",
     "FieldPhoto",
     "HrEmployeeDispatch",
+    "IngestAgentEvent",
     "IngestErrorEvent",
     "InvoiceDeliveryMethod",
     "Issue",
@@ -287,6 +308,18 @@ __all__ = [
     "LeadEstimate",
     "Location",
     "ManufacturerProductData",
+    "Organization",
+    "OrganizationMember",
+    "FeatureFlag",
+    "ImpersonationSession",
+    "OrganizationNote",
+    "OrganizationSeatOverage",
+    "OrganizationSendDomain",
+    "PlanDefault",
+    "PlatformAudit",
+    "PlatformJob",
+    "TenantEntitlement",
+    "TenantSetting",
     "OwnerChangeOrder",
     "OwnerChangeOrderItem",
     "MaterialPrice",

@@ -10,10 +10,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 
-class CorrespondenceSource(UUIDPKMixin, TimestampMixin, db.Model):
+class CorrespondenceSource(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """Allow-listed mailbox or mapped Teams channel for Phase 1 ingest."""
 
     __tablename__ = "correspondence_sources"
@@ -33,7 +33,7 @@ class CorrespondenceSource(UUIDPKMixin, TimestampMixin, db.Model):
     items: Mapped[list["CorrespondenceItem"]] = relationship(back_populates="source")
 
 
-class CorrespondenceItem(UUIDPKMixin, TimestampMixin, db.Model):
+class CorrespondenceItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     """One archived message or channel post as files + metadata."""
 
     __tablename__ = "correspondence_items"
@@ -58,5 +58,6 @@ class CorrespondenceItem(UUIDPKMixin, TimestampMixin, db.Model):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     filed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    thread_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
 
     source: Mapped[Optional[CorrespondenceSource]] = relationship(back_populates="items")

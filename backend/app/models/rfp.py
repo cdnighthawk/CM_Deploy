@@ -11,14 +11,14 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..extensions import db
-from .base import TimestampMixin, UUIDPKMixin
+from .base import TimestampMixin, UUIDPKMixin, TenantMixin
 
 LINE_SOURCES = ("takeoff", "manual", "narrative")
 SOURCE_KINDS = ("takeoff", "manual", "ai_suggest")
 DRAWING_DELIVERIES = ("link", "attach", "both")
 
 
-class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
+class Rfp(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfps"
 
     lead_estimate_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -86,7 +86,7 @@ class Rfp(UUIDPKMixin, TimestampMixin, db.Model):
     )
 
 
-class RfpLineItem(UUIDPKMixin, TimestampMixin, db.Model):
+class RfpLineItem(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfp_line_items"
 
     rfp_id: Mapped[uuid.UUID] = mapped_column(
@@ -123,7 +123,7 @@ class RfpLineItem(UUIDPKMixin, TimestampMixin, db.Model):
     rfp = relationship("Rfp", back_populates="line_items")
 
 
-class RfpVendorQuote(UUIDPKMixin, TimestampMixin, db.Model):
+class RfpVendorQuote(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfp_vendor_quotes"
 
     rfp_id: Mapped[uuid.UUID] = mapped_column(
@@ -157,7 +157,7 @@ class RfpVendorQuote(UUIDPKMixin, TimestampMixin, db.Model):
     rfp = relationship("Rfp", back_populates="vendor_quotes", foreign_keys=[rfp_id])
 
 
-class RfpDrawing(UUIDPKMixin, TimestampMixin, db.Model):
+class RfpDrawing(UUIDPKMixin, TimestampMixin, TenantMixin, db.Model):
     __tablename__ = "rfp_drawings"
 
     rfp_id: Mapped[uuid.UUID] = mapped_column(

@@ -2,60 +2,13 @@
 <html lang="en">
 <head>
     
-	<!-- Title -->
-	<title>WorX CM</title>
-	
-	<!-- Meta -->
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="author" content="WorX CM">
-	<meta name="robots" content="index, follow">
-	<meta name="format-detection" content="telephone=no">
-	
-	<meta name="keywords" content="WorX CM, USIS, US Interior Specialties, construction management, projects, estimates, field operations">
-	<meta name="description" content="WorX CM for US Interior Specialties. Sign in to access projects, estimates, and field operations.">
-	
-	<meta property="og:type" content="website">
-	<meta property="og:site_name" content="WorX CM">
-	<meta property="og:url" content="https://www.usiscm.com/">
-	<meta property="og:title" content="WorX CM">
-	<meta property="og:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
-	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/worx-cm-icon.png">
-	<meta property="og:image:alt" content="WorX CM">
-	
-	<!-- TWITTER META -->
-	<meta name="twitter:title" content="WorX CM">
-	<meta name="twitter:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
-	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/worx-cm-icon.png">
-	<meta name="twitter:card" content="summary">
-	
-	<!-- FAVICONS ICON -->
-	<link rel="icon" type="image/png" href="assets/images/branding/worx-cm-icon.svg">
-	<link rel="shortcut icon" type="image/png" href="assets/images/branding/worx-cm-icon.svg">
-	
-	<!-- MOBILE SPECIFIC -->
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	
-	<!-- Canonical URL -->
-	<link rel="canonical" href="https://www.usiscm.com/page-error-404.html">
-	
-	<!-- Plugins Stylesheet -->
-	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
-	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
-	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
-	<link href="assets/css/usis-ui.css" rel="stylesheet">
-
-	<!-- Flask API root for session login/logout + credentialed ``fetch``.
-	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
-	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
-	<script src="assets/js/usis-api-base-default.js"></script>
-	<script src="assets/js/usis-api-base.js"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
-	<script src="assets/js/usis-api-fetch.js"></script>
-	<script src="assets/js/usis-theme-boot.js"></script>
+	@@include("elements/meta.html", {
+		"fileName": "page-error-404.html",
+	})
 	
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
     
 </head>
 <body>
@@ -64,7 +17,7 @@
             <div class="row justify-content-center">
                 <div class="col-xl-6 error-page">
 					<div class="error-inner text-center">
-						<img class="mb-4" src="assets/images/branding/worx-cm-icon.svg" alt="WorX CM" style="max-height:4rem;width:auto;">
+						<img class="mb-4 usis-product-logo-mark" src="assets/images/branding/worx-cm-icon.svg" alt="WorX CM" style="max-height:4rem;width:auto;border-radius:0.75rem;">
 						<div class="dz-error" data-text="404">404</div>
 						<h4 class="error-head">That page is not in WorX CM</h4>	
 						<p class="text-muted">The address may be wrong, or that screen was removed. Sign in to go home, or apply for a job on the careers page.</p>
@@ -78,11 +31,6 @@
             </div>
         </div>
     </section>
-	<script src="assets/js/usis-auth-links.js"></script>
-	<script src="assets/js/usis-i18n.js"></script>
-	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
-	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
+	@@include("elements/script-public.html")
 </body>
 </html>

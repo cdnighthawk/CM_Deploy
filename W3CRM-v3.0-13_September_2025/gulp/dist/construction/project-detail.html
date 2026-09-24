@@ -560,22 +560,20 @@
 							<button type="button" class="btn usis-project-tool usis-project-tool--active" data-usis-parent="job" data-usis-show-tab="proj-tab-job" data-i18n="Job">Job</button>
 							<button type="button" class="btn usis-project-tool" data-usis-parent="files" data-usis-show-tab="proj-tab-drawings" data-i18n="Files">Files</button>
 							<button type="button" class="btn usis-project-tool" data-usis-parent="preconstruction" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
-							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule" data-i18n="Construction">Construction</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="field" data-usis-show-tab="proj-tab-schedule" data-i18n="Field">Field</button>
 							<button type="button" class="btn usis-project-tool" data-usis-parent="buyout" data-usis-show-tab="proj-tab-procurement" data-i18n="Buyout">Buyout</button>
+							<button type="button" class="btn usis-project-tool" data-usis-parent="contract" data-usis-show-tab="proj-tab-contract" data-i18n="Contract">Contract</button>
 						</nav>
 						<nav class="usis-project-subtools" aria-label="Job pages">
 							<div class="usis-project-subtools__group" data-usis-parent="job">
 								<button type="button" class="usis-project-subtool active" data-usis-show-tab="proj-tab-job" aria-current="page" data-i18n="Job information">Job information</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-openitems">Open items</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="files" hidden>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button>
-								<a class="usis-project-subtool" id="usis-proj-tool-documents" href="../usis-documents-hub.html">Documents</a>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-photos">Photos</button>
+							<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-drawings" data-i18n="Drawings">Drawings</button>
+							<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-specs" data-i18n="Specs">Specs</button>
+							<a class="usis-project-subtool" id="usis-proj-tool-documents" href="../usis-documents-hub.html" data-i18n="Documents">Documents</a>
+							<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-photos">Photos</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="preconstruction" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-estimate" data-i18n="Estimate">Estimate</button>
@@ -584,13 +582,14 @@
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="buyout" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-procurement" data-i18n="Procurement">Procurement</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
-								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-subinv">Sub invoices</button>
 							</div>
 							<div class="usis-project-subtools__group" data-usis-parent="field" hidden>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-schedule" data-i18n="Schedule">Schedule</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-tasks" data-i18n="Tasks">Tasks</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-rfi" data-i18n="RFIs">RFIs</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-submittals" data-i18n="Submittals">Submittals</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-transmittals" data-i18n="Transmittals">Transmittals</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-photos">Photos</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-dailylog">Daily log</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-meetings">Meetings</button>
@@ -600,6 +599,11 @@
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-incidents">Incidents</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-safety" data-i18n="Safety">Safety</button>
 								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-time" data-i18n="Time">Time</button>
+							</div>
+							<div class="usis-project-subtools__group" data-usis-parent="contract" hidden>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-contract" data-i18n="Contract admin">Contract admin</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-costing" data-i18n="Job costing">Job costing</button>
+								<button type="button" class="usis-project-subtool" data-usis-show-tab="proj-tab-invoicing" data-i18n="Invoicing">Invoicing</button>
 							</div>
 						</nav>
 						</div>

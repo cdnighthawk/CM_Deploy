@@ -2849,3 +2849,17 @@ body.usis-sv-open {
 		position: static;
 	}
 }
+
+/* Page title already names the screen — do not repeat it as the last crumb. */
+.page-title .breadcrumb > .breadcrumb-item.active {
+	display: none;
+}
+
+.header-right .usis-report-problem-btn {
+	color: var(--bs-body-color);
+}
+
+.header-right .usis-report-problem-btn:hover,
+.header-right .usis-report-problem-btn:focus {
+	color: var(--bs-primary);
+}

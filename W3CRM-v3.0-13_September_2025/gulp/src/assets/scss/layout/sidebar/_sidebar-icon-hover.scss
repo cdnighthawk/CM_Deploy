@@ -100,10 +100,10 @@
 							line-height: 1;
                         }
                     }
-					&:hover > a,
-					&.mm-active > a{
-						background:rgba(13, 153, 255, 0.05);
-						color:var(--bs-primary);
+				&:hover > a,
+				&.mm-active > a{
+					background:rgba(31, 78, 95, 0.05);
+					color:var(--bs-primary);
 						
 						i{
 							color:$white;

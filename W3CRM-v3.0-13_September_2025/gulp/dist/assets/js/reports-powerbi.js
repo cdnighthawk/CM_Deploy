@@ -201,38 +201,29 @@
 				}
 				return res.json();
 			})
-			.then(function (data) {
-				if (data && data.error) {
-					setStatus(statusEl, String(data.error), "error");
-					setEmbedVisible(embedEl, false);
-					return;
-				}
-				if (!data || data.configured !== true) {
-					var missing = Array.isArray(data.missing_env) ? data.missing_env : [];
-					var parts = [];
-					parts.push(data.message || "Power BI embed is not configured on the server.");
-					if (missing.length) {
-						parts.push("Missing: " + missing.join(", ") + ".");
-					}
-					parts.push(
-						"Set POWERBI_TENANT_ID, POWERBI_CLIENT_ID, POWERBI_CLIENT_SECRET, POWERBI_WORKSPACE_ID, and POWERBI_REPORT_ID in the API environment (see backend/.env.example), restart Flask, and ensure the app registration (service principal) has access to the workspace."
-					);
-					setStatus(statusEl, parts.join(" "), "info");
-					setEmbedVisible(embedEl, false);
-					return;
-				}
-				var err = embedReport(embedEl, data);
-				if (err) {
-					setStatus(statusEl, err, "error");
-					setEmbedVisible(embedEl, false);
-					return;
-				}
-				setStatus(statusEl, "", null);
-				setEmbedVisible(embedEl, true);
-			})
-			.catch(function (e) {
-				setStatus(statusEl, e && e.message ? e.message : String(e), "error");
+		.then(function (data) {
+			if (data && data.error) {
+				setStatus(statusEl, String(data.error), "error");
 				setEmbedVisible(embedEl, false);
-			});
+				return;
+			}
+			if (!data || data.configured !== true) {
+				var card = embedEl.closest('.card');
+				if (card) card.style.display = 'none';
+				return;
+			}
+			var err = embedReport(embedEl, data);
+			if (err) {
+				setStatus(statusEl, err, "error");
+				setEmbedVisible(embedEl, false);
+				return;
+			}
+			setStatus(statusEl, "", null);
+			setEmbedVisible(embedEl, true);
+		})
+		.catch(function (e) {
+			setStatus(statusEl, e && e.message ? e.message : String(e), "error");
+			setEmbedVisible(embedEl, false);
+		});
 	});
 })();

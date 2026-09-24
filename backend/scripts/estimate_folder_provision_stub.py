@@ -75,10 +75,13 @@ def main() -> int:
             if not isinstance(body, dict) or not body.get("estimate_id"):
                 self._json(400, {"ok": False, "error": "estimate_id is required"})
                 return
+            job_number = str(body.get("job_number") or "").strip()
+            if not job_number:
+                self._json(400, {"ok": False, "error": "missing_job_number"})
+                return
             folder = body.get("folder_name") or estimate_folder_name(
-                body.get("job_number"),
+                job_number,
                 body.get("name"),
-                estimate_id=body.get("estimate_id"),
             )
             try:
                 dest, created = create_local_folder_tree(root, str(folder))

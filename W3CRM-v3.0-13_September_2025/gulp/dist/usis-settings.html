@@ -19,19 +19,20 @@
 	<meta property="og:site_name" content="WorX CM">
 	<meta property="og:url" content="https://www.usiscm.com/">
 	<meta property="og:title" content="WorX CM">
-	<meta property="og:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
+	<meta property="og:description" content="WorX CM — projects, estimates, and field operations.">
 	<meta property="og:image" content="https://www.usiscm.com/assets/images/branding/worx-cm-icon.png">
 	<meta property="og:image:alt" content="WorX CM">
 	
 	<!-- TWITTER META -->
 	<meta name="twitter:title" content="WorX CM">
-	<meta name="twitter:description" content="US Interior Specialties construction management — projects, estimates, and field operations.">
+	<meta name="twitter:description" content="WorX CM — projects, estimates, and field operations.">
 	<meta name="twitter:image" content="https://www.usiscm.com/assets/images/branding/worx-cm-icon.png">
 	<meta name="twitter:card" content="summary">
 	
 	<!-- FAVICONS ICON -->
-	<link rel="icon" type="image/png" href="assets/images/branding/worx-cm-icon.svg">
-	<link rel="shortcut icon" type="image/png" href="assets/images/branding/worx-cm-icon.svg">
+	<link rel="icon" type="image/svg+xml" href="assets/images/branding/worx-cm-icon.svg">
+	<link rel="shortcut icon" href="assets/images/branding/worx-cm-icon.svg">
+	<link rel="apple-touch-icon" href="assets/images/branding/worx-cm-icon.png">
 	
 	<!-- MOBILE SPECIFIC -->
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -43,16 +44,16 @@
 	<link href="assets/vendor/metismenu/dist/metisMenu.min.css" rel="stylesheet">
 	<link href="assets/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
 	<link class="main-switcher" href="assets/css/switcher.css" rel="stylesheet">
-	<link href="/assets/css/usis-ui.css" rel="stylesheet">
+	<link href="assets/css/usis-ui.css" rel="stylesheet">
 
 	<!-- Flask API root for session login/logout + credentialed ``fetch``.
 	     External file avoids CSP ``script-src`` blocking inline scripts when ``default-src 'self'`` (no ``unsafe-inline``).
 	     For production builds, set ``window.USIS_API_BASE`` in a build step or hosting inject to your real API origin (HTTPS). -->
 	<script src="assets/js/usis-api-base-default.js"></script>
 	<script src="assets/js/usis-api-base.js"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
+	<script src="assets/js/usis-project-context.js?v=20260920a"></script>
 	<script src="assets/js/usis-api-fetch.js"></script>
-	<script src="/assets/js/usis-theme-boot.js"></script>
+	<script src="assets/js/usis-theme-boot.js?v=20260921b"></script>
 	<link class="main-plugins" href="assets/css/plugins.css" rel="stylesheet">
 	<link class="main-css" href="/assets/css/style.css" rel="stylesheet">
 	<link href="/assets/css/usis-ui.css" rel="stylesheet">
@@ -135,7 +136,7 @@
 		</div>
 		<!-- End - Sidebar Chat Box  -->
 
-		<link href="/assets/css/usis-ui.css" rel="stylesheet">
+		<link href="assets/css/usis-ui.css" rel="stylesheet">
 <!-- Start - Header -->
 		<div class="header">
 			<div class="header-content">
@@ -219,7 +220,6 @@
 										</div>
 									</li>
 									<li class="d-none usis-org-switcher-wrap"><hr class="dropdown-divider"></li>
-
 									<li>
 										<a class="dropdown-item" href="usis-profile.html">
 											<svg  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -330,10 +330,16 @@
 							<span class="nav-text" data-i18n="Dashboard">Dashboard</span>
 						</a>
 					</li>
-										<li data-usis-module="estimate">
+					<li data-usis-module="estimate">
 						<a href="construction/estimate.html" aria-expanded="false">
 							<i class="icon feather icon-file-text"></i>
 							<span class="nav-text" data-i18n="Estimate">Estimate</span>
+						</a>
+					</li>
+					<li data-usis-module="estimate" id="usis-ingest-nav">
+						<a href="construction/ingest.html" aria-expanded="false">
+							<i class="icon feather icon-download"></i>
+							<span class="nav-text" data-i18n="Ingest">Ingest</span>
 						</a>
 					</li>
 					<li data-usis-module="projects">
@@ -389,20 +395,12 @@
 							<li data-usis-module="hr"><a href="usis-hr-applications.html" data-i18n="Applications">Applications</a></li>
 						</ul>
 					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-mail"></i>
-							<span class="nav-text" data-i18n="Inbox">Inbox</span>
-						</a>
-						<ul aria-expanded="false">
-							<li>
-								<a href="usis-email.html" data-i18n="Email">Email</a>
-							</li>
-							<li>
-								<a href="usis-messenger.html" data-i18n="Messages">Messages</a>
-							</li>
-						</ul>
-					</li>
+				<li>
+					<a href="usis-email.html" aria-expanded="false">
+						<i class="icon feather icon-mail"></i>
+						<span class="nav-text" data-i18n="Inbox">Inbox</span>
+					</a>
+				</li>
 					<li>
 						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
 							<i class="icon feather icon-dollar-sign"></i>
@@ -420,56 +418,53 @@
 							</li>
 						</ul>
 					</li>
-					<li data-usis-module="user_admin" id="usis-settings-nav">
-						<a href="/settings">
-							<i class="icon feather icon-sliders"></i>
-							<span class="nav-text" data-i18n="Settings">Settings</span>
-						</a>
-					</li>
-					<li data-usis-module="platform" id="usis-platform-admin-nav">
-						<a href="/admin">
-							<i class="icon feather icon-shield"></i>
-							<span class="nav-text" data-i18n="Admin">Admin</span>
-						</a>
-					</li>
-					<li>
-						<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-							<i class="icon feather icon-settings"></i>
-							<span class="nav-text" data-i18n="Admin">Admin</span>
-						</a>
-						<ul aria-expanded="false">
-							<li data-usis-module="user_admin">
-								<a href="/settings/people" data-i18n="People & access">People & access</a>
-							</li>
-							<li data-usis-module="platform">
-								<a href="usis-platform-contractors.html" data-i18n="Contractors">Contractors</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="usis-companies.html">Companies</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="usis-company-settings.html">Company settings</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="usis-cost-codes.html">Cost codes</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="usis-wage-rates.html" data-i18n="Wage rates">Wage rates</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="construction/material.html" data-i18n="Catalog">Catalog</a>
-							</li>
-							<li data-usis-module="playbooks">
-								<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
-							</li>
-							<li data-usis-module="user_admin">
-								<a href="usis-workflows.html">Workflows</a>
-							</li>
-							<li data-usis-module="reports">
-								<a href="reports.html" data-i18n="Reports">Reports</a>
-							</li>
-						</ul>
-					</li>
+				<li data-usis-module="platform" id="usis-platform-admin-nav">
+					<a href="/admin">
+						<i class="icon feather icon-shield"></i>
+						<span class="nav-text" data-i18n="Admin">Admin</span>
+					</a>
+				</li>
+				<li data-usis-module="user_admin" id="usis-settings-nav">
+					<a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+						<i class="icon feather icon-sliders"></i>
+						<span class="nav-text" data-i18n="Settings">Settings</span>
+					</a>
+					<ul aria-expanded="false">
+						<li data-usis-module="user_admin">
+							<a href="/settings" data-i18n="Settings overview">Settings overview</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="/settings/people" data-i18n="People & access">People & access</a>
+						</li>
+						<li data-usis-module="reports">
+							<a href="reports.html" data-i18n="Reports">Reports</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="usis-cost-codes.html">Cost codes</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="usis-wage-rates.html" data-i18n="Wage rates">Wage rates</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="construction/material.html" data-i18n="Catalog">Catalog</a>
+						</li>
+						<li data-usis-module="playbooks">
+							<a href="usis-playbooks.html" data-i18n="Playbooks">Playbooks</a>
+						</li>
+						<li data-usis-module="platform">
+							<a href="usis-platform-contractors.html" data-i18n="Contractors">Contractors</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="usis-companies.html">Companies</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="usis-company-settings.html">Company settings</a>
+						</li>
+						<li data-usis-module="user_admin">
+							<a href="usis-workflows.html">Workflows</a>
+						</li>
+					</ul>
+				</li>
 				</ul>
 			</div>
 		</div>
@@ -477,14 +472,33 @@
 
 		<main class="content-body">
 			<div class="page-title">
-				<div class="row">
-					<div class="col-auto me-auto">
-						<ul class="breadcrumbs">
-							<li><a href="usis-dashboard-dark.html">Home</a></li>
-							<li><h1 data-i18n="Settings">Settings</h1></li>
-						</ul>
-					</div>
-				</div>
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb">
+						<li><h1 data-i18n="Settings">Settings</h1></li>
+						<li class="breadcrumb-item">
+							<a href="usis-dashboard-dark.html">
+								<svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M2.125 6.375L8.5 1.41667L14.875 6.375V14.1667C14.875 14.5424 14.7257 14.9027 14.4601 15.1684C14.1944 15.4341 13.8341 15.5833 13.4583 15.5833H3.54167C3.16594 15.5833 2.80561 15.4341 2.53993 15.1684C2.27426 14.9027 2.125 14.5424 2.125 14.1667V6.375Z" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M6.375 15.5833V8.5H10.625V15.5833" stroke="var(--bs-body-color)" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								<span data-i18n="Home">Home</span>
+							</a>
+						</li>
+						<li class="breadcrumb-item d-none" id="usis-projects-crumb">
+							<a href="construction/projects.html" data-i18n="Active projects">Active projects</a>
+						</li>
+						<li class="breadcrumb-item d-none" id="usis-project-crumb">
+							<a id="usis-project-crumb-link" href="construction/projects.html"></a>
+						</li>
+						<li class="breadcrumb-item active" aria-current="page">
+
+
+							<span data-i18n="Settings">Settings</span>
+
+						</li>
+					</ol>
+				</nav>
+
 			</div>
 			<div class="container-fluid">
 				<div class="usis-console">
@@ -504,6 +518,38 @@
 				</div>
 			</div>
 		</main>
+		<!-- USIS mobile bottom nav — visible below md -->
+<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="WorX CM primary">
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
+		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
+		<span class="fs-11">Home</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
+		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
+		<span class="fs-11">Projects</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-time-live.html">
+		<i class="icon feather icon-clock d-block fs-5 mb-0"></i>
+		<span class="fs-11">Time</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-safety.html">
+		<i class="icon feather icon-shield d-block fs-5 mb-0"></i>
+		<span class="fs-11">Safety</span>
+	</a>
+	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-email.html">
+		<i class="icon feather icon-mail d-block fs-5 mb-0"></i>
+		<span class="fs-11">Inbox</span>
+	</a>
+</nav>
+
+<!-- Start - Footer -->
+		<div class="footer">
+			<div class="copyright text-center">
+			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
+			</div>
+		</div>
+		<!-- End - Footer -->
+	</div>
 	<div class="modal fade" id="usis-set-invite-modal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
@@ -560,52 +606,19 @@
 			</div>
 		</div>
 	</div>
-		<!-- USIS mobile bottom nav — visible below md -->
-<nav class="usis-mobile-bottomnav d-flex d-md-none border-top bg-body" aria-label="WorX CM primary">
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-dashboard-dark.html">
-		<i class="icon feather icon-home d-block fs-5 mb-0"></i>
-		<span class="fs-11">Home</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="construction/projects.html">
-		<i class="icon feather icon-layers d-block fs-5 mb-0"></i>
-		<span class="fs-11">Projects</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-time-live.html">
-		<i class="icon feather icon-clock d-block fs-5 mb-0"></i>
-		<span class="fs-11">Time</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-safety.html">
-		<i class="icon feather icon-shield d-block fs-5 mb-0"></i>
-		<span class="fs-11">Safety</span>
-	</a>
-	<a class="flex-fill text-center py-2 text-decoration-none text-body" href="usis-email.html">
-		<i class="icon feather icon-mail d-block fs-5 mb-0"></i>
-		<span class="fs-11">Inbox</span>
-	</a>
-</nav>
-
-<!-- Start - Footer -->
-		<div class="footer">
-			<div class="copyright text-center">
-			   <p class="mb-0">Copyright © <span class="current-year">2025</span> USIS</p>
-			</div>
-		</div>
-		<!-- End - Footer -->
-	</div>
-
 	<script src="assets/js/usis-auth-links.js"></script>
 	<script src="assets/js/usis-i18n.js"></script>
 	<script src="assets/js/usis-report-problem.js"></script>
 	<script src="assets/js/usis-applicant-guard.js"></script>
 	<script src="assets/js/usis-require-auth.js"></script>
 	<script src="assets/js/usis-drawing-cache.js?v=20260830e"></script>
-<script src="assets/js/usis-nav-access.js?v=20260917a"></script>
+<script src="assets/js/usis-nav-access.js?v=20260919ingest"></script>
 	<script src="assets/js/usis-command-palette.js?v=20260905b"></script>
 	<script src="assets/js/usis-header-bell.js?v=20260912a"></script>
 	<script src="assets/vendor/jquery/dist/jquery.min.js"></script>
 	<script src="assets/js/usis-theme.js"></script>
-	<script src="assets/js/usis-ui.js?v=20260906a"></script>
-	<script src="assets/js/usis-project-context.js?v=20260830a"></script>
+	<script src="assets/js/usis-ui.js?v=20260919p"></script>
+	<script src="assets/js/usis-project-context.js?v=20260920a"></script>
 	<script src="assets/js/usis-ai-chat.js"></script>
 	<script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="assets/vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>

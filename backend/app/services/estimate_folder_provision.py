@@ -26,6 +26,7 @@ from urllib.request import Request, urlopen
 from flask import current_app, has_app_context
 from sqlalchemy import event
 from sqlalchemy.orm import Session, object_session
+from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from ..extensions import db
 
@@ -48,6 +49,9 @@ FOLDER_NAME_MAX = 150
 STATUS_READY = "ready"
 STATUS_FAILED = "failed"
 STATUS_UNCONFIGURED = "unconfigured"
+MISSING_JOB_NUMBER = "missing_job_number"
+# Last-resort UUID folder labels. Default OFF — Charles wants human job numbers only.
+ALLOW_UUID_JOB_NUMBER_ENV = "ESTIMATE_FOLDER_ALLOW_UUID_JOB_NUMBER"
 
 # Relative directories created under ``{root}/{job} - {name}/``.
 FOLDER_TEMPLATE: tuple[str, ...] = (
@@ -120,9 +124,22 @@ def sanitize_windows_folder_name(raw: str | None, *, fallback: str = "Estimate")
     return text or fallback
 
 
-def estimate_folder_name(job_or_id: str | None, name: str | None, *, estimate_id: uuid.UUID | str | None = None) -> str:
-    """``{job_or_id} - {name}`` with Windows-safe segments."""
-    fallback = str(estimate_id) if estimate_id is not None else "Estimate"
+def estimate_folder_name(
+    job_or_id: str | None,
+    name: str | None,
+    *,
+    estimate_id: uuid.UUID | str | None = None,
+    allow_uuid_fallback: bool = False,
+) -> str:
+    """``{job_or_id} - {name}`` with Windows-safe segments.
+
+    ``estimate_id`` is used as the job segment only when ``allow_uuid_fallback``
+    is True (gated last-resort). Default folder labels never use a UUID.
+    """
+    if allow_uuid_fallback and estimate_id is not None:
+        fallback = str(estimate_id)
+    else:
+        fallback = "Estimate"
     job = sanitize_windows_folder_name(job_or_id, fallback=fallback)
     label = sanitize_windows_folder_name(name, fallback="Estimate")
     combined = f"{job} - {label}"
@@ -197,41 +214,100 @@ def is_configured() -> bool:
 
 
 def _estimate_session(est: Any):
-    return object_session(est) or db.session
+    try:
+        return object_session(est) or db.session
+    except UnmappedInstanceError:
+        return db.session
 
 
-def job_number_for_estimate(est: Any) -> str:
+def _truthy_cfg(name: str) -> bool:
+    raw = _cfg(name)
+    if raw is None:
+        return False
+    return str(raw).strip().lower() in ("true", "1", "yes", "on")
+
+
+def allow_uuid_job_number() -> bool:
+    """Last-resort UUID folder labels. Default OFF; see docs/estimate-folder-provision.md."""
+    return _truthy_cfg(ALLOW_UUID_JOB_NUMBER_ENV)
+
+
+def _clean_job_number(value: Any) -> str | None:
+    text = str(value or "").strip()
+    return text or None
+
+
+def _project_number(session: Any, project_id: Any) -> str | None:
+    if project_id is None:
+        return None
+    from ..models import Project
+
+    project = session.get(Project, project_id)
+    if project is None:
+        return None
+    return _clean_job_number(getattr(project, "number", None))
+
+
+def _lead_for_estimate(est: Any) -> Any:
     lead = getattr(est, "lead_estimate", None)
     if lead is not None:
-        number = str(getattr(lead, "number", None) or "").strip()
+        return lead
+    lead_id = getattr(est, "lead_estimate_id", None)
+    if lead_id is None:
+        return None
+    from ..models import LeadEstimate
+
+    return _estimate_session(est).get(LeadEstimate, lead_id)
+
+
+def job_number_for_estimate(est: Any) -> str | None:
+    """Human job/estimate number for folder labels.
+
+    Prefers ``lead_estimates.number``, then ``projects.number``. There is no
+    ``estimates.number`` column. Does **not** fall back to the estimate UUID
+    unless ``ESTIMATE_FOLDER_ALLOW_UUID_JOB_NUMBER`` is explicitly on.
+    """
+    lead = _lead_for_estimate(est)
+    if lead is not None:
+        number = _clean_job_number(getattr(lead, "number", None))
         if number:
             return number
     project_id = getattr(est, "project_id", None)
-    if project_id is not None:
-        from ..models import Project
-
-        project = _estimate_session(est).get(Project, project_id)
-        if project is not None:
-            number = str(getattr(project, "number", None) or "").strip()
-            if number:
-                return number
-    return str(est.id)
+    if project_id is None and lead is not None:
+        project_id = getattr(lead, "project_id", None)
+    number = _project_number(_estimate_session(est), project_id) if project_id is not None else None
+    if number:
+        return number
+    if allow_uuid_job_number() and getattr(est, "id", None) is not None:
+        logger.warning(
+            "estimate folder provision using UUID job_number (%s is on) estimate_id=%s",
+            ALLOW_UUID_JOB_NUMBER_ENV,
+            est.id,
+        )
+        return str(est.id)
+    return None
 
 
 def build_provision_payload(est: Any, *, requested_by: str | None = None) -> dict[str, Any]:
-    lead = getattr(est, "lead_estimate", None)
+    lead = _lead_for_estimate(est)
     job_number = job_number_for_estimate(est)
     name = str(getattr(est, "name", None) or getattr(est, "title", None) or "Estimate").strip() or "Estimate"
     office = None
     if lead is not None:
         office = getattr(lead, "owning_office_id", None)
+    use_uuid = bool(job_number) and allow_uuid_job_number() and job_number == str(getattr(est, "id", ""))
     return {
         "estimate_id": str(est.id),
         "job_number": job_number,
         "name": name,
         "project_uuid": str(est.project_id) if getattr(est, "project_id", None) else None,
         "requested_by": requested_by,
-        "folder_name": estimate_folder_name(job_number, name, estimate_id=est.id),
+        "folder_name": estimate_folder_name(
+            job_number,
+            name,
+            estimate_id=est.id if use_uuid else None,
+            allow_uuid_fallback=use_uuid,
+        ),
         "office": str(office) if office else None,
         "lead_estimate_id": str(est.lead_estimate_id) if getattr(est, "lead_estimate_id", None) else None,
         "template": list(FOLDER_TEMPLATE),
@@ -333,7 +409,10 @@ def _mkdir_local(payload: Mapping[str, Any]) -> ProvisionResult:
     root = provision_root()
     if not root:
         return ProvisionResult(ok=False, status=STATUS_UNCONFIGURED, error="ESTIMATE_FOLDER_ROOT is not set")
-    folder_name = str(payload.get("folder_name") or estimate_folder_name(payload.get("job_number"), payload.get("name")))
+    job_number = str(payload.get("job_number") or "").strip()
+    if not job_number:
+        return ProvisionResult(ok=False, status=STATUS_FAILED, error=MISSING_JOB_NUMBER, via="mkdir")
+    folder_name = str(payload.get("folder_name") or estimate_folder_name(job_number, payload.get("name")))
     try:
         path, created = create_local_folder_tree(root, folder_name)
     except OSError as exc:
@@ -348,15 +427,23 @@ def provision_estimate_folder(
     requested_by: str | None = None,
 ) -> ProvisionResult:
     """Call the configured provisioner. Never raises."""
-    payload = build_provision_payload(est, requested_by=requested_by)
     url = provision_url()
     root = provision_root()
     if not url and not root:
         logger.info(
             "estimate folder provision skipped (set ESTIMATE_FOLDER_PROVISION_URL or ESTIMATE_FOLDER_ROOT) estimate_id=%s",
-            payload["estimate_id"],
+            getattr(est, "id", None),
         )
         return ProvisionResult(ok=True, status=STATUS_UNCONFIGURED, via=None)
+    job_number = job_number_for_estimate(est)
+    if not job_number:
+        logger.warning(
+            "estimate folder provision skipped %s estimate_id=%s",
+            MISSING_JOB_NUMBER,
+            getattr(est, "id", None),
+        )
+        return ProvisionResult(ok=False, status=STATUS_FAILED, error=MISSING_JOB_NUMBER)
+    payload = build_provision_payload(est, requested_by=requested_by)
     if url:
         result = _post_to_agent(payload)
         if result.ok or not root:

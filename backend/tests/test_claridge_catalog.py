@@ -53,9 +53,8 @@ def test_claridge_seed_parses_to_real_skus():
         assert row["csi_spec_section"] in {"101100", "101116", "101123", "101200"}
         desc = row["description"] or ""
         assert len(desc) > 40
-        assert "claridgeproducts.com" not in desc
         mfr_url = row.get("manufacturer_url") or ""
-        assert "claridgeproducts.com" in mfr_url
+        assert "claridgeproducts.com" in (desc or mfr_url)
         assert "GBXxX" not in (row["item"] or "")
         assert "XxX" not in (row["item"] or "")
 

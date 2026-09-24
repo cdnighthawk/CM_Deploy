@@ -1,0 +1,710 @@
+{
+  "crawled_at": "2026-09-16T16:34:43.905129+00:00",
+  "source_index": "https://claridgeproducts.com/products/all-products/",
+  "index_pagination_note": "Claridge All Products is a filterable archive: each /page/N/ HTML document repeats the same product-tile-container cards. Pagination was followed; unique products are de-duplicated by URL.",
+  "index_pages": [
+    "https://claridgeproducts.com/products/all-products/",
+    "https://claridgeproducts.com/products/all-products/page/2/",
+    "https://claridgeproducts.com/products/all-products/page/3/",
+    "https://claridgeproducts.com/products/all-products/page/4/",
+    "https://claridgeproducts.com/products/all-products/page/5/",
+    "https://claridgeproducts.com/products/all-products/page/6/",
+    "https://claridgeproducts.com/products/all-products/page/7/",
+    "https://claridgeproducts.com/products/all-products/page/8/",
+    "https://claridgeproducts.com/products/all-products/page/9/",
+    "https://claridgeproducts.com/products/all-products/page/10/",
+    "https://claridgeproducts.com/products/all-products/page/11/"
+  ],
+  "index_pages_scanned": 11,
+  "unique_index_tiles": 55,
+  "sitemap_product_urls": 41,
+  "product_pages_ok": 55,
+  "download_sitemap_urls": 131,
+  "resource_pages_followed": 1,
+  "http_requests": 69,
+  "http_errors": [],
+  "scanned_pages": [
+    {
+      "url": "https://claridgeproducts.com/products/all-products/",
+      "requested": "https://claridgeproducts.com/products/all-products/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/2/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/2/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/3/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/3/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/4/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/4/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/5/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/5/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/6/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/6/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/7/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/7/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/8/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/8/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/9/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/9/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/10/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/10/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/products/all-products/page/11/",
+      "requested": "https://claridgeproducts.com/products/all-products/page/11/",
+      "status": 200,
+      "role": "index"
+    },
+    {
+      "url": "https://claridgeproducts.com/product-sitemap.xml",
+      "requested": "https://claridgeproducts.com/product-sitemap.xml",
+      "status": 200,
+      "role": "sitemap"
+    },
+    {
+      "url": "https://claridgeproducts.com/downloads-claridge-sitemap.xml",
+      "requested": "https://claridgeproducts.com/downloads-claridge-sitemap.xml",
+      "status": 200,
+      "role": "sitemap"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/claridge-glass/",
+      "requested": "https://claridgeproducts.com/product/claridge-glass/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/lcs-elite/",
+      "requested": "https://claridgeproducts.com/product/lcs-elite/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/aspire-whiteboard/",
+      "requested": "https://claridgeproducts.com/product/aspire-whiteboard/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/arise-whiteboard/",
+      "requested": "https://claridgeproducts.com/product/arise-whiteboard/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/series-1/",
+      "requested": "https://claridgeproducts.com/product/series-1/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/series-2/",
+      "requested": "https://claridgeproducts.com/product/series-2/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/series-3/",
+      "requested": "https://claridgeproducts.com/product/series-3/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/series-4/",
+      "requested": "https://claridgeproducts.com/product/series-4/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/series-5/",
+      "requested": "https://claridgeproducts.com/product/series-5/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/series-8/",
+      "requested": "https://claridgeproducts.com/product/series-8/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/lcs-deluxe-porcelain-whiteboard-2/",
+      "requested": "https://claridgeproducts.com/product/lcs-deluxe-porcelain-whiteboard-2/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/grain-whiteboard/",
+      "requested": "https://claridgeproducts.com/product/grain-whiteboard/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/custom-logo-print-glass-markerboard/",
+      "requested": "https://claridgeproducts.com/product/custom-logo-print-glass-markerboard/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/custom-print-whiteboards/",
+      "requested": "https://claridgeproducts.com/product/custom-print-whiteboards/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/standard-graphic-board/",
+      "requested": "https://claridgeproducts.com/product/standard-graphic-board/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/envision-graphic-board/",
+      "requested": "https://claridgeproducts.com/product/envision-graphic-board/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/xchange-graphic-board/",
+      "requested": "https://claridgeproducts.com/product/xchange-graphic-board/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/glass-marker-wall/",
+      "requested": "https://claridgeproducts.com/product/glass-marker-wall/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/arise-marker-wall/",
+      "requested": "https://claridgeproducts.com/product/arise-marker-wall/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/wall-write-walll/",
+      "requested": "https://claridgeproducts.com/product/wall-write-walll/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/tack-walls-2/",
+      "requested": "https://claridgeproducts.com/product/tack-walls-2/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/edge-wrapped-tackboard/",
+      "requested": "https://claridgeproducts.com/product/edge-wrapped-tackboard/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/tableau/",
+      "requested": "https://claridgeproducts.com/product/tableau/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/grain-tackboard/",
+      "requested": "https://claridgeproducts.com/product/grain-tackboard/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/glass-sliding-wall/",
+      "requested": "https://claridgeproducts.com/product/glass-sliding-wall/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/porcelain-sliding-wall/",
+      "requested": "https://claridgeproducts.com/product/porcelain-sliding-wall/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/vertical-sliding-system/",
+      "requested": "https://claridgeproducts.com/product/vertical-sliding-system/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/horizontal-sliding-system/",
+      "requested": "https://claridgeproducts.com/product/horizontal-sliding-system/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/classic-bulletin-board-cabinet/",
+      "requested": "https://claridgeproducts.com/product/classic-bulletin-board-cabinet/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/contemporary-bulletin-board-cabinet/",
+      "requested": "https://claridgeproducts.com/product/contemporary-bulletin-board-cabinet/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/310-series-bulletin-board-cabinet/",
+      "requested": "https://claridgeproducts.com/product/310-series-bulletin-board-cabinet/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/imperial-bulletin-board-cabinet/",
+      "requested": "https://claridgeproducts.com/product/imperial-bulletin-board-cabinet/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/revere-bulletin-board/",
+      "requested": "https://claridgeproducts.com/product/revere-bulletin-board/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/premiere-wall-mounted-display-case/",
+      "requested": "https://claridgeproducts.com/product/premiere-wall-mounted-display-case/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/premiere-freestanding-display-case/",
+      "requested": "https://claridgeproducts.com/product/premiere-freestanding-display-case/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/370-series-recessed-display-case/",
+      "requested": "https://claridgeproducts.com/product/370-series-recessed-display-case/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/390-series-recessed-display-case/",
+      "requested": "https://claridgeproducts.com/product/390-series-recessed-display-case/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/economy-deluxe-map-display-rail/",
+      "requested": "https://claridgeproducts.com/product/economy-deluxe-map-display-rail/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/hang-tight-rail-system/",
+      "requested": "https://claridgeproducts.com/product/hang-tight-rail-system/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/edr-exhibit-rail/",
+      "requested": "https://claridgeproducts.com/product/edr-exhibit-rail/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/ez-fit-panels/",
+      "requested": "https://claridgeproducts.com/product/ez-fit-panels/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/rare-earth-magnets/",
+      "requested": "https://claridgeproducts.com/product/rare-earth-magnets/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/magnetic-marker-tray/",
+      "requested": "https://claridgeproducts.com/product/magnetic-marker-tray/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/magnetic-aluminum-tray/",
+      "requested": "https://claridgeproducts.com/product/magnetic-aluminum-tray/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/slim-magnetic-marker-tray/",
+      "requested": "https://claridgeproducts.com/product/slim-magnetic-marker-tray/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/magnetic-aluminum-accessory-tray/",
+      "requested": "https://claridgeproducts.com/product/magnetic-aluminum-accessory-tray/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/magnetic-wood-accessory-tray/",
+      "requested": "https://claridgeproducts.com/product/magnetic-wood-accessory-tray/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/adhesive-backed-marker-tray/",
+      "requested": "https://claridgeproducts.com/product/adhesive-backed-marker-tray/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/stadium-marker-caddy/",
+      "requested": "https://claridgeproducts.com/product/stadium-marker-caddy/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/slim-marker-caddy/",
+      "requested": "https://claridgeproducts.com/product/slim-marker-caddy/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/dry-erase-markers/",
+      "requested": "https://claridgeproducts.com/product/dry-erase-markers/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/magnetic-eraser/",
+      "requested": "https://claridgeproducts.com/product/magnetic-eraser/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/dry-erase-cloth/",
+      "requested": "https://claridgeproducts.com/product/dry-erase-cloth/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/markerboard-cleaner/",
+      "requested": "https://claridgeproducts.com/product/markerboard-cleaner/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/product/partition-panel-clip/",
+      "requested": "https://claridgeproducts.com/product/partition-panel-clip/",
+      "status": 200,
+      "role": "product"
+    },
+    {
+      "url": "https://claridgeproducts.com/resources-new/",
+      "requested": "https://claridgeproducts.com/resources-new/",
+      "status": 200,
+      "role": "resource"
+    }
+  ],
+  "counts": {
+    "unique_products_or_families": 55,
+    "exact_skus_or_models": 596,
+    "catalog_rows_after_dedupe": 651,
+    "skipped_or_ambiguous": 7,
+    "family_rows": 55,
+    "sku_rows": 596
+  },
+  "skipped": [
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/custom-logo-print-glass-markerboard/",
+      "reason": "configurable family or accessory with no published Product Code table"
+    },
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/custom-print-whiteboards/",
+      "reason": "configurable family or accessory with no published Product Code table"
+    },
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/standard-graphic-board/",
+      "reason": "configurable family or accessory with no published Product Code table"
+    },
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/glass-sliding-wall/",
+      "reason": "configurable family or accessory with no published Product Code table"
+    },
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/porcelain-sliding-wall/",
+      "reason": "configurable family or accessory with no published Product Code table"
+    },
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/horizontal-sliding-system/",
+      "reason": "track-count suffixes -2/-3/-4 are documented as options, not explicit SKUs"
+    },
+    {
+      "sku": "",
+      "url": "https://claridgeproducts.com/product/rare-earth-magnets/",
+      "reason": "configurable family or accessory with no published Product Code table"
+    }
+  ],
+  "sitemap_products": [
+    "https://claridgeproducts.com/product/370-series-recessed-display-case/",
+    "https://claridgeproducts.com/product/vertical-sliding-system/",
+    "https://claridgeproducts.com/product/lcs-elite/",
+    "https://claridgeproducts.com/product/series-8/",
+    "https://claridgeproducts.com/product/series-5/",
+    "https://claridgeproducts.com/product/series-4/",
+    "https://claridgeproducts.com/product/series-3/",
+    "https://claridgeproducts.com/product/series-2/",
+    "https://claridgeproducts.com/product/series-1/",
+    "https://claridgeproducts.com/product/arise-whiteboard/",
+    "https://claridgeproducts.com/product/310-series-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/product/ez-fit-panels/",
+    "https://claridgeproducts.com/product/classic-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/product/adhesive-backed-marker-tray/",
+    "https://claridgeproducts.com/product/390-series-recessed-display-case/",
+    "https://claridgeproducts.com/product/premiere-freestanding-display-case/",
+    "https://claridgeproducts.com/product/premiere-wall-mounted-display-case/",
+    "https://claridgeproducts.com/product/revere-bulletin-board/",
+    "https://claridgeproducts.com/product/imperial-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/product/contemporary-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/product/porcelain-sliding-wall/",
+    "https://claridgeproducts.com/product/glass-sliding-wall/",
+    "https://claridgeproducts.com/product/grain-tackboard/",
+    "https://claridgeproducts.com/product/tableau/",
+    "https://claridgeproducts.com/product/edge-wrapped-tackboard/",
+    "https://claridgeproducts.com/product/tack-walls-2/",
+    "https://claridgeproducts.com/product/wall-write-walll/",
+    "https://claridgeproducts.com/product/arise-marker-wall/",
+    "https://claridgeproducts.com/product/glass-marker-wall/",
+    "https://claridgeproducts.com/product/xchange-graphic-board/",
+    "https://claridgeproducts.com/product/envision-graphic-board/",
+    "https://claridgeproducts.com/product/standard-graphic-board/",
+    "https://claridgeproducts.com/product/custom-print-whiteboards/",
+    "https://claridgeproducts.com/product/custom-logo-print-glass-markerboard/",
+    "https://claridgeproducts.com/product/grain-whiteboard/",
+    "https://claridgeproducts.com/product/lcs-deluxe-porcelain-whiteboard-2/",
+    "https://claridgeproducts.com/product/aspire-whiteboard/",
+    "https://claridgeproducts.com/product/claridge-glass/",
+    "https://claridgeproducts.com/product/edr-exhibit-rail/",
+    "https://claridgeproducts.com/product/magnetic-wood-accessory-tray/",
+    "https://claridgeproducts.com/product/rare-earth-magnets/"
+  ],
+  "download_urls": [
+    "https://claridgeproducts.com/downloads-claridge/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-quick-ship-product-guide/",
+    "https://claridgeproducts.com/downloads-claridge/tack-wall-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/tack-walls/",
+    "https://claridgeproducts.com/downloads-claridge/lcs-elite-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/lcs-elite/",
+    "https://claridgeproducts.com/downloads-claridge/ez-fit-panels-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/horizontal-sliding-system-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/vertical-sliding-system-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/porcelain-sliding-wall-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/tableau-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/wall-write-wall-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/envision-graphic-board-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/grain-whiteboard-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/lcs-deluxe-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-8-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-8/",
+    "https://claridgeproducts.com/downloads-claridge/series-5-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-5/",
+    "https://claridgeproducts.com/downloads-claridge/series-4-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-4/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-products-catalog/",
+    "https://claridgeproducts.com/downloads-claridge/series-3-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-3/",
+    "https://claridgeproducts.com/downloads-claridge/series-2-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-1-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/series-1/",
+    "https://claridgeproducts.com/downloads-claridge/arise-whiteboard-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/arise-marker-wall-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/aspire-whiteboard-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/aspire-whiteboard/",
+    "https://claridgeproducts.com/downloads-claridge/porcelain-color-guide/",
+    "https://claridgeproducts.com/downloads-claridge/revere-bulletin-board-cabinet-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/revere-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/downloads-claridge/premiere-wall-mounted-display-case-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/premier-wall-mounted-display-case/",
+    "https://claridgeproducts.com/downloads-claridge/premiere-freestanding-display-case-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/premiere-freestanding-display-case/",
+    "https://claridgeproducts.com/downloads-claridge/imperial-bulletin-board-cabinet-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/imperial-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/downloads-claridge/large-contemporary-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/downloads-claridge/contemporary-bulletin-board-cabinet-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/contemporary-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/downloads-claridge/classic-bulletin-board-cabinet-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/classic-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/downloads-claridge/arise-markerboard-marker-wall/",
+    "https://claridgeproducts.com/downloads-claridge/390-series-recessed-display-case-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/390-series-recessed-display-case/",
+    "https://claridgeproducts.com/downloads-claridge/370-series-recessed-display-case-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/370-series-recessed-display-case/",
+    "https://claridgeproducts.com/downloads-claridge/310-series-bulletin-board-cabinet-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/310-series-bulletin-board-cabinet/",
+    "https://claridgeproducts.com/downloads-claridge/glass-sliding-wall-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/grain-tackboard-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/edge-wrapped-tackboard-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/glass-marker-wall-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/xchange-graphic-board-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/custom-print-glass-markerboard-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-glass-tech-data/",
+    "https://claridgeproducts.com/downloads-claridge/display-case-guarantee/",
+    "https://claridgeproducts.com/downloads-claridge/tack-surface-guarantee/",
+    "https://claridgeproducts.com/downloads-claridge/envision-guarantee/",
+    "https://claridgeproducts.com/downloads-claridge/porcelain-guarantee/",
+    "https://claridgeproducts.com/downloads-claridge/glass-guarantee/",
+    "https://claridgeproducts.com/downloads-claridge/ez-fit-panels/",
+    "https://claridgeproducts.com/downloads-claridge/ez-fit-panels-2/",
+    "https://claridgeproducts.com/downloads-claridge/hang-tight-rail-system/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-extrusion/",
+    "https://claridgeproducts.com/downloads-claridge/51ez-and-74ez-map-and-display-rail/",
+    "https://claridgeproducts.com/downloads-claridge/accessories/",
+    "https://claridgeproducts.com/downloads-claridge/lcs-deluxe/",
+    "https://claridgeproducts.com/downloads-claridge/wall-write-wall/",
+    "https://claridgeproducts.com/downloads-claridge/vertical-sliding-system/",
+    "https://claridgeproducts.com/downloads-claridge/tableau/",
+    "https://claridgeproducts.com/downloads-claridge/envision-graphic-board/",
+    "https://claridgeproducts.com/downloads-claridge/laminate-finishes/",
+    "https://claridgeproducts.com/downloads-claridge/porcelain-sliding-wall/",
+    "https://claridgeproducts.com/downloads-claridge/horizontal-sliding-system/",
+    "https://claridgeproducts.com/downloads-claridge/grain-whiteboard-tackboard/",
+    "https://claridgeproducts.com/downloads-claridge/lcs-elite-2/",
+    "https://claridgeproducts.com/downloads-claridge/390-series-recessed-display-case-2/",
+    "https://claridgeproducts.com/downloads-claridge/glass-color-guide/",
+    "https://claridgeproducts.com/downloads-claridge/tableau-2/",
+    "https://claridgeproducts.com/downloads-claridge/wall-write-wall-ww3/",
+    "https://claridgeproducts.com/downloads-claridge/wall-write-wall-ww2/",
+    "https://claridgeproducts.com/downloads-claridge/vertical-sliding-system-2/",
+    "https://claridgeproducts.com/downloads-claridge/grain-whiteboard-tackboard-2/",
+    "https://claridgeproducts.com/downloads-claridge/premiere-wall-mounted-display-case/",
+    "https://claridgeproducts.com/downloads-claridge/premiere-freestanding-display-case-2/",
+    "https://claridgeproducts.com/downloads-claridge/edge-wrapped-tackboard-2/",
+    "https://claridgeproducts.com/downloads-claridge/arise-markerboard-marker-wall-2/",
+    "https://claridgeproducts.com/downloads-claridge/aspire-whiteboard-2/",
+    "https://claridgeproducts.com/downloads-claridge/envision-graphic-board-2/",
+    "https://claridgeproducts.com/downloads-claridge/tack-walls-2/",
+    "https://claridgeproducts.com/downloads-claridge/glass-marker-wall-2/",
+    "https://claridgeproducts.com/downloads-claridge/370-series-recessed-display-case-2/",
+    "https://claridgeproducts.com/downloads-claridge/lcs-deluxe-2/",
+    "https://claridgeproducts.com/downloads-claridge/bulletin-board-cabinets-multi-product/",
+    "https://claridgeproducts.com/downloads-claridge/310-series-bulletin-board-cabinet-2/",
+    "https://claridgeproducts.com/downloads-claridge/horizontal-sliding-system-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-8-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-5-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-4-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-3-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-2-2/",
+    "https://claridgeproducts.com/downloads-claridge/series-1-2/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-glass-whiteboard-through-mount/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-glass-whiteboard-edge-mount/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-glass-whiteboard-invisimount/",
+    "https://claridgeproducts.com/downloads-claridge/xchange-graphic-board-2/",
+    "https://claridgeproducts.com/downloads-claridge/glass-sliding-wall/",
+    "https://claridgeproducts.com/downloads-claridge/edge-wrapped-tackboard/",
+    "https://claridgeproducts.com/downloads-claridge/custom-print-claridge-glass-markerboard/",
+    "https://claridgeproducts.com/downloads-claridge/xchange-graphic-board/",
+    "https://claridgeproducts.com/downloads-claridge/care-and-maintenance-for-envision-graphics/",
+    "https://claridgeproducts.com/downloads-claridge/care-and-maintenance-for-tack-surfaces/",
+    "https://claridgeproducts.com/downloads-claridge/care-and-maintenance-for-chalk-surfaces/",
+    "https://claridgeproducts.com/downloads-claridge/care-and-maintenance-for-lcs-porcelain/",
+    "https://claridgeproducts.com/downloads-claridge/care-and-maintenance-for-glass/",
+    "https://claridgeproducts.com/downloads-claridge/freight-damage-claims-policy/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-glass-whiteboard/",
+    "https://claridgeproducts.com/downloads-claridge/glass-porcelain-comparison-guide/",
+    "https://claridgeproducts.com/downloads-claridge/tan-nucork/",
+    "https://claridgeproducts.com/downloads-claridge/claridge-cork/",
+    "https://claridgeproducts.com/downloads-claridge/fabricork-colors/",
+    "https://claridgeproducts.com/downloads-claridge/wood-finishes/",
+    "https://claridgeproducts.com/downloads-claridge/guilford-of-maine-fabrics/",
+    "https://claridgeproducts.com/downloads-claridge/aluminum-trim-colors/",
+    "https://claridgeproducts.com/downloads-claridge/powder-coatings-color-guide/",
+    "https://claridgeproducts.com/downloads-claridge/glass-marker-wall/"
+  ],
+  "resource_pages": [
+    {
+      "url": "https://claridgeproducts.com/resources-new/",
+      "pdfs": [
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series-1_Installation.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series-2_Installation.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series-3_Installation.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series-4_Installation.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series-5_Installation.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series-8_Installation.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series1-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series2-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series3-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series4-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series5-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/Series8-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/08/VerticalMB_SlidingSystem.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/310-Bulletin.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/390_Display.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/AluminumTrimColors_Claridge.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/AriseMB-Wall-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Aspire-sheet.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/CareMaintenance-Claridge-Chalk.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/CareMaintenance-Claridge-Envision.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/CareMaintenance-Claridge-Glass.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/CareMaintenance-Claridge-Porcelain.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/CareMaintenance-Claridge-Tack.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/ChoosingGlass-Porcelain_Claridge.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Claridge-EnvisionGuarantee.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Claridge-FreightDamage.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Claridge-GlassGuarantee.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Claridge-PorcelainGuarantee.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/ClaridgeGlassMB-digital.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/ClaridgeGlassWall2023.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Claridge_Cork-colors.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/ClassicBulletin.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Contemporary_BulletinBoard.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/CustomPrint-GlassMB.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/Envision-Sheet-Claridge.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/FabricorkColors_Claridge.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/GLASScolorguide_Claridge.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/GrainBoard-Claridge.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/GuilfordFabrics_digital.pdf",
+        "https://claridgeproducts.com/wp-content/uploads/2023/09/HorizontalMBSlidingSystem.pdf"
+      ]
+    }
+  ]
+}

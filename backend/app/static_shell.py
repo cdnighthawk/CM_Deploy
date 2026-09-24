@@ -12,6 +12,7 @@ _RESERVED_PREFIXES = ("/api/", "/auth/", "/healthz", "/public/")
 
 # Public careers / hiring entry points (no ``.html`` suffix required).
 _CAREER_PATH_REDIRECTS: dict[str, str] = {
+    "/login": "/page-login.html",
     "/careers": "/apply.html",
     "/apply": "/apply.html",
     "/Apply": "/apply.html",

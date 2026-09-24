@@ -427,15 +427,16 @@
 						</div>
 
 						<div class="tab-pane fade" id="estd-pane-takeoff" role="tabpanel" aria-labelledby="estd-tab-takeoff" tabindex="0">
-							<p id="usis-estimate-takeoff-no-lead" class="text-muted mb-0">Open this page with an estimate id in the URL (<code>?id=…</code>) to load takeoff lines.</p>
-							<div id="usis-estimate-takeoff-root" class="d-none">
+							<p id="usis-estimate-takeoff-no-lead" class="text-muted mb-0 d-none">Open this page with an estimate id in the URL (<code>?id=…</code>) to load takeoff lines.</p>
+							<div id="usis-estimate-takeoff-root">
 								<div class="mb-3">
 									<a class="btn btn-outline-primary btn-sm" id="usis-estd-goto-door-schedule" href="construction/door-schedule.html">Door schedule takeoff (Div 08)</a>
 								</div>
 							</div>
 						</div>
 						<div class="tab-pane fade" id="estd-pane-labor-rates" role="tabpanel" aria-labelledby="estd-tab-labor-rates" tabindex="0">
-							<div id="usis-est-labor-root">
+							<p id="usis-est-labor-no-est" class="text-muted mb-0">Create a proposal to set project labor rates from company wages.</p>
+							<div id="usis-est-labor-root" class="d-none">
 								<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
 									<div>
 										<h5 class="mb-1">Project labor rates</h5>
@@ -606,18 +607,11 @@
 									</div>
 								</div>
 							</div>
-							<div id="usis-est-create-cta" class="d-none">
-								<div class="alert alert-light border">
-									<div class="fw-semibold mb-1">No proposal on this estimate yet</div>
-									<p class="text-muted small mb-2">Create a proposal to start takeoff and pricing. Job information stays on this estimate.</p>
-									<button type="button" class="btn btn-primary btn-sm" id="usis-estd-create-from-cta">Create proposal</button>
-								</div>
-							</div>
-							<p id="usis-est-detail-no-id" class="text-muted mb-0">Open this page from Estimates, then create a proposal. <a href="construction/estimate.html">Back to Estimates</a>.</p>
+							<p id="usis-est-detail-no-id" class="text-muted mb-0 d-none">Open this page from Estimates. <a href="construction/estimate.html">Back to Estimates</a>.</p>
 						</div>
 						<div class="tab-pane fade" id="estd-pane-spec-package" role="tabpanel" aria-labelledby="estd-tab-spec-package" tabindex="0">
 							<div id="usis-spec-pkg-root">
-								<p class="text-muted mb-0">Spec package analysis and vendor RFPs will appear here.</p>
+								<p class="text-muted mb-0">Create a proposal to analyze specs and draft vendor RFPs.</p>
 							</div>
 						</div>
 						<div class="tab-pane fade" id="estd-pane-rfp" role="tabpanel" aria-labelledby="estd-tab-rfp" tabindex="0">

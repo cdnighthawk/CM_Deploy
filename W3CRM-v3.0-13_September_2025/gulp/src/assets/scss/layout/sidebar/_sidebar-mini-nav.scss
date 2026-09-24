@@ -186,10 +186,10 @@
                             }
                         }
                     }
-					&.mm-active {
-						&>a {
-							background: rgba(13, 153, 255, 0.05);
-							color:$white;
+				&.mm-active {
+					&>a {
+						background: rgba(31, 78, 95, 0.05);
+						color:$white;
 							
 							i{
 								color:$white;
@@ -200,10 +200,10 @@
 
 
                         &>a {
-                            background-color: rgba(13, 153, 255, 0.05);
-							color:var(--bs-primary);
-							border-radius: 0;
-							position: unset;
+                            background-color: rgba(31, 78, 95, 0.05);
+						color:var(--bs-primary);
+						border-radius: 0;
+						position: unset;
 							i{
 								color:$white;
 							}

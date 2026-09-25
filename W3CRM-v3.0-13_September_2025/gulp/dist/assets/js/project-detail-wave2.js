@@ -98,161 +98,173 @@
 									? "No sub invoices."
 									: "None yet.";
 					tbody.innerHTML = emptyCell(cols, emptyTitle);
-				} else {
-					tbody.innerHTML = items
-						.map(function (it) {
-							var createTarget =
-								cfg.kind === "punchlist"
-									? "#usis-punch-gc-add"
-									: cfg.kind === "meetings"
-										? "#usis-meeting-add"
-										: cfg.kind === "po-change-orders"
-											? "#usis-poco-add"
-											: cfg.kind === "sub-invoices"
-												? "#usis-subinv-add"
-												: '[data-usis-wave2-add="' + cfg.kind + '"]';
-							var menu =
-								window.USISUi && window.USISUi.rowMenu
-									? window.USISUi.rowMenu({
-											id: it.id,
-											createTarget: createTarget,
-											deleteClass: "usis-w2-del",
-											deleteData: { kind: cfg.kind, id: it.id },
-										})
-									: '<button type="button" class="btn btn-link btn-sm p-0 usis-w2-del" data-kind="' +
-										esc(cfg.kind) +
-										'" data-id="' +
-										esc(it.id) +
-										'">Delete</button>';
-							if (cfg.kind === "punchlist") {
-								return (
-									"<tr><td>" +
-									esc(it.number || "") +
-									"</td><td>" +
-									esc(it.title || "") +
-									"</td><td>" +
-									esc(it.status || "") +
-									"</td><td>" +
-									esc(it.punch_type || "") +
-									"</td><td>" +
-									esc(it.location || "") +
-									"</td><td>" +
-									esc(it.priority || "") +
-									"</td><td>" +
-									menu +
-									"</td></tr>"
-								);
-							}
-							if (cfg.kind === "meetings") {
-								var mhref = docHref("meeting-create.html", it.id);
-								return (
-									"<tr><td><a href=\"" +
-									esc(mhref) +
-									"\">" +
-									esc(it.number || "") +
-									"</a></td><td>" +
-									esc(it.meeting_type || "") +
-									"</td><td><a href=\"" +
-									esc(mhref) +
-									"\">" +
-									esc(it.subject || "") +
-									"</a></td><td>" +
-									esc(it.meeting_date || "") +
-									"</td><td>" +
-									esc(it.time_range || ((it.start_time || "") + (it.end_time ? "–" + it.end_time : ""))) +
-									"</td><td>" +
-									esc(it.location || "") +
-									"</td><td>" +
-									esc(it.facilitator_name || "") +
-									"</td><td>" +
-									chip(it.status) +
-									"</td><td>" +
-									esc(it.attendee_count != null ? it.attendee_count : "") +
-									"</td><td>" +
-									menu +
-									"</td></tr>"
-								);
-							}
-							if (cfg.kind === "po-change-orders") {
-								var phref = docHref("po-co-create.html", it.id);
-								return (
-									"<tr><td><a href=\"" +
-									esc(phref) +
-									"\">" +
-									esc(it.number || "") +
-									"</a></td><td>" +
-									esc(it.po_number || "") +
-									"</td><td><a href=\"" +
-									esc(phref) +
-									"\">" +
-									esc(it.subject || "") +
-									"</a></td><td>" +
-									chip(it.status) +
-									"</td><td>" +
-									esc(it.status_date || "") +
-									'</td><td class="text-end">' +
-									money(it.amount) +
-									"</td><td>" +
-									menu +
-									"</td></tr>"
-								);
-							}
-							if (cfg.kind === "sub-invoices") {
-								var shref = docHref("sub-invoice-create.html", it.id);
-								return (
-									"<tr><td><a href=\"" +
-									esc(shref) +
-									"\">" +
-									esc(it.number || "") +
-									"</a></td><td>" +
-									esc(it.subcontract_number || "") +
-									"</td><td>" +
-									esc(it.vendor_name || "") +
-									"</td><td>" +
-									esc(it.period || "") +
-									"</td><td>" +
-									chip(it.status) +
-									'</td><td class="text-end">' +
-									money(it.this_period) +
-									'</td><td class="text-end">' +
-									money(it.retainage) +
-									'</td><td class="text-end">' +
-									money(it.previous_to_date) +
-									'</td><td class="text-end">' +
-									money(it.amount_due) +
-									"</td><td>" +
-									menu +
-									"</td></tr>"
-								);
-							}
-							var extra = it[cfg.extra];
-							if (cfg.extra === "amount") extra = money(extra);
+					if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+						if (cfg.kind === "po-change-orders") {
+							window.USISUi.addMoneyTotalsRow(tbody, items, [{ index: 5, field: "amount", label: "Total" }], cols);
+						} else if (cfg.kind === "sub-invoices") {
+							window.USISUi.addMoneyTotalsRow(tbody, items, [
+								{ index: 5, field: "this_period", label: "Total" },
+								{ index: 6, field: "retainage" },
+								{ index: 7, field: "previous_to_date" },
+								{ index: 8, field: "amount_due" }
+							], cols);
+						}
+					}
+					return;
+				}
+				tbody.innerHTML = items
+					.map(function (it) {
+						var createTarget =
+							cfg.kind === "punchlist"
+								? "#usis-punch-gc-add"
+								: cfg.kind === "meetings"
+									? "#usis-meeting-add"
+									: cfg.kind === "po-change-orders"
+										? "#usis-poco-add"
+										: cfg.kind === "sub-invoices"
+											? "#usis-subinv-add"
+											: '[data-usis-wave2-add="' + cfg.kind + '"]';
+						var menu =
+							window.USISUi && window.USISUi.rowMenu
+								? window.USISUi.rowMenu({
+										id: it.id,
+										createTarget: createTarget,
+										deleteClass: "usis-w2-del",
+										deleteData: { kind: cfg.kind, id: it.id },
+									})
+								: '<button type="button" class="btn btn-link btn-sm p-0 usis-w2-del" data-kind="' +
+									esc(cfg.kind) +
+									'" data-id="' +
+									esc(it.id) +
+									'">Delete</button>';
+						if (cfg.kind === "punchlist") {
 							return (
 								"<tr><td>" +
 								esc(it.number || "") +
 								"</td><td>" +
-								esc(it[cfg.titleKey] || "") +
+								esc(it.title || "") +
 								"</td><td>" +
 								esc(it.status || "") +
 								"</td><td>" +
-								esc(extra == null ? "" : extra) +
+								esc(it.punch_type || "") +
+								"</td><td>" +
+								esc(it.location || "") +
+								"</td><td>" +
+								esc(it.priority || "") +
 								"</td><td>" +
 								menu +
 								"</td></tr>"
 							);
-						})
-						.join("");
-				}
+						}
+						if (cfg.kind === "meetings") {
+							var mhref = docHref("meeting-create.html", it.id);
+							return (
+								"<tr><td><a href=\"" +
+								esc(mhref) +
+								"\">" +
+								esc(it.number || "") +
+								"</a></td><td>" +
+								esc(it.meeting_type || "") +
+								"</td><td><a href=\"" +
+								esc(mhref) +
+								"\">" +
+								esc(it.subject || "") +
+								"</a></td><td>" +
+								esc(it.meeting_date || "") +
+								"</td><td>" +
+								esc(it.time_range || ((it.start_time || "") + (it.end_time ? "–" + it.end_time : ""))) +
+								"</td><td>" +
+								esc(it.location || "") +
+								"</td><td>" +
+								esc(it.facilitator_name || "") +
+								"</td><td>" +
+								chip(it.status) +
+								"</td><td>" +
+								esc(it.attendee_count != null ? it.attendee_count : "") +
+								"</td><td>" +
+								menu +
+								"</td></tr>"
+							);
+						}
+						if (cfg.kind === "po-change-orders") {
+							var phref = docHref("po-co-create.html", it.id);
+							return (
+								"<tr><td><a href=\"" +
+								esc(phref) +
+								"\">" +
+								esc(it.number || "") +
+								"</a></td><td>" +
+								esc(it.po_number || "") +
+								"</td><td><a href=\"" +
+								esc(phref) +
+								"\">" +
+								esc(it.subject || "") +
+								"</a></td><td>" +
+								chip(it.status) +
+								"</td><td>" +
+								esc(it.status_date || "") +
+								'</td><td class="text-end">' +
+								money(it.amount) +
+								"</td><td>" +
+								menu +
+								"</td></tr>"
+							);
+						}
+						if (cfg.kind === "sub-invoices") {
+							var shref = docHref("sub-invoice-create.html", it.id);
+							return (
+								"<tr><td><a href=\"" +
+								esc(shref) +
+								"\">" +
+								esc(it.number || "") +
+								"</a></td><td>" +
+								esc(it.subcontract_number || "") +
+								"</td><td>" +
+								esc(it.vendor_name || "") +
+								"</td><td>" +
+								esc(it.period || "") +
+								"</td><td>" +
+								chip(it.status) +
+								'</td><td class="text-end">' +
+								money(it.this_period) +
+								'</td><td class="text-end">' +
+								money(it.retainage) +
+								'</td><td class="text-end">' +
+								money(it.previous_to_date) +
+								'</td><td class="text-end">' +
+								money(it.amount_due) +
+								"</td><td>" +
+								menu +
+								"</td></tr>"
+							);
+						}
+						var extra = it[cfg.extra];
+						if (cfg.extra === "amount") extra = money(extra);
+						return (
+							"<tr><td>" +
+							esc(it.number || "") +
+							"</td><td>" +
+							esc(it[cfg.titleKey] || "") +
+							"</td><td>" +
+							esc(it.status || "") +
+							"</td><td>" +
+							esc(extra == null ? "" : extra) +
+							"</td><td>" +
+							menu +
+							"</td></tr>"
+						);
+					})
+					.join("");
 				if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
 					if (cfg.kind === "po-change-orders") {
-						window.USISUi.addMoneyTotalsRow(tbody, [{ index: 5, label: "Total" }]);
+						window.USISUi.addMoneyTotalsRow(tbody, items, [{ index: 5, field: "amount", label: "Total" }], cols);
 					} else if (cfg.kind === "sub-invoices") {
-						window.USISUi.addMoneyTotalsRow(tbody, [
-							{ index: 5, label: "Total" },
-							{ index: 6 },
-							{ index: 7 },
-							{ index: 8 }
-						]);
+						window.USISUi.addMoneyTotalsRow(tbody, items, [
+							{ index: 5, field: "this_period", label: "Total" },
+							{ index: 6, field: "retainage" },
+							{ index: 7, field: "previous_to_date" },
+							{ index: 8, field: "amount_due" }
+						], cols);
 					}
 				}
 			})

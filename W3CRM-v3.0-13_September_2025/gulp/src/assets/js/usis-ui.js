@@ -363,17 +363,55 @@
 		);
 	}
 
-	function addMoneyTotalsRow(tbody, columnSpecs) {
+	function addMoneyTotalsRow(tbody, rawItems, columnSpecs, totalCols) {
 		if (!tbody) return;
-		var rows = Array.from(tbody.querySelectorAll("tr"));
-		var existingFooter = rows.find(function (r) {
-			return r.classList.contains("usis-totals-row");
+		var existingFooter = tbody.querySelector("tr.usis-totals-row");
+		if (existingFooter) existingFooter.remove();
+		var totals = {};
+		columnSpecs.forEach(function (spec) {
+			totals[spec.field] = 0;
 		});
+		(rawItems || []).forEach(function (item) {
+			columnSpecs.forEach(function (spec) {
+				var val = parseFloat(item[spec.field]);
+				if (!isNaN(val)) totals[spec.field] += val;
+			});
+		});
+		var totalCells = [];
+		for (var i = 0; i < totalCols; i++) {
+			var spec = columnSpecs.find(function (s) {
+				return s.index === i;
+			});
+			if (spec && totals[spec.field] !== undefined) {
+				var fmt = totals[spec.field].toLocaleString("en-US", {
+					style: "currency",
+					currency: "USD",
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
+				});
+				totalCells.push('<td class="text-end fw-bold">' + esc(fmt) + "</td>");
+			} else if (i === 0) {
+				var label = columnSpecs[0] && columnSpecs[0].label ? columnSpecs[0].label : "Total";
+				totalCells.push('<td class="fw-bold">' + esc(label) + "</td>");
+			} else {
+				totalCells.push("<td></td>");
+			}
+		}
+		var tr = document.createElement("tr");
+		tr.className = "usis-totals-row table-light";
+		tr.innerHTML = totalCells.join("");
+		tbody.appendChild(tr);
+	}
+
+	function addMoneyTotalsRowFromInputs(tbody, columnSpecs, totalCols) {
+		if (!tbody) return;
+		var existingFooter = tbody.querySelector("tr.usis-totals-row");
 		if (existingFooter) existingFooter.remove();
 		var totals = {};
 		columnSpecs.forEach(function (spec) {
 			totals[spec.index] = 0;
 		});
+		var rows = Array.from(tbody.querySelectorAll("tr"));
 		var dataRows = rows.filter(function (r) {
 			return !r.classList.contains("usis-totals-row") && !r.querySelector("td[colspan]");
 		});
@@ -391,24 +429,23 @@
 			});
 		});
 		var totalCells = [];
-		var maxIndex = 0;
-		columnSpecs.forEach(function (spec) {
-			if (spec.index > maxIndex) maxIndex = spec.index;
-		});
-		for (var i = 0; i <= maxIndex; i++) {
-			if (totals[i] !== undefined) {
-				var fmt = totals[i].toLocaleString(undefined, {
+		for (var i = 0; i < totalCols; i++) {
+			var spec = columnSpecs.find(function (s) {
+				return s.index === i;
+			});
+			if (spec && totals[spec.index] !== undefined) {
+				var fmt = totals[spec.index].toLocaleString("en-US", {
 					style: "currency",
 					currency: "USD",
 					minimumFractionDigits: 2,
 					maximumFractionDigits: 2,
 				});
-				totalCells[i] = '<td class="text-end fw-bold">' + esc(fmt) + "</td>";
+				totalCells.push('<td class="text-end fw-bold">' + esc(fmt) + "</td>");
 			} else if (i === 0) {
 				var label = columnSpecs[0] && columnSpecs[0].label ? columnSpecs[0].label : "Total";
-				totalCells[i] = '<td class="fw-bold">' + esc(label) + "</td>";
+				totalCells.push('<td class="fw-bold">' + esc(label) + "</td>");
 			} else {
-				totalCells[i] = "<td></td>";
+				totalCells.push("<td></td>");
 			}
 		}
 		var tr = document.createElement("tr");
@@ -429,6 +466,7 @@
 		rowMenu: rowMenu,
 		rowMenuHtml: rowMenuHtml,
 		addMoneyTotalsRow: addMoneyTotalsRow,
+		addMoneyTotalsRowFromInputs: addMoneyTotalsRowFromInputs,
 	};
 
 	bindRowMenuNew();

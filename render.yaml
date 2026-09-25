@@ -86,6 +86,12 @@ services:
         sync: false
       - key: ESTIMATE_FOLDER_PROVISION_TOKEN
         sync: false
+      # Optional. After a ready folder provision, POST usis.specialty_takeoff.v1.
+      # Unset skips the follower. CM sends JSON only (no office-share writes).
+      - key: SPECIALTY_TAKEOFF_QUEUE_URL
+        sync: false
+      - key: SPECIALTY_TAKEOFF_QUEUE_TOKEN
+        sync: false
       # Backblaze B2 — set in Render Dashboard (see docs/backblaze-b2.md).
       # Use B2_PREFIX=prod/usis-cm on Render; dev machines use dev/usis-cm in backend/.env.
       - key: B2_APPLICATION_KEY_ID

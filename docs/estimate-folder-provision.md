@@ -153,6 +153,16 @@ already existed. On failure return a non-2xx status and/or `"ok": false` with
 an `error` string. CM stores `folder_provision_status`, `folder_path`,
 `folder_provisioned_at`, and `folder_provision_error` on the estimate.
 
+## Specialty takeoff follower
+
+After `provision_estimate_folder_by_id` applies a `ready` result and commits
+it, CM calls `on_estimate_folder_ready(estimate_id, folder_path)`. The default
+hook POSTs `usis.specialty_takeoff.v1` when `SPECIALTY_TAKEOFF_QUEUE_URL` is
+set. The call is best-effort and does not change provision success or failure.
+Artifact files for each specialty are `{folder_path}\03_Takeoff\{specialty}\`
+under `Y:\Estimates\{job} - {name}`. Contract and env vars:
+[specialty-takeoff-enqueue.md](specialty-takeoff-enqueue.md).
+
 ## Local stub
 
 For tests and local HTTP without the Windows agent:

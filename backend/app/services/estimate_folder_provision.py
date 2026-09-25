@@ -7,6 +7,10 @@ path is writable.
 
 Folder creation is best-effort: failures are logged and stored on the estimate
 and never roll back the estimate row. See ``docs/estimate-folder-provision.md``.
+
+After a ready path is committed, ``specialty_takeoff_enqueue`` may POST a
+best-effort ``usis.specialty_takeoff.v1`` job. That follower never raises and
+never blocks estimate create. See ``docs/specialty-takeoff-enqueue.md``.
 """
 from __future__ import annotations
 
@@ -484,12 +488,36 @@ def provision_estimate_folder_by_id(
             if persist and result.status != STATUS_UNCONFIGURED:
                 apply_result_to_estimate(est, result)
                 session.commit()
+                _invoke_on_estimate_folder_ready(est, result)
     except Exception:
         logger.exception("estimate folder provision could not persist status estimate_id=%s", eid)
         if result is None:
             return ProvisionResult(ok=False, status=STATUS_FAILED, error="provision persist failed")
     _expire_cached_estimate(eid)
     return result or ProvisionResult(ok=False, status=STATUS_FAILED, error="provision failed")
+
+
+def _invoke_on_estimate_folder_ready(est: Any, result: ProvisionResult) -> None:
+    """Call ``on_estimate_folder_ready(estimate_id, folder_path)`` after commit.
+
+    Only when provision is ``ready`` and the path is non-empty. Never raises.
+    The hook is resolved on the enqueue module at call time so tests can swap it.
+    """
+    if result.status != STATUS_READY:
+        return
+    folder_path = str(result.path or getattr(est, "folder_path", None) or "").strip()
+    if not folder_path:
+        return
+    estimate_id = getattr(est, "id", None)
+    try:
+        from . import specialty_takeoff_enqueue as takeoff
+
+        takeoff.on_estimate_folder_ready(estimate_id, folder_path)
+    except Exception:
+        logger.exception(
+            "on_estimate_folder_ready crashed estimate_id=%s",
+            estimate_id,
+        )
 
 
 def _expire_cached_estimate(estimate_id: uuid.UUID) -> None:

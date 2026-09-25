@@ -2,18 +2,21 @@
 
 CM on Render cannot write the office share or the Ingest drop folder. After
 estimate-folder provision commits a non-empty ``folder_path`` with status
-``ready``, this module best-effort POSTs ``usis.specialty_takeoff.v1`` to
-``SPECIALTY_TAKEOFF_QUEUE_URL``. The on-prem consumer (Ingest Panel) owns
-dropping that JSON for the takeoff bots.
+``ready``, provision calls :func:`on_estimate_folder_ready`. The default hook
+best-effort POSTs ``usis.specialty_takeoff.v1`` to ``SPECIALTY_TAKEOFF_QUEUE_URL``
+so the consumer can patch an existing queue job or create one. The on-prem
+consumer owns dropping that JSON for the takeoff bots.
 
 Unconfigured (URL unset) is a no-op. Failures are logged and never raised.
-See ``docs/specialty-takeoff-enqueue.md``.
+Swap the hook with :func:`set_on_estimate_folder_ready` or by replacing
+``on_estimate_folder_ready`` on this module. See ``docs/specialty-takeoff-enqueue.md``.
 """
 from __future__ import annotations
 
 import json
 import logging
 import os
+from collections.abc import Callable
 from typing import Any, Mapping
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -47,6 +50,7 @@ SPECIALTY_SLUGS: tuple[str, ...] = (
 )
 
 _unconfigured_logged = False
+FolderReadyHook = Callable[[Any, str], None]
 
 
 def _cfg(name: str, default: Any = None) -> Any:
@@ -94,37 +98,34 @@ def specialty_slugs() -> tuple[str, ...]:
     return slugs or SPECIALTY_SLUGS
 
 
-def artifact_root_for(folder_path: str) -> str:
-    """``{folder_path}/03_Takeoff`` using the same separator as ``folder_path``.
+def artifact_root_for(folder_path: str, specialty: str) -> str:
+    """Canonical drop path ``{folder_path}\\03_Takeoff\\{specialty}\\``.
 
-    A provisioned Windows path stays Windows
-    (``Y:\\Estimates\\{job} - {name}\\03_Takeoff``). Consumers append
-    ``\\{specialty}\\`` under that root. CM does not create those directories.
+    Uses the separator already in ``folder_path``. A provisioned Windows path
+    stays Windows (``Y:\\Estimates\\{job} - {name}\\03_Takeoff\\{specialty}\\``).
+    CM does not create these directories.
     """
     text = str(folder_path or "").strip().rstrip("/\\")
+    slug = str(specialty or "").strip().strip("/\\")
     sep = "\\" if "\\" in text else "/"
-    return f"{text}{sep}{TAKEOFF_DIR}"
+    return f"{text}{sep}{TAKEOFF_DIR}{sep}{slug}{sep}"
 
 
-def _uuid_or_none(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None
+def build_payload(estimate_id: Any, folder_path: str) -> dict[str, Any]:
+    """JSON body for ``usis.specialty_takeoff.v1``. ``folder_path`` is stored verbatim.
 
-
-def build_payload(est: Any, folder_path: str) -> dict[str, Any]:
-    """JSON body for ``usis.specialty_takeoff.v1``. ``folder_path`` is stored verbatim."""
+    The consumer patches the queue job for ``estimate_id`` when one exists and
+    creates it otherwise. ``artifact_roots`` is one canonical path per specialty.
+    """
     path = str(folder_path)
+    slugs = list(specialty_slugs())
     return {
         "schema": SCHEMA,
-        "estimate_id": _uuid_or_none(getattr(est, "id", None)),
-        "project_uuid": _uuid_or_none(getattr(est, "project_id", None)),
-        "lead_estimate_id": _uuid_or_none(getattr(est, "lead_estimate_id", None)),
+        "estimate_id": str(estimate_id),
         "folder_path": path,
         "status": STATUS_READY_FOR_TAKEOFF,
-        "specialties": list(specialty_slugs()),
-        "artifact_root": artifact_root_for(path),
+        "specialties": slugs,
+        "artifact_roots": {slug: artifact_root_for(path, slug) for slug in slugs},
     }
 
 
@@ -139,58 +140,82 @@ def post_queue(url: str, payload: Mapping[str, Any], headers: dict[str, str], ti
         return int(exc.code)
 
 
-def notify_folder_ready(est: Any, folder_path: str) -> None:
-    """Best-effort enqueue. Never raises. No-op when the queue URL is unset."""
+def _http_on_estimate_folder_ready(estimate_id: Any, folder_path: str) -> None:
+    """POST an upsert for this estimate. No-op when the queue URL is unset."""
     global _unconfigured_logged
-    try:
-        path = str(folder_path or "").strip()
-        if not path:
-            logger.warning(
-                "specialty takeoff enqueue skipped (empty folder_path) estimate_id=%s",
-                getattr(est, "id", None),
-            )
-            return
-        url = queue_url()
-        if not url:
-            if not _unconfigured_logged:
-                logger.info(
-                    "specialty takeoff enqueue skipped (SPECIALTY_TAKEOFF_QUEUE_URL is not set) estimate_id=%s",
-                    getattr(est, "id", None),
-                )
-                _unconfigured_logged = True
-            else:
-                logger.debug(
-                    "specialty takeoff enqueue skipped (SPECIALTY_TAKEOFF_QUEUE_URL is not set) estimate_id=%s",
-                    getattr(est, "id", None),
-                )
-            return
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        token = queue_token()
-        if token:
-            headers[QUEUE_HEADER] = token
-        payload = build_payload(est, path)
-        status = post_queue(url, payload, headers, queue_timeout_sec())
-        if status >= 400:
-            logger.warning(
-                "specialty takeoff enqueue HTTP %s estimate_id=%s",
-                status,
-                payload.get("estimate_id"),
-            )
-            return
-        logger.info(
-            "specialty takeoff enqueue posted estimate_id=%s status=%s",
-            payload.get("estimate_id"),
-            status,
+    path = str(folder_path or "").strip()
+    if not path:
+        logger.warning(
+            "specialty takeoff enqueue skipped (empty folder_path) estimate_id=%s",
+            estimate_id,
         )
+        return
+    url = queue_url()
+    if not url:
+        if not _unconfigured_logged:
+            logger.info(
+                "specialty takeoff enqueue skipped (SPECIALTY_TAKEOFF_QUEUE_URL is not set) estimate_id=%s",
+                estimate_id,
+            )
+            _unconfigured_logged = True
+        else:
+            logger.debug(
+                "specialty takeoff enqueue skipped (SPECIALTY_TAKEOFF_QUEUE_URL is not set) estimate_id=%s",
+                estimate_id,
+            )
+        return
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    token = queue_token()
+    if token:
+        headers[QUEUE_HEADER] = token
+    payload = build_payload(estimate_id, path)
+    status = post_queue(url, payload, headers, queue_timeout_sec())
+    if status >= 400:
+        logger.warning(
+            "specialty takeoff enqueue HTTP %s estimate_id=%s",
+            status,
+            payload.get("estimate_id"),
+        )
+        return
+    logger.info(
+        "specialty takeoff enqueue posted estimate_id=%s http=%s",
+        payload.get("estimate_id"),
+        status,
+    )
+
+
+_registered_hook: FolderReadyHook = _http_on_estimate_folder_ready
+
+
+def set_on_estimate_folder_ready(hook: FolderReadyHook | None) -> None:
+    """Install a replacement for :func:`on_estimate_folder_ready`.
+
+    Pass ``None`` to restore the default HTTP upsert. Tests can also replace
+    ``on_estimate_folder_ready`` on this module; provision looks the name up
+    at call time.
+    """
+    global _registered_hook
+    _registered_hook = hook or _http_on_estimate_folder_ready
+
+
+def on_estimate_folder_ready(estimate_id: Any, folder_path: str) -> None:
+    """Folder-ready hook. Never raises.
+
+    Default: patch-or-create semantics via HTTP POST of ``usis.specialty_takeoff.v1``
+    when ``SPECIALTY_TAKEOFF_QUEUE_URL`` is set, otherwise a no-op. The consumer
+    updates the existing specialty-takeoff job for ``estimate_id`` or creates one.
+    """
+    try:
+        _registered_hook(estimate_id, folder_path)
     except (URLError, TimeoutError, OSError, ValueError) as exc:
         logger.warning(
             "specialty takeoff enqueue failed estimate_id=%s error=%s",
-            getattr(est, "id", None),
+            estimate_id,
             exc,
         )
     except Exception as exc:
         logger.warning(
             "specialty takeoff enqueue failed estimate_id=%s error=%s",
-            getattr(est, "id", None),
+            estimate_id,
             exc,
         )

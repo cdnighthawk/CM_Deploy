@@ -72,7 +72,7 @@ def test_default_specialty_slugs_are_nine():
     assert len(enqueue.SPECIALTY_SLUGS) == 9
 
 
-def test_notify_noop_when_url_unset(flask_app, monkeypatch):
+def test_on_estimate_folder_ready_noop_when_url_unset(flask_app, monkeypatch):
     posts: list = []
 
     def fake_post(*args, **kwargs):
@@ -81,13 +81,13 @@ def test_notify_noop_when_url_unset(flask_app, monkeypatch):
 
     monkeypatch.setattr(enqueue, "post_queue", fake_post)
     flask_app.config["SPECIALTY_TAKEOFF_QUEUE_URL"] = ""
-    est = _estimate()
+    eid = uuid.uuid4()
     with flask_app.app_context():
-        enqueue.notify_folder_ready(est, r"Y:\Estimates\23044 - Turner Bid")
+        enqueue.on_estimate_folder_ready(eid, r"Y:\Estimates\23044 - Turner Bid")
     assert posts == []
 
 
-def test_notify_posts_ready_payload(flask_app, monkeypatch):
+def test_on_estimate_folder_ready_posts_confirmed_payload(flask_app, monkeypatch):
     captured: list[dict] = []
 
     def fake_post(url, payload, headers, timeout):
@@ -102,12 +102,9 @@ def test_notify_posts_ready_payload(flask_app, monkeypatch):
     flask_app.config["SPECIALTY_TAKEOFF_QUEUE_TIMEOUT_SEC"] = "5"
     flask_app.config["SPECIALTY_TAKEOFF_SLUGS"] = ""
     eid = uuid.uuid4()
-    pid = uuid.uuid4()
-    lid = uuid.uuid4()
-    est = _estimate(id=eid, project_id=pid, lead_estimate_id=lid)
     folder = r"Y:\Estimates\23044 - Turner Bid"
     with flask_app.app_context():
-        enqueue.notify_folder_ready(est, folder)
+        enqueue.on_estimate_folder_ready(eid, folder)
 
     assert len(captured) == 1
     call = captured[0]
@@ -116,31 +113,56 @@ def test_notify_posts_ready_payload(flask_app, monkeypatch):
     assert call["headers"][enqueue.QUEUE_HEADER] == "queue-secret"
     assert call["headers"]["Content-Type"] == "application/json"
     body = call["payload"]
-    assert body["schema"] == enqueue.SCHEMA
+    assert set(body) == {"schema", "estimate_id", "folder_path", "status", "specialties", "artifact_roots"}
+    assert body["schema"] == "usis.specialty_takeoff.v1"
     assert body["estimate_id"] == str(eid)
-    assert body["project_uuid"] == str(pid)
-    assert body["lead_estimate_id"] == str(lid)
     assert body["folder_path"] == folder
     assert body["status"] == "ready_for_takeoff"
     assert body["specialties"] == list(enqueue.SPECIALTY_SLUGS)
-    assert body["artifact_root"] == folder + r"\03_Takeoff"
+    assert set(body["artifact_roots"]) == set(enqueue.SPECIALTY_SLUGS)
+    for slug in enqueue.SPECIALTY_SLUGS:
+        assert body["artifact_roots"][slug] == folder + "\\03_Takeoff\\" + slug + "\\"
 
 
-def test_notify_swallows_http_500_and_raise(flask_app, monkeypatch):
+def test_on_estimate_folder_ready_swallows_http_500_and_raise(flask_app, monkeypatch):
     flask_app.config["SPECIALTY_TAKEOFF_QUEUE_URL"] = "http://queue.example/specialty-takeoff"
-    est = _estimate()
+    eid = uuid.uuid4()
     folder = r"Y:\Estimates\23044 - Turner Bid"
 
     monkeypatch.setattr(enqueue, "post_queue", lambda *a, **k: 500)
     with flask_app.app_context():
-        enqueue.notify_folder_ready(est, folder)
+        enqueue.on_estimate_folder_ready(eid, folder)
 
     def boom(*_a, **_k):
         raise TimeoutError("queue down")
 
     monkeypatch.setattr(enqueue, "post_queue", boom)
     with flask_app.app_context():
-        enqueue.notify_folder_ready(est, folder)
+        enqueue.on_estimate_folder_ready(eid, folder)
+
+
+def test_swapped_hook_receives_estimate_id_and_folder_path(flask_app, monkeypatch):
+    posts: list = []
+    seen: list[tuple] = []
+    folder = r"Y:\Estimates\23044 - Turner Bid"
+    est = _estimate()
+
+    def replacement(estimate_id, folder_path):
+        seen.append((estimate_id, folder_path))
+
+    monkeypatch.setattr(enqueue, "post_queue", lambda *a, **k: posts.append(a) or 200)
+    enqueue.set_on_estimate_folder_ready(replacement)
+    try:
+        result = provision.ProvisionResult(
+            ok=True, status=provision.STATUS_READY, path=folder, created=True, via="http"
+        )
+        out, events = _run_provision(flask_app, monkeypatch, est, result)
+        assert out.status == "ready"
+        assert events == ["commit"]
+        assert seen == [(est.id, folder)]
+        assert posts == []
+    finally:
+        enqueue.set_on_estimate_folder_ready(None)
 
 
 def test_provision_ready_posts_after_commit_and_survives_queue_500(flask_app, monkeypatch):
@@ -167,8 +189,8 @@ def test_provision_ready_posts_after_commit_and_survives_queue_500(flask_app, mo
     assert body["estimate_id"] == str(est.id)
     assert body["folder_path"] == folder
     assert body["status"] == "ready_for_takeoff"
-    assert body["artifact_root"] == folder + r"\03_Takeoff"
     assert body["specialties"] == list(enqueue.SPECIALTY_SLUGS)
+    assert body["artifact_roots"]["doors"] == folder + "\\03_Takeoff\\doors\\"
 
 
 def test_provision_ready_survives_enqueue_raise(flask_app, monkeypatch):

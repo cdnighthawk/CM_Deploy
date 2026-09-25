@@ -155,10 +155,13 @@ an `error` string. CM stores `folder_provision_status`, `folder_path`,
 
 ## Specialty takeoff follower
 
-After `provision_estimate_folder_by_id` commits a `ready` result with a
-non-empty path, CM may POST that path to the specialty-takeoff queue. The
-call is best-effort and does not change provision success or failure. Contract,
-env vars, and the nine specialty slugs: [specialty-takeoff-enqueue.md](specialty-takeoff-enqueue.md).
+After `provision_estimate_folder_by_id` applies a `ready` result and commits
+it, CM calls `on_estimate_folder_ready(estimate_id, folder_path)`. The default
+hook POSTs `usis.specialty_takeoff.v1` when `SPECIALTY_TAKEOFF_QUEUE_URL` is
+set. The call is best-effort and does not change provision success or failure.
+Artifact files for each specialty are `{folder_path}\03_Takeoff\{specialty}\`
+under `Y:\Estimates\{job} - {name}`. Contract and env vars:
+[specialty-takeoff-enqueue.md](specialty-takeoff-enqueue.md).
 
 ## Local stub
 

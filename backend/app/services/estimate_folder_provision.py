@@ -488,7 +488,7 @@ def provision_estimate_folder_by_id(
             if persist and result.status != STATUS_UNCONFIGURED:
                 apply_result_to_estimate(est, result)
                 session.commit()
-                _notify_specialty_takeoff(est, result)
+                _invoke_on_estimate_folder_ready(est, result)
     except Exception:
         logger.exception("estimate folder provision could not persist status estimate_id=%s", eid)
         if result is None:
@@ -497,21 +497,26 @@ def provision_estimate_folder_by_id(
     return result or ProvisionResult(ok=False, status=STATUS_FAILED, error="provision failed")
 
 
-def _notify_specialty_takeoff(est: Any, result: ProvisionResult) -> None:
-    """After folder fields commit, enqueue specialty takeoff. Never raises."""
+def _invoke_on_estimate_folder_ready(est: Any, result: ProvisionResult) -> None:
+    """Call ``on_estimate_folder_ready(estimate_id, folder_path)`` after commit.
+
+    Only when provision is ``ready`` and the path is non-empty. Never raises.
+    The hook is resolved on the enqueue module at call time so tests can swap it.
+    """
     if result.status != STATUS_READY:
         return
     folder_path = str(result.path or getattr(est, "folder_path", None) or "").strip()
     if not folder_path:
         return
+    estimate_id = getattr(est, "id", None)
     try:
-        from .specialty_takeoff_enqueue import notify_folder_ready
+        from . import specialty_takeoff_enqueue as takeoff
 
-        notify_folder_ready(est, folder_path)
+        takeoff.on_estimate_folder_ready(estimate_id, folder_path)
     except Exception:
         logger.exception(
-            "specialty takeoff enqueue crashed estimate_id=%s",
-            getattr(est, "id", None),
+            "on_estimate_folder_ready crashed estimate_id=%s",
+            estimate_id,
         )
 
 

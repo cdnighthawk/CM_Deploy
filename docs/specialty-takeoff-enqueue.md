@@ -5,20 +5,25 @@ notifies the on-prem specialty-takeoff consumer. The consumer (Ingest Panel)
 drops the job for the takeoff bots. CM does not write the office share and
 does not write the ingest drop directory.
 
-Hook: `provision_estimate_folder_by_id` in
-`backend/app/services/estimate_folder_provision.py`, after
-`apply_result_to_estimate` and `session.commit()`, only when
-`result.status == "ready"` and `result.path` (or `est.folder_path`) is
-non-empty. Failures are logged. They never raise into provision and never
-roll back the estimate.
+Public hook: `on_estimate_folder_ready(estimate_id, folder_path)` in
+`backend/app/services/specialty_takeoff_enqueue.py`.
+
+`provision_estimate_folder_by_id` calls that hook after
+`apply_result_to_estimate` and `session.commit()` (commit first so the
+after-commit session is safe), only when `result.status == "ready"` and the
+path is non-empty. Provision looks the function up on the module at call time.
+Replace it in tests with `monkeypatch`, or install another callable with
+`set_on_estimate_folder_ready` (`None` restores the default). Failures are
+logged. They never raise into provision and never roll back the estimate.
 
 On Render, folder provision already runs in a daemon thread after the
 estimate commit. The follower runs in that same thread, with a short HTTP
 timeout, so estimate create stays non-blocking.
 
-There is no `takeoff_jobs` table in CM. The POST is the queue. The consumer
-should upsert by `estimate_id` (patch `folder_path`, `estimate_id`, and
-`status`). A later retry of folder provision POSTs again.
+There is no `takeoff_jobs` table in CM. The POST is the queue job. The same
+body is an upsert: the consumer patches the existing specialty-takeoff job for
+`estimate_id` or creates one when none exists. A later folder-provision retry
+POSTs again. When `SPECIALTY_TAKEOFF_QUEUE_URL` is unset the hook is a no-op.
 
 ## Environment
 
@@ -44,14 +49,17 @@ Y:\Estimates\{job} - {name}
 
 Example: `Y:\Estimates\23044 - Turner – Bid Set`.
 
-Takeoff artifacts for each specialty live under:
+Canonical artifact root for each specialty, under
+`Y:\Estimates\{job} - {name}`:
 
 ```
 {folder_path}\03_Takeoff\{specialty}\
 ```
 
-The JSON `artifact_root` is `{folder_path}\03_Takeoff` (same separator as
-`folder_path`). CM only sends that hint. It does not create the directories.
+Example: `Y:\Estimates\23044 - Turner – Bid Set\03_Takeoff\doors\`.
+
+The payload `artifact_roots` map has one of those paths per specialty slug.
+CM only sends the strings. It does not create the directories.
 
 ## Payload (`usis.specialty_takeoff.v1`)
 
@@ -65,8 +73,6 @@ X-USIS-Specialty-Takeoff-Token: <token>   # only when the token env is set
 {
   "schema": "usis.specialty_takeoff.v1",
   "estimate_id": "uuid",
-  "project_uuid": "uuid or null",
-  "lead_estimate_id": "uuid or null",
   "folder_path": "Y:\\Estimates\\23044 - Turner – Bid Set",
   "status": "ready_for_takeoff",
   "specialties": [
@@ -80,9 +86,16 @@ X-USIS-Specialty-Takeoff-Token: <token>   # only when the token env is set
     "markerboards",
     "signage"
   ],
-  "artifact_root": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff"
+  "artifact_roots": {
+    "bathroom_partitions": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\bathroom_partitions\\",
+    "doors": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\doors\\",
+    "signage": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\signage\\"
+  }
 }
 ```
+
+`artifact_roots` includes every slug in `specialties`. Each value is
+`{folder_path}\03_Takeoff\{specialty}\`. `status` is `ready_for_takeoff`.
 
 `status` is always `ready_for_takeoff` on this follower. HTTP 4xx/5xx,
 timeouts, and client errors are logged. Provision status stays `ready`.

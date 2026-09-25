@@ -59,15 +59,15 @@ def _run_provision(flask_app, monkeypatch, est, result, *, post=None):
 
 def test_default_specialty_slugs_are_nine():
     assert enqueue.SPECIALTY_SLUGS == (
-        "bathroom_partitions",
-        "bathroom_accessories",
         "lockers",
+        "concrete",
+        "door_spec",
+        "room_interiors",
         "wall_protection",
-        "fire_extinguisher_cabinets",
-        "commercial_millwork",
-        "doors",
-        "markerboards",
-        "signage",
+        "partitions",
+        "fec",
+        "millwork",
+        "bathroom_accessories",
     )
     assert len(enqueue.SPECIALTY_SLUGS) == 9
 
@@ -190,7 +190,7 @@ def test_provision_ready_posts_after_commit_and_survives_queue_500(flask_app, mo
     assert body["folder_path"] == folder
     assert body["status"] == "ready_for_takeoff"
     assert body["specialties"] == list(enqueue.SPECIALTY_SLUGS)
-    assert body["artifact_roots"]["doors"] == folder + "\\03_Takeoff\\doors\\"
+    assert body["artifact_roots"]["partitions"] == folder + "\\03_Takeoff\\partitions\\"
 
 
 def test_provision_ready_survives_enqueue_raise(flask_app, monkeypatch):

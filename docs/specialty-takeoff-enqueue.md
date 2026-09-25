@@ -76,20 +76,20 @@ X-USIS-Specialty-Takeoff-Token: <token>   # only when the token env is set
   "folder_path": "Y:\\Estimates\\23044 - Turner – Bid Set",
   "status": "ready_for_takeoff",
   "specialties": [
-    "bathroom_partitions",
-    "bathroom_accessories",
     "lockers",
+    "concrete",
+    "door_spec",
+    "room_interiors",
     "wall_protection",
-    "fire_extinguisher_cabinets",
-    "commercial_millwork",
-    "doors",
-    "markerboards",
-    "signage"
+    "partitions",
+    "fec",
+    "millwork",
+    "bathroom_accessories"
   ],
   "artifact_roots": {
-    "bathroom_partitions": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\bathroom_partitions\\",
-    "doors": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\doors\\",
-    "signage": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\signage\\"
+    "lockers": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\lockers\\",
+    "partitions": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\partitions\\",
+    "fec": "Y:\\Estimates\\23044 - Turner – Bid Set\\03_Takeoff\\fec\\"
   }
 }
 ```
@@ -105,21 +105,17 @@ timeouts, and client errors are logged. Provision status stays `ready`.
 Default list is `SPECIALTY_SLUGS` in
 `backend/app/services/specialty_takeoff_enqueue.py`.
 
-| Slug | CSI (estimating presets) |
+| Slug | CSI / scope |
 | --- | --- |
-| `bathroom_partitions` | 10 21 00 Compartments and Cubicles |
-| `bathroom_accessories` | 10 28 00 Toilet, Bath, and Laundry Accessories |
-| `lockers` | 10 51 00 Lockers |
-| `wall_protection` | 10 26 00 Wall and Door Protection |
-| `fire_extinguisher_cabinets` | 10 44 00 Fire Protection Specialties |
-| `commercial_millwork` | 06 40 00 Architectural Woodwork |
-| `doors` | 08 11 00 Steel Doors and Frames (also 08 14 / 08 71) |
-| `markerboards` | 10 11 00 Visual Display Surfaces |
-| `signage` | 10 14 00 Signage |
+| `lockers` | CSI 10 51 00 |
+| `concrete` | Div 03 + excav / Div 32 |
+| `door_spec` | Div 8 DFH |
+| `room_interiors` | room inside-face rings |
+| `wall_protection` | CSI 10 26 00 |
+| `partitions` | CSI 10 21 13 |
+| `fec` | CSI 10 44 16 |
+| `millwork` | CSI 06 40 / 06 41 |
+| `bathroom_accessories` | CSI 10 28 13 |
 
-`signage` is the ninth slug. It is the extra specialty section in the USIS
-estimating presets (`USIS_CRM` `estimating-agent/config/preset_spec_sections.json`)
-next to the eight product lines above. Furniture (division 12) is not a
-specialty takeoff slug. Cubicle curtains stay under `bathroom_partitions`
-(10 21). Override the tuple later with `SPECIALTY_TAKEOFF_SLUGS` or by
-editing that one constant.
+These nine strings are the contract. Do not substitute other product names.
+`SPECIALTY_TAKEOFF_SLUGS` can replace the tuple later without editing call sites.

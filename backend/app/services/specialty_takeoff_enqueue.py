@@ -31,22 +31,21 @@ QUEUE_HEADER = "X-USIS-Specialty-Takeoff-Token"
 TAKEOFF_DIR = "03_Takeoff"
 DEFAULT_TIMEOUT_SEC = 5.0
 
-# Default nine CSI specialty slugs for USIS specialty takeoff bots.
-# Eight are the product lines named for this queue; ``signage`` is CSI 10 14 00
-# from the USIS estimating presets (alongside 10 11 markerboards, 10 21
-# partitions, 10 26 wall protection, 10 28 accessories, 10 44 cabinets,
-# 10 51 lockers, 06 40 millwork, and 08 doors). Override with
-# SPECIALTY_TAKEOFF_SLUGS (comma-separated) without editing call sites.
+# Exact specialty slugs for usis.specialty_takeoff.v1. Do not add others here.
+# CSI / scope (docs only): lockers 10 51 00; concrete Div 03 + excav / Div 32;
+# door_spec Div 8 DFH; room_interiors room inside-face rings; wall_protection
+# 10 26 00; partitions 10 21 13; fec 10 44 16; millwork 06 40 / 06 41;
+# bathroom_accessories 10 28 13. Optional override: SPECIALTY_TAKEOFF_SLUGS.
 SPECIALTY_SLUGS: tuple[str, ...] = (
-    "bathroom_partitions",
-    "bathroom_accessories",
     "lockers",
+    "concrete",
+    "door_spec",
+    "room_interiors",
     "wall_protection",
-    "fire_extinguisher_cabinets",
-    "commercial_millwork",
-    "doors",
-    "markerboards",
-    "signage",
+    "partitions",
+    "fec",
+    "millwork",
+    "bathroom_accessories",
 )
 
 _unconfigured_logged = False

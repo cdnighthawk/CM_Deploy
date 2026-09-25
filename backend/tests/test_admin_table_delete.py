@@ -147,7 +147,13 @@ def test_project_writer_can_delete_document(client, flask_app, monkeypatch):
 
 def test_delete_rfp(client, flask_app):
     _skip_if_no_db(flask_app)
-    created = client.post("/api/v1/rfps", json={"title": "Delete me"})
+    from app.models import Project
+    with flask_app.app_context():
+        p = Project(name="RFP-Delete-Test")
+        db.session.add(p)
+        db.session.commit()
+        pid = str(p.id)
+    created = client.post("/api/v1/rfps", json={"title": "Delete me", "project_id": pid})
     assert created.status_code in (200, 201), created.get_data(as_text=True)
     rid = created.get_json()["item"]["id"]
 

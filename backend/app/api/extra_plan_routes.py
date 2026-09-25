@@ -702,6 +702,8 @@ def register_extra_routes(bp: Blueprint) -> None:
             est = db.session.get(Estimate, est_id)
             if est is None:
                 return _jsonify({"error": "estimate_id does not exist"}), 400
+            if le_id and est.lead_estimate_id and est.lead_estimate_id != le_id:
+                return _jsonify({"error": "estimate_id does not belong to the specified lead_estimate_id"}), 400
             if pj_id and est.project_id is not None and est.project_id != pj_id:
                 return _jsonify({"error": "estimate_id does not belong to the specified project"}), 400
             if pj_id and est.project_id is None and le_id:

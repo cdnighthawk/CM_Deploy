@@ -35,7 +35,7 @@ def _setup_user_and_project(client):
         db.session.add(ProjectMember(user_id=u.id, project_id=p2.id, member_role="estimator"))
         est = Estimate(project_id=p.id, name="Test Estimate")
         db.session.add(est)
-        le = LeadEstimate(name="Test Lead", project_id=p.id)
+        le = LeadEstimate(external_id="rfp-val-" + uuid.uuid4().hex[:10], name="Test Lead", project_id=p.id)
         db.session.add(le)
         db.session.flush()
         est_no_proj = Estimate(lead_estimate_id=le.id, name="Lead Estimate No Project")
@@ -256,4 +256,27 @@ def test_create_rfp_with_estimate_no_project_validation(client, no_dev_admin):
     data = resp.get_json()
     assert "error" in data
     assert "does not exist" in data["error"]
+
+
+def test_create_rfp_with_mismatched_lead_estimate_id(client, no_dev_admin):
+    """Test creating an RFP where estimate belongs to a different lead_estimate_id."""
+    ctx = _setup_user_and_project(client)
+    with client.application.app_context():
+        le2 = LeadEstimate(external_id="rfp-val2-" + uuid.uuid4().hex[:10], name="Other Lead", project_id=ctx["pid"])
+        db.session.add(le2)
+        db.session.commit()
+        le2_id = str(le2.id)
+    resp = client.post(
+        "/api/v1/rfps",
+        json={
+            "lead_estimate_id": le2_id,
+            "estimate_id": ctx["est_no_proj_id"],
+            "title": "Mismatched Lead RFP",
+        },
+        headers={"X-Usis-User-Id": ctx["uid"]},
+    )
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert "error" in data
+    assert "lead_estimate_id" in data["error"]
 

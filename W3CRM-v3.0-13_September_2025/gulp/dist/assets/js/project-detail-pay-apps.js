@@ -186,62 +186,46 @@
 				var items = data.items || [];
 				if (!items.length) {
 					tb.innerHTML = '<tr><td colspan="8" class="text-muted">No payment applications yet.</td></tr>';
+				} else {
+					tb.innerHTML = items
+						.map(function (row) {
+							return (
+								"<tr data-pay-app-id=\"" +
+								escapeHtml(row.id) +
+								"\"><td>" +
+								row.application_number +
+								"</td><td>" +
+								escapeHtml(row.period_to || "—") +
+								"</td><td><span class=\"badge " +
+								statusBadgeClass(row.status) +
+								"\">" +
+								escapeHtml(statusLabel(row.status)) +
+								(row.textura_invoice_id ? " <span class=\"badge bg-info-subtle text-info border\" title=\"Synced from Textura\">Textura</span>" : "") +
+								(row.import_source === "sage_cm" ? " <span class=\"badge bg-secondary-subtle text-secondary border\" title=\"Imported from Sage CM\">Sage CM</span>" : "") +
+								"</span></td><td>" +
+								escapeHtml(isoToDateInput(row.paid_at) || "—") +
+								"</td><td class=\"text-end font-monospace\">" +
+								escapeHtml(row.current_payment_due || "—") +
+								"</td><td class=\"text-end font-monospace\">" +
+								escapeHtml(row.architect_certified_amount || "—") +
+								"</td><td class=\"text-end\">" +
+								(row.line_count != null ? row.line_count : "—") +
+								"</td><td class=\"text-end\">" +
+								(window.USISUi && window.USISUi.rowMenu
+									? window.USISUi.rowMenu({
+											id: row.id,
+											editClass: "usis-inv-open",
+											deleteClass: "usis-inv-del-app",
+											createTarget: "#usis-inv-new-app",
+										})
+									: '<button type="button" class="btn btn-sm btn-outline-primary usis-inv-open">Open</button>') +
+								"</td></tr>"
+							);
+						})
+						.join("");
 				}
-				tb.innerHTML = items
-					.map(function (row) {
-						return (
-							"<tr data-pay-app-id=\"" +
-							escapeHtml(row.id) +
-							"\"><td>" +
-							row.application_number +
-							"</td><td>" +
-							escapeHtml(row.period_to || "—") +
-							"</td><td><span class=\"badge " +
-							statusBadgeClass(row.status) +
-							"\">" +
-							escapeHtml(statusLabel(row.status)) +
-							(row.textura_invoice_id ? " <span class=\"badge bg-info-subtle text-info border\" title=\"Synced from Textura\">Textura</span>" : "") +
-							(row.import_source === "sage_cm" ? " <span class=\"badge bg-secondary-subtle text-secondary border\" title=\"Imported from Sage CM\">Sage CM</span>" : "") +
-							"</span></td><td>" +
-							escapeHtml(isoToDateInput(row.paid_at) || "—") +
-							"</td><td class=\"text-end font-monospace\">" +
-							escapeHtml(row.current_payment_due || "—") +
-							"</td><td class=\"text-end font-monospace\">" +
-							escapeHtml(row.architect_certified_amount || "—") +
-							"</td><td class=\"text-end\">" +
-							(row.line_count != null ? row.line_count : "—") +
-							"</td><td class=\"text-end\">" +
-							(window.USISUi && window.USISUi.rowMenu
-								? window.USISUi.rowMenu({
-										id: row.id,
-										editClass: "usis-inv-open",
-										deleteClass: "usis-inv-del-app",
-										createTarget: "#usis-inv-new-app",
-									})
-								: '<button type="button" class="btn btn-sm btn-outline-primary usis-inv-open">Open</button>') +
-							"</td></tr>"
-						);
-					})
-					.join("");
 				if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
-					var totalsFields = [];
-					items.forEach(function (row) {
-						var cpd = parseFloat(String(row.current_payment_due || "0").replace(/[^0-9.\-]/g, ""));
-						var aca = parseFloat(String(row.architect_certified_amount || "0").replace(/[^0-9.\-]/g, ""));
-						if (!isNaN(cpd)) {
-							if (!totalsFields[0]) totalsFields[0] = 0;
-							totalsFields[0] += cpd;
-						}
-						if (!isNaN(aca)) {
-							if (!totalsFields[1]) totalsFields[1] = 0;
-							totalsFields[1] += aca;
-						}
-					});
-					var fakeItems = [{
-						current_payment_due: totalsFields[0] || 0,
-						architect_certified_amount: totalsFields[1] || 0
-					}];
-					window.USISUi.addMoneyTotalsRow(tb, fakeItems, [
+					window.USISUi.addMoneyTotalsRow(tb, items, [
 						{ index: 4, field: "current_payment_due", label: "Total" },
 						{ index: 5, field: "architect_certified_amount" }
 					], 8);
@@ -368,6 +352,8 @@
 		if (!lines || !lines.length) {
 			tb.innerHTML =
 				"<tr><td colspan=\"11\" class=\"text-muted\">No schedule of values on this invoice. Add the prime SOV in Contract admin, or use <strong>+ Add line</strong> (draft only).</td></tr>";
+			refreshSovTotals();
+			return;
 		}
 		tb.innerHTML = lines.map(function (li) {
 			return sovRowHtml(li);

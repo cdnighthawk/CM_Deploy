@@ -836,9 +836,9 @@
 					state.id = item.id;
 					state.mode = null;
 					state.createParams = null;
-					var newUrl = "usis-rfp-detail.html?id=" + encodeURIComponent(state.id);
-					if (window.history && window.history.replaceState) {
-						window.history.replaceState({}, "", newUrl);
+				var newUrl = "usis-rfp-detail.html?id=" + encodeURIComponent(state.id);
+				if (window.history && window.history.replaceState) {
+					window.history.replaceState({}, "", newUrl);
 				} else {
 					window.location.replace(newUrl);
 				}

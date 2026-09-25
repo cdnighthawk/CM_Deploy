@@ -15,6 +15,7 @@ from ..models import (
     CommitmentBillAllocation,
     CommitmentLineItem,
     Company,
+    CompanyInsurancePolicy,
     Contact,
     CostCode,
     Project,
@@ -170,6 +171,106 @@ def _serialize_bill(b: CommitmentBillAllocation) -> dict[str, Any]:
     }
 
 
+def _calculate_vendor_insurance_status_from_policies(policies: list[CompanyInsurancePolicy]) -> dict[str, Any]:
+    """
+    Calculate insurance status from a list of policies for one vendor.
+    Returns dict with 'status' (ok, expiring_soon, expired, missing) and optional 'expires_on'.
+    """
+    from datetime import timedelta
+
+    if not policies:
+        return {"status": "missing", "expires_on": None}
+
+    today = date.today()
+    most_recent_policy = None
+
+    for policy in policies:
+        if policy.expires_on is not None:
+            if most_recent_policy is None or policy.expires_on > most_recent_policy.expires_on:
+                most_recent_policy = policy
+
+    if most_recent_policy is None:
+        return {"status": "missing", "expires_on": None}
+
+    expires_on = most_recent_policy.expires_on
+
+    if expires_on < today:
+        return {"status": "expired", "expires_on": _iso(expires_on)}
+
+    threshold = today + timedelta(days=30)
+    if expires_on <= threshold:
+        return {"status": "expiring_soon", "expires_on": _iso(expires_on)}
+
+    return {"status": "ok", "expires_on": _iso(expires_on)}
+
+
+def _calculate_vendor_insurance_status(company_id: uuid.UUID) -> dict[str, Any]:
+    """
+    Calculate insurance status for a single vendor company.
+    Returns dict with 'status' (ok, expiring_soon, expired, missing) and optional 'expires_on'.
+    """
+    policies = db.session.scalars(
+        select(CompanyInsurancePolicy)
+        .where(CompanyInsurancePolicy.company_id == company_id)
+        .order_by(CompanyInsurancePolicy.expires_on.desc().nullslast())
+    ).all()
+    return _calculate_vendor_insurance_status_from_policies(policies)
+
+
+def _batch_calculate_vendor_insurance_statuses(company_ids: set[uuid.UUID]) -> dict[uuid.UUID, dict[str, Any]]:
+    """
+    Batch calculate insurance status for multiple vendors.
+    Returns dict mapping company_id to status dict.
+    """
+    if not company_ids:
+        return {}
+
+    policies = db.session.scalars(
+        select(CompanyInsurancePolicy)
+        .where(CompanyInsurancePolicy.company_id.in_(company_ids))
+        .order_by(CompanyInsurancePolicy.company_id, CompanyInsurancePolicy.expires_on.desc().nullslast())
+    ).all()
+
+    policies_by_company: dict[uuid.UUID, list[CompanyInsurancePolicy]] = {}
+    for policy in policies:
+        if policy.company_id not in policies_by_company:
+            policies_by_company[policy.company_id] = []
+        policies_by_company[policy.company_id].append(policy)
+
+    result = {}
+    for company_id in company_ids:
+        company_policies = policies_by_company.get(company_id, [])
+        result[company_id] = _calculate_vendor_insurance_status_from_policies(company_policies)
+
+    return result
+
+
+def count_vendors_with_insurance_issues(project_id: uuid.UUID) -> int:
+    """
+    Count vendors on this project with missing or expired insurance.
+    This includes vendors from commitments on the project.
+    """
+    vendor_ids_on_project = set(
+        db.session.scalars(
+            select(Commitment.vendor_company_id)
+            .where(Commitment.project_id == project_id)
+            .distinct()
+        ).all()
+    )
+    
+    if not vendor_ids_on_project:
+        return 0
+    
+    insurance_statuses = _batch_calculate_vendor_insurance_statuses(vendor_ids_on_project)
+    
+    issue_count = sum(
+        1 for status_info in insurance_statuses.values()
+        if status_info["status"] in ("missing", "expired")
+    )
+    
+    return issue_count
+
+
 def _user_display_name(u: User | None) -> str | None:
     if u is None:
         return None
@@ -177,12 +278,17 @@ def _user_display_name(u: User | None) -> str | None:
     return name or u.email
 
 
-def _serialize_commitment_row(c: Commitment, vendor_name: str, rfp: Rfp | None = None) -> dict[str, Any]:
+def _serialize_commitment_row(c: Commitment, vendor_name: str, rfp: Rfp | None = None, vendor_insurance: dict[str, Any] | None = None) -> dict[str, Any]:
+    if vendor_insurance is None:
+        vendor_insurance = _calculate_vendor_insurance_status(c.vendor_company_id)
+
     row: dict[str, Any] = {
         "id": str(c.id),
         "project_id": str(c.project_id),
         "vendor_company_id": str(c.vendor_company_id),
         "vendor_name": vendor_name,
+        "vendor_insurance_status": vendor_insurance["status"],
+        "vendor_insurance_expires_on": vendor_insurance["expires_on"],
         "commitment_kind": c.commitment_kind,
         "reference_number": c.reference_number,
         "title": c.title,
@@ -260,13 +366,24 @@ def list_commitments(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any]:
         .order_by(Commitment.created_at.desc())
     )
     rows = db.session.execute(stmt).all()
+    
+    vendor_ids = {c.vendor_company_id for c, _ in rows}
+    insurance_statuses = _batch_calculate_vendor_insurance_statuses(vendor_ids)
+    
     rfp_ids = {c.rfp_id for c, _ in rows if c.rfp_id}
     rfp_map: dict[uuid.UUID, Rfp] = {}
     if rfp_ids:
         loaded = db.session.scalars(select(Rfp).where(Rfp.id.in_(rfp_ids))).all()
         rfp_map = {r.id: r for r in loaded}
+    
     items = [
-        _serialize_commitment_row(c, name, rfp_map.get(c.rfp_id) if c.rfp_id else None) for c, name in rows
+        _serialize_commitment_row(
+            c, 
+            name, 
+            rfp_map.get(c.rfp_id) if c.rfp_id else None,
+            insurance_statuses.get(c.vendor_company_id)
+        ) 
+        for c, name in rows
     ]
     return {"items": items, "entity": "commitments"}
 

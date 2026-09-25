@@ -22,6 +22,37 @@
 		if (!val) return "";
 		return String(val).slice(0, 10);
 	}
+	function esc(s) {
+		if (s == null || s === "") return "";
+		var d = document.createElement("div");
+		d.textContent = String(s);
+		return d.innerHTML;
+	}
+	function showVendorInsuranceWarning(status, expiresOn, containerId, context) {
+		var targetModal = context === "edit" ? document.getElementById("usis-modal-commitment-edit") : document.getElementById("usis-modal-commitment-create");
+		if (!targetModal) return;
+		var existingWarning = document.getElementById(containerId);
+		if (existingWarning) existingWarning.remove();
+		if (!status || status === "ok") return;
+		var banner = document.createElement("div");
+		banner.id = containerId;
+		banner.className = "alert alert-warning d-flex align-items-start gap-2 mb-3";
+		banner.setAttribute("role", "status");
+		var icon = '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>';
+		var msg = "";
+		if (status === "missing") {
+			msg = "Vendor has no insurance records. Please verify compliance before approving.";
+		} else if (status === "expired") {
+			msg = "Vendor insurance expired on " + (expiresOn || "unknown date") + ". Please verify current coverage before approving.";
+		} else if (status === "expiring_soon") {
+			msg = "Vendor insurance expires soon on " + (expiresOn || "unknown date") + ". Please verify renewal status.";
+		}
+		banner.innerHTML = icon + "<span>" + esc(msg) + "</span>";
+		var modalBody = targetModal.querySelector(".modal-body");
+		if (modalBody && modalBody.firstChild) {
+			modalBody.insertBefore(banner, modalBody.firstChild);
+		}
+	}
 	function fillSelectOptions(sel, items, valueKey, labelFn, selectedVal) {
 		if (!sel) return;
 		var keep = sel.getAttribute("data-usis-keep-first") === "1";
@@ -185,6 +216,60 @@
 			return item;
 		});
 	}
+	function checkVendorInsurance(companyId, context) {
+		if (!companyId) {
+			var existingWarning = document.getElementById("usis-c-" + context + "-insurance-warning");
+			if (existingWarning) existingWarning.remove();
+			return;
+		}
+		fetchJson("/api/v1/companies/" + encodeURIComponent(companyId) + "/insurance")
+			.then(function (data) {
+				var items = data.items || [];
+				if (items.length === 0) {
+					showVendorInsuranceWarning("missing", null, "usis-c-" + context + "-insurance-warning", context);
+					return;
+				}
+				var today = dateStringToday();
+				var mostRecentPolicy = null;
+				items.forEach(function (policy) {
+					if (policy.expires_on) {
+						if (!mostRecentPolicy || policy.expires_on > mostRecentPolicy.expires_on) {
+							mostRecentPolicy = policy;
+						}
+					}
+				});
+				if (!mostRecentPolicy || !mostRecentPolicy.expires_on) {
+					showVendorInsuranceWarning("missing", null, "usis-c-" + context + "-insurance-warning", context);
+					return;
+				}
+				var expiresOn = mostRecentPolicy.expires_on;
+				if (expiresOn < today) {
+					showVendorInsuranceWarning("expired", expiresOn, "usis-c-" + context + "-insurance-warning", context);
+				} else {
+					var threshold = dateStringAddDays(today, 30);
+					if (expiresOn <= threshold) {
+						showVendorInsuranceWarning("expiring_soon", expiresOn, "usis-c-" + context + "-insurance-warning", context);
+					} else {
+						var existingWarning = document.getElementById("usis-c-" + context + "-insurance-warning");
+						if (existingWarning) existingWarning.remove();
+					}
+				}
+			})
+			.catch(function () {
+				var existingWarning = document.getElementById("usis-c-" + context + "-insurance-warning");
+				if (existingWarning) existingWarning.remove();
+			});
+	}
+	function dateStringToday() {
+		var d = new Date();
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
+	function dateStringAddDays(dateStr, days) {
+		var parts = dateStr.split("-");
+		var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+		d.setDate(d.getDate() + days);
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
 	function wireVendorComboboxes() {
 		wireEntityCombobox("usis-c-create-vendor-q", "usis-c-create-vendor-menu", "usis-c-create-vendor-id", searchDirectoryCompanies, function (it) {
 			var hint = document.getElementById("usis-c-create-vendor-dir-hint");
@@ -213,9 +298,11 @@
 				}
 			}
 			loadVendorProfile(it.id, "usis-c-create");
+			checkVendorInsurance(it.id, "create");
 		});
 		wireEntityCombobox("usis-c-edit-vendor-q", "usis-c-edit-vendor-menu", "usis-c-edit-vendor-id", searchDirectoryCompanies, function (it) {
 			loadVendorProfile(it.id, "usis-c-edit");
+			checkVendorInsurance(it.id, "edit");
 		});
 		wireEntityCombobox("usis-c-create-issued-by-q", "usis-c-create-issued-by-menu", "usis-c-create-issued-by-id", searchUsers, null);
 		wireEntityCombobox("usis-c-create-authorized-by-q", "usis-c-create-authorized-by-menu", "usis-c-create-authorized-by-id", searchUsers, null);
@@ -379,6 +466,8 @@
 		var addBtn = document.getElementById("usis-c-create-vendor-add-dir");
 		if (hint) hint.classList.add("d-none");
 		if (addBtn) addBtn.classList.add("d-none");
+		var insuranceWarning = document.getElementById("usis-c-create-insurance-warning");
+		if (insuranceWarning) insuranceWarning.remove();
 	}
 	function buildCreatePayload(kind) {
 		var status = document.getElementById("usis-c-create-status").value;
@@ -436,12 +525,6 @@
 		var p = new URLSearchParams(window.location.search);
 		var id = (p.get("id") || p.get("project_id") || p.get("projectId") || "").trim();
 		return id || null;
-	}
-	function esc(s) {
-		if (s == null || s === "") return "";
-		var d = document.createElement("div");
-		d.textContent = String(s);
-		return d.innerHTML;
 	}
 	function toastErr(msg) {
 		if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(msg);
@@ -1053,6 +1136,7 @@
 			.then(function (data) {
 				var item = data.item;
 				populateEditHeader(item);
+				showVendorInsuranceWarning(item.vendor_insurance_status, item.vendor_insurance_expires_on, "usis-c-edit-insurance-warning", "edit");
 				var rfpWrap = document.getElementById("usis-c-edit-rfp-link-wrap");
 				var rfpA = document.getElementById("usis-c-edit-rfp-link");
 				if (item.rfp_id && rfpWrap && rfpA) {

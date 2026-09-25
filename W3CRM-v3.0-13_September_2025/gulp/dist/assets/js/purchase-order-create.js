@@ -612,9 +612,97 @@
 				}
 			}
 			loadVendorProfile(it.id);
+			checkVendorInsurance(it.id);
 		});
 		wireEntityCombobox("usis-po-issued-by-q", "usis-po-issued-by-menu", "usis-po-issued-by-id", searchUsers, null);
 		wireEntityCombobox("usis-po-authorized-by-q", "usis-po-authorized-by-menu", "usis-po-authorized-by-id", searchUsers, null);
+	}
+
+	function checkVendorInsurance(companyId) {
+		if (!companyId) {
+			hideInsuranceWarning();
+			return;
+		}
+		fetchJson("/api/v1/companies/" + encodeURIComponent(companyId) + "/insurance")
+			.then(function (data) {
+				var items = data.items || [];
+				if (items.length === 0) {
+					showInsuranceWarning("missing", null);
+					return;
+				}
+				var today = dateStringToday();
+				var mostRecentPolicy = null;
+				items.forEach(function (policy) {
+					if (policy.expires_on) {
+						if (!mostRecentPolicy || policy.expires_on > mostRecentPolicy.expires_on) {
+							mostRecentPolicy = policy;
+						}
+					}
+				});
+				if (!mostRecentPolicy || !mostRecentPolicy.expires_on) {
+					showInsuranceWarning("missing", null);
+					return;
+				}
+				var expiresOn = mostRecentPolicy.expires_on;
+				if (expiresOn < today) {
+					showInsuranceWarning("expired", expiresOn);
+				} else {
+					var threshold = dateStringAddDays(today, 30);
+					if (expiresOn <= threshold) {
+						showInsuranceWarning("expiring_soon", expiresOn);
+					} else {
+						hideInsuranceWarning();
+					}
+				}
+			})
+			.catch(function () {
+				hideInsuranceWarning();
+			});
+	}
+
+	function dateStringToday() {
+		var d = new Date();
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
+
+	function dateStringAddDays(dateStr, days) {
+		var parts = dateStr.split("-");
+		var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+		d.setDate(d.getDate() + days);
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
+
+	function showInsuranceWarning(status, expiresOn) {
+		var banner = $("usis-po-insurance-warning");
+		if (!banner) {
+			banner = document.createElement("div");
+			banner.id = "usis-po-insurance-warning";
+			banner.className = "alert alert-warning d-flex align-items-start gap-2 mb-3";
+			banner.setAttribute("role", "status");
+			var existingBanner = $("usis-po-banner");
+			if (existingBanner && existingBanner.parentNode) {
+				existingBanner.parentNode.insertBefore(banner, existingBanner.nextSibling);
+			} else {
+				var form = $("usis-po-form");
+				if (form) form.insertBefore(banner, form.firstChild);
+			}
+		}
+		var icon = '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>';
+		var msg = "";
+		if (status === "missing") {
+			msg = "Vendor has no insurance records. Please verify compliance before approving this PO.";
+		} else if (status === "expired") {
+			msg = "Vendor insurance expired on " + (expiresOn || "unknown date") + ". Please verify current coverage before approving this PO.";
+		} else if (status === "expiring_soon") {
+			msg = "Vendor insurance expires soon on " + (expiresOn || "unknown date") + ". Please verify renewal status.";
+		}
+		banner.innerHTML = icon + "<span>" + esc(msg) + "</span>";
+		banner.classList.remove("d-none");
+	}
+
+	function hideInsuranceWarning() {
+		var banner = $("usis-po-insurance-warning");
+		if (banner) banner.classList.add("d-none");
 	}
 
 	function wire() {

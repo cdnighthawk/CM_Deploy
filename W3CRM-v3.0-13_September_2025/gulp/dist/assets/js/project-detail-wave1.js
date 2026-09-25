@@ -306,6 +306,7 @@
 		fetchJson(pidPath("/directory/companies?all=1"))
 			.then(function (data) {
 				var items = data.items || [];
+				var insuranceIssueCount = data.vendor_insurance_issue_count || 0;
 				if (!items.length) {
 					tbody.innerHTML = emptyRow(3, "No companies in the project directory.");
 					return;
@@ -323,6 +324,19 @@
 						);
 					})
 					.join("");
+				var dirCard = tbody.closest(".card");
+				if (dirCard && insuranceIssueCount > 0) {
+					var cardHeader = dirCard.querySelector(".card-header");
+					if (cardHeader) {
+						var existingBadge = cardHeader.querySelector(".usis-insurance-issue-badge");
+						if (existingBadge) existingBadge.remove();
+						var badge = document.createElement("span");
+						badge.className = "badge bg-warning text-dark ms-2 usis-insurance-issue-badge";
+						badge.textContent = insuranceIssueCount + " vendor" + (insuranceIssueCount === 1 ? "" : "s") + " with insurance issues";
+						badge.title = "Vendors on this job with missing or expired insurance";
+						cardHeader.appendChild(badge);
+					}
+				}
 			})
 			.catch(function () {
 				tbody.innerHTML = emptyRow(3, "Could not load directory.");

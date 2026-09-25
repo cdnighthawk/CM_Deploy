@@ -267,3 +267,120 @@ def test_sage_po_create_with_line_items_and_lookups(client, no_dev_admin):
     assert body["line_items"][0]["tax_code"] == "TAXABLE"
     assert body["line_items"][0]["resource"] == "material"
     assert float(body["item"]["total_amount"]) == 1500.0
+
+
+def test_vendor_insurance_status_on_commitment(client, no_dev_admin):
+    """Test that vendor insurance status is included in commitment response."""
+    from datetime import date, timedelta
+    from app.models import CompanyInsurancePolicy
+
+    with client.application.app_context():
+        role = db.session.scalar(select(Role).where(Role.code == "standard"))
+        if role is None:
+            role = Role(code="standard", name="Standard")
+            db.session.add(role)
+            db.session.flush()
+        u = User(email="ins_test_" + uuid.uuid4().hex[:8] + "@t.com", first_name="Ins", last_name="Tester")
+        db.session.add(u)
+        db.session.flush()
+        db.session.add(UserRole(user_id=u.id, role_id=role.id))
+
+        p = Project(name="InsTest-" + uuid.uuid4().hex[:8])
+        v_no_ins = Company(name="NoIns " + uuid.uuid4().hex[:6], company_type="vendor")
+        v_expired = Company(name="ExpiredIns " + uuid.uuid4().hex[:6], company_type="vendor")
+        v_expiring_soon = Company(name="ExpiringSoon " + uuid.uuid4().hex[:6], company_type="vendor")
+        v_ok = Company(name="OkIns " + uuid.uuid4().hex[:6], company_type="vendor")
+        db.session.add_all([p, v_no_ins, v_expired, v_expiring_soon, v_ok])
+        db.session.flush()
+
+        yesterday = date.today() - timedelta(days=1)
+        in_20_days = date.today() + timedelta(days=20)
+        in_60_days = date.today() + timedelta(days=60)
+
+        db.session.add(CompanyInsurancePolicy(
+            company_id=v_expired.id,
+            policy_type="General Liability",
+            expires_on=yesterday
+        ))
+        db.session.add(CompanyInsurancePolicy(
+            company_id=v_expiring_soon.id,
+            policy_type="General Liability",
+            expires_on=in_20_days
+        ))
+        db.session.add(CompanyInsurancePolicy(
+            company_id=v_ok.id,
+            policy_type="General Liability",
+            expires_on=in_60_days
+        ))
+        db.session.flush()
+
+        pid = str(p.id)
+        uid = str(u.id)
+        db.session.commit()
+
+    hdr = {"X-Usis-User-Id": uid}
+
+    r1 = client.post(
+        f"/api/v1/projects/{pid}/commitments",
+        json={
+            "commitment_kind": "purchase_order",
+            "vendor_company_id": str(v_no_ins.id),
+            "title": "No insurance PO",
+            "reference_number": "PO-NOINS",
+        },
+        headers=hdr,
+    )
+    assert r1.status_code == 201
+    assert r1.get_json()["item"]["vendor_insurance_status"] == "missing"
+    assert r1.get_json()["item"]["vendor_insurance_expires_on"] is None
+
+    r2 = client.post(
+        f"/api/v1/projects/{pid}/commitments",
+        json={
+            "commitment_kind": "purchase_order",
+            "vendor_company_id": str(v_expired.id),
+            "title": "Expired insurance PO",
+            "reference_number": "PO-EXP",
+        },
+        headers=hdr,
+    )
+    assert r2.status_code == 201
+    assert r2.get_json()["item"]["vendor_insurance_status"] == "expired"
+    assert r2.get_json()["item"]["vendor_insurance_expires_on"] is not None
+
+    r3 = client.post(
+        f"/api/v1/projects/{pid}/commitments",
+        json={
+            "commitment_kind": "purchase_order",
+            "vendor_company_id": str(v_expiring_soon.id),
+            "title": "Expiring soon PO",
+            "reference_number": "PO-SOON",
+        },
+        headers=hdr,
+    )
+    assert r3.status_code == 201
+    assert r3.get_json()["item"]["vendor_insurance_status"] == "expiring_soon"
+    assert r3.get_json()["item"]["vendor_insurance_expires_on"] is not None
+
+    r4 = client.post(
+        f"/api/v1/projects/{pid}/commitments",
+        json={
+            "commitment_kind": "purchase_order",
+            "vendor_company_id": str(v_ok.id),
+            "title": "OK insurance PO",
+            "reference_number": "PO-OK",
+        },
+        headers=hdr,
+    )
+    assert r4.status_code == 201
+    assert r4.get_json()["item"]["vendor_insurance_status"] == "ok"
+    assert r4.get_json()["item"]["vendor_insurance_expires_on"] is not None
+
+    r_list = client.get(f"/api/v1/projects/{pid}/commitments", headers=hdr)
+    assert r_list.status_code == 200
+    items = r_list.get_json()["items"]
+    assert len(items) == 4
+    for item in items:
+        assert "vendor_insurance_status" in item
+        assert item["vendor_insurance_status"] in ("missing", "expired", "expiring_soon", "ok")
+

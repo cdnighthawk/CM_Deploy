@@ -7,6 +7,10 @@ path is writable.
 
 Folder creation is best-effort: failures are logged and stored on the estimate
 and never roll back the estimate row. See ``docs/estimate-folder-provision.md``.
+
+After a ready path is committed, ``specialty_takeoff_enqueue`` may POST a
+best-effort ``usis.specialty_takeoff.v1`` job. That follower never raises and
+never blocks estimate create. See ``docs/specialty-takeoff-enqueue.md``.
 """
 from __future__ import annotations
 
@@ -484,12 +488,31 @@ def provision_estimate_folder_by_id(
             if persist and result.status != STATUS_UNCONFIGURED:
                 apply_result_to_estimate(est, result)
                 session.commit()
+                _notify_specialty_takeoff(est, result)
     except Exception:
         logger.exception("estimate folder provision could not persist status estimate_id=%s", eid)
         if result is None:
             return ProvisionResult(ok=False, status=STATUS_FAILED, error="provision persist failed")
     _expire_cached_estimate(eid)
     return result or ProvisionResult(ok=False, status=STATUS_FAILED, error="provision failed")
+
+
+def _notify_specialty_takeoff(est: Any, result: ProvisionResult) -> None:
+    """After folder fields commit, enqueue specialty takeoff. Never raises."""
+    if result.status != STATUS_READY:
+        return
+    folder_path = str(result.path or getattr(est, "folder_path", None) or "").strip()
+    if not folder_path:
+        return
+    try:
+        from .specialty_takeoff_enqueue import notify_folder_ready
+
+        notify_folder_ready(est, folder_path)
+    except Exception:
+        logger.exception(
+            "specialty takeoff enqueue crashed estimate_id=%s",
+            getattr(est, "id", None),
+        )
 
 
 def _expire_cached_estimate(estimate_id: uuid.UUID) -> None:

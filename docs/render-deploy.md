@@ -39,6 +39,8 @@ Optional overrides:
 | `CM_API_KEY` | Long-lived Bearer token for the Autodesk ingest PC (`GET /api/projects`, `GET /api/ingest/estimates`, JSON `POST /api/documents` / `POST /api/drawings`). Do not POST file bytes to those routes — mint native B2, then ack. Do not commit. |
 | `ESTIMATE_FOLDER_PROVISION_URL` | Base URL of `C:\usis-cm\folder_provision.py` (port **5055**). Example: `http://<data-server-host>:5055`. Must be reachable from Render. Do not set `ESTIMATE_FOLDER_ROOT` on Render. |
 | `ESTIMATE_FOLDER_PROVISION_TOKEN` | Shared secret; CM sends header `X-USIS-Provision-Token`. Must match the live agent. |
+| `SPECIALTY_TAKEOFF_QUEUE_URL` | Optional. After a ready folder provision, CM POSTs `usis.specialty_takeoff.v1` here. Unset skips the follower. See [specialty-takeoff-enqueue.md](specialty-takeoff-enqueue.md). |
+| `SPECIALTY_TAKEOFF_QUEUE_TOKEN` | Optional shared secret; header `X-USIS-Specialty-Takeoff-Token`. |
 
 ### Object storage (Backblaze B2, recommended for production uploads)
 

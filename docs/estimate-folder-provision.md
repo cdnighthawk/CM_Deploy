@@ -153,6 +153,13 @@ already existed. On failure return a non-2xx status and/or `"ok": false` with
 an `error` string. CM stores `folder_provision_status`, `folder_path`,
 `folder_provisioned_at`, and `folder_provision_error` on the estimate.
 
+## Specialty takeoff follower
+
+After `provision_estimate_folder_by_id` commits a `ready` result with a
+non-empty path, CM may POST that path to the specialty-takeoff queue. The
+call is best-effort and does not change provision success or failure. Contract,
+env vars, and the nine specialty slugs: [specialty-takeoff-enqueue.md](specialty-takeoff-enqueue.md).
+
 ## Local stub
 
 For tests and local HTTP without the Windows agent:

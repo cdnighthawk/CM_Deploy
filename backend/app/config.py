@@ -419,6 +419,23 @@ class Config:
     except ValueError:
         ESTIMATE_FOLDER_PROVISION_TIMEOUT_SEC = 20.0
 
+    # Optional HTTP enqueue after a ready folder provision. Unset = no-op.
+    # CM posts JSON only; it does not write the office share or the ingest drop folder.
+    # See docs/specialty-takeoff-enqueue.md.
+    SPECIALTY_TAKEOFF_QUEUE_URL: str | None = (
+        os.environ.get("SPECIALTY_TAKEOFF_QUEUE_URL") or ""
+    ).strip() or None
+    SPECIALTY_TAKEOFF_QUEUE_TOKEN: str | None = (
+        os.environ.get("SPECIALTY_TAKEOFF_QUEUE_TOKEN") or ""
+    ).strip() or None
+    SPECIALTY_TAKEOFF_SLUGS: str = (os.environ.get("SPECIALTY_TAKEOFF_SLUGS") or "").strip()
+    try:
+        SPECIALTY_TAKEOFF_QUEUE_TIMEOUT_SEC: float = float(
+            (os.environ.get("SPECIALTY_TAKEOFF_QUEUE_TIMEOUT_SEC") or "5").strip() or "5"
+        )
+    except ValueError:
+        SPECIALTY_TAKEOFF_QUEUE_TIMEOUT_SEC = 5.0
+
 
 def running_on_render() -> bool:
     """True when the process is a Render web/cron service (``RENDER=true``)."""

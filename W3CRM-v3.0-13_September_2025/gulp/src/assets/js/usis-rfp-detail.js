@@ -836,18 +836,18 @@
 					state.id = item.id;
 					state.mode = null;
 					state.createParams = null;
-					var newUrl = "usis-rfp-detail.html?id=" + encodeURIComponent(state.id);
-					if (window.history && window.history.replaceState) {
-						window.history.replaceState({}, "", newUrl);
-					} else {
-						window.location.replace(newUrl);
-					}
+				var newUrl = "usis-rfp-detail.html?id=" + encodeURIComponent(state.id);
+				if (window.history && window.history.replaceState) {
+					window.history.replaceState({}, "", newUrl);
+				} else {
+					window.location.replace(newUrl);
+				}
+				enableCreateModeActions();
+				return load().then(function (rfp) {
 					flash("RFP created.", "success");
-					enableCreateModeActions();
-					return load().then(function (rfp) {
-						if (window.usisLoadRfpVendorSuggestions) window.usisLoadRfpVendorSuggestions();
-						return rfp;
-					});
+					if (window.usisLoadRfpVendorSuggestions) window.usisLoadRfpVendorSuggestions();
+					return rfp;
+				});
 				})
 				.catch(function (err) {
 					flash(err.message || String(err), "error");

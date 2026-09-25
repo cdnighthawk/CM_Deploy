@@ -587,56 +587,80 @@
 			var codes = data.cost_codes || [];
 			var canEdit = data.can_edit;
 			var dis = canEdit ? "" : " disabled";
+			var req = canEdit ? " required" : "";
 			var html = '<div class="card mb-3"><div class="card-body"><h6 class="mb-3">Time Policy</h6>';
 			if (canEdit) {
-				html += '<form id="usis-time-policy-form">';
+				html += '<form id="usis-time-policy-form" novalidate>';
 				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
+				html += '<label class="form-label small">Timezone</label>';
+				html += '<input type="text" class="form-control form-control-sm" id="pol-timezone" value="' + esc(p.timezone != null ? p.timezone : "America/Los_Angeles") + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Timezone is required.</div>';
+				html += '</div>';
+				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Week start</label>';
-				html += '<select class="form-select form-select-sm" id="pol-week-start"' + dis + '>';
+				html += '<select class="form-select form-select-sm" id="pol-week-start"' + req + dis + '>';
 				["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].forEach(function (day) {
 					html += '<option value="' + esc(day) + '"' + (p.week_start === day ? " selected" : "") + '>' + esc(day.charAt(0).toUpperCase() + day.slice(1)) + '</option>';
 				});
 				html += '</select></div>';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">OT daily threshold (hours)</label>';
-				html += '<input type="number" step="0.5" class="form-control form-control-sm" id="pol-ot-daily" value="' + esc(p.ot_daily_hours || 8) + '"' + dis + '></div>';
+				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-ot-daily" value="' + esc(p.ot_daily_hours != null ? p.ot_daily_hours : 8) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
+				html += '</div>';
+				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">DT daily threshold (hours)</label>';
-				html += '<input type="number" step="0.5" class="form-control form-control-sm" id="pol-dt-daily" value="' + esc(p.dt_daily_hours || 12) + '"' + dis + '></div>';
+				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-dt-daily" value="' + esc(p.dt_daily_hours != null ? p.dt_daily_hours : 12) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
 				html += '</div>';
-				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">OT weekly threshold (hours)</label>';
-				html += '<input type="number" step="0.5" class="form-control form-control-sm" id="pol-ot-weekly" value="' + esc(p.ot_weekly_hours || 40) + '"' + dis + '></div>';
+				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-ot-weekly" value="' + esc(p.ot_weekly_hours != null ? p.ot_weekly_hours : 40) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Meal break after (hours)</label>';
-				html += '<input type="number" step="0.5" class="form-control form-control-sm" id="pol-meal-after" value="' + esc(p.meal_after_hours || 5) + '"' + dis + '></div>';
-				html += '<div class="col-md-4">';
-				html += '<label class="form-label small">Meal break duration (minutes)</label>';
-				html += '<input type="number" class="form-control form-control-sm" id="pol-meal-mins" value="' + esc(p.meal_minutes || 30) + '"' + dis + '></div>';
+				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-meal-after" value="' + esc(p.meal_after_hours != null ? p.meal_after_hours : 5) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
 				html += '</div>';
 				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
+				html += '<label class="form-label small">Meal break duration (minutes)</label>';
+				html += '<input type="number" min="0" class="form-control form-control-sm" id="pol-meal-mins" value="' + esc(p.meal_minutes != null ? p.meal_minutes : 30) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
+				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Second meal after (hours)</label>';
-				html += '<input type="number" step="0.5" class="form-control form-control-sm" id="pol-second-meal" value="' + esc(p.second_meal_after_hours || 10) + '"' + dis + '></div>';
+				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-second-meal" value="' + esc(p.second_meal_after_hours != null ? p.second_meal_after_hours : 10) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Rest break per 4h (minutes)</label>';
-				html += '<input type="number" class="form-control form-control-sm" id="pol-rest-mins" value="' + esc(p.rest_minutes_per_4h || 10) + '"' + dis + '></div>';
+				html += '<input type="number" min="0" class="form-control form-control-sm" id="pol-rest-mins" value="' + esc(p.rest_minutes_per_4h != null ? p.rest_minutes_per_4h : 10) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
+				html += '</div>';
+				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Geofence default mode</label>';
-				html += '<select class="form-select form-select-sm" id="pol-geofence"' + dis + '>';
+				html += '<select class="form-select form-select-sm" id="pol-geofence"' + req + dis + '>';
 				html += '<option value="flag"' + (p.geofence_default_mode === "flag" ? " selected" : "") + '>Flag</option>';
 				html += '<option value="block"' + (p.geofence_default_mode === "block" ? " selected" : "") + '>Block</option>';
 				html += '</select></div>';
-				html += '</div>';
-				html += '<div class="row g-3 mb-3">';
-				html += '<div class="col-md-6">';
+				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Open punch flag after (hours)</label>';
-				html += '<input type="number" step="0.5" class="form-control form-control-sm" id="pol-open-punch-flag" value="' + esc(p.open_punch_flag_after_hours || 12) + '"' + dis + '></div>';
-				html += '<div class="col-md-6">';
+				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-open-punch-flag" value="' + esc(p.open_punch_flag_after_hours != null ? p.open_punch_flag_after_hours : 12) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
+				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Breadcrumb interval (seconds)</label>';
-				html += '<input type="number" class="form-control form-control-sm" id="pol-breadcrumb-interval" value="' + esc(p.breadcrumb_min_interval_sec || 180) + '"' + dis + '></div>';
+				html += '<input type="number" min="0" class="form-control form-control-sm" id="pol-breadcrumb-interval" value="' + esc(p.breadcrumb_min_interval_sec != null ? p.breadcrumb_min_interval_sec : 180) + '"' + req + dis + '>';
+				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
+				html += '</div>';
 				html += '</div>';
 				html += '<div class="mb-3">';
 				html += '<div class="form-check">';
@@ -697,6 +721,10 @@
 			if (form) {
 				form.addEventListener("submit", function (e) {
 					e.preventDefault();
+					if (!form.checkValidity()) {
+						form.classList.add("was-validated");
+						return;
+					}
 					function num(id, fallback) {
 						var val = document.getElementById(id).value;
 						var n = parseFloat(val);
@@ -706,6 +734,7 @@
 						return document.getElementById(id).checked;
 					}
 					var payload = {
+						timezone: document.getElementById("pol-timezone").value,
 						week_start: document.getElementById("pol-week-start").value,
 						ot_daily_hours: num("pol-ot-daily", 8),
 						dt_daily_hours: num("pol-dt-daily", 12),
@@ -726,11 +755,11 @@
 						track_off_clock: chk("pol-track-off"),
 						show_own_cost_on_my_time: chk("pol-show-cost")
 					};
+					if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Policy saved");
 					fetchJson("/api/time/settings", { method: "PUT", body: payload }).then(function (res) {
-						if (window.USISUi && window.USISUi.toast) window.USISUi.toast("Policy saved");
 						location.reload();
 					}).catch(function (err) {
-						if (window.USISUi && window.USISUi.toast) window.USISUi.toast("Save failed", { kind: "danger" });
+						if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Save failed");
 					});
 				});
 			}
@@ -752,12 +781,14 @@
 				saveJson.addEventListener("click", function () {
 					try {
 						var parsed = JSON.parse(document.getElementById("usis-policy-json").value);
+						if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Policy saved from JSON");
 						fetchJson("/api/time/settings", { method: "PUT", body: parsed }).then(function () {
-							if (window.USISUi && window.USISUi.toast) window.USISUi.toast("Policy saved from JSON");
 							location.reload();
+						}).catch(function (err) {
+							if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Save failed");
 						});
 					} catch (e) {
-						if (window.USISUi && window.USISUi.toast) window.USISUi.toast("Invalid JSON", { kind: "danger" });
+						if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Invalid JSON");
 					}
 				});
 			}

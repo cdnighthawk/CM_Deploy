@@ -603,77 +603,81 @@
 		var isPo = kindFilter === "purchase_order";
 		if (!rows.length) {
 			tb.innerHTML = '<tr><td colspan="' + (isPo ? 9 : 7) + '" class="text-muted small">No items yet.</td></tr>';
-			return;
-		}
-		rows.forEach(function (row) {
-			var chip = window.USISUi && window.USISUi.statusChip
-				? window.USISUi.statusChip(row.status)
-				: '<span class="badge bg-light text-dark border">' + esc(row.status) + "</span>";
-			var fulfill = "";
-			if (isPo) {
-				var late = row.missed_ship_date ? ' <span class="text-danger small">late</span>' : "";
-				fulfill =
+		} else {
+			rows.forEach(function (row) {
+				var chip = window.USISUi && window.USISUi.statusChip
+					? window.USISUi.statusChip(row.status)
+					: '<span class="badge bg-light text-dark border">' + esc(row.status) + "</span>";
+				var fulfill = "";
+				if (isPo) {
+					var late = row.missed_ship_date ? ' <span class="text-danger small">late</span>' : "";
+					fulfill =
+						"<td>" +
+						(window.USISUi && window.USISUi.statusChip
+							? window.USISUi.statusChip(row.fulfillment_status || "open")
+							: esc(row.fulfillment_status || "open")) +
+						"</td><td>" +
+						esc(row.ship_date || "—") +
+						late +
+						"</td>";
+				}
+				var tr = document.createElement("tr");
+				tr.innerHTML =
 					"<td>" +
-					(window.USISUi && window.USISUi.statusChip
-						? window.USISUi.statusChip(row.fulfillment_status || "open")
-						: esc(row.fulfillment_status || "open")) +
+					esc(row.reference_number || "—") +
 					"</td><td>" +
-					esc(row.ship_date || "—") +
-					late +
+					esc(row.title || "") +
+					"</td><td>" +
+					esc(row.vendor_name || "") +
+					"</td><td>" +
+					linkedRfpCell(row) +
+					"</td><td>" +
+					chip +
+					"</td>" +
+					fulfill +
+					'<td class="text-end">' +
+					esc(row.total_amount != null ? row.total_amount : "—") +
+					'</td><td class="text-end">' +
+					(window.USISUi && window.USISUi.rowMenu
+						? window.USISUi.rowMenu({
+								id: row.id,
+								editClass: "usis-c-open",
+								deleteClass: "usis-c-del",
+								createTarget: isPo ? "#usis-po-open-create" : ".usis-procurement-new-sub",
+							})
+						: '<button type="button" class="btn btn-link btn-sm p-0 usis-c-open" data-id="' +
+							esc(row.id) +
+							'">Edit</button>') +
 					"</td>";
-			}
-			var tr = document.createElement("tr");
-			tr.innerHTML =
-				"<td>" +
-				esc(row.reference_number || "—") +
-				"</td><td>" +
-				esc(row.title || "") +
-				"</td><td>" +
-				esc(row.vendor_name || "") +
-				"</td><td>" +
-				linkedRfpCell(row) +
-				"</td><td>" +
-				chip +
-				"</td>" +
-				fulfill +
-				'<td class="text-end">' +
-				esc(row.total_amount != null ? row.total_amount : "—") +
-				'</td><td class="text-end">' +
-				(window.USISUi && window.USISUi.rowMenu
-					? window.USISUi.rowMenu({
-							id: row.id,
-							editClass: "usis-c-open",
-							deleteClass: "usis-c-del",
-							createTarget: isPo ? "#usis-po-open-create" : ".usis-procurement-new-sub",
+				tb.appendChild(tr);
+			});
+			tb.querySelectorAll(".usis-c-open").forEach(function (btn) {
+				btn.addEventListener("click", function () {
+					openEditModal(btn.getAttribute("data-id"));
+				});
+			});
+			tb.querySelectorAll(".usis-c-del").forEach(function (btn) {
+				btn.addEventListener("click", function () {
+					var cid = btn.getAttribute("data-id");
+					if (!cid || !window.confirm("Delete this " + kindLabel(kindFilter).toLowerCase() + "?")) return;
+					fetchEmpty(
+						"DELETE",
+						"/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments/" + encodeURIComponent(cid)
+					)
+						.then(function () {
+							toastOk(kindLabel(kindFilter) + " deleted.");
+							return loadCommitmentsList();
 						})
-					: '<button type="button" class="btn btn-link btn-sm p-0 usis-c-open" data-id="' +
-						esc(row.id) +
-						'">Edit</button>') +
-				"</td>";
-			tb.appendChild(tr);
-		});
-		tb.querySelectorAll(".usis-c-open").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				openEditModal(btn.getAttribute("data-id"));
+						.catch(function (e) {
+							toastErr(e.message || String(e));
+						});
+				});
 			});
-		});
-		tb.querySelectorAll(".usis-c-del").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				var cid = btn.getAttribute("data-id");
-				if (!cid || !window.confirm("Delete this " + kindLabel(kindFilter).toLowerCase() + "?")) return;
-				fetchEmpty(
-					"DELETE",
-					"/api/v1/projects/" + encodeURIComponent(projectId) + "/commitments/" + encodeURIComponent(cid)
-				)
-					.then(function () {
-						toastOk(kindLabel(kindFilter) + " deleted.");
-						return loadCommitmentsList();
-					})
-					.catch(function (e) {
-						toastErr(e.message || String(e));
-					});
-			});
-		});
+		}
+		if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+			var totalColIndex = isPo ? 6 : 5;
+			window.USISUi.addMoneyTotalsRow(tb, [{ index: totalColIndex, label: "Total" }]);
+		}
 	}
 	function loadCommitmentsList() {
 		if (!projectId) {

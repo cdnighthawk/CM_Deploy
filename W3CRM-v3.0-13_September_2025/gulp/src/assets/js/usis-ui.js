@@ -363,6 +363,60 @@
 		);
 	}
 
+	function addMoneyTotalsRow(tbody, columnSpecs) {
+		if (!tbody) return;
+		var rows = Array.from(tbody.querySelectorAll("tr"));
+		var existingFooter = rows.find(function (r) {
+			return r.classList.contains("usis-totals-row");
+		});
+		if (existingFooter) existingFooter.remove();
+		var totals = {};
+		columnSpecs.forEach(function (spec) {
+			totals[spec.index] = 0;
+		});
+		var dataRows = rows.filter(function (r) {
+			return !r.classList.contains("usis-totals-row") && !r.querySelector("td[colspan]");
+		});
+		dataRows.forEach(function (row) {
+			var cells = Array.from(row.querySelectorAll("td"));
+			columnSpecs.forEach(function (spec) {
+				var cell = cells[spec.index];
+				if (cell) {
+					var input = cell.querySelector("input");
+					var text = input ? input.value : cell.textContent;
+					text = String(text).replace(/[^0-9.\-]/g, "");
+					var val = parseFloat(text);
+					if (!isNaN(val)) totals[spec.index] += val;
+				}
+			});
+		});
+		var totalCells = [];
+		var maxIndex = 0;
+		columnSpecs.forEach(function (spec) {
+			if (spec.index > maxIndex) maxIndex = spec.index;
+		});
+		for (var i = 0; i <= maxIndex; i++) {
+			if (totals[i] !== undefined) {
+				var fmt = totals[i].toLocaleString(undefined, {
+					style: "currency",
+					currency: "USD",
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
+				});
+				totalCells[i] = '<td class="text-end fw-bold">' + esc(fmt) + "</td>";
+			} else if (i === 0) {
+				var label = columnSpecs[0] && columnSpecs[0].label ? columnSpecs[0].label : "Total";
+				totalCells[i] = '<td class="fw-bold">' + esc(label) + "</td>";
+			} else {
+				totalCells[i] = "<td></td>";
+			}
+		}
+		var tr = document.createElement("tr");
+		tr.className = "usis-totals-row table-light";
+		tr.innerHTML = totalCells.join("");
+		tbody.appendChild(tr);
+	}
+
 	global.USISUi = {
 		statusChip: statusChip,
 		severityChip: severityChip,
@@ -374,6 +428,7 @@
 		downloadFiles: downloadFiles,
 		rowMenu: rowMenu,
 		rowMenuHtml: rowMenuHtml,
+		addMoneyTotalsRow: addMoneyTotalsRow,
 	};
 
 	bindRowMenuNew();

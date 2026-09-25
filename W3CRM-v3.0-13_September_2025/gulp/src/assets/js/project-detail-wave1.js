@@ -131,41 +131,91 @@
 			} else {
 				tbody.innerHTML = emptyRow(cols, emptyMsg);
 			}
-			return;
-		}
-		var createTarget =
-			kind === "cpr" ? "#usis-ca-cpr-add" : kind === "sco" ? "#usis-sco-add" : "#usis-ca-co-add";
-		var delClass =
-			kind === "cpr" ? "usis-cpr-del" : kind === "sco" ? "usis-sco-del" : "usis-co-del";
-		var chip = function (st) {
-			return window.USISUi && window.USISUi.statusChip ? window.USISUi.statusChip(st || "") : esc(st || "");
-		};
-		var openHref = function (it) {
-			var pid = projectId();
-			var page =
-				kind === "cpr"
-					? "construction/cpr-create.html"
-					: kind === "sco"
-						? "construction/sco-create.html"
-						: "construction/prime-co-create.html";
-			return page + "?project_id=" + encodeURIComponent(pid) + "&id=" + encodeURIComponent(it.id);
-		};
-		tbody.innerHTML = items
-			.map(function (it) {
-				var extras = convert
-					? [{ label: "To prime CO", className: "usis-cpr-to-co", data: { id: it.id } }]
-					: [];
-				var menu =
-					window.USISUi && window.USISUi.rowMenu
-						? window.USISUi.rowMenu({
-								id: it.id,
-								createTarget: createTarget,
-								deleteClass: delClass,
-								extras: extras,
-							})
-						: "";
-				var open = '<a class="text-decoration-none" href="' + esc(openHref(it)) + '">';
-				if (kind === "cpr") {
+		} else {
+			var createTarget =
+				kind === "cpr" ? "#usis-ca-cpr-add" : kind === "sco" ? "#usis-sco-add" : "#usis-ca-co-add";
+			var delClass =
+				kind === "cpr" ? "usis-cpr-del" : kind === "sco" ? "usis-sco-del" : "usis-co-del";
+			var chip = function (st) {
+				return window.USISUi && window.USISUi.statusChip ? window.USISUi.statusChip(st || "") : esc(st || "");
+			};
+			var openHref = function (it) {
+				var pid = projectId();
+				var page =
+					kind === "cpr"
+						? "construction/cpr-create.html"
+						: kind === "sco"
+							? "construction/sco-create.html"
+							: "construction/prime-co-create.html";
+				return page + "?project_id=" + encodeURIComponent(pid) + "&id=" + encodeURIComponent(it.id);
+			};
+			tbody.innerHTML = items
+				.map(function (it) {
+					var extras = convert
+						? [{ label: "To prime CO", className: "usis-cpr-to-co", data: { id: it.id } }]
+						: [];
+					var menu =
+						window.USISUi && window.USISUi.rowMenu
+							? window.USISUi.rowMenu({
+									id: it.id,
+									createTarget: createTarget,
+									deleteClass: delClass,
+									extras: extras,
+								})
+							: "";
+					var open = '<a class="text-decoration-none" href="' + esc(openHref(it)) + '">';
+					if (kind === "cpr") {
+						return (
+							"<tr>" +
+							"<td>" +
+							open +
+							esc(it.number || "") +
+							"</a></td><td>" +
+							open +
+							esc(it.subject || it.title || "") +
+							"</a></td><td>" +
+							esc(it.origin || "") +
+							"</td><td>" +
+							esc(it.impacted_company_name || "") +
+							"</td><td>" +
+							chip(it.status) +
+							"</td><td>" +
+							esc(it.status_date || "") +
+							'</td><td class="text-end">' +
+							money(it.amount) +
+							"</td><td>" +
+							esc(it.source_tm_ticket_id ? "T&M" : "—") +
+							"</td><td>" +
+							esc(it.prime_co_number || "—") +
+							'</td><td class="text-end">' +
+							menu +
+							"</td></tr>"
+						);
+					}
+					if (kind === "sco") {
+						return (
+							"<tr>" +
+							"<td>" +
+							open +
+							esc(it.number || "") +
+							"</a></td><td>" +
+							esc(it.subcontract_number || "") +
+							"</td><td>" +
+							esc(it.vendor_name || "") +
+							"</td><td>" +
+							open +
+							esc(it.subject || "") +
+							"</a></td><td>" +
+							chip(it.status) +
+							"</td><td>" +
+							esc(it.status_date || "") +
+							'</td><td class="text-end">' +
+							money(it.amount) +
+							'</td><td class="text-end">' +
+							menu +
+							"</td></tr>"
+						);
+					}
 					return (
 						"<tr>" +
 						"<td>" +
@@ -175,74 +225,28 @@
 						open +
 						esc(it.subject || it.title || "") +
 						"</a></td><td>" +
-						esc(it.origin || "") +
-						"</td><td>" +
-						esc(it.impacted_company_name || "") +
-						"</td><td>" +
 						chip(it.status) +
 						"</td><td>" +
 						esc(it.status_date || "") +
 						'</td><td class="text-end">' +
 						money(it.amount) +
 						"</td><td>" +
-						esc(it.source_tm_ticket_id ? "T&M" : "—") +
+						esc(it.contract_number || "") +
 						"</td><td>" +
-						esc(it.prime_co_number || "—") +
+						esc(it.gc_company_name || "USIS") +
+						"</td><td>" +
+						(it.revises_contract || it.approved_revises_contract ? "Yes" : "No") +
 						'</td><td class="text-end">' +
 						menu +
 						"</td></tr>"
 					);
-				}
-				if (kind === "sco") {
-					return (
-						"<tr>" +
-						"<td>" +
-						open +
-						esc(it.number || "") +
-						"</a></td><td>" +
-						esc(it.subcontract_number || "") +
-						"</td><td>" +
-						esc(it.vendor_name || "") +
-						"</td><td>" +
-						open +
-						esc(it.subject || "") +
-						"</a></td><td>" +
-						chip(it.status) +
-						"</td><td>" +
-						esc(it.status_date || "") +
-						'</td><td class="text-end">' +
-						money(it.amount) +
-						'</td><td class="text-end">' +
-						menu +
-						"</td></tr>"
-					);
-				}
-				return (
-					"<tr>" +
-					"<td>" +
-					open +
-					esc(it.number || "") +
-					"</a></td><td>" +
-					open +
-					esc(it.subject || it.title || "") +
-					"</a></td><td>" +
-					chip(it.status) +
-					"</td><td>" +
-					esc(it.status_date || "") +
-					'</td><td class="text-end">' +
-					money(it.amount) +
-					"</td><td>" +
-					esc(it.contract_number || "") +
-					"</td><td>" +
-					esc(it.gc_company_name || "USIS") +
-					"</td><td>" +
-					(it.revises_contract || it.approved_revises_contract ? "Yes" : "No") +
-					'</td><td class="text-end">' +
-					menu +
-					"</td></tr>"
-				);
-			})
-			.join("");
+				})
+				.join("");
+		}
+		if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+			var amountColIndex = kind === "cpr" ? 6 : kind === "sco" ? 6 : 4;
+			window.USISUi.addMoneyTotalsRow(tbody, [{ index: amountColIndex, label: "Total" }]);
+		}
 	}
 
 	function loadCprs() {

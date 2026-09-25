@@ -674,13 +674,30 @@ def register_extra_routes(bp: Blueprint) -> None:
         if not isinstance(data, Mapping):
             return _jsonify({"error": "expected JSON object body"}), 400
         le_id = _parse_uuid_param(str(data.get("lead_estimate_id") or "").strip())
-        pj_id = _parse_uuid_param(str(data.get("project_id") or "").strip())
+        
+        pj_id_raw = str(data.get("project_id") or "").strip()
+        pj_id = _parse_uuid_param(pj_id_raw)
+        if pj_id_raw and not pj_id:
+            return _jsonify({"error": "project_id must be a valid UUID"}), 400
+        if pj_id and not _project_exists(pj_id):
+            return _jsonify({"error": "project_id does not exist or you do not have access"}), 400
+        
+        est_id_raw = str(data.get("estimate_id") or data.get("source_estimate_id") or "").strip()
+        est_id = _parse_uuid_param(est_id_raw)
+        if est_id_raw and not est_id:
+            return _jsonify({"error": "estimate_id must be a valid UUID"}), 400
+        if est_id and pj_id:
+            est = db.session.get(Estimate, est_id)
+            if est is None:
+                return _jsonify({"error": "estimate_id does not exist"}), 400
+            if est.project_id != pj_id:
+                return _jsonify({"error": "estimate_id does not belong to the specified project"}), 400
+        
         title = str(data.get("title") or "RFP")[:500]
         token = secrets.token_urlsafe(32)[:64]
         source = str(data.get("line_source") or "").strip().lower()
         if source not in ("takeoff", "manual", "narrative"):
             source = default_line_source(pj_id, le_id)
-        est_id = _parse_uuid_param(str(data.get("estimate_id") or data.get("source_estimate_id") or "").strip())
         remaining = bool(data.get("remaining") or data.get("remaining_scopes"))
         if remaining:
             source = "takeoff"

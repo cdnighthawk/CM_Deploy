@@ -630,7 +630,7 @@
 					showInsuranceWarning("missing", null);
 					return;
 				}
-				var today = new Date();
+				var today = dateStringToday();
 				var mostRecentPolicy = null;
 				items.forEach(function (policy) {
 					if (policy.expires_on) {
@@ -643,13 +643,13 @@
 					showInsuranceWarning("missing", null);
 					return;
 				}
-				var expiresOn = new Date(mostRecentPolicy.expires_on);
+				var expiresOn = mostRecentPolicy.expires_on;
 				if (expiresOn < today) {
-					showInsuranceWarning("expired", mostRecentPolicy.expires_on);
+					showInsuranceWarning("expired", expiresOn);
 				} else {
-					var threshold = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+					var threshold = dateStringAddDays(today, 30);
 					if (expiresOn <= threshold) {
-						showInsuranceWarning("expiring_soon", mostRecentPolicy.expires_on);
+						showInsuranceWarning("expiring_soon", expiresOn);
 					} else {
 						hideInsuranceWarning();
 					}
@@ -658,6 +658,18 @@
 			.catch(function () {
 				hideInsuranceWarning();
 			});
+	}
+
+	function dateStringToday() {
+		var d = new Date();
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
+
+	function dateStringAddDays(dateStr, days) {
+		var parts = dateStr.split("-");
+		var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+		d.setDate(d.getDate() + days);
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 	}
 
 	function showInsuranceWarning(status, expiresOn) {

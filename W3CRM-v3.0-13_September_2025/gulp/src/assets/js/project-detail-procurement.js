@@ -218,6 +218,8 @@
 	}
 	function checkVendorInsurance(companyId, context) {
 		if (!companyId) {
+			var existingWarning = document.getElementById("usis-c-" + context + "-insurance-warning");
+			if (existingWarning) existingWarning.remove();
 			return;
 		}
 		fetchJson("/api/v1/companies/" + encodeURIComponent(companyId) + "/insurance")
@@ -227,7 +229,7 @@
 					showVendorInsuranceWarning("missing", null, "usis-c-" + context + "-insurance-warning", context);
 					return;
 				}
-				var today = new Date();
+				var today = dateStringToday();
 				var mostRecentPolicy = null;
 				items.forEach(function (policy) {
 					if (policy.expires_on) {
@@ -240,18 +242,33 @@
 					showVendorInsuranceWarning("missing", null, "usis-c-" + context + "-insurance-warning", context);
 					return;
 				}
-				var expiresOn = new Date(mostRecentPolicy.expires_on);
+				var expiresOn = mostRecentPolicy.expires_on;
 				if (expiresOn < today) {
-					showVendorInsuranceWarning("expired", mostRecentPolicy.expires_on, "usis-c-" + context + "-insurance-warning", context);
+					showVendorInsuranceWarning("expired", expiresOn, "usis-c-" + context + "-insurance-warning", context);
 				} else {
-					var threshold = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+					var threshold = dateStringAddDays(today, 30);
 					if (expiresOn <= threshold) {
-						showVendorInsuranceWarning("expiring_soon", mostRecentPolicy.expires_on, "usis-c-" + context + "-insurance-warning", context);
+						showVendorInsuranceWarning("expiring_soon", expiresOn, "usis-c-" + context + "-insurance-warning", context);
+					} else {
+						var existingWarning = document.getElementById("usis-c-" + context + "-insurance-warning");
+						if (existingWarning) existingWarning.remove();
 					}
 				}
 			})
 			.catch(function () {
+				var existingWarning = document.getElementById("usis-c-" + context + "-insurance-warning");
+				if (existingWarning) existingWarning.remove();
 			});
+	}
+	function dateStringToday() {
+		var d = new Date();
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+	}
+	function dateStringAddDays(dateStr, days) {
+		var parts = dateStr.split("-");
+		var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+		d.setDate(d.getDate() + days);
+		return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 	}
 	function wireVendorComboboxes() {
 		wireEntityCombobox("usis-c-create-vendor-q", "usis-c-create-vendor-menu", "usis-c-create-vendor-id", searchDirectoryCompanies, function (it) {
@@ -449,6 +466,8 @@
 		var addBtn = document.getElementById("usis-c-create-vendor-add-dir");
 		if (hint) hint.classList.add("d-none");
 		if (addBtn) addBtn.classList.add("d-none");
+		var insuranceWarning = document.getElementById("usis-c-create-insurance-warning");
+		if (insuranceWarning) insuranceWarning.remove();
 	}
 	function buildCreatePayload(kind) {
 		var status = document.getElementById("usis-c-create-status").value;

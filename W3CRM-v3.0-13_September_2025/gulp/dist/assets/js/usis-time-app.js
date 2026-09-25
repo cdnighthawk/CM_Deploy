@@ -585,16 +585,27 @@
 		fetchJson("/api/time/settings").then(function (data) {
 			var p = data.policy || {};
 			var codes = data.cost_codes || [];
-			var canEdit = data.can_edit;
+			var canEdit = !!data.can_edit;
 			var dis = canEdit ? "" : " disabled";
 			var req = canEdit ? " required" : "";
+			var timezones = [];
+			try {
+				timezones = Intl.supportedValuesOf("timeZone");
+			} catch (e) {
+				timezones = ["America/Los_Angeles", "America/New_York", "America/Chicago", "America/Denver", "America/Phoenix"];
+			}
 			var html = '<div class="card mb-3"><div class="card-body"><h6 class="mb-3">Time Policy</h6>';
 			if (canEdit) {
 				html += '<form id="usis-time-policy-form" novalidate>';
 				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Timezone</label>';
-				html += '<input type="text" class="form-control form-control-sm" id="pol-timezone" value="' + esc(p.timezone != null ? p.timezone : "America/Los_Angeles") + '"' + req + dis + '>';
+				html += '<select class="form-select form-select-sm" id="pol-timezone"' + req + dis + '>';
+				var selTz = p.timezone != null ? p.timezone : "America/Los_Angeles";
+				timezones.forEach(function (tz) {
+					html += '<option value="' + esc(tz) + '"' + (tz === selTz ? " selected" : "") + '>' + esc(tz) + '</option>';
+				});
+				html += '</select>';
 				html += '<div class="invalid-feedback">Timezone is required.</div>';
 				html += '</div>';
 				html += '<div class="col-md-4">';
@@ -664,35 +675,35 @@
 				html += '</div>';
 				html += '<div class="mb-3">';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-7th-day-ot"' + (p.seventh_day_ot ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-7th-day-ot"' + (!!p.seventh_day_ot ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-7th-day-ot">7th day overtime</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-require-cost"' + (p.require_cost_code ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-require-cost"' + (!!p.require_cost_code ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-require-cost">Require cost code on punch</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-daily-signoff"' + (p.require_daily_signoff ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-daily-signoff"' + (!!p.require_daily_signoff ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-daily-signoff">Require daily sign-off</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-supervisor-approve"' + (p.require_supervisor_approve_before_export ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-supervisor-approve"' + (!!p.require_supervisor_approve_before_export ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-supervisor-approve">Require supervisor approval before export</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-block-flags"' + (p.block_export_with_open_flags ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-block-flags"' + (!!p.block_export_with_open_flags ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-block-flags">Block export with open flags</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-web-punch"' + (p.web_punch_allowed ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-web-punch"' + (!!p.web_punch_allowed ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-web-punch">Web punch allowed</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-track-off"' + (p.track_off_clock ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-track-off"' + (!!p.track_off_clock ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-track-off">Track off-clock location</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-show-cost"' + (p.show_own_cost_on_my_time ? " checked" : "") + dis + '>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-show-cost"' + (!!p.show_own_cost_on_my_time ? " checked" : "") + dis + '>';
 				html += '<label class="form-check-label" for="pol-show-cost">Show own cost on My Time</label>';
 				html += '</div>';
 				html += '</div>';
@@ -702,9 +713,8 @@
 				html += '</div>';
 				html += '</form>';
 				html += '<div class="collapse mt-3" id="usis-json-editor">';
-				html += '<label class="form-label small">Advanced JSON editor</label>';
-				html += '<textarea class="form-control form-control-sm mb-2" id="usis-policy-json" rows="10">' + esc(JSON.stringify(p, null, 2)) + '</textarea>';
-				html += '<button class="btn btn-sm btn-primary" id="usis-save-json">Save from JSON</button>';
+				html += '<label class="form-label small">Advanced JSON — current form state</label>';
+				html += '<textarea class="form-control form-control-sm" id="usis-policy-json" rows="10" readonly></textarea>';
 				html += '</div>';
 			} else {
 				html += '<div class="alert alert-info small">Payroll admin access required to edit policy.</div>';
@@ -717,8 +727,48 @@
 			});
 			html += "</tbody></table></div></div>";
 			document.getElementById("usis-set").innerHTML = html;
+			function updateJsonPreview() {
+				var jsonEl = document.getElementById("usis-policy-json");
+				if (!jsonEl) return;
+				function num(id, fallback) {
+					var val = document.getElementById(id).value;
+					var n = parseFloat(val);
+					return isNaN(n) ? fallback : n;
+				}
+				function chk(id) {
+					return document.getElementById(id).checked;
+				}
+				var payload = {
+					timezone: document.getElementById("pol-timezone").value,
+					week_start: document.getElementById("pol-week-start").value,
+					ot_daily_hours: num("pol-ot-daily", 8),
+					dt_daily_hours: num("pol-dt-daily", 12),
+					ot_weekly_hours: num("pol-ot-weekly", 40),
+					meal_after_hours: num("pol-meal-after", 5),
+					meal_minutes: num("pol-meal-mins", 30),
+					second_meal_after_hours: num("pol-second-meal", 10),
+					rest_minutes_per_4h: num("pol-rest-mins", 10),
+					geofence_default_mode: document.getElementById("pol-geofence").value,
+					open_punch_flag_after_hours: num("pol-open-punch-flag", 12),
+					breadcrumb_min_interval_sec: num("pol-breadcrumb-interval", 180),
+					seventh_day_ot: chk("pol-7th-day-ot"),
+					require_cost_code: chk("pol-require-cost"),
+					require_daily_signoff: chk("pol-daily-signoff"),
+					require_supervisor_approve_before_export: chk("pol-supervisor-approve"),
+					block_export_with_open_flags: chk("pol-block-flags"),
+					web_punch_allowed: chk("pol-web-punch"),
+					track_off_clock: chk("pol-track-off"),
+					show_own_cost_on_my_time: chk("pol-show-cost")
+				};
+				jsonEl.value = JSON.stringify(payload, null, 2);
+			}
 			var form = document.getElementById("usis-time-policy-form");
 			if (form) {
+				form.querySelectorAll("input, select").forEach(function (el) {
+					el.addEventListener("input", updateJsonPreview);
+					el.addEventListener("change", updateJsonPreview);
+				});
+				updateJsonPreview();
 				form.addEventListener("submit", function (e) {
 					e.preventDefault();
 					if (!form.checkValidity()) {
@@ -755,8 +805,8 @@
 						track_off_clock: chk("pol-track-off"),
 						show_own_cost_on_my_time: chk("pol-show-cost")
 					};
-					if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Policy saved");
 					fetchJson("/api/time/settings", { method: "PUT", body: payload }).then(function (res) {
+						if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Policy saved");
 						location.reload();
 					}).catch(function (err) {
 						if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Save failed");
@@ -773,22 +823,6 @@
 						} else {
 							editor.classList.add("show");
 						}
-					}
-				});
-			}
-			var saveJson = document.getElementById("usis-save-json");
-			if (saveJson) {
-				saveJson.addEventListener("click", function () {
-					try {
-						var parsed = JSON.parse(document.getElementById("usis-policy-json").value);
-						if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Policy saved from JSON");
-						fetchJson("/api/time/settings", { method: "PUT", body: parsed }).then(function () {
-							location.reload();
-						}).catch(function (err) {
-							if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Save failed");
-						});
-					} catch (e) {
-						if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Invalid JSON");
 					}
 				});
 			}

@@ -178,7 +178,14 @@ def swap_main(html: str, filename: str, script: str, main: str) -> str:
     if start < 0 or end < 0:
         raise SystemExit("contractors dist html missing main")
     html = html[:start] + main + html[end + len("</main>") :]
-    html = html.replace("assets/js/usis-platform-contractors.js", "assets/js/" + script)
+    old_script = "assets/js/usis-platform-contractors.js"
+    new_script = "assets/js/" + script
+    html = html.replace(old_script, new_script)
+    if script.startswith("usis-settings.js"):
+        script_tag = f'<script src="{new_script}"></script>'
+        notify_tag = '<script src="assets/js/usis-notify.js"></script>'
+        if notify_tag not in html and script_tag in html:
+            html = html.replace(script_tag, f'{notify_tag}\n\t{script_tag}')
     m0 = html.find('<div class="modal fade" id="usis-pc-modal"')
     marker = '<script src="assets/js/usis-auth-links.js">'
     m1 = html.find(marker)
@@ -224,7 +231,7 @@ def main() -> None:
     _copy_assets()
     base = (DIST / "usis-platform-contractors.html").read_text(encoding="utf-8")
     (DIST / "usis-settings.html").write_text(
-        swap_main(base, "usis-settings.html", "usis-settings.js", SETTINGS_MAIN),
+        swap_main(base, "usis-settings.html", "usis-settings.js?v=20260925a", SETTINGS_MAIN),
         encoding="utf-8",
     )
     (DIST / "usis-admin.html").write_text(

@@ -363,6 +363,97 @@
 		);
 	}
 
+	function addMoneyTotalsRow(tbody, rawItems, columnSpecs, totalCols) {
+		if (!tbody) return;
+		var existingFooter = tbody.querySelector("tr.usis-totals-row");
+		if (existingFooter) existingFooter.remove();
+		var totals = {};
+		columnSpecs.forEach(function (spec) {
+			totals[spec.field] = 0;
+		});
+		(rawItems || []).forEach(function (item) {
+			columnSpecs.forEach(function (spec) {
+				var val = parseFloat(item[spec.field]);
+				if (!isNaN(val)) totals[spec.field] += val;
+			});
+		});
+		var totalCells = [];
+		for (var i = 0; i < totalCols; i++) {
+			var spec = columnSpecs.find(function (s) {
+				return s.index === i;
+			});
+			if (spec && totals[spec.field] !== undefined) {
+				var fmt = totals[spec.field].toLocaleString("en-US", {
+					style: "currency",
+					currency: "USD",
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
+				});
+				totalCells.push('<td class="text-end fw-bold">' + esc(fmt) + "</td>");
+			} else if (i === 0) {
+				var label = columnSpecs[0] && columnSpecs[0].label ? columnSpecs[0].label : "Total";
+				totalCells.push('<td class="fw-bold">' + esc(label) + "</td>");
+			} else {
+				totalCells.push("<td></td>");
+			}
+		}
+		var tr = document.createElement("tr");
+		tr.className = "usis-totals-row table-light";
+		tr.innerHTML = totalCells.join("");
+		tbody.appendChild(tr);
+	}
+
+	function addMoneyTotalsRowFromInputs(tbody, columnSpecs, totalCols) {
+		if (!tbody) return;
+		var existingFooter = tbody.querySelector("tr.usis-totals-row");
+		if (existingFooter) existingFooter.remove();
+		var totals = {};
+		columnSpecs.forEach(function (spec) {
+			totals[spec.index] = 0;
+		});
+		var rows = Array.from(tbody.querySelectorAll("tr"));
+		var dataRows = rows.filter(function (r) {
+			return !r.classList.contains("usis-totals-row") && !r.querySelector("td[colspan]");
+		});
+		dataRows.forEach(function (row) {
+			var cells = Array.from(row.querySelectorAll("td"));
+			columnSpecs.forEach(function (spec) {
+				var cell = cells[spec.index];
+				if (cell) {
+					var input = cell.querySelector("input");
+					var text = input ? input.value : cell.textContent;
+					text = String(text).replace(/[^0-9.\-]/g, "");
+					var val = parseFloat(text);
+					if (!isNaN(val)) totals[spec.index] += val;
+				}
+			});
+		});
+		var totalCells = [];
+		for (var i = 0; i < totalCols; i++) {
+			var spec = columnSpecs.find(function (s) {
+				return s.index === i;
+			});
+			if (spec && totals[spec.index] !== undefined) {
+				var fmt = totals[spec.index].toLocaleString("en-US", {
+					style: "currency",
+					currency: "USD",
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
+				});
+				totalCells.push('<td class="text-end fw-bold">' + esc(fmt) + "</td>");
+			} else if (i === 0) {
+				var label = columnSpecs[0] && columnSpecs[0].label ? columnSpecs[0].label : "Total";
+				totalCells.push('<td class="fw-bold">' + esc(label) + "</td>");
+			} else {
+				totalCells.push("<td></td>");
+			}
+		}
+		var tr = document.createElement("tr");
+		tr.className = "usis-totals-row table-light";
+		tr.innerHTML = totalCells.join("");
+		tbody.appendChild(tr);
+	}
+
 	global.USISUi = {
 		statusChip: statusChip,
 		severityChip: severityChip,
@@ -374,6 +465,8 @@
 		downloadFiles: downloadFiles,
 		rowMenu: rowMenu,
 		rowMenuHtml: rowMenuHtml,
+		addMoneyTotalsRow: addMoneyTotalsRow,
+		addMoneyTotalsRowFromInputs: addMoneyTotalsRowFromInputs,
 	};
 
 	bindRowMenuNew();

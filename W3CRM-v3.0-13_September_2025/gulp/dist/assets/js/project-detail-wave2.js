@@ -98,6 +98,18 @@
 									? "No sub invoices."
 									: "None yet.";
 					tbody.innerHTML = emptyCell(cols, emptyTitle);
+					if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+						if (cfg.kind === "po-change-orders") {
+							window.USISUi.addMoneyTotalsRow(tbody, items, [{ index: 5, field: "amount", label: "Total" }], cols);
+						} else if (cfg.kind === "sub-invoices") {
+							window.USISUi.addMoneyTotalsRow(tbody, items, [
+								{ index: 5, field: "this_period", label: "Total" },
+								{ index: 6, field: "retainage" },
+								{ index: 7, field: "previous_to_date" },
+								{ index: 8, field: "amount_due" }
+							], cols);
+						}
+					}
 					return;
 				}
 				tbody.innerHTML = items
@@ -243,6 +255,18 @@
 						);
 					})
 					.join("");
+				if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+					if (cfg.kind === "po-change-orders") {
+						window.USISUi.addMoneyTotalsRow(tbody, items, [{ index: 5, field: "amount", label: "Total" }], cols);
+					} else if (cfg.kind === "sub-invoices") {
+						window.USISUi.addMoneyTotalsRow(tbody, items, [
+							{ index: 5, field: "this_period", label: "Total" },
+							{ index: 6, field: "retainage" },
+							{ index: 7, field: "previous_to_date" },
+							{ index: 8, field: "amount_due" }
+						], cols);
+					}
+				}
 			})
 			.catch(function () {
 				var cols = cfg.kind === "punchlist" ? 7 : 5;

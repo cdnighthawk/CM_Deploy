@@ -603,7 +603,6 @@
 		var isPo = kindFilter === "purchase_order";
 		if (!rows.length) {
 			tb.innerHTML = '<tr><td colspan="' + (isPo ? 9 : 7) + '" class="text-muted small">No items yet.</td></tr>';
-			return;
 		}
 		rows.forEach(function (row) {
 			var chip = window.USISUi && window.USISUi.statusChip
@@ -674,6 +673,10 @@
 					});
 			});
 		});
+		if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+			var totalColIndex = isPo ? 7 : 5;
+			window.USISUi.addMoneyTotalsRow(tb, rows, [{ index: totalColIndex, field: "total_amount", label: "Total" }], isPo ? 9 : 7);
+		}
 	}
 	function loadCommitmentsList() {
 		if (!projectId) {

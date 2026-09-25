@@ -131,6 +131,10 @@
 			} else {
 				tbody.innerHTML = emptyRow(cols, emptyMsg);
 			}
+			if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+				var amountColIndex = kind === "cpr" ? 6 : kind === "sco" ? 6 : 4;
+				window.USISUi.addMoneyTotalsRow(tbody, items || [], [{ index: amountColIndex, field: "amount", label: "Total" }], cols);
+			}
 			return;
 		}
 		var createTarget =
@@ -243,6 +247,10 @@
 				);
 			})
 			.join("");
+		if (window.USISUi && window.USISUi.addMoneyTotalsRow) {
+			var amountColIndex = kind === "cpr" ? 6 : kind === "sco" ? 6 : 4;
+			window.USISUi.addMoneyTotalsRow(tbody, items, [{ index: amountColIndex, field: "amount", label: "Total" }], cols);
+		}
 	}
 
 	function loadCprs() {

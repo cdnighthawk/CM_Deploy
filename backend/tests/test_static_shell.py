@@ -165,3 +165,42 @@ def test_admin_prefix_does_not_serve_theme_assets(client, static_root):
     usis = client.get("/assets/css/usis-ui.css")
     assert usis.status_code == 200
     assert "text/css" in (usis.headers.get("Content-Type") or "")
+
+
+def test_nested_404_has_base_tag_and_reachable_assets(client, static_root):
+    """Nested 404 pages have <base href="/"> so relative asset paths resolve correctly."""
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    
+    nested_urls = [
+        "/admin/does-not-exist.html",
+        "/admin/organizations/x/y.html",
+        "/construction/nope/deeper.html",
+    ]
+    
+    for url in nested_urls:
+        r = client.get(url)
+        assert r.status_code == 404, f"{url} should return 404"
+        html = r.get_data(as_text=True)
+        assert '<base href="/">' in html, f"{url} 404 page should have base tag"
+        
+        import re
+        href_pattern = re.compile(r'(?:href|src)="(/assets/[^"]+|assets/[^"]+)"')
+        paths = href_pattern.findall(html)
+        
+        for path in paths:
+            normalized = "/" + path.lstrip("/")
+            asset_response = client.get(normalized)
+            assert asset_response.status_code == 200, \
+                f"Asset {normalized} from {url} 404 page should be reachable"
+        
+        usis_ui_pos = html.rfind('assets/css/usis-ui.css')
+        if usis_ui_pos == -1:
+            usis_ui_pos = html.rfind('/assets/css/usis-ui.css')
+        style_pos = html.rfind('assets/css/style.css')
+        if style_pos == -1:
+            style_pos = html.rfind('/assets/css/style.css')
+        
+        if usis_ui_pos > 0 and style_pos > 0:
+            assert usis_ui_pos > style_pos, \
+                f"{url} 404 page should load usis-ui.css after style.css"

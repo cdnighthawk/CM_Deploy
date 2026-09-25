@@ -1051,14 +1051,173 @@
 	}
 
 	function renderProjects(map) {
-		var html = formHtml(
-			{ keys: ["estimate.stage_labels", "project.default_trades", "project.who_may_create", "time.require_cost_code", "field.geofence_mode", "tm.requires_co"] },
-			map
-		);
-		html +=
-			'<p class="small"><a href="/construction/projects.html">All projects</a> — this page does not duplicate the job list.</p>';
+		var stageLabels = (map["estimate.stage_labels"] && map["estimate.stage_labels"].value) || {};
+		var defaultTrades = (map["project.default_trades"] && map["project.default_trades"].value) || [];
+		var whoMayCreate = (map["project.who_may_create"] && map["project.who_may_create"].value) || [];
+		var requireCost = (map["time.require_cost_code"] && map["time.require_cost_code"].value) || false;
+		var geofenceMode = (map["field.geofence_mode"] && map["field.geofence_mode"].value) || "flag";
+		var tmRequiresCo = (map["tm.requires_co"] && map["tm.requires_co"].value) || false;
+		var html = '<div class="card border-0 shadow-sm mb-3 usis-console-card"><div class="card-body">';
+		html += '<h6 class="mb-3">Project defaults</h6>';
+		html += '<form id="usis-proj-form">';
+		html += '<div class="mb-3">';
+		html += '<label class="form-label small">Who may create projects</label>';
+		html += '<select class="form-select form-select-sm" id="proj-who-create">';
+		html += '<option value="admin"' + (whoMayCreate.indexOf("admin") >= 0 || whoMayCreate.length === 0 ? " selected" : "") + '>Admins only</option>';
+		html += '<option value="pm"' + (whoMayCreate.indexOf("pm") >= 0 ? " selected" : "") + '>PMs and above</option>';
+		html += '<option value="all"' + (whoMayCreate.indexOf("all") >= 0 ? " selected" : "") + '>All staff</option>';
+		html += '</select>';
+		html += '</div>';
+		html += '<div class="mb-3">';
+		html += '<label class="form-label small">Default trades <span class="text-muted">(one per line)</span></label>';
+		html += '<textarea class="form-control form-control-sm" id="proj-trades" rows="6">' + esc((Array.isArray(defaultTrades) ? defaultTrades : []).join("\n")) + '</textarea>';
+		html += '<div class="form-text text-muted">Common: Drywall, Paint, Flooring, Ceilings, Doors & Hardware, Millwork, Glass & Glazing</div>';
+		html += '</div>';
+		html += '<div class="mb-3">';
+		html += '<label class="form-label small">Estimate stage labels</label>';
+		html += '<div id="proj-stages"></div>';
+		html += '<button type="button" class="btn btn-sm btn-outline-primary" id="proj-add-stage">Add stage</button>';
+		html += '</div>';
+		html += '<div class="mb-3">';
+		html += '<div class="form-check">';
+		html += '<input class="form-check-input" type="checkbox" id="proj-require-cost"' + (requireCost ? " checked" : "") + '>';
+		html += '<label class="form-check-label" for="proj-require-cost">Require cost code on time punch</label>';
+		html += '</div>';
+		html += '<div class="form-check">';
+		html += '<input class="form-check-input" type="checkbox" id="proj-tm-co"' + (tmRequiresCo ? " checked" : "") + '>';
+		html += '<label class="form-check-label" for="proj-tm-co">T&amp;M tickets require a change order</label>';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="mb-3">';
+		html += '<label class="form-label small">Geofence default mode</label>';
+		html += '<select class="form-select form-select-sm" id="proj-geofence">';
+		html += '<option value="flag"' + (geofenceMode === "flag" ? " selected" : "") + '>Flag (log only)</option>';
+		html += '<option value="block"' + (geofenceMode === "block" ? " selected" : "") + '>Block (prevent punch)</option>';
+		html += '</select>';
+		html += '</div>';
+		html += '<div class="d-flex justify-content-between">';
+		html += '<button type="button" class="btn btn-sm btn-outline-secondary" id="proj-show-json">Advanced (JSON)</button>';
+		html += '<button type="submit" class="btn btn-sm btn-primary">Save settings</button>';
+		html += '</div>';
+		html += '</form>';
+		html += '<div class="collapse mt-3" id="proj-json-editor">';
+		html += '<p class="small text-muted">Advanced editor for unmapped fields</p>';
+		html += '<div class="mb-2">';
+		html += '<label class="form-label small">estimate.stage_labels</label>';
+		html += '<textarea class="form-control form-control-sm mb-2" id="proj-json-stages" rows="4">' + esc(JSON.stringify(stageLabels, null, 2)) + '</textarea>';
+		html += '</div>';
+		html += '<div class="mb-2">';
+		html += '<label class="form-label small">project.default_trades</label>';
+		html += '<textarea class="form-control form-control-sm mb-2" id="proj-json-trades" rows="4">' + esc(JSON.stringify(defaultTrades, null, 2)) + '</textarea>';
+		html += '</div>';
+		html += '<div class="mb-2">';
+		html += '<label class="form-label small">project.who_may_create</label>';
+		html += '<textarea class="form-control form-control-sm mb-2" id="proj-json-who" rows="2">' + esc(JSON.stringify(whoMayCreate, null, 2)) + '</textarea>';
+		html += '</div>';
+		html += '<button class="btn btn-sm btn-primary" id="proj-save-json">Save from JSON</button>';
+		html += '</div>';
+		html += '</div></div>';
+		html += '<p class="small"><a href="/construction/projects.html">All projects</a> — this page does not duplicate the job list.</p>';
 		document.getElementById("usis-set-root").innerHTML = html;
-		bindSave(["estimate.stage_labels", "project.default_trades", "project.who_may_create", "time.require_cost_code", "field.geofence_mode", "tm.requires_co"]);
+		function renderStages(labels) {
+			var container = document.getElementById("proj-stages");
+			if (!container) return;
+			var keys = Object.keys(labels || {}).sort();
+			var html = "";
+			keys.forEach(function (key) {
+				html += '<div class="row g-2 mb-2 proj-stage-row">';
+				html += '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key" value="' + esc(key) + '"></div>';
+				html += '<div class="col-md-7"><input class="form-control form-control-sm proj-stage-label" placeholder="Label" value="' + esc(labels[key]) + '"></div>';
+				html += '<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100 proj-remove-stage">Remove</button></div>';
+				html += '</div>';
+			});
+			container.innerHTML = html;
+			document.querySelectorAll(".proj-remove-stage").forEach(function (btn) {
+				btn.addEventListener("click", function () {
+					btn.closest(".proj-stage-row").remove();
+				});
+			});
+		}
+		renderStages(stageLabels);
+		document.getElementById("proj-add-stage").addEventListener("click", function () {
+			var container = document.getElementById("proj-stages");
+			var row = document.createElement("div");
+			row.className = "row g-2 mb-2 proj-stage-row";
+			row.innerHTML = '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key"></div>' +
+				'<div class="col-md-7"><input class="form-control form-control-sm proj-stage-label" placeholder="Label"></div>' +
+				'<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100 proj-remove-stage">Remove</button></div>';
+			container.appendChild(row);
+			row.querySelector(".proj-remove-stage").addEventListener("click", function () {
+				row.remove();
+			});
+		});
+		document.getElementById("usis-proj-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var stages = {};
+			document.querySelectorAll(".proj-stage-row").forEach(function (row) {
+				var key = row.querySelector(".proj-stage-key").value.trim();
+				var label = row.querySelector(".proj-stage-label").value.trim();
+				if (key && label) stages[key] = label;
+			});
+			var trades = document.getElementById("proj-trades").value.split("\n").map(function (s) {
+				return s.trim();
+			}).filter(Boolean);
+			var who = document.getElementById("proj-who-create").value;
+			var whoArray = who === "all" ? ["all"] : who === "pm" ? ["pm", "admin"] : ["admin"];
+			var chain = Promise.resolve();
+			function saveSetting(key, value) {
+				chain = chain.then(function () {
+					return fetchJson("/api/settings/" + encodeURIComponent(key), { method: "PUT", body: { value: value } });
+				});
+			}
+			saveSetting("estimate.stage_labels", stages);
+			saveSetting("project.default_trades", trades);
+			saveSetting("project.who_may_create", whoArray);
+			saveSetting("time.require_cost_code", document.getElementById("proj-require-cost").checked);
+			saveSetting("field.geofence_mode", document.getElementById("proj-geofence").value);
+			saveSetting("tm.requires_co", document.getElementById("proj-tm-co").checked);
+			chain.then(function () {
+				if (window.USISUi && window.USISUi.toast) window.USISUi.toast("Saved");
+				flash("Settings saved.", "success");
+			}).catch(function (err) {
+				flash(err.message || "Save failed", "danger");
+			});
+		});
+		document.getElementById("proj-show-json").addEventListener("click", function () {
+			var editor = document.getElementById("proj-json-editor");
+			if (editor) {
+				if (editor.classList.contains("show")) {
+					editor.classList.remove("show");
+				} else {
+					editor.classList.add("show");
+				}
+			}
+		});
+		document.getElementById("proj-save-json").addEventListener("click", function () {
+			try {
+				var stages = JSON.parse(document.getElementById("proj-json-stages").value);
+				var trades = JSON.parse(document.getElementById("proj-json-trades").value);
+				var who = JSON.parse(document.getElementById("proj-json-who").value);
+				var chain = Promise.resolve();
+				function saveSetting(key, value) {
+					chain = chain.then(function () {
+						return fetchJson("/api/settings/" + encodeURIComponent(key), { method: "PUT", body: { value: value } });
+					});
+				}
+				saveSetting("estimate.stage_labels", stages);
+				saveSetting("project.default_trades", trades);
+				saveSetting("project.who_may_create", who);
+				chain.then(function () {
+					if (window.USISUi && window.USISUi.toast) window.USISUi.toast("Saved from JSON");
+					flash("Saved from JSON.", "success");
+					location.reload();
+				}).catch(function (err) {
+					flash(err.message || "Save failed", "danger");
+				});
+			} catch (e) {
+				flash("Invalid JSON: " + e.message, "danger");
+			}
+		});
 	}
 
 	function boot() {

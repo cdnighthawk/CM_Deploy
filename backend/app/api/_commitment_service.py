@@ -15,6 +15,7 @@ from ..models import (
     CommitmentBillAllocation,
     CommitmentLineItem,
     Company,
+    CompanyInsurancePolicy,
     Contact,
     CostCode,
     Project,
@@ -170,6 +171,77 @@ def _serialize_bill(b: CommitmentBillAllocation) -> dict[str, Any]:
     }
 
 
+def _calculate_vendor_insurance_status(company_id: uuid.UUID) -> dict[str, Any]:
+    """
+    Calculate insurance status for a vendor company.
+    Returns dict with 'status' (ok, expiring_soon, expired, missing) and optional 'expires_on'.
+    """
+    from datetime import timedelta
+
+    policies = db.session.scalars(
+        select(CompanyInsurancePolicy)
+        .where(CompanyInsurancePolicy.company_id == company_id)
+        .order_by(CompanyInsurancePolicy.expires_on.desc().nullslast())
+    ).all()
+
+    if not policies:
+        return {"status": "missing", "expires_on": None}
+
+    today = date.today()
+    most_recent_policy = None
+    earliest_expiry = None
+
+    for policy in policies:
+        if policy.expires_on is not None:
+            if most_recent_policy is None or policy.expires_on > most_recent_policy.expires_on:
+                most_recent_policy = policy
+            if earliest_expiry is None or policy.expires_on < earliest_expiry:
+                earliest_expiry = policy.expires_on
+
+    if most_recent_policy is None:
+        return {"status": "missing", "expires_on": None}
+
+    expires_on = most_recent_policy.expires_on
+
+    if expires_on < today:
+        return {"status": "expired", "expires_on": _iso(expires_on)}
+
+    threshold = today + timedelta(days=30)
+    if expires_on <= threshold:
+        return {"status": "expiring_soon", "expires_on": _iso(expires_on)}
+
+    return {"status": "ok", "expires_on": _iso(expires_on)}
+
+
+def count_vendors_with_insurance_issues(project_id: uuid.UUID) -> int:
+    """
+    Count vendors on this project with missing or expired insurance.
+    This includes vendors from commitments on the project.
+    """
+    from datetime import timedelta
+
+    today = date.today()
+    
+    vendor_ids_on_project = set(
+        db.session.scalars(
+            select(Commitment.vendor_company_id)
+            .where(Commitment.project_id == project_id)
+            .distinct()
+        ).all()
+    )
+    
+    if not vendor_ids_on_project:
+        return 0
+    
+    issue_count = 0
+    for vendor_id in vendor_ids_on_project:
+        status_info = _calculate_vendor_insurance_status(vendor_id)
+        if status_info["status"] in ("missing", "expired"):
+            issue_count += 1
+    
+    return issue_count
+
+
 def _user_display_name(u: User | None) -> str | None:
     if u is None:
         return None
@@ -178,11 +250,15 @@ def _user_display_name(u: User | None) -> str | None:
 
 
 def _serialize_commitment_row(c: Commitment, vendor_name: str, rfp: Rfp | None = None) -> dict[str, Any]:
+    vendor_insurance = _calculate_vendor_insurance_status(c.vendor_company_id)
+
     row: dict[str, Any] = {
         "id": str(c.id),
         "project_id": str(c.project_id),
         "vendor_company_id": str(c.vendor_company_id),
         "vendor_name": vendor_name,
+        "vendor_insurance_status": vendor_insurance["status"],
+        "vendor_insurance_expires_on": vendor_insurance["expires_on"],
         "commitment_kind": c.commitment_kind,
         "reference_number": c.reference_number,
         "title": c.title,

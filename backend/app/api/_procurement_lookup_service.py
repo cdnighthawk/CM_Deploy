@@ -193,7 +193,15 @@ def list_full_directory(project_id: uuid.UUID, cu: CurrentUser) -> dict[str, Any
                 "email": company.email,
             }
         )
-    return {"entity": "project_directory", "items": items}
+    
+    from . import _commitment_service as commitment_svc
+    vendor_insurance_issue_count = commitment_svc.count_vendors_with_insurance_issues(project_id)
+    
+    return {
+        "entity": "project_directory",
+        "items": items,
+        "vendor_insurance_issue_count": vendor_insurance_issue_count,
+    }
 
 
 def add_directory_any(

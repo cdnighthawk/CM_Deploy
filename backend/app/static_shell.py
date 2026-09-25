@@ -47,6 +47,7 @@ _PRODUCT_HTML_REDIRECTS: dict[str, str] = {
     "/usis-hr.html": "/usis-hr-dashboard.html",
     "/core-hr.html": "/usis-hr-dashboard.html",
     "/usis-hrms-home.html": "/usis-hr-dashboard.html",
+    "/construction/reports.html": "/reports.html",
 }
 
 # W3CRM leftover templates. Live USIS pages are not in this set.
@@ -100,7 +101,6 @@ _DEMO_HTML_EXACT: frozenset[str] = frozenset(
         "construction/overview.html",
         "construction/party.html",
         "construction/quotation.html",
-        "construction/reports.html",
         "construction/services.html",
         "construction/task.html",
         "construction/time-sheet.html",

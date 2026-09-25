@@ -93,6 +93,14 @@ def test_duplicate_hubs_redirect(client, static_root):
     assert r.headers.get("Location") == "/construction/leads.html"
 
 
+def test_construction_reports_redirects_to_reports(client, static_root):
+    if static_root is None:
+        pytest.skip("gulp/dist not present")
+    r = client.get("/construction/reports.html")
+    assert r.status_code == 302
+    assert r.headers.get("Location") == "/reports.html"
+
+
 def test_leftover_template_pages_are_branded_404(client, static_root):
     if static_root is None:
         pytest.skip("gulp/dist not present")

@@ -6,7 +6,7 @@ import uuid
 from decimal import Decimal
 from typing import Any, Mapping
 
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload
 
@@ -669,18 +669,56 @@ def register_extra_routes(bp: Blueprint) -> None:
     @bp.post("/rfps")
     def create_rfp():
         from ._rfp_body_service import attach_takeoff, default_line_source
+        from ..permissions.project_scope import _project_row_exists
 
         data = request.get_json(silent=True)
         if not isinstance(data, Mapping):
             return _jsonify({"error": "expected JSON object body"}), 400
-        le_id = _parse_uuid_param(str(data.get("lead_estimate_id") or "").strip())
-        pj_id = _parse_uuid_param(str(data.get("project_id") or "").strip())
+        
+        le_id_raw = str(data.get("lead_estimate_id") or "").strip()
+        le_id = _parse_uuid_param(le_id_raw)
+        if le_id_raw and not le_id:
+            return _jsonify({"error": "lead_estimate_id must be a valid UUID"}), 400
+        if le_id:
+            le = db.session.get(LeadEstimate, le_id)
+            if le is None:
+                return _jsonify({"error": "lead_estimate_id does not exist"}), 400
+        
+        pj_id_raw = str(data.get("project_id") or "").strip()
+        pj_id = _parse_uuid_param(pj_id_raw)
+        if pj_id_raw and not pj_id:
+            return _jsonify({"error": "project_id must be a valid UUID"}), 400
+        if pj_id and not _project_row_exists(pj_id):
+            return _jsonify({"error": "project_id does not exist"}), 400
+        
+        if not pj_id and not le_id:
+            return _jsonify({"error": "project_id or lead_estimate_id is required"}), 400
+        
+        est_id_raw = str(data.get("estimate_id") or data.get("source_estimate_id") or "").strip()
+        est_id = _parse_uuid_param(est_id_raw)
+        if est_id_raw and not est_id:
+            return _jsonify({"error": "estimate_id must be a valid UUID"}), 400
+        if est_id:
+            est = db.session.get(Estimate, est_id)
+            if est is None:
+                return _jsonify({"error": "estimate_id does not exist"}), 400
+            if le_id and est.lead_estimate_id and est.lead_estimate_id != le_id:
+                return _jsonify({"error": "estimate_id does not belong to the specified lead_estimate_id"}), 400
+            if pj_id and est.project_id is not None and est.project_id != pj_id:
+                return _jsonify({"error": "estimate_id does not belong to the specified project"}), 400
+            if pj_id and est.project_id is None and le_id:
+                est_le = db.session.get(LeadEstimate, est.lead_estimate_id) if est.lead_estimate_id else None
+                if est_le:
+                    from ..services.lead_workspace import drawing_project_for_lead
+                    est_proj = drawing_project_for_lead(est_le)
+                    if est_proj and est_proj.id != pj_id:
+                        return _jsonify({"error": "estimate_id does not belong to the specified project"}), 400
+        
         title = str(data.get("title") or "RFP")[:500]
         token = secrets.token_urlsafe(32)[:64]
         source = str(data.get("line_source") or "").strip().lower()
         if source not in ("takeoff", "manual", "narrative"):
             source = default_line_source(pj_id, le_id)
-        est_id = _parse_uuid_param(str(data.get("estimate_id") or data.get("source_estimate_id") or "").strip())
         remaining = bool(data.get("remaining") or data.get("remaining_scopes"))
         if remaining:
             source = "takeoff"

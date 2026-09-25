@@ -1,5 +1,5 @@
 /**
- * Project-details tool strip — five parents + a visible child row.
+ * Project-details tool strip — six parents + a visible child row.
  * Parent click = default child. Hidden tabs stay in the page so deep links still work.
  */
 (function () {
@@ -9,30 +9,19 @@
 		job: "Job pages",
 		files: "Files pages",
 		preconstruction: "Estimate pages",
-		field: "Construction pages",
+		field: "Field pages",
 		buyout: "Buyout pages",
+		contract: "Contract pages",
 	};
 
 	var TAB_TO_PARENT = {
 		"proj-tab-job": "job",
 		"proj-tab-openitems": "job",
-		"proj-tab-contract": "job",
-		"proj-tab-costing": "job",
-		"proj-tab-invoicing": "job",
 		"proj-tab-drawings": "files",
 		"proj-tab-specs": "files",
-		"proj-tab-photos": "field",
+		"proj-tab-photos": "files",
 		"proj-tab-estimate": "preconstruction",
 		"proj-tab-takeoff": "preconstruction",
-		"proj-tab-procurement": "buyout",
-		"proj-tab-order": "buyout",
-		"proj-tab-submittals": "buyout",
-		"proj-tab-rfi": "buyout",
-		"proj-tab-correspondence": "buyout",
-		"proj-tab-transmittals": "buyout",
-		"proj-tab-anticipated": "buyout",
-		"proj-tab-poco": "buyout",
-		"proj-tab-subinv": "buyout",
 		"proj-tab-schedule": "field",
 		"proj-tab-tasks": "field",
 		"proj-tab-dailylog": "field",
@@ -43,6 +32,18 @@
 		"proj-tab-incidents": "field",
 		"proj-tab-safety": "field",
 		"proj-tab-time": "field",
+		"proj-tab-procurement": "buyout",
+		"proj-tab-order": "buyout",
+		"proj-tab-anticipated": "buyout",
+		"proj-tab-poco": "buyout",
+		"proj-tab-subinv": "buyout",
+		"proj-tab-contract": "contract",
+		"proj-tab-costing": "contract",
+		"proj-tab-invoicing": "contract",
+		"proj-tab-rfi": "contract",
+		"proj-tab-submittals": "contract",
+		"proj-tab-transmittals": "contract",
+		"proj-tab-correspondence": "contract",
 	};
 
 	function projectId() {

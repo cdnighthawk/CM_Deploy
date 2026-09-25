@@ -592,7 +592,11 @@
 			try {
 				timezones = Intl.supportedValuesOf("timeZone");
 			} catch (e) {
-				timezones = ["America/Los_Angeles", "America/New_York", "America/Chicago", "America/Denver", "America/Phoenix"];
+				timezones = ["UTC", "America/Los_Angeles", "America/New_York", "America/Chicago", "America/Denver", "America/Phoenix"];
+			}
+			var selTz = p.timezone != null ? p.timezone : "America/Los_Angeles";
+			if (timezones.indexOf(selTz) < 0) {
+				timezones.unshift(selTz);
 			}
 			var html = '<div class="card mb-3"><div class="card-body"><h6 class="mb-3">Time Policy</h6>';
 			if (canEdit) {
@@ -601,7 +605,6 @@
 				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Timezone</label>';
 				html += '<select class="form-select form-select-sm" id="pol-timezone"' + req + dis + '>';
-				var selTz = p.timezone != null ? p.timezone : "America/Los_Angeles";
 				timezones.forEach(function (tz) {
 					html += '<option value="' + esc(tz) + '"' + (tz === selTz ? " selected" : "") + '>' + esc(tz) + '</option>';
 				});
@@ -657,12 +660,6 @@
 				html += '</div>';
 				html += '<div class="row g-3 mb-3">';
 				html += '<div class="col-md-4">';
-				html += '<label class="form-label small">Geofence default mode</label>';
-				html += '<select class="form-select form-select-sm" id="pol-geofence"' + req + dis + '>';
-				html += '<option value="flag"' + (p.geofence_default_mode === "flag" ? " selected" : "") + '>Flag</option>';
-				html += '<option value="block"' + (p.geofence_default_mode === "block" ? " selected" : "") + '>Block</option>';
-				html += '</select></div>';
-				html += '<div class="col-md-4">';
 				html += '<label class="form-label small">Open punch flag after (hours)</label>';
 				html += '<input type="number" step="0.5" min="0" class="form-control form-control-sm" id="pol-open-punch-flag" value="' + esc(p.open_punch_flag_after_hours != null ? p.open_punch_flag_after_hours : 12) + '"' + req + dis + '>';
 				html += '<div class="invalid-feedback">Enter a valid number ≥ 0.</div>';
@@ -679,8 +676,8 @@
 				html += '<label class="form-check-label" for="pol-7th-day-ot">7th day overtime</label>';
 				html += '</div>';
 				html += '<div class="form-check">';
-				html += '<input class="form-check-input" type="checkbox" id="pol-require-cost"' + (!!p.require_cost_code ? " checked" : "") + dis + '>';
-				html += '<label class="form-check-label" for="pol-require-cost">Require cost code on punch</label>';
+				html += '<input class="form-check-input" type="checkbox" id="pol-require-cost"' + (!!p.require_cost_code ? " checked" : "") + ' disabled>';
+				html += '<label class="form-check-label text-muted" for="pol-require-cost">Require cost code on punch <span class="small">(managed in Settings → Projects & defaults)</span></label>';
 				html += '</div>';
 				html += '<div class="form-check">';
 				html += '<input class="form-check-input" type="checkbox" id="pol-daily-signoff"' + (!!p.require_daily_signoff ? " checked" : "") + dis + '>';
@@ -707,6 +704,7 @@
 				html += '<label class="form-check-label" for="pol-show-cost">Show own cost on My Time</label>';
 				html += '</div>';
 				html += '</div>';
+				html += '<p class="small text-muted">Note: "Require cost code on punch" and "Geofence default mode" are managed under Settings → Projects & defaults and override this policy.</p>';
 				html += '<div class="d-flex justify-content-between">';
 				html += '<button type="button" class="btn btn-sm btn-outline-secondary" id="usis-show-json">Advanced (JSON)</button>';
 				html += '<button type="submit" class="btn btn-sm btn-primary">Save policy</button>';
@@ -748,11 +746,9 @@
 					meal_minutes: num("pol-meal-mins", 30),
 					second_meal_after_hours: num("pol-second-meal", 10),
 					rest_minutes_per_4h: num("pol-rest-mins", 10),
-					geofence_default_mode: document.getElementById("pol-geofence").value,
 					open_punch_flag_after_hours: num("pol-open-punch-flag", 12),
 					breadcrumb_min_interval_sec: num("pol-breadcrumb-interval", 180),
 					seventh_day_ot: chk("pol-7th-day-ot"),
-					require_cost_code: chk("pol-require-cost"),
 					require_daily_signoff: chk("pol-daily-signoff"),
 					require_supervisor_approve_before_export: chk("pol-supervisor-approve"),
 					block_export_with_open_flags: chk("pol-block-flags"),
@@ -793,11 +789,9 @@
 						meal_minutes: num("pol-meal-mins", 30),
 						second_meal_after_hours: num("pol-second-meal", 10),
 						rest_minutes_per_4h: num("pol-rest-mins", 10),
-						geofence_default_mode: document.getElementById("pol-geofence").value,
 						open_punch_flag_after_hours: num("pol-open-punch-flag", 12),
 						breadcrumb_min_interval_sec: num("pol-breadcrumb-interval", 180),
 						seventh_day_ot: chk("pol-7th-day-ot"),
-						require_cost_code: chk("pol-require-cost"),
 						require_daily_signoff: chk("pol-daily-signoff"),
 						require_supervisor_approve_before_export: chk("pol-supervisor-approve"),
 						block_export_with_open_flags: chk("pol-block-flags"),
@@ -805,11 +799,14 @@
 						track_off_clock: chk("pol-track-off"),
 						show_own_cost_on_my_time: chk("pol-show-cost")
 					};
-					fetchJson("/api/time/settings", { method: "PUT", body: payload }).then(function (res) {
+					fetchJson("/api/time/settings", { method: "PUT", body: payload }).then(function (data) {
 						if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Policy saved");
-						location.reload();
+						renderSettings(root);
 					}).catch(function (err) {
-						if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Save failed");
+						var errMsg = "Save failed";
+						if (err && err.body && err.body.error) errMsg = err.body.error;
+						else if (err && err.message) errMsg = err.message;
+						if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(errMsg);
 					});
 				});
 			}

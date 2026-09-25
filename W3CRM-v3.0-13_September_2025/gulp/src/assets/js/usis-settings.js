@@ -1052,6 +1052,7 @@
 
 	function renderProjects(map) {
 		fetchJson("/api/settings/roles").then(function (rolesResp) {
+			var rolesAvailable = rolesResp.ok;
 			var allRoles = (rolesResp.ok && rolesResp.body && rolesResp.body.items) || [];
 			var roleCodes = allRoles.map(function (r) {
 				return r.code;
@@ -1062,6 +1063,9 @@
 			allRoles.forEach(function (r) {
 				if (r.code) roleNames[r.code] = r.name || r.code;
 			});
+			if (!rolesAvailable) {
+				if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Could not load role list");
+			}
 			var stageLabels = (map["estimate.stage_labels"] && map["estimate.stage_labels"].value) || {};
 			var stageKeys = Object.keys(stageLabels);
 			var defaultTrades = (map["project.default_trades"] && map["project.default_trades"].value) || [];
@@ -1071,24 +1075,36 @@
 			var tmRequiresCo = !!(map["tm.requires_co"] && map["tm.requires_co"].value);
 			var html = '<div class="card border-0 shadow-sm mb-3 usis-console-card"><div class="card-body">';
 			html += '<h6 class="mb-3">Project defaults</h6>';
+			if (!rolesAvailable) {
+				html += '<div class="alert alert-warning small">Could not load role list. Showing stored values only.</div>';
+			}
 			html += '<form id="usis-proj-form" novalidate>';
 			html += '<div class="mb-3">';
 			html += '<label class="form-label small">Who may create projects</label>';
-			roleCodes.forEach(function (code) {
-				html += '<div class="form-check">';
-				html += '<input class="form-check-input proj-who-role" type="checkbox" id="proj-who-' + esc(code) + '" value="' + esc(code) + '"' + (whoMayCreate.indexOf(code) >= 0 ? " checked" : "") + '>';
-				html += '<label class="form-check-label" for="proj-who-' + esc(code) + '">' + esc(roleNames[code] || code) + '</label>';
-				html += '</div>';
-			});
-			whoMayCreate.forEach(function (code) {
-				if (roleCodes.indexOf(code) < 0) {
+			if (rolesAvailable) {
+				roleCodes.forEach(function (code) {
+					html += '<div class="form-check">';
+					html += '<input class="form-check-input proj-who-role" type="checkbox" id="proj-who-' + esc(code) + '" value="' + esc(code) + '"' + (whoMayCreate.indexOf(code) >= 0 ? " checked" : "") + '>';
+					html += '<label class="form-check-label" for="proj-who-' + esc(code) + '">' + esc(roleNames[code] || code) + '</label>';
+					html += '</div>';
+				});
+				whoMayCreate.forEach(function (code) {
+					if (roleCodes.indexOf(code) < 0) {
+						html += '<div class="form-check">';
+						html += '<input class="form-check-input proj-who-role" type="checkbox" id="proj-who-' + esc(code) + '" value="' + esc(code) + '" checked>';
+						html += '<label class="form-check-label text-muted" for="proj-who-' + esc(code) + '">(legacy) ' + esc(code) + '</label>';
+						html += '</div>';
+					}
+				});
+			} else {
+				whoMayCreate.forEach(function (code) {
 					html += '<div class="form-check">';
 					html += '<input class="form-check-input proj-who-role" type="checkbox" id="proj-who-' + esc(code) + '" value="' + esc(code) + '" checked>';
-					html += '<label class="form-check-label text-muted" for="proj-who-' + esc(code) + '">(legacy) ' + esc(code) + '</label>';
+					html += '<label class="form-check-label" for="proj-who-' + esc(code) + '">' + esc(code) + '</label>';
 					html += '</div>';
-				}
-			});
-			html += '<div class="invalid-feedback d-none" id="proj-who-error">At least one role must be selected.</div>';
+				});
+			}
+			html += '<div class="small text-danger d-none" id="proj-who-error">At least one role must be selected.</div>';
 			html += '</div>';
 			html += '<div class="mb-3">';
 			html += '<label class="form-label small">Default trades <span class="text-muted">(one per line)</span></label>';
@@ -1098,7 +1114,7 @@
 			html += '<div class="mb-3">';
 			html += '<label class="form-label small">Estimate stage labels</label>';
 			html += '<div id="proj-stages"></div>';
-			html += '<div class="invalid-feedback d-none" id="proj-stages-error"></div>';
+			html += '<div class="small text-danger d-none" id="proj-stages-error"></div>';
 			html += '<button type="button" class="btn btn-sm btn-outline-primary mt-2" id="proj-add-stage">Add stage</button>';
 			html += '</div>';
 			html += '<div class="mb-3">';
@@ -1166,7 +1182,7 @@
 				var html = "";
 				keys.forEach(function (key) {
 					html += '<div class="row g-2 mb-2 proj-stage-row">';
-					html += '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key (a-z0-9_)" value="' + esc(key) + '" data-original="' + esc(key) + '"></div>';
+					html += '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key (a-z0-9_)" value="' + esc(key) + '" data-original="' + esc(key) + '" readonly></div>';
 					html += '<div class="col-md-7"><input class="form-control form-control-sm proj-stage-label" placeholder="Label" value="' + esc(labels[key]) + '"></div>';
 					html += '<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100 proj-remove-stage">Remove</button></div>';
 					html += '</div>';
@@ -1178,7 +1194,7 @@
 						updateJsonPreview();
 					});
 				});
-				document.querySelectorAll(".proj-stage-key, .proj-stage-label").forEach(function (inp) {
+				document.querySelectorAll(".proj-stage-label").forEach(function (inp) {
 					inp.addEventListener("input", updateJsonPreview);
 				});
 			}
@@ -1192,7 +1208,7 @@
 				var container = document.getElementById("proj-stages");
 				var row = document.createElement("div");
 				row.className = "row g-2 mb-2 proj-stage-row";
-				row.innerHTML = '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key (a-z0-9_)" data-original=""></div>' +
+				row.innerHTML = '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key (a-z0-9_)" data-original="" data-new="true"></div>' +
 					'<div class="col-md-7"><input class="form-control form-control-sm proj-stage-label" placeholder="Label"></div>' +
 					'<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100 proj-remove-stage">Remove</button></div>';
 				container.appendChild(row);
@@ -1207,16 +1223,21 @@
 			});
 			document.getElementById("usis-proj-form").addEventListener("submit", function (e) {
 				e.preventDefault();
-				document.getElementById("proj-stages-error").classList.add("d-none");
-				document.getElementById("proj-stages-error").textContent = "";
-				document.getElementById("proj-who-error").classList.add("d-none");
+				var stagesErr = document.getElementById("proj-stages-error");
+				var whoErr = document.getElementById("proj-who-error");
+				stagesErr.classList.add("d-none");
+				stagesErr.classList.remove("d-block");
+				stagesErr.textContent = "";
+				whoErr.classList.add("d-none");
+				whoErr.classList.remove("d-block");
 				var stages = {};
 				var seenKeys = {};
 				var valid = true;
 				var stageRows = document.querySelectorAll(".proj-stage-row");
 				if (stageRows.length === 0) {
-					document.getElementById("proj-stages-error").textContent = "At least one stage is required.";
-					document.getElementById("proj-stages-error").classList.remove("d-none");
+					stagesErr.textContent = "At least one stage is required.";
+					stagesErr.classList.remove("d-none");
+					stagesErr.classList.add("d-block");
 					return;
 				}
 				stageRows.forEach(function (row) {
@@ -1224,20 +1245,23 @@
 					var labelInput = row.querySelector(".proj-stage-label");
 					var key = keyInput.value.trim();
 					var label = labelInput.value.trim();
+					var isNew = keyInput.getAttribute("data-new") === "true";
 					keyInput.classList.remove("is-invalid");
 					labelInput.classList.remove("is-invalid");
 					if (!key) {
-						keyInput.classList.add("is-invalid");
+						if (isNew) keyInput.classList.add("is-invalid");
 						valid = false;
 					} else if (!/^[a-z0-9_]+$/.test(key)) {
-						keyInput.classList.add("is-invalid");
-						document.getElementById("proj-stages-error").textContent = "Keys must match ^[a-z0-9_]+$ (lowercase letters, numbers, underscore).";
-						document.getElementById("proj-stages-error").classList.remove("d-none");
+						if (isNew) keyInput.classList.add("is-invalid");
+						stagesErr.textContent = "Keys must match ^[a-z0-9_]+$ (lowercase letters, numbers, underscore).";
+						stagesErr.classList.remove("d-none");
+						stagesErr.classList.add("d-block");
 						valid = false;
 					} else if (seenKeys[key]) {
-						keyInput.classList.add("is-invalid");
-						document.getElementById("proj-stages-error").textContent = "Duplicate key: " + key;
-						document.getElementById("proj-stages-error").classList.remove("d-none");
+						if (isNew) keyInput.classList.add("is-invalid");
+						stagesErr.textContent = "Duplicate key: " + key;
+						stagesErr.classList.remove("d-none");
+						stagesErr.classList.add("d-block");
 						valid = false;
 					}
 					if (!label) {
@@ -1258,7 +1282,8 @@
 					who.push(cb.value);
 				});
 				if (who.length === 0) {
-					document.getElementById("proj-who-error").classList.remove("d-none");
+					whoErr.classList.remove("d-none");
+					whoErr.classList.add("d-block");
 					return;
 				}
 				var chain = Promise.resolve();
@@ -1278,7 +1303,6 @@
 				saveKey("tm.requires_co", document.getElementById("proj-tm-co").checked);
 				chain.then(function () {
 					if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Settings saved");
-					flash("Settings saved.", "success");
 				}).catch(function (err) {
 					if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(err.message || "Save failed");
 					flash(err.message || "Save failed", "danger");
@@ -1294,6 +1318,247 @@
 					}
 				}
 			});
+		}).catch(function (err) {
+			var stageLabels = (map["estimate.stage_labels"] && map["estimate.stage_labels"].value) || {};
+			var stageKeys = Object.keys(stageLabels);
+			var defaultTrades = (map["project.default_trades"] && map["project.default_trades"].value) || [];
+			var whoMayCreate = (map["project.who_may_create"] && map["project.who_may_create"].value) || ["admin", "pm", "estimator"];
+			var requireCost = !!(map["time.require_cost_code"] && map["time.require_cost_code"].value);
+			var geofenceMode = (map["field.geofence_mode"] && map["field.geofence_mode"].value) || "flag";
+			var tmRequiresCo = !!(map["tm.requires_co"] && map["tm.requires_co"].value);
+			if (window.USISNotify && window.USISNotify.error) window.USISNotify.error("Could not load role list");
+			var html = '<div class="card border-0 shadow-sm mb-3 usis-console-card"><div class="card-body">';
+			html += '<h6 class="mb-3">Project defaults</h6>';
+			html += '<div class="alert alert-warning small">Could not load role list. Showing stored values only.</div>';
+			html += '<form id="usis-proj-form" novalidate>';
+			html += '<div class="mb-3">';
+			html += '<label class="form-label small">Who may create projects</label>';
+			whoMayCreate.forEach(function (code) {
+				html += '<div class="form-check">';
+				html += '<input class="form-check-input proj-who-role" type="checkbox" id="proj-who-' + esc(code) + '" value="' + esc(code) + '" checked>';
+				html += '<label class="form-check-label" for="proj-who-' + esc(code) + '">' + esc(code) + '</label>';
+				html += '</div>';
+			});
+			html += '<div class="small text-danger d-none" id="proj-who-error">At least one role must be selected.</div>';
+			html += '</div>';
+			html += '<div class="mb-3">';
+			html += '<label class="form-label small">Default trades <span class="text-muted">(one per line)</span></label>';
+			html += '<textarea class="form-control form-control-sm" id="proj-trades" rows="6">' + esc((Array.isArray(defaultTrades) ? defaultTrades : []).join("\n")) + '</textarea>';
+			html += '<div class="form-text text-muted">Common: Drywall, Paint, Flooring, Ceilings, Doors & Hardware, Millwork, Glass & Glazing</div>';
+			html += '</div>';
+			html += '<div class="mb-3">';
+			html += '<label class="form-label small">Estimate stage labels</label>';
+			html += '<div id="proj-stages"></div>';
+			html += '<div class="small text-danger d-none" id="proj-stages-error"></div>';
+			html += '<button type="button" class="btn btn-sm btn-outline-primary mt-2" id="proj-add-stage">Add stage</button>';
+			html += '</div>';
+			html += '<div class="mb-3">';
+			html += '<div class="form-check">';
+			html += '<input class="form-check-input" type="checkbox" id="proj-require-cost"' + (requireCost ? " checked" : "") + (map["time.require_cost_code"] && map["time.require_cost_code"].locked ? " disabled" : "") + '>';
+			html += '<label class="form-check-label" for="proj-require-cost">Require cost code on time punch</label>';
+			html += '</div>';
+			html += '<div class="form-check">';
+			html += '<input class="form-check-input" type="checkbox" id="proj-tm-co"' + (tmRequiresCo ? " checked" : "") + (map["tm.requires_co"] && map["tm.requires_co"].locked ? " disabled" : "") + '>';
+			html += '<label class="form-check-label" for="proj-tm-co">T&amp;M tickets require a change order</label>';
+			html += '</div>';
+			html += '</div>';
+			html += '<div class="mb-3">';
+			html += '<label class="form-label small">Geofence default mode</label>';
+			html += '<select class="form-select form-select-sm" id="proj-geofence"' + (map["field.geofence_mode"] && map["field.geofence_mode"].locked ? " disabled" : "") + '>';
+			html += '<option value="flag"' + (geofenceMode === "flag" ? " selected" : "") + '>Flag (log only)</option>';
+			html += '<option value="block"' + (geofenceMode === "block" ? " selected" : "") + '>Block (prevent punch)</option>';
+			html += '</select>';
+			html += '</div>';
+			html += '<div class="d-flex justify-content-between">';
+			html += '<button type="button" class="btn btn-sm btn-outline-secondary" id="proj-show-json">Advanced (JSON)</button>';
+			html += '<button type="submit" class="btn btn-sm btn-primary">Save settings</button>';
+			html += '</div>';
+			html += '</form>';
+			html += '<div class="collapse mt-3" id="proj-json-editor">';
+			html += '<p class="small text-muted">Advanced editor — reflects current form state</p>';
+			html += '<div class="mb-2">';
+			html += '<label class="form-label small">estimate.stage_labels</label>';
+			html += '<textarea class="form-control form-control-sm mb-2" id="proj-json-stages" rows="4" readonly></textarea>';
+			html += '</div>';
+			html += '<div class="mb-2">';
+			html += '<label class="form-label small">project.default_trades</label>';
+			html += '<textarea class="form-control form-control-sm mb-2" id="proj-json-trades" rows="4" readonly></textarea>';
+			html += '</div>';
+			html += '<div class="mb-2">';
+			html += '<label class="form-label small">project.who_may_create</label>';
+			html += '<textarea class="form-control form-control-sm mb-2" id="proj-json-who" rows="2" readonly></textarea>';
+			html += '</div>';
+			html += '</div>';
+			html += '</div></div>';
+			html += '<p class="small"><a href="/construction/projects.html">All projects</a> — this page does not duplicate the job list.</p>';
+			document.getElementById("usis-set-root").innerHTML = html;
+			function renderStages(labels, keys) {
+				var container = document.getElementById("proj-stages");
+				if (!container) return;
+				var html = "";
+				keys.forEach(function (key) {
+					html += '<div class="row g-2 mb-2 proj-stage-row">';
+					html += '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key (a-z0-9_)" value="' + esc(key) + '" data-original="' + esc(key) + '" readonly></div>';
+					html += '<div class="col-md-7"><input class="form-control form-control-sm proj-stage-label" placeholder="Label" value="' + esc(labels[key]) + '"></div>';
+					html += '<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100 proj-remove-stage">Remove</button></div>';
+					html += '</div>';
+				});
+				container.innerHTML = html;
+				document.querySelectorAll(".proj-remove-stage").forEach(function (btn) {
+					btn.addEventListener("click", function () {
+						btn.closest(".proj-stage-row").remove();
+						updateJsonPreview();
+					});
+				});
+				document.querySelectorAll(".proj-stage-label").forEach(function (inp) {
+					inp.addEventListener("input", updateJsonPreview);
+				});
+			}
+			renderStages(stageLabels, stageKeys);
+			function updateJsonPreview() {
+				var stagesJson = document.getElementById("proj-json-stages");
+				var tradesJson = document.getElementById("proj-json-trades");
+				var whoJson = document.getElementById("proj-json-who");
+				if (!stagesJson || !tradesJson || !whoJson) return;
+				var stages = {};
+				document.querySelectorAll(".proj-stage-row").forEach(function (row) {
+					var key = row.querySelector(".proj-stage-key").value.trim();
+					var label = row.querySelector(".proj-stage-label").value.trim();
+					if (key && label) stages[key] = label;
+				});
+				var trades = document.getElementById("proj-trades").value.split("\n").map(function (s) {
+					return s.trim();
+				}).filter(Boolean);
+				var who = [];
+				document.querySelectorAll(".proj-who-role:checked").forEach(function (cb) {
+					who.push(cb.value);
+				});
+				stagesJson.value = JSON.stringify(stages, null, 2);
+				tradesJson.value = JSON.stringify(trades, null, 2);
+				whoJson.value = JSON.stringify(who, null, 2);
+			}
+			document.querySelectorAll("#proj-trades, .proj-who-role").forEach(function (el) {
+				el.addEventListener("input", updateJsonPreview);
+				el.addEventListener("change", updateJsonPreview);
+			});
+			updateJsonPreview();
+			document.getElementById("proj-add-stage").addEventListener("click", function () {
+				var container = document.getElementById("proj-stages");
+				var row = document.createElement("div");
+				row.className = "row g-2 mb-2 proj-stage-row";
+				row.innerHTML = '<div class="col-md-3"><input class="form-control form-control-sm proj-stage-key" placeholder="Key (a-z0-9_)" data-original="" data-new="true"></div>' +
+					'<div class="col-md-7"><input class="form-control form-control-sm proj-stage-label" placeholder="Label"></div>' +
+					'<div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100 proj-remove-stage">Remove</button></div>';
+				container.appendChild(row);
+				row.querySelector(".proj-remove-stage").addEventListener("click", function () {
+					row.remove();
+					updateJsonPreview();
+				});
+				row.querySelectorAll(".proj-stage-key, .proj-stage-label").forEach(function (inp) {
+					inp.addEventListener("input", updateJsonPreview);
+				});
+				updateJsonPreview();
+			});
+			document.getElementById("usis-proj-form").addEventListener("submit", function (e) {
+				e.preventDefault();
+				var stagesErr = document.getElementById("proj-stages-error");
+				var whoErr = document.getElementById("proj-who-error");
+				stagesErr.classList.add("d-none");
+				stagesErr.classList.remove("d-block");
+				stagesErr.textContent = "";
+				whoErr.classList.add("d-none");
+				whoErr.classList.remove("d-block");
+				var stages = {};
+				var seenKeys = {};
+				var valid = true;
+				var stageRows = document.querySelectorAll(".proj-stage-row");
+				if (stageRows.length === 0) {
+					stagesErr.textContent = "At least one stage is required.";
+					stagesErr.classList.remove("d-none");
+					stagesErr.classList.add("d-block");
+					return;
+				}
+				stageRows.forEach(function (row) {
+					var keyInput = row.querySelector(".proj-stage-key");
+					var labelInput = row.querySelector(".proj-stage-label");
+					var key = keyInput.value.trim();
+					var label = labelInput.value.trim();
+					var isNew = keyInput.getAttribute("data-new") === "true";
+					keyInput.classList.remove("is-invalid");
+					labelInput.classList.remove("is-invalid");
+					if (!key) {
+						if (isNew) keyInput.classList.add("is-invalid");
+						valid = false;
+					} else if (!/^[a-z0-9_]+$/.test(key)) {
+						if (isNew) keyInput.classList.add("is-invalid");
+						stagesErr.textContent = "Keys must match ^[a-z0-9_]+$ (lowercase letters, numbers, underscore).";
+						stagesErr.classList.remove("d-none");
+						stagesErr.classList.add("d-block");
+						valid = false;
+					} else if (seenKeys[key]) {
+						if (isNew) keyInput.classList.add("is-invalid");
+						stagesErr.textContent = "Duplicate key: " + key;
+						stagesErr.classList.remove("d-none");
+						stagesErr.classList.add("d-block");
+						valid = false;
+					}
+					if (!label) {
+						labelInput.classList.add("is-invalid");
+						valid = false;
+					}
+					if (key && label && /^[a-z0-9_]+$/.test(key) && !seenKeys[key]) {
+						stages[key] = label;
+						seenKeys[key] = true;
+					}
+				});
+				if (!valid) return;
+				var trades = document.getElementById("proj-trades").value.split("\n").map(function (s) {
+					return s.trim();
+				}).filter(Boolean);
+				var who = [];
+				document.querySelectorAll(".proj-who-role:checked").forEach(function (cb) {
+					who.push(cb.value);
+				});
+				if (who.length === 0) {
+					whoErr.classList.remove("d-none");
+					whoErr.classList.add("d-block");
+					return;
+				}
+				var chain = Promise.resolve();
+				var saveKey = function (key, value) {
+					if (map[key] && map[key].locked) return;
+					chain = chain.then(function () {
+						return fetchJson("/api/settings/" + encodeURIComponent(key), { method: "PUT", body: { value: value } }).then(function (r) {
+							if (!r.ok) throw new Error((r.body && r.body.error) || "Save failed for " + key);
+						});
+					});
+				};
+				saveKey("estimate.stage_labels", stages);
+				saveKey("project.default_trades", trades);
+				saveKey("project.who_may_create", who);
+				saveKey("time.require_cost_code", document.getElementById("proj-require-cost").checked);
+				saveKey("field.geofence_mode", document.getElementById("proj-geofence").value);
+				saveKey("tm.requires_co", document.getElementById("proj-tm-co").checked);
+				chain.then(function () {
+					if (window.USISNotify && window.USISNotify.success) window.USISNotify.success("Settings saved");
+				}).catch(function (err) {
+					if (window.USISNotify && window.USISNotify.error) window.USISNotify.error(err.message || "Save failed");
+					flash(err.message || "Save failed", "danger");
+				});
+			});
+			var showJson = document.getElementById("proj-show-json");
+			if (showJson) {
+				showJson.addEventListener("click", function () {
+					var editor = document.getElementById("proj-json-editor");
+					if (editor) {
+						if (editor.classList.contains("show")) {
+							editor.classList.remove("show");
+						} else {
+							editor.classList.add("show");
+						}
+					}
+				});
+			}
 		});
 	}
 
